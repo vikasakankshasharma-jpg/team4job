@@ -97,20 +97,20 @@ export function JobCard({ job }: JobCardProps) {
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="space-y-3 text-sm">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-foreground">
             <MapPin className="h-4 w-4" />
             <span>{job.location}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-foreground">
             <IndianRupee className="h-4 w-4" />
             <span>{job.budget.min} - {job.budget.max}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-foreground">
             <Users className="h-4 w-4" />
             <span>{job.bids.length} Bids</span>
           </div>
           {job.status === 'Open for Bidding' && (
-             <div className="flex items-center gap-2 text-primary">
+             <div className="flex items-center gap-2 text-primary font-medium">
               <Clock className="h-4 w-4" />
               <span>Bidding ends {timeRemaining}</span>
             </div>

@@ -120,7 +120,9 @@ function JobGiverBid({ bid }: { bid: Bid }) {
     const [timeAgo, setTimeAgo] = React.useState('');
 
     React.useEffect(() => {
-        setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
+        if(bid.timestamp) {
+            setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
+        }
     }, [bid.timestamp]);
 
     return (
@@ -145,7 +147,7 @@ function JobGiverBid({ bid }: { bid: Bid }) {
                     <p className="text-xs text-muted-foreground">{timeAgo}</p>
                 </div>
             </div>
-            <p className="mt-4 text-sm">{bid.coverLetter}</p>
+            <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
             <div className="mt-4 flex gap-2">
                 <Button size="sm">Select Installer</Button>
                 <Button size="sm" variant="outline">Message</Button>
@@ -224,7 +226,9 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
     const [timeAgo, setTimeAgo] = React.useState('');
 
     React.useEffect(() => {
-        setTimeAgo(formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true }));
+        if (comment.timestamp) {
+            setTimeAgo(formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true }));
+        }
     }, [comment.timestamp]);
 
     return (
@@ -264,7 +268,7 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
                             </div>
                         )}
                     </div>
-                    <p className="text-sm mt-1">{comment.content}</p>
+                    <p className="text-sm mt-1 text-foreground">{comment.content}</p>
                 </>
                 ) : (
                     <div className="space-y-2">
@@ -420,39 +424,39 @@ export default function JobDetailPage() {
           <CardHeader>
             <CardTitle>Job Overview</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm">
+          <CardContent className="space-y-4 text-sm text-foreground">
             <div className="flex items-center gap-3">
               <IndianRupee className="h-5 w-5" />
               <div>
-                <p>Budget</p>
+                <p className="text-muted-foreground">Budget</p>
                 <p className="font-semibold">₹{job.budget.min.toLocaleString()} - ₹{job.budget.max.toLocaleString()}</p>
               </div>
             </div>
              <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5" />
               <div>
-                <p>Location</p>
+                <p className="text-muted-foreground">Location</p>
                 <p className="font-semibold">{job.location}</p>
               </div>
             </div>
              <div className="flex items-center gap-3">
               <Clock className="h-5 w-5" />
               <div>
-                <p>Bidding Ends</p>
+                <p className="text-muted-foreground">Bidding Ends</p>
                 <p className="font-semibold">{deadlineRelative} ({deadlineAbsolute})</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5" />
               <div>
-                <p>Bids</p>
+                <p className="text-muted-foreground">Bids</p>
                 <p className="font-semibold">{job.bids.length} Received</p>
               </div>
             </div>
              <div className="flex items-center gap-3">
               <MessageSquare className="h-5 w-5" />
               <div>
-                <p>Comments</p>
+                <p className="text-muted-foreground">Comments</p>
                 <p className="font-semibold">{jobComments.length}</p>
               </div>
             </div>
