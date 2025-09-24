@@ -166,14 +166,33 @@ export default function JobDetailPage() {
   const job = jobs.find((j) => j.id === id);
   const { toast } = useToast();
 
-  if (!job) {
-    notFound();
-  }
-  
-  const [jobComments, setJobComments] = React.useState(job.comments);
+  const [jobComments, setJobComments] = React.useState(job?.comments || []);
   const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
   const [editingContent, setEditingContent] = React.useState("");
 
+  React.useEffect(() => {
+    if (job) {
+      setJobComments(job.comments);
+    }
+  }, [job]);
+
+  if (!job) {
+     if (!user) { // Full page skeleton when nothing is loaded
+        return (
+          <div className="grid gap-8 md:grid-cols-3">
+            <div className="md:col-span-2 space-y-8">
+               <Card><CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader><CardContent><Skeleton className="h-24 w-full" /></CardContent></Card>
+               <Card><CardHeader><Skeleton className="h-8 w-1/3" /></CardHeader><CardContent><Skeleton className="h-32 w-full" /></CardContent></Card>
+            </div>
+            <div className="space-y-8">
+               <Card><CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>
+            </div>
+          </div>
+        )
+     }
+    notFound();
+  }
+  
   const handleEditComment = (commentId: string, content: string) => {
     setEditingCommentId(commentId);
     setEditingContent(content);
@@ -410,3 +429,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
