@@ -20,6 +20,24 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { format, formatDistanceToNow } from "date-fns";
 import { IndianRupee } from "lucide-react";
+import { Job } from "@/lib/types";
+
+
+const getStatusVariant = (status: Job['status']): "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined => {
+    switch (status) {
+        case 'Open for Bidding':
+            return 'success';
+        case 'Bidding Closed':
+            return 'warning';
+        case 'Awarded':
+        case 'In Progress':
+            return 'info';
+        case 'Completed':
+            return 'secondary';
+        default:
+            return 'default';
+    }
+}
 
 export default function MyBidsPage() {
   // Assuming the logged in user is user-1 (Alex Johnson)
@@ -63,10 +81,10 @@ export default function MyBidsPage() {
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{formatDistanceToNow(bid.timestamp, { addSuffix: true })}</TableCell>
                   <TableCell>
-                      <Badge variant="outline">{bid.jobStatus}</Badge>
+                      <Badge variant={getStatusVariant(bid.jobStatus as Job['status'])}>{bid.jobStatus}</Badge>
                   </TableCell>
                    <TableCell>
-                      <Badge variant={jobs.find(j => j.id === bid.jobId)?.awardedInstaller === installerId ? "default" : "secondary"}>
+                      <Badge variant={jobs.find(j => j.id === bid.jobId)?.awardedInstaller === installerId ? "success" : "secondary"}>
                         {jobs.find(j => j.id === bid.jobId)?.awardedInstaller === installerId ? "Won" : "Pending"}
                       </Badge>
                   </TableCell>

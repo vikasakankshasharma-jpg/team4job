@@ -13,10 +13,27 @@ import type { Job } from "@/lib/types";
 import { MapPin, Briefcase, IndianRupee, Clock, Users } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow, format } from 'date-fns';
+import { badgeVariants } from "./ui/badge";
 
 type JobCardProps = {
   job: Job;
 };
+
+const getStatusVariant = (status: Job['status']): "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined => {
+    switch (status) {
+        case 'Open for Bidding':
+            return 'success';
+        case 'Bidding Closed':
+            return 'warning';
+        case 'Awarded':
+        case 'In Progress':
+            return 'info';
+        case 'Completed':
+            return 'secondary';
+        default:
+            return 'default';
+    }
+}
 
 export function JobCard({ job }: JobCardProps) {
   const timeRemaining = formatDistanceToNow(job.deadline, { addSuffix: true });
@@ -37,7 +54,7 @@ export function JobCard({ job }: JobCardProps) {
               </p>
             </div>
           </div>
-          <Badge variant={job.status === 'Open for Bidding' ? 'default' : 'secondary'} className="capitalize">
+          <Badge variant={getStatusVariant(job.status)} className="capitalize">
             {job.status}
           </Badge>
         </div>

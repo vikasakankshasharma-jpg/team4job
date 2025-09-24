@@ -38,6 +38,23 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal } from "lucide-react"
 import { useSearchParams } from "next/navigation";
+import { Job } from "@/lib/types";
+
+const getStatusVariant = (status: Job['status']): "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined => {
+    switch (status) {
+        case 'Open for Bidding':
+            return 'success';
+        case 'Bidding Closed':
+            return 'warning';
+        case 'Awarded':
+        case 'In Progress':
+            return 'info';
+        case 'Completed':
+            return 'secondary';
+        default:
+            return 'default';
+    }
+}
 
 function PostedJobsTable({ jobs, title, description, footerText }) {
   return (
@@ -68,7 +85,7 @@ function PostedJobsTable({ jobs, title, description, footerText }) {
                       <Link href={`/dashboard/jobs/${job.id}`} className="hover:underline">{job.title}</Link>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{job.status}</Badge>
+                      <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{job.bids.length}</TableCell>
                     <TableCell className="hidden md:table-cell">{format(job.postedAt, "MMM d, yyyy")}</TableCell>
