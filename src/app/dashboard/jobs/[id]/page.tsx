@@ -36,6 +36,7 @@ import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Bid } from "@/lib/types";
 
 function InstallerBidSection({ job }: { job: (typeof jobs)[0] }) {
   const { toast } = useToast();
@@ -115,6 +116,44 @@ function InstallerBidSection({ job }: { job: (typeof jobs)[0] }) {
   );
 }
 
+function JobGiverBid({ bid }: { bid: Bid }) {
+    const [timeAgo, setTimeAgo] = React.useState('');
+
+    React.useEffect(() => {
+        setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
+    }, [bid.timestamp]);
+
+    return (
+        <div className="border p-4 rounded-lg">
+            <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                    <Avatar>
+                        <AvatarImage src={bid.installer.avatarUrl} alt={bid.installer.name} data-ai-hint="person face" />
+                        <AvatarFallback>{bid.installer.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p className="font-semibold">{bid.installer.name}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Star className="h-3 w-3 fill-primary text-primary" />
+                            <span>{bid.installer.installerProfile?.rating} ({bid.installer.installerProfile?.reviews} reviews)</span>
+                            {bid.installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
+                        </div>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <p className="text-lg font-bold">₹{bid.amount.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                </div>
+            </div>
+            <p className="mt-4 text-sm">{bid.coverLetter}</p>
+            <div className="mt-4 flex gap-2">
+                <Button size="sm">Select Installer</Button>
+                <Button size="sm" variant="outline">Message</Button>
+            </div>
+        </div>
+    );
+}
+
 function JobGiverBidsSection({ job }: { job: (typeof jobs)[0] }) {
   return (
     <Card>
@@ -126,33 +165,7 @@ function JobGiverBidsSection({ job }: { job: (typeof jobs)[0] }) {
       </CardHeader>
       <CardContent className="space-y-4">
         {job.bids.map((bid) => (
-          <div key={bid.id} className="border p-4 rounded-lg">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarImage src={bid.installer.avatarUrl} alt={bid.installer.name} data-ai-hint="person face" />
-                  <AvatarFallback>{bid.installer.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold">{bid.installer.name}</p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Star className="h-3 w-3 fill-primary text-primary" />
-                    <span>{bid.installer.installerProfile?.rating} ({bid.installer.installerProfile?.reviews} reviews)</span>
-                    {bid.installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
-                  </div>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-bold">₹{bid.amount.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">{formatDistanceToNow(bid.timestamp, { addSuffix: true })}</p>
-              </div>
-            </div>
-            <p className="mt-4 text-sm">{bid.coverLetter}</p>
-            <div className="mt-4 flex gap-2">
-              <Button size="sm">Select Installer</Button>
-              <Button size="sm" variant="outline">Message</Button>
-            </div>
-          </div>
+          <JobGiverBid key={bid.id} bid={bid} />
         ))}
       </CardContent>
     </Card>
@@ -207,6 +220,70 @@ function PageSkeleton() {
   );
 }
 
+function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handleDeleteComment, handleCancelEdit, handleSaveEdit, editingContent, setEditingContent }) {
+    const [timeAgo, setTimeAgo] = React.useState('');
+
+    React.useEffect(() => {
+        setTimeAgo(formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true }));
+    }, [comment.timestamp]);
+
+    return (
+        <div key={comment.id} className="flex gap-3">
+            <Avatar className="h-9 w-9">
+                <AvatarImage src={comment.author.avatarUrl} alt={comment.author.name} data-ai-hint="person face" />
+                <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+                {!isEditing ? (
+                <>
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm">{comment.author.name}</p>
+                        <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                        </div>
+                        {canEdit && (
+                            <div className="flex items-center">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => handleEditComment(comment.id, comment.content)}
+                                >
+                                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                                    <span className="sr-only">Edit comment</span>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => handleDeleteComment(comment.id)}
+                                >
+                                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                    <span className="sr-only">Delete comment</span>
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                    <p className="text-sm mt-1">{comment.content}</p>
+                </>
+                ) : (
+                    <div className="space-y-2">
+                        <Textarea 
+                            value={editingContent}
+                            onChange={(e) => setEditingContent(e.target.value)}
+                            className="min-h-24"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Cancel</Button>
+                            <Button size="sm" onClick={() => handleSaveEdit(comment.id)}>Save</Button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function JobDetailPage() {
   const { user, role } = useUser();
   const params = useParams();
@@ -217,15 +294,18 @@ export default function JobDetailPage() {
   const [jobComments, setJobComments] = React.useState<Comment[]>([]);
   const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
   const [editingContent, setEditingContent] = React.useState("");
+  
+  const [deadlineRelative, setDeadlineRelative] = React.useState('');
+  const [deadlineAbsolute, setDeadlineAbsolute] = React.useState('');
 
   React.useEffect(() => {
-    // A page with a dynamic route might not have the parameter on first render
-    // This makes sure we have an id before we try to find the job.
     if (id) {
       const foundJob = jobs.find((j) => j.id === id);
       setJob(foundJob || null);
       if (foundJob) {
         setJobComments(foundJob.comments);
+        setDeadlineRelative(formatDistanceToNow(new Date(foundJob.deadline), { addSuffix: true }));
+        setDeadlineAbsolute(format(new Date(foundJob.deadline), "MMM d, yyyy"));
       }
     }
   }, [id]);
@@ -291,7 +371,7 @@ export default function JobDetailPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p>{job.description}</p>
+            <p className="text-foreground">{job.description}</p>
             <Separator className="my-6" />
             <h3 className="font-semibold mb-4">Comments ({jobComments.length})</h3>
             <div className="space-y-6">
@@ -300,61 +380,18 @@ export default function JobDetailPage() {
                     const canEdit = user?.id === comment.author.id && index === jobComments.length - 1;
 
                     return (
-                        <div key={comment.id} className="flex gap-3">
-                            <Avatar className="h-9 w-9">
-                                <AvatarImage src={comment.author.avatarUrl} alt={comment.author.name} data-ai-hint="person face" />
-                                <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                                {!isEditing ? (
-                                <>
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-2">
-                                        <p className="font-semibold text-sm">{comment.author.name}</p>
-                                        <p className="text-xs text-muted-foreground">{formatDistanceToNow(comment.timestamp, { addSuffix: true })}</p>
-                                        </div>
-                                        {user?.id === comment.author.id && (
-                                            <div className="flex items-center">
-                                                {canEdit && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7"
-                                                        onClick={() => handleEditComment(comment.id, comment.content)}
-                                                    >
-                                                        <Pencil className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="sr-only">Edit comment</span>
-                                                    </Button>
-                                                )}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7"
-                                                    onClick={() => handleDeleteComment(comment.id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-muted-foreground" />
-                                                    <span className="sr-only">Delete comment</span>
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <p className="text-sm mt-1">{comment.content}</p>
-                                </>
-                                ) : (
-                                    <div className="space-y-2">
-                                        <Textarea 
-                                            value={editingContent}
-                                            onChange={(e) => setEditingContent(e.target.value)}
-                                            className="min-h-24"
-                                        />
-                                        <div className="flex justify-end gap-2">
-                                            <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Cancel</Button>
-                                            <Button size="sm" onClick={() => handleSaveEdit(comment.id)}>Save</Button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <CommentDisplay
+                            key={comment.id}
+                            comment={comment}
+                            isEditing={isEditing}
+                            canEdit={user?.id === comment.author.id}
+                            handleEditComment={handleEditComment}
+                            handleDeleteComment={handleDeleteComment}
+                            handleCancelEdit={handleCancelEdit}
+                            handleSaveEdit={handleSaveEdit}
+                            editingContent={editingContent}
+                            setEditingContent={setEditingContent}
+                        />
                     )
                 })}
                  <div className="flex gap-3">
@@ -387,35 +424,35 @@ export default function JobDetailPage() {
             <div className="flex items-center gap-3">
               <IndianRupee className="h-5 w-5" />
               <div>
-                <p className="text-muted-foreground">Budget</p>
+                <p>Budget</p>
                 <p className="font-semibold">₹{job.budget.min.toLocaleString()} - ₹{job.budget.max.toLocaleString()}</p>
               </div>
             </div>
              <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5" />
               <div>
-                <p className="text-muted-foreground">Location</p>
+                <p>Location</p>
                 <p className="font-semibold">{job.location}</p>
               </div>
             </div>
              <div className="flex items-center gap-3">
               <Clock className="h-5 w-5" />
               <div>
-                <p className="text-muted-foreground">Bidding Ends</p>
-                <p className="font-semibold">{formatDistanceToNow(job.deadline, { addSuffix: true })} ({format(job.deadline, "MMM d, yyyy")})</p>
+                <p>Bidding Ends</p>
+                <p className="font-semibold">{deadlineRelative} ({deadlineAbsolute})</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5" />
               <div>
-                <p className="text-muted-foreground">Bids</p>
+                <p>Bids</p>
                 <p className="font-semibold">{job.bids.length} Received</p>
               </div>
             </div>
              <div className="flex items-center gap-3">
               <MessageSquare className="h-5 w-5" />
               <div>
-                <p className="text-muted-foreground">Comments</p>
+                <p>Comments</p>
                 <p className="font-semibold">{jobComments.length}</p>
               </div>
             </div>

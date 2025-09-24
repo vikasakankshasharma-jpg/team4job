@@ -1,4 +1,6 @@
 
+"use client";
+
 import {
   Card,
   CardContent,
@@ -16,6 +18,7 @@ import Link from "next/link";
 import { formatDistanceToNow, format } from 'date-fns';
 import { badgeVariants } from "./ui/badge";
 import { cn } from "@/lib/utils";
+import React from "react";
 
 type JobCardProps = {
   job: Job;
@@ -54,7 +57,15 @@ const getButtonText = (status: Job['status']) => {
 }
 
 export function JobCard({ job }: JobCardProps) {
-  const timeRemaining = formatDistanceToNow(job.deadline, { addSuffix: true });
+  const [postedAt, setPostedAt] = React.useState("");
+  const [timeRemaining, setTimeRemaining] = React.useState("");
+  
+  React.useEffect(() => {
+    setPostedAt(format(new Date(job.postedAt), "MMM d, yyyy"));
+    setTimeRemaining(formatDistanceToNow(new Date(job.deadline), { addSuffix: true }));
+  }, [job.postedAt, job.deadline]);
+
+
   const statusVariant = getStatusVariant(job.status);
   const buttonText = getButtonText(job.status);
 
@@ -73,7 +84,7 @@ export function JobCard({ job }: JobCardProps) {
             <div>
               <p className="font-semibold text-sm">{job.jobGiver.name}</p>
               <p className="text-xs text-muted-foreground">
-                Posted {format(job.postedAt, "MMM d, yyyy")}
+                Posted {postedAt}
               </p>
             </div>
           </div>
@@ -101,7 +112,7 @@ export function JobCard({ job }: JobCardProps) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button asChild className="w-full" variant={job.status === 'Completed' ? "outline" : statusVariant}>
+        <Button asChild className="w-full" variant={job.status === 'Completed' ? "outline" : "default"}>
           <Link href={`/dashboard/jobs/${job.id}`}>{buttonText}</Link>
         </Button>
       </CardFooter>

@@ -1,4 +1,6 @@
 
+"use client";
+
 import {
   Card,
   CardContent,
@@ -7,7 +9,7 @@ import {
   CardTitle,
   CardFooter
 } from "@/components/ui/card";
-import { jobs, users } from "@/lib/data";
+import { jobs } from "@/lib/data";
 import {
   Table,
   TableBody,
@@ -20,7 +22,8 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { format, formatDistanceToNow } from "date-fns";
 import { IndianRupee } from "lucide-react";
-import { Job } from "@/lib/types";
+import { Job, Bid } from "@/lib/types";
+import React from "react";
 
 
 const getStatusVariant = (status: Job['status']): "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined => {
@@ -39,8 +42,43 @@ const getStatusVariant = (status: Job['status']): "default" | "secondary" | "suc
     }
 }
 
+type MyBidRowProps = {
+  bid: Bid & { jobTitle: string; jobId: string; jobStatus: Job['status'] };
+}
+
+function MyBidRow({ bid }: MyBidRowProps) {
+    const [timeAgo, setTimeAgo] = React.useState('');
+    const installerId = 'user-1';
+
+    React.useEffect(() => {
+        setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
+    }, [bid.timestamp]);
+
+    return (
+        <TableRow>
+            <TableCell className="font-medium">
+                <Link href={`/dashboard/jobs/${bid.jobId}`} className="hover:underline">{bid.jobTitle}</Link>
+            </TableCell>
+            <TableCell>
+                <div className="flex items-center gap-1">
+                    <IndianRupee className="h-4 w-4" />
+                    {bid.amount.toLocaleString()}
+                </div>
+            </TableCell>
+            <TableCell className="hidden md:table-cell">{timeAgo}</TableCell>
+            <TableCell>
+                <Badge variant={getStatusVariant(bid.jobStatus)}>{bid.jobStatus}</Badge>
+            </TableCell>
+            <TableCell>
+                <Badge variant={jobs.find(j => j.id === bid.jobId)?.awardedInstaller === installerId ? "success" : "secondary"}>
+                    {jobs.find(j => j.id === bid.jobId)?.awardedInstaller === installerId ? "Won" : "Pending"}
+                </Badge>
+            </TableCell>
+        </TableRow>
+    );
+}
+
 export default function MyBidsPage() {
-  // Assuming the logged in user is user-1 (Alex Johnson)
   const installerId = 'user-1';
   const myBids = jobs.flatMap(job => 
     job.bids.filter(bid => bid.installer.id === installerId)
@@ -69,26 +107,7 @@ export default function MyBidsPage() {
             </TableHeader>
             <TableBody>
               {myBids.map(bid => (
-                <TableRow key={bid.id}>
-                  <TableCell className="font-medium">
-                    <Link href={`/dashboard/jobs/${bid.jobId}`} className="hover:underline">{bid.jobTitle}</Link>
-                  </TableCell>
-                  <TableCell>
-                     <div className="flex items-center gap-1">
-                        <IndianRupee className="h-4 w-4" />
-                        {bid.amount.toLocaleString()}
-                     </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{formatDistanceToNow(bid.timestamp, { addSuffix: true })}</TableCell>
-                  <TableCell>
-                      <Badge variant={getStatusVariant(bid.jobStatus as Job['status'])}>{bid.jobStatus}</Badge>
-                  </TableCell>
-                   <TableCell>
-                      <Badge variant={jobs.find(j => j.id === bid.jobId)?.awardedInstaller === installerId ? "success" : "secondary"}>
-                        {jobs.find(j => j.id === bid.jobId)?.awardedInstaller === installerId ? "Won" : "Pending"}
-                      </Badge>
-                  </TableCell>
-                </TableRow>
+                <MyBidRow key={bid.id} bid={bid} />
               ))}
             </TableBody>
           </Table>
