@@ -60,7 +60,7 @@ function MyBidRow({ bid }: MyBidRowProps) {
             if (!won) return { text: 'Not Selected', variant: 'destructive' };
         }
         
-        return { text: job.status, variant: 'secondary' };
+        return { text: job.status, variant: getStatusVariant(job.status) };
     }
 
     const myBidStatus = getMyBidStatus();

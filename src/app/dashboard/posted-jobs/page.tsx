@@ -42,7 +42,7 @@ import { Job } from "@/lib/types";
 import { getStatusVariant } from "@/lib/utils";
 
 
-function PostedJobsTable({ jobs, title, description, footerText }) {
+function PostedJobsTable({ jobs, title, description, footerText }: { jobs: Job[], title: string, description: string, footerText: string }) {
   return (
       <Card>
         <CardHeader>
@@ -74,7 +74,7 @@ function PostedJobsTable({ jobs, title, description, footerText }) {
                       <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{job.bids.length}</TableCell>
-                    <TableCell className="hidden md:table-cell">{format(job.postedAt, "MMM d, yyyy")}</TableCell>
+                    <TableCell className="hidden md:table-cell">{format(new Date(job.postedAt), "MMM d, yyyy")}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
