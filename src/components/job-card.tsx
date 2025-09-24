@@ -79,16 +79,16 @@ export function JobCard({ job }: JobCardProps) {
           </div>
       </CardHeader>
       <CardContent className="flex-grow">
-        <div className="space-y-3 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
+        <div className="space-y-3 text-sm">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <MapPin className="h-4 w-4" />
             <span>{job.location}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <IndianRupee className="h-4 w-4" />
             <span>{job.budget.min} - {job.budget.max}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Users className="h-4 w-4" />
             <span>{job.bids.length} Bids</span>
           </div>
