@@ -28,7 +28,8 @@ import {
   Users,
   Zap,
   Loader2,
-  Trash2
+  Trash2,
+  Pencil,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -169,10 +170,32 @@ export default function JobDetailPage() {
   }
   
   const [jobComments, setJobComments] = React.useState(job.comments);
+  const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
+  const [editingContent, setEditingContent] = React.useState("");
+
+  const handleEditComment = (commentId: string, content: string) => {
+    setEditingCommentId(commentId);
+    setEditingContent(content);
+  };
+  
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditingContent("");
+  };
+
+  const handleSaveEdit = (commentId: string) => {
+    setJobComments(jobComments.map(c => 
+      c.id === commentId ? { ...c, content: editingContent, timestamp: new Date() } : c
+    ));
+    setEditingCommentId(null);
+    setEditingContent("");
+    toast({
+      title: "Comment Updated",
+      description: "Your comment has been successfully updated.",
+    });
+  };
 
   const handleDeleteComment = (commentId: string) => {
-    // In a real app, this would be an API call.
-    // For this demo, we'll just filter the state.
     setJobComments(jobComments.filter(c => c.id !== commentId));
     toast({
       title: "Comment Deleted",
@@ -207,34 +230,68 @@ export default function JobDetailPage() {
             <Separator className="my-6" />
             <h3 className="font-semibold mb-4">Comments ({jobComments.length})</h3>
             <div className="space-y-6">
-                {jobComments.map(comment => (
-                    <div key={comment.id} className="flex gap-3">
-                        <Avatar className="h-9 w-9">
-                            <AvatarImage src={comment.author.avatarUrl} alt={comment.author.name} data-ai-hint="person face" />
-                            <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                  <p className="font-semibold text-sm">{comment.author.name}</p>
-                                  <p className="text-xs text-muted-foreground">{formatDistanceToNow(comment.timestamp, { addSuffix: true })}</p>
-                                </div>
-                                {user?.id === comment.author.id && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={() => handleDeleteComment(comment.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-muted-foreground" />
-                                    <span className="sr-only">Delete comment</span>
-                                  </Button>
+                {jobComments.map((comment, index) => {
+                    const isEditing = editingCommentId === comment.id;
+                    const canEdit = user?.id === comment.author.id && index === jobComments.length - 1;
+
+                    return (
+                        <div key={comment.id} className="flex gap-3">
+                            <Avatar className="h-9 w-9">
+                                <AvatarImage src={comment.author.avatarUrl} alt={comment.author.name} data-ai-hint="person face" />
+                                <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                                {!isEditing ? (
+                                <>
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                        <p className="font-semibold text-sm">{comment.author.name}</p>
+                                        <p className="text-xs text-muted-foreground">{formatDistanceToNow(comment.timestamp, { addSuffix: true })}</p>
+                                        </div>
+                                        {user?.id === comment.author.id && (
+                                            <div className="flex items-center">
+                                                {canEdit && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7"
+                                                        onClick={() => handleEditComment(comment.id, comment.content)}
+                                                    >
+                                                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                                                        <span className="sr-only">Edit comment</span>
+                                                    </Button>
+                                                )}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7"
+                                                    onClick={() => handleDeleteComment(comment.id)}
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="sr-only">Delete comment</span>
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground mt-1">{comment.content}</p>
+                                </>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <Textarea 
+                                            value={editingContent}
+                                            onChange={(e) => setEditingContent(e.target.value)}
+                                            className="min-h-24"
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                            <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Cancel</Button>
+                                            <Button size="sm" onClick={() => handleSaveEdit(comment.id)}>Save</Button>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
-                            <p className="text-sm text-muted-foreground mt-1">{comment.content}</p>
                         </div>
-                    </div>
-                ))}
+                    )
+                })}
                  <div className="flex gap-3">
                     <Avatar className="h-9 w-9">
                         <AvatarImage src={user?.avatarUrl} alt={user?.name} data-ai-hint="person face" />
@@ -304,3 +361,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
