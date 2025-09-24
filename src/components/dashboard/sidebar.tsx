@@ -22,7 +22,7 @@ import { useUser } from "@/hooks/use-user";
 
 const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
-  { href: "/dashboard/browse", icon: Search, label: "Browse Jobs" },
+  { href: "/dashboard/jobs", icon: Search, label: "Browse Jobs" },
   { href: "/dashboard/my-bids", icon: Briefcase, label: "My Bids" },
   { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
