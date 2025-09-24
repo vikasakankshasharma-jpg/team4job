@@ -1,3 +1,7 @@
+
+"use client";
+
+import * as React from "react";
 import {
   Tabs,
   TabsContent,
@@ -27,7 +31,16 @@ import { jobs } from "@/lib/data";
 import { JobCard } from "@/components/job-card";
 
 export default function BrowseJobsPage() {
+  const [searchPincode, setSearchPincode] = React.useState("");
+
   const openJobs = jobs.filter((job) => job.status === "Open for Bidding");
+
+  const filteredJobs = openJobs.filter((job) => {
+    if (searchPincode === "") {
+      return true;
+    }
+    return job.location.includes(searchPincode);
+  });
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -51,7 +64,7 @@ export default function BrowseJobsPage() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Filter by</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem checked>
+                <DropdownMenuCheckboxItem>
                   Budget Range
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem>Location</DropdownMenuCheckboxItem>
@@ -62,7 +75,13 @@ export default function BrowseJobsPage() {
             </DropdownMenu>
             <div className="relative">
                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                 <Input type="search" placeholder="Search by Pincode..." className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px] h-8" />
+                 <Input 
+                    type="search" 
+                    placeholder="Search by Pincode..." 
+                    className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px] h-8"
+                    value={searchPincode}
+                    onChange={(e) => setSearchPincode(e.target.value)}
+                 />
             </div>
           </div>
         </div>
@@ -76,14 +95,19 @@ export default function BrowseJobsPage() {
             </CardHeader>
             <CardContent>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {openJobs.map(job => (
+                    {filteredJobs.map(job => (
                         <JobCard key={job.id} job={job} />
                     ))}
                 </div>
+                 {filteredJobs.length === 0 && (
+                  <div className="text-center py-10">
+                    <p className="text-muted-foreground">No jobs found matching your criteria.</p>
+                  </div>
+                )}
             </CardContent>
             <CardFooter>
                <div className="text-xs text-muted-foreground">
-                Showing <strong>1-{openJobs.length}</strong> of <strong>{openJobs.length}</strong> jobs
+                Showing <strong>1-{filteredJobs.length}</strong> of <strong>{filteredJobs.length}</strong> jobs
               </div>
             </CardFooter>
           </Card>
