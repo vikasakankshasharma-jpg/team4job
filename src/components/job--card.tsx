@@ -41,9 +41,11 @@ export function JobCard({ job }: JobCardProps) {
     <Card className="flex flex-col relative">
       <CardHeader>
         <div className="flex items-center justify-between mb-2">
-            <Badge variant={statusVariant} className="capitalize">
-                {job.status}
-            </Badge>
+            <div className="flex-1">
+                <Badge variant={statusVariant} className="capitalize">
+                    {job.status}
+                </Badge>
+            </div>
             <span className="text-xs text-muted-foreground font-mono">#{job.id}</span>
         </div>
         <div className="flex items-start justify-between gap-4">
@@ -90,3 +92,4 @@ export function JobCard({ job }: JobCardProps) {
     </Card>
   );
 }
+
