@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useUser } from "@/hooks/use-user";
@@ -26,7 +27,8 @@ import {
   Star,
   Users,
   Zap,
-  Loader2
+  Loader2,
+  Trash2
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -156,14 +158,27 @@ function JobGiverBidsSection({ job }: { job: (typeof jobs)[0] }) {
 }
 
 export default function JobDetailPage() {
-  const { role } = useUser();
+  const { user, role } = useUser();
   const params = useParams();
   const id = params.id as string;
   const job = jobs.find((j) => j.id === id);
+  const { toast } = useToast();
 
   if (!job) {
     notFound();
   }
+  
+  const [jobComments, setJobComments] = React.useState(job.comments);
+
+  const handleDeleteComment = (commentId: string) => {
+    // In a real app, this would be an API call.
+    // For this demo, we'll just filter the state.
+    setJobComments(jobComments.filter(c => c.id !== commentId));
+    toast({
+      title: "Comment Deleted",
+      description: "Your comment has been successfully removed.",
+    });
+  };
 
   return (
     <div className="grid gap-8 md:grid-cols-3">
@@ -190,9 +205,9 @@ export default function JobDetailPage() {
           <CardContent>
             <p className="text-muted-foreground">{job.description}</p>
             <Separator className="my-6" />
-            <h3 className="font-semibold mb-4">Comments ({job.comments.length})</h3>
+            <h3 className="font-semibold mb-4">Comments ({jobComments.length})</h3>
             <div className="space-y-6">
-                {job.comments.map(comment => (
+                {jobComments.map(comment => (
                     <div key={comment.id} className="flex gap-3">
                         <Avatar className="h-9 w-9">
                             <AvatarImage src={comment.author.avatarUrl} alt={comment.author.name} data-ai-hint="person face" />
@@ -200,8 +215,21 @@ export default function JobDetailPage() {
                         </Avatar>
                         <div className="flex-1">
                             <div className="flex justify-between items-center">
-                                <p className="font-semibold text-sm">{comment.author.name}</p>
-                                <p className="text-xs text-muted-foreground">{formatDistanceToNow(comment.timestamp, { addSuffix: true })}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-sm">{comment.author.name}</p>
+                                  <p className="text-xs text-muted-foreground">{formatDistanceToNow(comment.timestamp, { addSuffix: true })}</p>
+                                </div>
+                                {user?.id === comment.author.id && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => handleDeleteComment(comment.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                    <span className="sr-only">Delete comment</span>
+                                  </Button>
+                                )}
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">{comment.content}</p>
                         </div>
@@ -209,8 +237,8 @@ export default function JobDetailPage() {
                 ))}
                  <div className="flex gap-3">
                     <Avatar className="h-9 w-9">
-                        <AvatarImage src={users[0].avatarUrl} alt={users[0].name} data-ai-hint="person face" />
-                        <AvatarFallback>{users[0].name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={user?.avatarUrl} alt={user?.name} data-ai-hint="person face" />
+                        <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                         <Textarea placeholder="Ask a question or post a comment..." />
@@ -266,7 +294,7 @@ export default function JobDetailPage() {
               <MessageSquare className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-muted-foreground">Comments</p>
-                <p className="font-semibold">{job.comments.length}</p>
+                <p className="font-semibold">{jobComments.length}</p>
               </div>
             </div>
           </CardContent>
