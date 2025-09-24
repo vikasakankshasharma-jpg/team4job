@@ -14,12 +14,12 @@ body {
     --card-foreground: 220 9% 26%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 9% 26%;
-    --primary: 226 55% 58%; /* Desaturated grayish-blue #B0B6C4 -> more professional */
+    --primary: 226 55% 58%; /* Desaturated grayish-blue */
     --primary-foreground: 210 20% 98%;
     --secondary: 220 13% 90%;
     --secondary-foreground: 220 9% 26%;
     --muted: 220 13% 90%;
-    --muted-foreground: 220 7% 55%; /* #868B94 - Much darker for readability */
+    --muted-foreground: 220 7% 55%;
     --accent: 30 54% 55%; /* Muted amber #C88E4D */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
