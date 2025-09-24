@@ -16,6 +16,14 @@ export const users: User[] = [
       rating: 4.9,
       reviews: 28,
       verified: true,
+      reputationHistory: [
+        { month: 'Apr', points: 200 },
+        { month: 'May', points: 150 },
+        { month: 'Jun', points: 300 },
+        { month: 'Jul', points: 250 },
+        { month: 'Aug', points: 150 },
+        { month: 'Sep', points: 200 },
+      ]
     },
   },
   {
@@ -41,6 +49,14 @@ export const users: User[] = [
       rating: 4.7,
       reviews: 12,
       verified: true,
+      reputationHistory: [
+        { month: 'Apr', points: 100 },
+        { month: 'May', points: 50 },
+        { month: 'Jun', points: 150 },
+        { month: 'Jul', points: 100 },
+        { month: 'Aug', points: 100 },
+        { month: 'Sep', points: 100 },
+      ]
     },
   },
   {
@@ -58,6 +74,14 @@ export const users: User[] = [
       rating: 4.5,
       reviews: 4,
       verified: false,
+      reputationHistory: [
+        { month: 'Apr', points: 0 },
+        { month: 'May', points: 50 },
+        { month: 'Jun', points: 50 },
+        { month: 'Jul', points: 75 },
+        { month: 'Aug', points: 25 },
+        { month: 'Sep', points: 50 },
+      ]
     },
   },
   {
@@ -75,6 +99,14 @@ export const users: User[] = [
       rating: 5.0,
       reviews: 68,
       verified: true,
+      reputationHistory: [
+        { month: 'Apr', points: 400 },
+        { month: 'May', points: 500 },
+        { month: 'Jun', points: 450 },
+        { month: 'Jul', points: 350 },
+        { month: 'Aug', points: 400 },
+        { month: 'Sep', points: 400 },
+      ]
     },
   },
   {
@@ -100,6 +132,14 @@ export const users: User[] = [
       rating: 4.8,
       reviews: 25,
       verified: true,
+      reputationHistory: [
+         { month: 'Apr', points: 150 },
+        { month: 'May', points: 200 },
+        { month: 'Jun', points: 250 },
+        { month: 'Jul', points: 150 },
+        { month: 'Aug', points: 150 },
+        { month: 'Sep', points: 200 },
+      ]
     },
   },
   {
@@ -117,6 +157,14 @@ export const users: User[] = [
       rating: 4.6,
       reviews: 9,
       verified: false,
+      reputationHistory: [
+        { month: 'Apr', points: 50 },
+        { month: 'May', points: 100 },
+        { month: 'Jun', points: 100 },
+        { month: 'Jul', points: 50 },
+        { month: 'Aug', points: 100 },
+        { month: 'Sep', points: 50 },
+      ]
     },
   },
 ];

@@ -13,6 +13,7 @@ export type User = {
     rating: number;
     reviews: number;
     verified: boolean;
+    reputationHistory?: { month: string; points: number }[];
   };
 };
 

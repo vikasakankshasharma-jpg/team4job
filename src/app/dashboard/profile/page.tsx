@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/collapsible"
 import { Progress } from "@/components/ui/progress";
 import React from "react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 
 const tierIcons = {
@@ -36,6 +38,13 @@ const tierData = {
     'Gold': { points: 1000, next: 'Platinum', goal: 2000 },
     'Platinum': { points: 2000, next: 'Max', goal: 2000 },
 };
+
+const chartConfig = {
+  points: {
+    label: "Points",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig
 
 export default function ProfilePage() {
   const { user, role } = useUser();
@@ -109,7 +118,7 @@ export default function ProfilePage() {
                             </div>
                         </div>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-4 pt-4">
+                    <CollapsibleContent className="space-y-6 pt-6">
                         <div className="text-sm text-muted-foreground p-4 border rounded-lg">
                            <h4 className="font-semibold text-foreground mb-2">How Reputation Works</h4>
                            <p>Earn points for completing jobs and receiving positive ratings. Higher points unlock new tiers, giving you more visibility and access to premium jobs.</p>
@@ -128,6 +137,42 @@ export default function ProfilePage() {
                                 </div>
                                 <Progress value={progressPercentage} className="h-2"/>
                              </div>
+                        )}
+                        {installerProfile.reputationHistory && (
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base flex items-center gap-2">
+                                        <TrendingUp className="h-5 w-5" />
+                                        Reputation History (Last 6 Months)
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ChartContainer config={chartConfig} className="h-64 w-full">
+                                        <AreaChart data={installerProfile.reputationHistory} margin={{ left: -20, right: 20, top: 10, bottom: 0 }}>
+                                            <CartesianGrid vertical={false} />
+                                            <XAxis 
+                                                dataKey="month" 
+                                                tickLine={false} 
+                                                axisLine={false} 
+                                                tickMargin={8} 
+                                            />
+                                            <YAxis
+                                                 tickLine={false}
+                                                 axisLine={false}
+                                                 tickMargin={8}
+                                            />
+                                            <ChartTooltip content={<ChartTooltipContent />} />
+                                            <Area 
+                                                dataKey="points" 
+                                                type="natural" 
+                                                fill="var(--color-points)" 
+                                                fillOpacity={0.4} 
+                                                stroke="var(--color-points)" 
+                                            />
+                                        </AreaChart>
+                                    </ChartContainer>
+                                </CardContent>
+                             </Card>
                         )}
                     </CollapsibleContent>
                 </Collapsible>
