@@ -39,6 +39,21 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+    // Redirect if the user is on a page not allowed for the current role
+    const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
+    const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
+
+    if (role === 'Job Giver' && isInstallerPage) {
+        router.push('/dashboard');
+    }
+    if (role === 'Installer' && isJobGiverPage) {
+        router.push('/dashboard');
+    }
+  }, [role, pathname, user, router]);
+
+
   const login = (userId: string) => {
     const foundUser = users.find((u) => u.id === userId);
     if (foundUser) {
@@ -55,17 +70,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const setRole = (newRole: Role) => {
     if (user && user.roles.includes(newRole)) {
       setRoleState(newRole);
-
-      // Redirect if the user is on a page not allowed for the new role
-      const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
-      const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
-
-      if (newRole === 'Job Giver' && isInstallerPage) {
-        router.push('/dashboard');
-      }
-      if (newRole === 'Installer' && isJobGiverPage) {
-        router.push('/dashboard');
-      }
     }
   };
 
