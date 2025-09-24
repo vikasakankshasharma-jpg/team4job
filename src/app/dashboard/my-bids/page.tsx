@@ -24,23 +24,8 @@ import { format, formatDistanceToNow } from "date-fns";
 import { IndianRupee } from "lucide-react";
 import { Job, Bid } from "@/lib/types";
 import React from "react";
+import { getStatusVariant } from "@/lib/utils";
 
-
-const getJobStatusVariant = (status: Job['status']): "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined => {
-    switch (status) {
-        case 'Open for Bidding':
-            return 'success';
-        case 'Bidding Closed':
-            return 'warning';
-        case 'Awarded':
-        case 'In Progress':
-            return 'info';
-        case 'Completed':
-            return 'secondary';
-        default:
-            return 'default';
-    }
-}
 
 type MyBidRowProps = {
   bid: Bid & { jobTitle: string; jobId: string; jobStatus: Job['status'] };
@@ -93,7 +78,7 @@ function MyBidRow({ bid }: MyBidRowProps) {
             </TableCell>
             <TableCell className="hidden md:table-cell">{timeAgo}</TableCell>
             <TableCell>
-                <Badge variant={getJobStatusVariant(bid.jobStatus)}>{bid.jobStatus}</Badge>
+                <Badge variant={getStatusVariant(bid.jobStatus)}>{bid.jobStatus}</Badge>
             </TableCell>
             <TableCell>
                 <Badge variant={myBidStatus.variant}>

@@ -39,22 +39,8 @@ import {
 import { MoreHorizontal } from "lucide-react"
 import { useSearchParams } from "next/navigation";
 import { Job } from "@/lib/types";
+import { getStatusVariant } from "@/lib/utils";
 
-const getStatusVariant = (status: Job['status']): "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined => {
-    switch (status) {
-        case 'Open for Bidding':
-            return 'success';
-        case 'Bidding Closed':
-            return 'warning';
-        case 'Awarded':
-        case 'In Progress':
-            return 'info';
-        case 'Completed':
-            return 'secondary';
-        default:
-            return 'default';
-    }
-}
 
 function PostedJobsTable({ jobs, title, description, footerText }) {
   return (

@@ -1,6 +1,24 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { Job } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+export const getStatusVariant = (status: Job['status']): "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined => {
+    switch (status) {
+        case 'Open for Bidding':
+            return 'success';
+        case 'Bidding Closed':
+            return 'warning';
+        case 'Awarded':
+        case 'In Progress':
+            return 'info';
+        case 'Completed':
+            return 'secondary';
+        default:
+            return 'default';
+    }
 }
