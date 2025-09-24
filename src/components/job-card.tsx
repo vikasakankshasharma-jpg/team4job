@@ -71,10 +71,10 @@ export function JobCard({ job }: JobCardProps) {
          <div className="flex items-center gap-3 pt-4">
             <Avatar className="h-9 w-9">
               <AvatarImage src={job.jobGiver.avatarUrl} alt={job.jobGiver.name} data-ai-hint="person face" />
-              <AvatarFallback>{job.jobGiver.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback>{job.jobGiver.anonymousId.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold text-sm text-foreground">{job.jobGiver.name}</p>
+              <p className="font-semibold text-sm text-foreground">{job.jobGiver.anonymousId}</p>
               <p className="text-xs text-muted-foreground">
                 Posted {postedAt}
               </p>

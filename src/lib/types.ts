@@ -1,6 +1,7 @@
 export type User = {
   id: string;
   name: string;
+  anonymousId: string;
   email: string;
   avatarUrl: string;
   pincode: string;
@@ -19,7 +20,7 @@ export type User = {
 
 export type Comment = {
   id: string;
-  author: Pick<User, 'id' | 'name' | 'avatarUrl'>;
+  author: Pick<User, 'id' | 'name' | 'avatarUrl' | 'anonymousId'>;
   timestamp: Date;
   content: string;
 };
@@ -36,7 +37,7 @@ export type Job = {
   id: string;
   title: string;
   description: string;
-  jobGiver: Pick<User, 'id' | 'name' | 'avatarUrl'>;
+  jobGiver: Pick<User, 'id' | 'name' | 'avatarUrl' | 'anonymousId'>;
   location: string; // Pincode
   budget: {
     min: number;

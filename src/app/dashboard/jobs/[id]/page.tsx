@@ -134,10 +134,10 @@ function JobGiverBid({ bid }: { bid: Bid }) {
                 <div className="flex items-center gap-3">
                     <Avatar>
                         <AvatarImage src={bid.installer.avatarUrl} alt={bid.installer.name} data-ai-hint="person face" />
-                        <AvatarFallback>{bid.installer.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{bid.installer.anonymousId.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <p className="font-semibold">{bid.installer.name}</p>
+                        <p className="font-semibold">{bid.installer.anonymousId}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
                             <span>{bid.installer.installerProfile?.rating} ({bid.installer.installerProfile?.reviews} reviews)</span>
@@ -285,14 +285,14 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
         <div key={comment.id} className="flex gap-3">
             <Avatar className="h-9 w-9">
                 <AvatarImage src={comment.author.avatarUrl} alt={comment.author.name} data-ai-hint="person face" />
-                <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{comment.author.anonymousId.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
                 {!isEditing ? (
                 <>
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm">{comment.author.name}</p>
+                        <p className="font-semibold text-sm">{comment.author.anonymousId}</p>
                         <p className="text-xs text-muted-foreground">{timeAgo}</p>
                         </div>
                         {canEdit && (
@@ -415,10 +415,10 @@ export default function JobDetailPage() {
                 <div className="flex items-center gap-3">
                     <Avatar>
                         <AvatarImage src={job.jobGiver.avatarUrl} alt={job.jobGiver.name} data-ai-hint="person face" />
-                        <AvatarFallback>{job.jobGiver.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{job.jobGiver.anonymousId.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <p className="text-sm font-semibold">{job.jobGiver.name}</p>
+                        <p className="text-sm font-semibold">{job.jobGiver.anonymousId}</p>
                         <p className="text-xs text-muted-foreground">Job Giver</p>
                     </div>
                 </div>
