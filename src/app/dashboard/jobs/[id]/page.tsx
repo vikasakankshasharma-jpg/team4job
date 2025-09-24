@@ -2,7 +2,7 @@
 
 import { useUser } from "@/hooks/use-user";
 import { jobs, users } from "@/lib/data";
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -155,9 +155,11 @@ function JobGiverBidsSection({ job }: { job: (typeof jobs)[0] }) {
   );
 }
 
-export default function JobDetailPage({ params }: { params: { id: string } }) {
+export default function JobDetailPage() {
   const { role } = useUser();
-  const job = jobs.find((j) => j.id === params.id);
+  const params = useParams();
+  const id = params.id as string;
+  const job = jobs.find((j) => j.id === id);
 
   if (!job) {
     notFound();
