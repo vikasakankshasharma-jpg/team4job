@@ -40,7 +40,7 @@ import { MoreHorizontal } from "lucide-react"
 import { useSearchParams } from "next/navigation";
 import { Job } from "@/lib/types";
 import { getStatusVariant } from "@/lib/utils";
-
+import { useUser } from "@/hooks/use-user";
 
 function PostedJobsTable({ jobs, title, description, footerText }: { jobs: Job[], title: string, description: string, footerText: string }) {
   return (
@@ -97,6 +97,11 @@ function PostedJobsTable({ jobs, title, description, footerText }: { jobs: Job[]
                     </TableCell>
                   </TableRow>
               ))}
+               {jobs.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center h-24">You haven't posted any jobs in this category.</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -113,9 +118,25 @@ function PostedJobsTable({ jobs, title, description, footerText }: { jobs: Job[]
 export default function PostedJobsPage() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "active";
+  const { user } = useUser();
+  
+  if (!user) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>My Posted Jobs</CardTitle>
+          <CardDescription>
+            Loading your jobs...
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Please log in to see your posted jobs.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  // Assuming the logged in user is user-2 (Brenda Smith)
-  const myJobs = jobs.filter(job => job.jobGiver.id === 'user-2');
+  const myJobs = jobs.filter(job => job.jobGiver.id === user.id);
   const activeJobs = myJobs.filter(job => job.status !== 'Completed');
   const archivedJobs = myJobs.filter(job => job.status === 'Completed');
 

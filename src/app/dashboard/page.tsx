@@ -22,10 +22,12 @@ import Link from "next/link";
 import { jobs } from "@/lib/data";
 
 function InstallerDashboard() {
+  const { user } = useUser();
+  if (!user) return null;
+
   const openJobs = jobs.filter(job => job.status === 'Open for Bidding').length;
-  // This is a simplified count. In a real app, you'd fetch this for the logged in user.
-  const bidsPlaced = jobs.flatMap(j => j.bids).filter(b => b.installer.id === 'user-1').length;
-  const jobsWon = jobs.filter(job => job.awardedInstaller === 'user-1').length;
+  const bidsPlaced = jobs.flatMap(j => j.bids).filter(b => b.installer.id === user.id).length;
+  const jobsWon = jobs.filter(job => job.awardedInstaller === user.id).length;
 
   return (
     <>
@@ -95,9 +97,12 @@ function InstallerDashboard() {
 }
 
 function JobGiverDashboard() {
-  const activeJobs = jobs.filter(job => job.jobGiver.id === 'user-2' && job.status === 'Open for Bidding').length;
-  const totalBids = jobs.reduce((acc, job) => (job.jobGiver.id === 'user-2' ? acc + job.bids.length : acc), 0);
-  const completedJobs = jobs.filter(job => job.jobGiver.id === 'user-2' && job.status === 'Completed').length;
+  const { user } = useUser();
+  if (!user) return null;
+
+  const activeJobs = jobs.filter(job => job.jobGiver.id === user.id && job.status === 'Open for Bidding').length;
+  const totalBids = jobs.reduce((acc, job) => (job.jobGiver.id === user.id ? acc + job.bids.length : acc), 0);
+  const completedJobs = jobs.filter(job => job.jobGiver.id === user.id && job.status === 'Completed').length;
 
   return (
     <>

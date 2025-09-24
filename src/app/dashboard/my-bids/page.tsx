@@ -20,11 +20,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { Award, IndianRupee } from "lucide-react";
 import { Job, Bid } from "@/lib/types";
 import React from "react";
 import { getStatusVariant } from "@/lib/utils";
+import { useUser } from "@/hooks/use-user";
 
 
 type MyBidRowProps = {
@@ -33,7 +34,7 @@ type MyBidRowProps = {
 
 function MyBidRow({ bid }: MyBidRowProps) {
     const [timeAgo, setTimeAgo] = React.useState('');
-    const installerId = 'user-1';
+    const { user } = useUser();
 
     React.useEffect(() => {
         if (bid.timestamp) {
@@ -44,9 +45,9 @@ function MyBidRow({ bid }: MyBidRowProps) {
     const job = jobs.find(j => j.id === bid.jobId);
     
     const getMyBidStatus = (): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
-        if (!job) return { text: "Unknown", variant: "secondary" };
+        if (!job || !user) return { text: "Unknown", variant: "secondary" };
 
-        const won = job.awardedInstaller === installerId;
+        const won = job.awardedInstaller === user.id;
 
         if (won) {
             if (job.status === 'Completed') return { text: 'Completed', variant: 'secondary' };
@@ -64,7 +65,7 @@ function MyBidRow({ bid }: MyBidRowProps) {
     }
     
     const calculatePoints = () => {
-        if (!job || job.status !== 'Completed' || job.awardedInstaller !== installerId) {
+        if (!job || job.status !== 'Completed' || job.awardedInstaller !== user?.id) {
             return null;
         }
         const ratingPoints = job.rating === 5 ? 20 : job.rating === 4 ? 10 : 0;
@@ -110,9 +111,26 @@ function MyBidRow({ bid }: MyBidRowProps) {
 }
 
 export default function MyBidsPage() {
-  const installerId = 'user-1';
+  const { user } = useUser();
+  
+  if (!user) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>My Bids</CardTitle>
+          <CardDescription>
+            Loading your bids...
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Please log in to see your bids.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const myBids = jobs.flatMap(job => 
-    job.bids.filter(bid => bid.installer.id === installerId)
+    job.bids.filter(bid => bid.installer.id === user.id)
     .map(bid => ({ ...bid, jobTitle: job.title, jobId: job.id, jobStatus: job.status }))
   );
 
@@ -141,6 +159,11 @@ export default function MyBidsPage() {
               {myBids.map(bid => (
                 <MyBidRow key={bid.id} bid={bid} />
               ))}
+               {myBids.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center h-24">You haven't placed any bids yet.</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
