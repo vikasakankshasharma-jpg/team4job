@@ -15,6 +15,7 @@ import { MapPin, Briefcase, IndianRupee, Clock, Users } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow, format } from 'date-fns';
 import { badgeVariants } from "./ui/badge";
+import { cn } from "@/lib/utils";
 
 type JobCardProps = {
   job: Job;
@@ -36,12 +37,30 @@ const getStatusVariant = (status: Job['status']): "default" | "secondary" | "suc
     }
 }
 
+const getButtonText = (status: Job['status']) => {
+  switch (status) {
+    case 'Open for Bidding':
+      return 'View Job & Bid';
+    case 'Bidding Closed':
+      return 'View Bids';
+    case 'Awarded':
+    case 'In Progress':
+      return 'View Job Details';
+    case 'Completed':
+      return 'View Archived Job';
+    default:
+      return 'View Job';
+  }
+}
+
 export function JobCard({ job }: JobCardProps) {
   const timeRemaining = formatDistanceToNow(job.deadline, { addSuffix: true });
+  const statusVariant = getStatusVariant(job.status);
+  const buttonText = getButtonText(job.status);
 
   return (
     <Card className="flex flex-col relative pt-6">
-       <Badge variant={getStatusVariant(job.status)} className="capitalize absolute -top-3 left-1/2 -translate-x-1/2">
+       <Badge variant={statusVariant} className="capitalize absolute -top-3 left-1/2 -translate-x-1/2">
             {job.status}
           </Badge>
       <CardHeader>
@@ -73,15 +92,17 @@ export function JobCard({ job }: JobCardProps) {
             <Users className="h-4 w-4" />
             <span>{job.bids.length} Bids</span>
           </div>
-          <div className="flex items-center gap-2 text-primary">
-            <Clock className="h-4 w-4" />
-            <span>Bidding ends {timeRemaining}</span>
-          </div>
+          {job.status === 'Open for Bidding' && (
+            <div className={cn("flex items-center gap-2", statusVariant === 'success' ? 'text-primary' : 'text-muted-foreground' )}>
+              <Clock className="h-4 w-4" />
+              <span>Bidding ends {timeRemaining}</span>
+            </div>
+          )}
         </div>
       </CardContent>
       <CardFooter>
-        <Button asChild className="w-full">
-          <Link href={`/dashboard/jobs/${job.id}`}>View Job & Bid</Link>
+        <Button asChild className="w-full" variant={statusVariant === "secondary" ? "outline" : statusVariant}>
+          <Link href={`/dashboard/jobs/${job.id}`}>{buttonText}</Link>
         </Button>
       </CardFooter>
     </Card>
