@@ -26,7 +26,7 @@ import { Job, Bid } from "@/lib/types";
 import React from "react";
 
 
-const getStatusVariant = (status: Job['status']): "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined => {
+const getJobStatusVariant = (status: Job['status']): "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined => {
     switch (status) {
         case 'Open for Bidding':
             return 'success';
@@ -57,6 +57,28 @@ function MyBidRow({ bid }: MyBidRowProps) {
     }, [bid.timestamp]);
 
     const job = jobs.find(j => j.id === bid.jobId);
+    
+    const getMyBidStatus = (): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
+        if (!job) return { text: "Unknown", variant: "secondary" };
+
+        const won = job.awardedInstaller === installerId;
+
+        if (won) {
+            if (job.status === 'Completed') return { text: 'Completed', variant: 'secondary' };
+            if (job.status === 'In Progress') return { text: 'In Progress', variant: 'info' };
+            if (job.status === 'Awarded') return { text: 'Awarded', variant: 'success' };
+        }
+
+        if (job.status === 'Open for Bidding') return { text: 'Bidded', variant: 'default' };
+
+        if (job.status === 'Bidding Closed' || job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') {
+            if (!won) return { text: 'Not Selected', variant: 'destructive' };
+        }
+        
+        return { text: job.status, variant: 'secondary' };
+    }
+
+    const myBidStatus = getMyBidStatus();
 
     return (
         <TableRow>
@@ -71,11 +93,11 @@ function MyBidRow({ bid }: MyBidRowProps) {
             </TableCell>
             <TableCell className="hidden md:table-cell">{timeAgo}</TableCell>
             <TableCell>
-                <Badge variant={getStatusVariant(bid.jobStatus)}>{bid.jobStatus}</Badge>
+                <Badge variant={getJobStatusVariant(bid.jobStatus)}>{bid.jobStatus}</Badge>
             </TableCell>
             <TableCell>
-                <Badge variant={job?.awardedInstaller === installerId ? "success" : "secondary"}>
-                    {job?.awardedInstaller === installerId ? "Won" : "Pending"}
+                <Badge variant={myBidStatus.variant}>
+                    {myBidStatus.text}
                 </Badge>
             </TableCell>
         </TableRow>
