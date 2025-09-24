@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import { ListFilter, Search, X } from "lucide-react";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -30,41 +29,67 @@ import {
 import { jobs } from "@/lib/data";
 import { JobCard } from "@/components/job-card";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+
+// Get unique skills from jobs data for filter
+const allSkills = Array.from(new Set(jobs.flatMap(job => job.description.toLowerCase().match(/ip camera|nvr setup|cabling|troubleshooting|ptz|vms|access control/g) || [])));
+
 
 export default function BrowseJobsPage() {
   const [searchPincode, setSearchPincode] = React.useState("");
-  const [filterBudget, setFilterBudget] = React.useState(false);
-  const [filterLocation, setFilterLocation] = React.useState(false);
-  const [filterSkills, setFilterSkills] = React.useState(false);
-
+  const [budget, setBudget] = React.useState([0, 150000]);
+  const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
+  
   const openJobs = jobs.filter((job) => job.status === "Open for Bidding");
 
   const filteredJobs = openJobs.filter((job) => {
+    // Pincode filter
     if (searchPincode !== "" && !job.location.includes(searchPincode)) {
         return false;
     }
-    // Note: The following filter checks are placeholders.
-    // In a real app, you'd have UI to set budget ranges, select locations, or skills.
-    if (filterBudget && (job.budget.max < 15000)) {
+    // Budget filter
+    if (job.budget.max < budget[0] || job.budget.min > budget[1]) {
         return false;
     }
-    if (filterLocation && !job.location.includes("Delhi")) {
-        return false;
-    }
-    if (filterSkills && !job.description.toLowerCase().includes("ip camera")) {
-        return false;
+    // Skills filter
+    if (selectedSkills.length > 0) {
+        const jobSkills = job.description.toLowerCase();
+        if (!selectedSkills.every(skill => jobSkills.includes(skill))) {
+            return false;
+        }
     }
     return true;
   });
 
   const clearFilters = () => {
     setSearchPincode("");
-    setFilterBudget(false);
-    setFilterLocation(false);
-    setFilterSkills(false);
+    setBudget([0, 150000]);
+    setSelectedSkills([]);
   }
 
-  const activeFiltersCount = [searchPincode !== "", filterBudget, filterLocation, filterSkills].filter(Boolean).length;
+  const handleSkillChange = (skill: string) => {
+    setSelectedSkills(prev => 
+      prev.includes(skill) 
+        ? prev.filter(s => s !== skill) 
+        : [...prev, skill]
+    );
+  };
+  
+  const activeFiltersCount = [
+    searchPincode !== "", 
+    budget[0] !== 0 || budget[1] !== 150000,
+    selectedSkills.length > 0
+  ].filter(Boolean).length;
 
 
   return (
@@ -87,27 +112,49 @@ export default function BrowseJobsPage() {
                   {activeFiltersCount > 0 && <Badge variant="secondary" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">{activeFiltersCount}</Badge>}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-80 p-4 space-y-4">
                 <DropdownMenuLabel>Filter by</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem
-                  checked={filterBudget}
-                  onCheckedChange={setFilterBudget}
-                >
-                  Budget (15k+)
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={filterLocation}
-                  onCheckedChange={setFilterLocation}
-                >
-                  Location (Delhi)
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={filterSkills}
-                  onCheckedChange={setFilterSkills}
-                >
-                  Skills (IP Camera)
-                </DropdownMenuCheckboxItem>
+                <DropdownMenuSeparator className="-mx-4" />
+                
+                <div className="space-y-2">
+                  <Label>Budget Range</Label>
+                   <Slider
+                    min={0}
+                    max={150000}
+                    step={1000}
+                    value={budget}
+                    onValueChange={setBudget}
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>₹{budget[0].toLocaleString()}</span>
+                    <span>₹{budget[1].toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Skills</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                       <Button variant="outline" className="w-full justify-start font-normal">
+                          {selectedSkills.length > 0 ? `${selectedSkills.length} skill(s) selected` : "Select skills"}
+                       </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-0" align="start">
+                        <div className="p-4 space-y-2">
+                            {allSkills.map(skill => (
+                                <div key={skill} className="flex items-center space-x-2">
+                                    <Checkbox 
+                                        id={`skill-${skill}`}
+                                        checked={selectedSkills.includes(skill)}
+                                        onCheckedChange={() => handleSkillChange(skill)}
+                                    />
+                                    <Label htmlFor={`skill-${skill}`} className="capitalize font-normal">{skill}</Label>
+                                </div>
+                            ))}
+                        </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
             <div className="relative">
