@@ -1,4 +1,18 @@
+
 import type { User, Job, Bid, Comment } from './types';
+
+// Updated to use centralized placeholder images for anonymity
+const userAvatars: Record<string, string> = {
+  'user-1': 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080',
+  'user-2': 'https://images.unsplash.com/photo-1725028748781-7adb1df9a943?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080',
+  'user-3': 'https://images.unsplash.com/photo-1710974481447-fb001ad9ad5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080',
+  'user-4': 'https://images.unsplash.com/flagged/photo-1570612861542-284f4c12e75f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080',
+  'user-5': 'https://images.unsplash.com/photo-1521146764736-56c929d59c83?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080',
+  'user-6': 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwZmFjZXxlbnwwfHx8fDE3NTg2OTUzNzh8MA&ixlib=rb-4.1.0&q=80&w=1080',
+  'user-7': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMXx8cGVyc29uJTIwZmFjZXxlbnwwfHx8fDE3NTg2OTUzNzh8MA&ixlib=rb-4.1.0&q=80&w=1080',
+  'user-8': 'https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMnx8cGVyc29uJTIwZmFjZXxlbnwwfHx8fDE3NTg2OTUzNzh8MA&ixlib=rb-4.1.0&q=80&w=1080',
+};
+
 
 export const users: User[] = [
   {
@@ -6,7 +20,7 @@ export const users: User[] = [
     name: 'Alex Johnson',
     anonymousId: 'Installer #A1B2',
     email: 'alex.j@example.com',
-    avatarUrl: 'https://picsum.photos/seed/avatar1/100/100',
+    avatarUrl: userAvatars['user-1'],
     pincode: '110001',
     roles: ['Job Giver', 'Installer'],
     installerProfile: {
@@ -32,7 +46,7 @@ export const users: User[] = [
     name: 'Brenda Smith',
     anonymousId: 'Job Giver #C3D4',
     email: 'brenda.s@example.com',
-    avatarUrl: 'https://picsum.photos/seed/avatar2/100/100',
+    avatarUrl: userAvatars['user-2'],
     pincode: '400001',
     roles: ['Job Giver'],
   },
@@ -41,7 +55,7 @@ export const users: User[] = [
     name: 'Carlos Diaz',
     anonymousId: 'Installer #E5F6',
     email: 'carlos.d@example.com',
-    avatarUrl: 'https://picsum.photos/seed/avatar3/100/100',
+    avatarUrl: userAvatars['user-3'],
     pincode: '500001',
     roles: ['Installer'],
     installerProfile: {
@@ -67,7 +81,7 @@ export const users: User[] = [
     name: 'Diana Prince',
     anonymousId: 'Installer #G7H8',
     email: 'diana.p@example.com',
-    avatarUrl: 'https://picsum.photos/seed/avatar4/100/100',
+    avatarUrl: userAvatars['user-4'],
     pincode: '600001',
     roles: ['Installer'],
     installerProfile: {
@@ -93,7 +107,7 @@ export const users: User[] = [
     name: 'Ethan Hunt',
     anonymousId: 'Installer #I9J0',
     email: 'ethan.h@example.com',
-    avatarUrl: 'https://picsum.photos/seed/avatar5/100/100',
+    avatarUrl: userAvatars['user-5'],
     pincode: '110031',
     roles: ['Installer'],
     installerProfile: {
@@ -119,7 +133,7 @@ export const users: User[] = [
     name: 'Fiona Glenanne',
     anonymousId: 'Job Giver #K1L2',
     email: 'fiona.g@example.com',
-    avatarUrl: 'https://picsum.photos/seed/avatar6/100/100',
+    avatarUrl: userAvatars['user-6'],
     pincode: '400050',
     roles: ['Job Giver'],
   },
@@ -128,7 +142,7 @@ export const users: User[] = [
     name: 'George Mason',
     anonymousId: 'Installer #M3N4',
     email: 'george.m@example.com',
-    avatarUrl: 'https://picsum.photos/seed/avatar7/100/100',
+    avatarUrl: userAvatars['user-7'],
     pincode: '800001',
     roles: ['Installer'],
     installerProfile: {
@@ -154,7 +168,7 @@ export const users: User[] = [
     name: 'Hannah Simone',
     anonymousId: 'Job Giver #O5P6',
     email: 'hannah.s@example.com',
-    avatarUrl: 'https://picsum.photos/seed/avatar8/100/100',
+    avatarUrl: userAvatars['user-8'],
     pincode: '500032',
     roles: ['Job Giver', 'Installer'],
     installerProfile: {
@@ -181,25 +195,25 @@ const comments: {[key: string]: Comment[]} = {
   'JOB-20240920-1A3B': [
     {
       id: 'comment-1-1',
-      author: { id: 'user-3', name: 'Carlos Diaz', anonymousId: 'Installer #E5F6', avatarUrl: 'https://picsum.photos/seed/avatar3/100/100' },
+      author: { id: 'user-3', name: 'Carlos Diaz', anonymousId: 'Installer #E5F6', avatarUrl: userAvatars['user-3'] },
       timestamp: new Date('2024-09-22T10:00:00Z'),
       content: "What brand of cameras are you planning to use? And is wiring already in place?",
     },
     {
       id: 'comment-1-2',
-      author: { id: 'user-2', name: 'Brenda Smith', anonymousId: 'Job Giver #C3D4', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
+      author: { id: 'user-2', name: 'Brenda Smith', anonymousId: 'Job Giver #C3D4', avatarUrl: userAvatars['user-2'] },
       timestamp: new Date('2024-09-23T11:00:00Z'),
       content: "Hi Carlos, we're open to suggestions, but leaning towards Hikvision. No existing wiring, it needs to be run from scratch.",
     },
     {
       id: 'comment-1-3',
-      author: { id: 'user-1', name: 'Alex Johnson', anonymousId: 'Installer #A1B2', avatarUrl: 'https://picsum.photos/seed/avatar1/100/100' },
+      author: { id: 'user-1', name: 'Alex Johnson', anonymousId: 'Installer #A1B2', avatarUrl: userAvatars['user-1'] },
       timestamp: new Date('2024-09-23T12:00:00Z'),
       content: "Is the building construction concrete or drywall? It will affect the cabling time.",
     },
      {
       id: 'comment-1-4',
-      author: { id: 'user-2', name: 'Brenda Smith', anonymousId: 'Job Giver #C3D4', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
+      author: { id: 'user-2', name: 'Brenda Smith', anonymousId: 'Job Giver #C3D4', avatarUrl: userAvatars['user-2'] },
       timestamp: new Date('2024-09-23T13:00:00Z'),
       content: "It's a mix. Mostly drywall interiors with a concrete exterior.",
     }
@@ -207,13 +221,13 @@ const comments: {[key: string]: Comment[]} = {
   'JOB-20240924-4D5E': [
     {
       id: 'comment-5-1',
-      author: { id: 'user-4', name: 'Diana Prince', anonymousId: 'Installer #G7H8', avatarUrl: 'https://picsum.photos/seed/avatar4/100/100' },
+      author: { id: 'user-4', name: 'Diana Prince', anonymousId: 'Installer #G7H8', avatarUrl: userAvatars['user-4'] },
       timestamp: new Date('2024-09-23T14:00:00Z'),
       content: "Is this a single warehouse or multiple buildings?",
     },
      {
       id: 'comment-5-2',
-      author: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: 'Job Giver #K1L2', avatarUrl: 'https://picsum.photos/seed/avatar6/100/100' },
+      author: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: 'Job Giver #K1L2', avatarUrl: userAvatars['user-6'] },
       timestamp: new Date('2024-09-24T09:00:00Z'),
       content: "It's a single large warehouse, approximately 50,000 sq ft.",
     }
@@ -295,7 +309,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240920-1A3B',
     title: 'Install 8 IP Cameras for a 2-Story Office Building',
     description: "We are looking for a professional installer to set up a comprehensive surveillance system for our new office. The job involves installing 8 high-definition IP cameras covering both indoor and outdoor areas. The installer will also be responsible for setting up the Network Video Recorder (NVR), configuring motion detection, and enabling remote viewing access on mobile devices. All equipment will be provided, but the installer must supply their own tools and manage all cabling and mounting.",
-    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: 'Job Giver #C3D4', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
+    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: 'Job Giver #C3D4', avatarUrl: userAvatars['user-2'] },
     location: '400001, Mumbai',
     budget: { min: 10000, max: 20000 },
     status: 'Open for Bidding',
@@ -308,7 +322,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240922-2B4C',
     title: 'CCTV System Upgrade for a Retail Store',
     description: "Upgrading an existing 4-camera analog system to a modern 6-camera IP system. The job requires removing the old DVR and cameras, and installing new IP cameras with a new NVR. The installer should be able to advise on optimal camera placement for maximum coverage of the sales floor and entrance/exit points. Experience with POS integration is a plus.",
-    jobGiver: { id: 'user-1', name: 'Alex Johnson', anonymousId: 'Job Giver #A1B2', avatarUrl: 'https://picsum.photos/seed/avatar1/100/100' },
+    jobGiver: { id: 'user-1', name: 'Alex Johnson', anonymousId: 'Job Giver #A1B2', avatarUrl: userAvatars['user-1'] },
     location: '110001, Delhi',
     budget: { min: 8000, max: 15000 },
     status: 'Open for Bidding',
@@ -321,7 +335,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240915-3C5D',
     title: 'Residential 4-Camera Security Installation',
     description: "Seeking an installer for a standard 4-camera setup for a single-family home. Cameras to be placed at the front door, back door, driveway, and backyard. Simple setup with a DVR and mobile viewing required. Straightforward project for an experienced residential installer.",
-    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: 'Job Giver #C3D4', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
+    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: 'Job Giver #C3D4', avatarUrl: userAvatars['user-2'] },
     location: '600001, Chennai',
     budget: { min: 5000, max: 8000 },
     status: 'Awarded',
@@ -335,7 +349,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240825-4D6E',
     title: 'Maintenance and Check-up for existing system',
     description: "Need a technician to perform a full system check on our 16-camera setup. This includes cleaning lenses, checking all connections, ensuring the NVR is recording properly, and verifying that remote access is functional. The system is 2 years old.",
-    jobGiver: { id: 'user-1', name: 'Alex Johnson', anonymousId: 'Job Giver #A1B2', avatarUrl: 'https://picsum.photos/seed/avatar1/100/100' },
+    jobGiver: { id: 'user-1', name: 'Alex Johnson', anonymousId: 'Job Giver #A1B2', avatarUrl: userAvatars['user-1'] },
     location: '500001, Hyderabad',
     budget: { min: 2000, max: 4000 },
     status: 'Completed',
@@ -350,7 +364,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240924-4D5E',
     title: 'Install 32 PTZ Cameras in a Warehouse',
     description: 'We require a comprehensive surveillance solution for our new logistics warehouse. This involves installing 32 Pan-Tilt-Zoom (PTZ) cameras at strategic locations, setting up a centralized monitoring station with a Video Management System (VMS), and ensuring full wireless coverage across the facility. Only verified installers with experience in large-scale industrial projects should apply.',
-    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: 'Job Giver #K1L2', avatarUrl: 'https://picsum.photos/seed/avatar6/100/100' },
+    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: 'Job Giver #K1L2', avatarUrl: userAvatars['user-6'] },
     location: '400050, Mumbai',
     budget: { min: 40000, max: 75000 },
     status: 'Open for Bidding',
@@ -363,7 +377,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240917-5E6F',
     title: 'Boutique Shop Camera Setup with Covert Cameras',
     description: 'Looking for a discreet security camera installation for a high-end boutique. The project requires 4-6 cameras, some of which must be covert or hidden. Aesthetics are very important. The system should be accessible remotely and have high-quality recording capabilities.',
-    jobGiver: { id: 'user-8', name: 'Hannah Simone', anonymousId: 'Job Giver #O5P6', avatarUrl: 'https://picsum.photos/seed/avatar8/100/100' },
+    jobGiver: { id: 'user-8', name: 'Hannah Simone', anonymousId: 'Job Giver #O5P6', avatarUrl: userAvatars['user-8'] },
     location: '500032, Hyderabad',
     budget: { min: 9000, max: 18000 },
     status: 'Bidding Closed',
@@ -376,7 +390,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240922-6F7G',
     title: 'Solar-Powered Camera for Remote Farm',
     description: 'Need to install one or two solar-powered 4G cameras to monitor a remote agricultural property. The location has no power or Wi-Fi. The installer must provide a complete solution including the solar panel, battery, and 4G camera setup. ',
-    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: 'Job Giver #C3D4', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
+    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: 'Job Giver #C3D4', avatarUrl: userAvatars['user-2'] },
     location: '800001, Patna',
     budget: { min: 15000, max: 25000 },
     status: 'Open for Bidding',
@@ -389,7 +403,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240816-7G8H',
     title: 'Apartment Complex Access Control & CCTV',
     description: 'We are seeking bids for a full security overall for a 50-unit apartment building. This includes installing cameras in all common areas (lobbies, hallways, parking) and setting up an access control system for the main entrance. The job will be awarded to a company that can handle both aspects.',
-    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: 'Job Giver #K1L2', avatarUrl: 'https://picsum.photos/seed/avatar6/100/100' },
+    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: 'Job Giver #K1L2', avatarUrl: userAvatars['user-6'] },
     location: '110001, Delhi',
     budget: { min: 80000, max: 150000 },
     status: 'In Progress',
@@ -400,3 +414,5 @@ export const jobs: Job[] = [
     comments: [],
   },
 ];
+
+    
