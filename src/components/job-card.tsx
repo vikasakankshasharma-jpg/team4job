@@ -40,11 +40,14 @@ export function JobCard({ job }: JobCardProps) {
   const timeRemaining = formatDistanceToNow(job.deadline, { addSuffix: true });
 
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col relative pt-6">
+       <Badge variant={getStatusVariant(job.status)} className="capitalize absolute -top-3 left-1/2 -translate-x-1/2">
+            {job.status}
+          </Badge>
       <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <Avatar>
+        <CardTitle className="text-lg mb-2">{job.title}</CardTitle>
+        <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9">
               <AvatarImage src={job.jobGiver.avatarUrl} alt={job.jobGiver.name} data-ai-hint="person face" />
               <AvatarFallback>{job.jobGiver.name.charAt(0)}</AvatarFallback>
             </Avatar>
@@ -55,11 +58,6 @@ export function JobCard({ job }: JobCardProps) {
               </p>
             </div>
           </div>
-          <Badge variant={getStatusVariant(job.status)} className="capitalize text-right shrink-0">
-            {job.status}
-          </Badge>
-        </div>
-        <CardTitle className="pt-4 text-lg">{job.title}</CardTitle>
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="space-y-3 text-sm text-muted-foreground">
