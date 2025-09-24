@@ -332,6 +332,7 @@ export const jobs: Job[] = [
     budget: { min: 2000, max: 4000 },
     status: 'Completed',
     awardedInstaller: 'user-1',
+    rating: 5,
     deadline: new Date('2024-08-26T23:59:59Z'),
     postedAt: new Date('2024-08-25T10:00:00Z'),
     bids: [],

@@ -49,4 +49,5 @@ export type Job = {
   comments: Comment[];
   selectedInstallers?: User['id'][];
   awardedInstaller?: User['id'];
+  rating?: number;
 };

@@ -30,13 +30,16 @@ import {
   Loader2,
   Trash2,
   Pencil,
+  Award,
+  CheckCircle2,
+  TrendingUp,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bid } from "@/lib/types";
+import { Bid, Job } from "@/lib/types";
 
 function InstallerBidSection({ job }: { job: (typeof jobs)[0] }) {
   const { toast } = useToast();
@@ -222,6 +225,53 @@ function PageSkeleton() {
   );
 }
 
+function ReputationImpactCard({ job }: { job: Job }) {
+  if (job.status !== 'Completed' || !job.awardedInstaller || !job.rating) {
+    return null;
+  }
+
+  const installer = users.find(u => u.id === job.awardedInstaller);
+  const ratingPoints = job.rating === 5 ? 20 : job.rating === 4 ? 10 : 0;
+  const completionPoints = 50;
+  const totalPoints = completionPoints + ratingPoints;
+
+  return (
+    <Card className="bg-gradient-to-br from-blue-50/20 to-purple-50/20 dark:from-blue-950/20 dark:to-purple-950/20">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+            <Award className="h-5 w-5 text-primary" />
+            Reputation Impact
+        </CardTitle>
+        <CardDescription>Reputation points awarded to {installer?.name} for this job.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex justify-between items-center text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Job Completion</span>
+            </div>
+            <span className="font-medium text-green-600">+ {completionPoints} pts</span>
+        </div>
+         <div className="flex justify-between items-center text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+                <Star className="h-4 w-4" />
+                <span>{job.rating}-Star Rating from Job Giver</span>
+            </div>
+            <span className="font-medium text-green-600">+ {ratingPoints} pts</span>
+        </div>
+        <Separator />
+         <div className="flex justify-between items-center font-semibold">
+            <div className="flex items-center gap-2">
+                 <TrendingUp className="h-4 w-4" />
+                <span>Total Points Earned</span>
+            </div>
+            <span className="text-green-600">+ {totalPoints} pts</span>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handleDeleteComment, handleCancelEdit, handleSaveEdit, editingContent, setEditingContent }) {
     const [timeAgo, setTimeAgo] = React.useState('');
 
@@ -379,6 +429,9 @@ export default function JobDetailPage() {
             <Separator className="my-6" />
             <h3 className="font-semibold mb-4">Comments ({jobComments.length})</h3>
             <div className="space-y-6">
+                {job.status === 'Completed' && (
+                  <ReputationImpactCard job={job} />
+                )}
                 {jobComments.map((comment, index) => {
                     const isEditing = editingCommentId === comment.id;
                     const canEdit = user?.id === comment.author.id && index === jobComments.length - 1;
