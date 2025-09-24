@@ -4,78 +4,80 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Job } from "@/lib/types";
-import { MapPin, Briefcase, IndianRupee, Clock, Users } from "lucide-react";
+import { MapPin, IndianRupee, Clock, Users } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow, format } from 'date-fns';
-import { cn, getStatusVariant } from "@/lib/utils";
+import { getStatusVariant } from "@/lib/utils";
 import React from "react";
 
 type JobCardProps = {
   job: Job;
 };
 
-const getButtonText = (status: Job['status']) => {
-  switch (status) {
-    case 'Open for Bidding':
-      return 'View Job & Bid';
-    case 'Bidding Closed':
-      return 'View Bids';
-    case 'Awarded':
-    case 'In Progress':
-      return 'View Job Details';
-    case 'Completed':
-      return 'View Archived Job';
-    default:
-      return 'View Job';
-  }
-}
-
 export function JobCard({ job }: JobCardProps) {
-  const [postedAt, setPostedAt] = React.useState("");
-  const [timeRemaining, setTimeRemaining] = React.useState("");
-  
+  const [timeRemaining, setTimeRemaining] = React.useState('');
+  const [postedAt, setPostedAt] = React.useState('');
+
   React.useEffect(() => {
-    if (job.postedAt) {
-      setPostedAt(format(new Date(job.postedAt), "MMM d, yyyy"));
-    }
     if (job.deadline) {
       setTimeRemaining(formatDistanceToNow(new Date(job.deadline), { addSuffix: true }));
     }
-  }, [job.postedAt, job.deadline]);
-
+    if (job.postedAt) {
+      setPostedAt(format(new Date(job.postedAt), "MMM d, yyyy"));
+    }
+  }, [job.deadline, job.postedAt]);
 
   const statusVariant = getStatusVariant(job.status);
+  
+  const getButtonText = (status: Job['status']) => {
+    switch (status) {
+      case 'Open for Bidding':
+        return 'View Job & Bid';
+      case 'Bidding Closed':
+        return 'View Bids';
+      case 'Awarded':
+      case 'In Progress':
+        return 'View Job Details';
+      case 'Completed':
+        return 'View Archived Job';
+      default:
+        return 'View Job';
+    }
+  }
+
   const buttonText = getButtonText(job.status);
   const buttonVariant = statusVariant === 'success' ? 'success' : statusVariant === 'warning' ? 'warning' : statusVariant === 'info' ? 'info' : 'default';
 
   return (
-    <Card className="flex flex-col relative pt-6">
-       <Badge variant={statusVariant} className="capitalize absolute -top-3 left-1/2 -translate-x-1/2">
-            {job.status}
-          </Badge>
+    <Card className="flex flex-col relative">
       <CardHeader>
-        <CardTitle className="text-lg mb-2">{job.title}</CardTitle>
-        <div className="flex justify-between items-center text-xs text-muted-foreground">
-            <div className="flex items-center gap-3">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={job.jobGiver.avatarUrl} alt={job.jobGiver.name} data-ai-hint="person face" />
-                  <AvatarFallback>{job.jobGiver.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold text-sm text-foreground">{job.jobGiver.name}</p>
-                  <p>
-                    Posted {postedAt}
-                  </p>
-                </div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <Badge variant={statusVariant} className="capitalize mb-4">
+              {job.status}
+            </Badge>
+            <CardTitle className="text-lg">{job.title}</CardTitle>
+          </div>
+           <span className="text-xs text-muted-foreground font-mono">#{job.id}</span>
+        </div>
+         <div className="flex items-center gap-3 pt-4">
+            <Avatar className="h-9 w-9">
+              <AvatarImage src={job.jobGiver.avatarUrl} alt={job.jobGiver.name} data-ai-hint="person face" />
+              <AvatarFallback>{job.jobGiver.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-semibold text-sm text-foreground">{job.jobGiver.name}</p>
+              <p className="text-xs text-muted-foreground">
+                Posted {postedAt}
+              </p>
             </div>
         </div>
       </CardHeader>
@@ -105,7 +107,6 @@ export function JobCard({ job }: JobCardProps) {
         <Button asChild className="w-full" variant={job.status === 'Completed' ? "outline" : buttonVariant}>
           <Link href={`/dashboard/jobs/${job.id}`}>{buttonText}</Link>
         </Button>
-         <span className="text-xs text-muted-foreground font-mono">#{job.id}</span>
       </CardFooter>
     </Card>
   );
