@@ -119,15 +119,30 @@ export default function ProfilePage() {
                         </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="space-y-6 pt-6">
-                        <div className="text-sm text-muted-foreground p-4 border rounded-lg">
-                           <h4 className="font-semibold text-foreground mb-2">How Reputation Works</h4>
-                           <p>Earn points for completing jobs and receiving positive ratings. Higher points unlock new tiers, giving you more visibility and access to premium jobs.</p>
-                            <ul className="list-disc list-inside mt-2 space-y-1">
-                               <li><span className="font-semibold">Bronze:</span> 0+ points</li>
-                               <li><span className="font-semibold">Silver:</span> 500+ points</li>
-                               <li><span className="font-semibold">Gold:</span> 1000+ points</li>
-                               <li><span className="font-semibold">Platinum:</span> 2000+ points</li>
-                           </ul>
+                        <div className="text-sm text-muted-foreground p-4 border rounded-lg space-y-4">
+                           <div>
+                                <h4 className="font-semibold text-foreground mb-2">How Reputation Works</h4>
+                                <p>Earn points for completing jobs and receiving positive ratings. Higher points unlock new tiers, giving you more visibility and access to premium jobs.</p>
+                           </div>
+                           <div>
+                                <h4 className="font-semibold text-foreground mb-2">Point System</h4>
+                                <ul className="list-disc list-inside space-y-1">
+                                   <li><span className="font-semibold">Complete a Job:</span> +50 points</li>
+                                   <li><span className="font-semibold">Receive a 5-Star Rating:</span> +20 points</li>
+                                   <li><span className="font-semibold">Receive a 4-Star Rating:</span> +10 points</li>
+                                   <li><span className="font-semibold">On-time Completion Bonus:</span> +15 points</li>
+                                   <li><span className="font-semibold">Job Canceled or 1-Star Rating:</span> -25 points</li>
+                                </ul>
+                           </div>
+                           <div>
+                                <h4 className="font-semibold text-foreground mb-2">Reputation Tiers</h4>
+                               <ul className="list-disc list-inside space-y-1">
+                                   <li><span className="font-semibold">Bronze:</span> 0 - 499 points</li>
+                                   <li><span className="font-semibold">Silver:</span> 500 - 999 points</li>
+                                   <li><span className="font-semibold">Gold:</span> 1000 - 1999 points</li>
+                                   <li><span className="font-semibold">Platinum:</span> 2000+ points</li>
+                               </ul>
+                           </div>
                         </div>
                         {currentTierInfo && currentTierInfo.next !== 'Max' && (
                              <div>
