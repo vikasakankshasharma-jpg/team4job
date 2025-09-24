@@ -10,13 +10,14 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Job } from "@/lib/types";
 import { MapPin, IndianRupee, Clock, Users } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow, format } from 'date-fns';
 import { getStatusVariant } from "@/lib/utils";
 import React from "react";
+import { AnimatedAvatar } from "./ui/animated-avatar";
 
 type JobCardProps = {
   job: Job;
@@ -70,7 +71,7 @@ export function JobCard({ job }: JobCardProps) {
         </div>
          <div className="flex items-center gap-3 pt-4">
             <Avatar className="h-9 w-9">
-              <AvatarImage src={job.jobGiver.avatarUrl} alt={job.jobGiver.name} data-ai-hint="person face" />
+              <AnimatedAvatar svg={job.jobGiver.avatarUrl} />
               <AvatarFallback>{job.jobGiver.anonymousId.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div>

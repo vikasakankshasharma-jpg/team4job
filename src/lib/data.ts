@@ -1,16 +1,17 @@
 
 import type { User, Job, Bid, Comment } from './types';
+import { PlaceHolderImages } from './placeholder-images';
 
 // Updated to use centralized placeholder images for anonymity
 const userAvatars: Record<string, string> = {
-  'user-1': 'https://picsum.photos/seed/user1/200/200',
-  'user-2': 'https://picsum.photos/seed/user2/200/200',
-  'user-3': 'https://picsum.photos/seed/user3/200/200',
-  'user-4': 'https://picsum.photos/seed/user4/200/200',
-  'user-5': 'https://picsum.photos/seed/user5/200/200',
-  'user-6': 'https://picsum.photos/seed/user6/200/200',
-  'user-7': 'https://picsum.photos/seed/user7/200/200',
-  'user-8': 'https://picsum.photos/seed/user8/200/200',
+  'user-1': PlaceHolderImages.find(p => p.id === 'avatar1')?.imageUrl || '',
+  'user-2': PlaceHolderImages.find(p => p.id === 'avatar2')?.imageUrl || '',
+  'user-3': PlaceHolderImages.find(p => p.id === 'avatar3')?.imageUrl || '',
+  'user-4': PlaceHolderImages.find(p => p.id === 'avatar4')?.imageUrl || '',
+  'user-5': PlaceHolderImages.find(p => p.id === 'avatar5')?.imageUrl || '',
+  'user-6': PlaceHolderImages.find(p => p.id === 'avatar6')?.imageUrl || '',
+  'user-7': PlaceHolderImages.find(p => p.id === 'avatar7')?.imageUrl || '',
+  'user-8': PlaceHolderImages.find(p => p.id === 'avatar8')?.imageUrl || '',
 };
 
 

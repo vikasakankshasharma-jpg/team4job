@@ -10,12 +10,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useUser } from "@/hooks/use-user";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "./ui/label";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AnimatedAvatar } from "./ui/animated-avatar";
 
 export function UserNav() {
   const { user, role, setRole, logout } = useUser();
@@ -39,7 +40,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon" className="overflow-hidden rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="person face" />
+            <AnimatedAvatar svg={user.avatarUrl} />
             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
         </Button>

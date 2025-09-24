@@ -2,51 +2,51 @@
   "placeholderImages": [
     {
       "id": "avatar1",
-      "description": "User avatar 1",
-      "imageUrl": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "person face"
+      "description": "Animated user avatar 1",
+      "imageUrl": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad1' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:rgb(255,255,0);stop-opacity:1' /><stop offset='100%' style='stop-color:rgb(255,0,0);stop-opacity:1' /></linearGradient></defs><circle cx='50' cy='50' r='40' fill='url(#grad1)'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='5s' repeatCount='indefinite' /></circle></svg>",
+      "imageHint": "animated avatar"
     },
     {
       "id": "avatar2",
-      "description": "User avatar 2",
-      "imageUrl": "https://images.unsplash.com/photo-1725028748781-7adb1df9a943?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "person face"
+      "description": "Animated user avatar 2",
+      "imageUrl": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad2' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:rgb(0,255,255);stop-opacity:1' /><stop offset='100%' style='stop-color:rgb(0,0,255);stop-opacity:1' /></linearGradient></defs><rect width='80' height='80' x='10' y='10' fill='url(#grad2)'><animate attributeName='rx' values='0;40;0' dur='4s' repeatCount='indefinite' /></rect></svg>",
+      "imageHint": "animated avatar"
     },
     {
       "id": "avatar3",
-      "description": "User avatar 3",
-      "imageUrl": "https://images.unsplash.com/photo-1710974481447-fb001ad9ad5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "person face"
+      "description": "Animated user avatar 3",
+      "imageUrl": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><pattern id='patt3' x='0' y='0' width='20' height='20' patternUnits='userSpaceOnUse'><circle cx='10' cy='10' r='5' fill='rgba(255,255,255,0.5)'/></pattern></defs><rect width='100' height='100' fill='#8A2BE2'><animate attributeName='fill' values='#8A2BE2;#4682B4;#8A2BE2' dur='6s' repeatCount='indefinite' /></rect><rect width='100' height='100' fill='url(#patt3)'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='10s' repeatCount='indefinite' /></rect></svg>",
+      "imageHint": "animated avatar"
     },
     {
       "id": "avatar4",
-      "description": "User avatar 4",
-      "imageUrl": "https://images.unsplash.com/flagged/photo-1570612861542-284f4c12e75f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "person face"
+      "description": "Animated user avatar 4",
+      "imageUrl": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M 50,10 L 90,90 L 10,90 z' fill='#32CD32'><animateTransform attributeName='transform' type='scale' values='1;1.2;1' dur='3s' repeatCount='indefinite' /></path></svg>",
+      "imageHint": "animated avatar"
     },
     {
       "id": "avatar5",
-      "description": "User avatar 5",
-      "imageUrl": "https://images.unsplash.com/photo-1521146764736-56c929d59c83?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlibrb-4.1.0&q=80&w=1080",
-      "imageHint": "person face"
+      "description": "Animated user avatar 5",
+      "imageUrl": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='grad5'><stop offset='0%' stop-color='#FF1493' /><stop offset='100%' stop-color='#4B0082' /></radialGradient></defs><circle cx='50' cy='50' r='45' fill='url(#grad5)'><animate attributeName='r' values='45;35;45' dur='4s' repeatCount='indefinite'/></circle></svg>",
+      "imageHint": "animated avatar"
     },
     {
       "id": "avatar6",
-      "description": "User avatar 6",
-      "imageUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwZmFjZXxlbnwwfHx8fDE3NTg2OTUzNzh8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "person face"
+      "description": "Animated user avatar 6",
+      "imageUrl": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g><rect x='20' y='20' width='60' height='60' fill='#FFD700'/><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='90 50 50' dur='2s' repeatCount='indefinite' /></g></svg>",
+      "imageHint": "animated avatar"
     },
     {
       "id": "avatar7",
-      "description": "User avatar 7",
-      "imageUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMXx8cGVyc29uJTIwZmFjZXxlbnwwfHx8fDE3NTg2OTUzNzh8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "person face"
+      "description": "Animated user avatar 7",
+      "imageUrl": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad7' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#00FFFF' /><stop offset='100%' stop-color='#FF00FF' /></linearGradient></defs><ellipse cx='50' cy='50' rx='40' ry='20' fill='url(#grad7)'><animateTransform attributeName='transform' type='rotate' from='0 50 50' to='360 50 50' dur='7s' repeatCount='indefinite' /></ellipse></svg>",
+      "imageHint": "animated avatar"
     },
     {
       "id": "avatar8",
-      "description": "User avatar 8",
-      "imageUrl": "https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMnx8cGVyc29uJTIwZmFjZXxlbnwwfHx8fDE3NTg2OTUzNzh8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "person face"
+      "description": "Animated user avatar 8",
+      "imageUrl": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,10 60,40 90,40 65,60 75,90 50,70 25,90 35,60 10,40 40,40' fill='#FFA500'><animate attributeName='opacity' values='1;0.5;1' dur='3s' repeatCount='indefinite' /></polygon></svg>",
+      "imageHint": "animated avatar"
     }
   ]
 }

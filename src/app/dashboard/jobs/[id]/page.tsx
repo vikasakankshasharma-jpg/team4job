@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +40,7 @@ import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bid, Job } from "@/lib/types";
+import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 
 function InstallerBidSection({ job }: { job: (typeof jobs)[0] }) {
   const { toast } = useToast();
@@ -133,7 +134,7 @@ function JobGiverBid({ bid }: { bid: Bid }) {
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                     <Avatar>
-                        <AvatarImage src={bid.installer.avatarUrl} alt={bid.installer.name} data-ai-hint="person face" />
+                        <AnimatedAvatar svg={bid.installer.avatarUrl} />
                         <AvatarFallback>{bid.installer.anonymousId.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -284,7 +285,7 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
     return (
         <div key={comment.id} className="flex gap-3">
             <Avatar className="h-9 w-9">
-                <AvatarImage src={comment.author.avatarUrl} alt={comment.author.name} data-ai-hint="person face" />
+                <AnimatedAvatar svg={comment.author.avatarUrl} />
                 <AvatarFallback>{comment.author.anonymousId.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
@@ -414,7 +415,7 @@ export default function JobDetailPage() {
                 </div>
                 <div className="flex items-center gap-3">
                     <Avatar>
-                        <AvatarImage src={job.jobGiver.avatarUrl} alt={job.jobGiver.name} data-ai-hint="person face" />
+                        <AnimatedAvatar svg={job.jobGiver.avatarUrl} />
                         <AvatarFallback>{job.jobGiver.anonymousId.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -453,7 +454,7 @@ export default function JobDetailPage() {
                 })}
                  <div className="flex gap-3">
                     <Avatar className="h-9 w-9">
-                        <AvatarImage src={user?.avatarUrl} alt={user?.name} data-ai-hint="person face" />
+                        <AnimatedAvatar svg={user?.avatarUrl} />
                         <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">

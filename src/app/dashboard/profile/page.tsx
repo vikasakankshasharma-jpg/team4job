@@ -2,7 +2,7 @@
 "use client";
 
 import { useUser } from "@/hooks/use-user";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,6 +23,7 @@ import { Progress } from "@/components/ui/progress";
 import React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 
 
 const tierIcons = {
@@ -66,7 +67,7 @@ export default function ProfilePage() {
         <CardHeader>
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             <Avatar className="h-24 w-24 border-2 border-primary">
-              <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="person face" />
+              <AnimatedAvatar svg={user.avatarUrl} />
               <AvatarFallback className="text-3xl">
                 {user.name.charAt(0)}
               </AvatarFallback>
