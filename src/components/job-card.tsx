@@ -121,7 +121,7 @@ export function JobCard({ job }: JobCardProps) {
         <Button asChild className="w-full" variant={job.status === 'Completed' ? "outline" : buttonVariant}>
           <Link href={`/dashboard/jobs/${job.id}`}>{buttonText}</Link>
         </Button>
-         <span className="text-xs text-muted-foreground font-mono">#{job.id.split('-').pop()}</span>
+         <span className="text-xs text-muted-foreground font-mono">#{job.id}</span>
       </CardFooter>
     </Card>
   );
