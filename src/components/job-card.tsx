@@ -71,7 +71,7 @@ export function JobCard({ job }: JobCardProps) {
               <AvatarFallback>{job.jobGiver.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-sm font-semibold">{job.jobGiver.name}</p>
+              <p className="font-semibold text-sm">{job.jobGiver.name}</p>
               <p className="text-xs text-muted-foreground">
                 Posted {format(job.postedAt, "MMM d, yyyy")}
               </p>
