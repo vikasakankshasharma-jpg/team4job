@@ -51,8 +51,12 @@ function MyBidRow({ bid }: MyBidRowProps) {
     const installerId = 'user-1';
 
     React.useEffect(() => {
-        setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
+        if (bid.timestamp) {
+            setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
+        }
     }, [bid.timestamp]);
+
+    const job = jobs.find(j => j.id === bid.jobId);
 
     return (
         <TableRow>
@@ -70,8 +74,8 @@ function MyBidRow({ bid }: MyBidRowProps) {
                 <Badge variant={getStatusVariant(bid.jobStatus)}>{bid.jobStatus}</Badge>
             </TableCell>
             <TableCell>
-                <Badge variant={jobs.find(j => j.id === bid.jobId)?.awardedInstaller === installerId ? "success" : "secondary"}>
-                    {jobs.find(j => j.id === bid.jobId)?.awardedInstaller === installerId ? "Won" : "Pending"}
+                <Badge variant={job?.awardedInstaller === installerId ? "success" : "secondary"}>
+                    {job?.awardedInstaller === installerId ? "Won" : "Pending"}
                 </Badge>
             </TableCell>
         </TableRow>

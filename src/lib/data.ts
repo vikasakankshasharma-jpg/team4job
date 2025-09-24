@@ -122,7 +122,7 @@ export const users: User[] = [
 ];
 
 const comments: {[key: string]: Comment[]} = {
-  'job-1': [
+  'JOB-20240920-1A3B': [
     {
       id: 'comment-1-1',
       author: { id: 'user-3', name: 'Carlos Diaz', avatarUrl: 'https://picsum.photos/seed/avatar3/100/100' },
@@ -148,7 +148,7 @@ const comments: {[key: string]: Comment[]} = {
       content: "It's a mix. Mostly drywall interiors with a concrete exterior.",
     }
   ],
-  'job-5': [
+  'JOB-20240924-4D5E': [
     {
       id: 'comment-5-1',
       author: { id: 'user-4', name: 'Diana Prince', avatarUrl: 'https://picsum.photos/seed/avatar4/100/100' },
@@ -165,7 +165,7 @@ const comments: {[key: string]: Comment[]} = {
 };
 
 const bids: {[key: string]: Bid[]} = {
-  'job-1': [
+  'JOB-20240920-1A3B': [
     {
       id: 'bid-1-1',
       installer: users[0],
@@ -188,7 +188,7 @@ const bids: {[key: string]: Bid[]} = {
       coverLetter: "As a Platinum tier installer specializing in advanced systems, I can offer a premium installation with optimized camera placement and robust network configuration for flawless performance. My bid reflects a higher quality of service and components.",
     },
   ],
-  'job-2': [
+  'JOB-20240922-2B4C': [
      {
       id: 'bid-2-1',
       installer: users[3],
@@ -197,7 +197,7 @@ const bids: {[key: string]: Bid[]} = {
       coverLetter: "I can handle this upgrade efficiently. I'll ensure the new IP system is perfectly integrated.",
     },
   ],
-  'job-3': [
+  'JOB-20240915-3C5D': [
      {
       id: 'bid-3-1',
       installer: users[2],
@@ -206,7 +206,7 @@ const bids: {[key: string]: Bid[]} = {
       coverLetter: "I specialize in residential installations and can complete this quickly and cleanly. I guarantee a user-friendly setup for your mobile devices.",
     },
   ],
-  'job-5': [
+  'JOB-20240924-4D5E': [
      {
       id: 'bid-5-1',
       installer: users[4],
@@ -222,7 +222,7 @@ const bids: {[key: string]: Bid[]} = {
       coverLetter: "I have installed systems in 5 warehouses in the last year. My bid is competitive and I can start next week.",
     },
   ],
-  'job-6': [
+  'JOB-20240917-5E6F': [
       {
       id: 'bid-6-1',
       installer: users[0],
@@ -236,7 +236,7 @@ const bids: {[key: string]: Bid[]} = {
 
 export const jobs: Job[] = [
   {
-    id: 'job-1',
+    id: 'JOB-20240920-1A3B',
     title: 'Install 8 IP Cameras for a 2-Story Office Building',
     description: "We are looking for a professional installer to set up a comprehensive surveillance system for our new office. The job involves installing 8 high-definition IP cameras covering both indoor and outdoor areas. The installer will also be responsible for setting up the Network Video Recorder (NVR), configuring motion detection, and enabling remote viewing access on mobile devices. All equipment will be provided, but the installer must supply their own tools and manage all cabling and mounting.",
     jobGiver: { id: 'user-2', name: 'Brenda Smith', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
@@ -245,11 +245,11 @@ export const jobs: Job[] = [
     status: 'Open for Bidding',
     deadline: new Date('2024-09-30T23:59:59Z'),
     postedAt: new Date('2024-09-20T08:00:00Z'),
-    bids: bids['job-1'],
-    comments: comments['job-1'],
+    bids: bids['JOB-20240920-1A3B'],
+    comments: comments['JOB-20240920-1A3B'],
   },
   {
-    id: 'job-2',
+    id: 'JOB-20240922-2B4C',
     title: 'CCTV System Upgrade for a Retail Store',
     description: "Upgrading an existing 4-camera analog system to a modern 6-camera IP system. The job requires removing the old DVR and cameras, and installing new IP cameras with a new NVR. The installer should be able to advise on optimal camera placement for maximum coverage of the sales floor and entrance/exit points. Experience with POS integration is a plus.",
     jobGiver: { id: 'user-1', name: 'Alex Johnson', avatarUrl: 'https://picsum.photos/seed/avatar1/100/100' },
@@ -258,11 +258,11 @@ export const jobs: Job[] = [
     status: 'Open for Bidding',
     deadline: new Date('2024-10-03T23:59:59Z'),
     postedAt: new Date('2024-09-22T09:00:00Z'),
-    bids: bids['job-2'],
+    bids: bids['JOB-20240922-2B4C'],
     comments: [],
   },
   {
-    id: 'job-3',
+    id: 'JOB-20240915-3C5D',
     title: 'Residential 4-Camera Security Installation',
     description: "Seeking an installer for a standard 4-camera setup for a single-family home. Cameras to be placed at the front door, back door, driveway, and backyard. Simple setup with a DVR and mobile viewing required. Straightforward project for an experienced residential installer.",
     jobGiver: { id: 'user-2', name: 'Brenda Smith', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
@@ -272,11 +272,11 @@ export const jobs: Job[] = [
     awardedInstaller: 'user-3',
     deadline: new Date('2024-09-23T23:59:59Z'),
     postedAt: new Date('2024-09-15T11:00:00Z'),
-    bids: bids['job-3'],
+    bids: bids['JOB-20240915-3C5D'],
     comments: [],
   },
   {
-    id: 'job-4',
+    id: 'JOB-20240825-4D6E',
     title: 'Maintenance and Check-up for existing system',
     description: "Need a technician to perform a full system check on our 16-camera setup. This includes cleaning lenses, checking all connections, ensuring the NVR is recording properly, and verifying that remote access is functional. The system is 2 years old.",
     jobGiver: { id: 'user-1', name: 'Alex Johnson', avatarUrl: 'https://picsum.photos/seed/avatar1/100/100' },
@@ -290,7 +290,7 @@ export const jobs: Job[] = [
     comments: [],
   },
   {
-    id: 'job-5',
+    id: 'JOB-20240924-4D5E',
     title: 'Install 32 PTZ Cameras in a Warehouse',
     description: 'We require a comprehensive surveillance solution for our new logistics warehouse. This involves installing 32 Pan-Tilt-Zoom (PTZ) cameras at strategic locations, setting up a centralized monitoring station with a Video Management System (VMS), and ensuring full wireless coverage across the facility. Only verified installers with experience in large-scale industrial projects should apply.',
     jobGiver: { id: 'user-6', name: 'Fiona Glenanne', avatarUrl: 'https://picsum.photos/seed/avatar6/100/100' },
@@ -299,11 +299,11 @@ export const jobs: Job[] = [
     status: 'Open for Bidding',
     deadline: new Date('2024-10-09T23:59:59Z'),
     postedAt: new Date('2024-09-24T14:00:00Z'),
-    bids: bids['job-5'],
-    comments: comments['job-5'],
+    bids: bids['JOB-20240924-4D5E'],
+    comments: comments['JOB-20240924-4D5E'],
   },
   {
-    id: 'job-6',
+    id: 'JOB-20240917-5E6F',
     title: 'Boutique Shop Camera Setup with Covert Cameras',
     description: 'Looking for a discreet security camera installation for a high-end boutique. The project requires 4-6 cameras, some of which must be covert or hidden. Aesthetics are very important. The system should be accessible remotely and have high-quality recording capabilities.',
     jobGiver: { id: 'user-8', name: 'Hannah Simone', avatarUrl: 'https://picsum.photos/seed/avatar8/100/100' },
@@ -312,11 +312,11 @@ export const jobs: Job[] = [
     status: 'Bidding Closed',
     deadline: new Date('2024-09-24T23:59:59Z'),
     postedAt: new Date('2024-09-17T16:00:00Z'),
-    bids: bids['job-6'],
+    bids: bids['JOB-20240917-5E6F'],
     comments: [],
   },
   {
-    id: 'job-7',
+    id: 'JOB-20240922-6F7G',
     title: 'Solar-Powered Camera for Remote Farm',
     description: 'Need to install one or two solar-powered 4G cameras to monitor a remote agricultural property. The location has no power or Wi-Fi. The installer must provide a complete solution including the solar panel, battery, and 4G camera setup. ',
     jobGiver: { id: 'user-2', name: 'Brenda Smith', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
@@ -329,7 +329,7 @@ export const jobs: Job[] = [
     comments: [],
   },
   {
-    id: 'job-8',
+    id: 'JOB-20240816-7G8H',
     title: 'Apartment Complex Access Control & CCTV',
     description: 'We are seeking bids for a full security overall for a 50-unit apartment building. This includes installing cameras in all common areas (lobbies, hallways, parking) and setting up an access control system for the main entrance. The job will be awarded to a company that can handle both aspects.',
     jobGiver: { id: 'user-6', name: 'Fiona Glenanne', avatarUrl: 'https://picsum.photos/seed/avatar6/100/100' },
