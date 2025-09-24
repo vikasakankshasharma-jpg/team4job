@@ -35,6 +35,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function InstallerBidSection({ job }: { job: (typeof jobs)[0] }) {
   const { toast } = useToast();
@@ -203,6 +204,54 @@ export default function JobDetailPage() {
     });
   };
 
+  if (!user) {
+    return (
+      <div className="grid gap-8 md:grid-cols-3">
+      <div className="md:col-span-2 grid gap-8">
+        <Card>
+          <CardHeader>
+             <Skeleton className="h-8 w-1/4" />
+             <Skeleton className="h-6 w-3/4" />
+          </CardHeader>
+          <CardContent>
+             <Skeleton className="h-20 w-full" />
+             <Separator className="my-6" />
+             <Skeleton className="h-8 w-1/3 mb-4" />
+             <div className="space-y-6">
+                <div className="flex gap-3">
+                  <Skeleton className="h-9 w-9 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                </div>
+                 <div className="flex gap-3">
+                  <Skeleton className="h-9 w-9 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                </div>
+             </div>
+          </CardContent>
+        </Card>
+      </div>
+       <div className="space-y-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Job Overview</CardTitle>
+          </CardHeader>
+           <CardContent className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+           </CardContent>
+        </Card>
+       </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-8 md:grid-cols-3">
       <div className="md:col-span-2 grid gap-8">
@@ -361,5 +410,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
