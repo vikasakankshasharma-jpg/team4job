@@ -10,7 +10,7 @@ import {
   Settings,
   User as UserIcon,
 } from "lucide-react";
-
+import * as React from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
