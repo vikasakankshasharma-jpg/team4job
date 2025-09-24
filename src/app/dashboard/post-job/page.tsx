@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Zap, Loader2 } from "lucide-react";
 import { generateJobDescription } from "@/ai/flows/generate-job-description";
+import { suggestSkills } from "@/ai/flows/suggest-skills";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 
@@ -34,6 +35,7 @@ const jobSchema = z.object({
   jobDescription: z
     .string()
     .min(50, { message: "Description must be at least 50 characters." }),
+  skills: z.string().min(1, { message: "Please provide at least one skill." }),
   location: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
   budgetMin: z.coerce.number().min(1, { message: "Minimum budget must be at least 1." }),
   budgetMax: z.coerce.number().min(1, { message: "Maximum budget must be at least 1." }),
@@ -45,22 +47,24 @@ const jobSchema = z.object({
 
 export default function PostJobPage() {
   const { toast } = useToast();
-  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isGeneratingDesc, setIsGeneratingDesc] = React.useState(false);
+  const [isGeneratingSkills, setIsGeneratingSkills] = React.useState(false);
 
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
     defaultValues: {
       jobTitle: "",
       jobDescription: "",
+      skills: "",
       location: "",
       budgetMin: 0,
       budgetMax: 0,
     },
   });
 
-  const jobTitle = useWatch({
+  const { jobTitle, jobDescription } = useWatch({
     control: form.control,
-    name: "jobTitle",
+    name: ["jobTitle", "jobDescription"],
   });
 
   const handleGenerateDescription = async () => {
@@ -73,7 +77,7 @@ export default function PostJobPage() {
       return;
     }
 
-    setIsGenerating(true);
+    setIsGeneratingDesc(true);
     try {
       const result = await generateJobDescription({ jobTitle });
       if (result.jobDescription) {
@@ -91,9 +95,42 @@ export default function PostJobPage() {
         variant: "destructive",
       });
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingDesc(false);
     }
   };
+
+  const handleSuggestSkills = async () => {
+    if (!jobTitle || !jobDescription) {
+      toast({
+        title: "Title and Description Required",
+        description: "Please enter a title and description before suggesting skills.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingSkills(true);
+    try {
+      const result = await suggestSkills({ jobTitle, jobDescription });
+      if (result.skills && result.skills.length > 0) {
+        form.setValue("skills", result.skills.join(', '), { shouldValidate: true });
+        toast({
+          title: "Skills Suggested!",
+          description: "AI-suggested skills have been added.",
+        });
+      }
+    } catch (error) {
+      console.error("Error suggesting skills:", error);
+      toast({
+        title: "Suggestion Failed",
+        description: "There was an error suggesting skills. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingSkills(false);
+    }
+  };
+
 
   function onSubmit(values: z.infer<typeof jobSchema>) {
     console.log(values);
@@ -150,9 +187,9 @@ export default function PostJobPage() {
                         variant="ghost"
                         size="sm"
                         onClick={handleGenerateDescription}
-                        disabled={isGenerating || !jobTitle}
+                        disabled={isGeneratingDesc || !jobTitle}
                       >
-                        {isGenerating ? (
+                        {isGeneratingDesc ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                           <Zap className="mr-2 h-4 w-4" />
@@ -167,6 +204,41 @@ export default function PostJobPage() {
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="skills"
+                render={({ field }) => (
+                  <FormItem>
+                     <div className="flex items-center justify-between">
+                        <FormLabel>Required Skills</FormLabel>
+                         <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleSuggestSkills}
+                          disabled={isGeneratingSkills || !jobTitle || !jobDescription}
+                        >
+                          {isGeneratingSkills ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Zap className="mr-2 h-4 w-4" />
+                          )}
+                          Suggest with AI
+                        </Button>
+                     </div>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., IP Cameras, NVR Setup, Cabling"
+                        {...field}
+                      />
+                    </FormControl>
+                     <FormDescription>
+                      Enter a comma-separated list of skills.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
