@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useUser } from "@/hooks/use-user";
@@ -50,7 +51,7 @@ export default function ProfilePage() {
                     </Badge>
                 )}
               </div>
-              <CardDescription className="mt-1">{user.email}</CardDescription>
+              <p className="mt-1">{user.email}</p>
               <div className="mt-4">
                 <Button>Edit Profile</Button>
               </div>
@@ -70,12 +71,12 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-4">
                         {tierIcons[installerProfile.tier]}
                         <div>
-                            <p className="text-sm text-muted-foreground">Tier</p>
+                            <p className="text-sm">Tier</p>
                             <p className="text-xl font-bold">{installerProfile.tier}</p>
                         </div>
                     </div>
                     <div>
-                        <p className="text-sm text-muted-foreground text-right">Reputation Points</p>
+                        <p className="text-sm text-right">Reputation Points</p>
                         <p className="text-xl font-bold text-right">{installerProfile.points}</p>
                     </div>
                 </div>

@@ -75,7 +75,7 @@ export default function MyBidsPage() {
                   </TableCell>
                   <TableCell>
                      <div className="flex items-center gap-1">
-                        <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                        <IndianRupee className="h-4 w-4" />
                         {bid.amount.toLocaleString()}
                      </div>
                   </TableCell>

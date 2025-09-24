@@ -147,7 +147,7 @@ function JobGiverBidsSection({ job }: { job: (typeof jobs)[0] }) {
                 <p className="text-xs text-muted-foreground">{formatDistanceToNow(bid.timestamp, { addSuffix: true })}</p>
               </div>
             </div>
-            <p className="mt-4 text-sm text-muted-foreground">{bid.coverLetter}</p>
+            <p className="mt-4 text-sm">{bid.coverLetter}</p>
             <div className="mt-4 flex gap-2">
               <Button size="sm">Select Installer</Button>
               <Button size="sm" variant="outline">Message</Button>
@@ -219,9 +219,11 @@ export default function JobDetailPage() {
   const [editingContent, setEditingContent] = React.useState("");
 
   React.useEffect(() => {
+    // A page with a dynamic route might not have the parameter on first render
+    // This makes sure we have an id before we try to find the job.
     if (id) {
       const foundJob = jobs.find((j) => j.id === id);
-      setJob(foundJob);
+      setJob(foundJob || null);
       if (foundJob) {
         setJobComments(foundJob.comments);
       }
@@ -289,7 +291,7 @@ export default function JobDetailPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">{job.description}</p>
+            <p>{job.description}</p>
             <Separator className="my-6" />
             <h3 className="font-semibold mb-4">Comments ({jobComments.length})</h3>
             <div className="space-y-6">
@@ -336,7 +338,7 @@ export default function JobDetailPage() {
                                             </div>
                                         )}
                                     </div>
-                                    <p className="text-sm text-muted-foreground mt-1">{comment.content}</p>
+                                    <p className="text-sm mt-1">{comment.content}</p>
                                 </>
                                 ) : (
                                     <div className="space-y-2">
@@ -383,35 +385,35 @@ export default function JobDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <div className="flex items-center gap-3">
-              <IndianRupee className="h-5 w-5 text-muted-foreground" />
+              <IndianRupee className="h-5 w-5" />
               <div>
                 <p className="text-muted-foreground">Budget</p>
                 <p className="font-semibold">₹{job.budget.min.toLocaleString()} - ₹{job.budget.max.toLocaleString()}</p>
               </div>
             </div>
              <div className="flex items-center gap-3">
-              <MapPin className="h-5 w-5 text-muted-foreground" />
+              <MapPin className="h-5 w-5" />
               <div>
                 <p className="text-muted-foreground">Location</p>
                 <p className="font-semibold">{job.location}</p>
               </div>
             </div>
              <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-muted-foreground" />
+              <Clock className="h-5 w-5" />
               <div>
                 <p className="text-muted-foreground">Bidding Ends</p>
                 <p className="font-semibold">{formatDistanceToNow(job.deadline, { addSuffix: true })} ({format(job.deadline, "MMM d, yyyy")})</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-muted-foreground" />
+              <Users className="h-5 w-5" />
               <div>
                 <p className="text-muted-foreground">Bids</p>
                 <p className="font-semibold">{job.bids.length} Received</p>
               </div>
             </div>
              <div className="flex items-center gap-3">
-              <MessageSquare className="h-5 w-5 text-muted-foreground" />
+              <MessageSquare className="h-5 w-5" />
               <div>
                 <p className="text-muted-foreground">Comments</p>
                 <p className="font-semibold">{jobComments.length}</p>
