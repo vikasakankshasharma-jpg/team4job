@@ -93,7 +93,6 @@ export function JobCard({ job }: JobCardProps) {
                   </p>
                 </div>
             </div>
-            <span className="font-mono">#{job.id}</span>
         </div>
       </CardHeader>
       <CardContent className="flex-grow">
@@ -118,10 +117,11 @@ export function JobCard({ job }: JobCardProps) {
           )}
         </div>
       </CardContent>
-      <CardFooter>
-        <Button asChild className="w-full" variant={job.status === 'Completed' ? "outline" : buttonVariant}>
+      <CardFooter className="flex justify-between items-center">
+        <Button asChild className="w-3/4" variant={job.status === 'Completed' ? "outline" : buttonVariant}>
           <Link href={`/dashboard/jobs/${job.id}`}>{buttonText}</Link>
         </Button>
+         <span className="text-xs text-muted-foreground font-mono">#{job.id.split('-').pop()}</span>
       </CardFooter>
     </Card>
   );
