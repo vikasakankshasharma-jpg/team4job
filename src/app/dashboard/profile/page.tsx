@@ -13,7 +13,15 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import { Progress } from "@/components/ui/progress";
+import React from "react";
+
 
 const tierIcons = {
   Bronze: <Medal className="h-6 w-6 text-yellow-700" />,
@@ -22,14 +30,26 @@ const tierIcons = {
   Platinum: <Gem className="h-6 w-6 text-cyan-400" />,
 };
 
+const tierData = {
+    'Bronze': { points: 0, next: 'Silver', goal: 500 },
+    'Silver': { points: 500, next: 'Gold', goal: 1000 },
+    'Gold': { points: 1000, next: 'Platinum', goal: 2000 },
+    'Platinum': { points: 2000, next: 'Max', goal: 2000 },
+};
+
 export default function ProfilePage() {
   const { user, role } = useUser();
+  const [isReputationOpen, setIsReputationOpen] = React.useState(false);
 
   if (!user) {
     return <div>Loading...</div>;
   }
   
   const installerProfile = user.installerProfile;
+
+  const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
+  const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
+
 
   return (
     <div className="grid gap-8">
@@ -67,19 +87,51 @@ export default function ProfilePage() {
                 <CardDescription>Your performance and trust score on the platform.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6">
-                <div className="flex items-center justify-between p-4 rounded-lg bg-accent/20">
-                    <div className="flex items-center gap-4">
-                        {tierIcons[installerProfile.tier]}
-                        <div>
-                            <p className="text-sm">Tier</p>
-                            <p className="text-xl font-bold">{installerProfile.tier}</p>
+                 <Collapsible
+                    open={isReputationOpen}
+                    onOpenChange={setIsReputationOpen}
+                 >
+                    <CollapsibleTrigger asChild>
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-accent/20 cursor-pointer hover:bg-accent/30 transition-colors">
+                            <div className="flex items-center gap-4">
+                                {tierIcons[installerProfile.tier]}
+                                <div>
+                                    <p className="text-sm">Tier</p>
+                                    <p className="text-xl font-bold">{installerProfile.tier}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="text-right">
+                                    <p className="text-sm">Reputation Points</p>
+                                    <p className="text-xl font-bold text-right">{installerProfile.points}</p>
+                                </div>
+                                <ChevronsUpDown className="h-5 w-5 text-muted-foreground" />
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        <p className="text-sm text-right">Reputation Points</p>
-                        <p className="text-xl font-bold text-right">{installerProfile.points}</p>
-                    </div>
-                </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-4 pt-4">
+                        <div className="text-sm text-muted-foreground p-4 border rounded-lg">
+                           <h4 className="font-semibold text-foreground mb-2">How Reputation Works</h4>
+                           <p>Earn points for completing jobs and receiving positive ratings. Higher points unlock new tiers, giving you more visibility and access to premium jobs.</p>
+                            <ul className="list-disc list-inside mt-2 space-y-1">
+                               <li><span className="font-semibold">Bronze:</span> 0+ points</li>
+                               <li><span className="font-semibold">Silver:</span> 500+ points</li>
+                               <li><span className="font-semibold">Gold:</span> 1000+ points</li>
+                               <li><span className="font-semibold">Platinum:</span> 2000+ points</li>
+                           </ul>
+                        </div>
+                        {currentTierInfo && currentTierInfo.next !== 'Max' && (
+                             <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <p className="text-sm font-medium">Progress to {currentTierInfo.next}</p>
+                                    <p className="text-sm font-medium">{installerProfile.points} / {currentTierInfo.goal} pts</p>
+                                </div>
+                                <Progress value={progressPercentage} className="h-2"/>
+                             </div>
+                        )}
+                    </CollapsibleContent>
+                </Collapsible>
+
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
                     <div className="p-4 rounded-lg border">
