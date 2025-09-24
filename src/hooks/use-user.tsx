@@ -1,3 +1,4 @@
+
 "use client";
 
 import { users, type User } from "@/lib/data";
@@ -8,6 +9,7 @@ type Role = "Job Giver" | "Installer";
 type UserContextType = {
   user: User | null;
   role: Role;
+  setUser: React.Dispatch<React.SetStateAction<User | null>> | null;
   setRole: (role: Role) => void;
   login: (userId: string) => void;
   logout: () => void;
@@ -50,7 +52,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, role, setRole, login, logout }}>
+    <UserContext.Provider value={{ user, role, setRole, login, logout, setUser }}>
       {children}
     </UserContext.Provider>
   );
@@ -63,3 +65,5 @@ export const useUser = () => {
   }
   return context;
 };
+
+    

@@ -24,6 +24,10 @@ import React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 
 const tierIcons = {
@@ -47,8 +51,54 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+function EditProfileForm({ user, onSave }) {
+    const [name, setName] = React.useState(user.name);
+    const { toast } = useToast();
+
+    const handleSave = () => {
+        onSave(name);
+        toast({
+            title: "Profile Updated",
+            description: "Your name has been successfully updated.",
+        });
+    }
+
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Edit Profile</DialogTitle>
+                <DialogDescription>
+                    Make changes to your profile here. Click save when you're done.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                        Name
+                    </Label>
+                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="email" className="text-right">
+                        Email
+                    </Label>
+                    <Input id="email" value={user.email} className="col-span-3" disabled />
+                </div>
+            </div>
+            <DialogFooter>
+                <DialogClose asChild>
+                    <Button type="button" variant="secondary">Cancel</Button>
+                </DialogClose>
+                 <DialogClose asChild>
+                    <Button onClick={handleSave}>Save Changes</Button>
+                 </DialogClose>
+            </DialogFooter>
+        </DialogContent>
+    );
+}
+
 export default function ProfilePage() {
-  const { user, role } = useUser();
+  const { user, role, setUser } = useUser(); // Using a mock setUser for demo
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
 
   if (!user) {
@@ -59,6 +109,13 @@ export default function ProfilePage() {
 
   const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
   const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
+
+  const handleProfileSave = (newName: string) => {
+    // In a real app, you'd call an API. Here, we just update the context state.
+    if(setUser) {
+      setUser(prevUser => prevUser ? ({ ...prevUser, name: newName }) : null);
+    }
+  };
 
 
   return (
@@ -83,7 +140,12 @@ export default function ProfilePage() {
               </div>
               <p className="mt-1">{user.email}</p>
               <div className="mt-4">
-                <Button>Edit Profile</Button>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button>Edit Profile</Button>
+                    </DialogTrigger>
+                    <EditProfileForm user={user} onSave={handleProfileSave} />
+                </Dialog>
               </div>
             </div>
           </div>
@@ -221,3 +283,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
