@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -28,7 +29,9 @@ import { ShieldCheck } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Invalid email address." }),
+  email: z.string().email({ message: "Invalid email address." }).refine(s => !s.includes(' '), {
+    message: "Email cannot contain spaces.",
+  }),
   password: z
     .string()
     .min(6, { message: "Password must be at least 6 characters." }),
