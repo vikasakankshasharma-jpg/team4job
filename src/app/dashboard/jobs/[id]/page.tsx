@@ -159,73 +159,9 @@ function JobGiverBidsSection({ job }: { job: (typeof jobs)[0] }) {
   );
 }
 
-export default function JobDetailPage() {
-  const { user, role } = useUser();
-  const params = useParams();
-  const id = params.id as string;
-  const job = jobs.find((j) => j.id === id);
-  const { toast } = useToast();
-
-  const [jobComments, setJobComments] = React.useState(job?.comments || []);
-  const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
-  const [editingContent, setEditingContent] = React.useState("");
-
-  React.useEffect(() => {
-    if (job) {
-      setJobComments(job.comments);
-    }
-  }, [job]);
-
-  if (!job) {
-     if (!user) { // Full page skeleton when nothing is loaded
-        return (
-          <div className="grid gap-8 md:grid-cols-3">
-            <div className="md:col-span-2 space-y-8">
-               <Card><CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader><CardContent><Skeleton className="h-24 w-full" /></CardContent></Card>
-               <Card><CardHeader><Skeleton className="h-8 w-1/3" /></CardHeader><CardContent><Skeleton className="h-32 w-full" /></CardContent></Card>
-            </div>
-            <div className="space-y-8">
-               <Card><CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>
-            </div>
-          </div>
-        )
-     }
-    notFound();
-  }
-  
-  const handleEditComment = (commentId: string, content: string) => {
-    setEditingCommentId(commentId);
-    setEditingContent(content);
-  };
-  
-  const handleCancelEdit = () => {
-    setEditingCommentId(null);
-    setEditingContent("");
-  };
-
-  const handleSaveEdit = (commentId: string) => {
-    setJobComments(jobComments.map(c => 
-      c.id === commentId ? { ...c, content: editingContent, timestamp: new Date() } : c
-    ));
-    setEditingCommentId(null);
-    setEditingContent("");
-    toast({
-      title: "Comment Updated",
-      description: "Your comment has been successfully updated.",
-    });
-  };
-
-  const handleDeleteComment = (commentId: string) => {
-    setJobComments(jobComments.filter(c => c.id !== commentId));
-    toast({
-      title: "Comment Deleted",
-      description: "Your comment has been successfully removed.",
-    });
-  };
-
-  if (!user) {
-    return (
-      <div className="grid gap-8 md:grid-cols-3">
+function PageSkeleton() {
+  return (
+    <div className="grid gap-8 md:grid-cols-3">
       <div className="md:col-span-2 grid gap-8">
         <Card>
           <CardHeader>
@@ -268,8 +204,67 @@ export default function JobDetailPage() {
         </Card>
        </div>
       </div>
-    );
+  );
+}
+
+export default function JobDetailPage() {
+  const { user, role } = useUser();
+  const params = useParams();
+  const id = params.id as string;
+  const { toast } = useToast();
+  
+  const [job, setJob] = React.useState<(typeof jobs)[0] | null | undefined>(undefined);
+  const [jobComments, setJobComments] = React.useState<Comment[]>([]);
+  const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
+  const [editingContent, setEditingContent] = React.useState("");
+
+  React.useEffect(() => {
+    if (id) {
+      const foundJob = jobs.find((j) => j.id === id);
+      setJob(foundJob);
+      if (foundJob) {
+        setJobComments(foundJob.comments);
+      }
+    }
+  }, [id]);
+
+  if (job === undefined || !user) {
+    return <PageSkeleton />;
   }
+
+  if (job === null) {
+    notFound();
+  }
+  
+  const handleEditComment = (commentId: string, content: string) => {
+    setEditingCommentId(commentId);
+    setEditingContent(content);
+  };
+  
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditingContent("");
+  };
+
+  const handleSaveEdit = (commentId: string) => {
+    setJobComments(jobComments.map(c => 
+      c.id === commentId ? { ...c, content: editingContent, timestamp: new Date() } : c
+    ));
+    setEditingCommentId(null);
+    setEditingContent("");
+    toast({
+      title: "Comment Updated",
+      description: "Your comment has been successfully updated.",
+    });
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    setJobComments(jobComments.filter(c => c.id !== commentId));
+    toast({
+      title: "Comment Deleted",
+      description: "Your comment has been successfully removed.",
+    });
+  };
 
   return (
     <div className="grid gap-8 md:grid-cols-3">
@@ -429,5 +424,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
