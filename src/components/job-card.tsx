@@ -79,22 +79,22 @@ export function JobCard({ job }: JobCardProps) {
             {job.status}
           </Badge>
       <CardHeader>
-        <div className="flex justify-between items-start">
-            <CardTitle className="text-lg mb-2">{job.title}</CardTitle>
-            <span className="text-xs text-muted-foreground font-mono">#{job.id}</span>
-        </div>
-        <div className="flex items-center gap-3">
-            <Avatar className="h-9 w-9">
-              <AvatarImage src={job.jobGiver.avatarUrl} alt={job.jobGiver.name} data-ai-hint="person face" />
-              <AvatarFallback>{job.jobGiver.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-semibold text-sm">{job.jobGiver.name}</p>
-              <p className="text-xs text-muted-foreground">
-                Posted {postedAt}
-              </p>
+        <CardTitle className="text-lg mb-2">{job.title}</CardTitle>
+        <div className="flex justify-between items-center text-xs text-muted-foreground">
+            <div className="flex items-center gap-3">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={job.jobGiver.avatarUrl} alt={job.jobGiver.name} data-ai-hint="person face" />
+                  <AvatarFallback>{job.jobGiver.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{job.jobGiver.name}</p>
+                  <p>
+                    Posted {postedAt}
+                  </p>
+                </div>
             </div>
-          </div>
+            <span className="font-mono">#{job.id}</span>
+        </div>
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="space-y-3 text-sm">
