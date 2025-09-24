@@ -1,0 +1,152 @@
+import type { User, Job, Bid, Comment } from './types';
+
+export const users: User[] = [
+  {
+    id: 'user-1',
+    name: 'Alex Johnson',
+    email: 'alex.j@example.com',
+    avatarUrl: 'https://picsum.photos/seed/avatar1/100/100',
+    pincode: '110001',
+    roles: ['Job Giver', 'Installer'],
+    installerProfile: {
+      tier: 'Gold',
+      points: 1250,
+      skills: ['IP Cameras', 'NVR Setup', 'Remote Viewing', 'Access Control'],
+      jobsCompleted: 35,
+      rating: 4.9,
+      reviews: 28,
+      verified: true,
+    },
+  },
+  {
+    id: 'user-2',
+    name: 'Brenda Smith',
+    email: 'brenda.s@example.com',
+    avatarUrl: 'https://picsum.photos/seed/avatar2/100/100',
+    pincode: '400001',
+    roles: ['Job Giver'],
+  },
+  {
+    id: 'user-3',
+    name: 'Carlos Diaz',
+    email: 'carlos.d@example.com',
+    avatarUrl: 'https://picsum.photos/seed/avatar3/100/100',
+    pincode: '500001',
+    roles: ['Installer'],
+    installerProfile: {
+      tier: 'Silver',
+      points: 600,
+      skills: ['Analog Cameras', 'DVR Configuration', 'Cabling'],
+      jobsCompleted: 15,
+      rating: 4.7,
+      reviews: 12,
+      verified: true,
+    },
+  },
+  {
+    id: 'user-4',
+    name: 'Diana Prince',
+    email: 'diana.p@example.com',
+    avatarUrl: 'https://picsum.photos/seed/avatar4/100/100',
+    pincode: '600001',
+    roles: ['Installer'],
+    installerProfile: {
+      tier: 'Bronze',
+      points: 250,
+      skills: ['IP Cameras', 'Basic Setup'],
+      jobsCompleted: 5,
+      rating: 4.5,
+      reviews: 4,
+      verified: false,
+    },
+  },
+];
+
+const comments: Comment[] = [
+  {
+    id: 'comment-1',
+    author: { id: 'user-3', name: 'Carlos Diaz', avatarUrl: 'https://picsum.photos/seed/avatar3/100/100' },
+    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    content: "What brand of cameras are you planning to use? And is wiring already in place?",
+  },
+  {
+    id: 'comment-2',
+    author: { id: 'user-2', name: 'Brenda Smith', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
+    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    content: "Hi Carlos, we're open to suggestions, but leaning towards Hikvision. No existing wiring, it needs to be run from scratch.",
+  }
+]
+
+const bids: Bid[] = [
+  {
+    id: 'bid-1',
+    installer: users[0],
+    amount: 14000,
+    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    coverLetter: "With over 5 years of experience in IP camera systems and NVR setups, I can ensure a professional and clean installation. My bid includes all necessary cabling and configuration for remote viewing.",
+  },
+  {
+    id: 'bid-2',
+    installer: users[2],
+    amount: 12500,
+    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    coverLetter: "I am confident I can complete this job to your satisfaction. I have experience with all major brands and can provide a cost-effective solution without compromising on quality.",
+  },
+];
+
+export const jobs: Job[] = [
+  {
+    id: 'job-1',
+    title: 'Install 8 IP Cameras for a 2-Story Office Building',
+    description: "We are looking for a professional installer to set up a comprehensive surveillance system for our new office. The job involves installing 8 high-definition IP cameras covering both indoor and outdoor areas. The installer will also be responsible for setting up the Network Video Recorder (NVR), configuring motion detection, and enabling remote viewing access on mobile devices. All equipment will be provided, but the installer must supply their own tools and manage all cabling and mounting.",
+    jobGiver: { id: 'user-2', name: 'Brenda Smith', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
+    location: '400001, Mumbai',
+    budget: { min: 10000, max: 20000 },
+    status: 'Open for Bidding',
+    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+    postedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    bids: bids,
+    comments: comments,
+  },
+  {
+    id: 'job-2',
+    title: 'CCTV System Upgrade for a Retail Store',
+    description: "Upgrading an existing 4-camera analog system to a modern 6-camera IP system. The job requires removing the old DVR and cameras, and installing new IP cameras with a new NVR. The installer should be able to advise on optimal camera placement for maximum coverage of the sales floor and entrance/exit points. Experience with POS integration is a plus.",
+    jobGiver: { id: 'user-1', name: 'Alex Johnson', avatarUrl: 'https://picsum.photos/seed/avatar1/100/100' },
+    location: '110001, Delhi',
+    budget: { min: 8000, max: 15000 },
+    status: 'Open for Bidding',
+    deadline: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000),
+    postedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    bids: [],
+    comments: [],
+  },
+  {
+    id: 'job-3',
+    title: 'Residential 4-Camera Security Installation',
+    description: "Seeking an installer for a standard 4-camera setup for a single-family home. Cameras to be placed at the front door, back door, driveway, and backyard. Simple setup with a DVR and mobile viewing required. Straightforward project for an experienced residential installer.",
+    jobGiver: { id: 'user-2', name: 'Brenda Smith', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
+    location: '600001, Chennai',
+    budget: { min: 5000, max: 8000 },
+    status: 'Awarded',
+    awardedInstaller: 'user-3',
+    deadline: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    postedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+    bids: [bids[1]],
+    comments: [],
+  },
+  {
+    id: 'job-4',
+    title: 'Maintenance and Check-up for existing system',
+    description: "Need a technician to perform a full system check on our 16-camera setup. This includes cleaning lenses, checking all connections, ensuring the NVR is recording properly, and verifying that remote access is functional. The system is 2 years old.",
+    jobGiver: { id: 'user-1', name: 'Alex Johnson', avatarUrl: 'https://picsum.photos/seed/avatar1/100/100' },
+    location: '500001, Hyderabad',
+    budget: { min: 2000, max: 4000 },
+    status: 'Completed',
+    awardedInstaller: 'user-1',
+    deadline: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
+    postedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    bids: [],
+    comments: [],
+  },
+];
