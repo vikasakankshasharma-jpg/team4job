@@ -14,37 +14,38 @@ import type { Job } from "@/lib/types";
 import { MapPin, Briefcase, IndianRupee, Clock, Users } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow, format } from 'date-fns';
-import { badgeVariants } from "./ui/badge";
+import { getStatusVariant } from "@/lib/utils";
+import React from "react";
+import { cn } from "@/lib/utils";
 
 type JobCardProps = {
   job: Job;
 };
 
-const getStatusVariant = (status: Job['status']): "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined => {
-    switch (status) {
-        case 'Open for Bidding':
-            return 'success';
-        case 'Bidding Closed':
-            return 'warning';
-        case 'Awarded':
-        case 'In Progress':
-            return 'info';
-        case 'Completed':
-            return 'secondary';
-        default:
-            return 'default';
-    }
-}
-
 export function JobCard({ job }: JobCardProps) {
-  const timeRemaining = formatDistanceToNow(job.deadline, { addSuffix: true });
+  const [timeRemaining, setTimeRemaining] = React.useState('');
+  const [postedAt, setPostedAt] = React.useState('');
+
+  React.useEffect(() => {
+    if (job.deadline) {
+      setTimeRemaining(formatDistanceToNow(new Date(job.deadline), { addSuffix: true }));
+    }
+    if (job.postedAt) {
+      setPostedAt(format(new Date(job.postedAt), "MMM d, yyyy"));
+    }
+  }, [job.deadline, job.postedAt]);
+
+  const statusVariant = getStatusVariant(job.status);
 
   return (
-    <Card className="flex flex-col relative pt-8">
-       <Badge variant={getStatusVariant(job.status)} className="capitalize absolute -top-3 left-1/2 -translate-x-1/2">
-            {job.status}
-          </Badge>
+    <Card className="flex flex-col relative">
       <CardHeader>
+        <div className="flex items-center justify-between mb-2">
+            <Badge variant={statusVariant} className="capitalize">
+                {job.status}
+            </Badge>
+            <span className="text-xs text-muted-foreground font-mono">#{job.id}</span>
+        </div>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             <Avatar>
@@ -54,7 +55,7 @@ export function JobCard({ job }: JobCardProps) {
             <div>
               <p className="text-sm font-semibold">{job.jobGiver.name}</p>
               <p className="text-xs text-muted-foreground">
-                Posted {format(job.postedAt, "MMM d, yyyy")}
+                Posted {postedAt}
               </p>
             </div>
           </div>
@@ -89,4 +90,3 @@ export function JobCard({ job }: JobCardProps) {
     </Card>
   );
 }
-
