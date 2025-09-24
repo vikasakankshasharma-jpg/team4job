@@ -1,6 +1,7 @@
 
 "use client"
 
+import * as React from "react"
 import {
   Card,
   CardContent,
@@ -17,10 +18,43 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useTheme } from "next-themes"
+import { Skeleton } from "@/components/ui/skeleton"
+
+function ThemeSelector() {
+    const { theme, setTheme } = useTheme()
+    const [mounted, setMounted] = React.useState(false)
+
+    React.useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) {
+        return (
+            <div className="space-y-2">
+                <Label htmlFor="theme">Theme</Label>
+                <Skeleton className="h-10 w-full" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-2">
+            <Label htmlFor="theme">Theme</Label>
+            <Select value={theme} onValueChange={setTheme}>
+                <SelectTrigger id="theme" className="w-full">
+                    <SelectValue placeholder="Select a theme" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="system">System</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+    )
+}
 
 export default function SettingsPage() {
-    const { theme, setTheme } = useTheme()
-
     return (
         <div className="grid gap-6">
             <Card>
@@ -38,19 +72,7 @@ export default function SettingsPage() {
                                 <CardDescription>Customize the look and feel of the application.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="space-y-2">
-                                    <Label htmlFor="theme">Theme</Label>
-                                    <Select value={theme} onValueChange={setTheme}>
-                                        <SelectTrigger id="theme" className="w-full">
-                                            <SelectValue placeholder="Select a theme" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="light">Light</SelectItem>
-                                            <SelectItem value="dark">Dark</SelectItem>
-                                            <SelectItem value="system">System</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                <ThemeSelector />
                             </CardContent>
                         </Card>
                     </div>
