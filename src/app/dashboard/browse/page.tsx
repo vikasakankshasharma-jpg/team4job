@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ListFilter, Search } from "lucide-react";
+import { ListFilter, Search, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -29,18 +29,43 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { jobs } from "@/lib/data";
 import { JobCard } from "@/components/job-card";
+import { Badge } from "@/components/ui/badge";
 
 export default function BrowseJobsPage() {
   const [searchPincode, setSearchPincode] = React.useState("");
+  const [filterBudget, setFilterBudget] = React.useState(false);
+  const [filterLocation, setFilterLocation] = React.useState(false);
+  const [filterSkills, setFilterSkills] = React.useState(false);
 
   const openJobs = jobs.filter((job) => job.status === "Open for Bidding");
 
   const filteredJobs = openJobs.filter((job) => {
-    if (searchPincode === "") {
-      return true;
+    if (searchPincode !== "" && !job.location.includes(searchPincode)) {
+        return false;
     }
-    return job.location.includes(searchPincode);
+    // Note: The following filter checks are placeholders.
+    // In a real app, you'd have UI to set budget ranges, select locations, or skills.
+    if (filterBudget && (job.budget.max < 15000)) {
+        return false;
+    }
+    if (filterLocation && !job.location.includes("Delhi")) {
+        return false;
+    }
+    if (filterSkills && !job.description.toLowerCase().includes("ip camera")) {
+        return false;
+    }
+    return true;
   });
+
+  const clearFilters = () => {
+    setSearchPincode("");
+    setFilterBudget(false);
+    setFilterLocation(false);
+    setFilterSkills(false);
+  }
+
+  const activeFiltersCount = [searchPincode !== "", filterBudget, filterLocation, filterSkills].filter(Boolean).length;
+
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -59,17 +84,29 @@ export default function BrowseJobsPage() {
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Filter
                   </span>
+                  {activeFiltersCount > 0 && <Badge variant="secondary" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">{activeFiltersCount}</Badge>}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Filter by</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem>
-                  Budget Range
+                <DropdownMenuCheckboxItem
+                  checked={filterBudget}
+                  onCheckedChange={setFilterBudget}
+                >
+                  Budget (15k+)
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Location</DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>
-                  Skills Required
+                <DropdownMenuCheckboxItem
+                  checked={filterLocation}
+                  onCheckedChange={setFilterLocation}
+                >
+                  Location (Delhi)
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={filterSkills}
+                  onCheckedChange={setFilterSkills}
+                >
+                  Skills (IP Camera)
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -83,6 +120,12 @@ export default function BrowseJobsPage() {
                     onChange={(e) => setSearchPincode(e.target.value)}
                  />
             </div>
+             {activeFiltersCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="h-4 w-4 mr-1" />
+                Clear
+              </Button>
+            )}
           </div>
         </div>
         <TabsContent value="all">
@@ -107,7 +150,7 @@ export default function BrowseJobsPage() {
             </CardContent>
             <CardFooter>
                <div className="text-xs text-muted-foreground">
-                Showing <strong>1-{filteredJobs.length}</strong> of <strong>{filteredJobs.length}</strong> jobs
+                Showing <strong>1-{filteredJobs.length}</strong> of <strong>{openJobs.length}</strong> jobs
               </div>
             </CardFooter>
           </Card>
