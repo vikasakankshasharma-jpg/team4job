@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useUser } from "@/hooks/use-user";
@@ -22,47 +23,54 @@ import { jobs } from "@/lib/data";
 
 function InstallerDashboard() {
   const openJobs = jobs.filter(job => job.status === 'Open for Bidding').length;
-  const bidsPlaced = 5; // mock data
+  // This is a simplified count. In a real app, you'd fetch this for the logged in user.
+  const bidsPlaced = jobs.flatMap(j => j.bids).filter(b => b.installer.id === 'user-1').length;
   const jobsWon = jobs.filter(job => job.awardedInstaller === 'user-1').length;
 
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open Jobs</CardTitle>
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{openJobs}</div>
-            <p className="text-xs text-muted-foreground">
-              Jobs currently accepting bids
-            </p>
-          </CardContent>
+          <Link href="/dashboard/browse">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Open Jobs</CardTitle>
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{openJobs}</div>
+              <p className="text-xs text-muted-foreground">
+                Jobs currently accepting bids
+              </p>
+            </CardContent>
+          </Link>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bids Placed</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+{bidsPlaced}</div>
-            <p className="text-xs text-muted-foreground">
-              in the last 30 days
-            </p>
-          </CardContent>
+          <Link href="/dashboard/my-bids">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Bids Placed</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">+{bidsPlaced}</div>
+              <p className="text-xs text-muted-foreground">
+                Total bids you have placed
+              </p>
+            </CardContent>
+          </Link>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Jobs Won</CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+{jobsWon}</div>
-            <p className="text-xs text-muted-foreground">
-              Total jobs successfully awarded
-            </p>
-          </CardContent>
+           <Link href="/dashboard/my-bids">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Jobs Won</CardTitle>
+              <UserCheck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">+{jobsWon}</div>
+              <p className="text-xs text-muted-foreground">
+                Total jobs successfully awarded
+              </p>
+            </CardContent>
+          </Link>
         </Card>
       </div>
       <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
@@ -95,40 +103,46 @@ function JobGiverDashboard() {
     <>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeJobs}</div>
-            <p className="text-xs text-muted-foreground">
-              Jobs currently open for bidding
-            </p>
-          </CardContent>
+          <Link href="/dashboard/posted-jobs">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{activeJobs}</div>
+              <p className="text-xs text-muted-foreground">
+                Jobs currently open for bidding
+              </p>
+            </CardContent>
+          </Link>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Bids Received</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalBids}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all your job postings
-            </p>
-          </CardContent>
+           <Link href="/dashboard/posted-jobs">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Bids Received</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalBids}</div>
+              <p className="text-xs text-muted-foreground">
+                Across all your job postings
+              </p>
+            </CardContent>
+          </Link>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Jobs</CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+{completedJobs}</div>
-            <p className="text-xs text-muted-foreground">
-              Successfully finished projects
-            </p>
-          </CardContent>
+           <Link href="/dashboard/posted-jobs?tab=archived">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed Jobs</CardTitle>
+              <UserCheck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">+{completedJobs}</div>
+              <p className="text-xs text-muted-foreground">
+                Successfully finished projects
+              </p>
+            </CardContent>
+          </Link>
         </Card>
       </div>
       <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
