@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -41,8 +42,8 @@ export function JobCard({ job }: JobCardProps) {
   return (
     <Card className="flex flex-col">
       <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
             <Avatar>
               <AvatarImage src={job.jobGiver.avatarUrl} alt={job.jobGiver.name} data-ai-hint="person face" />
               <AvatarFallback>{job.jobGiver.name.charAt(0)}</AvatarFallback>
@@ -54,7 +55,7 @@ export function JobCard({ job }: JobCardProps) {
               </p>
             </div>
           </div>
-          <Badge variant={getStatusVariant(job.status)} className="capitalize">
+          <Badge variant={getStatusVariant(job.status)} className="capitalize text-right shrink-0">
             {job.status}
           </Badge>
         </div>
