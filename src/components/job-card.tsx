@@ -80,16 +80,16 @@ export function JobCard({ job }: JobCardProps) {
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="space-y-3 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <MapPin className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-muted-foreground" />
             <span>{job.location}</span>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <IndianRupee className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <IndianRupee className="h-4 w-4 text-muted-foreground" />
             <span>{job.budget.min} - {job.budget.max}</span>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Users className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
             <span>{job.bids.length} Bids</span>
           </div>
           {job.status === 'Open for Bidding' && (
@@ -101,7 +101,7 @@ export function JobCard({ job }: JobCardProps) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button asChild className="w-full" variant={statusVariant === "secondary" ? "outline" : statusVariant}>
+        <Button asChild className="w-full" variant={job.status === 'Completed' ? "outline" : statusVariant}>
           <Link href={`/dashboard/jobs/${job.id}`}>{buttonText}</Link>
         </Button>
       </CardFooter>
