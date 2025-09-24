@@ -10,13 +10,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Job } from "@/lib/types";
 import { MapPin, Briefcase, IndianRupee, Clock, Users } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow, format } from 'date-fns';
-import { badgeVariants } from "./ui/badge";
 import { cn } from "@/lib/utils";
 import React from "react";
 
@@ -68,6 +67,7 @@ export function JobCard({ job }: JobCardProps) {
 
   const statusVariant = getStatusVariant(job.status);
   const buttonText = getButtonText(job.status);
+  const buttonVariant = statusVariant === 'success' ? 'success' : statusVariant === 'warning' ? 'warning' : statusVariant === 'info' ? 'info' : 'default';
 
   return (
     <Card className="flex flex-col relative pt-6">
@@ -104,7 +104,7 @@ export function JobCard({ job }: JobCardProps) {
             <span>{job.bids.length} Bids</span>
           </div>
           {job.status === 'Open for Bidding' && (
-            <div className={cn("flex items-center gap-2", statusVariant === 'success' ? 'text-primary' : '' )}>
+             <div className="flex items-center gap-2 text-primary">
               <Clock className="h-4 w-4" />
               <span>Bidding ends {timeRemaining}</span>
             </div>
@@ -112,7 +112,7 @@ export function JobCard({ job }: JobCardProps) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button asChild className="w-full" variant={job.status === 'Completed' ? "outline" : "default"}>
+        <Button asChild className="w-full" variant={job.status === 'Completed' ? "outline" : buttonVariant}>
           <Link href={`/dashboard/jobs/${job.id}`}>{buttonText}</Link>
         </Button>
       </CardFooter>
