@@ -3,14 +3,14 @@ import type { User, Job, Bid, Comment } from './types';
 
 // Updated to use centralized placeholder images for anonymity
 const userAvatars: Record<string, string> = {
-  'user-1': 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080',
-  'user-2': 'https://images.unsplash.com/photo-1725028748781-7adb1df9a943?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080',
-  'user-3': 'https://images.unsplash.com/photo-1710974481447-fb001ad9ad5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080',
-  'user-4': 'https://images.unsplash.com/flagged/photo-1570612861542-284f4c12e75f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080',
-  'user-5': 'https://images.unsplash.com/photo-1521146764736-56c929d59c83?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1ODY5NTM3OHww&ixlib=rb-4.1.0&q=80&w=1080',
-  'user-6': 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwZmFjZXxlbnwwfHx8fDE3NTg2OTUzNzh8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  'user-7': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMXx8cGVyc29uJTIwZmFjZXxlbnwwfHx8fDE3NTg2OTUzNzh8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  'user-8': 'https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMnx8cGVyc29uJTIwZmFjZXxlbnwwfHx8fDE3NTg2OTUzNzh8MA&ixlib=rb-4.1.0&q=80&w=1080',
+  'user-1': 'https://picsum.photos/seed/user1/200/200',
+  'user-2': 'https://picsum.photos/seed/user2/200/200',
+  'user-3': 'https://picsum.photos/seed/user3/200/200',
+  'user-4': 'https://picsum.photos/seed/user4/200/200',
+  'user-5': 'https://picsum.photos/seed/user5/200/200',
+  'user-6': 'https://picsum.photos/seed/user6/200/200',
+  'user-7': 'https://picsum.photos/seed/user7/200/200',
+  'user-8': 'https://picsum.photos/seed/user8/200/200',
 };
 
 
@@ -414,5 +414,7 @@ export const jobs: Job[] = [
     comments: [],
   },
 ];
+
+    
 
     
