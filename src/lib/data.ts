@@ -11,7 +11,7 @@ export const users: User[] = [
     installerProfile: {
       tier: 'Gold',
       points: 1250,
-      skills: ['IP Cameras', 'NVR Setup', 'Remote Viewing', 'Access Control'],
+      skills: ['IP Cameras', 'NVR Setup', 'Remote Viewing', 'Access Control', 'Structured Cabling'],
       jobsCompleted: 35,
       rating: 4.9,
       reviews: 28,
@@ -36,7 +36,7 @@ export const users: User[] = [
     installerProfile: {
       tier: 'Silver',
       points: 600,
-      skills: ['Analog Cameras', 'DVR Configuration', 'Cabling'],
+      skills: ['Analog Cameras', 'DVR Configuration', 'Cabling', 'Troubleshooting'],
       jobsCompleted: 15,
       rating: 4.7,
       reviews: 12,
@@ -53,46 +53,186 @@ export const users: User[] = [
     installerProfile: {
       tier: 'Bronze',
       points: 250,
-      skills: ['IP Cameras', 'Basic Setup'],
+      skills: ['IP Cameras', 'Basic Setup', 'Wireless Cameras'],
       jobsCompleted: 5,
       rating: 4.5,
       reviews: 4,
       verified: false,
     },
   },
+  {
+    id: 'user-5',
+    name: 'Ethan Hunt',
+    email: 'ethan.h@example.com',
+    avatarUrl: 'https://picsum.photos/seed/avatar5/100/100',
+    pincode: '110031',
+    roles: ['Installer'],
+    installerProfile: {
+      tier: 'Platinum',
+      points: 2500,
+      skills: ['Advanced IP Systems', 'VMS', 'Analytics', 'Access Control', 'Fiber Optics'],
+      jobsCompleted: 75,
+      rating: 5.0,
+      reviews: 68,
+      verified: true,
+    },
+  },
+  {
+    id: 'user-6',
+    name: 'Fiona Glenanne',
+    email: 'fiona.g@example.com',
+    avatarUrl: 'https://picsum.photos/seed/avatar6/100/100',
+    pincode: '400050',
+    roles: ['Job Giver'],
+  },
+  {
+    id: 'user-7',
+    name: 'George Mason',
+    email: 'george.m@example.com',
+    avatarUrl: 'https://picsum.photos/seed/avatar7/100/100',
+    pincode: '800001',
+    roles: ['Installer'],
+    installerProfile: {
+      tier: 'Gold',
+      points: 1100,
+      skills: ['Thermal Cameras', 'NVR Setup', 'PTZ Cameras', 'Wireless Bridge'],
+      jobsCompleted: 28,
+      rating: 4.8,
+      reviews: 25,
+      verified: true,
+    },
+  },
+  {
+    id: 'user-8',
+    name: 'Hannah Simone',
+    email: 'hannah.s@example.com',
+    avatarUrl: 'https://picsum.photos/seed/avatar8/100/100',
+    pincode: '500032',
+    roles: ['Job Giver', 'Installer'],
+    installerProfile: {
+      tier: 'Silver',
+      points: 450,
+      skills: ['IP Cameras', 'Home Automation', 'Basic Setup'],
+      jobsCompleted: 10,
+      rating: 4.6,
+      reviews: 9,
+      verified: false,
+    },
+  },
 ];
 
-const comments: Comment[] = [
-  {
-    id: 'comment-1',
-    author: { id: 'user-3', name: 'Carlos Diaz', avatarUrl: 'https://picsum.photos/seed/avatar3/100/100' },
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    content: "What brand of cameras are you planning to use? And is wiring already in place?",
-  },
-  {
-    id: 'comment-2',
-    author: { id: 'user-2', name: 'Brenda Smith', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
-    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    content: "Hi Carlos, we're open to suggestions, but leaning towards Hikvision. No existing wiring, it needs to be run from scratch.",
-  }
-]
+const comments: {[key: string]: Comment[]} = {
+  'job-1': [
+    {
+      id: 'comment-1-1',
+      author: { id: 'user-3', name: 'Carlos Diaz', avatarUrl: 'https://picsum.photos/seed/avatar3/100/100' },
+      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      content: "What brand of cameras are you planning to use? And is wiring already in place?",
+    },
+    {
+      id: 'comment-1-2',
+      author: { id: 'user-2', name: 'Brenda Smith', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
+      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      content: "Hi Carlos, we're open to suggestions, but leaning towards Hikvision. No existing wiring, it needs to be run from scratch.",
+    },
+    {
+      id: 'comment-1-3',
+      author: { id: 'user-1', name: 'Alex Johnson', avatarUrl: 'https://picsum.photos/seed/avatar1/100/100' },
+      timestamp: new Date(Date.now() - 23 * 60 * 60 * 1000),
+      content: "Is the building construction concrete or drywall? It will affect the cabling time.",
+    },
+     {
+      id: 'comment-1-4',
+      author: { id: 'user-2', name: 'Brenda Smith', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
+      timestamp: new Date(Date.now() - 22 * 60 * 60 * 1000),
+      content: "It's a mix. Mostly drywall interiors with a concrete exterior.",
+    }
+  ],
+  'job-5': [
+    {
+      id: 'comment-5-1',
+      author: { id: 'user-4', name: 'Diana Prince', avatarUrl: 'https://picsum.photos/seed/avatar4/100/100' },
+      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      content: "Is this a single warehouse or multiple buildings?",
+    },
+     {
+      id: 'comment-5-2',
+      author: { id: 'user-6', name: 'Fiona Glenanne', avatarUrl: 'https://picsum.photos/seed/avatar6/100/100' },
+      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      content: "It's a single large warehouse, approximately 50,000 sq ft.",
+    }
+  ],
+};
 
-const bids: Bid[] = [
-  {
-    id: 'bid-1',
-    installer: users[0],
-    amount: 14000,
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    coverLetter: "With over 5 years of experience in IP camera systems and NVR setups, I can ensure a professional and clean installation. My bid includes all necessary cabling and configuration for remote viewing.",
-  },
-  {
-    id: 'bid-2',
-    installer: users[2],
-    amount: 12500,
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    coverLetter: "I am confident I can complete this job to your satisfaction. I have experience with all major brands and can provide a cost-effective solution without compromising on quality.",
-  },
-];
+const bids: {[key: string]: Bid[]} = {
+  'job-1': [
+    {
+      id: 'bid-1-1',
+      installer: users[0],
+      amount: 14000,
+      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      coverLetter: "With over 5 years of experience in IP camera systems and NVR setups, I can ensure a professional and clean installation. My bid includes all necessary cabling and configuration for remote viewing.",
+    },
+    {
+      id: 'bid-1-2',
+      installer: users[2],
+      amount: 12500,
+      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      coverLetter: "I am confident I can complete this job to your satisfaction. I have experience with all major brands and can provide a cost-effective solution without compromising on quality.",
+    },
+    {
+      id: 'bid-1-3',
+      installer: users[4],
+      amount: 18000,
+      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      coverLetter: "As a Platinum tier installer specializing in advanced systems, I can offer a premium installation with optimized camera placement and robust network configuration for flawless performance. My bid reflects a higher quality of service and components.",
+    },
+  ],
+  'job-2': [
+     {
+      id: 'bid-2-1',
+      installer: users[3],
+      amount: 9000,
+      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      coverLetter: "I can handle this upgrade efficiently. I'll ensure the new IP system is perfectly integrated.",
+    },
+  ],
+  'job-3': [
+     {
+      id: 'bid-3-1',
+      installer: users[2],
+      amount: 7500,
+      timestamp: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000),
+      coverLetter: "I specialize in residential installations and can complete this quickly and cleanly. I guarantee a user-friendly setup for your mobile devices.",
+    },
+  ],
+  'job-5': [
+     {
+      id: 'bid-5-1',
+      installer: users[4],
+      amount: 48000,
+      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      coverLetter: "My team has extensive experience with large-scale warehouse projects. We use high-quality cabling and network gear to ensure reliable coverage across the entire area. We can also set up advanced analytics like line-crossing detection.",
+    },
+    {
+      id: 'bid-5-2',
+      installer: users[6],
+      amount: 45000,
+      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      coverLetter: "I have installed systems in 5 warehouses in the last year. My bid is competitive and I can start next week.",
+    },
+  ],
+  'job-6': [
+      {
+      id: 'bid-6-1',
+      installer: users[0],
+      amount: 11000,
+      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      coverLetter: "I'm a Gold-tier installer with experience in retail environments. I can ensure minimal disruption to your business operations during the installation.",
+    },
+  ],
+};
+
 
 export const jobs: Job[] = [
   {
@@ -105,8 +245,8 @@ export const jobs: Job[] = [
     status: 'Open for Bidding',
     deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
     postedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    bids: bids,
-    comments: comments,
+    bids: bids['job-1'],
+    comments: comments['job-1'],
   },
   {
     id: 'job-2',
@@ -118,7 +258,7 @@ export const jobs: Job[] = [
     status: 'Open for Bidding',
     deadline: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000),
     postedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    bids: [],
+    bids: bids['job-2'],
     comments: [],
   },
   {
@@ -132,7 +272,7 @@ export const jobs: Job[] = [
     awardedInstaller: 'user-3',
     deadline: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     postedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-    bids: [bids[1]],
+    bids: bids['job-3'],
     comments: [],
   },
   {
@@ -146,6 +286,59 @@ export const jobs: Job[] = [
     awardedInstaller: 'user-1',
     deadline: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
     postedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    bids: [],
+    comments: [],
+  },
+  {
+    id: 'job-5',
+    title: 'Install 32 PTZ Cameras in a Warehouse',
+    description: 'We require a comprehensive surveillance solution for our new logistics warehouse. This involves installing 32 Pan-Tilt-Zoom (PTZ) cameras at strategic locations, setting up a centralized monitoring station with a Video Management System (VMS), and ensuring full wireless coverage across the facility. Only verified installers with experience in large-scale industrial projects should apply.',
+    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', avatarUrl: 'https://picsum.photos/seed/avatar6/100/100' },
+    location: '400050, Mumbai',
+    budget: { min: 40000, max: 75000 },
+    status: 'Open for Bidding',
+    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+    postedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    bids: bids['job-5'],
+    comments: comments['job-5'],
+  },
+  {
+    id: 'job-6',
+    title: 'Boutique Shop Camera Setup with Covert Cameras',
+    description: 'Looking for a discreet security camera installation for a high-end boutique. The project requires 4-6 cameras, some of which must be covert or hidden. Aesthetics are very important. The system should be accessible remotely and have high-quality recording capabilities.',
+    jobGiver: { id: 'user-8', name: 'Hannah Simone', avatarUrl: 'https://picsum.photos/seed/avatar8/100/100' },
+    location: '500032, Hyderabad',
+    budget: { min: 9000, max: 18000 },
+    status: 'Bidding Closed',
+    deadline: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    postedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+    bids: bids['job-6'],
+    comments: [],
+  },
+  {
+    id: 'job-7',
+    title: 'Solar-Powered Camera for Remote Farm',
+    description: 'Need to install one or two solar-powered 4G cameras to monitor a remote agricultural property. The location has no power or Wi-Fi. The installer must provide a complete solution including the solar panel, battery, and 4G camera setup. ',
+    jobGiver: { id: 'user-2', name: 'Brenda Smith', avatarUrl: 'https://picsum.photos/seed/avatar2/100/100' },
+    location: '800001, Patna',
+    budget: { min: 15000, max: 25000 },
+    status: 'Open for Bidding',
+    deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+    postedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    bids: [],
+    comments: [],
+  },
+  {
+    id: 'job-8',
+    title: 'Apartment Complex Access Control & CCTV',
+    description: 'We are seeking bids for a full security overall for a 50-unit apartment building. This includes installing cameras in all common areas (lobbies, hallways, parking) and setting up an access control system for the main entrance. The job will be awarded to a company that can handle both aspects.',
+    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', avatarUrl: 'https://picsum.photos/seed/avatar6/100/100' },
+    location: '110001, Delhi',
+    budget: { min: 80000, max: 150000 },
+    status: 'In Progress',
+    awardedInstaller: 'user-5',
+    deadline: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+    postedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000),
     bids: [],
     comments: [],
   },
