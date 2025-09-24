@@ -60,8 +60,12 @@ export function JobCard({ job }: JobCardProps) {
   const [timeRemaining, setTimeRemaining] = React.useState("");
   
   React.useEffect(() => {
-    setPostedAt(format(new Date(job.postedAt), "MMM d, yyyy"));
-    setTimeRemaining(formatDistanceToNow(new Date(job.deadline), { addSuffix: true }));
+    if (job.postedAt) {
+      setPostedAt(format(new Date(job.postedAt), "MMM d, yyyy"));
+    }
+    if (job.deadline) {
+      setTimeRemaining(formatDistanceToNow(new Date(job.deadline), { addSuffix: true }));
+    }
   }, [job.postedAt, job.deadline]);
 
 
@@ -75,7 +79,10 @@ export function JobCard({ job }: JobCardProps) {
             {job.status}
           </Badge>
       <CardHeader>
-        <CardTitle className="text-lg mb-2">{job.title}</CardTitle>
+        <div className="flex justify-between items-start">
+            <CardTitle className="text-lg mb-2">{job.title}</CardTitle>
+            <span className="text-xs text-muted-foreground font-mono">#{job.id}</span>
+        </div>
         <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9">
               <AvatarImage src={job.jobGiver.avatarUrl} alt={job.jobGiver.name} data-ai-hint="person face" />
