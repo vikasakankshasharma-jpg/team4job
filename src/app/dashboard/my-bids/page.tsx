@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { format, formatDistanceToNow } from "date-fns";
-import { IndianRupee } from "lucide-react";
+import { Award, IndianRupee } from "lucide-react";
 import { Job, Bid } from "@/lib/types";
 import React from "react";
 import { getStatusVariant } from "@/lib/utils";
@@ -62,8 +62,18 @@ function MyBidRow({ bid }: MyBidRowProps) {
         
         return { text: job.status, variant: getStatusVariant(job.status) };
     }
+    
+    const calculatePoints = () => {
+        if (!job || job.status !== 'Completed' || job.awardedInstaller !== installerId) {
+            return null;
+        }
+        const ratingPoints = job.rating === 5 ? 20 : job.rating === 4 ? 10 : 0;
+        const completionPoints = 50;
+        return completionPoints + ratingPoints;
+    }
 
     const myBidStatus = getMyBidStatus();
+    const pointsEarned = calculatePoints();
 
     return (
         <TableRow>
@@ -84,6 +94,16 @@ function MyBidRow({ bid }: MyBidRowProps) {
                 <Badge variant={myBidStatus.variant}>
                     {myBidStatus.text}
                 </Badge>
+            </TableCell>
+            <TableCell className="text-right">
+                {pointsEarned !== null ? (
+                    <div className="flex items-center justify-end gap-1 font-semibold text-green-600">
+                        <Award className="h-4 w-4" />
+                        +{pointsEarned} pts
+                    </div>
+                ) : (
+                    <span className="text-muted-foreground">—</span>
+                )}
             </TableCell>
         </TableRow>
     );
@@ -114,6 +134,7 @@ export default function MyBidsPage() {
                 <TableHead className="hidden md:table-cell">Placed</TableHead>
                 <TableHead>Job Status</TableHead>
                 <TableHead>My Bid Status</TableHead>
+                <TableHead className="text-right">Points Earned</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
