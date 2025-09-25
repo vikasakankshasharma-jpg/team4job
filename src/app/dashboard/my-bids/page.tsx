@@ -21,12 +21,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { Award, IndianRupee } from "lucide-react";
+import { Award, IndianRupee, ListFilter, X } from "lucide-react";
 import { Job, Bid } from "@/lib/types";
 import React from "react";
 import { getStatusVariant } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 
 type MyBidRowProps = {
@@ -118,10 +128,21 @@ function MyBidRow({ bid }: MyBidRowProps) {
     );
 }
 
+const bidStatuses = [
+    "Bidded",
+    "Awarded",
+    "In Progress",
+    "Completed & Won",
+    "Not Selected",
+    "Cancelled"
+];
+
 function MyBidsPageContent() {
   const { user } = useUser();
   const searchParams = useSearchParams();
-  const statusFilter = searchParams.get('status') as Job['status'] | null;
+  const router = useRouter();
+  const pathname = usePathname();
+  const statusFilter = searchParams.get('status');
   
   if (!user) {
     return (
@@ -139,56 +160,101 @@ function MyBidsPageContent() {
     );
   }
 
- const myJobs = jobs
-    .filter(job => {
-      const myBid = job.bids.find(bid => bid.installer.id === user.id);
-      const isAwardedToMe = job.awardedInstaller === user.id;
-
-      if (statusFilter) {
-        return isAwardedToMe && job.status === statusFilter;
-      }
-
-      // Show jobs I've bid on that are still open
-      if (myBid && job.status === 'Open for Bidding') {
-        return true;
-      }
-      
-      // Show jobs that were awarded to me, regardless of status
-      if (isAwardedToMe) {
-        return true;
-      }
-      
-      return false;
-    });
-
-  const myBids = myJobs.map(job => {
-    const myBid = job.bids.find(bid => bid.installer.id === user.id);
-    if (myBid) {
-      return { ...myBid, jobTitle: job.title, jobId: job.id, jobStatus: job.status };
+  const handleFilterChange = (newStatus: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (newStatus) {
+      params.set('status', newStatus);
+    } else {
+      params.delete('status');
     }
-    // If job was awarded but no bid entry exists (data inconsistency), create a placeholder
-    return {
-      id: `placeholder-${job.id}`,
-      installer: user,
-      amount: 0, // No bid amount available
-      timestamp: job.postedAt, // No bid timestamp available
-      coverLetter: "Job awarded directly.",
-      jobTitle: job.title,
-      jobId: job.id,
-      jobStatus: job.status,
-    };
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const clearFilters = () => {
+    router.replace(pathname);
+  };
+  
+ const myBids = jobs.map(job => {
+    const myBid = job.bids.find(bid => bid.installer.id === user.id);
+    const isAwardedToMe = job.awardedInstaller === user.id;
+
+    if (myBid || isAwardedToMe) {
+      return {
+        id: myBid?.id || `placeholder-${job.id}`,
+        installer: user,
+        amount: myBid?.amount || 0,
+        timestamp: myBid?.timestamp || job.postedAt,
+        coverLetter: myBid?.coverLetter || "Job awarded directly.",
+        jobTitle: job.title,
+        jobId: job.id,
+        jobStatus: job.status,
+      };
+    }
+    return null;
+  }).filter(Boolean) as (Bid & { jobTitle: string; jobId: string; jobStatus: Job['status'] })[];
+
+ const getMyBidStatus = (job: { id: string, status: Job['status'], awardedInstaller?: string | undefined; }): string => {
+    if (!job || !user) return "Unknown";
+    const won = job.awardedInstaller === user.id;
+    if (won) {
+        if (job.status === 'Completed') return 'Completed & Won';
+        if (job.status === 'In Progress') return 'In Progress';
+        if (job.status === 'Awarded') return 'Awarded';
+        if (job.status === 'Cancelled') return 'Cancelled';
+    }
+    if (job.status === 'Open for Bidding') return 'Bidded';
+    if (job.status === 'Bidding Closed' || job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') {
+        if (!won) return 'Not Selected';
+    }
+    return job.status;
+  }
+
+  const filteredBids = myBids.filter(bid => {
+    const job = jobs.find(j => j.id === bid.jobId);
+    if (!job) return false;
+    const bidStatus = getMyBidStatus(job);
+    return !statusFilter || bidStatus === statusFilter;
   });
 
-
-  const pageTitle = statusFilter ? `${statusFilter} Jobs` : 'My Bids';
-  const pageDescription = statusFilter ? `A list of your jobs that are ${statusFilter.toLowerCase()}.` : 'A history of all the bids you have placed and jobs you have won.';
+  const pageTitle = statusFilter ? `${statusFilter} Bids` : 'My Bids';
+  const pageDescription = statusFilter ? `A list of your bids that are ${statusFilter.toLowerCase()}.` : 'A history of all the bids you have placed and jobs you have won.';
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
       <Card>
-        <CardHeader>
-          <CardTitle>{pageTitle}</CardTitle>
-          <CardDescription>{pageDescription}</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>{pageTitle}</CardTitle>
+            <CardDescription>{pageDescription}</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1">
+                  <ListFilter className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Filter
+                  </span>
+                  {statusFilter && <Badge variant="secondary" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">1</Badge>}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Filter by My Bid Status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup value={statusFilter || ''} onValueChange={handleFilterChange}>
+                  {bidStatuses.map(status => (
+                    <DropdownMenuRadioItem key={status} value={status}>{status}</DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {statusFilter && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="h-4 w-4 mr-1" />
+                Clear
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -203,14 +269,14 @@ function MyBidsPageContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {myBids.map(bid => (
+              {filteredBids.map(bid => (
                 <MyBidRow key={bid.id} bid={bid} />
               ))}
-               {myBids.length === 0 && (
+               {filteredBids.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center h-24">
                     {statusFilter 
-                      ? `You have no ${statusFilter.toLowerCase()} jobs.`
+                      ? `You have no bids with status "${statusFilter}".`
                       : "You haven't placed any bids yet."
                     }
                   </TableCell>
@@ -221,7 +287,7 @@ function MyBidsPageContent() {
         </CardContent>
         <CardFooter>
             <div className="text-xs text-muted-foreground">
-                Showing <strong>{myBids.length}</strong> of <strong>{myBids.length}</strong> bids
+                Showing <strong>{filteredBids.length}</strong> of <strong>{myBids.length}</strong> bids
             </div>
         </CardFooter>
       </Card>
@@ -236,3 +302,5 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
+
+    
