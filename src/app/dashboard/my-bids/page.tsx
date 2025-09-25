@@ -129,10 +129,18 @@ export default function MyBidsPage() {
     );
   }
 
-  const myBids = jobs.flatMap(job => 
-    job.bids.filter(bid => bid.installer.id === user.id)
-    .map(bid => ({ ...bid, jobTitle: job.title, jobId: job.id, jobStatus: job.status }))
-  );
+  const myBids = jobs
+    .filter(job => 
+        // Keep the job if it's still open for bidding
+        job.status === 'Open for Bidding' || 
+        // OR if the installer won the job
+        job.awardedInstaller === user.id
+    )
+    .flatMap(job => 
+        job.bids
+        .filter(bid => bid.installer.id === user.id)
+        .map(bid => ({ ...bid, jobTitle: job.title, jobId: job.id, jobStatus: job.status }))
+    );
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
