@@ -40,6 +40,8 @@ function MyBidRow({ bid }: MyBidRowProps) {
     React.useEffect(() => {
         if (bid.timestamp) {
             setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
+        } else {
+            setTimeAgo('N/A');
         }
     }, [bid.timestamp]);
 
@@ -51,7 +53,7 @@ function MyBidRow({ bid }: MyBidRowProps) {
         const won = job.awardedInstaller === user.id;
 
         if (won) {
-            if (job.status === 'Completed') return { text: 'Completed', variant: 'secondary' };
+            if (job.status === 'Completed') return { text: 'Completed & Won', variant: 'success' };
             if (job.status === 'In Progress') return { text: 'In Progress', variant: 'info' };
             if (job.status === 'Awarded') return { text: 'Awarded', variant: 'success' };
             if (job.status === 'Cancelled') return { text: 'Cancelled', variant: 'destructive' };
@@ -84,10 +86,14 @@ function MyBidRow({ bid }: MyBidRowProps) {
                 <Link href={`/dashboard/jobs/${bid.jobId}`} className="hover:underline">{bid.jobTitle}</Link>
             </TableCell>
             <TableCell>
-                <div className="flex items-center gap-1">
-                    <IndianRupee className="h-4 w-4" />
-                    {bid.amount.toLocaleString()}
-                </div>
+                 {bid.amount > 0 ? (
+                    <div className="flex items-center gap-1">
+                        <IndianRupee className="h-4 w-4" />
+                        {bid.amount.toLocaleString()}
+                    </div>
+                 ) : (
+                    <span className="text-muted-foreground">—</span>
+                 )}
             </TableCell>
             <TableCell className="hidden md:table-cell">{timeAgo}</TableCell>
             <TableCell>
@@ -133,34 +139,49 @@ function MyBidsPageContent() {
     );
   }
 
-  const myBids = jobs
+ const myJobs = jobs
     .filter(job => {
-        const myBid = job.bids.find(bid => bid.installer.id === user.id);
-        
-        if (statusFilter) {
-            // If filtering by status, we only care if the job was awarded to the user and matches the status
-            return job.awardedInstaller === user.id && job.status === statusFilter;
-        }
+      const myBid = job.bids.find(bid => bid.installer.id === user.id);
+      const isAwardedToMe = job.awardedInstaller === user.id;
 
-        if (myBid) {
-            // if job is open, show it
-            if (job.status === 'Open for Bidding') return true;
+      if (statusFilter) {
+        return isAwardedToMe && job.status === statusFilter;
+      }
 
-            // if job is awarded to me, show it (any status like awarded, in progress, completed, cancelled)
-            if (job.awardedInstaller === user.id) return true;
-        }
-        
-        // Hide jobs that were bid on but not won and are now closed.
-        return false;
-    })
-    .flatMap(job => 
-        job.bids
-        .filter(bid => bid.installer.id === user.id)
-        .map(bid => ({ ...bid, jobTitle: job.title, jobId: job.id, jobStatus: job.status }))
-    );
+      // Show jobs I've bid on that are still open
+      if (myBid && job.status === 'Open for Bidding') {
+        return true;
+      }
+      
+      // Show jobs that were awarded to me, regardless of status
+      if (isAwardedToMe) {
+        return true;
+      }
+      
+      return false;
+    });
+
+  const myBids = myJobs.map(job => {
+    const myBid = job.bids.find(bid => bid.installer.id === user.id);
+    if (myBid) {
+      return { ...myBid, jobTitle: job.title, jobId: job.id, jobStatus: job.status };
+    }
+    // If job was awarded but no bid entry exists (data inconsistency), create a placeholder
+    return {
+      id: `placeholder-${job.id}`,
+      installer: user,
+      amount: 0, // No bid amount available
+      timestamp: job.postedAt, // No bid timestamp available
+      coverLetter: "Job awarded directly.",
+      jobTitle: job.title,
+      jobId: job.id,
+      jobStatus: job.status,
+    };
+  });
+
 
   const pageTitle = statusFilter ? `${statusFilter} Jobs` : 'My Bids';
-  const pageDescription = statusFilter ? `A list of your jobs that are ${statusFilter.toLowerCase()}.` : 'A history of all the bids you have placed.';
+  const pageDescription = statusFilter ? `A list of your jobs that are ${statusFilter.toLowerCase()}.` : 'A history of all the bids you have placed and jobs you have won.';
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
