@@ -129,6 +129,7 @@ function MyBidRow({ bid }: MyBidRowProps) {
 }
 
 const bidStatuses = [
+    "All",
     "Bidded",
     "Awarded",
     "In Progress",
@@ -162,7 +163,7 @@ function MyBidsPageContent() {
 
   const handleFilterChange = (newStatus: string) => {
     const params = new URLSearchParams(searchParams);
-    if (newStatus) {
+    if (newStatus && newStatus !== 'All') {
       params.set('status', newStatus);
     } else {
       params.delete('status');
@@ -212,6 +213,23 @@ function MyBidsPageContent() {
   const filteredBids = myBids.filter(bid => {
     const job = jobs.find(j => j.id === bid.jobId);
     if (!job) return false;
+    
+    // An installer should only see jobs they bid on or won.
+    const isMyBid = job.bids.some(b => b.installer.id === user.id);
+    const iWon = job.awardedInstaller === user.id;
+    if (!isMyBid && !iWon) {
+        // Exception for awarded jobs that might not have a formal bid record in mock data
+        if(job.awardedInstaller !== user.id){
+           return false;
+        }
+    }
+    
+    // Bids on jobs that are closed and not won by the user should be hidden.
+    const isClosedAndNotWon = (job.status === 'Bidding Closed' || job.status === 'Completed') && job.awardedInstaller !== user.id;
+    if (isClosedAndNotWon) {
+        return false;
+    }
+
     const bidStatus = getMyBidStatus(job);
     return !statusFilter || bidStatus === statusFilter;
   });
@@ -241,7 +259,7 @@ function MyBidsPageContent() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Filter by My Bid Status</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={statusFilter || ''} onValueChange={handleFilterChange}>
+                <DropdownMenuRadioGroup value={statusFilter || 'All'} onValueChange={handleFilterChange}>
                   {bidStatuses.map(status => (
                     <DropdownMenuRadioItem key={status} value={status}>{status}</DropdownMenuRadioItem>
                   ))}
