@@ -102,17 +102,18 @@ function EditProfileForm({ user, onSave }) {
 export default function ProfilePage() {
   const { user, role, setUser } = useUser(); // Using a mock setUser for demo
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
-
+  
+  const jobsCompleted = React.useMemo(() => {
+    if (role !== 'Installer' || !user) return 0;
+    return jobs.filter(job => job.status === 'Completed' && job.awardedInstaller === user.id).length;
+  }, [user, role]);
+  
   if (!user) {
     return <div>Loading...</div>;
   }
   
   const installerProfile = user.installerProfile;
 
-  const jobsCompleted = React.useMemo(() => {
-    if (role !== 'Installer' || !user) return 0;
-    return jobs.filter(job => job.status === 'Completed' && job.awardedInstaller === user.id).length;
-  }, [user, role]);
 
   const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
   const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
@@ -290,5 +291,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
