@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 
 const tierIcons = {
@@ -262,11 +263,11 @@ export default function ProfilePage() {
                         <p className="text-2xl font-bold">{installerProfile.rating}/5.0</p>
                         <p className="text-sm text-muted-foreground">from {installerProfile.reviews} reviews</p>
                     </div>
-                    <div className="p-4 rounded-lg border">
+                    <Link href="/dashboard/my-bids?status=Completed" className="block p-4 rounded-lg border hover:bg-accent transition-colors">
                         <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary"/>
                         <p className="text-2xl font-bold">{installerProfile.jobsCompleted}</p>
                         <p className="text-sm text-muted-foreground">Jobs Completed</p>
-                    </div>
+                    </Link>
                 </div>
 
                 <div>
@@ -283,5 +284,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

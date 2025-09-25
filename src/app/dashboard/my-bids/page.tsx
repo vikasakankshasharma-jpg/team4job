@@ -26,6 +26,7 @@ import { Job, Bid } from "@/lib/types";
 import React from "react";
 import { getStatusVariant } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
+import { useSearchParams } from "next/navigation";
 
 
 type MyBidRowProps = {
@@ -111,8 +112,10 @@ function MyBidRow({ bid }: MyBidRowProps) {
     );
 }
 
-export default function MyBidsPage() {
+function MyBidsPageContent() {
   const { user } = useUser();
+  const searchParams = useSearchParams();
+  const statusFilter = searchParams.get('status') as Job['status'] | null;
   
   if (!user) {
     return (
@@ -135,13 +138,14 @@ export default function MyBidsPage() {
         const myBid = job.bids.find(bid => bid.installer.id === user.id);
         if (!myBid) return false;
 
-        // Keep the job if it's still open for bidding
+        if (statusFilter) {
+            return job.awardedInstaller === user.id && job.status === statusFilter;
+        }
+
         if (job.status === 'Open for Bidding') return true;
         
-        // Keep the job if the installer won it, regardless of status (Awarded, In Progress, Completed, Cancelled)
         if (job.awardedInstaller === user.id) return true;
 
-        // Exclude jobs that are closed and not won by the user
         return false;
     })
     .flatMap(job => 
@@ -150,14 +154,15 @@ export default function MyBidsPage() {
         .map(bid => ({ ...bid, jobTitle: job.title, jobId: job.id, jobStatus: job.status }))
     );
 
+  const pageTitle = statusFilter ? `${statusFilter} Jobs` : 'My Bids';
+  const pageDescription = statusFilter ? `A list of your jobs that are ${statusFilter.toLowerCase()}.` : 'A history of all the bids you have placed.';
+
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
       <Card>
         <CardHeader>
-          <CardTitle>My Bids</CardTitle>
-          <CardDescription>
-            A history of all the bids you have placed.
-          </CardDescription>
+          <CardTitle>{pageTitle}</CardTitle>
+          <CardDescription>{pageDescription}</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -177,7 +182,12 @@ export default function MyBidsPage() {
               ))}
                {myBids.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">You haven't placed any bids yet.</TableCell>
+                  <TableCell colSpan={6} className="text-center h-24">
+                    {statusFilter 
+                      ? `You have no ${statusFilter.toLowerCase()} jobs.`
+                      : "You haven't placed any bids yet."
+                    }
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -191,4 +201,12 @@ export default function MyBidsPage() {
       </Card>
     </div>
   )
+}
+
+export default function MyBidsPage() {
+    return (
+        <React.Suspense fallback={<div>Loading...</div>}>
+            <MyBidsPageContent />
+        </React.Suspense>
+    )
 }
