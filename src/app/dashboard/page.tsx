@@ -27,7 +27,7 @@ function InstallerDashboard() {
 
   const openJobs = jobs.filter(job => job.status === 'Open for Bidding').length;
   const bidsPlaced = jobs.flatMap(j => j.bids).filter(b => b.installer.id === user.id).length;
-  const jobsWon = jobs.filter(job => job.awardedInstaller === user.id).length;
+  const jobsWon = jobs.filter(job => job.awardedInstaller === user.id && (job.status === 'Awarded' || job.status === 'In Progress')).length;
 
   return (
     <>
@@ -69,7 +69,7 @@ function InstallerDashboard() {
             <CardContent>
               <div className="text-2xl font-bold">+{jobsWon}</div>
               <p className="text-xs text-muted-foreground">
-                Total jobs successfully awarded
+                Active jobs awarded to you
               </p>
             </CardContent>
           </Link>
@@ -100,9 +100,10 @@ function JobGiverDashboard() {
   const { user } = useUser();
   if (!user) return null;
 
-  const activeJobs = jobs.filter(job => job.jobGiver.id === user.id && job.status !== 'Completed').length;
-  const totalBids = jobs.reduce((acc, job) => (job.jobGiver.id === user.id ? acc + job.bids.length : acc), 0);
-  const completedJobs = jobs.filter(job => job.jobGiver.id === user.id && job.status === 'Completed').length;
+  const myJobs = jobs.filter(job => job.jobGiver.id === user.id);
+  const activeJobs = myJobs.filter(job => job.status !== 'Completed').length;
+  const completedJobs = myJobs.filter(job => job.status === 'Completed').length;
+  const totalBids = myJobs.reduce((acc, job) => acc + job.bids.length, 0);
 
   return (
     <>
@@ -116,7 +117,7 @@ function JobGiverDashboard() {
             <CardContent>
               <div className="text-2xl font-bold">{activeJobs}</div>
               <p className="text-xs text-muted-foreground">
-                Jobs currently open for bidding
+                Jobs not yet completed
               </p>
             </CardContent>
           </Link>
