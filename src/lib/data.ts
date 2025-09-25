@@ -302,6 +302,15 @@ const bids: {[key: string]: Bid[]} = {
       coverLetter: "I'm a Gold-tier installer with experience in retail environments. I can ensure minimal disruption to your business operations during the installation.",
     },
   ],
+  'JOB-20240918-8J9K': [
+    {
+      id: 'bid-9-1',
+      installer: users[0],
+      amount: 6000,
+      timestamp: new Date('2024-09-19T10:00:00Z'),
+      coverLetter: "I can handle this residential setup. My work is clean and I will ensure you are happy with the camera placements.",
+    }
+  ],
 };
 
 
@@ -412,6 +421,20 @@ export const jobs: Job[] = [
     deadline: new Date('2024-09-10T23:59:59Z'),
     postedAt: new Date('2024-08-16T12:00:00Z'),
     bids: [],
+    comments: [],
+  },
+  {
+    id: 'JOB-20240918-8J9K',
+    title: '4 Camera setup for a new house',
+    description: 'This is for a new house construction. Need 4 cameras installed. 2 outdoor, 2 indoor. All wiring needs to be concealed. The job giver will provide cameras and NVR.',
+    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: 'Job Giver #K1L2', avatarUrl: userAvatars['user-6'] },
+    location: '400050, Mumbai',
+    budget: { min: 5000, max: 9000 },
+    status: 'Cancelled',
+    awardedInstaller: 'user-1',
+    deadline: new Date('2024-09-25T23:59:59Z'),
+    postedAt: new Date('2024-09-18T11:00:00Z'),
+    bids: bids['JOB-20240918-8J9K'],
     comments: [],
   },
 ];

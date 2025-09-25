@@ -18,6 +18,8 @@ export const getStatusVariant = (status: Job['status']): "default" | "secondary"
             return 'info';
         case 'Completed':
             return 'secondary';
+        case 'Cancelled':
+            return 'destructive'
         default:
             return 'default';
     }

@@ -53,6 +53,7 @@ function MyBidRow({ bid }: MyBidRowProps) {
             if (job.status === 'Completed') return { text: 'Completed', variant: 'secondary' };
             if (job.status === 'In Progress') return { text: 'In Progress', variant: 'info' };
             if (job.status === 'Awarded') return { text: 'Awarded', variant: 'success' };
+            if (job.status === 'Cancelled') return { text: 'Cancelled', variant: 'destructive' };
         }
 
         if (job.status === 'Open for Bidding') return { text: 'Bidded', variant: 'default' };
@@ -130,12 +131,19 @@ export default function MyBidsPage() {
   }
 
   const myBids = jobs
-    .filter(job => 
+    .filter(job => {
+        const myBid = job.bids.find(bid => bid.installer.id === user.id);
+        if (!myBid) return false;
+
         // Keep the job if it's still open for bidding
-        job.status === 'Open for Bidding' || 
-        // OR if the installer won the job
-        job.awardedInstaller === user.id
-    )
+        if (job.status === 'Open for Bidding') return true;
+        
+        // Keep the job if the installer won it, regardless of status (Awarded, In Progress, Completed, Cancelled)
+        if (job.awardedInstaller === user.id) return true;
+
+        // Exclude jobs that are closed and not won by the user
+        return false;
+    })
     .flatMap(job => 
         job.bids
         .filter(bid => bid.installer.id === user.id)
