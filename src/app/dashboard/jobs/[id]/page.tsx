@@ -41,8 +41,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bid, Job } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
+import { getStatusVariant } from "@/lib/utils";
 
-function InstallerBidSection({ job }: { job: (typeof jobs)[0] }) {
+function InstallerBidSection({ job }: { job: Job }) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [bidProposal, setBidProposal] = React.useState("");
@@ -120,8 +121,11 @@ function InstallerBidSection({ job }: { job: (typeof jobs)[0] }) {
   );
 }
 
-function JobGiverBid({ bid }: { bid: Bid }) {
+function JobGiverBid({ bid, job, onSelectInstaller }: { bid: Bid, job: Job, onSelectInstaller: (installerId: string) => void }) {
     const [timeAgo, setTimeAgo] = React.useState('');
+    const isAwardedToThisBidder = job.awardedInstaller === bid.installer.id;
+    const isJobAwarded = !!job.awardedInstaller;
+
 
     React.useEffect(() => {
         if(bid.timestamp) {
@@ -130,7 +134,7 @@ function JobGiverBid({ bid }: { bid: Bid }) {
     }, [bid.timestamp]);
 
     return (
-        <div className="border p-4 rounded-lg">
+        <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''}`}>
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                     <Avatar>
@@ -152,26 +156,50 @@ function JobGiverBid({ bid }: { bid: Bid }) {
                 </div>
             </div>
             <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
-            <div className="mt-4 flex gap-2">
-                <Button size="sm">Select Installer</Button>
+            <div className="mt-4 flex items-center gap-2">
+                 <Button 
+                    size="sm" 
+                    onClick={() => onSelectInstaller(bid.installer.id)}
+                    disabled={isJobAwarded}
+                    variant={isAwardedToThisBidder ? 'secondary' : 'default'}
+                 >
+                    {isAwardedToThisBidder ? (
+                        <>
+                            <Award className="mr-2 h-4 w-4" /> Awarded
+                        </>
+                    ) : 'Select Installer'}
+                </Button>
                 <Button size="sm" variant="outline">Message</Button>
             </div>
         </div>
     );
 }
 
-function JobGiverBidsSection({ job }: { job: (typeof jobs)[0] }) {
+function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Job) => void }) {
+    const { toast } = useToast();
+
+    const handleSelectInstaller = (installerId: string) => {
+        const updatedJob = { ...job, awardedInstaller: installerId, status: 'Awarded' as const };
+        onJobUpdate(updatedJob);
+        
+        const installer = users.find(u => u.id === installerId);
+        toast({
+            title: "Installer Selected!",
+            description: `${installer?.name || 'The installer'} has been awarded the job.`,
+        });
+    };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Received Bids ({job.bids.length})</CardTitle>
         <CardDescription>
-          Review the bids from installers and select the best fit.
+          {job.awardedInstaller ? 'An installer has been selected for this job.' : 'Review the bids from installers and select the best fit.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {job.bids.map((bid) => (
-          <JobGiverBid key={bid.id} bid={bid} />
+          <JobGiverBid key={bid.id} bid={bid} job={job} onSelectInstaller={handleSelectInstaller}/>
         ))}
       </CardContent>
     </Card>
@@ -345,7 +373,7 @@ export default function JobDetailPage() {
   const id = params.id as string;
   const { toast } = useToast();
   
-  const [job, setJob] = React.useState<(typeof jobs)[0] | null | undefined>(undefined);
+  const [job, setJob] = React.useState<Job | null | undefined>(undefined);
   const [jobComments, setJobComments] = React.useState<Comment[]>([]);
   const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
   const [editingContent, setEditingContent] = React.useState("");
@@ -364,6 +392,15 @@ export default function JobDetailPage() {
       }
     }
   }, [id]);
+
+  const handleJobUpdate = (updatedJob: Job) => {
+    // This is a mock update. In a real app, you'd send this to your backend.
+    const jobIndex = jobs.findIndex(j => j.id === updatedJob.id);
+    if (jobIndex !== -1) {
+        jobs[jobIndex] = updatedJob;
+    }
+    setJob(updatedJob);
+  };
 
   if (job === undefined || !user) {
     return <PageSkeleton />;
@@ -410,7 +447,7 @@ export default function JobDetailPage() {
           <CardHeader>
             <div className="flex justify-between items-start">
                 <div>
-                    <Badge variant="secondary" className="mb-2">{job.status}</Badge>
+                    <Badge variant={getStatusVariant(job.status)} className="mb-2">{job.status}</Badge>
                     <CardTitle className="text-2xl">{job.title}</CardTitle>
                 </div>
                 <div className="flex items-center gap-3">
@@ -476,7 +513,7 @@ export default function JobDetailPage() {
         </Card>
 
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job}/>}
-        {role === "Job Giver" && <JobGiverBidsSection job={job}/>}
+        {role === "Job Giver" && <JobGiverBidsSection job={job} onJobUpdate={handleJobUpdate} />}
 
       </div>
 
