@@ -143,7 +143,11 @@ function MyBidsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const statusFilter = searchParams.get('status');
+  let statusFilter = searchParams.get('status');
+
+  if (statusFilter === 'Completed') {
+      statusFilter = 'Completed & Won';
+  }
   
   if (!user) {
     return (
@@ -214,24 +218,16 @@ function MyBidsPageContent() {
     const job = jobs.find(j => j.id === bid.jobId);
     if (!job) return false;
     
-    // An installer should only see jobs they bid on or won.
-    const isMyBid = job.bids.some(b => b.installer.id === user.id);
-    const iWon = job.awardedInstaller === user.id;
-    if (!isMyBid && !iWon) {
-        // Exception for awarded jobs that might not have a formal bid record in mock data
-        if(job.awardedInstaller !== user.id){
-           return false;
-        }
-    }
-    
-    // Bids on jobs that are closed and not won by the user should be hidden.
-    const isClosedAndNotWon = (job.status === 'Bidding Closed' || job.status === 'Completed') && job.awardedInstaller !== user.id;
-    if (isClosedAndNotWon) {
-        return false;
+    const bidStatus = getMyBidStatus(job);
+    if (!statusFilter || statusFilter === 'All') {
+        return true;
     }
 
-    const bidStatus = getMyBidStatus(job);
-    return !statusFilter || bidStatus === statusFilter;
+    if (statusFilter === 'Awarded') {
+        return bidStatus === 'Awarded' || bidStatus === 'In Progress';
+    }
+
+    return bidStatus === statusFilter;
   });
 
   const pageTitle = statusFilter ? `${statusFilter} Bids` : 'My Bids';
@@ -253,7 +249,7 @@ function MyBidsPageContent() {
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Filter
                   </span>
-                  {statusFilter && <Badge variant="secondary" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">1</Badge>}
+                  {statusFilter && statusFilter !== 'All' && <Badge variant="secondary" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">1</Badge>}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -266,7 +262,7 @@ function MyBidsPageContent() {
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
-            {statusFilter && (
+            {statusFilter && statusFilter !== 'All' && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 <X className="h-4 w-4 mr-1" />
                 Clear
@@ -293,7 +289,7 @@ function MyBidsPageContent() {
                {filteredBids.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center h-24">
-                    {statusFilter 
+                    {statusFilter && statusFilter !== 'All'
                       ? `You have no bids with status "${statusFilter}".`
                       : "You haven't placed any bids yet."
                     }
@@ -320,5 +316,3 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
-
-    
