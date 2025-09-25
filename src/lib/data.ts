@@ -1,4 +1,3 @@
-
 import type { User, Job, Bid, Comment } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
@@ -576,6 +575,3 @@ export const jobs: Job[] = [
     comments: [],
   },
 ];
-
-    
-    
