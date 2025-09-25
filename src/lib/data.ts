@@ -227,6 +227,14 @@ const comments: {[key: string]: Comment[]} = {
       content: "It's a single large warehouse, approximately 50,000 sq ft.",
     }
   ],
+   'JOB-20240925-P2Q3': [
+    {
+      id: 'comment-12-1',
+      author: { id: 'user-1', name: 'Alex Johnson', anonymousId: 'Installer #A1B2', avatarUrl: userAvatars['user-1'] },
+      timestamp: new Date('2024-09-26T10:00:00Z'),
+      content: "I've reviewed the requirements. This seems straightforward. I can start on Monday.",
+    },
+  ],
 };
 
 const bids: {[key: string]: Bid[]} = {
@@ -312,6 +320,40 @@ const bids: {[key: string]: Bid[]} = {
       amount: 22000,
       timestamp: new Date('2024-07-25T10:00:00Z'),
       coverLetter: "Completed this project successfully.",
+    },
+  ],
+   'JOB-20240925-P2Q3': [
+    {
+      id: 'bid-12-1',
+      installer: users[0],
+      amount: 28000,
+      timestamp: new Date('2024-09-26T11:00:00Z'),
+      coverLetter: "I have experience with multi-building wireless bridges and can ensure a seamless, unified system. My bid includes high-grade outdoor-rated equipment.",
+    },
+    {
+      id: 'bid-12-2',
+      installer: users[2],
+      amount: 26500,
+      timestamp: new Date('2024-09-26T14:00:00Z'),
+      coverLetter: "My team can handle this campus-wide installation, including all trenching and cabling required for the fiber link between buildings.",
+    },
+  ],
+  'JOB-20240928-R4S5': [
+    {
+      id: 'bid-13-1',
+      installer: users[3],
+      amount: 2800,
+      timestamp: new Date('2024-09-29T09:00:00Z'),
+      coverLetter: "I can troubleshoot your NVR and camera connectivity issues. I have a feeling it might be a network switch problem. I can diagnose and fix it.",
+    },
+  ],
+  'JOB-20240910-T6U7': [
+      {
+      id: 'bid-14-1',
+      installer: users[2],
+      amount: 19000,
+      timestamp: new Date('2024-09-08T12:00:00Z'),
+      coverLetter: "My team and I can handle this.",
     },
   ]
 };
@@ -469,6 +511,68 @@ export const jobs: Job[] = [
     deadline: new Date('2024-07-25T23:59:59Z'),
     postedAt: new Date('2024-07-15T09:00:00Z'),
     bids: [],
+    comments: [],
+  },
+  {
+    id: 'JOB-20240925-P2Q3',
+    title: 'Connect Two Buildings with Wireless Bridge',
+    description: 'We need to link the camera systems of two adjacent buildings. This requires setting up a point-to-point wireless bridge. The distance is approximately 200 meters with clear line of sight. The goal is to have a unified view of cameras from both buildings on a single NVR.',
+    jobGiver: { id: 'user-1', name: 'Alex Johnson', anonymousId: 'Job Giver #A1B2', avatarUrl: userAvatars['user-1'] },
+    location: '500001, Hyderabad',
+    budget: { min: 25000, max: 40000 },
+    status: 'Open for Bidding',
+    deadline: new Date('2024-10-02T23:59:59Z'),
+    postedAt: new Date('2024-09-25T09:00:00Z'),
+    bids: bids['JOB-20240925-P2Q3'],
+    comments: comments['JOB-20240925-P2Q3'],
+  },
+  {
+    id: 'JOB-20240928-R4S5',
+    title: 'Troubleshoot NVR Not Recording',
+    description: 'Our 8-camera NVR has stopped recording on 3 channels. The live view is working fine, but no footage is being saved from the affected cameras. We need an experienced technician to diagnose and fix the issue. Might be a hard drive issue or configuration problem.',
+    jobGiver: { id: 'user-8', name: 'Hannah Simone', anonymousId: 'Job Giver #O5P6', avatarUrl: userAvatars['user-8'] },
+    location: '500032, Hyderabad',
+    budget: { min: 2000, max: 3500 },
+    status: 'Open for Bidding',
+    deadline: new Date('2024-10-01T23:59:59Z'),
+    postedAt: new Date('2024-09-28T10:00:00Z'),
+    bids: bids['JOB-20240928-R4S5'],
+    comments: [],
+  },
+  {
+    id: 'JOB-20240910-T6U7',
+    title: 'Cafe Interior and Exterior Camera Setup',
+    description: 'Setting up 4 dome cameras inside a small cafe and 2 bullet cameras for the exterior. Need clear footage of the entrance and seating areas. The job includes all wiring and setup on a new NVR system.',
+    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: 'Job Giver #C3D4', avatarUrl: userAvatars['user-2'] },
+    location: '600001, Chennai',
+    budget: { min: 15000, max: 22000 },
+    status: 'Completed',
+    awardedInstaller: 'user-3',
+    rating: 5,
+    deadline: new Date('2024-09-15T23:59:59Z'),
+    postedAt: new Date('2024-09-10T11:00:00Z'),
+    bids: bids['JOB-20240910-T6U7'],
+    comments: [],
+  },
+  {
+    id: 'JOB-20240905-V8W9',
+    title: 'Bidding Closed Job Example',
+    description: 'This is a job where the bidding period has ended, but the job giver has not yet selected an installer. It should appear as "Bidding Closed".',
+    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: 'Job Giver #K1L2', avatarUrl: userAvatars['user-6'] },
+    location: '800001, Patna',
+    budget: { min: 5000, max: 10000 },
+    status: 'Bidding Closed',
+    deadline: new Date('2024-09-10T23:59:59Z'),
+    postedAt: new Date('2024-09-05T15:00:00Z'),
+    bids: [
+      {
+        id: 'bid-15-1',
+        installer: users[6],
+        amount: 8000,
+        timestamp: new Date('2024-09-06T10:00:00Z'),
+        coverLetter: "I'm available to start immediately.",
+      },
+    ],
     comments: [],
   },
 ];
