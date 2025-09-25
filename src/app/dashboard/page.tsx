@@ -26,8 +26,11 @@ function InstallerDashboard() {
   if (!user) return null;
 
   const openJobs = jobs.filter(job => job.status === 'Open for Bidding').length;
-  const bidsPlaced = jobs.flatMap(j => j.bids).filter(b => b.installer.id === user.id).length;
+  const bidsAndAwardedJobs = jobs.filter(job => 
+    job.bids.some(bid => bid.installer.id === user.id) || job.awardedInstaller === user.id
+  ).length;
   const jobsWon = jobs.filter(job => job.awardedInstaller === user.id && (job.status === 'Awarded' || job.status === 'In Progress')).length;
+
 
   return (
     <>
@@ -49,13 +52,13 @@ function InstallerDashboard() {
         <Card>
           <Link href="/dashboard/my-bids">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Bids Placed</CardTitle>
+              <CardTitle className="text-sm font-medium">My Bids</CardTitle>
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+{bidsPlaced}</div>
+              <div className="text-2xl font-bold">+{bidsAndAwardedJobs}</div>
               <p className="text-xs text-muted-foreground">
-                Total bids you have placed
+                Your bids and awarded jobs
               </p>
             </CardContent>
           </Link>
