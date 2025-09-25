@@ -427,44 +427,51 @@ export default function JobDetailPage() {
           </CardHeader>
           <CardContent>
             <p className="text-foreground">{job.description}</p>
-            <Separator className="my-6" />
-            <h3 className="font-semibold mb-4">Comments ({jobComments.length})</h3>
-            <div className="space-y-6">
-                {job.status === 'Completed' && (
-                  <ReputationImpactCard job={job} />
-                )}
-                {jobComments.map((comment, index) => {
-                    const isEditing = editingCommentId === comment.id;
-                    const canEdit = user?.id === comment.author.id && index === jobComments.length - 1;
-
-                    return (
-                        <CommentDisplay
-                            key={comment.id}
-                            comment={comment}
-                            isEditing={isEditing}
-                            canEdit={user?.id === comment.author.id}
-                            handleEditComment={handleEditComment}
-                            handleDeleteComment={handleDeleteComment}
-                            handleCancelEdit={handleCancelEdit}
-                            handleSaveEdit={handleSaveEdit}
-                            editingContent={editingContent}
-                            setEditingContent={setEditingContent}
-                        />
-                    )
-                })}
-                 <div className="flex gap-3">
-                    <Avatar className="h-9 w-9">
-                        <AnimatedAvatar svg={user?.avatarUrl} />
-                        <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                        <Textarea placeholder="Ask a question or post a comment..." />
-                        <div className="flex justify-end mt-2">
-                           <Button size="sm">Post Comment</Button>
+            
+            {job.status === 'Open for Bidding' ? (
+              <>
+                <Separator className="my-6" />
+                <h3 className="font-semibold mb-4">Comments ({jobComments.length})</h3>
+                <div className="space-y-6">
+                    {jobComments.map((comment, index) => {
+                        const isEditing = editingCommentId === comment.id;
+                        return (
+                            <CommentDisplay
+                                key={comment.id}
+                                comment={comment}
+                                isEditing={isEditing}
+                                canEdit={user?.id === comment.author.id}
+                                handleEditComment={handleEditComment}
+                                handleDeleteComment={handleDeleteComment}
+                                handleCancelEdit={handleCancelEdit}
+                                handleSaveEdit={handleSaveEdit}
+                                editingContent={editingContent}
+                                setEditingContent={setEditingContent}
+                            />
+                        )
+                    })}
+                     <div className="flex gap-3">
+                        <Avatar className="h-9 w-9">
+                            <AnimatedAvatar svg={user?.avatarUrl} />
+                            <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                            <Textarea placeholder="Ask a question or post a comment..." />
+                            <div className="flex justify-end mt-2">
+                               <Button size="sm">Post Comment</Button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+              </>
+            ) : (
+                 job.status === 'Completed' && (
+                    <>
+                        <Separator className="my-6" />
+                        <ReputationImpactCard job={job} />
+                    </>
+                 )
+            )}
           </CardContent>
         </Card>
 
@@ -521,3 +528,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
