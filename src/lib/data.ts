@@ -393,7 +393,8 @@ export const jobs: Job[] = [
     jobGiver: { id: 'user-8', name: 'Hannah Simone', anonymousId: 'Job Giver #O5P6', avatarUrl: userAvatars['user-8'] },
     location: '500032, Hyderabad',
     budget: { min: 9000, max: 18000 },
-    status: 'Bidding Closed',
+    status: 'Awarded',
+    awardedInstaller: 'user-1',
     deadline: new Date('2024-09-24T23:59:59Z'),
     postedAt: new Date('2024-09-17T16:00:00Z'),
     bids: bids['JOB-20240917-5E6F'],
@@ -472,4 +473,5 @@ export const jobs: Job[] = [
   },
 ];
 
+    
     
