@@ -28,7 +28,6 @@ export const users: User[] = [
       tier: 'Gold',
       points: 1250,
       skills: ['IP Cameras', 'NVR Setup', 'Remote Viewing', 'Access Control', 'Structured Cabling'],
-      jobsCompleted: 35,
       rating: 4.9,
       reviews: 28,
       verified: true,
@@ -63,7 +62,6 @@ export const users: User[] = [
       tier: 'Silver',
       points: 600,
       skills: ['Analog Cameras', 'DVR Configuration', 'Cabling', 'Troubleshooting'],
-      jobsCompleted: 15,
       rating: 4.7,
       reviews: 12,
       verified: true,
@@ -89,7 +87,6 @@ export const users: User[] = [
       tier: 'Bronze',
       points: 250,
       skills: ['IP Cameras', 'Basic Setup', 'Wireless Cameras'],
-      jobsCompleted: 5,
       rating: 4.5,
       reviews: 4,
       verified: false,
@@ -115,7 +112,6 @@ export const users: User[] = [
       tier: 'Platinum',
       points: 2500,
       skills: ['Advanced IP Systems', 'VMS', 'Analytics', 'Access Control', 'Fiber Optics'],
-      jobsCompleted: 75,
       rating: 5.0,
       reviews: 68,
       verified: true,
@@ -150,7 +146,6 @@ export const users: User[] = [
       tier: 'Gold',
       points: 1100,
       skills: ['Thermal Cameras', 'NVR Setup', 'PTZ Cameras', 'Wireless Bridge'],
-      jobsCompleted: 28,
       rating: 4.8,
       reviews: 25,
       verified: true,
@@ -176,7 +171,6 @@ export const users: User[] = [
       tier: 'Silver',
       points: 450,
       skills: ['IP Cameras', 'Home Automation', 'Basic Setup'],
-      jobsCompleted: 10,
       rating: 4.6,
       reviews: 9,
       verified: false,
@@ -461,9 +455,21 @@ export const jobs: Job[] = [
     bids: bids['JOB-20240801-K2L3'],
     comments: [],
   },
+  {
+    id: 'JOB-20240715-M4N5',
+    title: 'School Campus Camera Overhaul',
+    description: 'Full overhaul of a school campus security system. Requires 20+ cameras, NVR, and integration with an existing alert system.',
+    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: 'Job Giver #C3D4', avatarUrl: userAvatars['user-2'] },
+    location: '110001, Delhi',
+    budget: { min: 50000, max: 80000 },
+    status: 'Completed',
+    awardedInstaller: 'user-1',
+    rating: 5,
+    deadline: new Date('2024-07-25T23:59:59Z'),
+    postedAt: new Date('2024-07-15T09:00:00Z'),
+    bids: [],
+    comments: [],
+  },
 ];
 
     
-
-    
-

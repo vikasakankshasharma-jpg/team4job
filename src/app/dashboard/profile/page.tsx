@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { jobs } from "@/lib/data";
 
 
 const tierIcons = {
@@ -107,6 +108,11 @@ export default function ProfilePage() {
   }
   
   const installerProfile = user.installerProfile;
+
+  const jobsCompleted = React.useMemo(() => {
+    if (role !== 'Installer' || !user) return 0;
+    return jobs.filter(job => job.status === 'Completed' && job.awardedInstaller === user.id).length;
+  }, [user, role]);
 
   const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
   const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
@@ -265,7 +271,7 @@ export default function ProfilePage() {
                     </div>
                     <Link href="/dashboard/my-bids?status=Completed" className="block p-4 rounded-lg border hover:bg-accent transition-colors">
                         <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary"/>
-                        <p className="text-2xl font-bold">{installerProfile.jobsCompleted}</p>
+                        <p className="text-2xl font-bold">{jobsCompleted}</p>
                         <p className="text-sm text-muted-foreground">Jobs Completed</p>
                     </Link>
                 </div>
@@ -284,3 +290,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

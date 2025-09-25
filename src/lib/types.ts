@@ -1,3 +1,4 @@
+
 export type User = {
   id: string;
   name: string;
@@ -10,7 +11,6 @@ export type User = {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;
     skills: string[];
-    jobsCompleted: number;
     rating: number;
     reviews: number;
     verified: boolean;
@@ -52,3 +52,5 @@ export type Job = {
   awardedInstaller?: User['id'];
   rating?: number;
 };
+
+    
