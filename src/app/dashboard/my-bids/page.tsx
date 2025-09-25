@@ -136,16 +136,21 @@ function MyBidsPageContent() {
   const myBids = jobs
     .filter(job => {
         const myBid = job.bids.find(bid => bid.installer.id === user.id);
-        if (!myBid) return false;
-
+        
         if (statusFilter) {
+            // If filtering by status, we only care if the job was awarded to the user and matches the status
             return job.awardedInstaller === user.id && job.status === statusFilter;
         }
 
-        if (job.status === 'Open for Bidding') return true;
-        
-        if (job.awardedInstaller === user.id) return true;
+        if (myBid) {
+            // if job is open, show it
+            if (job.status === 'Open for Bidding') return true;
 
+            // if job is awarded to me, show it (any status like awarded, in progress, completed, cancelled)
+            if (job.awardedInstaller === user.id) return true;
+        }
+        
+        // Hide jobs that were bid on but not won and are now closed.
         return false;
     })
     .flatMap(job => 

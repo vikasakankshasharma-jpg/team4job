@@ -311,6 +311,15 @@ const bids: {[key: string]: Bid[]} = {
       coverLetter: "I can handle this residential setup. My work is clean and I will ensure you are happy with the camera placements.",
     }
   ],
+  'JOB-20240801-K2L3': [
+     {
+      id: 'bid-10-1',
+      installer: users[0],
+      amount: 22000,
+      timestamp: new Date('2024-07-25T10:00:00Z'),
+      coverLetter: "Completed this project successfully.",
+    },
+  ]
 };
 
 
@@ -338,7 +347,7 @@ export const jobs: Job[] = [
     status: 'Open for Bidding',
     deadline: new Date('2024-10-03T23:59:59Z'),
     postedAt: new Date('2024-09-22T09:00:00Z'),
-    bids: bids['JOB-20240922-2B4C'],
+    bids: bids['JOB-20240922-2B4C'] || [],
     comments: [],
   },
   {
@@ -437,8 +446,24 @@ export const jobs: Job[] = [
     bids: bids['JOB-20240918-8J9K'],
     comments: [],
   },
+  {
+    id: 'JOB-20240801-K2L3',
+    title: 'Corporate Office Full Security System',
+    description: 'Installation of 15 cameras, access control on 5 doors, and a central monitoring room setup for a corporate office. High-end equipment required.',
+    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: 'Job Giver #K1L2', avatarUrl: userAvatars['user-6'] },
+    location: '500032, Hyderabad',
+    budget: { min: 20000, max: 30000 },
+    status: 'Completed',
+    awardedInstaller: 'user-1',
+    rating: 4,
+    deadline: new Date('2024-08-10T23:59:59Z'),
+    postedAt: new Date('2024-08-01T10:00:00Z'),
+    bids: bids['JOB-20240801-K2L3'],
+    comments: [],
+  },
 ];
 
     
 
     
+
