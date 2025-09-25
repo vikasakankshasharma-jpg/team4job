@@ -100,7 +100,7 @@ function JobGiverDashboard() {
   const { user } = useUser();
   if (!user) return null;
 
-  const activeJobs = jobs.filter(job => job.jobGiver.id === user.id && job.status === 'Open for Bidding').length;
+  const activeJobs = jobs.filter(job => job.jobGiver.id === user.id && job.status !== 'Completed').length;
   const totalBids = jobs.reduce((acc, job) => (job.jobGiver.id === user.id ? acc + job.bids.length : acc), 0);
   const completedJobs = jobs.filter(job => job.jobGiver.id === user.id && job.status === 'Completed').length;
 
