@@ -17,7 +17,6 @@ export type User = {
     rating: number;
     reviews: number;
     verified: boolean;
-    jobsCompleted: number;
     reputationHistory?: { month: string; points: number }[];
   };
 };

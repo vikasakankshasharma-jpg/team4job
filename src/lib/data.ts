@@ -33,7 +33,6 @@ export const users: User[] = [
       rating: 4.9,
       reviews: 28,
       verified: true,
-      jobsCompleted: 22,
       reputationHistory: [
         { month: 'Apr', points: 200 },
         { month: 'May', points: 150 },
@@ -72,7 +71,6 @@ export const users: User[] = [
       rating: 4.7,
       reviews: 12,
       verified: true,
-      jobsCompleted: 9,
       reputationHistory: [
         { month: 'Apr', points: 100 },
         { month: 'May', points: 50 },
@@ -100,7 +98,6 @@ export const users: User[] = [
       rating: 4.5,
       reviews: 4,
       verified: false,
-      jobsCompleted: 3,
       reputationHistory: [
         { month: 'Apr', points: 0 },
         { month: 'May', points: 50 },
@@ -128,7 +125,6 @@ export const users: User[] = [
       rating: 5.0,
       reviews: 68,
       verified: true,
-      jobsCompleted: 51,
       reputationHistory: [
         { month: 'Apr', points: 400 },
         { month: 'May', points: 500 },
@@ -167,7 +163,6 @@ export const users: User[] = [
       rating: 4.8,
       reviews: 25,
       verified: true,
-      jobsCompleted: 19,
       reputationHistory: [
          { month: 'Apr', points: 150 },
         { month: 'May', points: 200 },
@@ -195,7 +190,6 @@ export const users: User[] = [
       rating: 4.6,
       reviews: 9,
       verified: false,
-      jobsCompleted: 7,
       reputationHistory: [
         { month: 'Apr', points: 50 },
         { month: 'May', points: 100 },
