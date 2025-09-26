@@ -20,9 +20,40 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { jobs } from "@/lib/data";
+import { useHelp } from "@/hooks/use-help";
+import React from "react";
 
 function InstallerDashboard() {
   const { user } = useUser();
+  const { setHelp } = useHelp();
+
+  React.useEffect(() => {
+    setHelp({
+        title: 'Installer Dashboard Guide',
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>Welcome to your Dashboard! Here’s a quick overview of what you can do:</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                        <span className="font-semibold">Open Jobs:</span> This card shows you the total number of jobs currently available for bidding. Click it to browse all opportunities.
+                    </li>
+                    <li>
+                        <span className="font-semibold">My Bids:</span> Tracks all the jobs you've bid on and those that have been awarded to you. Click to see your bidding history.
+                    </li>
+                    <li>
+                        <span className="font-semibold">Jobs Won:</span> Displays the number of active jobs you've won and are currently working on.
+                    </li>
+                    <li>
+                        <span className="font-semibold">Find Your Next Project:</span> This is a shortcut to jump directly to the job browsing page to find new work.
+                    </li>
+                </ul>
+                <p>Use the navigation on the left to access other sections like your profile and settings.</p>
+            </div>
+        )
+    });
+  }, [setHelp]);
+
+
   if (!user) return null;
 
   const openJobs = jobs.filter(job => job.status === 'Open for Bidding').length;
@@ -101,6 +132,34 @@ function InstallerDashboard() {
 
 function JobGiverDashboard() {
   const { user } = useUser();
+  const { setHelp } = useHelp();
+  
+  React.useEffect(() => {
+    setHelp({
+        title: 'Job Giver Dashboard Guide',
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>Welcome to your Dashboard! Here’s a quick overview of what you can do:</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                        <span className="font-semibold">Active Jobs:</span> This card shows the number of jobs you've posted that are not yet completed. Click to manage them.
+                    </li>
+                    <li>
+                        <span className="font-semibold">Total Bids Received:</span> See the total number of bids submitted across all of your job postings.
+                    </li>
+                    <li>
+                        <span className="font-semibold">Completed Jobs:</span> View a history of all your successfully completed projects.
+                    </li>
+                    <li>
+                        <span className="font-semibold">Need an Installer?:</span> This is a shortcut to post a new job and start receiving bids from professionals.
+                    </li>
+                </ul>
+                <p>Use the navigation on the left to access other sections like your profile and settings.</p>
+            </div>
+        )
+    });
+  }, [setHelp]);
+
   if (!user) return null;
 
   const myJobs = jobs.filter(job => job.jobGiver.id === user.id);

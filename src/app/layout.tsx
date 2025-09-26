@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { UserProvider } from "@/hooks/use-user";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { HelpProvider } from "@/hooks/use-help";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-body" });
 
@@ -41,8 +42,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <UserProvider>
-            {children}
-            <Toaster />
+            <HelpProvider>
+              {children}
+              <Toaster />
+            </HelpProvider>
           </UserProvider>
         </ThemeProvider>
       </body>

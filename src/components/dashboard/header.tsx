@@ -11,6 +11,7 @@ import {
   Settings,
   Users as UsersIcon,
   User as UserIcon,
+  LifeBuoy,
 } from "lucide-react";
 import * as React from "react";
 import {
@@ -29,6 +30,7 @@ import { UserNav } from "@/components/user-nav";
 import { useUser } from "@/hooks/use-user";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../theme-toggle";
+import { HelpDialog } from "../help-dialog";
 
 const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
@@ -126,6 +128,12 @@ export function Header() {
           className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
         />
       </div>
+      <HelpDialog>
+        <Button variant="outline" size="icon">
+          <LifeBuoy className="h-5 w-5" />
+          <span className="sr-only">Help</span>
+        </Button>
+      </HelpDialog>
       <ThemeToggle />
       <UserNav />
     </header>
