@@ -66,13 +66,14 @@ function MyBidRow({ bid }: MyBidRowProps) {
             if (job.status === 'Completed') return { text: 'Completed & Won', variant: 'success' };
             if (job.status === 'In Progress') return { text: 'In Progress', variant: 'info' };
             if (job.status === 'Awarded') return { text: 'Awarded', variant: 'success' };
-            if (job.status === 'Cancelled') return { text: 'Cancelled', variant: 'destructive' };
         }
+
+        if (job.status === 'Cancelled') return { text: 'Cancelled', variant: 'destructive' };
 
         if (job.status === 'Open for Bidding') return { text: 'Bidded', variant: 'default' };
 
-        if (job.status === 'Bidding Closed' || job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') {
-            if (!won) return { text: 'Not Selected', variant: 'destructive' };
+        if ((job.status === 'Bidding Closed' || job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') && !won) {
+            return { text: 'Not Selected', variant: 'destructive' };
         }
         
         return { text: job.status, variant: getStatusVariant(job.status) };
@@ -202,18 +203,18 @@ function MyBidsPageContent() {
   }).filter((bid): bid is Bid & { jobTitle: string; jobId: string; jobStatus: Job['status']; wasPlaced: boolean } => bid !== null)
     .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
- const getMyBidStatus = (job: { id: string, status: Job['status'], awardedInstaller?: string | undefined; }): string => {
+ const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: string | undefined; }): string => {
     if (!job || !user) return "Unknown";
     const won = job.awardedInstaller === user.id;
     if (won) {
         if (job.status === 'Completed') return 'Completed & Won';
         if (job.status === 'In Progress') return 'In Progress';
         if (job.status === 'Awarded') return 'Awarded';
-        if (job.status === 'Cancelled') return 'Cancelled';
     }
+    if (job.status === 'Cancelled') return 'Cancelled';
     if (job.status === 'Open for Bidding') return 'Bidded';
-    if (job.status === 'Bidding Closed' || job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') {
-        if (!won) return 'Not Selected';
+    if ((job.status === 'Bidding Closed' || job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') && !won) {
+        return 'Not Selected';
     }
     return job.status;
   }
@@ -222,7 +223,7 @@ function MyBidsPageContent() {
     const job = jobs.find(j => j.id === bid.jobId);
     if (!job) return false;
     
-    const bidStatus = getMyBidStatus(job);
+    const bidStatus = getMyBidStatusText(job);
     if (!statusFilter || statusFilter === 'All') {
         return true;
     }
@@ -320,3 +321,5 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
+
+    
