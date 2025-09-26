@@ -69,8 +69,7 @@ function InstallerBidSection({ job }: { job: Job }) {
           description: "Review the AI-generated proposal and place your bid.",
         });
       }
-    } catch (error) {
-      console.error("Error generating bid proposal:", error);
+    } catch (error)      console.error("Error generating bid proposal:", error);
       toast({
         title: "Generation Failed",
         description: "There was an error generating the bid. Please try again.",
@@ -124,7 +123,7 @@ function InstallerBidSection({ job }: { job: Job }) {
   );
 }
 
-function JobGiverBid({ bid, job, onSelectInstaller, rank, isSelected }: { bid: Bid, job: Job, onSelectInstaller: (installerId: string) => void, rank: number, isSelected: boolean }) {
+function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected, showRanking, canAward }: { bid: Bid, job: Job, onSelectInstaller: (installerId: string) => void, onAwardJob: (installerId: string) => void, rank: number, isSelected: boolean, showRanking: boolean, canAward: boolean }) {
     const [timeAgo, setTimeAgo] = React.useState('');
     const isAwardedToThisBidder = job.awardedInstaller === bid.installer.id;
     const isJobAwarded = !!job.awardedInstaller;
@@ -136,7 +135,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank, isSelected }: { bid: B
     }, [bid.timestamp]);
 
     return (
-        <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && rank === 1 ? 'border-primary' : ''}`}>
+        <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && showRanking && rank === 1 ? 'border-primary' : ''}`}>
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                     <Avatar>
@@ -149,13 +148,13 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank, isSelected }: { bid: B
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
-                            <p className="font-semibold">{isAwardedToThisBidder ? bid.installer.name : `Position #${rank}`}</p>
-                            {!isAwardedToThisBidder && rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
+                            <p className="font-semibold">{isAwardedToThisBidder ? bid.installer.name : showRanking ? `Position #${rank}` : bid.installer.anonymousId}</p>
+                            {!isAwardedToThisBidder && showRanking && rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
                             <span>{bid.installer.installerProfile?.rating} ({bid.installer.installerProfile?.reviews} reviews)</span>
-                            <span className="font-mono">{bid.installer.anonymousId}</span>
+                            <span className="font-mono">{isAwardedToThisBidder ? bid.installer.anonymousId : ''}</span>
                             {bid.installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
                         </div>
                     </div>
@@ -169,7 +168,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank, isSelected }: { bid: B
             <div className="mt-4 flex items-center gap-2">
                  <Button 
                     size="sm" 
-                    onClick={() => onSelectInstaller(bid.installer.id)}
+                    onClick={() => canAward ? onAwardJob(bid.installer.id) : onSelectInstaller(bid.installer.id)}
                     disabled={isJobAwarded || isSelected}
                     variant={isAwardedToThisBidder ? 'secondary' : 'default'}
                  >
@@ -177,7 +176,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank, isSelected }: { bid: B
                         <>
                             <Award className="mr-2 h-4 w-4" /> Awarded
                         </>
-                    ) : isSelected ? 'Selected' : 'Select Installer'}
+                    ) : canAward ? 'Award Job' : isSelected ? 'Selected' : 'Select Installer'}
                 </Button>
                 <Button size="sm" variant="outline">Message</Button>
             </div>
@@ -188,6 +187,8 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank, isSelected }: { bid: B
 function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Job) => void }) {
     const { toast } = useToast();
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>(job.selectedInstallers?.map(i => i.installerId) || []);
+
+    const canAwardDirectly = job.bids.length < 3;
 
     const handleSelectInstaller = (installerId: string) => {
         // This is a temporary implementation for the first phase.
@@ -201,6 +202,20 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
         toast({
             title: "Installer Selected for Ranking",
             description: `You have selected installer ${users.find(u=>u.id === installerId)?.anonymousId} for your shortlist.`,
+        });
+    };
+    
+    const handleAwardJob = (installerId: string) => {
+        const installer = users.find(u => u.id === installerId);
+        if (!installer) return;
+
+        const updatedJob = { ...job, awardedInstaller: installerId, status: 'Awarded' as Job['status'] };
+        onJobUpdate(updatedJob);
+
+        toast({
+            title: "Job Awarded!",
+            description: `You have awarded the job to ${installer.anonymousId}.`,
+            variant: "success",
         });
     };
 
@@ -240,7 +255,8 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
       <CardHeader>
         <CardTitle>Received Bids ({job.bids.length})</CardTitle>
         <CardDescription>
-          {job.awardedInstaller ? 'An installer has been selected for this job.' : 'Review the ranked bids from installers and select the best fit.'}
+          {job.awardedInstaller ? 'An installer has been selected for this job.' : 
+          canAwardDirectly ? 'Award the job to the best installer.' : 'Review the ranked bids and select your top candidates.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -249,9 +265,12 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
             key={bid.id} 
             bid={bid} 
             job={job} 
-            onSelectInstaller={handleSelectInstaller} 
+            onSelectInstaller={handleSelectInstaller}
+            onAwardJob={handleAwardJob}
             rank={index + 1}
             isSelected={selectedInstallers.includes(bid.installer.id)}
+            showRanking={!canAwardDirectly}
+            canAward={canAwardDirectly}
           />
         ))}
       </CardContent>
@@ -629,3 +648,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
