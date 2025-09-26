@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Job } from "@/lib/types";
 import { MapPin, IndianRupee, Clock, Users } from "lucide-react";
 import Link from "next/link";
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { getStatusVariant } from "@/lib/utils";
 import React from "react";
 import { AnimatedAvatar } from "./ui/animated-avatar";
@@ -77,7 +77,7 @@ export function JobCard({ job }: JobCardProps) {
             <div>
               <p className="font-semibold text-sm text-foreground">{job.jobGiver.anonymousId}</p>
               <p className="text-xs text-muted-foreground">
-                Posted {postedAt}
+                Member since {format(job.jobGiver.memberSince, 'MMM yyyy')}
               </p>
             </div>
         </div>
