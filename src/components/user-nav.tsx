@@ -74,7 +74,7 @@ export function UserNav() {
             <div className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
                 <span className="text-sm">{role}</span>
                 <div className="flex items-center space-x-2">
-                    <Label htmlFor="role-switch" className={cn("text-xs font-medium", role === 'Job Giver' ? 'text-primary' : 'text-muted-foreground')}>Giver</Label>
+                    <Label htmlFor="role-switch" className={cn("text-xs font-bold", role === 'Job Giver' ? 'text-primary' : 'text-muted-foreground')}>Giver</Label>
                     <Switch 
                         id="role-switch"
                         checked={role === 'Installer'}
@@ -82,7 +82,7 @@ export function UserNav() {
                         disabled={user.roles.length < 2}
                         aria-label="Role switcher"
                     />
-                    <Label htmlFor="role-switch" className={cn("text-xs font-medium", role === 'Installer' ? 'text-success' : 'text-muted-foreground')}>Installer</Label>
+                    <Label htmlFor="role-switch" className={cn("text-xs font-bold", role === 'Installer' ? 'text-success' : 'text-muted-foreground')}>Installer</Label>
                 </div>
             </div>
         </div>
