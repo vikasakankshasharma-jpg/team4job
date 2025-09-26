@@ -40,7 +40,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon" className="overflow-hidden rounded-full">
           <Avatar className="h-9 w-9">
-            <AnimatedAvatar svg={user.avatarUrl} />
+            <AvatarImage src={user.realAvatarUrl} alt={user.name} />
             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
         </Button>

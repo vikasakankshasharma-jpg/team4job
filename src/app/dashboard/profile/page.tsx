@@ -134,7 +134,7 @@ export default function ProfilePage() {
             <Avatar className="h-24 w-24 border-2 border-primary">
               <AnimatedAvatar svg={user.avatarUrl} />
               <AvatarFallback className="text-3xl">
-                {user.name.charAt(0)}
+                {user.anonymousId.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">

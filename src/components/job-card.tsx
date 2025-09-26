@@ -32,7 +32,7 @@ export function JobCard({ job }: JobCardProps) {
       setTimeRemaining(formatDistanceToNow(new Date(job.deadline), { addSuffix: true }));
     }
     if (job.postedAt) {
-      setPostedAt(format(new Date(job.postedAt), "MMM d, yyyy"));
+      setPostedAt(formatDistanceToNow(new Date(job.postedAt), { addSuffix: true }));
     }
   }, [job.deadline, job.postedAt]);
 

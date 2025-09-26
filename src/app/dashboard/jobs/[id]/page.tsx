@@ -132,7 +132,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank }: { bid: Bid, job: Job
         if(bid.timestamp) {
             setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
         }
-    }, [bid.timestamp]);
+    }, [bid.timestamp.toISOString()]);
 
     return (
         <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && rank === 1 ? 'border-primary' : ''}`}>
@@ -534,7 +534,7 @@ export default function JobDetailPage() {
                      <div className="flex gap-3">
                         <Avatar className="h-9 w-9">
                             <AnimatedAvatar svg={user?.avatarUrl} />
-                            <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{user?.anonymousId.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                             <Textarea placeholder="Ask a question or post a comment..." />

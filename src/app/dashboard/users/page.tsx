@@ -32,7 +32,7 @@ export default function UsersPage() {
     <Card>
       <CardHeader>
         <CardTitle>User Directory</CardTitle>
-        <CardDescription>A list of all registered dummy users in the system.</CardDescription>
+        <CardDescription>A list of all registered users in the system, identified by their anonymous IDs.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -56,7 +56,7 @@ export default function UsersPage() {
                     </Avatar>
                     <div className="font-medium">
                         <p>{user.anonymousId}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                        <p className="text-sm text-muted-foreground">{`user-${user.id.substring(user.id.length-4)}@example.com`}</p>
                     </div>
                   </div>
                 </TableCell>
