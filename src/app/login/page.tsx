@@ -15,15 +15,13 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
-       <div className="absolute top-8 left-8">
+       <header className="w-full max-w-5xl absolute top-0 left-1/2 -translate-x-1/2 flex items-center justify-between p-8">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
           <Logo className="h-7 w-7" />
           <span>CCTV Job Connect</span>
         </Link>
-      </div>
-      <div className="absolute top-8 right-8">
         <ThemeToggle />
-      </div>
+       </header>
       <Tabs defaultValue="login" className="w-full max-w-md">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Log In</TabsTrigger>
