@@ -17,6 +17,7 @@ import { Label } from "./ui/label";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatedAvatar } from "./ui/animated-avatar";
+import { cn } from "@/lib/utils";
 
 export function UserNav() {
   const { user, role, setRole, logout } = useUser();
@@ -73,7 +74,7 @@ export function UserNav() {
             <div className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
                 <span className="text-sm">{role}</span>
                 <div className="flex items-center space-x-2">
-                    <Label htmlFor="role-switch" className="text-xs text-muted-foreground">Giver</Label>
+                    <Label htmlFor="role-switch" className={cn("text-xs", role === 'Job Giver' ? 'text-foreground' : 'text-muted-foreground')}>Giver</Label>
                     <Switch 
                         id="role-switch"
                         checked={role === 'Installer'}
@@ -81,7 +82,7 @@ export function UserNav() {
                         disabled={user.roles.length < 2}
                         aria-label="Role switcher"
                     />
-                    <Label htmlFor="role-switch" className="text-xs text-muted-foreground">Installer</Label>
+                    <Label htmlFor="role-switch" className={cn("text-xs", role === 'Installer' ? 'text-foreground' : 'text-muted-foreground')}>Installer</Label>
                 </div>
             </div>
         </div>
