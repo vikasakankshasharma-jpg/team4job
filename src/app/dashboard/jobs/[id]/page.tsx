@@ -33,6 +33,7 @@ import {
   Award,
   CheckCircle2,
   TrendingUp,
+  Trophy,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -121,11 +122,10 @@ function InstallerBidSection({ job }: { job: Job }) {
   );
 }
 
-function JobGiverBid({ bid, job, onSelectInstaller }: { bid: Bid, job: Job, onSelectInstaller: (installerId: string) => void }) {
+function JobGiverBid({ bid, job, onSelectInstaller, rank }: { bid: Bid, job: Job, onSelectInstaller: (installerId: string) => void, rank: number }) {
     const [timeAgo, setTimeAgo] = React.useState('');
     const isAwardedToThisBidder = job.awardedInstaller === bid.installer.id;
     const isJobAwarded = !!job.awardedInstaller;
-
 
     React.useEffect(() => {
         if(bid.timestamp) {
@@ -134,7 +134,7 @@ function JobGiverBid({ bid, job, onSelectInstaller }: { bid: Bid, job: Job, onSe
     }, [bid.timestamp]);
 
     return (
-        <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''}`}>
+        <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${rank === 1 ? 'border-primary' : ''}`}>
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                     <Avatar>
@@ -142,10 +142,14 @@ function JobGiverBid({ bid, job, onSelectInstaller }: { bid: Bid, job: Job, onSe
                         <AvatarFallback>{bid.installer.anonymousId.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <p className="font-semibold">{bid.installer.anonymousId}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="font-semibold">Rank #{rank}</p>
+                            {rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
+                        </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
                             <span>{bid.installer.installerProfile?.rating} ({bid.installer.installerProfile?.reviews} reviews)</span>
+                             <span className="font-mono">{bid.installer.anonymousId}</span>
                             {bid.installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
                         </div>
                     </div>
@@ -189,17 +193,47 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
         });
     };
 
+    const calculateBidScore = (bid: Bid, job: Job) => {
+        const profile = bid.installer.installerProfile;
+        if (!profile) return -Infinity;
+
+        // Price Score (lower is better, normalized)
+        // A bid at the min budget gets 1, at max budget gets 0. Bids below min get > 1.
+        const priceRange = job.budget.max - job.budget.min;
+        const priceScore = priceRange > 0 ? (job.budget.max - bid.amount) / priceRange : 1;
+        
+        // Rating Score (0-5 scale to 0-1 scale)
+        const ratingScore = profile.rating / 5;
+
+        // Reputation Score (logarithmic to handle large numbers, normalized somewhat arbitrarily)
+        const reputationScore = Math.log1p(profile.points) / Math.log1p(3000); // 3000 is a hypothetical max points
+
+        // Weights
+        const W_PRICE = 0.5;
+        const W_RATING = 0.3;
+        const W_REPUTATION = 0.2;
+
+        return (priceScore * W_PRICE) + (ratingScore * W_RATING) + (reputationScore * W_REPUTATION);
+    }
+
+    const sortedBids = React.useMemo(() => {
+        return [...job.bids]
+            .map(bid => ({ bid, score: calculateBidScore(bid, job) }))
+            .sort((a, b) => b.score - a.score);
+    }, [job.bids, job.budget]);
+
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Received Bids ({job.bids.length})</CardTitle>
         <CardDescription>
-          {job.awardedInstaller ? 'An installer has been selected for this job.' : 'Review the bids from installers and select the best fit.'}
+          {job.awardedInstaller ? 'An installer has been selected for this job.' : 'Review the ranked bids from installers and select the best fit.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {job.bids.map((bid) => (
-          <JobGiverBid key={bid.id} bid={bid} job={job} onSelectInstaller={handleSelectInstaller}/>
+        {sortedBids.map(({ bid }, index) => (
+          <JobGiverBid key={bid.id} bid={bid} job={job} onSelectInstaller={handleSelectInstaller} rank={index + 1}/>
         ))}
       </CardContent>
     </Card>
@@ -308,7 +342,7 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
         if (comment.timestamp) {
             setTimeAgo(formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true }));
         }
-    }, [comment.timestamp.toISOString()]);
+    }, [comment.timestamp]);
 
     return (
         <div key={comment.id} className="flex gap-3">
@@ -565,3 +599,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
