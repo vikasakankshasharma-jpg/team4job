@@ -131,7 +131,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank }: { bid: Bid, job: Job
         if(bid.timestamp) {
             setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
         }
-    }, [bid.timestamp]);
+    }, [bid.timestamp.toISOString()]);
 
     return (
         <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && rank === 1 ? 'border-primary' : ''}`}>
@@ -604,3 +604,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
