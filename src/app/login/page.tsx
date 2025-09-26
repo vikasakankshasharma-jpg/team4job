@@ -28,9 +28,9 @@ export default function LoginPage() {
         <TabsContent value="login">
           <Card>
             <CardHeader>
-              <CardTitle>Welcome Back</CardTitle>
+              <CardTitle>Log In As Dummy User</CardTitle>
               <CardDescription>
-                Enter your credentials to access your account.
+                Select a user profile to explore the application.
               </CardDescription>
             </CardHeader>
             <CardContent>

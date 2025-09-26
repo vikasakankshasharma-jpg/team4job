@@ -29,13 +29,19 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Simulate fetching logged in user on mount
-    const loggedInUser = users[0];
-    if (loggedInUser) {
-      setUser(loggedInUser);
-      // Set initial role to first available role, prefer Installer
-      const initialRole = loggedInUser.roles.includes("Installer") ? "Installer" : "Job Giver";
-      setRoleState(initialRole);
+    const storedUserId = localStorage.getItem('loggedInUserId');
+    if (storedUserId) {
+        const loggedInUser = users.find(u => u.id === storedUserId);
+        if (loggedInUser) {
+            setUser(loggedInUser);
+            const storedRole = localStorage.getItem('userRole') as Role;
+            if (storedRole && loggedInUser.roles.includes(storedRole)) {
+                setRoleState(storedRole);
+            } else {
+                const initialRole = loggedInUser.roles.includes("Installer") ? "Installer" : "Job Giver";
+                setRoleState(initialRole);
+            }
+        }
     }
   }, []);
 
@@ -58,18 +64,23 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     const foundUser = users.find((u) => u.id === userId);
     if (foundUser) {
       setUser(foundUser);
+      localStorage.setItem('loggedInUserId', userId);
       const initialRole = foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
       setRoleState(initialRole);
+      localStorage.setItem('userRole', initialRole);
     }
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('loggedInUserId');
+    localStorage.removeItem('userRole');
   };
 
   const setRole = (newRole: Role) => {
     if (user && user.roles.includes(newRole)) {
       setRoleState(newRole);
+      localStorage.setItem('userRole', newRole);
     }
   };
 
