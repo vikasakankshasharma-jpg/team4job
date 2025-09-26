@@ -133,7 +133,7 @@ export default function BrowseJobsPage() {
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <Tabs defaultValue="all">
+      <Tabs defaultValue="recommended">
         <div className="flex items-center">
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
