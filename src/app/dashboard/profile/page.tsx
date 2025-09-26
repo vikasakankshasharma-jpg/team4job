@@ -103,6 +103,11 @@ function EditProfileForm({ user, onSave }) {
 export default function ProfilePage() {
   const { user, role, setUser } = useUser(); // Using a mock setUser for demo
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
+
+   const jobsCompletedCount = React.useMemo(() => {
+    if (role !== 'Installer' || !user) return 0;
+    return jobs.filter(job => job.status === 'Completed' && job.awardedInstaller === user.id).length;
+  }, [user, role]);
   
   if (!user) {
     return <div>Loading...</div>;
@@ -142,8 +147,11 @@ export default function ProfilePage() {
                     </Badge>
                 )}
               </div>
-              <p className="text-muted-foreground">{user.email}</p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+               <div className="flex flex-col mt-1">
+                <p className="text-muted-foreground">{user.email}</p>
+                <p className="text-sm text-muted-foreground">{user.anonymousId}</p>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
                 <CalendarDays className="h-4 w-4" />
                 <span>Member since {format(user.memberSince, 'MMMM yyyy')}</span>
               </div>
@@ -272,7 +280,7 @@ export default function ProfilePage() {
                     </div>
                     <Link href="/dashboard/my-bids?status=Completed" className="block p-4 rounded-lg border hover:bg-accent transition-colors">
                         <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary"/>
-                        <p className="text-2xl font-bold">{installerProfile.jobsCompleted}</p>
+                        <p className="text-2xl font-bold">{jobsCompletedCount}</p>
                         <p className="text-sm text-muted-foreground">Jobs Completed</p>
                     </Link>
                 </div>

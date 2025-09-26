@@ -24,7 +24,7 @@ export type User = {
 
 export type Comment = {
   id: string;
-  author: Pick<User, 'id' | 'name' | 'avatarUrl' | 'anonymousId'>;
+  author: Pick<User, 'id' | 'name' | 'avatarUrl' | 'anonymousId' | 'memberSince'>;
   timestamp: Date;
   content: string;
 };
