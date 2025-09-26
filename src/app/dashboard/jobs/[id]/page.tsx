@@ -124,7 +124,7 @@ function InstallerBidSection({ job }: { job: Job }) {
   );
 }
 
-function JobGiverBid({ bid, job, onSelectInstaller, rank }: { bid: Bid, job: Job, onSelectInstaller: (installerId: string) => void, rank: number }) {
+function JobGiverBid({ bid, job, onSelectInstaller, rank, isSelected }: { bid: Bid, job: Job, onSelectInstaller: (installerId: string) => void, rank: number, isSelected: boolean }) {
     const [timeAgo, setTimeAgo] = React.useState('');
     const isAwardedToThisBidder = job.awardedInstaller === bid.installer.id;
     const isJobAwarded = !!job.awardedInstaller;
@@ -155,7 +155,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank }: { bid: Bid, job: Job
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
                             <span>{bid.installer.installerProfile?.rating} ({bid.installer.installerProfile?.reviews} reviews)</span>
-                            {!isAwardedToThisBidder && <span className="font-mono">{bid.installer.anonymousId}</span>}
+                            <span className="font-mono">{bid.installer.anonymousId}</span>
                             {bid.installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
                         </div>
                     </div>
@@ -170,14 +170,14 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank }: { bid: Bid, job: Job
                  <Button 
                     size="sm" 
                     onClick={() => onSelectInstaller(bid.installer.id)}
-                    disabled={isJobAwarded}
+                    disabled={isJobAwarded || isSelected}
                     variant={isAwardedToThisBidder ? 'secondary' : 'default'}
                  >
                     {isAwardedToThisBidder ? (
                         <>
                             <Award className="mr-2 h-4 w-4" /> Awarded
                         </>
-                    ) : 'Select Installer'}
+                    ) : isSelected ? 'Selected' : 'Select Installer'}
                 </Button>
                 <Button size="sm" variant="outline">Message</Button>
             </div>
@@ -187,15 +187,20 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank }: { bid: Bid, job: Job
 
 function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Job) => void }) {
     const { toast } = useToast();
+    const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>(job.selectedInstallers?.map(i => i.installerId) || []);
 
     const handleSelectInstaller = (installerId: string) => {
-        const updatedJob = { ...job, awardedInstaller: installerId, status: 'Awarded' as const };
+        // This is a temporary implementation for the first phase.
+        // It just marks the installer as selected in the UI.
+        const newSelected = [...selectedInstallers, installerId];
+        setSelectedInstallers(newSelected);
+
+        const updatedJob = { ...job, selectedInstallers: newSelected.map((id, index) => ({ installerId: id, rank: index + 1 })) };
         onJobUpdate(updatedJob);
         
-        const installer = users.find(u => u.id === installerId);
         toast({
-            title: "Installer Selected!",
-            description: `${installer?.anonymousId || 'The installer'} has been awarded the job.`,
+            title: "Installer Selected for Ranking",
+            description: `You have selected installer ${users.find(u=>u.id === installerId)?.anonymousId} for your shortlist.`,
         });
     };
 
@@ -240,7 +245,14 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
       </CardHeader>
       <CardContent className="space-y-4">
         {sortedBids.map(({ bid }, index) => (
-          <JobGiverBid key={bid.id} bid={bid} job={job} onSelectInstaller={handleSelectInstaller} rank={index + 1}/>
+          <JobGiverBid 
+            key={bid.id} 
+            bid={bid} 
+            job={job} 
+            onSelectInstaller={handleSelectInstaller} 
+            rank={index + 1}
+            isSelected={selectedInstallers.includes(bid.installer.id)}
+          />
         ))}
       </CardContent>
     </Card>

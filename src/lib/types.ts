@@ -30,7 +30,7 @@ export type Comment = {
 };
 
 export type Bid = {
-  id: string;
+  id:string;
   installer: User;
   amount: number;
   timestamp: Date;
@@ -53,7 +53,7 @@ export type Job = {
   postedAt: Date;
   bids: Bid[];
   comments: Comment[];
-  selectedInstallers?: User['id'][];
+  selectedInstallers?: { installerId: string, rank: number }[];
   awardedInstaller?: User['id'];
   rating?: number;
 };
