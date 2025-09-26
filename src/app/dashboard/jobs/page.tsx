@@ -42,12 +42,14 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
+import { useUser } from "@/hooks/use-user";
 
 // Get unique skills from jobs data for filter
 const allSkills = Array.from(new Set(jobs.flatMap(job => job.description.toLowerCase().match(/ip camera|nvr setup|cabling|troubleshooting|ptz|vms|access control/g) || [])));
 
 
 export default function BrowseJobsPage() {
+  const { user } = useUser();
   const [searchPincode, setSearchPincode] = React.useState("");
   const [budget, setBudget] = React.useState([0, 150000]);
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
@@ -82,24 +84,31 @@ export default function BrowseJobsPage() {
   
   const openJobs = jobs.filter((job) => job.status === "Open for Bidding");
 
-  const filteredJobs = openJobs.filter((job) => {
-    // Pincode filter
-    if (searchPincode !== "" && !job.location.includes(searchPincode)) {
-        return false;
-    }
-    // Budget filter
-    if (job.budget.max < budget[0] || job.budget.min > budget[1]) {
-        return false;
-    }
-    // Skills filter
-    if (selectedSkills.length > 0) {
-        const jobSkills = job.description.toLowerCase();
-        if (!selectedSkills.every(skill => jobSkills.includes(skill))) {
+  const filterJobs = (jobsToFilter: typeof jobs) => {
+    return jobsToFilter.filter((job) => {
+        // Pincode filter
+        if (searchPincode !== "" && !job.location.includes(searchPincode)) {
             return false;
         }
-    }
-    return true;
-  });
+        // Budget filter
+        if (job.budget.max < budget[0] || job.budget.min > budget[1]) {
+            return false;
+        }
+        // Skills filter
+        if (selectedSkills.length > 0) {
+            const jobSkills = job.description.toLowerCase();
+            if (!selectedSkills.every(skill => jobSkills.includes(skill))) {
+                return false;
+            }
+        }
+        return true;
+    });
+  }
+
+  const filteredJobs = filterJobs(openJobs);
+
+  const recommendedJobs = user ? openJobs.filter(job => job.location.includes(user.pincode)) : [];
+  const filteredRecommendedJobs = filterJobs(recommendedJobs);
 
   const clearFilters = () => {
     setSearchPincode("");
@@ -232,7 +241,36 @@ export default function BrowseJobsPage() {
             </CardFooter>
           </Card>
         </TabsContent>
+        <TabsContent value="recommended">
+           <Card>
+            <CardHeader>
+              <CardTitle>Recommended For You</CardTitle>
+              <CardDescription>
+                Jobs that match your profile pincode: {user?.pincode}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {filteredRecommendedJobs.map(job => (
+                        <JobCard key={job.id} job={job} />
+                    ))}
+                </div>
+                 {filteredRecommendedJobs.length === 0 && (
+                  <div className="text-center py-10">
+                    <p className="text-muted-foreground">No recommended jobs found in your area right now.</p>
+                  </div>
+                )}
+            </CardContent>
+            <CardFooter>
+               <div className="text-xs text-muted-foreground">
+                Showing <strong>{filteredRecommendedJobs.length}</strong> of <strong>{recommendedJobs.length}</strong> recommended jobs
+              </div>
+            </CardFooter>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
 }
+
+    
