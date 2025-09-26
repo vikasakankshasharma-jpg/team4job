@@ -19,6 +19,7 @@ import { users } from "@/lib/data";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { Gem, Medal, ShieldCheck } from "lucide-react";
+import { format } from "date-fns";
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
@@ -40,6 +41,7 @@ export default function UsersPage() {
             <TableRow>
               <TableHead>User</TableHead>
               <TableHead>Roles</TableHead>
+              <TableHead className="hidden sm:table-cell">Member Since</TableHead>
               <TableHead className="hidden sm:table-cell">Installer Tier</TableHead>
               <TableHead className="hidden sm:table-cell">Rating</TableHead>
               <TableHead className="text-right">Reputation</TableHead>
@@ -66,6 +68,9 @@ export default function UsersPage() {
                         <Badge key={role} variant="outline">{role}</Badge>
                     ))}
                   </div>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">
+                    {format(user.memberSince, 'MMM, yyyy')}
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
                     {user.installerProfile ? (

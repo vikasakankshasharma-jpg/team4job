@@ -9,6 +9,7 @@ export type User = {
   realAvatarUrl: string;
   pincode: string;
   roles: ('Job Giver' | 'Installer')[];
+  memberSince: Date;
   installerProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;
@@ -40,7 +41,7 @@ export type Job = {
   id: string;
   title: string;
   description: string;
-  jobGiver: Pick<User, 'id' | 'name' | 'avatarUrl' | 'anonymousId'>;
+  jobGiver: Pick<User, 'id' | 'name' | 'avatarUrl' | 'anonymousId' | 'memberSince'>;
   location: string; // Pincode
   budget: {
     min: number;

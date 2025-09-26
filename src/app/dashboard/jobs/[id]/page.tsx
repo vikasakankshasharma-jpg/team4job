@@ -35,6 +35,7 @@ import {
   CheckCircle2,
   TrendingUp,
   Trophy,
+  CalendarDays,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -132,7 +133,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank }: { bid: Bid, job: Job
         if(bid.timestamp) {
             setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
         }
-    }, [bid.timestamp.toISOString()]);
+    }, [bid.timestamp]);
 
     return (
         <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && rank === 1 ? 'border-primary' : ''}`}>
@@ -348,7 +349,7 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
         if (comment.timestamp) {
             setTimeAgo(formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true }));
         }
-    }, [comment.timestamp?.toISOString()]);
+    }, [comment.timestamp]);
 
     return (
         <div key={comment.id} className="flex gap-3">
@@ -501,7 +502,7 @@ export default function JobDetailPage() {
                     </Avatar>
                     <div>
                         <p className="text-sm font-semibold">{job.jobGiver.anonymousId}</p>
-                        <p className="text-xs text-muted-foreground">Job Giver</p>
+                        <p className="text-xs text-muted-foreground">Job Giver (Member since {format(job.jobGiver.memberSince, 'MMM yyyy')})</p>
                     </div>
                 </div>
             </div>

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { jobs } from "@/lib/data";
+import { format } from "date-fns";
 
 
 const tierIcons = {
@@ -141,8 +142,11 @@ export default function ProfilePage() {
                     </Badge>
                 )}
               </div>
-              <p className="mt-1">{user.email}</p>
-               <p className="text-sm text-muted-foreground">{user.anonymousId}</p>
+              <p className="text-muted-foreground">{user.email}</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                <CalendarDays className="h-4 w-4" />
+                <span>Member since {format(user.memberSince, 'MMMM yyyy')}</span>
+              </div>
               <div className="mt-4">
                 <Dialog>
                     <DialogTrigger asChild>

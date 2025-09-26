@@ -25,6 +25,7 @@ export const users: User[] = [
     realAvatarUrl: 'https://picsum.photos/seed/alex/100/100',
     pincode: '110001',
     roles: ['Job Giver', 'Installer'],
+    memberSince: new Date('2022-08-15'),
     installerProfile: {
       tier: 'Gold',
       points: 1250,
@@ -52,6 +53,7 @@ export const users: User[] = [
     realAvatarUrl: 'https://picsum.photos/seed/brenda/100/100',
     pincode: '400001',
     roles: ['Job Giver'],
+    memberSince: new Date('2023-01-20'),
   },
   {
     id: 'user-3',
@@ -62,6 +64,7 @@ export const users: User[] = [
     realAvatarUrl: 'https://picsum.photos/seed/carlos/100/100',
     pincode: '500001',
     roles: ['Installer'],
+    memberSince: new Date('2023-05-10'),
     installerProfile: {
       tier: 'Silver',
       points: 600,
@@ -89,6 +92,7 @@ export const users: User[] = [
     realAvatarUrl: 'https://picsum.photos/seed/diana/100/100',
     pincode: '600001',
     roles: ['Installer'],
+    memberSince: new Date('2024-03-01'),
     installerProfile: {
       tier: 'Bronze',
       points: 250,
@@ -116,6 +120,7 @@ export const users: User[] = [
     realAvatarUrl: 'https://picsum.photos/seed/ethan/100/100',
     pincode: '110031',
     roles: ['Installer'],
+    memberSince: new Date('2021-11-11'),
     installerProfile: {
       tier: 'Platinum',
       points: 2500,
@@ -143,6 +148,7 @@ export const users: User[] = [
     realAvatarUrl: 'https://picsum.photos/seed/fiona/100/100',
     pincode: '400050',
     roles: ['Job Giver'],
+    memberSince: new Date('2022-04-30'),
   },
   {
     id: 'user-7',
@@ -153,6 +159,7 @@ export const users: User[] = [
     realAvatarUrl: 'https://picsum.photos/seed/george/100/100',
     pincode: '800001',
     roles: ['Installer'],
+    memberSince: new Date('2023-08-01'),
     installerProfile: {
       tier: 'Gold',
       points: 1100,
@@ -180,6 +187,7 @@ export const users: User[] = [
     realAvatarUrl: 'https://picsum.photos/seed/hannah/100/100',
     pincode: '500032',
     roles: ['Job Giver', 'Installer'],
+    memberSince: new Date('2024-01-10'),
     installerProfile: {
       tier: 'Silver',
       points: 450,
@@ -263,21 +271,21 @@ const bids: {[key: string]: Bid[]} = {
   'JOB-20240920-1A3B': [
     {
       id: 'bid-1-1',
-      installer: users[0],
+      installer: users.find(u => u.id === 'user-1')!,
       amount: 14000,
       timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
       coverLetter: "With over 5 years of experience in IP camera systems and NVR setups, I can ensure a professional and clean installation. My bid includes all necessary cabling and configuration for remote viewing.",
     },
     {
       id: 'bid-1-2',
-      installer: users[2],
+      installer: users.find(u => u.id === 'user-3')!,
       amount: 12500,
       timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
       coverLetter: "I am confident I can complete this job to your satisfaction. I have experience with all major brands and can provide a cost-effective solution without compromising on quality.",
     },
     {
       id: 'bid-1-3',
-      installer: users[4],
+      installer: users.find(u => u.id === 'user-5')!,
       amount: 18000,
       timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000), // 4 hours ago
       coverLetter: "As a Platinum tier installer specializing in advanced systems, I can offer a premium installation with optimized camera placement and robust network configuration for flawless performance. My bid reflects a higher quality of service and components.",
@@ -286,7 +294,7 @@ const bids: {[key: string]: Bid[]} = {
   'JOB-20240922-2B4C': [
      {
       id: 'bid-2-1',
-      installer: users[3],
+      installer: users.find(u => u.id === 'user-4')!,
       amount: 9000,
       timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
       coverLetter: "I can handle this upgrade efficiently. I'll ensure the new IP system is perfectly integrated.",
@@ -295,7 +303,7 @@ const bids: {[key: string]: Bid[]} = {
   'JOB-20240915-3C5D': [
      {
       id: 'bid-3-1',
-      installer: users[2],
+      installer: users.find(u => u.id === 'user-3')!,
       amount: 7500,
       timestamp: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
       coverLetter: "I specialize in residential installations and can complete this quickly and cleanly. I guarantee a user-friendly setup for your mobile devices.",
@@ -304,14 +312,14 @@ const bids: {[key: string]: Bid[]} = {
   'JOB-20240924-4D5E': [
      {
       id: 'bid-5-1',
-      installer: users[4],
+      installer: users.find(u => u.id === 'user-5')!,
       amount: 48000,
       timestamp: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
       coverLetter: "My team has extensive experience with large-scale warehouse projects. We use high-quality cabling and network gear to ensure reliable coverage across the entire area. We can also set up advanced analytics like line-crossing detection.",
     },
     {
       id: 'bid-5-2',
-      installer: users[6],
+      installer: users.find(u => u.id === 'user-7')!,
       amount: 45000,
       timestamp: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000 + 3600000), // 3 days ago + 1 hour
       coverLetter: "I have installed systems in 5 warehouses in the last year. My bid is competitive and I can start next week.",
@@ -320,7 +328,7 @@ const bids: {[key: string]: Bid[]} = {
   'JOB-20240917-5E6F': [
       {
       id: 'bid-6-1',
-      installer: users[0],
+      installer: users.find(u => u.id === 'user-1')!,
       amount: 11000,
       timestamp: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
       coverLetter: "I'm a Gold-tier installer with experience in retail environments. I can ensure minimal disruption to your business operations during the installation.",
@@ -329,7 +337,7 @@ const bids: {[key: string]: Bid[]} = {
   'JOB-20240918-8J9K': [
     {
       id: 'bid-9-1',
-      installer: users[0],
+      installer: users.find(u => u.id === 'user-1')!,
       amount: 6000,
       timestamp: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000), // 8 days ago
       coverLetter: "I can handle this residential setup. My work is clean and I will ensure you are happy with the camera placements.",
@@ -338,23 +346,23 @@ const bids: {[key: string]: Bid[]} = {
   'JOB-20240801-K2L3': [
      {
       id: 'bid-10-1',
-      installer: users[0],
+      installer: users.find(u => u.id === 'user-1')!,
       amount: 22000,
-      timestamp: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000), // 25 days ago
+      timestamp: new Date('2024-08-03T10:00:00Z'),
       coverLetter: "Completed this project successfully.",
     },
   ],
    'JOB-20240925-P2Q3': [
     {
       id: 'bid-12-1',
-      installer: users[0],
+      installer: users.find(u => u.id === 'user-1')!,
       amount: 28000,
       timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
       coverLetter: "I have experience with multi-building wireless bridges and can ensure a seamless, unified system. My bid includes high-grade outdoor-rated equipment.",
     },
     {
       id: 'bid-12-2',
-      installer: users[2],
+      installer: users.find(u => u.id === 'user-3')!,
       amount: 26500,
       timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000 + 3600000), // 1 day ago + 1 hour
       coverLetter: "My team can handle this campus-wide installation, including all trenching and cabling required for the fiber link between buildings.",
@@ -363,7 +371,7 @@ const bids: {[key: string]: Bid[]} = {
   'JOB-20240928-R4S5': [
     {
       id: 'bid-13-1',
-      installer: users[3],
+      installer: users.find(u => u.id === 'user-4')!,
       amount: 2800,
       timestamp: new Date(now.getTime() - 1 * 60 * 60 * 1000), // 1 hour ago
       coverLetter: "I can troubleshoot your NVR and camera connectivity issues. I have a feeling it might be a network switch problem. I can diagnose and fix it.",
@@ -372,21 +380,22 @@ const bids: {[key: string]: Bid[]} = {
   'JOB-20240910-T6U7': [
       {
       id: 'bid-14-1',
-      installer: users[2],
+      installer: users.find(u => u.id === 'user-3')!,
       amount: 19000,
-      timestamp: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
+      timestamp: new Date('2024-09-11T10:00:00Z'),
       coverLetter: "My team and I can handle this.",
     },
   ]
 };
 
+const findUser = (id: string) => users.find(u => u.id === id)!;
 
 export const jobs: Job[] = [
   {
     id: 'JOB-20240920-1A3B',
     title: 'Install 8 IP Cameras for a 2-Story Office Building',
     description: "We are looking for a professional installer to set up a comprehensive surveillance system for our new office. The job involves installing 8 high-definition IP cameras covering both indoor and outdoor areas. The installer will also be responsible for setting up the Network Video Recorder (NVR), configuring motion detection, and enabling remote viewing access on mobile devices. All equipment will be provided, but the installer must supply their own tools and manage all cabling and mounting.",
-    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: users.find(u => u.id === 'user-2')?.anonymousId || '', avatarUrl: userAvatars['user-2'] },
+    jobGiver: findUser('user-2'),
     location: '400001, Mumbai',
     budget: { min: 10000, max: 20000 },
     status: 'Open for Bidding',
@@ -400,7 +409,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240922-2B4C',
     title: 'CCTV System Upgrade for a Retail Store',
     description: "Upgrading an existing 4-camera analog system to a modern 6-camera IP system. The job requires removing the old DVR and cameras, and installing new IP cameras with a new NVR. The installer should be able to advise on optimal camera placement for maximum coverage of the sales floor and entrance/exit points. Experience with POS integration is a plus.",
-    jobGiver: { id: 'user-1', name: 'Alex Johnson', anonymousId: users.find(u => u.id === 'user-1')?.anonymousId || '', avatarUrl: userAvatars['user-1'] },
+    jobGiver: findUser('user-1'),
     location: '110001, Delhi',
     budget: { min: 8000, max: 15000 },
     status: 'Open for Bidding',
@@ -414,7 +423,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240915-3C5D',
     title: 'Residential 4-Camera Security Installation',
     description: "Seeking an installer for a standard 4-camera setup for a single-family home. Cameras to be placed at the front door, back door, driveway, and backyard. Simple setup with a DVR and mobile viewing required. Straightforward project for an experienced residential installer.",
-    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: users.find(u => u.id === 'user-2')?.anonymousId || '', avatarUrl: userAvatars['user-2'] },
+    jobGiver: findUser('user-2'),
     location: '600001, Chennai',
     budget: { min: 5000, max: 8000 },
     status: 'Awarded',
@@ -429,15 +438,15 @@ export const jobs: Job[] = [
     id: 'JOB-20240825-4D6E',
     title: 'Maintenance and Check-up for existing system',
     description: "Need a technician to perform a full system check on our 16-camera setup. This includes cleaning lenses, checking all connections, ensuring the NVR is recording properly, and verifying that remote access is functional. The system is 2 years old.",
-    jobGiver: { id: 'user-1', name: 'Alex Johnson', anonymousId: users.find(u => u.id === 'user-1')?.anonymousId || '', avatarUrl: userAvatars['user-1'] },
+    jobGiver: findUser('user-1'),
     location: '500001, Hyderabad',
     budget: { min: 2000, max: 4000 },
     status: 'Completed',
     awardedInstaller: 'user-1',
     rating: 5,
-    deadline: new Date(now.getTime() - 32 * 24 * 60 * 60 * 1000), // Old date
-    jobStartDate: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), // Old date
-    postedAt: new Date(now.getTime() - 33 * 24 * 60 * 60 * 1000), // Old date
+    deadline: new Date('2024-08-28T23:59:59Z'), // Old date
+    jobStartDate: new Date('2024-09-01T09:00:00Z'), // Old date
+    postedAt: new Date('2024-08-25T10:00:00Z'), // Old date
     bids: [],
     comments: [],
   },
@@ -445,7 +454,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240924-4D5E',
     title: 'Install 32 PTZ Cameras in a Warehouse',
     description: 'We require a comprehensive surveillance solution for our new logistics warehouse. This involves installing 32 Pan-Tilt-Zoom (PTZ) cameras at strategic locations, setting up a centralized monitoring station with a Video Management System (VMS), and ensuring full wireless coverage across the facility. Only verified installers with experience in large-scale industrial projects should apply.',
-    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: users.find(u => u.id === 'user-6')?.anonymousId || '', avatarUrl: userAvatars['user-6'] },
+    jobGiver: findUser('user-6'),
     location: '400050, Mumbai',
     budget: { min: 40000, max: 75000 },
     status: 'Open for Bidding',
@@ -459,7 +468,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240917-5E6F',
     title: 'Boutique Shop Camera Setup with Covert Cameras',
     description: 'Looking for a discreet security camera installation for a high-end boutique. The project requires 4-6 cameras, some of which must be covert or hidden. Aesthetics are very important. The system should be accessible remotely and have high-quality recording capabilities.',
-    jobGiver: { id: 'user-8', name: 'Hannah Simone', anonymousId: users.find(u => u.id === 'user-8')?.anonymousId || '', avatarUrl: userAvatars['user-8'] },
+    jobGiver: findUser('user-8'),
     location: '500032, Hyderabad',
     budget: { min: 9000, max: 18000 },
     status: 'Awarded',
@@ -474,7 +483,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240922-6F7G',
     title: 'Solar-Powered Camera for Remote Farm',
     description: 'Need to install one or two solar-powered 4G cameras to monitor a remote agricultural property. The location has no power or Wi-Fi. The installer must provide a complete solution including the solar panel, battery, and 4G camera setup. ',
-    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: users.find(u => u.id === 'user-2')?.anonymousId || '', avatarUrl: userAvatars['user-2'] },
+    jobGiver: findUser('user-2'),
     location: '800001, Patna',
     budget: { min: 15000, max: 25000 },
     status: 'Open for Bidding',
@@ -488,14 +497,14 @@ export const jobs: Job[] = [
     id: 'JOB-20240816-7G8H',
     title: 'Apartment Complex Access Control & CCTV',
     description: 'We are seeking bids for a full security overall for a 50-unit apartment building. This includes installing cameras in all common areas (lobbies, hallways, parking) and setting up an access control system for the main entrance. The job will be awarded to a company that can handle both aspects.',
-    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: users.find(u => u.id === 'user-6')?.anonymousId || '', avatarUrl: userAvatars['user-6'] },
+    jobGiver: findUser('user-6'),
     location: '110001, Delhi',
     budget: { min: 80000, max: 150000 },
     status: 'In Progress',
     awardedInstaller: 'user-5',
-    deadline: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000), // Bidding ended 20 days ago
-    jobStartDate: new Date(now.getTime() - 18 * 24 * 60 * 60 * 1000), // Started 18 days ago
-    postedAt: new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000), // 45 days ago
+    deadline: new Date('2024-09-01T23:59:59Z'), // Bidding ended
+    jobStartDate: new Date('2024-09-03T09:00:00Z'), // Started
+    postedAt: new Date('2024-08-16T11:00:00Z'), // Posted
     bids: [],
     comments: [],
   },
@@ -503,7 +512,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240918-8J9K',
     title: '4 Camera setup for a new house',
     description: 'This is for a new house construction. Need 4 cameras installed. 2 outdoor, 2 indoor. All wiring needs to be concealed. The job giver will provide cameras and NVR.',
-    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: users.find(u => u.id === 'user-6')?.anonymousId || '', avatarUrl: userAvatars['user-6'] },
+    jobGiver: findUser('user-6'),
     location: '400050, Mumbai',
     budget: { min: 5000, max: 9000 },
     status: 'Cancelled',
@@ -518,15 +527,15 @@ export const jobs: Job[] = [
     id: 'JOB-20240801-K2L3',
     title: 'Corporate Office Full Security System',
     description: 'Installation of 15 cameras, access control on 5 doors, and a central monitoring room setup for a corporate office. High-end equipment required.',
-    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: users.find(u => u.id === 'user-6')?.anonymousId || '', avatarUrl: userAvatars['user-6'] },
+    jobGiver: findUser('user-6'),
     location: '500032, Hyderabad',
     budget: { min: 20000, max: 30000 },
     status: 'Completed',
     awardedInstaller: 'user-1',
     rating: 4,
-    deadline: new Date(now.getTime() - 50 * 24 * 60 * 60 * 1000), // Old date
-    jobStartDate: new Date(now.getTime() - 48 * 24 * 60 * 60 * 1000), // Old date
-    postedAt: new Date(now.getTime() - 58 * 24 * 60 * 60 * 1000), // Old date
+    deadline: new Date('2024-08-05T23:59:59Z'), // Old date
+    jobStartDate: new Date('2024-08-07T09:00:00Z'), // Old date
+    postedAt: new Date('2024-08-01T14:00:00Z'), // Old date
     bids: bids['JOB-20240801-K2L3'],
     comments: [],
   },
@@ -534,15 +543,15 @@ export const jobs: Job[] = [
     id: 'JOB-20240715-M4N5',
     title: 'School Campus Camera Overhaul',
     description: 'Full overhaul of a school campus security system. Requires 20+ cameras, NVR, and integration with an existing alert system.',
-    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: users.find(u => u.id === 'user-2')?.anonymousId || '', avatarUrl: userAvatars['user-2'] },
+    jobGiver: findUser('user-2'),
     location: '110001, Delhi',
     budget: { min: 50000, max: 80000 },
     status: 'Completed',
     awardedInstaller: 'user-1',
     rating: 5,
-    deadline: new Date(now.getTime() - 67 * 24 * 60 * 60 * 1000), // Old date
-    jobStartDate: new Date(now.getTime() - 65 * 24 * 60 * 60 * 1000), // Old date
-    postedAt: new Date(now.getTime() - 77 * 24 * 60 * 60 * 1000), // Old date
+    deadline: new Date('2024-07-20T23:59:59Z'), // Old date
+    jobStartDate: new Date('2024-07-22T09:00:00Z'), // Old date
+    postedAt: new Date('2024-07-15T12:00:00Z'), // Old date
     bids: [],
     comments: [],
   },
@@ -550,7 +559,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240925-P2Q3',
     title: 'Connect Two Buildings with Wireless Bridge',
     description: 'We need to link the camera systems of two adjacent buildings. This requires setting up a point-to-point wireless bridge. The distance is approximately 200 meters with clear line of sight. The goal is to have a unified view of cameras from both buildings on a single NVR.',
-    jobGiver: { id: 'user-1', name: 'Alex Johnson', anonymousId: users.find(u => u.id === 'user-1')?.anonymousId || '', avatarUrl: userAvatars['user-1'] },
+    jobGiver: findUser('user-1'),
     location: '500001, Hyderabad',
     budget: { min: 25000, max: 40000 },
     status: 'Open for Bidding',
@@ -564,7 +573,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240928-R4S5',
     title: 'Troubleshoot NVR Not Recording',
     description: 'Our 8-camera NVR has stopped recording on 3 channels. The live view is working fine, but no footage is being saved from the affected cameras. We need an experienced technician to diagnose and fix the issue. Might be a hard drive issue or configuration problem.',
-    jobGiver: { id: 'user-8', name: 'Hannah Simone', anonymousId: users.find(u => u.id === 'user-8')?.anonymousId || '', avatarUrl: userAvatars['user-8'] },
+    jobGiver: findUser('user-8'),
     location: '500032, Hyderabad',
     budget: { min: 2000, max: 3500 },
     status: 'Open for Bidding',
@@ -578,15 +587,15 @@ export const jobs: Job[] = [
     id: 'JOB-20240910-T6U7',
     title: 'Cafe Interior and Exterior Camera Setup',
     description: 'Setting up 4 dome cameras inside a small cafe and 2 bullet cameras for the exterior. Need clear footage of the entrance and seating areas. The job includes all wiring and setup on a new NVR system.',
-    jobGiver: { id: 'user-2', name: 'Brenda Smith', anonymousId: users.find(u => u.id === 'user-2')?.anonymousId || '', avatarUrl: userAvatars['user-2'] },
+    jobGiver: findUser('user-2'),
     location: '600001, Chennai',
     budget: { min: 15000, max: 22000 },
     status: 'Completed',
     awardedInstaller: 'user-3',
     rating: 5,
-    deadline: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000), // 12 days ago
-    jobStartDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-    postedAt: new Date(now.getTime() - 17 * 24 * 60 * 60 * 1000), // 17 days ago
+    deadline: new Date('2024-09-12T23:59:59Z'), // Old date
+    jobStartDate: new Date('2024-09-15T09:00:00Z'), // Old date
+    postedAt: new Date('2024-09-10T09:00:00Z'), // Old date
     bids: bids['JOB-20240910-T6U7'],
     comments: [],
   },
@@ -594,7 +603,7 @@ export const jobs: Job[] = [
     id: 'JOB-20240905-V8W9',
     title: 'Bidding Closed Job Example',
     description: 'This is a job where the bidding period has ended, but the job giver has not yet selected an installer. It should appear as "Bidding Closed".',
-    jobGiver: { id: 'user-6', name: 'Fiona Glenanne', anonymousId: users.find(u => u.id === 'user-6')?.anonymousId || '', avatarUrl: userAvatars['user-6'] },
+    jobGiver: findUser('user-6'),
     location: '800001, Patna',
     budget: { min: 5000, max: 10000 },
     status: 'Bidding Closed',
@@ -604,9 +613,10 @@ export const jobs: Job[] = [
     bids: [
       {
         id: 'bid-15-1',
-        installer: users[6],
+        installer: users.find(u => u.id === 'user-7')!,
         amount: 8000,
         timestamp: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000), // 4 days ago
+        coverLetter: 'I can do this job.'
       },
     ],
     comments: [],
