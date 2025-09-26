@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
+  Calendar,
   Clock,
   IndianRupee,
   MapPin,
@@ -131,7 +132,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank }: { bid: Bid, job: Job
         if(bid.timestamp) {
             setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
         }
-    }, [bid.timestamp.toISOString()]);
+    }, [bid.timestamp]);
 
     return (
         <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && rank === 1 ? 'border-primary' : ''}`}>
@@ -419,6 +420,7 @@ export default function JobDetailPage() {
   
   const [deadlineRelative, setDeadlineRelative] = React.useState('');
   const [deadlineAbsolute, setDeadlineAbsolute] = React.useState('');
+  const [jobStartDate, setJobStartDate] = React.useState('');
 
   React.useEffect(() => {
     if (id) {
@@ -428,6 +430,9 @@ export default function JobDetailPage() {
         setJobComments(foundJob.comments);
         setDeadlineRelative(formatDistanceToNow(new Date(foundJob.deadline), { addSuffix: true }));
         setDeadlineAbsolute(format(new Date(foundJob.deadline), "MMM d, yyyy"));
+        if(foundJob.jobStartDate){
+          setJobStartDate(format(new Date(foundJob.jobStartDate), "MMM d, yyyy"));
+        }
       }
     }
   }, [id]);
@@ -583,6 +588,13 @@ export default function JobDetailPage() {
                 <p className="font-semibold">{deadlineRelative} ({deadlineAbsolute})</p>
               </div>
             </div>
+             <div className="flex items-center gap-3">
+              <Calendar className="h-5 w-5" />
+              <div>
+                <p className="text-muted-foreground">Work Starts</p>
+                <p className="font-semibold">{jobStartDate}</p>
+              </div>
+            </div>
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5" />
               <div>
@@ -604,5 +616,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    

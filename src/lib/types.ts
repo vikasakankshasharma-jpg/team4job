@@ -32,7 +32,7 @@ export type Bid = {
   installer: User;
   amount: number;
   timestamp: Date;
-  coverLetter: string;
+  coverLetter?: string;
 };
 
 export type Job = {
@@ -47,6 +47,7 @@ export type Job = {
   };
   status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled';
   deadline: Date;
+  jobStartDate?: Date;
   postedAt: Date;
   bids: Bid[];
   comments: Comment[];
@@ -54,5 +55,3 @@ export type Job = {
   awardedInstaller?: User['id'];
   rating?: number;
 };
-
-    

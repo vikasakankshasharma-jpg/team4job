@@ -1,3 +1,4 @@
+
 import type { User, Job, Bid, Comment } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
@@ -384,6 +385,7 @@ export const jobs: Job[] = [
     budget: { min: 10000, max: 20000 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    jobStartDate: new Date(now.getTime() + 9 * 24 * 60 * 60 * 1000), // 9 days from now
     postedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
     bids: bids['JOB-20240920-1A3B'],
     comments: comments['JOB-20240920-1A3B'],
@@ -397,6 +399,7 @@ export const jobs: Job[] = [
     budget: { min: 8000, max: 15000 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
+    jobStartDate: new Date(now.getTime() + 12 * 24 * 60 * 60 * 1000), // 12 days from now
     postedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
     bids: bids['JOB-20240922-2B4C'] || [],
     comments: [],
@@ -411,6 +414,7 @@ export const jobs: Job[] = [
     status: 'Awarded',
     awardedInstaller: 'user-3',
     deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Bidding ended 2 days ago
+    jobStartDate: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000), // Starts in 2 days
     postedAt: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000), // 12 days ago
     bids: bids['JOB-20240915-3C5D'],
     comments: [],
@@ -426,6 +430,7 @@ export const jobs: Job[] = [
     awardedInstaller: 'user-1',
     rating: 5,
     deadline: new Date(now.getTime() - 32 * 24 * 60 * 60 * 1000), // Old date
+    jobStartDate: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), // Old date
     postedAt: new Date(now.getTime() - 33 * 24 * 60 * 60 * 1000), // Old date
     bids: [],
     comments: [],
@@ -439,6 +444,7 @@ export const jobs: Job[] = [
     budget: { min: 40000, max: 75000 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
+    jobStartDate: new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000), // 20 days from now
     postedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
     bids: bids['JOB-20240924-4D5E'],
     comments: comments['JOB-20240924-4D5E'],
@@ -453,6 +459,7 @@ export const jobs: Job[] = [
     status: 'Awarded',
     awardedInstaller: 'user-1',
     deadline: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // Bidding ended 3 days ago
+    jobStartDate: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000), // Starts tomorrow
     postedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
     bids: bids['JOB-20240917-5E6F'],
     comments: [],
@@ -466,6 +473,7 @@ export const jobs: Job[] = [
     budget: { min: 15000, max: 25000 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 12 * 24 * 60 * 60 * 1000), // 12 days from now
+    jobStartDate: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
     postedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
     bids: [],
     comments: [],
@@ -480,6 +488,7 @@ export const jobs: Job[] = [
     status: 'In Progress',
     awardedInstaller: 'user-5',
     deadline: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000), // Bidding ended 20 days ago
+    jobStartDate: new Date(now.getTime() - 18 * 24 * 60 * 60 * 1000), // Started 18 days ago
     postedAt: new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000), // 45 days ago
     bids: [],
     comments: [],
@@ -494,6 +503,7 @@ export const jobs: Job[] = [
     status: 'Cancelled',
     awardedInstaller: 'user-1',
     deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Bidding ended 2 days ago
+    jobStartDate: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000), // Was supposed to start tomorrow
     postedAt: new Date(now.getTime() - 9 * 24 * 60 * 60 * 1000), // 9 days ago
     bids: bids['JOB-20240918-8J9K'],
     comments: [],
@@ -509,6 +519,7 @@ export const jobs: Job[] = [
     awardedInstaller: 'user-1',
     rating: 4,
     deadline: new Date(now.getTime() - 50 * 24 * 60 * 60 * 1000), // Old date
+    jobStartDate: new Date(now.getTime() - 48 * 24 * 60 * 60 * 1000), // Old date
     postedAt: new Date(now.getTime() - 58 * 24 * 60 * 60 * 1000), // Old date
     bids: bids['JOB-20240801-K2L3'],
     comments: [],
@@ -524,6 +535,7 @@ export const jobs: Job[] = [
     awardedInstaller: 'user-1',
     rating: 5,
     deadline: new Date(now.getTime() - 67 * 24 * 60 * 60 * 1000), // Old date
+    jobStartDate: new Date(now.getTime() - 65 * 24 * 60 * 60 * 1000), // Old date
     postedAt: new Date(now.getTime() - 77 * 24 * 60 * 60 * 1000), // Old date
     bids: [],
     comments: [],
@@ -537,6 +549,7 @@ export const jobs: Job[] = [
     budget: { min: 25000, max: 40000 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 9 * 24 * 60 * 60 * 1000), // 9 days from now
+    jobStartDate: new Date(now.getTime() + 11 * 24 * 60 * 60 * 1000), // 11 days from now
     postedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
     bids: bids['JOB-20240925-P2Q3'],
     comments: comments['JOB-20240925-P2Q3'],
@@ -550,6 +563,7 @@ export const jobs: Job[] = [
     budget: { min: 2000, max: 3500 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000), // 4 days from now
+    jobStartDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
     postedAt: new Date(now.getTime() - 12 * 60 * 60 * 1000), // 12 hours ago
     bids: bids['JOB-20240928-R4S5'],
     comments: [],
@@ -565,6 +579,7 @@ export const jobs: Job[] = [
     awardedInstaller: 'user-3',
     rating: 5,
     deadline: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000), // 12 days ago
+    jobStartDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
     postedAt: new Date(now.getTime() - 17 * 24 * 60 * 60 * 1000), // 17 days ago
     bids: bids['JOB-20240910-T6U7'],
     comments: [],
@@ -578,6 +593,7 @@ export const jobs: Job[] = [
     budget: { min: 5000, max: 10000 },
     status: 'Bidding Closed',
     deadline: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // Bidding ended 1 day ago
+    jobStartDate: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000), // Starts in 3 days
     postedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
     bids: [
       {

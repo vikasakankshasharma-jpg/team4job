@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
@@ -39,10 +40,14 @@ const jobSchema = z.object({
   location: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
   budgetMin: z.coerce.number().min(1, { message: "Minimum budget must be at least 1." }),
   budgetMax: z.coerce.number().min(1, { message: "Maximum budget must be at least 1." }),
-  deadline: z.string().min(1, { message: "Please select a deadline." }),
+  deadline: z.string().min(1, { message: "Please select a bidding deadline." }),
+  jobStartDate: z.string().min(1, { message: "Please select a job start date." }),
 }).refine(data => data.budgetMax > data.budgetMin, {
     message: "Maximum budget must be greater than minimum budget.",
     path: ["budgetMax"],
+}).refine(data => new Date(data.jobStartDate) >= new Date(data.deadline), {
+    message: "Job start date must be on or after the bidding deadline.",
+    path: ["jobStartDate"],
 });
 
 export default function PostJobPage() {
@@ -263,6 +268,19 @@ export default function PostJobPage() {
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel>Bidding Deadline</FormLabel>
+                        <FormControl>
+                         <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="jobStartDate"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Job Work Start Date</FormLabel>
                         <FormControl>
                          <Input type="date" {...field} />
                         </FormControl>
