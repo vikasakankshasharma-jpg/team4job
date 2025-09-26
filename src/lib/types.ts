@@ -1,10 +1,12 @@
 
+
 export type User = {
   id: string;
   name: string;
   anonymousId: string;
   email: string;
   avatarUrl: string;
+  realAvatarUrl: string;
   pincode: string;
   roles: ('Job Giver' | 'Installer')[];
   installerProfile?: {

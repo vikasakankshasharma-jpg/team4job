@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -134,22 +134,26 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank }: { bid: Bid, job: Job
     }, [bid.timestamp]);
 
     return (
-        <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${rank === 1 ? 'border-primary' : ''}`}>
+        <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && rank === 1 ? 'border-primary' : ''}`}>
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                     <Avatar>
-                        <AnimatedAvatar svg={bid.installer.avatarUrl} />
-                        <AvatarFallback>{bid.installer.anonymousId.substring(0, 2)}</AvatarFallback>
+                       {isAwardedToThisBidder ? (
+                            <AvatarImage src={bid.installer.realAvatarUrl} alt={bid.installer.name} />
+                       ) : (
+                           <AnimatedAvatar svg={bid.installer.avatarUrl} />
+                       )}
+                        <AvatarFallback>{isAwardedToThisBidder ? bid.installer.name.substring(0, 2) : bid.installer.anonymousId.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
-                            <p className="font-semibold">Rank #{rank}</p>
-                            {rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
+                            <p className="font-semibold">{isAwardedToThisBidder ? bid.installer.name : `Rank #${rank}`}</p>
+                            {!isAwardedToThisBidder && rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
                             <span>{bid.installer.installerProfile?.rating} ({bid.installer.installerProfile?.reviews} reviews)</span>
-                             <span className="font-mono">{bid.installer.anonymousId}</span>
+                            {!isAwardedToThisBidder && <span className="font-mono">{bid.installer.anonymousId}</span>}
                             {bid.installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
                         </div>
                     </div>
@@ -343,7 +347,7 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
         if (comment.timestamp) {
             setTimeAgo(formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true }));
         }
-    }, [comment.timestamp.toISOString()]);
+    }, [comment.timestamp?.toISOString()]);
 
     return (
         <div key={comment.id} className="flex gap-3">

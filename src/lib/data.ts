@@ -21,6 +21,7 @@ export const users: User[] = [
     anonymousId: 'Installer #A1B2',
     email: 'alex.j@example.com',
     avatarUrl: userAvatars['user-1'],
+    realAvatarUrl: 'https://picsum.photos/seed/alex/100/100',
     pincode: '110001',
     roles: ['Job Giver', 'Installer'],
     installerProfile: {
@@ -46,6 +47,7 @@ export const users: User[] = [
     anonymousId: 'Job Giver #C3D4',
     email: 'brenda.s@example.com',
     avatarUrl: userAvatars['user-2'],
+    realAvatarUrl: 'https://picsum.photos/seed/brenda/100/100',
     pincode: '400001',
     roles: ['Job Giver'],
   },
@@ -55,6 +57,7 @@ export const users: User[] = [
     anonymousId: 'Installer #E5F6',
     email: 'carlos.d@example.com',
     avatarUrl: userAvatars['user-3'],
+    realAvatarUrl: 'https://picsum.photos/seed/carlos/100/100',
     pincode: '500001',
     roles: ['Installer'],
     installerProfile: {
@@ -80,6 +83,7 @@ export const users: User[] = [
     anonymousId: 'Installer #G7H8',
     email: 'diana.p@example.com',
     avatarUrl: userAvatars['user-4'],
+    realAvatarUrl: 'https://picsum.photos/seed/diana/100/100',
     pincode: '600001',
     roles: ['Installer'],
     installerProfile: {
@@ -105,6 +109,7 @@ export const users: User[] = [
     anonymousId: 'Installer #I9J0',
     email: 'ethan.h@example.com',
     avatarUrl: userAvatars['user-5'],
+    realAvatarUrl: 'https://picsum.photos/seed/ethan/100/100',
     pincode: '110031',
     roles: ['Installer'],
     installerProfile: {
@@ -130,6 +135,7 @@ export const users: User[] = [
     anonymousId: 'Job Giver #K1L2',
     email: 'fiona.g@example.com',
     avatarUrl: userAvatars['user-6'],
+    realAvatarUrl: 'https://picsum.photos/seed/fiona/100/100',
     pincode: '400050',
     roles: ['Job Giver'],
   },
@@ -139,6 +145,7 @@ export const users: User[] = [
     anonymousId: 'Installer #M3N4',
     email: 'george.m@example.com',
     avatarUrl: userAvatars['user-7'],
+    realAvatarUrl: 'https://picsum.photos/seed/george/100/100',
     pincode: '800001',
     roles: ['Installer'],
     installerProfile: {
@@ -164,6 +171,7 @@ export const users: User[] = [
     anonymousId: 'Job Giver #O5P6',
     email: 'hannah.s@example.com',
     avatarUrl: userAvatars['user-8'],
+    realAvatarUrl: 'https://picsum.photos/seed/hannah/100/100',
     pincode: '500032',
     roles: ['Job Giver', 'Installer'],
     installerProfile: {
@@ -325,7 +333,7 @@ const bids: {[key: string]: Bid[]} = {
       id: 'bid-10-1',
       installer: users[0],
       amount: 22000,
-      timestamp: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000), // 60 days ago
+      timestamp: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000), // 25 days ago
       coverLetter: "Completed this project successfully.",
     },
   ],
@@ -417,8 +425,8 @@ export const jobs: Job[] = [
     status: 'Completed',
     awardedInstaller: 'user-1',
     rating: 5,
-    deadline: new Date('2024-08-26T23:59:59Z'), // Old date
-    postedAt: new Date('2024-08-25T10:00:00Z'), // Old date
+    deadline: new Date(now.getTime() - 32 * 24 * 60 * 60 * 1000), // Old date
+    postedAt: new Date(now.getTime() - 33 * 24 * 60 * 60 * 1000), // Old date
     bids: [],
     comments: [],
   },
@@ -500,8 +508,8 @@ export const jobs: Job[] = [
     status: 'Completed',
     awardedInstaller: 'user-1',
     rating: 4,
-    deadline: new Date('2024-08-10T23:59:59Z'), // Old date
-    postedAt: new Date('2024-08-01T10:00:00Z'), // Old date
+    deadline: new Date(now.getTime() - 50 * 24 * 60 * 60 * 1000), // Old date
+    postedAt: new Date(now.getTime() - 58 * 24 * 60 * 60 * 1000), // Old date
     bids: bids['JOB-20240801-K2L3'],
     comments: [],
   },
@@ -515,8 +523,8 @@ export const jobs: Job[] = [
     status: 'Completed',
     awardedInstaller: 'user-1',
     rating: 5,
-    deadline: new Date('2024-07-25T23:59:59Z'), // Old date
-    postedAt: new Date('2024-07-15T09:00:00Z'), // Old date
+    deadline: new Date(now.getTime() - 67 * 24 * 60 * 60 * 1000), // Old date
+    postedAt: new Date(now.getTime() - 77 * 24 * 60 * 60 * 1000), // Old date
     bids: [],
     comments: [],
   },
