@@ -56,6 +56,7 @@ export default function PostJobPage() {
 
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
+    mode: "onChange",
     defaultValues: {
       jobTitle: "",
       jobDescription: "",
@@ -67,11 +68,11 @@ export default function PostJobPage() {
   });
 
   const jobTitle = useWatch({ control: form.control, name: "jobTitle" });
+  const jobTitleState = form.getFieldState("jobTitle");
+  const isJobTitleValid = jobTitle && !jobTitleState.invalid;
 
   const handleGenerateDetails = async () => {
-    form.trigger("jobTitle");
-    const jobTitleState = form.getFieldState("jobTitle");
-    if (!jobTitle || jobTitleState.invalid) {
+    if (!isJobTitleValid) {
       toast({
         title: "Invalid Job Title",
         description: "Please enter a job title (at least 10 characters) first.",
@@ -161,7 +162,7 @@ export default function PostJobPage() {
                         variant="ghost"
                         size="sm"
                         onClick={handleGenerateDetails}
-                        disabled={isGenerating}
+                        disabled={isGenerating || !isJobTitleValid}
                       >
                         {isGenerating ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
