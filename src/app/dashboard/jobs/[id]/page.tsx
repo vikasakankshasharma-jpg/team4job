@@ -149,7 +149,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, rank }: { bid: Bid, job: Job
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
-                            <p className="font-semibold">{isAwardedToThisBidder ? bid.installer.name : `Rank #${rank}`}</p>
+                            <p className="font-semibold">{isAwardedToThisBidder ? bid.installer.name : `Position #${rank}`}</p>
                             {!isAwardedToThisBidder && rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
