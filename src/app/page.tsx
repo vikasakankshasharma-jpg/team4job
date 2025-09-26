@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -50,12 +51,19 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="container mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Logo className="h-8 w-8 text-primary" />
-          <span className="text-xl font-bold">CCTV Job Connect</span>
+      <header className="container mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center">
+        <div className="flex-1 flex justify-start">
+          <Link href="/" className="flex items-center gap-2">
+            <Logo className="h-8 w-8 text-primary" />
+            <span className="text-xl font-bold">CCTV Job Connect</span>
+          </Link>
         </div>
-        <nav className="flex items-center gap-4">
+        
+        <div className="flex-1 hidden md:flex justify-center">
+          {/* Can add nav links here in the future */}
+        </div>
+
+        <nav className="flex-1 flex justify-end items-center gap-4">
           <ThemeToggle />
           <Button variant="ghost" asChild>
             <Link href="/login">Log In</Link>
