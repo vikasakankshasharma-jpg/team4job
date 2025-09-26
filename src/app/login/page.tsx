@@ -10,6 +10,7 @@ import { LoginForm } from "@/components/auth/login-form";
 import { SignUpForm } from "@/components/auth/signup-form";
 import { Logo } from "@/components/icons";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
   return (
@@ -19,6 +20,9 @@ export default function LoginPage() {
           <Logo className="h-7 w-7" />
           <span>CCTV Job Connect</span>
         </Link>
+      </div>
+      <div className="absolute top-8 right-8">
+        <ThemeToggle />
       </div>
       <Tabs defaultValue="login" className="w-full max-w-md">
         <TabsList className="grid w-full grid-cols-2">

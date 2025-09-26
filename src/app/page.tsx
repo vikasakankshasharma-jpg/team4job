@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowRight, CheckCircle, ShieldCheck, Zap } from "lucide-react";
 import { Logo } from "@/components/icons";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Home() {
   const features = [
@@ -55,6 +56,7 @@ export default function Home() {
           <span className="text-xl font-bold">CCTV Job Connect</span>
         </div>
         <nav className="flex items-center gap-4">
+          <ThemeToggle />
           <Button variant="ghost" asChild>
             <Link href="/login">Log In</Link>
           </Button>
