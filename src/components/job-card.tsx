@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Job } from "@/lib/types";
 import { MapPin, IndianRupee, Clock, Users } from "lucide-react";
 import Link from "next/link";
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { getStatusVariant } from "@/lib/utils";
 import React from "react";
 import { AnimatedAvatar } from "./ui/animated-avatar";
