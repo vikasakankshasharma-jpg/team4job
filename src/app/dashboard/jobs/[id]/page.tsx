@@ -308,7 +308,7 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
         if (comment.timestamp) {
             setTimeAgo(formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true }));
         }
-    }, [comment.timestamp]);
+    }, [comment.timestamp.toISOString()]);
 
     return (
         <div key={comment.id} className="flex gap-3">
