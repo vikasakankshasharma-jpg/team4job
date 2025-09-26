@@ -24,10 +24,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Zap, Loader2 } from "lucide-react";
-import { generateJobDescription } from "@/ai/flows/generate-job-description";
-import { suggestSkills } from "@/ai/flows/suggest-skills";
+import { generateJobDetails } from "@/ai/flows/generate-job-details";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
+import { cn } from "@/lib/utils";
 
 const jobSchema = z.object({
   jobTitle: z
@@ -52,8 +52,8 @@ const jobSchema = z.object({
 
 export default function PostJobPage() {
   const { toast } = useToast();
-  const [isGeneratingDesc, setIsGeneratingDesc] = React.useState(false);
-  const [isGeneratingSkills, setIsGeneratingSkills] = React.useState(false);
+  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [debouncedTitle, setDebouncedTitle] = React.useState("");
 
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
@@ -67,72 +67,50 @@ export default function PostJobPage() {
     },
   });
 
-  const { jobTitle, jobDescription } = useWatch({
-    control: form.control,
-    name: ["jobTitle", "jobDescription"],
-  });
+  const jobTitle = useWatch({ control: form.control, name: "jobTitle" });
 
-  const handleGenerateDescription = async () => {
-    if (!jobTitle) {
-      toast({
-        title: "Job Title Required",
-        description: "Please enter a job title before generating a description.",
-        variant: "destructive",
-      });
-      return;
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+        setDebouncedTitle(jobTitle);
+    }, 1000); // 1-second debounce delay
+
+    return () => {
+        clearTimeout(handler);
+    };
+  }, [jobTitle]);
+
+  React.useEffect(() => {
+    if (debouncedTitle && debouncedTitle.length >= 10) {
+      handleGenerateDetails();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedTitle]);
 
-    setIsGeneratingDesc(true);
+
+  const handleGenerateDetails = async () => {
+    setIsGenerating(true);
     try {
-      const result = await generateJobDescription({ jobTitle });
-      if (result.jobDescription) {
+      const result = await generateJobDetails({ jobTitle: debouncedTitle });
+      if (result) {
         form.setValue("jobDescription", result.jobDescription, { shouldValidate: true });
+        form.setValue("skills", result.suggestedSkills.join(', '), { shouldValidate: true });
+        form.setValue("budgetMin", result.budgetMin, { shouldValidate: true });
+        form.setValue("budgetMax", result.budgetMax, { shouldValidate: true });
+
         toast({
-          title: "Description Generated!",
-          description: "The AI-generated description has been added.",
+          title: "AI Suggestions Added!",
+          description: "Description, skills, and budget have been auto-filled.",
         });
       }
     } catch (error) {
-      console.error("Error generating job description:", error);
+      console.error("Error generating job details:", error);
       toast({
         title: "Generation Failed",
-        description: "There was an error generating the description. Please try again.",
+        description: "There was an error generating details. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsGeneratingDesc(false);
-    }
-  };
-
-  const handleSuggestSkills = async () => {
-    if (!jobTitle || !jobDescription) {
-      toast({
-        title: "Title and Description Required",
-        description: "Please enter a title and description before suggesting skills.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGeneratingSkills(true);
-    try {
-      const result = await suggestSkills({ jobTitle, jobDescription });
-      if (result.skills && result.skills.length > 0) {
-        form.setValue("skills", result.skills.join(', '), { shouldValidate: true });
-        toast({
-          title: "Skills Suggested!",
-          description: "AI-suggested skills have been added.",
-        });
-      }
-    } catch (error) {
-      console.error("Error suggesting skills:", error);
-      toast({
-        title: "Suggestion Failed",
-        description: "There was an error suggesting skills. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingSkills(false);
+      setIsGenerating(false);
     }
   };
 
@@ -159,8 +137,7 @@ export default function PostJobPage() {
             <CardHeader>
               <CardTitle>Job Details</CardTitle>
               <CardDescription>
-                Fill in the details below to attract the best installers for
-                your project.
+                Start with a clear title. Our AI will help you fill out the rest.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -187,25 +164,12 @@ export default function PostJobPage() {
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel>Job Description</FormLabel>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleGenerateDescription}
-                        disabled={isGeneratingDesc || !jobTitle}
-                      >
-                        {isGeneratingDesc ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Zap className="mr-2 h-4 w-4" />
-                        )}
-                        Generate with AI
-                      </Button>
+                       {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                     </div>
                     <FormControl>
                       <Textarea
                         placeholder="Describe the project requirements, scope, and any important details..."
-                        className="min-h-32"
+                        className={cn("min-h-32", isGenerating && "opacity-50")}
                         {...field}
                       />
                     </FormControl>
@@ -220,24 +184,12 @@ export default function PostJobPage() {
                   <FormItem>
                      <div className="flex items-center justify-between">
                         <FormLabel>Required Skills</FormLabel>
-                         <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleSuggestSkills}
-                          disabled={isGeneratingSkills || !jobTitle || !jobDescription}
-                        >
-                          {isGeneratingSkills ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Zap className="mr-2 h-4 w-4" />
-                          )}
-                          Suggest with AI
-                        </Button>
+                         {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                      </div>
                     <FormControl>
                       <Input
                         placeholder="e.g., IP Cameras, NVR Setup, Cabling"
+                        className={cn(isGenerating && "opacity-50")}
                         {...field}
                       />
                     </FormControl>
@@ -269,7 +221,7 @@ export default function PostJobPage() {
                     <FormItem>
                         <FormLabel>Bidding Deadline</FormLabel>
                         <FormControl>
-                         <Input type="date" {...field} />
+                         <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -282,7 +234,7 @@ export default function PostJobPage() {
                     <FormItem>
                         <FormLabel>Job Work Start Date</FormLabel>
                         <FormControl>
-                         <Input type="date" {...field} />
+                         <Input type="date" {...field} min={form.getValues('deadline')} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -295,9 +247,12 @@ export default function PostJobPage() {
                   name="budgetMin"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Minimum Budget (₹)</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Minimum Budget (₹)</FormLabel>
+                         {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                      </div>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 10000" {...field} />
+                        <Input type="number" placeholder="e.g., 10000" {...field} className={cn(isGenerating && "opacity-50")} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -308,9 +263,12 @@ export default function PostJobPage() {
                   name="budgetMax"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Maximum Budget (₹)</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Maximum Budget (₹)</FormLabel>
+                        {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                      </div>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 20000" {...field} />
+                        <Input type="number" placeholder="e.g., 20000" {...field} className={cn(isGenerating && "opacity-50")} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -323,7 +281,7 @@ export default function PostJobPage() {
             <Button variant="outline" type="button" onClick={() => form.reset()}>
               Cancel
             </Button>
-            <Button type="submit">Post Job</Button>
+            <Button type="submit" disabled={isGenerating}>Post Job</Button>
           </div>
         </form>
       </Form>
