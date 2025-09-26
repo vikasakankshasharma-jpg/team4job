@@ -40,7 +40,7 @@ import { Button } from "@/components/ui/button";
 
 
 type MyBidRowProps = {
-  bid: Bid & { jobTitle: string; jobId: string; jobStatus: Job['status'] };
+  bid: Bid & { jobTitle: string; jobId: string; jobStatus: Job['status'], wasPlaced: boolean };
 }
 
 function MyBidRow({ bid }: MyBidRowProps) {
@@ -48,12 +48,14 @@ function MyBidRow({ bid }: MyBidRowProps) {
     const { user } = useUser();
 
     React.useEffect(() => {
-        if (bid.timestamp) {
+        if (bid.timestamp && bid.wasPlaced) {
             setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
-        } else {
+        } else if (bid.wasPlaced) {
             setTimeAgo('N/A');
+        } else {
+            setTimeAgo('Awarded Directly');
         }
-    }, [bid.timestamp]);
+    }, [bid.timestamp, bid.wasPlaced]);
 
     const job = jobs.find(j => j.id === bid.jobId);
     
@@ -105,7 +107,9 @@ function MyBidRow({ bid }: MyBidRowProps) {
                     <span className="text-muted-foreground">—</span>
                  )}
             </TableCell>
-            <TableCell className="hidden md:table-cell">{timeAgo}</TableCell>
+            <TableCell className="hidden md:table-cell">
+                {bid.wasPlaced ? timeAgo : <span className="text-muted-foreground italic">{timeAgo}</span>}
+            </TableCell>
             <TableCell>
                 <Badge variant={getStatusVariant(bid.jobStatus)}>{bid.jobStatus}</Badge>
             </TableCell>
@@ -193,10 +197,11 @@ function MyBidsPageContent() {
         jobTitle: job.title,
         jobId: job.id,
         jobStatus: job.status,
+        wasPlaced: !!myBid, // Add a flag to know if a bid was actually placed
       };
     }
     return null;
-  }).filter(Boolean) as (Bid & { jobTitle: string; jobId: string; jobStatus: Job['status'] })[];
+  }).filter(Boolean) as (Bid & { jobTitle: string; jobId: string; jobStatus: Job['status']; wasPlaced: boolean })[];
 
  const getMyBidStatus = (job: { id: string, status: Job['status'], awardedInstaller?: string | undefined; }): string => {
     if (!job || !user) return "Unknown";
