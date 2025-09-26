@@ -18,7 +18,7 @@ type UserContextType = {
 
 const UserContext = createContext<UserContextType | null>(null);
 
-const installerPaths = ['/dashboard/my-bids', '/dashboard/jobs'];
+const installerPaths = ['/dashboard/my-bids'];
 const jobGiverPaths = ['/dashboard/posted-jobs', '/dashboard/post-job'];
 
 
