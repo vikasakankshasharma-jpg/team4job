@@ -32,22 +32,22 @@ function InstallerDashboard() {
         title: 'Installer Dashboard Guide',
         content: (
             <div className="space-y-4 text-sm">
-                <p>Welcome to your Dashboard! Here’s a quick overview of what you can do:</p>
+                <p>Welcome to your Dashboard! This is your central hub for managing your work on the platform.</p>
                 <ul className="list-disc space-y-2 pl-5">
                     <li>
-                        <span className="font-semibold">Open Jobs:</span> This card shows you the total number of jobs currently available for bidding. Click it to browse all opportunities.
+                        <span className="font-semibold">Open Jobs:</span> This shows the total number of jobs currently available for bidding. Click it to find your next opportunity.
                     </li>
                     <li>
-                        <span className="font-semibold">My Bids:</span> Tracks all the jobs you've bid on and those that have been awarded to you. Click to see your bidding history.
+                        <span className="font-semibold">My Bids:</span> Tracks all the jobs you've bid on and their current status (Bidded, Awarded, etc.). Click to see your bidding history.
                     </li>
                     <li>
-                        <span className="font-semibold">Jobs Won:</span> Displays the number of active jobs you've won and are currently working on.
+                        <span className="font-semibold">Jobs Won:</span> Displays the number of jobs you've won that are currently active or in progress.
                     </li>
                     <li>
-                        <span className="font-semibold">Find Your Next Project:</span> This is a shortcut to jump directly to the job browsing page to find new work.
+                        <span className="font-semibold">Find Your Next Project:</span> A quick link to jump directly to the job browsing page.
                     </li>
                 </ul>
-                <p>Use the navigation on the left to access other sections like your profile and settings.</p>
+                <p>Use the navigation on the left to access other sections like your Profile, where you can track your reputation and skills.</p>
             </div>
         )
     });
@@ -139,22 +139,22 @@ function JobGiverDashboard() {
         title: 'Job Giver Dashboard Guide',
         content: (
             <div className="space-y-4 text-sm">
-                <p>Welcome to your Dashboard! Here’s a quick overview of what you can do:</p>
+                <p>Welcome to your Dashboard! This is your control center for hiring and managing installers.</p>
                 <ul className="list-disc space-y-2 pl-5">
                     <li>
-                        <span className="font-semibold">Active Jobs:</span> This card shows the number of jobs you've posted that are not yet completed. Click to manage them.
+                        <span className="font-semibold">Active Jobs:</span> This shows the number of jobs you've posted that are currently open for bidding or in progress. Click to manage them.
                     </li>
                     <li>
-                        <span className="font-semibold">Total Bids Received:</span> See the total number of bids submitted across all of your job postings.
+                        <span className="font-semibold">Total Bids Received:</span> See the total number of bids submitted across all your job postings.
                     </li>
                     <li>
-                        <span className="font-semibold">Completed Jobs:</span> View a history of all your successfully completed projects.
+                        <span className="font-semibold">Completed Jobs:</span> View a history of all your successfully completed projects. Click to see your archived jobs.
                     </li>
                     <li>
-                        <span className="font-semibold">Need an Installer?:</span> This is a shortcut to post a new job and start receiving bids from professionals.
+                        <span className="font-semibold">Need an Installer?:</span> A shortcut to post a new job and start receiving bids from professionals.
                     </li>
                 </ul>
-                <p>Use the navigation on the left to access other sections like your profile and settings.</p>
+                <p>Use the navigation on the left to access other sections, like "My Jobs" to review bids on your active postings.</p>
             </div>
         )
     });

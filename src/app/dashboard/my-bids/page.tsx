@@ -37,6 +37,7 @@ import {
   DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useHelp } from "@/hooks/use-help";
 
 
 type MyBidRowProps = {
@@ -147,6 +148,40 @@ function MyBidsPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   let statusFilter = searchParams.get('status');
+  const { setHelp } = useHelp();
+
+  React.useEffect(() => {
+    setHelp({
+        title: 'My Bids Guide',
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>This page tracks every job you have bid on. Here’s what the different statuses mean:</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                        <span className="font-semibold">Bidded:</span> You have placed a bid, and the job is still open for other installers to bid on.
+                    </li>
+                    <li>
+                        <span className="font-semibold">Awarded:</span> Congratulations! The Job Giver has chosen you for the project. The job is ready to be started.
+                    </li>
+                    <li>
+                        <span className="font-semibold">In Progress:</span> You have started working on an awarded job.
+                    </li>
+                    <li>
+                        <span className="font-semibold">Completed & Won:</span> You have successfully completed the job and received reputation points.
+                    </li>
+                     <li>
+                        <span className="font-semibold">Not Selected:</span> The job was awarded to another installer, or the bidding period closed and you were not chosen.
+                    </li>
+                    <li>
+                        <span className="font-semibold">Cancelled:</span> The job was cancelled by the Job Giver.
+                    </li>
+                </ul>
+                <p>You can use the "Filter" button to view bids of a specific status, like seeing all the jobs you've won.</p>
+            </div>
+        )
+    });
+  }, [setHelp]);
+
 
   if (statusFilter === 'Completed') {
       statusFilter = 'Completed & Won';

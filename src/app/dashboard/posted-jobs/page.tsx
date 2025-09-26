@@ -41,6 +41,8 @@ import { useSearchParams } from "next/navigation";
 import { Job } from "@/lib/types";
 import { getStatusVariant } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
+import React from "react";
+import { useHelp } from "@/hooks/use-help";
 
 function PostedJobsTable({ jobs, title, description, footerText }: { jobs: Job[], title: string, description: string, footerText: string }) {
   return (
@@ -119,6 +121,29 @@ export default function PostedJobsPage() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "active";
   const { user } = useUser();
+  const { setHelp } = useHelp();
+
+   React.useEffect(() => {
+    setHelp({
+        title: 'My Posted Jobs Guide',
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>This page lists all the jobs you have created. It's split into two tabs:</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                        <span className="font-semibold">Active:</span> Shows all jobs that are currently open for bidding, in progress, or waiting for your action. This is where you'll manage ongoing projects.
+                    </li>
+                    <li>
+                        <span className="font-semibold">Archived:</span> Shows all your jobs that have been completed. This is your history of successful hires.
+                    </li>
+                </ul>
+                <p>
+                  Click on any job title to go to its detail page, where you can review bids from installers. You can also use the "Post New Job" button to quickly create a new listing.
+                </p>
+            </div>
+        )
+    });
+  }, [setHelp]);
   
   if (!user) {
     return (

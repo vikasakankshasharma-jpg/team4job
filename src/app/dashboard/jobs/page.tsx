@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useHelp } from "@/hooks/use-help";
 
 // Get unique skills from jobs data for filter
 const allSkills = Array.from(new Set(jobs.flatMap(job => job.description.toLowerCase().match(/ip camera|nvr setup|cabling|troubleshooting|ptz|vms|access control/g) || [])));
@@ -50,6 +51,34 @@ export default function BrowseJobsPage() {
   const [searchPincode, setSearchPincode] = React.useState("");
   const [budget, setBudget] = React.useState([0, 150000]);
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
+  const { setHelp } = useHelp();
+
+  React.useEffect(() => {
+    setHelp({
+        title: 'Browse Jobs Guide',
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>This page is where you find new projects. Here’s how to use the tools to your advantage:</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                        <span className="font-semibold">Search by Pincode:</span> Use the search bar at the top right to find jobs in a specific area. This helps you find work close to home.
+                    </li>
+                    <li>
+                        <span className="font-semibold">Filter Menu:</span> Click the "Filter" button to open a menu with more powerful options:
+                        <ul className="list-disc space-y-1 pl-5 mt-1">
+                            <li><span className="font-semibold">Budget Range:</span> Drag the slider to only see jobs that match your expected pay.</li>
+                            <li><span className="font-semibold">Skills:</span> Select one or more skills to narrow down jobs that match your expertise (e.g., "IP Cameras", "Access Control").</li>
+                        </ul>
+                    </li>
+                     <li>
+                        <span className="font-semibold">Clear Filters:</span> If you have any filters active, a "Clear" button will appear. Click it to reset your search and see all available jobs again.
+                    </li>
+                </ul>
+                <p>Each job card gives you a quick summary. Click "View Job & Bid" to see the full details and place your offer.</p>
+            </div>
+        )
+    });
+  }, [setHelp]);
   
   const openJobs = jobs.filter((job) => job.status === "Open for Bidding");
 
