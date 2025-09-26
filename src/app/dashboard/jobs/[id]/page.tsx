@@ -69,7 +69,8 @@ function InstallerBidSection({ job }: { job: Job }) {
           description: "Review the AI-generated proposal and place your bid.",
         });
       }
-    } catch (error)      console.error("Error generating bid proposal:", error);
+    } catch (error) {
+      console.error("Error generating bid proposal:", error);
       toast({
         title: "Generation Failed",
         description: "There was an error generating the bid. Please try again.",
