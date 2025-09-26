@@ -70,12 +70,12 @@ function InstallerBidSection({ job }: { job: Job }) {
         });
       }
     } catch (error) {
-      console.error("Error generating bid proposal:", error);
-      toast({
-        title: "Generation Failed",
-        description: "There was an error generating the bid. Please try again.",
-        variant: "destructive",
-      });
+        console.error("Error generating bid proposal:", error);
+        toast({
+            title: "Generation Failed",
+            description: "There was an error generating the bid. Please try again.",
+            variant: "destructive",
+        });
     } finally {
       setIsGenerating(false);
     }
@@ -547,7 +547,7 @@ export default function JobDetailPage() {
                 <Separator className="my-6" />
                 <h3 className="font-semibold mb-4">Comments ({jobComments.length})</h3>
                 <div className="space-y-6">
-                    {jobComments.map((comment, index) => {
+                    {jobComments.map((comment) => {
                         const isEditing = editingCommentId === comment.id;
                         return (
                             <CommentDisplay
@@ -649,5 +649,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    

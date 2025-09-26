@@ -219,11 +219,11 @@ function MyBidsPageContent() {
   
  const myBids = jobs.map(job => {
     const myBid = job.bids.find(bid => bid.installer.id === user.id);
-    const isAwardedToMe = job.awardedInstaller === user.id;
-
-    if (myBid || isAwardedToMe) {
+    
+    // Include the job if the user bid on it OR if it was awarded to them (even without a bid)
+    if (myBid || job.awardedInstaller === user.id) {
       return {
-        id: myBid?.id || `placeholder-${job.id}`,
+        id: myBid?.id || `direct-award-${job.id}`,
         installer: user,
         amount: myBid?.amount || 0,
         timestamp: myBid?.timestamp || job.postedAt,
@@ -231,7 +231,7 @@ function MyBidsPageContent() {
         jobTitle: job.title,
         jobId: job.id,
         jobStatus: job.status,
-        wasPlaced: !!myBid, // Add a flag to know if a bid was actually placed
+        wasPlaced: !!myBid,
       };
     }
     return null;
@@ -356,5 +356,3 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
-
-    
