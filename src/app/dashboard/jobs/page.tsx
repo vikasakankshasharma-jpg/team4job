@@ -138,7 +138,6 @@ export default function BrowseJobsPage() {
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="recommended">Recommended</TabsTrigger>
-            <TabsTrigger value="saved">Saved</TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
             <DropdownMenu>
@@ -272,5 +271,3 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
-
-    
