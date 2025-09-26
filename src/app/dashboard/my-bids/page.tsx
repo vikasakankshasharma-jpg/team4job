@@ -9,7 +9,7 @@ import {
   CardTitle,
   CardFooter
 } from "@/components/ui/card";
-import { jobs } from "@/lib/data";
+import { jobs, users } from "@/lib/data";
 import {
   Table,
   TableBody,
@@ -50,12 +50,10 @@ function MyBidRow({ bid }: MyBidRowProps) {
     React.useEffect(() => {
         if (bid.timestamp && bid.wasPlaced) {
             setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
-        } else if (bid.wasPlaced) {
-            setTimeAgo('N/A');
-        } else {
-            setTimeAgo('Awarded Directly');
+        } else if (!bid.wasPlaced && bid.jobStatus !== 'Open for Bidding') {
+             setTimeAgo('Awarded Directly');
         }
-    }, [bid.timestamp.toISOString(), bid.wasPlaced]);
+    }, [bid.timestamp, bid.wasPlaced, bid.jobStatus]);
 
     const job = jobs.find(j => j.id === bid.jobId);
     
@@ -81,7 +79,7 @@ function MyBidRow({ bid }: MyBidRowProps) {
     }
     
     const calculatePoints = () => {
-        if (!job || job.status !== 'Completed' || job.awardedInstaller !== user?.id) {
+        if (!job || job.status !== 'Completed' || job.awardedInstaller !== user?.id || !job.rating) {
             return null;
         }
         const ratingPoints = job.rating === 5 ? 20 : job.rating === 4 ? 10 : 0;
@@ -108,7 +106,7 @@ function MyBidRow({ bid }: MyBidRowProps) {
                  )}
             </TableCell>
             <TableCell className="hidden md:table-cell">
-                {bid.wasPlaced ? timeAgo : <span className="text-muted-foreground italic">{timeAgo}</span>}
+                {timeAgo || <span className="text-muted-foreground italic">Pending...</span>}
             </TableCell>
             <TableCell>
                 <Badge variant={getStatusVariant(bid.jobStatus)}>{bid.jobStatus}</Badge>
@@ -201,7 +199,8 @@ function MyBidsPageContent() {
       };
     }
     return null;
-  }).filter((bid): bid is Bid & { jobTitle: string; jobId: string; jobStatus: Job['status']; wasPlaced: boolean } => bid !== null);
+  }).filter((bid): bid is Bid & { jobTitle: string; jobId: string; jobStatus: Job['status']; wasPlaced: boolean } => bid !== null)
+    .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
  const getMyBidStatus = (job: { id: string, status: Job['status'], awardedInstaller?: string | undefined; }): string => {
     if (!job || !user) return "Unknown";

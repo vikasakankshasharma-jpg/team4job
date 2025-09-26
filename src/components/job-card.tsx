@@ -67,7 +67,7 @@ export function JobCard({ job }: JobCardProps) {
             </Badge>
             <CardTitle className="text-lg">{job.title}</CardTitle>
           </div>
-           <span className="text-xs text-muted-foreground font-mono">#{job.id}</span>
+           <span className="text-xs text-muted-foreground font-mono">#{job.id.substring(job.id.lastIndexOf('-') + 1)}</span>
         </div>
          <div className="flex items-center gap-3 pt-4">
             <Avatar className="h-9 w-9">

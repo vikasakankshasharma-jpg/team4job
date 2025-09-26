@@ -2,7 +2,7 @@
 "use client";
 
 import { useUser } from "@/hooks/use-user";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -103,11 +103,6 @@ export default function ProfilePage() {
   const { user, role, setUser } = useUser(); // Using a mock setUser for demo
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   
-  const jobsCompleted = React.useMemo(() => {
-    if (role !== 'Installer' || !user) return [];
-    return jobs.filter(job => job.status === 'Completed' && job.awardedInstaller === user.id);
-  }, [user, role]);
-  
   if (!user) {
     return <div>Loading...</div>;
   }
@@ -132,9 +127,9 @@ export default function ProfilePage() {
         <CardHeader>
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             <Avatar className="h-24 w-24 border-2 border-primary">
-              <AnimatedAvatar svg={user.avatarUrl} />
+              <AvatarImage src={user.realAvatarUrl} alt={user.name} />
               <AvatarFallback className="text-3xl">
-                {user.anonymousId.charAt(0)}
+                {user.name.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
@@ -273,7 +268,7 @@ export default function ProfilePage() {
                     </div>
                     <Link href="/dashboard/my-bids?status=Completed" className="block p-4 rounded-lg border hover:bg-accent transition-colors">
                         <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary"/>
-                        <p className="text-2xl font-bold">{jobsCompleted.length}</p>
+                        <p className="text-2xl font-bold">{installerProfile.jobsCompleted}</p>
                         <p className="text-sm text-muted-foreground">Jobs Completed</p>
                     </Link>
                 </div>
