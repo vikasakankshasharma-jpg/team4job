@@ -189,7 +189,7 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
         const installer = users.find(u => u.id === installerId);
         toast({
             title: "Installer Selected!",
-            description: `${installer?.name || 'The installer'} has been awarded the job.`,
+            description: `${installer?.anonymousId || 'The installer'} has been awarded the job.`,
         });
     };
 
@@ -217,6 +217,7 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
     }
 
     const sortedBids = React.useMemo(() => {
+        if (!job.bids) return [];
         return [...job.bids]
             .map(bid => ({ bid, score: calculateBidScore(bid, job) }))
             .sort((a, b) => b.score - a.score);
@@ -305,7 +306,7 @@ function ReputationImpactCard({ job }: { job: Job }) {
             <Award className="h-5 w-5 text-primary" />
             Reputation Impact
         </CardTitle>
-        <CardDescription>Reputation points awarded to {installer?.name} for this job.</CardDescription>
+        <CardDescription>Reputation points awarded to {installer?.anonymousId} for this job.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex justify-between items-center text-sm">
@@ -342,7 +343,7 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
         if (comment.timestamp) {
             setTimeAgo(formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true }));
         }
-    }, [comment.timestamp]);
+    }, [comment.timestamp.toISOString()]);
 
     return (
         <div key={comment.id} className="flex gap-3">
@@ -599,5 +600,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    

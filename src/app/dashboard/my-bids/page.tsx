@@ -55,7 +55,7 @@ function MyBidRow({ bid }: MyBidRowProps) {
         } else {
             setTimeAgo('Awarded Directly');
         }
-    }, [bid.timestamp, bid.wasPlaced]);
+    }, [bid.timestamp.toISOString(), bid.wasPlaced]);
 
     const job = jobs.find(j => j.id === bid.jobId);
     
@@ -201,7 +201,7 @@ function MyBidsPageContent() {
       };
     }
     return null;
-  }).filter(Boolean) as (Bid & { jobTitle: string; jobId: string; jobStatus: Job['status']; wasPlaced: boolean })[];
+  }).filter((bid): bid is Bid & { jobTitle: string; jobId: string; jobStatus: Job['status']; wasPlaced: boolean } => bid !== null);
 
  const getMyBidStatus = (job: { id: string, status: Job['status'], awardedInstaller?: string | undefined; }): string => {
     if (!job || !user) return "Unknown";

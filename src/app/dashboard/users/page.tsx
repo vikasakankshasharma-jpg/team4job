@@ -52,11 +52,11 @@ export default function UsersPage() {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-9 w-9">
                       <AnimatedAvatar svg={user.avatarUrl} />
-                      <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
+                      <AvatarFallback>{user.anonymousId.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div className="font-medium">
-                        <p>{user.name}</p>
-                        <p className="text-sm text-muted-foreground">{user.anonymousId}</p>
+                        <p>{user.anonymousId}</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
                     </div>
                   </div>
                 </TableCell>

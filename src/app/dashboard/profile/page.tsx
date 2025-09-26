@@ -104,8 +104,8 @@ export default function ProfilePage() {
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   
   const jobsCompleted = React.useMemo(() => {
-    if (role !== 'Installer' || !user) return 0;
-    return jobs.filter(job => job.status === 'Completed' && job.awardedInstaller === user.id).length;
+    if (role !== 'Installer' || !user) return [];
+    return jobs.filter(job => job.status === 'Completed' && job.awardedInstaller === user.id);
   }, [user, role]);
   
   if (!user) {
@@ -147,6 +147,7 @@ export default function ProfilePage() {
                 )}
               </div>
               <p className="mt-1">{user.email}</p>
+               <p className="text-sm text-muted-foreground">{user.anonymousId}</p>
               <div className="mt-4">
                 <Dialog>
                     <DialogTrigger asChild>
@@ -272,7 +273,7 @@ export default function ProfilePage() {
                     </div>
                     <Link href="/dashboard/my-bids?status=Completed" className="block p-4 rounded-lg border hover:bg-accent transition-colors">
                         <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary"/>
-                        <p className="text-2xl font-bold">{jobsCompleted}</p>
+                        <p className="text-2xl font-bold">{jobsCompleted.length}</p>
                         <p className="text-sm text-muted-foreground">Jobs Completed</p>
                     </Link>
                 </div>
