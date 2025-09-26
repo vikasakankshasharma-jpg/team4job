@@ -53,7 +53,6 @@ const jobSchema = z.object({
 export default function PostJobPage() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
-  const [debouncedTitle, setDebouncedTitle] = React.useState("");
 
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
@@ -69,28 +68,21 @@ export default function PostJobPage() {
 
   const jobTitle = useWatch({ control: form.control, name: "jobTitle" });
 
-  React.useEffect(() => {
-    const handler = setTimeout(() => {
-        setDebouncedTitle(jobTitle);
-    }, 1000); // 1-second debounce delay
-
-    return () => {
-        clearTimeout(handler);
-    };
-  }, [jobTitle]);
-
-  React.useEffect(() => {
-    if (debouncedTitle && debouncedTitle.length >= 10) {
-      handleGenerateDetails();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedTitle]);
-
-
   const handleGenerateDetails = async () => {
+    form.trigger("jobTitle");
+    const jobTitleState = form.getFieldState("jobTitle");
+    if (!jobTitle || jobTitleState.invalid) {
+      toast({
+        title: "Invalid Job Title",
+        description: "Please enter a job title (at least 10 characters) first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGenerating(true);
     try {
-      const result = await generateJobDetails({ jobTitle: debouncedTitle });
+      const result = await generateJobDetails({ jobTitle });
       if (result) {
         form.setValue("jobDescription", result.jobDescription, { shouldValidate: true });
         form.setValue("skills", result.suggestedSkills.join(', '), { shouldValidate: true });
@@ -137,7 +129,7 @@ export default function PostJobPage() {
             <CardHeader>
               <CardTitle>Job Details</CardTitle>
               <CardDescription>
-                Start with a clear title. Our AI will help you fill out the rest.
+                Start with a clear title, then click the AI button to fill out the rest.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -164,7 +156,20 @@ export default function PostJobPage() {
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel>Job Description</FormLabel>
-                       {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleGenerateDetails}
+                        disabled={isGenerating}
+                      >
+                        {isGenerating ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Zap className="mr-2 h-4 w-4" />
+                        )}
+                        AI Generate
+                      </Button>
                     </div>
                     <FormControl>
                       <Textarea
