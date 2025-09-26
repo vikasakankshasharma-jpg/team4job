@@ -50,10 +50,10 @@ function MyBidRow({ bid }: MyBidRowProps) {
     React.useEffect(() => {
         if (bid.timestamp && bid.wasPlaced) {
             setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
-        } else if (!bid.wasPlaced && bid.jobStatus !== 'Open for Bidding') {
+        } else if (!bid.wasPlaced) {
              setTimeAgo('Awarded Directly');
         }
-    }, [bid.timestamp, bid.wasPlaced, bid.jobStatus]);
+    }, [bid.timestamp, bid.wasPlaced]);
 
     const job = jobs.find(j => j.id === bid.jobId);
     
