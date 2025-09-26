@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -14,6 +15,7 @@ import {
   PlusCircle,
   Settings,
   User as UserIcon,
+  Users as UsersIcon,
 } from "lucide-react";
 import { Logo } from "@/components/icons";
 import { usePathname } from "next/navigation";
@@ -24,6 +26,7 @@ const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/jobs", icon: Search, label: "Browse Jobs" },
   { href: "/dashboard/my-bids", icon: Briefcase, label: "My Bids" },
+  { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
   { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
@@ -31,7 +34,8 @@ const jobGiverNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job" },
   { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs" },
-   { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
+  { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
+  { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
 export function DashboardSidebar() {
@@ -58,7 +62,8 @@ export function DashboardSidebar() {
                   href={item.href}
                   className={cn(
                     "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                    pathname === item.href && "bg-accent text-accent-foreground"
+                    pathname.startsWith(item.href) && item.href !== '/dashboard' && "bg-accent text-accent-foreground",
+                    pathname === '/dashboard' && item.href === '/dashboard' && "bg-accent text-accent-foreground"
                   )}
                 >
                   <item.icon className="h-5 w-5" />
