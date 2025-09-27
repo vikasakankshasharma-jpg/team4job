@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -190,6 +190,7 @@ function InstallerOnboardingDialog({ user, onSave }) {
 export default function ProfilePage() {
   const { user, role, setUser, setRole } = useUser();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
+  const { toast } = useToast();
 
    const jobsCompletedCount = React.useMemo(() => {
     if (role !== 'Installer' || !user) return 0;
@@ -202,6 +203,7 @@ export default function ProfilePage() {
   
   const installerProfile = user.installerProfile;
   const isJobGiverOnly = user.roles.length === 1 && user.roles[0] === "Job Giver";
+  const isInstallerOnly = user.roles.length === 1 && user.roles[0] === "Installer";
 
   const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
   const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
@@ -232,7 +234,6 @@ export default function ProfilePage() {
           }
         };
 
-        // Also update the user in the main data array
         const userIndex = users.findIndex(u => u.id === prevUser.id);
         if (userIndex !== -1) {
             users[userIndex] = updatedUser;
@@ -241,8 +242,34 @@ export default function ProfilePage() {
         return updatedUser;
       });
 
-      // Switch the user to the newly created role
       setRole('Installer');
+    }
+  };
+
+  const handleBecomeJobGiver = () => {
+    if (setUser && setRole) {
+      setUser(prevUser => {
+        if (!prevUser) return null;
+
+        const updatedUser = {
+          ...prevUser,
+          roles: [...prevUser.roles, 'Job Giver'] as ('Job Giver' | 'Installer')[],
+        };
+
+        const userIndex = users.findIndex(u => u.id === prevUser.id);
+        if (userIndex !== -1) {
+          users[userIndex] = updatedUser;
+        }
+        
+        return updatedUser;
+      });
+      
+      setRole('Job Giver');
+      toast({
+        title: "Job Giver Role Activated!",
+        description: "You can now post jobs and hire installers.",
+        variant: "success",
+      });
     }
   };
 
@@ -432,6 +459,20 @@ export default function ProfilePage() {
                     </DialogTrigger>
                     <InstallerOnboardingDialog user={user} onSave={handleInstallerOnboarding} />
                 </Dialog>
+            </CardContent>
+         </Card>
+      )}
+
+       {isInstallerOnly && (
+         <Card className="bg-accent/20 border-dashed">
+            <CardHeader>
+                <CardTitle>Ready to Hire?</CardTitle>
+                <CardDescription>Activate your Job Giver profile to post jobs and find the perfect installer for your projects.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button onClick={handleBecomeJobGiver}>
+                    Start Hiring as a Job Giver <PlusCircle className="ml-2 h-4 w-4" />
+                </Button>
             </CardContent>
          </Card>
       )}
