@@ -150,12 +150,12 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                     <div>
                         <div className="flex items-center gap-2">
                             <p className="font-semibold">{isAwardedToThisBidder ? bid.installer.name : showRanking ? `Position #${rank}` : bid.installer.anonymousId}</p>
-                            {!isAwardedToThisBidder && showRanking && rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
+                            {!isJobAwarded && showRanking && rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
                             <span>{bid.installer.installerProfile?.rating} ({bid.installer.installerProfile?.reviews} reviews)</span>
-                            <span className="font-mono">{isAwardedToThisBidder ? bid.installer.anonymousId : ''}</span>
+                            {isAwardedToThisBidder && <span className="font-mono">{bid.installer.anonymousId}</span>}
                             {bid.installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
                         </div>
                     </div>
@@ -170,7 +170,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                  <Button 
                     size="sm" 
                     onClick={() => canAward ? onAwardJob(bid.installer.id) : onSelectInstaller(bid.installer.id)}
-                    disabled={isJobAwarded || isSelected}
+                    disabled={isJobAwarded}
                     variant={isAwardedToThisBidder ? 'secondary' : 'default'}
                  >
                     {isAwardedToThisBidder ? (
@@ -189,20 +189,17 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
     const { toast } = useToast();
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>(job.selectedInstallers?.map(i => i.installerId) || []);
 
-    const canAwardDirectly = job.bids.length < 3;
+    const canAwardDirectly = true; // Simplified logic, always allow awarding
 
     const handleSelectInstaller = (installerId: string) => {
-        // This is a temporary implementation for the first phase.
-        // It just marks the installer as selected in the UI.
+        // This function is now deprecated in favor of direct awarding but kept for potential future use.
         const newSelected = [...selectedInstallers, installerId];
         setSelectedInstallers(newSelected);
-
         const updatedJob = { ...job, selectedInstallers: newSelected.map((id, index) => ({ installerId: id, rank: index + 1 })) };
         onJobUpdate(updatedJob);
-        
         toast({
-            title: "Installer Selected for Ranking",
-            description: `You have selected installer ${users.find(u=>u.id === installerId)?.anonymousId} for your shortlist.`,
+            title: "Installer Selected",
+            description: `Installer has been shortlisted.`,
         });
     };
     
@@ -215,7 +212,7 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
 
         toast({
             title: "Job Awarded!",
-            description: `You have awarded the job to ${installer.anonymousId}.`,
+            description: `You have awarded the job to ${installer.name}.`,
             variant: "success",
         });
     };
@@ -223,23 +220,13 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
     const calculateBidScore = (bid: Bid, job: Job) => {
         const profile = bid.installer.installerProfile;
         if (!profile) return -Infinity;
-
-        // Price Score (lower is better, normalized)
-        // A bid at the min budget gets 1, at max budget gets 0. Bids below min get > 1.
         const priceRange = job.budget.max - job.budget.min;
         const priceScore = priceRange > 0 ? (job.budget.max - bid.amount) / priceRange : 1;
-        
-        // Rating Score (0-5 scale to 0-1 scale)
         const ratingScore = profile.rating / 5;
-
-        // Reputation Score (logarithmic to handle large numbers, normalized somewhat arbitrarily)
-        const reputationScore = Math.log1p(profile.points) / Math.log1p(3000); // 3000 is a hypothetical max points
-
-        // Weights
+        const reputationScore = Math.log1p(profile.points) / Math.log1p(3000);
         const W_PRICE = 0.5;
         const W_RATING = 0.3;
         const W_REPUTATION = 0.2;
-
         return (priceScore * W_PRICE) + (ratingScore * W_RATING) + (reputationScore * W_REPUTATION);
     }
 
@@ -257,7 +244,7 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
         <CardTitle>Received Bids ({job.bids.length})</CardTitle>
         <CardDescription>
           {job.awardedInstaller ? 'An installer has been selected for this job.' : 
-          canAwardDirectly ? 'Award the job to the best installer.' : 'Review the ranked bids and select your top candidates.'}
+          'Review the bids and award the job to the best installer.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -270,8 +257,8 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
             onAwardJob={handleAwardJob}
             rank={index + 1}
             isSelected={selectedInstallers.includes(bid.installer.id)}
-            showRanking={!canAwardDirectly}
-            canAward={canAwardDirectly}
+            showRanking={true} // Always show ranking for consistency
+            canAward={true} // Always allow awarding
           />
         ))}
       </CardContent>
