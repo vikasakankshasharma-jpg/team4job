@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -29,8 +29,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { jobs } from "@/lib/data";
+import { jobs, users } from "@/lib/data";
 import { format } from "date-fns";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 
 
 const tierIcons = {
@@ -100,8 +112,83 @@ function EditProfileForm({ user, onSave }) {
     );
 }
 
+const installerOnboardingSchema = z.object({
+    pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit Indian pincode." }),
+    skills: z.string().min(10, { message: "Please list at least one skill (min 10 characters)." }),
+});
+
+
+function InstallerOnboardingDialog({ user, onSave }) {
+    const { toast } = useToast();
+    const form = useForm<z.infer<typeof installerOnboardingSchema>>({
+        resolver: zodResolver(installerOnboardingSchema),
+        defaultValues: {
+            pincode: user.pincode || "",
+            skills: "",
+        },
+    });
+
+    function onSubmit(values: z.infer<typeof installerOnboardingSchema>) {
+        onSave(values);
+        toast({
+            title: "Installer Profile Created!",
+            description: "You can now switch to your Installer role and start finding jobs.",
+            variant: "success",
+        });
+    }
+
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Become an Installer</DialogTitle>
+                <DialogDescription>
+                    Fill out your details below to start finding jobs on the platform.
+                </DialogDescription>
+            </DialogHeader>
+             <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="pincode"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Your Pincode</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g., 110001" {...field} />
+                                </FormControl>
+                                <FormDescription>This helps us recommend jobs near you.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="skills"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Your Skills</FormLabel>
+                                <FormControl>
+                                    <Textarea placeholder="e.g., IP Cameras, NVR Setup, Cabling, Access Control..." {...field} />
+                                </FormControl>
+                                <FormDescription>Enter a comma-separated list of your technical skills.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="secondary">Cancel</Button>
+                        </DialogClose>
+                        <Button type="submit">Create Installer Profile</Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+    );
+}
+
 export default function ProfilePage() {
-  const { user, role, setUser } = useUser(); // Using a mock setUser for demo
+  const { user, role, setUser, setRole } = useUser();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
 
    const jobsCompletedCount = React.useMemo(() => {
@@ -114,15 +201,48 @@ export default function ProfilePage() {
   }
   
   const installerProfile = user.installerProfile;
-
+  const isJobGiverOnly = user.roles.length === 1 && user.roles[0] === "Job Giver";
 
   const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
   const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
 
   const handleProfileSave = (newName: string) => {
-    // In a real app, you'd call an API. Here, we just update the context state.
     if(setUser) {
       setUser(prevUser => prevUser ? ({ ...prevUser, name: newName }) : null);
+    }
+  };
+
+  const handleInstallerOnboarding = (values: z.infer<typeof installerOnboardingSchema>) => {
+    if (setUser && setRole) {
+      setUser(prevUser => {
+        if (!prevUser) return null;
+
+        const updatedUser = {
+          ...prevUser,
+          pincode: values.pincode,
+          roles: [...prevUser.roles, 'Installer'] as ('Job Giver' | 'Installer')[],
+          installerProfile: {
+            tier: 'Bronze' as const,
+            points: 0,
+            skills: values.skills.split(',').map(s => s.trim()),
+            rating: 0,
+            reviews: 0,
+            verified: prevUser.installerProfile?.verified || false,
+            reputationHistory: [],
+          }
+        };
+
+        // Also update the user in the main data array
+        const userIndex = users.findIndex(u => u.id === prevUser.id);
+        if (userIndex !== -1) {
+            users[userIndex] = updatedUser;
+        }
+
+        return updatedUser;
+      });
+
+      // Switch the user to the newly created role
+      setRole('Installer');
     }
   };
 
@@ -296,6 +416,27 @@ export default function ProfilePage() {
             </CardContent>
         </Card>
       )}
+
+      {isJobGiverOnly && (
+         <Card className="bg-accent/20 border-dashed">
+            <CardHeader>
+                <CardTitle>Expand Your Opportunities</CardTitle>
+                <CardDescription>Want to find work on the platform? Create an installer profile to start bidding on jobs.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button>
+                            Become an Installer <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </DialogTrigger>
+                    <InstallerOnboardingDialog user={user} onSave={handleInstallerOnboarding} />
+                </Dialog>
+            </CardContent>
+         </Card>
+      )}
     </div>
   );
 }
+
+    
