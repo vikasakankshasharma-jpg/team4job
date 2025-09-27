@@ -26,6 +26,9 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
+import { users } from "@/lib/data";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
+import type { User } from "@/lib/types";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -36,6 +39,7 @@ const formSchema = z.object({
     .string()
     .min(6, { message: "Password must be at least 6 characters." }),
   role: z.enum(["Job Giver", "Installer"]),
+  pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
   aadhar: z.string().optional(),
 });
 
@@ -51,13 +55,42 @@ export function SignUpForm() {
       email: "",
       password: "",
       role: undefined,
+      pincode: "",
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     // Simulate signup
-    console.log(values);
-    login('user-1'); // Log in as the default user for demo
+    const newUserId = `user-${users.length + 1}`;
+    const newAnonymousId = `${values.role === 'Installer' ? 'Installer' : 'JobGiver'}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const randomAvatar = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
+    
+    const newUser: User = {
+      id: newUserId,
+      name: values.name,
+      email: values.email,
+      anonymousId: newAnonymousId,
+      pincode: values.pincode,
+      roles: [values.role],
+      memberSince: new Date(),
+      avatarUrl: randomAvatar.imageUrl,
+      realAvatarUrl: `https://picsum.photos/seed/${values.name.split(' ')[0]}/100/100`,
+    };
+
+    if (values.role === 'Installer') {
+      newUser.installerProfile = {
+        tier: 'Bronze',
+        points: 0,
+        skills: [],
+        rating: 0,
+        reviews: 0,
+        verified: !!values.aadhar,
+        reputationHistory: [],
+      };
+    }
+
+    users.push(newUser);
+    login(newUserId);
     router.push("/dashboard");
   }
 
@@ -103,33 +136,48 @@ export function SignUpForm() {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>I am a...</FormLabel>
-              <Select
-                onValueChange={(value) => {
-                  field.onChange(value);
-                  setRole(value as any);
-                }}
-                defaultValue={field.value}
-              >
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>I am a...</FormLabel>
+                <Select
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    setRole(value as any);
+                  }}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Job Giver">Job Giver</SelectItem>
+                    <SelectItem value="Installer">Installer</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="pincode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Pincode</FormLabel>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your role" />
-                  </SelectTrigger>
+                  <Input placeholder="e.g., 110001" {...field} />
                 </FormControl>
-                <SelectContent>
-                  <SelectItem value="Job Giver">Job Giver</SelectItem>
-                  <SelectItem value="Installer">Installer</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         {role === "Installer" && (
           <FormField
