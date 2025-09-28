@@ -82,7 +82,7 @@ export function UserNav() {
                         disabled={user.roles.length < 2}
                         aria-label="Role switcher"
                     />
-                    <Label htmlFor="role-switch" className={cn("text-xs font-bold", role === 'Installer' ? 'text-success' : 'text-muted-foreground')}>Installer</Label>
+                    <Label htmlFor="role-switch" className={cn("text-xs font-bold", role === 'Installer' ? 'text-primary' : 'text-muted-foreground')}>Installer</Label>
                 </div>
             </div>
         </div>
