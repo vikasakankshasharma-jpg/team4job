@@ -19,6 +19,11 @@ export type User = {
     reviews: number;
     verified: boolean;
     reputationHistory?: { month: string; points: number }[];
+    aadharData?: {
+      name: string;
+      mobile: string;
+      pincode: string;
+    };
   };
 };
 

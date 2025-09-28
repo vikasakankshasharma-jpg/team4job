@@ -32,6 +32,7 @@ import type { User } from "@/lib/types";
 import {
   initiateAadharVerification,
   confirmAadharVerification,
+  ConfirmAadharOutput,
 } from "@/ai/flows/aadhar-verification";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -66,6 +67,7 @@ export function SignUpForm() {
   const [transactionId, setTransactionId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [kycData, setKycData] = useState<ConfirmAadharOutput['kycData'] | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -125,6 +127,7 @@ export function SignUpForm() {
         form.clearErrors("aadhar");
 
         if (result.kycData) {
+            setKycData(result.kycData);
             form.setValue("name", result.kycData.name, { shouldValidate: true });
             form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
             form.setValue("pincode", result.kycData.pincode, { shouldValidate: true });
@@ -173,6 +176,7 @@ export function SignUpForm() {
         reviews: 0,
         verified: verificationStep === 'verified',
         reputationHistory: [],
+        aadharData: kycData ? { ...kycData } : undefined,
       };
     }
 
@@ -273,7 +277,7 @@ export function SignUpForm() {
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertTitle>KYC Verified</AlertTitle>
                 <AlertDescription>
-                    Your Aadhar has been verified. Please complete your profile details.
+                    Your Aadhar details have been pre-filled. Please review and complete your profile.
                 </AlertDescription>
             </Alert>
             <FormField
@@ -281,7 +285,7 @@ export function SignUpForm() {
                 name="name"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>Full Name (as per Aadhar)</FormLabel>
                     <FormControl>
                         <Input placeholder="John Doe" {...field} />
                     </FormControl>

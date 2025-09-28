@@ -41,7 +41,12 @@ export const users: User[] = [
         { month: 'Jul', points: 250 },
         { month: 'Aug', points: 150 },
         { month: 'Sep', points: 200 },
-      ]
+      ],
+      aadharData: {
+        name: 'Alex Johnson',
+        mobile: '9876543210',
+        pincode: '110001',
+      }
     },
   },
   {
@@ -81,7 +86,12 @@ export const users: User[] = [
         { month: 'Jul', points: 100 },
         { month: 'Aug', points: 100 },
         { month: 'Sep', points: 100 },
-      ]
+      ],
+      aadharData: {
+          name: 'Carlos Diaz',
+          mobile: '9876543212',
+          pincode: '500001'
+      }
     },
   },
   {
@@ -137,7 +147,12 @@ export const users: User[] = [
         { month: 'Jul', points: 350 },
         { month: 'Aug', points: 400 },
         { month: 'Sep', points: 400 },
-      ]
+      ],
+      aadharData: {
+          name: 'Ethan Hunt',
+          mobile: '9876543214',
+          pincode: '110031'
+      }
     },
   },
   {
@@ -177,7 +192,12 @@ export const users: User[] = [
         { month: 'Jul', points: 150 },
         { month: 'Aug', points: 150 },
         { month: 'Sep', points: 200 },
-      ]
+      ],
+      aadharData: {
+          name: 'George Mason',
+          mobile: '9876543216',
+          pincode: '800001'
+      }
     },
   },
   {
