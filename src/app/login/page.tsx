@@ -15,9 +15,9 @@ import { Logo } from "@/components/icons";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -35,7 +35,9 @@ export default function LoginPage() {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     // Update the URL without reloading the page
-    router.push(`${pathname}?tab=${value}`);
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", value);
+    router.push(`${pathname}?${params.toString()}`);
   };
   
   return (
@@ -85,4 +87,12 @@ export default function LoginPage() {
       </Tabs>
     </div>
   );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <LoginPageContent />
+        </Suspense>
+    )
 }
