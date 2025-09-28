@@ -46,16 +46,14 @@ const formSchema = z.object({
   role: z.enum(["Job Giver", "Installer"]),
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
   pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
-  aadhar: z.string().refine(val => val.length === 12, {
-    message: "Aadhar must be a 12-digit number.",
-  }),
+  aadhar: z.string().optional(),
 }).refine(data => {
   if (data.role === 'Installer') {
     return data.aadhar && /^\d{12}$/.test(data.aadhar);
   }
   return true;
 }, {
-  message: "Aadhar must be a 12-digit number for Installers.",
+  message: "Aadhar must be verified for Installers.",
   path: ["aadhar"],
 });
 
@@ -229,30 +227,26 @@ export function SignUpForm() {
                   <ShieldCheck className="h-4 w-4 text-muted-foreground" />
                   Aadhar Verification
                 </FormLabel>
-                <div className="flex items-center gap-2">
-                   <FormControl>
-                      <Input 
-                        placeholder="Enter 12-digit Aadhar to verify" 
-                        {...field} 
-                        disabled={isAadharVerified}
-                        className={cn(isAadharVerified && "border-green-500 focus-visible:ring-green-500")}
-                      />
-                    </FormControl>
-                  <AadharVerificationDialog
-                    onSuccess={handleVerificationSuccess}
-                    isVerified={isAadharVerified}
-                  />
-                </div>
-                 {isAadharVerified ? (
-                  <div className="flex items-center gap-2 text-sm font-medium text-green-600">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Aadhar Verified Successfully</span>
-                  </div>
-                ) : (
+                <FormControl>
+                   <>
+                    {!isAadharVerified ? (
+                       <AadharVerificationDialog
+                        onSuccess={handleVerificationSuccess}
+                        isVerified={isAadharVerified}
+                       />
+                    ) : (
+                       <div className="flex items-center gap-2 text-sm font-medium text-green-600 border rounded-md p-2 justify-center">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>Aadhar Verified Successfully</span>
+                       </div>
+                    )}
+                   </>
+                </FormControl>
+                 {!isAadharVerified && (
                   <FormDescription>
                     Aadhar verification is required for all installers to increase trust.
                   </FormDescription>
-                )}
+                 )}
                 <FormMessage />
               </FormItem>
             )}
@@ -266,5 +260,3 @@ export function SignUpForm() {
     </Form>
   );
 }
-
-    
