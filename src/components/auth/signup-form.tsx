@@ -470,12 +470,10 @@ export function SignUpForm() {
             )}
         />
         
-        {role === "Installer" && renderInstallerForm()}
-        {role === "Job Giver" && renderJobGiverForm()}
+        {role === "Installer" ? renderInstallerForm() : null}
+        {role === "Job Giver" ? renderJobGiverForm() : null}
 
       </form>
     </Form>
   );
 }
-
-    
