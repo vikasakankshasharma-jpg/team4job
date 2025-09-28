@@ -34,7 +34,6 @@ import {
   confirmAadharVerification,
 } from "@/ai/flows/aadhar-verification";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 
@@ -54,14 +53,6 @@ const formSchema = z.object({
   pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
   aadhar: z.string().refine(val => /^\d{12}$/.test(val), { message: "Must be a 12-digit Aadhar number." }),
   otp: z.string().optional(),
-}).refine(data => {
-  if (data.role === 'Installer') {
-    return data.aadhar && /^\d{12}$/.test(data.aadhar);
-  }
-  return true;
-}, {
-  message: "Aadhar must be verified for Installers.",
-  path: ["aadhar"],
 });
 
 
@@ -71,7 +62,7 @@ export function SignUpForm() {
   const { toast } = useToast();
   const [role, setRole] = useState<"Job Giver" | "Installer" | "">("");
   
-  const [verificationState, setVerificationState] = useState<"idle" | "otpSent" | "verifying" | "verified">("idle");
+  const [verificationStep, setVerificationStep] = useState<"enterAadhar" | "enterOtp" | "verified">("enterAadhar");
   const [transactionId, setTransactionId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +92,7 @@ export function SignUpForm() {
       const result = await initiateAadharVerification({ aadharNumber });
       if (result.success) {
         setTransactionId(result.transactionId);
-        setVerificationState("otpSent");
+        setVerificationStep("enterOtp");
         toast({
           title: "OTP Sent!",
           description: result.message,
@@ -120,28 +111,30 @@ export function SignUpForm() {
   const handleConfirmVerification = async () => {
     setError(null);
     setIsLoading(true);
-    setVerificationState("verifying");
     const otp = form.getValues("otp");
 
     try {
       const result = await confirmAadharVerification({ transactionId, otp: otp || "" });
       if (result.isVerified) {
-        setVerificationState("verified");
+        setVerificationStep("verified");
         toast({
           title: "Verification Successful!",
-          description: result.message,
+          description: "Please fill in your remaining details.",
           variant: "success",
         });
-        // Set aadhar field as validated
         form.clearErrors("aadhar");
+
+        if (result.kycData) {
+            form.setValue("name", result.kycData.name, { shouldValidate: true });
+            form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
+            form.setValue("pincode", result.kycData.pincode, { shouldValidate: true });
+        }
       } else {
         setError(result.message);
-         setVerificationState("otpSent");
       }
     } catch (e: any) {
       setError("An unexpected error occurred. Please try again.");
       console.error(e);
-       setVerificationState("otpSent");
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +142,7 @@ export function SignUpForm() {
 
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    if (values.role === 'Installer' && verificationState !== 'verified') {
+    if (values.role === 'Installer' && verificationStep !== 'verified') {
         form.setError("aadhar", { type: "manual", message: "Please complete Aadhar verification." });
         return;
     }
@@ -178,7 +171,7 @@ export function SignUpForm() {
         skills: [],
         rating: 0,
         reviews: 0,
-        verified: verificationState === 'verified',
+        verified: verificationStep === 'verified',
         reputationHistory: [],
       };
     }
@@ -190,9 +183,173 @@ export function SignUpForm() {
 
   const isAadharValid = /^\d{12}$/.test(aadharValue) && form.getFieldState('aadhar').isDirty && !form.getFieldState('aadhar').invalid;
 
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+  const renderInstallerForm = () => {
+    if (verificationStep !== 'verified') {
+        return (
+            <Card className="p-4 space-y-4">
+                 <FormLabel className="flex items-center gap-2 text-lg font-semibold">
+                    <ShieldCheck className="h-5 w-5 text-primary" />
+                    Installer KYC Verification
+                </FormLabel>
+                <FormDescription>
+                    Please verify your Aadhar to proceed with registration.
+                </FormDescription>
+
+                {error && (
+                <Alert variant="destructive">
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+                )}
+                
+                <FormField
+                    control={form.control}
+                    name="aadhar"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Aadhar Number</FormLabel>
+                            <div className="flex gap-2">
+                                <FormControl>
+                                    <Input 
+                                        placeholder="XXXX XXXX XXXX" 
+                                        {...field} 
+                                        maxLength={12}
+                                        disabled={verificationStep !== 'enterAadhar'}
+                                    />
+                                </FormControl>
+                                {verificationStep === 'enterAadhar' && (
+                                    <Button 
+                                        type="button" 
+                                        onClick={handleInitiateVerification}
+                                        disabled={!isAadharValid || isLoading}
+                                    >
+                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Send OTP
+                                    </Button>
+                                )}
+                            </div>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                {verificationStep === "enterOtp" && (
+                    <FormField
+                        control={form.control}
+                        name="otp"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>One-Time Password (OTP)</FormLabel>
+                                    <div className="flex gap-2">
+                                    <FormControl>
+                                        <Input 
+                                            placeholder="Enter 6-digit OTP" 
+                                            {...field} 
+                                            maxLength={6}
+                                        />
+                                    </FormControl>
+                                    <Button 
+                                        type="button" 
+                                        onClick={handleConfirmVerification}
+                                        disabled={isLoading}
+                                    >
+                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Verify
+                                    </Button>
+                                </div>
+                                <FormDescription>For this demo, the OTP is always <strong>123456</strong>.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+            </Card>
+        )
+    }
+
+    return (
+        <>
+            <Alert variant="success" className="mb-4">
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertTitle>KYC Verified</AlertTitle>
+                <AlertDescription>
+                    Your Aadhar has been verified. Please complete your profile details.
+                </AlertDescription>
+            </Alert>
+            <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                        <Input placeholder="John Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                        <Input placeholder="name@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                control={form.control}
+                name="mobile"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Mobile Number</FormLabel>
+                    <FormControl>
+                        <Input placeholder="10-digit mobile number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                control={form.control}
+                name="pincode"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Pincode</FormLabel>
+                    <FormControl>
+                        <Input placeholder="e.g., 110001" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <Button type="submit" className="w-full">
+                    Create Account
+                </Button>
+        </>
+    )
+  }
+
+  const renderJobGiverForm = () => (
+      <>
         <FormField
           control={form.control}
           name="name"
@@ -245,139 +402,60 @@ export function SignUpForm() {
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>I am a...</FormLabel>
-                <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    setRole(value as any);
-                  }}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Job Giver">Job Giver</SelectItem>
-                    <SelectItem value="Installer">Installer</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-           <FormField
+        <FormField
             control={form.control}
             name="pincode"
             render={({ field }) => (
-              <FormItem>
+                <FormItem>
                 <FormLabel>Pincode</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., 110001" {...field} />
+                    <Input placeholder="e.g., 110001" {...field} />
                 </FormControl>
                 <FormMessage />
-              </FormItem>
+                </FormItem>
             )}
-          />
-        </div>
-
-        {role === "Installer" && (
-          <Card className="p-4 space-y-4">
-            <FormLabel className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-              Aadhar Verification (Required for Installers)
-            </FormLabel>
-            
-            {error && (
-              <Alert variant="destructive">
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {verificationState === 'verified' ? (
-                <div className="flex items-center gap-2 text-sm font-medium text-green-600 border rounded-md p-3 justify-center bg-green-500/10 border-green-500/20">
-                    <CheckCircle2 className="h-5 w-5" />
-                    <span>Aadhar Verified Successfully</span>
-                </div>
-            ) : (
-                <>
-                    <FormField
-                        control={form.control}
-                        name="aadhar"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Aadhar Number</FormLabel>
-                                <div className="flex gap-2">
-                                    <FormControl>
-                                        <Input 
-                                            placeholder="XXXX XXXX XXXX" 
-                                            {...field} 
-                                            maxLength={12}
-                                            disabled={verificationState !== 'idle'}
-                                        />
-                                    </FormControl>
-                                     {verificationState === 'idle' && (
-                                        <Button 
-                                            type="button" 
-                                            onClick={handleInitiateVerification}
-                                            disabled={!isAadharValid || isLoading}
-                                        >
-                                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Send OTP
-                                        </Button>
-                                    )}
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {verificationState === "otpSent" || verificationState === "verifying" ? (
-                        <FormField
-                            control={form.control}
-                            name="otp"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>One-Time Password (OTP)</FormLabel>
-                                     <div className="flex gap-2">
-                                        <FormControl>
-                                            <Input 
-                                                placeholder="Enter 6-digit OTP" 
-                                                {...field} 
-                                                maxLength={6}
-                                            />
-                                        </FormControl>
-                                        <Button 
-                                            type="button" 
-                                            onClick={handleConfirmVerification}
-                                            disabled={isLoading}
-                                        >
-                                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Verify
-                                        </Button>
-                                    </div>
-                                    <FormDescription>For this demo, the OTP is always <strong>123456</strong>.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    ) : null}
-                </>
-            )}
-          </Card>
-        )}
-
+            />
         <Button type="submit" className="w-full">
           Create Account
         </Button>
+      </>
+  )
+
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+            <FormItem>
+                <FormLabel>I am a...</FormLabel>
+                <Select
+                onValueChange={(value) => {
+                    field.onChange(value);
+                    setRole(value as any);
+                }}
+                defaultValue={field.value}
+                >
+                <FormControl>
+                    <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                    <SelectItem value="Job Giver">Job Giver</SelectItem>
+                    <SelectItem value="Installer">Installer</SelectItem>
+                </SelectContent>
+                </Select>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
+        
+        {role === "Installer" && renderInstallerForm()}
+        {role === "Job Giver" && renderJobGiverForm()}
+
       </form>
     </Form>
   );

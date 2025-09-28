@@ -6,11 +6,11 @@
  * or KYC User Agency (KUA). This is a hypothetical implementation.
  *
  * - initiateAadharVerification - Simulates requesting an OTP for a given Aadhar number.
- * - confirmAadharVerification - Simulates verifying the OTP to complete the process.
+ * - confirmAadharVerification - Simulates verifying the OTP to complete the process and return mock KYC data.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 // === Step 1: Initiate Verification and Request OTP ===
 
@@ -89,6 +89,11 @@ export type ConfirmAadharInput = z.infer<typeof ConfirmAadharInputSchema>;
 const ConfirmAadharOutputSchema = z.object({
   isVerified: z.boolean().describe('Whether the Aadhar verification was successful.'),
   message: z.string().describe('A message indicating the result of the verification.'),
+  kycData: z.object({
+    name: z.string().describe('The name of the user as per Aadhar.'),
+    mobile: z.string().describe('The mobile number as per Aadhar.'),
+    pincode: z.string().describe('The pincode as per Aadhar address.'),
+  }).optional().describe('Mock KYC data returned on successful verification.'),
 });
 export type ConfirmAadharOutput = z.infer<typeof ConfirmAadharOutputSchema>;
 
@@ -96,9 +101,9 @@ export type ConfirmAadharOutput = z.infer<typeof ConfirmAadharOutputSchema>;
  * Simulates making a server-to-server call to an AUA/KUA to verify the OTP.
  * @param transactionId The unique transaction ID.
  * @param otp The 6-digit OTP.
- * @returns A verification status.
+ * @returns A verification status and mock KYC data.
  */
-async function callKuaToVerifyOtp(transactionId: string, otp: string): Promise<{ success: boolean, error?: string }> {
+async function callKuaToVerifyOtp(transactionId: string, otp: string): Promise<{ success: boolean; kycData?: z.infer<typeof ConfirmAadharOutputSchema>['kycData']; error?: string }> {
     console.log(`[Mock AUA/KUA] Verifying OTP: ${otp} for Transaction: ${transactionId}`);
     // In a real application, you would call the verification endpoint.
     // const response = await fetch('https://api.your-kua-provider.com/verify-otp', {
@@ -114,8 +119,13 @@ async function callKuaToVerifyOtp(transactionId: string, otp: string): Promise<{
         return { success: false, error: 'The OTP entered is incorrect.' };
     }
 
-    console.log('[Mock AUA/KUA] Verification successful.');
-    return { success: true };
+    console.log('[Mock AUA/KUA] Verification successful. Returning mock KYC data.');
+    const mockKycData = {
+        name: 'Ramesh Kumar',
+        mobile: '9876543210',
+        pincode: '110001'
+    };
+    return { success: true, kycData: mockKycData };
 }
 
 
@@ -126,7 +136,7 @@ export const confirmAadharVerification = ai.defineFlow(
     outputSchema: ConfirmAadharOutputSchema,
   },
   async (input) => {
-    const { success, error } = await callKuaToVerifyOtp(input.transactionId, input.otp);
+    const { success, error, kycData } = await callKuaToVerifyOtp(input.transactionId, input.otp);
 
     if (!success) {
       return {
@@ -141,6 +151,7 @@ export const confirmAadharVerification = ai.defineFlow(
     return {
       isVerified: true,
       message: 'Aadhar verification successful. Your profile is now marked as verified.',
+      kycData: kycData,
     };
   }
 );
