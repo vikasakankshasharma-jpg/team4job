@@ -14,12 +14,29 @@ import { SignUpForm } from "@/components/auth/signup-form";
 import { Logo } from "@/components/icons";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useSearchParams } from "next/navigation";
-import React from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import React, { useEffect, useState } from "react";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const tab = searchParams.get("tab") || "login";
+  const initialTab = searchParams.get("tab") || "login";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    // Sync state with URL if it changes (e.g., browser back/forward)
+    const tabFromUrl = searchParams.get("tab") || "login";
+    if (tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams, activeTab]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Update the URL without reloading the page
+    router.push(`${pathname}?tab=${value}`);
+  };
   
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
@@ -34,7 +51,7 @@ export default function LoginPage() {
           <ThemeToggle />
         </div>
        </header>
-      <Tabs defaultValue={tab} className="w-full max-w-md">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-md">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Log In</TabsTrigger>
           <TabsTrigger value="signup">Sign Up</TabsTrigger>
