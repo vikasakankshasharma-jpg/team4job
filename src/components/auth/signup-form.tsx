@@ -36,7 +36,6 @@ import {
 } from "@/ai/flows/aadhar-verification";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card } from "@/components/ui/card";
 
 
 const formSchema = z.object({
@@ -195,13 +194,12 @@ export function SignUpForm() {
   const renderInstallerForm = () => {
     if (verificationStep !== 'verified') {
         return (
-            <Card className="p-4 space-y-4">
-                 <FormLabel className="flex items-center gap-2 text-lg font-semibold">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    Installer KYC Verification
+            <div className="space-y-4 rounded-lg border p-4">
+                 <FormLabel className="text-base font-semibold">
+                    Step 1: Aadhar Verification
                 </FormLabel>
                 <FormDescription>
-                    Please verify your Aadhar to proceed with registration.
+                    Installers must complete KYC verification. This ensures a trustworthy platform for everyone.
                 </FormDescription>
 
                 {error && (
@@ -263,7 +261,7 @@ export function SignUpForm() {
                                         disabled={isLoading}
                                     >
                                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Verify
+                                        Verify OTP
                                     </Button>
                                 </div>
                                 <FormDescription>For this demo, the OTP is always <strong>123456</strong>.</FormDescription>
@@ -272,87 +270,92 @@ export function SignUpForm() {
                         )}
                     />
                 )}
-            </Card>
+            </div>
         )
     }
 
     return (
         <>
             <Alert variant="success" className="mb-4">
-                <CheckCircle2 className="h-4 w-4" />
-                <AlertTitle>KYC Verified</AlertTitle>
+                <ShieldCheck className="h-4 w-4" />
+                <AlertTitle>Aadhar Verified Successfully!</AlertTitle>
                 <AlertDescription>
-                    Your Aadhar details have been pre-filled. Please review and complete your profile.
+                    Please complete your profile. The details from your Aadhar have been pre-filled but can be edited if needed.
                 </AlertDescription>
             </Alert>
-            <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Full Name (as per Aadhar)</FormLabel>
-                    <FormControl>
-                        <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
+             <FormLabel className="text-base font-semibold">
+                Step 2: Complete Your Profile
+            </FormLabel>
+            <div className="space-y-4 pt-4">
                 <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                        <Input placeholder="name@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="mobile"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Mobile Number</FormLabel>
-                    <FormControl>
-                        <Input placeholder="10-digit mobile number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="pincode"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Pincode</FormLabel>
-                    <FormControl>
-                        <Input placeholder="e.g., 110001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <Button type="submit" className="w-full">
-                    Create Account
-                </Button>
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Full Name (as per Aadhar)</FormLabel>
+                        <FormControl>
+                            <Input placeholder="John Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                            <Input placeholder="name@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="mobile"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Mobile Number</FormLabel>
+                        <FormControl>
+                            <Input placeholder="10-digit mobile number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="pincode"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Pincode</FormLabel>
+                        <FormControl>
+                            <Input placeholder="e.g., 110001" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <Button type="submit" className="w-full">
+                        Create Account
+                    </Button>
+            </div>
         </>
     )
   }
@@ -468,7 +471,3 @@ export function SignUpForm() {
     </Form>
   );
 }
-
-    
-
-    
