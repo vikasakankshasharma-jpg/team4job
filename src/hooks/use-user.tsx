@@ -12,7 +12,7 @@ type UserContextType = {
   role: Role;
   setUser: React.Dispatch<React.SetStateAction<User | null>> | null;
   setRole: (role: Role) => void;
-  login: (userId: string) => void;
+  login: (email: string) => boolean;
   logout: () => void;
 };
 
@@ -60,15 +60,17 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   }, [role, pathname, user, router]);
 
 
-  const login = (userId: string) => {
-    const foundUser = users.find((u) => u.id === userId);
+  const login = (email: string) => {
+    const foundUser = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (foundUser) {
       setUser(foundUser);
-      localStorage.setItem('loggedInUserId', userId);
+      localStorage.setItem('loggedInUserId', foundUser.id);
       const initialRole = foundUser.roles.includes("Admin") ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
       setRoleState(initialRole);
       localStorage.setItem('userRole', initialRole);
+      return true;
     }
+    return false;
   };
 
   const logout = () => {

@@ -12,35 +12,41 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { users } from "@/lib/data";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
-  userId: z.string().min(1, { message: "Please select a user to log in." }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(1, { message: "Password cannot be empty." }),
 });
 
 export function LoginForm() {
   const router = useRouter();
   const { login } = useUser();
+  const { toast } = useToast();
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      userId: "",
+      email: "",
+      password: "",
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    login(values.userId);
-    router.push("/dashboard");
+    const success = login(values.email);
+    if (success) {
+      router.push("/dashboard");
+    } else {
+      toast({
+        title: "Login Failed",
+        description: "No user found with that email address. Please sign up or try a different email.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (
@@ -48,27 +54,26 @@ export function LoginForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="userId"
+          name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Select User Profile</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a user to log in as..." />
-                  </SelectTrigger>
+              <FormLabel>Email Address</FormLabel>
+               <FormControl>
+                  <Input type="email" placeholder="name@example.com" {...field} />
                 </FormControl>
-                <SelectContent>
-                  {users.map(user => (
-                    <SelectItem key={user.id} value={user.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{user.name}</span>
-                        <span className="text-xs text-muted-foreground">({user.roles.join(', ')})</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+               <FormControl>
+                  <Input type="password" placeholder="••••••••" {...field} />
+                </FormControl>
               <FormMessage />
             </FormItem>
           )}
