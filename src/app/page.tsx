@@ -65,7 +65,7 @@ export default function Home() {
 
         <nav className="flex-1 flex justify-end items-center gap-4">
           <ThemeToggle />
-          <Button variant="ghost" asChild>
+          <Button variant="secondary" asChild>
             <Link href="/login">Log In</Link>
           </Button>
           <Button asChild>
