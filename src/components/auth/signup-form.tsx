@@ -61,7 +61,6 @@ export function SignUpForm() {
   const router = useRouter();
   const { login } = useUser();
   const { toast } = useToast();
-  const [role, setRole] = useState<"Job Giver" | "Installer" | "">("");
   
   const [verificationStep, setVerificationStep] = useState<"enterAadhar" | "enterOtp" | "verified">("enterAadhar");
   const [transactionId, setTransactionId] = useState("");
@@ -84,6 +83,7 @@ export function SignUpForm() {
     },
   });
   
+  const role = form.watch("role");
   const aadharValue = form.watch("aadhar");
 
   const handleInitiateVerification = async () => {
@@ -121,7 +121,7 @@ export function SignUpForm() {
         setVerificationStep("verified");
         toast({
           title: "Verification Successful!",
-          description: "Please fill in your remaining details.",
+          description: "Your KYC data has been pre-filled.",
           variant: "success",
         });
         form.clearErrors("aadhar");
@@ -181,7 +181,7 @@ export function SignUpForm() {
     }
 
     users.push(newUser);
-    login(newUserId);
+    login(values.email);
     router.push("/dashboard");
   }
 
@@ -438,7 +438,6 @@ export function SignUpForm() {
                 <Select
                 onValueChange={(value) => {
                     field.onChange(value);
-                    setRole(value as any);
                 }}
                 defaultValue={field.value}
                 >
@@ -464,3 +463,5 @@ export function SignUpForm() {
     </Form>
   );
 }
+
+    
