@@ -25,10 +25,13 @@ import {
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { useState } from "react";
-import { ShieldCheck } from "lucide-react";
+import { CheckCircle2, ShieldCheck } from "lucide-react";
 import { users } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { User } from "@/lib/types";
+import { AadharVerificationDialog } from "./aadhar-verification-dialog";
+import { cn } from "@/lib/utils";
+
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -43,16 +46,15 @@ const formSchema = z.object({
   role: z.enum(["Job Giver", "Installer"]),
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
   pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
-  aadhar: z.string().optional(), // It remains optional in the base schema
+  aadhar: z.string().optional(),
 }).refine(data => {
-  // If the role is 'Installer', aadhar must be a 12-digit string.
   if (data.role === 'Installer') {
     return data.aadhar && /^\d{12}$/.test(data.aadhar);
   }
   return true;
 }, {
   message: "Aadhar must be a 12-digit number for Installers.",
-  path: ["aadhar"], // Specify the path of the error
+  path: ["aadhar"],
 });
 
 
@@ -60,6 +62,7 @@ export function SignUpForm() {
   const router = useRouter();
   const { login } = useUser();
   const [role, setRole] = useState<"Job Giver" | "Installer" | "">("");
+  const [isAadharVerified, setIsAadharVerified] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -100,7 +103,7 @@ export function SignUpForm() {
         skills: [],
         rating: 0,
         reviews: 0,
-        verified: !!values.aadhar,
+        verified: isAadharVerified,
         reputationHistory: [],
       };
     }
@@ -109,6 +112,12 @@ export function SignUpForm() {
     login(newUserId);
     router.push("/dashboard");
   }
+
+  const handleVerificationSuccess = (aadharNumber: string) => {
+    form.setValue("aadhar", aadharNumber, { shouldValidate: true });
+    setIsAadharVerified(true);
+  };
+
 
   return (
     <Form {...form}>
@@ -218,12 +227,30 @@ export function SignUpForm() {
                   <ShieldCheck className="h-4 w-4 text-muted-foreground" />
                   Aadhar Verification
                 </FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter 12-digit Aadhar number" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Aadhar verification is required for all installers to increase trust.
-                </FormDescription>
+                <div className="flex items-center gap-2">
+                   <FormControl>
+                      <Input 
+                        placeholder="Enter 12-digit Aadhar number" 
+                        {...field} 
+                        disabled={isAadharVerified}
+                        className={cn(isAadharVerified && "border-green-500")}
+                      />
+                    </FormControl>
+                  <AadharVerificationDialog
+                    onSuccess={handleVerificationSuccess}
+                    isVerified={isAadharVerified}
+                  />
+                </div>
+                 {isAadharVerified ? (
+                  <div className="flex items-center gap-2 text-sm font-medium text-green-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Aadhar Verified Successfully</span>
+                  </div>
+                ) : (
+                  <FormDescription>
+                    Aadhar verification is required for all installers to increase trust.
+                  </FormDescription>
+                )}
                 <FormMessage />
               </FormItem>
             )}
