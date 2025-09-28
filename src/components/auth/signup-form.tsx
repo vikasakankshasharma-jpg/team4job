@@ -25,12 +25,17 @@ import {
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { useState } from "react";
-import { CheckCircle2, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { users } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { User } from "@/lib/types";
-import { AadharVerificationDialog } from "./aadhar-verification-dialog";
+import {
+  initiateAadharVerification,
+  confirmAadharVerification,
+} from "@/ai/flows/aadhar-verification";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 const formSchema = z.object({
@@ -46,7 +51,8 @@ const formSchema = z.object({
   role: z.enum(["Job Giver", "Installer"]),
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
   pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
-  aadhar: z.string().optional(),
+  aadhar: z.string().refine(val => /^\d{12}$/.test(val), { message: "Must be a 12-digit Aadhar number." }),
+  otp: z.string().optional(),
 }).refine(data => {
   if (data.role === 'Installer') {
     return data.aadhar && /^\d{12}$/.test(data.aadhar);
@@ -61,11 +67,17 @@ const formSchema = z.object({
 export function SignUpForm() {
   const router = useRouter();
   const { login } = useUser();
+  const { toast } = useToast();
   const [role, setRole] = useState<"Job Giver" | "Installer" | "">("");
-  const [isAadharVerified, setIsAadharVerified] = useState(false);
+  
+  const [verificationState, setVerificationState] = useState<"idle" | "otpSent" | "verifying" | "verified">("idle");
+  const [transactionId, setTransactionId] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       name: "",
       email: "",
@@ -74,11 +86,73 @@ export function SignUpForm() {
       mobile: "",
       pincode: "",
       aadhar: "",
+      otp: "",
     },
   });
+  
+  const aadharValue = form.watch("aadhar");
+
+  const handleInitiateVerification = async () => {
+    setError(null);
+    setIsLoading(true);
+    const aadharNumber = form.getValues("aadhar");
+    try {
+      const result = await initiateAadharVerification({ aadharNumber });
+      if (result.success) {
+        setTransactionId(result.transactionId);
+        setVerificationState("otpSent");
+        toast({
+          title: "OTP Sent!",
+          description: result.message,
+        });
+      } else {
+        setError(result.message);
+      }
+    } catch (e: any) {
+      setError("An unexpected error occurred. Please try again.");
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConfirmVerification = async () => {
+    setError(null);
+    setIsLoading(true);
+    setVerificationState("verifying");
+    const otp = form.getValues("otp");
+
+    try {
+      const result = await confirmAadharVerification({ transactionId, otp });
+      if (result.isVerified) {
+        setVerificationState("verified");
+        toast({
+          title: "Verification Successful!",
+          description: result.message,
+          variant: "success",
+        });
+        // Set aadhar field as validated
+        form.clearErrors("aadhar");
+      } else {
+        setError(result.message);
+         setVerificationState("otpSent");
+      }
+    } catch (e: any) {
+      setError("An unexpected error occurred. Please try again.");
+      console.error(e);
+       setVerificationState("otpSent");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Simulate signup
+    if (values.role === 'Installer' && verificationState !== 'verified') {
+        form.setError("aadhar", { type: "manual", message: "Please complete Aadhar verification." });
+        return;
+    }
+    
     const newUserId = `user-${users.length + 1}`;
     const newAnonymousId = `${values.role === 'Installer' ? 'Installer' : 'JobGiver'}-${Math.floor(1000 + Math.random() * 9000)}`;
     const randomAvatar = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
@@ -103,7 +177,7 @@ export function SignUpForm() {
         skills: [],
         rating: 0,
         reviews: 0,
-        verified: isAadharVerified,
+        verified: verificationState === 'verified',
         reputationHistory: [],
       };
     }
@@ -113,11 +187,7 @@ export function SignUpForm() {
     router.push("/dashboard");
   }
 
-  const handleVerificationSuccess = (aadharNumber: string) => {
-    form.setValue("aadhar", aadharNumber, { shouldValidate: true });
-    setIsAadharVerified(true);
-  };
-
+  const isAadharValid = /^\d{12}$/.test(aadharValue) && form.getFieldState('aadhar').isDirty && !form.getFieldState('aadhar').invalid;
 
   return (
     <Form {...form}>
@@ -218,39 +288,90 @@ export function SignUpForm() {
         </div>
 
         {role === "Installer" && (
-          <FormField
-            control={form.control}
-            name="aadhar"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                  Aadhar Verification
-                </FormLabel>
-                <FormControl>
-                   <>
-                    {!isAadharVerified ? (
-                       <AadharVerificationDialog
-                        onSuccess={handleVerificationSuccess}
-                        isVerified={isAadharVerified}
-                       />
-                    ) : (
-                       <div className="flex items-center gap-2 text-sm font-medium text-green-600 border rounded-md p-2 justify-center">
-                        <CheckCircle2 className="h-4 w-4" />
-                        <span>Aadhar Verified Successfully</span>
-                       </div>
-                    )}
-                   </>
-                </FormControl>
-                 {!isAadharVerified && (
-                  <FormDescription>
-                    Aadhar verification is required for all installers to increase trust.
-                  </FormDescription>
-                 )}
-                <FormMessage />
-              </FormItem>
+          <Card className="p-4 space-y-4">
+            <FormLabel className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+              Aadhar Verification (Required for Installers)
+            </FormLabel>
+            
+            {error && (
+              <Alert variant="destructive">
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
-          />
+
+            {verificationState === 'verified' ? (
+                <div className="flex items-center gap-2 text-sm font-medium text-green-600 border rounded-md p-3 justify-center bg-green-500/10 border-green-500/20">
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span>Aadhar Verified Successfully</span>
+                </div>
+            ) : (
+                <>
+                    <FormField
+                        control={form.control}
+                        name="aadhar"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Aadhar Number</FormLabel>
+                                <div className="flex gap-2">
+                                    <FormControl>
+                                        <Input 
+                                            placeholder="XXXX XXXX XXXX" 
+                                            {...field} 
+                                            maxLength={12}
+                                            disabled={verificationState !== 'idle'}
+                                        />
+                                    </FormControl>
+                                     {verificationState === 'idle' && (
+                                        <Button 
+                                            type="button" 
+                                            onClick={handleInitiateVerification}
+                                            disabled={!isAadharValid || isLoading}
+                                        >
+                                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Send OTP
+                                        </Button>
+                                    )}
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {verificationState === "otpSent" || verificationState === "verifying" ? (
+                        <FormField
+                            control={form.control}
+                            name="otp"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>One-Time Password (OTP)</FormLabel>
+                                     <div className="flex gap-2">
+                                        <FormControl>
+                                            <Input 
+                                                placeholder="Enter 6-digit OTP" 
+                                                {...field} 
+                                                maxLength={6}
+                                            />
+                                        </FormControl>
+                                        <Button 
+                                            type="button" 
+                                            onClick={handleConfirmVerification}
+                                            disabled={isLoading}
+                                        >
+                                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Verify
+                                        </Button>
+                                    </div>
+                                    <FormDescription>For this demo, the OTP is always <strong>123456</strong>.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    ) : null}
+                </>
+            )}
+          </Card>
         )}
 
         <Button type="submit" className="w-full">
