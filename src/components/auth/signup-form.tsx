@@ -36,6 +36,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card } from "@/components/ui/card";
 
 
 const formSchema = z.object({
@@ -123,7 +124,7 @@ export function SignUpForm() {
     const otp = form.getValues("otp");
 
     try {
-      const result = await confirmAadharVerification({ transactionId, otp });
+      const result = await confirmAadharVerification({ transactionId, otp: otp || "" });
       if (result.isVerified) {
         setVerificationState("verified");
         toast({
