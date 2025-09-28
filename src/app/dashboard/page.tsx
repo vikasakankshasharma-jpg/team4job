@@ -341,8 +341,7 @@ export default function DashboardPage() {
     return <div>Loading...</div>; // Or a spinner
   }
 
-  // user-1 is designated as the admin/creator
-  const isAdmin = user.id === 'user-1';
+  const isAdmin = role === "Admin";
 
   return (
     <>

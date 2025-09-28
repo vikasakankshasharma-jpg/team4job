@@ -4,6 +4,7 @@ import { PlaceHolderImages } from './placeholder-images';
 
 // Updated to use centralized placeholder images for anonymity
 const userAvatars: Record<string, string> = {
+  'user-0': PlaceHolderImages.find(p => p.id === 'avatar1')?.imageUrl || '',
   'user-1': PlaceHolderImages.find(p => p.id === 'avatar1')?.imageUrl || '',
   'user-2': PlaceHolderImages.find(p => p.id === 'avatar2')?.imageUrl || '',
   'user-3': PlaceHolderImages.find(p => p.id === 'avatar3')?.imageUrl || '',
@@ -16,6 +17,18 @@ const userAvatars: Record<string, string> = {
 
 
 export const users: User[] = [
+  {
+    id: 'user-0',
+    name: 'Vikas Sharma',
+    anonymousId: 'Admin-0001',
+    email: 'vikaskumarsharma@gmail.com',
+    mobile: '9772699395',
+    avatarUrl: userAvatars['user-0'],
+    realAvatarUrl: 'https://picsum.photos/seed/vikas/100/100',
+    pincode: '110001',
+    roles: ['Admin'],
+    memberSince: new Date('2024-01-01'),
+  },
   {
     id: 'user-1',
     name: 'Alex Johnson',

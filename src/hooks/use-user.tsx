@@ -5,7 +5,7 @@ import { users, type User } from "@/lib/data";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-type Role = "Job Giver" | "Installer";
+type Role = "Job Giver" | "Installer" | "Admin";
 
 type UserContextType = {
   user: User | null;
@@ -38,7 +38,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             if (storedRole && loggedInUser.roles.includes(storedRole)) {
                 setRoleState(storedRole);
             } else {
-                const initialRole = loggedInUser.roles.includes("Installer") ? "Installer" : "Job Giver";
+                const initialRole = loggedInUser.roles.includes("Admin") ? "Admin" : loggedInUser.roles.includes("Installer") ? "Installer" : "Job Giver";
                 setRoleState(initialRole);
             }
         }
@@ -65,7 +65,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     if (foundUser) {
       setUser(foundUser);
       localStorage.setItem('loggedInUserId', userId);
-      const initialRole = foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
+      const initialRole = foundUser.roles.includes("Admin") ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
       setRoleState(initialRole);
       localStorage.setItem('userRole', initialRole);
     }

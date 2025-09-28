@@ -1,5 +1,6 @@
 
 
+
 export type User = {
   id: string;
   name: string;
@@ -9,7 +10,7 @@ export type User = {
   avatarUrl: string;
   realAvatarUrl: string;
   pincode: string;
-  roles: ('Job Giver' | 'Installer')[];
+  roles: ('Job Giver' | 'Installer' | 'Admin')[];
   memberSince: Date;
   installerProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
