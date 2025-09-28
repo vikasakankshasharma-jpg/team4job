@@ -35,14 +35,14 @@ function LoginPageContent() {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     // Update the URL without reloading the page
-    const params = new URLSearchParams(searchParams);
-    params.set("tab", value);
-    router.push(`${pathname}?${params.toString()}`);
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    newSearchParams.set("tab", value);
+    router.push(`${pathname}?${newSearchParams.toString()}`);
   };
   
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4">
-       <header className="w-full max-w-5xl absolute top-0 left-1/2 -translate-x-1/2 flex items-center p-8">
+    <div className="flex min-h-screen flex-col items-center p-4">
+       <header className="w-full max-w-5xl flex items-center p-8">
         <div className="flex-1 flex justify-start">
           <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
             <Logo className="h-7 w-7" />
@@ -53,38 +53,40 @@ function LoginPageContent() {
           <ThemeToggle />
         </div>
        </header>
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-md">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Log In</TabsTrigger>
-          <TabsTrigger value="signup">Sign Up</TabsTrigger>
-        </TabsList>
-        <TabsContent value="login">
-          <Card>
-            <CardHeader>
-              <CardTitle>Log In</CardTitle>
-              <CardDescription>
-                Enter your credentials to access your dashboard.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LoginForm />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="signup">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create an Account</CardTitle>
-              <CardDescription>
-                Choose your role and fill in your details to get started.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SignUpForm />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <main className="flex-grow flex items-center justify-center w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-md">
+            <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login">Log In</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
+            <TabsContent value="login">
+            <Card>
+                <CardHeader>
+                <CardTitle>Log In</CardTitle>
+                <CardDescription>
+                    Enter your credentials to access your dashboard.
+                </CardDescription>
+                </CardHeader>
+                <CardContent>
+                <LoginForm />
+                </CardContent>
+            </Card>
+            </TabsContent>
+            <TabsContent value="signup">
+            <Card>
+                <CardHeader>
+                <CardTitle>Create an Account</CardTitle>
+                <CardDescription>
+                    Choose your role and fill in your details to get started.
+                </CardDescription>
+                </CardHeader>
+                <CardContent>
+                <SignUpForm />
+                </CardContent>
+            </Card>
+            </TabsContent>
+        </Tabs>
+      </main>
     </div>
   );
 }
