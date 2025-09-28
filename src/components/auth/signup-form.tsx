@@ -46,7 +46,9 @@ const formSchema = z.object({
   role: z.enum(["Job Giver", "Installer"]),
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
   pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
-  aadhar: z.string().optional(),
+  aadhar: z.string().refine(val => val.length === 12, {
+    message: "Aadhar must be a 12-digit number.",
+  }),
 }).refine(data => {
   if (data.role === 'Installer') {
     return data.aadhar && /^\d{12}$/.test(data.aadhar);
@@ -230,10 +232,10 @@ export function SignUpForm() {
                 <div className="flex items-center gap-2">
                    <FormControl>
                       <Input 
-                        placeholder="Enter 12-digit Aadhar number" 
+                        placeholder="Enter 12-digit Aadhar to verify" 
                         {...field} 
                         disabled={isAadharVerified}
-                        className={cn(isAadharVerified && "border-green-500")}
+                        className={cn(isAadharVerified && "border-green-500 focus-visible:ring-green-500")}
                       />
                     </FormControl>
                   <AadharVerificationDialog
@@ -264,3 +266,5 @@ export function SignUpForm() {
     </Form>
   );
 }
+
+    
