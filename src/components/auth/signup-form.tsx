@@ -41,7 +41,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Invalid email address." }).refine(email => {
-    return !users.some(user => user.email === email);
+    return !users.some(user => user.email.toLowerCase() === email.toLowerCase());
   }, {
     message: "This email is already in use.",
   }),
@@ -118,6 +118,11 @@ export function SignUpForm() {
     setError(null);
     setIsLoading(true);
     const otp = form.getValues("otp");
+    if (!otp || otp.length !== 6) {
+        setError("Please enter a valid 6-digit OTP.");
+        setIsLoading(false);
+        return;
+    }
 
     try {
       const result = await confirmAadharVerification({ transactionId, otp: otp || "" });
@@ -190,6 +195,7 @@ export function SignUpForm() {
   }
 
   const isAadharValid = aadharValue && /^\d{12}$/.test(aadharValue) && form.getFieldState('aadhar').isDirty && !form.getFieldState('aadhar').invalid;
+  const isOtpValid = form.watch('otp') && /^\d{6}$/.test(form.watch('otp')!);
 
   const renderInstallerForm = () => {
     if (verificationStep !== 'verified') {
@@ -258,7 +264,7 @@ export function SignUpForm() {
                                     <Button 
                                         type="button" 
                                         onClick={handleConfirmVerification}
-                                        disabled={isLoading}
+                                        disabled={isLoading || !isOtpValid}
                                     >
                                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Verify OTP
@@ -471,3 +477,5 @@ export function SignUpForm() {
     </Form>
   );
 }
+
+    
