@@ -43,8 +43,18 @@ const formSchema = z.object({
   role: z.enum(["Job Giver", "Installer"]),
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
   pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
-  aadhar: z.string().optional(),
+  aadhar: z.string().optional(), // It remains optional in the base schema
+}).refine(data => {
+  // If the role is 'Installer', aadhar must be a 12-digit string.
+  if (data.role === 'Installer') {
+    return data.aadhar && /^\d{12}$/.test(data.aadhar);
+  }
+  return true;
+}, {
+  message: "Aadhar must be a 12-digit number for Installers.",
+  path: ["aadhar"], // Specify the path of the error
 });
+
 
 export function SignUpForm() {
   const router = useRouter();
@@ -60,6 +70,7 @@ export function SignUpForm() {
       role: undefined,
       mobile: "",
       pincode: "",
+      aadhar: "",
     },
   });
 
@@ -205,13 +216,13 @@ export function SignUpForm() {
               <FormItem>
                 <FormLabel className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                  Aadhar Verification (Optional)
+                  Aadhar Verification
                 </FormLabel>
                 <FormControl>
                   <Input placeholder="Enter 12-digit Aadhar number" {...field} />
                 </FormControl>
                 <FormDescription>
-                  Verifying your Aadhar increases trust and job opportunities. This is a simulated field.
+                  Aadhar verification is required for all installers to increase trust.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
