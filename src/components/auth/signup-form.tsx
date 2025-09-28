@@ -41,17 +41,9 @@ const formSchema = z.object({
     .string()
     .min(6, { message: "Password must be at least 6 characters." }),
   role: z.enum(["Job Giver", "Installer"]),
-  pincode: z.string().optional(),
+  mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
+  pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
   aadhar: z.string().optional(),
-}).refine(data => {
-    // If role is Installer, pincode must be a 6-digit string
-    if (data.role === 'Installer') {
-        return data.pincode && /^\d{6}$/.test(data.pincode);
-    }
-    return true;
-}, {
-    message: "Installer must provide a 6-digit pincode.",
-    path: ["pincode"],
 });
 
 export function SignUpForm() {
@@ -66,6 +58,7 @@ export function SignUpForm() {
       email: "",
       password: "",
       role: undefined,
+      mobile: "",
       pincode: "",
     },
   });
@@ -80,6 +73,7 @@ export function SignUpForm() {
       id: newUserId,
       name: values.name,
       email: values.email,
+      mobile: values.mobile,
       anonymousId: newAnonymousId,
       pincode: values.pincode || '',
       roles: [values.role],
@@ -134,6 +128,19 @@ export function SignUpForm() {
             </FormItem>
           )}
         />
+         <FormField
+          control={form.control}
+          name="mobile"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Mobile Number</FormLabel>
+              <FormControl>
+                <Input placeholder="10-digit mobile number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="password"
@@ -175,21 +182,19 @@ export function SignUpForm() {
               </FormItem>
             )}
           />
-           {role === 'Installer' && (
-             <FormField
-              control={form.control}
-              name="pincode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Pincode</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., 110001" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-           )}
+           <FormField
+            control={form.control}
+            name="pincode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Pincode</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., 110001" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         {role === "Installer" && (

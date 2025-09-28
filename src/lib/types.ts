@@ -5,6 +5,7 @@ export type User = {
   name: string;
   anonymousId: string;
   email: string;
+  mobile: string;
   avatarUrl: string;
   realAvatarUrl: string;
   pincode: string;
