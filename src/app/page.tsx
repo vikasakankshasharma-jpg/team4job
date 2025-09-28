@@ -66,10 +66,10 @@ export default function Home() {
         <nav className="flex-1 flex justify-end items-center gap-4">
           <ThemeToggle />
           <Button variant="secondary" asChild>
-            <Link href="/login">Log In</Link>
+            <Link href="/login?tab=login">Log In</Link>
           </Button>
           <Button asChild>
-            <Link href="/login">Sign Up</Link>
+            <Link href="/login?tab=signup">Sign Up</Link>
           </Button>
         </nav>
       </header>
@@ -85,12 +85,12 @@ export default function Home() {
             </p>
             <div className="flex justify-center gap-4">
               <Button size="lg" asChild>
-                <Link href="/login">
+                <Link href="/login?tab=signup">
                   Post a Job <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button size="lg" variant="secondary" asChild>
-                <Link href="/login">Find Work</Link>
+                <Link href="/login?tab=signup">Find Work</Link>
               </Button>
             </div>
           </div>

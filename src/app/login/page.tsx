@@ -1,4 +1,6 @@
 
+"use client";
+
 import {
   Card,
   CardContent,
@@ -12,8 +14,13 @@ import { SignUpForm } from "@/components/auth/signup-form";
 import { Logo } from "@/components/icons";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useSearchParams } from "next/navigation";
+import React from "react";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab") || "login";
+  
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
        <header className="w-full max-w-5xl absolute top-0 left-1/2 -translate-x-1/2 flex items-center p-8">
@@ -27,7 +34,7 @@ export default function LoginPage() {
           <ThemeToggle />
         </div>
        </header>
-      <Tabs defaultValue="login" className="w-full max-w-md">
+      <Tabs defaultValue={tab} className="w-full max-w-md">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Log In</TabsTrigger>
           <TabsTrigger value="signup">Sign Up</TabsTrigger>
