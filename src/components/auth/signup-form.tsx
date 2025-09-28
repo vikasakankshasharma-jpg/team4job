@@ -48,7 +48,7 @@ const formSchema = z.object({
   password: z
     .string()
     .min(6, { message: "Password must be at least 6 characters." }),
-  role: z.enum(["Job Giver", "Installer"]),
+  role: z.enum(["Job Giver", "Installer", "Both (Job Giver & Installer)"]),
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
   pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
   aadhar: z.string().optional(),
@@ -154,13 +154,30 @@ export function SignUpForm() {
 
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    if (values.role === 'Installer' && verificationStep !== 'verified') {
+    if ((values.role === 'Installer' || values.role === 'Both (Job Giver & Installer)') && verificationStep !== 'verified') {
         form.setError("aadhar", { type: "manual", message: "Please complete Aadhar verification." });
         return;
     }
     
     const newUserId = `user-${users.length + 1}`;
-    const newAnonymousId = `${values.role === 'Installer' ? 'Installer' : 'JobGiver'}-${Math.floor(1000 + Math.random() * 9000)}`;
+    let newAnonymousId = '';
+    let roles: User['roles'] = [];
+
+    switch(values.role) {
+      case 'Installer':
+        newAnonymousId = `Installer-${Math.floor(1000 + Math.random() * 9000)}`;
+        roles = ['Installer'];
+        break;
+      case 'Job Giver':
+        newAnonymousId = `JobGiver-${Math.floor(1000 + Math.random() * 9000)}`;
+        roles = ['Job Giver'];
+        break;
+      case 'Both (Job Giver & Installer)':
+        newAnonymousId = `User-${Math.floor(1000 + Math.random() * 9000)}`;
+        roles = ['Job Giver', 'Installer'];
+        break;
+    }
+
     const randomAvatar = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
     
     const newUser: User = {
@@ -170,13 +187,13 @@ export function SignUpForm() {
       mobile: values.mobile,
       anonymousId: newAnonymousId,
       pincode: values.pincode || '',
-      roles: [values.role],
+      roles: roles,
       memberSince: new Date(),
       avatarUrl: randomAvatar.imageUrl,
       realAvatarUrl: `https://picsum.photos/seed/${values.name.split(' ')[0]}/100/100`,
     };
 
-    if (values.role === 'Installer') {
+    if (values.role === 'Installer' || values.role === 'Both (Job Giver & Installer)') {
       newUser.installerProfile = {
         tier: 'Bronze',
         points: 0,
@@ -205,7 +222,7 @@ export function SignUpForm() {
                     Step 1: Aadhar Verification
                 </FormLabel>
                 <FormDescription>
-                    Installers must complete KYC verification. This ensures a trustworthy platform for everyone.
+                    To ensure a trustworthy platform for everyone, installers are required to complete KYC verification.
                 </FormDescription>
 
                 {error && (
@@ -461,8 +478,9 @@ export function SignUpForm() {
                     </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                    <SelectItem value="Job Giver">Job Giver</SelectItem>
-                    <SelectItem value="Installer">Installer</SelectItem>
+                    <SelectItem value="Job Giver">Job Giver (I want to hire)</SelectItem>
+                    <SelectItem value="Installer">Installer (I want to work)</SelectItem>
+                    <SelectItem value="Both (Job Giver & Installer)">Both (Hire and Work)</SelectItem>
                 </SelectContent>
                 </Select>
                 <FormMessage />
@@ -470,7 +488,7 @@ export function SignUpForm() {
             )}
         />
         
-        {role === "Installer" && renderInstallerForm()}
+        {(role === "Installer" || role === "Both (Job Giver & Installer)") && renderInstallerForm()}
         {role === "Job Giver" && renderJobGiverForm()}
 
       </form>
