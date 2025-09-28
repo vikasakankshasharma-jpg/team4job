@@ -52,7 +52,7 @@ const formSchema = z.object({
   role: z.enum(["Job Giver", "Installer"]),
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
   pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
-  aadhar: z.string().refine(val => /^\d{12}$/.test(val), { message: "Must be a 12-digit Aadhar number." }),
+  aadhar: z.string().optional(),
   otp: z.string().optional(),
 });
 
@@ -90,6 +90,11 @@ export function SignUpForm() {
     setError(null);
     setIsLoading(true);
     const aadharNumber = form.getValues("aadhar");
+    if (!aadharNumber) {
+      setError("Aadhar number is required.");
+      setIsLoading(false);
+      return;
+    }
     try {
       const result = await initiateAadharVerification({ aadharNumber });
       if (result.success) {
@@ -185,7 +190,7 @@ export function SignUpForm() {
     router.push("/dashboard");
   }
 
-  const isAadharValid = /^\d{12}$/.test(aadharValue) && form.getFieldState('aadhar').isDirty && !form.getFieldState('aadhar').invalid;
+  const isAadharValid = aadharValue && /^\d{12}$/.test(aadharValue) && form.getFieldState('aadhar').isDirty && !form.getFieldState('aadhar').invalid;
 
   const renderInstallerForm = () => {
     if (verificationStep !== 'verified') {
@@ -463,5 +468,7 @@ export function SignUpForm() {
     </Form>
   );
 }
+
+    
 
     
