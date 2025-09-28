@@ -17,9 +17,11 @@ import {
   PlusCircle,
   ArrowRight,
   UserCheck,
+  Users,
+  IndianRupee,
 } from "lucide-react";
 import Link from "next/link";
-import { jobs } from "@/lib/data";
+import { jobs, users } from "@/lib/data";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
 
@@ -234,6 +236,104 @@ function JobGiverDashboard() {
   );
 }
 
+function AdminDashboard() {
+  const { setHelp } = useHelp();
+
+  React.useEffect(() => {
+    setHelp({
+      title: 'Admin Dashboard Guide',
+      content: (
+        <div className="space-y-4 text-sm">
+          <p>Welcome, Admin! This is your high-level overview of the entire platform.</p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>
+              <span className="font-semibold">Total Users:</span> The total number of registered users (Installers and Job Givers).
+            </li>
+            <li>
+              <span className="font-semibold">Total Jobs:</span> The total number of jobs ever created on the platform.
+            </li>
+            <li>
+              <span className="font-semibold">Total Bids:</span> The sum of all bids placed across all jobs.
+            </li>
+            <li>
+              <span className="font-semibold">Completed Job Value:</span> The total monetary value of all successfully completed jobs.
+            </li>
+          </ul>
+          <p>Use the navigation menu to access detailed views like the User Directory.</p>
+        </div>
+      )
+    });
+  }, [setHelp]);
+
+  const totalUsers = users.length;
+  const totalJobs = jobs.length;
+  const totalBids = jobs.reduce((sum, job) => sum + job.bids.length, 0);
+  const completedJobValue = jobs
+    .filter(job => job.status === 'Completed' && job.awardedInstaller)
+    .reduce((sum, job) => {
+      const winningBid = job.bids.find(bid => bid.installer.id === job.awardedInstaller);
+      return sum + (winningBid?.amount || 0);
+    }, 0);
+
+  return (
+    <>
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+        <Card>
+          <Link href="/dashboard/users">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                Installers & Job Givers
+              </p>
+            </CardContent>
+          </Link>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
+            <Briefcase className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalJobs}</div>
+            <p className="text-xs text-muted-foreground">
+              Jobs posted on the platform
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Bids</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalBids}</div>
+            <p className="text-xs text-muted-foreground">
+              Bids placed on all jobs
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed Job Value</CardTitle>
+            <IndianRupee className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹{completedJobValue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              Value of all completed jobs
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </>
+  );
+}
+
+
 export default function DashboardPage() {
   const { user, role } = useUser();
 
@@ -241,12 +341,15 @@ export default function DashboardPage() {
     return <div>Loading...</div>; // Or a spinner
   }
 
+  // user-1 is designated as the admin/creator
+  const isAdmin = user.id === 'user-1';
+
   return (
     <>
       <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">{isAdmin ? 'Admin Dashboard' : 'Dashboard'}</h1>
       </div>
-      {role === "Installer" ? <InstallerDashboard /> : <JobGiverDashboard />}
+      {isAdmin ? <AdminDashboard /> : (role === "Installer" ? <InstallerDashboard /> : <JobGiverDashboard />)}
     </>
   );
 }
