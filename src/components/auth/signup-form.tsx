@@ -361,7 +361,7 @@ export function SignUpForm() {
   }
 
   const renderJobGiverForm = () => (
-      <>
+      <div className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -430,7 +430,7 @@ export function SignUpForm() {
         <Button type="submit" className="w-full">
           Create Account
         </Button>
-      </>
+      </div>
   )
 
 
