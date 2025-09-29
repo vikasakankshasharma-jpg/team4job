@@ -1,4 +1,6 @@
 
+"use client";
+
 import {
   Card,
   CardContent,
@@ -20,6 +22,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { Gem, Medal, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
@@ -29,11 +32,17 @@ const tierIcons: Record<string, React.ReactNode> = {
 };
 
 export default function UsersPage() {
+  const router = useRouter();
+
+  const handleRowClick = (userId: string) => {
+    router.push(`/dashboard/users/${userId}`);
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>User Directory</CardTitle>
-        <CardDescription>A list of all registered users in the system, identified by their anonymous IDs.</CardDescription>
+        <CardDescription>A list of all registered users in the system. Click on a row to view details.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -49,7 +58,7 @@ export default function UsersPage() {
           </TableHeader>
           <TableBody>
             {users.map((user) => (
-              <TableRow key={user.id}>
+              <TableRow key={user.id} onClick={() => handleRowClick(user.id)} className="cursor-pointer">
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-9 w-9">
@@ -105,3 +114,5 @@ export default function UsersPage() {
     </Card>
   );
 }
+
+    

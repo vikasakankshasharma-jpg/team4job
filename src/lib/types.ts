@@ -3,6 +3,7 @@
 
 
 
+
 export type User = {
   id: string;
   name: string;
@@ -69,3 +70,5 @@ export type Job = {
   rating?: number;
   completionOtp?: string;
 };
+
+    
