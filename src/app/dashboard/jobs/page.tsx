@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import * as React from "react";
@@ -53,6 +52,7 @@ export default function BrowseJobsPage() {
   const [searchPincode, setSearchPincode] = React.useState("");
   const [budget, setBudget] = React.useState([0, 150000]);
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
+  const [recommendedPincodeFilter, setRecommendedPincodeFilter] = React.useState("all");
   const { setHelp } = useHelp();
 
   React.useEffect(() => {
@@ -107,7 +107,26 @@ export default function BrowseJobsPage() {
 
   const filteredJobs = filterJobs(openJobs);
 
-  const recommendedJobs = user ? openJobs.filter(job => job.location.includes(user.pincodes.residential) || (user.pincodes.office && job.location.includes(user.pincodes.office))) : [];
+  const recommendedJobs = React.useMemo(() => {
+    if (!user) return [];
+    
+    return openJobs.filter(job => {
+        const residentialMatch = job.location.includes(user.pincodes.residential);
+        const officeMatch = user.pincodes.office && job.location.includes(user.pincodes.office);
+
+        if (recommendedPincodeFilter === "all") {
+            return residentialMatch || officeMatch;
+        }
+        if (recommendedPincodeFilter === "residential") {
+            return residentialMatch;
+        }
+        if (recommendedPincodeFilter === "office") {
+            return officeMatch;
+        }
+        return false;
+    });
+  }, [user, openJobs, recommendedPincodeFilter]);
+
   const filteredRecommendedJobs = filterJobs(recommendedJobs);
 
   const clearFilters = () => {
@@ -243,10 +262,26 @@ export default function BrowseJobsPage() {
         <TabsContent value="recommended">
            <Card>
             <CardHeader>
-              <CardTitle>Recommended For You</CardTitle>
-              <CardDescription>
-                Jobs that match your profile pincode(s): {user?.pincodes.residential}{user?.pincodes.office && `, ${user.pincodes.office}`}
-              </CardDescription>
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <CardTitle>Recommended For You</CardTitle>
+                        <CardDescription>
+                            Jobs that match your profile pincode(s).
+                        </CardDescription>
+                    </div>
+                     {user && user.pincodes.office && (
+                         <Select value={recommendedPincodeFilter} onValueChange={setRecommendedPincodeFilter}>
+                            <SelectTrigger className="w-full sm:w-[240px]">
+                                <SelectValue placeholder="Filter by pincode..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All My Pincodes</SelectItem>
+                                <SelectItem value="residential">Residential: {user.pincodes.residential}</SelectItem>
+                                <SelectItem value="office">Office: {user.pincodes.office}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                     )}
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -256,7 +291,7 @@ export default function BrowseJobsPage() {
                 </div>
                  {filteredRecommendedJobs.length === 0 && (
                   <div className="text-center py-10">
-                    <p className="text-muted-foreground">No recommended jobs found in your area right now.</p>
+                    <p className="text-muted-foreground">No recommended jobs found for the selected filter.</p>
                   </div>
                 )}
             </CardContent>
@@ -271,3 +306,5 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
+
+    
