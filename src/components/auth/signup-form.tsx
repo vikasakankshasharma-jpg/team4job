@@ -186,7 +186,7 @@ export function SignUpForm() {
       email: values.email,
       mobile: values.mobile,
       anonymousId: newAnonymousId,
-      pincode: values.pincode || '',
+      pincodes: { residential: values.pincode || '' },
       roles: roles,
       memberSince: new Date(),
       avatarUrl: randomAvatar.imageUrl,
@@ -367,7 +367,7 @@ export function SignUpForm() {
                     name="pincode"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Pincode</FormLabel>
+                        <FormLabel>Residential Pincode</FormLabel>
                         <FormControl>
                             <Input placeholder="e.g., 110001" {...field} />
                         </FormControl>

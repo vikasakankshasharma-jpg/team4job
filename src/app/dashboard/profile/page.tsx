@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -66,15 +66,31 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-function EditProfileForm({ user, onSave }) {
-    const [name, setName] = React.useState(user.name);
-    const { toast } = useToast();
 
-    const handleSave = () => {
-        onSave(name);
+const editProfileSchema = z.object({
+    name: z.string().min(2, "Name must be at least 2 characters."),
+    residentialPincode: z.string().regex(/^\d{6}$/, "Must be a 6-digit pincode."),
+    officePincode: z.string().optional().refine(val => val === '' || /^\d{6}$/.test(val!), "Must be a 6-digit pincode or empty."),
+});
+
+function EditProfileForm({ user, onSave }) {
+    const { toast } = useToast();
+    const isInstaller = user.roles.includes('Installer');
+
+    const form = useForm<z.infer<typeof editProfileSchema>>({
+        resolver: zodResolver(editProfileSchema),
+        defaultValues: {
+            name: user.name || "",
+            residentialPincode: user.pincodes.residential || "",
+            officePincode: user.pincodes.office || "",
+        },
+    });
+
+    function onSubmit(values: z.infer<typeof editProfileSchema>) {
+        onSave(values);
         toast({
             title: "Profile Updated",
-            description: "Your name has been successfully updated.",
+            description: "Your profile details have been successfully updated.",
         });
     }
 
@@ -86,28 +102,60 @@ function EditProfileForm({ user, onSave }) {
                     Make changes to your profile here. Click save when you're done.
                 </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                        Name
-                    </Label>
-                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">
-                        Email
-                    </Label>
-                    <Input id="email" value={user.email} className="col-span-3" disabled />
-                </div>
-            </div>
-            <DialogFooter>
-                <DialogClose asChild>
-                    <Button type="button" variant="secondary">Cancel</Button>
-                </DialogClose>
-                 <DialogClose asChild>
-                    <Button onClick={handleSave}>Save Changes</Button>
-                 </DialogClose>
-            </DialogFooter>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                     <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Name</FormLabel>
+                                <FormControl>
+                                    <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="residentialPincode"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Residential Pincode</FormLabel>
+                                <FormControl>
+                                    <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    {isInstaller && (
+                         <FormField
+                            control={form.control}
+                            name="officePincode"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Office Pincode (Optional)</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="e.g., 110021" {...field} />
+                                    </FormControl>
+                                    <FormDescription>Add an office pincode to find jobs in that area too.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    )}
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="secondary">Cancel</Button>
+                        </DialogClose>
+                        <DialogClose asChild>
+                             <Button type="submit">Save Changes</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </form>
+            </Form>
         </DialogContent>
     );
 }
@@ -123,7 +171,7 @@ function InstallerOnboardingDialog({ user, onSave }) {
     const form = useForm<z.infer<typeof installerOnboardingSchema>>({
         resolver: zodResolver(installerOnboardingSchema),
         defaultValues: {
-            pincode: user.pincode || "",
+            pincode: user.pincodes.residential || "",
             skills: "",
         },
     });
@@ -152,7 +200,7 @@ function InstallerOnboardingDialog({ user, onSave }) {
                         name="pincode"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Your Pincode</FormLabel>
+                                <FormLabel>Your Residential Pincode</FormLabel>
                                 <FormControl>
                                     <Input placeholder="e.g., 110001" {...field} />
                                 </FormControl>
@@ -208,9 +256,24 @@ export default function ProfilePage() {
   const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
   const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
 
-  const handleProfileSave = (newName: string) => {
+  const handleProfileSave = (values: z.infer<typeof editProfileSchema>) => {
     if(setUser) {
-      setUser(prevUser => prevUser ? ({ ...prevUser, name: newName }) : null);
+      setUser(prevUser => {
+        if (!prevUser) return null;
+        const updatedUser = { 
+            ...prevUser, 
+            name: values.name,
+            pincodes: {
+                residential: values.residentialPincode,
+                office: values.officePincode || undefined,
+            }
+        };
+        const userIndex = users.findIndex(u => u.id === prevUser.id);
+        if (userIndex !== -1) {
+            users[userIndex] = updatedUser;
+        }
+        return updatedUser;
+      });
     }
   };
 
@@ -221,7 +284,7 @@ export default function ProfilePage() {
 
         const updatedUser = {
           ...prevUser,
-          pincode: values.pincode,
+          pincodes: { residential: values.pincode, office: prevUser.pincodes.office },
           roles: [...prevUser.roles, 'Installer'] as ('Job Giver' | 'Installer')[],
           installerProfile: {
             tier: 'Bronze' as const,
@@ -298,10 +361,24 @@ export default function ProfilePage() {
                 <p className="text-muted-foreground">{user.email}</p>
                 <p className="text-sm text-muted-foreground">{user.anonymousId}</p>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-                <CalendarDays className="h-4 w-4" />
-                <span>Member since {format(user.memberSince, 'MMMM yyyy')}</span>
+
+               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mt-2">
+                <div className="flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4" />
+                    <span>Member since {format(user.memberSince, 'MMMM yyyy')}</span>
+                </div>
+                 <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>{user.pincodes.residential} (Home)</span>
+                </div>
+                 {user.pincodes.office && (
+                    <div className="flex items-center gap-2">
+                        <Building className="h-4 w-4" />
+                        <span>{user.pincodes.office} (Office)</span>
+                    </div>
+                 )}
               </div>
+
               <div className="mt-4">
                 <Dialog>
                     <DialogTrigger asChild>
@@ -479,5 +556,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

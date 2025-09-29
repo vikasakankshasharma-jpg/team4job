@@ -2,6 +2,7 @@
 
 
 
+
 export type User = {
   id: string;
   name: string;
@@ -10,7 +11,10 @@ export type User = {
   mobile: string;
   avatarUrl: string;
   realAvatarUrl: string;
-  pincode: string;
+  pincodes: {
+    residential: string;
+    office?: string;
+  };
   roles: ('Job Giver' | 'Installer' | 'Admin')[];
   memberSince: Date;
   installerProfile?: {

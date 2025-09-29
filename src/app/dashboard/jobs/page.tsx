@@ -107,7 +107,7 @@ export default function BrowseJobsPage() {
 
   const filteredJobs = filterJobs(openJobs);
 
-  const recommendedJobs = user ? openJobs.filter(job => job.location.includes(user.pincode)) : [];
+  const recommendedJobs = user ? openJobs.filter(job => job.location.includes(user.pincodes.residential) || (user.pincodes.office && job.location.includes(user.pincodes.office))) : [];
   const filteredRecommendedJobs = filterJobs(recommendedJobs);
 
   const clearFilters = () => {
@@ -245,7 +245,7 @@ export default function BrowseJobsPage() {
             <CardHeader>
               <CardTitle>Recommended For You</CardTitle>
               <CardDescription>
-                Jobs that match your profile pincode: {user?.pincode}
+                Jobs that match your profile pincode(s): {user?.pincodes.residential}{user?.pincodes.office && `, ${user.pincodes.office}`}
               </CardDescription>
             </CardHeader>
             <CardContent>
