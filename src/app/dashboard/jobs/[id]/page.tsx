@@ -36,6 +36,8 @@ import {
   TrendingUp,
   Trophy,
   CalendarDays,
+  KeyRound,
+  Copy,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -45,6 +47,110 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Bid, Job, Comment } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+
+
+function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Job) => void }) {
+  const { toast } = useToast();
+  const [otp, setOtp] = React.useState('');
+
+  const handleCompleteJob = () => {
+    if (otp === job.completionOtp) {
+      const updatedJob = { 
+        ...job, 
+        status: 'Completed' as const,
+        rating: 5, // Default rating, can be changed by job giver
+      };
+      onJobUpdate(updatedJob);
+      toast({
+        title: "Job Completed!",
+        description: "Congratulations! The job has been marked as complete.",
+        variant: "success",
+      });
+    } else {
+      toast({
+        title: "Invalid OTP",
+        description: "The Job Completion OTP is incorrect. Please ask the Job Giver for the correct code.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Complete This Job</CardTitle>
+        <CardDescription>
+          Once the job is finished to the client's satisfaction, enter the
+          Job Completion OTP provided by the Job Giver to mark it as complete.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-4">
+          <Input
+            type="text"
+            placeholder="Enter 6-digit OTP"
+            className="flex-1"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            maxLength={6}
+          />
+          <Button onClick={handleCompleteJob} disabled={otp.length !== 6}>
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            Complete Job
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function JobGiverOTPCard({ job }: { job: Job }) {
+  const { toast } = useToast();
+
+  const handleCopy = () => {
+    if (job.completionOtp) {
+      navigator.clipboard.writeText(job.completionOtp);
+      toast({
+        title: "OTP Copied!",
+        description: "The completion OTP has been copied to your clipboard.",
+      });
+    }
+  };
+
+  return (
+    <Card className="bg-primary/5 border-primary/20">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <KeyRound className="h-5 w-5 text-primary" />
+          Job Completion OTP
+        </CardTitle>
+        <CardDescription>
+          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="text-center">
+        <div className="flex items-center justify-center gap-4">
+          <p className="text-3xl font-bold tracking-widest text-primary font-mono bg-primary/10 px-4 py-2 rounded-lg">
+            {job.completionOtp}
+          </p>
+          <Button variant="ghost" size="icon" onClick={handleCopy}>
+            <Copy className="h-5 w-5" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 function InstallerBidSection({ job }: { job: Job }) {
   const { toast } = useToast();
@@ -504,6 +610,8 @@ export default function JobDetailPage() {
     });
   };
 
+  const isAwardedInstaller = role === "Installer" && user.id === job.awardedInstaller;
+
   return (
     <div className="grid gap-8 md:grid-cols-3">
       <div className="md:col-span-2 grid gap-8">
@@ -529,7 +637,7 @@ export default function JobDetailPage() {
           <CardContent>
             <p className="text-foreground">{job.description}</p>
             
-            {job.status === 'Open for Bidding' ? (
+            {job.status === 'Open for Bidding' && (
               <>
                 <Separator className="my-6" />
                 <h3 className="font-semibold mb-4">Comments ({jobComments.length})</h3>
@@ -565,13 +673,20 @@ export default function JobDetailPage() {
                     </div>
                 </div>
               </>
-            ) : (
-                 job.status === 'Completed' && (
-                    <>
-                        <Separator className="my-6" />
-                        <ReputationImpactCard job={job} />
-                    </>
-                 )
+            )}
+
+            {(job.status === 'Awarded' || job.status === 'In Progress') && isAwardedInstaller && (
+              <>
+                <Separator className="my-6" />
+                <InstallerCompletionSection job={job} onJobUpdate={handleJobUpdate} />
+              </>
+            )}
+            
+            {job.status === 'Completed' && (
+              <>
+                  <Separator className="my-6" />
+                  <ReputationImpactCard job={job} />
+              </>
             )}
           </CardContent>
         </Card>
@@ -582,6 +697,9 @@ export default function JobDetailPage() {
       </div>
 
       <div className="space-y-8">
+        {(role === 'Job Giver' && (job.status === 'Awarded' || job.status === 'In Progress')) && (
+            <JobGiverOTPCard job={job} />
+        )}
         <Card>
           <CardHeader>
             <CardTitle>Job Overview</CardTitle>

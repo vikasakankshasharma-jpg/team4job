@@ -28,6 +28,9 @@ import { generateJobDetails } from "@/ai/flows/generate-job-details";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { cn } from "@/lib/utils";
+import { jobs } from "@/lib/data";
+import { useUser } from "@/hooks/use-user";
+import { useRouter } from "next/navigation";
 
 const jobSchema = z.object({
   jobTitle: z
@@ -53,6 +56,8 @@ const jobSchema = z.object({
 export default function PostJobPage() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const { user } = useUser();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
@@ -109,12 +114,42 @@ export default function PostJobPage() {
 
 
   function onSubmit(values: z.infer<typeof jobSchema>) {
-    console.log(values);
+    if (!user) {
+        toast({ title: "Error", description: "You must be logged in to post a job.", variant: "destructive" });
+        return;
+    }
+    
+    // Generate a new job ID
+    const date = new Date();
+    const jobId = `JOB-${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    // Generate a 6-digit OTP
+    const completionOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const newJob = {
+      id: jobId,
+      title: values.jobTitle,
+      description: values.jobDescription,
+      jobGiver: user,
+      location: `${values.location}, India`,
+      budget: { min: values.budgetMin, max: values.budgetMax },
+      status: 'Open for Bidding' as const,
+      deadline: new Date(values.deadline),
+      jobStartDate: new Date(values.jobStartDate),
+      postedAt: new Date(),
+      bids: [],
+      comments: [],
+      completionOtp: completionOtp,
+    };
+
+    jobs.unshift(newJob);
+    
     toast({
         title: "Job Posted Successfully!",
         description: "Your job is now live and open for bidding.",
     });
     form.reset();
+    router.push(`/dashboard/jobs/${newJob.id}`);
   }
 
   return (

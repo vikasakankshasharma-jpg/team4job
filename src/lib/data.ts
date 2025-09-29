@@ -439,6 +439,7 @@ export const jobs: Job[] = [
     postedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
     bids: bids['JOB-20240920-1A3B'],
     comments: comments['JOB-20240920-1A3B'] || [],
+    completionOtp: '349871',
   },
   {
     id: 'JOB-20240922-2B4C',
@@ -453,6 +454,7 @@ export const jobs: Job[] = [
     postedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
     bids: bids['JOB-20240922-2B4C'] || [],
     comments: [],
+    completionOtp: '846201',
   },
   {
     id: 'JOB-20240915-3C5D',
@@ -460,7 +462,6 @@ export const jobs: Job[] = [
     description: "Seeking an installer for a standard 4-camera setup for a single-family home. Cameras to be placed at the front door, back door, driveway, and backyard. Simple setup with a DVR and mobile viewing required. Straightforward project for an experienced residential installer.",
     jobGiver: findUser('user-2'),
     location: '600001, Chennai',
-    budget: { min: 5000, max: 8000 },
     status: 'Awarded',
     awardedInstaller: 'user-3',
     deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Bidding ended 2 days ago
@@ -468,6 +469,7 @@ export const jobs: Job[] = [
     postedAt: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000), // 12 days ago
     bids: bids['JOB-20240915-3C5D'],
     comments: [],
+    completionOtp: '554289',
   },
   {
     id: 'JOB-20240825-4D6E',
@@ -484,6 +486,7 @@ export const jobs: Job[] = [
     postedAt: new Date('2024-08-25T10:00:00Z'), // Old date
     bids: [],
     comments: [],
+    completionOtp: '112233',
   },
   {
     id: 'JOB-20240924-4D5E',
@@ -498,6 +501,7 @@ export const jobs: Job[] = [
     postedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
     bids: bids['JOB-20240924-4D5E'],
     comments: comments['JOB-20240924-4D5E'] || [],
+    completionOtp: '987654',
   },
   {
     id: 'JOB-20240917-5E6F',
@@ -513,6 +517,7 @@ export const jobs: Job[] = [
     postedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
     bids: bids['JOB-20240917-5E6F'],
     comments: [],
+    completionOtp: '123789',
   },
   {
     id: 'JOB-20240922-6F7G',
@@ -527,6 +532,7 @@ export const jobs: Job[] = [
     postedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
     bids: [],
     comments: [],
+    completionOtp: '741852',
   },
   {
     id: 'JOB-20240816-7G8H',
@@ -542,6 +548,7 @@ export const jobs: Job[] = [
     postedAt: new Date('2024-08-16T11:00:00Z'), // Posted
     bids: [],
     comments: [],
+    completionOtp: '963258',
   },
   {
     id: 'JOB-20240918-8J9K',
@@ -557,6 +564,7 @@ export const jobs: Job[] = [
     postedAt: new Date(now.getTime() - 9 * 24 * 60 * 60 * 1000), // 9 days ago
     bids: bids['JOB-20240918-8J9K'],
     comments: [],
+    completionOtp: '753159',
   },
   {
     id: 'JOB-20240801-K2L3',
@@ -573,6 +581,7 @@ export const jobs: Job[] = [
     postedAt: new Date('2024-08-01T14:00:00Z'), // Old date
     bids: bids['JOB-20240801-K2L3'],
     comments: [],
+    completionOtp: '852963',
   },
   {
     id: 'JOB-20240715-M4N5',
@@ -589,6 +598,7 @@ export const jobs: Job[] = [
     postedAt: new Date('2024-07-15T12:00:00Z'), // Old date
     bids: [],
     comments: [],
+    completionOtp: '951753',
   },
   {
     id: 'JOB-20240925-P2Q3',
@@ -603,6 +613,7 @@ export const jobs: Job[] = [
     postedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
     bids: bids['JOB-20240925-P2Q3'],
     comments: comments['JOB-20240925-P2Q3'] || [],
+    completionOtp: '357159',
   },
   {
     id: 'JOB-20240928-R4S5',
@@ -617,6 +628,7 @@ export const jobs: Job[] = [
     postedAt: new Date(now.getTime() - 12 * 60 * 60 * 1000), // 12 hours ago
     bids: bids['JOB-20240928-R4S5'],
     comments: [],
+    completionOtp: '486246',
   },
   {
     id: 'JOB-20240910-T6U7',
@@ -633,6 +645,7 @@ export const jobs: Job[] = [
     postedAt: new Date('2024-09-10T09:00:00Z'), // Old date
     bids: bids['JOB-20240910-T6U7'],
     comments: [],
+    completionOtp: '246810',
   },
   {
     id: 'JOB-20240905-V8W9',
@@ -655,5 +668,6 @@ export const jobs: Job[] = [
       },
     ],
     comments: [],
+    completionOtp: '135790',
   },
 ];

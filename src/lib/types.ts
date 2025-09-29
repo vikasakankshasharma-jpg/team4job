@@ -1,6 +1,7 @@
 
 
 
+
 export type User = {
   id: string;
   name: string;
@@ -62,4 +63,5 @@ export type Job = {
   selectedInstallers?: { installerId: string, rank: number }[];
   awardedInstaller?: User['id'];
   rating?: number;
+  completionOtp?: string;
 };
