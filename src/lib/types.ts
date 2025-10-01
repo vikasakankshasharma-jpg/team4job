@@ -1,8 +1,5 @@
 
-
-
-
-
+import { DocumentReference } from "firebase/firestore";
 
 export type User = {
   id: string;
@@ -36,14 +33,14 @@ export type User = {
 
 export type Comment = {
   id: string;
-  author: Pick<User, 'id' | 'name' | 'avatarUrl' | 'anonymousId' | 'memberSince'>;
+  author: User | DocumentReference;
   timestamp: Date;
   content: string;
 };
 
 export type Bid = {
   id:string;
-  installer: User;
+  installer: User | DocumentReference;
   amount: number;
   timestamp: Date;
   coverLetter?: string;
@@ -53,7 +50,7 @@ export type Job = {
   id: string;
   title: string;
   description: string;
-  jobGiver: Pick<User, 'id' | 'name' | 'avatarUrl' | 'anonymousId' | 'memberSince'>;
+  jobGiver: User | DocumentReference;
   location: string; // Pincode
   budget: {
     min: number;
@@ -70,5 +67,3 @@ export type Job = {
   rating?: number;
   completionOtp?: string;
 };
-
-    

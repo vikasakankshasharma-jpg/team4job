@@ -29,7 +29,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { jobs, users } from "@/lib/data";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +42,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Job, User } from "@/lib/types";
+import { toDate } from "@/lib/utils";
+import { collection, doc, getDocs, updateDoc, where, query } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 
 const tierIcons = {
@@ -86,7 +89,16 @@ function EditProfileForm({ user, onSave }) {
         },
     });
 
-    function onSubmit(values: z.infer<typeof editProfileSchema>) {
+    async function onSubmit(values: z.infer<typeof editProfileSchema>) {
+        const updatedData = {
+            name: values.name,
+            pincodes: {
+                residential: values.residentialPincode,
+                office: values.officePincode || "",
+            }
+        };
+        const userRef = doc(db, 'users', user.id);
+        await updateDoc(userRef, updatedData);
         onSave(values);
         toast({
             title: "Profile Updated",
@@ -176,7 +188,7 @@ function InstallerOnboardingDialog({ user, onSave }) {
         },
     });
 
-    function onSubmit(values: z.infer<typeof installerOnboardingSchema>) {
+    async function onSubmit(values: z.infer<typeof installerOnboardingSchema>) {
         onSave(values);
         toast({
             title: "Installer Profile Created!",
@@ -239,13 +251,25 @@ export default function ProfilePage() {
   const { user, role, setUser, setRole } = useUser();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   const { toast } = useToast();
+  const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
+  const [loading, setLoading] = React.useState(true);
 
-   const jobsCompletedCount = React.useMemo(() => {
-    if (role !== 'Installer' || !user) return 0;
-    return jobs.filter(job => job.status === 'Completed' && job.awardedInstaller === user.id).length;
+  React.useEffect(() => {
+    const fetchCompletedJobs = async () => {
+      if (role !== 'Installer' || !user) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      const jobsQuery = query(collection(db, "jobs"), where("awardedInstaller", "==", user.id), where("status", "==", "Completed"));
+      const querySnapshot = await getDocs(jobsQuery);
+      setJobsCompletedCount(querySnapshot.size);
+      setLoading(false);
+    };
+    fetchCompletedJobs();
   }, [user, role]);
   
-  if (!user) {
+  if (!user || loading) {
     return <div>Loading...</div>;
   }
   
@@ -260,79 +284,57 @@ export default function ProfilePage() {
     if(setUser) {
       setUser(prevUser => {
         if (!prevUser) return null;
-        const updatedUser = { 
+        return { 
             ...prevUser, 
             name: values.name,
             pincodes: {
                 residential: values.residentialPincode,
-                office: values.officePincode || undefined,
+                office: values.officePincode || prevUser.pincodes.office,
             }
         };
-        const userIndex = users.findIndex(u => u.id === prevUser.id);
-        if (userIndex !== -1) {
-            users[userIndex] = updatedUser;
-        }
-        return updatedUser;
       });
     }
   };
 
-  const handleInstallerOnboarding = (values: z.infer<typeof installerOnboardingSchema>) => {
-    if (setUser && setRole) {
-      setUser(prevUser => {
-        if (!prevUser) return null;
-
-        const updatedUser = {
-          ...prevUser,
-          pincodes: { residential: values.pincode, office: prevUser.pincodes.office },
-          roles: [...prevUser.roles, 'Installer'] as ('Job Giver' | 'Installer')[],
+  const handleInstallerOnboarding = async (values: z.infer<typeof installerOnboardingSchema>) => {
+    if (setUser && setRole && user) {
+        const updatedData = {
+          roles: [...user.roles, 'Installer'],
+          'pincodes.residential': values.pincode,
           installerProfile: {
             tier: 'Bronze' as const,
             points: 0,
             skills: values.skills.split(',').map(s => s.trim()),
             rating: 0,
             reviews: 0,
-            verified: prevUser.installerProfile?.verified || false,
+            verified: user.installerProfile?.verified || false,
             reputationHistory: [],
           }
         };
 
-        const userIndex = users.findIndex(u => u.id === prevUser.id);
-        if (userIndex !== -1) {
-            users[userIndex] = updatedUser;
-        }
-
-        return updatedUser;
-      });
-
-      setRole('Installer');
+        const userRef = doc(db, 'users', user.id);
+        await updateDoc(userRef, updatedData);
+        
+        setUser(prev => prev ? ({ ...prev, ...updatedData }) : null);
+        setRole('Installer');
     }
   };
 
-  const handleBecomeJobGiver = () => {
-    if (setUser && setRole) {
-      setUser(prevUser => {
-        if (!prevUser) return null;
-
-        const updatedUser = {
-          ...prevUser,
-          roles: [...prevUser.roles, 'Job Giver'] as ('Job Giver' | 'Installer')[],
+  const handleBecomeJobGiver = async () => {
+    if (setUser && setRole && user) {
+        const updatedData = {
+            roles: [...user.roles, 'Job Giver']
         };
-
-        const userIndex = users.findIndex(u => u.id === prevUser.id);
-        if (userIndex !== -1) {
-          users[userIndex] = updatedUser;
-        }
-        
-        return updatedUser;
-      });
+        const userRef = doc(db, 'users', user.id);
+        await updateDoc(userRef, updatedData);
       
-      setRole('Job Giver');
-      toast({
-        title: "Job Giver Role Activated!",
-        description: "You can now post jobs and hire installers.",
-        variant: "success",
-      });
+        setUser(prev => prev ? ({ ...prev, ...updatedData }) : null);
+        setRole('Job Giver');
+        toast({
+            title: "Job Giver Role Activated!",
+            description: "You can now post jobs and hire installers.",
+            variant: "success",
+        });
     }
   };
 
@@ -365,7 +367,7 @@ export default function ProfilePage() {
                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mt-2">
                 <div className="flex items-center gap-2">
                     <CalendarDays className="h-4 w-4" />
-                    <span>Member since {format(user.memberSince, 'MMMM yyyy')}</span>
+                    <span>Member since {format(toDate(user.memberSince), 'MMMM yyyy')}</span>
                 </div>
                  <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />

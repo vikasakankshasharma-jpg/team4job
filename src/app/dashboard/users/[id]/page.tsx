@@ -1,7 +1,6 @@
 
 "use client";
 
-import { useUser } from "@/hooks/use-user";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Card,
@@ -16,11 +15,14 @@ import { Progress } from "@/components/ui/progress";
 import React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { jobs, users } from "@/lib/data";
 import { format } from "date-fns";
 import { notFound, useParams } from "next/navigation";
 import { JobCard } from "@/components/job-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Job, User } from "@/lib/types";
+import { toDate } from "@/lib/utils";
 
 
 const tierIcons = {
@@ -76,16 +78,51 @@ export default function UserProfilePage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [profileUser, setProfileUser] = React.useState<(typeof users[0]) | null | undefined>(undefined);
+  const [profileUser, setProfileUser] = React.useState<User | null | undefined>(undefined);
+  const [userPostedJobs, setUserPostedJobs] = React.useState<Job[]>([]);
+  const [userCompletedJobs, setUserCompletedJobs] = React.useState<Job[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (id) {
-      const foundUser = users.find(u => u.id === id);
-      setProfileUser(foundUser || null);
+      const fetchUserData = async () => {
+        setLoading(true);
+        const userDocRef = doc(db, 'users', id);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          const user = { id: userDocSnap.id, ...userDocSnap.data() } as User;
+          setProfileUser(user);
+
+          const allJobsQuery = await getDocs(collection(db, "jobs"));
+          const allUsersQuery = await getDocs(collection(db, "users"));
+          const usersList = allUsersQuery.docs.map(d => ({id: d.id, ...d.data()}) as User);
+          const allJobs = allJobsQuery.docs.map(jobDoc => {
+             const jobData = {id: jobDoc.id, ...jobDoc.data()} as Job;
+             const giver = usersList.find(u => u.id === (jobData.jobGiver as any).id);
+             if (giver) jobData.jobGiver = giver;
+             return jobData;
+          });
+
+          if (user.roles.includes('Job Giver')) {
+            const postedJobs = allJobs.filter(j => (j.jobGiver as User).id === user.id);
+            setUserPostedJobs(postedJobs);
+          }
+          if (user.roles.includes('Installer')) {
+            const completedJobs = allJobs.filter(j => j.awardedInstaller === user.id && j.status === "Completed");
+            setUserCompletedJobs(completedJobs);
+          }
+
+        } else {
+          setProfileUser(null);
+        }
+        setLoading(false);
+      };
+      fetchUserData();
     }
   }, [id]);
 
-  if (profileUser === undefined) {
+  if (loading || profileUser === undefined) {
     return <PageSkeleton />;
   }
 
@@ -97,14 +134,11 @@ export default function UserProfilePage() {
   const installerProfile = profileUser.installerProfile;
   const isInstaller = roles.includes('Installer');
   
-  const jobsCompletedCount = jobs.filter(job => job.status === 'Completed' && job.awardedInstaller === profileUser.id).length;
+  const jobsCompletedCount = userCompletedJobs.length;
 
   const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
   const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
   
-  const userPostedJobs = jobs.filter(job => job.jobGiver.id === profileUser.id);
-  const userCompletedJobs = jobs.filter(job => job.awardedInstaller === profileUser.id && job.status === 'Completed');
-
   return (
     <div className="grid gap-8">
       <Card>
@@ -135,7 +169,7 @@ export default function UserProfilePage() {
                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mt-2">
                 <div className="flex items-center gap-2">
                     <CalendarDays className="h-4 w-4" />
-                    <span>Member since {format(memberSince, 'MMMM yyyy')}</span>
+                    <span>Member since {format(toDate(memberSince), 'MMMM yyyy')}</span>
                 </div>
                  <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
@@ -278,5 +312,3 @@ export default function UserProfilePage() {
     </div>
   );
 }
-
-    

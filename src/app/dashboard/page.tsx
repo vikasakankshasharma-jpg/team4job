@@ -21,13 +21,28 @@ import {
   IndianRupee,
 } from "lucide-react";
 import Link from "next/link";
-import { jobs, users } from "@/lib/data";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
+import { collection, getDocs, query, where, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Job, User } from "@/lib/types";
 
 function InstallerDashboard() {
   const { user } = useUser();
   const { setHelp } = useHelp();
+  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const jobsSnapshot = await getDocs(collection(db, "jobs"));
+      const jobsList = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+      setJobs(jobsList);
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
 
   React.useEffect(() => {
     setHelp({
@@ -56,11 +71,11 @@ function InstallerDashboard() {
   }, [setHelp]);
 
 
-  if (!user) return null;
+  if (!user || loading) return null;
 
   const openJobs = jobs.filter(job => job.status === 'Open for Bidding').length;
   const bidsAndAwardedJobs = jobs.filter(job => 
-    job.bids.some(bid => bid.installer.id === user.id) || job.awardedInstaller === user.id
+    job.bids.some(bid => (bid.installer as any).id === user.id) || job.awardedInstaller === user.id
   ).length;
   const jobsWon = jobs.filter(job => job.awardedInstaller === user.id && (job.status === 'Awarded' || job.status === 'In Progress')).length;
 
@@ -135,7 +150,22 @@ function InstallerDashboard() {
 function JobGiverDashboard() {
   const { user } = useUser();
   const { setHelp } = useHelp();
-  
+  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      if (!user) return;
+      setLoading(true);
+      const q = query(collection(db, "jobs"), where("jobGiver", "==", doc(db, 'users', user.id)));
+      const jobsSnapshot = await getDocs(q);
+      const myJobs = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+      setJobs(myJobs);
+      setLoading(false);
+    };
+    fetchData();
+  }, [user]);
+
   React.useEffect(() => {
     setHelp({
         title: 'Job Giver Dashboard Guide',
@@ -162,12 +192,11 @@ function JobGiverDashboard() {
     });
   }, [setHelp]);
 
-  if (!user) return null;
-
-  const myJobs = jobs.filter(job => job.jobGiver.id === user.id);
-  const activeJobs = myJobs.filter(job => job.status !== 'Completed').length;
-  const completedJobs = myJobs.filter(job => job.status === 'Completed').length;
-  const totalBids = myJobs.reduce((acc, job) => acc + job.bids.length, 0);
+  if (!user || loading) return null;
+  
+  const activeJobs = jobs.filter(job => job.status !== 'Completed').length;
+  const completedJobs = jobs.filter(job => job.status === 'Completed').length;
+  const totalBids = jobs.reduce((acc, job) => acc + job.bids.length, 0);
 
   return (
     <>
@@ -238,6 +267,32 @@ function JobGiverDashboard() {
 
 function AdminDashboard() {
   const { setHelp } = useHelp();
+  const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, totalBids: 0, completedJobValue: 0 });
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      const jobsSnapshot = await getDocs(collection(db, "jobs"));
+
+      const jobsList = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+      
+      const totalUsers = usersSnapshot.size;
+      const totalJobs = jobsSnapshot.size;
+      const totalBids = jobsList.reduce((sum, job) => sum + (job.bids?.length || 0), 0);
+      const completedJobValue = jobsList
+        .filter(job => job.status === 'Completed' && job.awardedInstaller)
+        .reduce((sum, job) => {
+          const winningBid = job.bids.find(bid => (bid.installer as any).id === job.awardedInstaller);
+          return sum + (winningBid?.amount || 0);
+        }, 0);
+
+      setStats({ totalUsers, totalJobs, totalBids, completedJobValue });
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
 
   React.useEffect(() => {
     setHelp({
@@ -265,15 +320,7 @@ function AdminDashboard() {
     });
   }, [setHelp]);
 
-  const totalUsers = users.length;
-  const totalJobs = jobs.length;
-  const totalBids = jobs.reduce((sum, job) => sum + job.bids.length, 0);
-  const completedJobValue = jobs
-    .filter(job => job.status === 'Completed' && job.awardedInstaller)
-    .reduce((sum, job) => {
-      const winningBid = job.bids.find(bid => bid.installer.id === job.awardedInstaller);
-      return sum + (winningBid?.amount || 0);
-    }, 0);
+  if (loading) return null;
 
   return (
     <>
@@ -285,7 +332,7 @@ function AdminDashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalUsers}</div>
+              <div className="text-2xl font-bold">{stats.totalUsers}</div>
               <p className="text-xs text-muted-foreground">
                 Installers & Job Givers
               </p>
@@ -298,7 +345,7 @@ function AdminDashboard() {
             <Briefcase className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalJobs}</div>
+            <div className="text-2xl font-bold">{stats.totalJobs}</div>
             <p className="text-xs text-muted-foreground">
               Jobs posted on the platform
             </p>
@@ -310,7 +357,7 @@ function AdminDashboard() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalBids}</div>
+            <div className="text-2xl font-bold">{stats.totalBids}</div>
             <p className="text-xs text-muted-foreground">
               Bids placed on all jobs
             </p>
@@ -322,7 +369,7 @@ function AdminDashboard() {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{completedJobValue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">₹{stats.completedJobValue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               Value of all completed jobs
             </p>

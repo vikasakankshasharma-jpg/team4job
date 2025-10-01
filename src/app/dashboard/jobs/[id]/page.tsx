@@ -2,7 +2,6 @@
 "use client";
 
 import { useUser } from "@/hooks/use-user";
-import { jobs, users } from "@/lib/data";
 import { notFound, useParams } from "next/navigation";
 import {
   Card,
@@ -44,9 +43,9 @@ import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bid, Job, Comment } from "@/lib/types";
+import { Bid, Job, Comment, User } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
-import { getStatusVariant } from "@/lib/utils";
+import { getStatusVariant, toDate } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -57,20 +56,26 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 
 function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Job) => void }) {
   const { toast } = useToast();
   const [otp, setOtp] = React.useState('');
 
-  const handleCompleteJob = () => {
+  const handleCompleteJob = async () => {
     if (otp === job.completionOtp) {
-      const updatedJob = { 
-        ...job, 
+      const updatedData = { 
         status: 'Completed' as const,
         rating: 5, // Default rating, can be changed by job giver
       };
+      const jobRef = doc(db, 'jobs', job.id);
+      await updateDoc(jobRef, updatedData);
+      
+      const updatedJob = { ...job, ...updatedData };
       onJobUpdate(updatedJob);
+      
       toast({
         title: "Job Completed!",
         description: "Congratulations! The job has been marked as complete.",
@@ -152,13 +157,38 @@ function JobGiverOTPCard({ job }: { job: Job }) {
   );
 }
 
-function InstallerBidSection({ job }: { job: Job }) {
+function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [bidProposal, setBidProposal] = React.useState("");
+  const [bidAmount, setBidAmount] = React.useState("");
 
-  const installer = users.find(u => u.id === 'user-1')?.installerProfile;
+  const installer = user.installerProfile;
   if (!installer) return null;
+  
+  const handlePlaceBid = async () => {
+    if (!bidAmount || !bidProposal) {
+      toast({ title: "Missing Information", description: "Please provide both a bid amount and a proposal.", variant: "destructive" });
+      return;
+    }
+    const newBid: Bid = {
+      id: `bid-${job.id}-${user.id}`,
+      installer: user,
+      amount: Number(bidAmount),
+      timestamp: new Date(),
+      coverLetter: bidProposal
+    };
+
+    const jobRef = doc(db, 'jobs', job.id);
+    const newBids = [...job.bids, newBid];
+    await updateDoc(jobRef, {
+      bids: newBids
+    });
+    
+    onJobUpdate({ bids: newBids });
+
+    toast({ title: "Bid Placed!", description: "Your bid has been submitted successfully." });
+  };
 
   const handleGenerateBid = async () => {
     setIsGenerating(true);
@@ -166,7 +196,7 @@ function InstallerBidSection({ job }: { job: Job }) {
       const result = await aiAssistedBidCreation({
         jobDescription: job.description,
         installerSkills: installer.skills.join(', '),
-        installerExperience: `${installer.jobsCompleted} jobs completed with a ${installer.rating} rating.`,
+        installerExperience: `${installer.reviews} jobs completed with a ${installer.rating} rating.`,
       });
       if (result.bidProposal) {
         setBidProposal(result.bidProposal);
@@ -197,8 +227,14 @@ function InstallerBidSection({ job }: { job: Job }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-4">
-          <Input type="number" placeholder="Your bid amount (₹)" className="flex-1" />
-          <Button>Place Bid</Button>
+          <Input 
+            type="number" 
+            placeholder="Your bid amount (₹)" 
+            className="flex-1" 
+            value={bidAmount}
+            onChange={(e) => setBidAmount(e.target.value)}
+          />
+          <Button onClick={handlePlaceBid}>Place Bid</Button>
         </div>
         <div className="space-y-2">
             <div className="flex justify-between items-center">
@@ -237,7 +273,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
 
     React.useEffect(() => {
         if(bid.timestamp) {
-            setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
+            setTimeAgo(formatDistanceToNow(toDate(bid.timestamp), { addSuffix: true }));
         }
     }, [bid.timestamp]);
 
@@ -294,27 +330,44 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
 function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Job) => void }) {
     const { toast } = useToast();
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>(job.selectedInstallers?.map(i => i.installerId) || []);
+    const [users, setUsers] = React.useState<User[]>([]);
+
+    React.useEffect(() => {
+        const fetchUsers = async () => {
+            const usersSnapshot = await getDocs(collection(db, 'users'));
+            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+            setUsers(usersList);
+        };
+        fetchUsers();
+    }, []);
 
     const canAwardDirectly = true; // Simplified logic, always allow awarding
 
-    const handleSelectInstaller = (installerId: string) => {
-        // This function is now deprecated in favor of direct awarding but kept for potential future use.
+    const handleSelectInstaller = async (installerId: string) => {
         const newSelected = [...selectedInstallers, installerId];
         setSelectedInstallers(newSelected);
-        const updatedJob = { ...job, selectedInstallers: newSelected.map((id, index) => ({ installerId: id, rank: index + 1 })) };
-        onJobUpdate(updatedJob);
+        
+        const updatedJobData = { selectedInstallers: newSelected.map((id, index) => ({ installerId: id, rank: index + 1 })) };
+        const jobRef = doc(db, 'jobs', job.id);
+        await updateDoc(jobRef, updatedJobData);
+        
+        onJobUpdate({ ...job, ...updatedJobData });
+        
         toast({
             title: "Installer Selected",
             description: `Installer has been shortlisted.`,
         });
     };
     
-    const handleAwardJob = (installerId: string) => {
+    const handleAwardJob = async (installerId: string) => {
         const installer = users.find(u => u.id === installerId);
         if (!installer) return;
 
-        const updatedJob = { ...job, awardedInstaller: installerId, status: 'Awarded' as Job['status'] };
-        onJobUpdate(updatedJob);
+        const updatedJobData = { awardedInstaller: installerId, status: 'Awarded' as Job['status'] };
+        const jobRef = doc(db, 'jobs', job.id);
+        await updateDoc(jobRef, updatedJobData);
+
+        onJobUpdate({ ...job, ...updatedJobData });
 
         toast({
             title: "Job Awarded!",
@@ -420,7 +473,7 @@ function PageSkeleton() {
   );
 }
 
-function ReputationImpactCard({ job }: { job: Job }) {
+function ReputationImpactCard({ job, users }: { job: Job, users: User[] }) {
   if (job.status !== 'Completed' || !job.awardedInstaller || !job.rating) {
     return null;
   }
@@ -472,7 +525,7 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
 
     React.useEffect(() => {
         if (comment.timestamp) {
-            setTimeAgo(formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true }));
+            setTimeAgo(formatDistanceToNow(toDate(comment.timestamp), { addSuffix: true }));
         }
     }, [comment.timestamp]);
 
@@ -540,36 +593,73 @@ export default function JobDetailPage() {
   const { toast } = useToast();
   
   const [job, setJob] = React.useState<Job | null | undefined>(undefined);
-  const [jobComments, setJobComments] = React.useState<Comment[]>([]);
+  const [users, setUsers] = React.useState<User[]>([]);
   const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
   const [editingContent, setEditingContent] = React.useState("");
+  const [newComment, setNewComment] = React.useState("");
   
   const [deadlineRelative, setDeadlineRelative] = React.useState('');
   const [deadlineAbsolute, setDeadlineAbsolute] = React.useState('');
   const [jobStartDate, setJobStartDate] = React.useState('');
 
-  React.useEffect(() => {
-    if (id) {
-      const foundJob = jobs.find((j) => j.id === id);
-      setJob(foundJob || null);
-      if (foundJob) {
-        setJobComments(foundJob.comments);
-        setDeadlineRelative(formatDistanceToNow(new Date(foundJob.deadline), { addSuffix: true }));
-        setDeadlineAbsolute(format(new Date(foundJob.deadline), "MMM d, yyyy"));
-        if(foundJob.jobStartDate){
-          setJobStartDate(format(new Date(foundJob.jobStartDate), "MMM d, yyyy"));
+  const fetchJobAndUsers = React.useCallback(async () => {
+    if (!id) return;
+    
+    // Fetch all users to resolve references
+    const usersSnapshot = await getDocs(collection(db, 'users'));
+    const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+    setUsers(usersList);
+
+    // Fetch the specific job
+    const jobDocRef = doc(db, 'jobs', id);
+    const jobDocSnap = await getDoc(jobDocRef);
+
+    if (jobDocSnap.exists()) {
+      const jobData = { id: jobDocSnap.id, ...jobDocSnap.data() } as Job;
+
+      // Resolve user references in jobGiver, bids, and comments
+      const resolveUser = (userId: string | User) => {
+        if (typeof userId !== 'string') return userId; // Already resolved
+        const foundUser = usersList.find(u => u.id === userId);
+        if(foundUser) return foundUser;
+        // Handle cases where user might be from a sub-object like in a bid
+        if ((userId as any).id) {
+             const foundUserById = usersList.find(u => u.id === (userId as any).id);
+             if(foundUserById) return foundUserById;
         }
+        return userId;
+      };
+
+      jobData.jobGiver = resolveUser(jobData.jobGiver as any);
+      jobData.bids = jobData.bids.map(bid => ({
+        ...bid,
+        installer: resolveUser(bid.installer as any)
+      }));
+       jobData.comments = jobData.comments.map(comment => ({
+        ...comment,
+        author: resolveUser(comment.author as any)
+      }));
+
+      setJob(jobData);
+      setDeadlineRelative(formatDistanceToNow(toDate(jobData.deadline), { addSuffix: true }));
+      setDeadlineAbsolute(format(toDate(jobData.deadline), "MMM d, yyyy"));
+      if(jobData.jobStartDate){
+        setJobStartDate(format(toDate(jobData.jobStartDate), "MMM d, yyyy"));
       }
+    } else {
+      setJob(null);
     }
   }, [id]);
 
-  const handleJobUpdate = (updatedJob: Job) => {
-    // This is a mock update. In a real app, you'd send this to your backend.
-    const jobIndex = jobs.findIndex(j => j.id === updatedJob.id);
-    if (jobIndex !== -1) {
-        jobs[jobIndex] = updatedJob;
+  React.useEffect(() => {
+    fetchJobAndUsers();
+  }, [fetchJobAndUsers]);
+
+  const handleJobUpdate = (updatedPart: Partial<Job>) => {
+    if (job) {
+      const newJob = { ...job, ...updatedPart };
+      setJob(newJob);
     }
-    setJob(updatedJob);
   };
 
   if (job === undefined || !user) {
@@ -590,10 +680,22 @@ export default function JobDetailPage() {
     setEditingContent("");
   };
 
+  const updateCommentsInFirestore = async (updatedComments: Comment[]) => {
+    const jobRef = doc(db, 'jobs', job.id);
+    // Convert User objects back to references before storing
+    const commentsToStore = updatedComments.map(c => ({
+      ...c,
+      author: doc(db, 'users', c.author.id)
+    }));
+    await updateDoc(jobRef, { comments: commentsToStore });
+    handleJobUpdate({ comments: updatedComments });
+  };
+
   const handleSaveEdit = (commentId: string) => {
-    setJobComments(jobComments.map(c => 
+    const updatedComments = job.comments.map(c => 
       c.id === commentId ? { ...c, content: editingContent, timestamp: new Date() } : c
-    ));
+    );
+    updateCommentsInFirestore(updatedComments);
     setEditingCommentId(null);
     setEditingContent("");
     toast({
@@ -603,10 +705,27 @@ export default function JobDetailPage() {
   };
 
   const handleDeleteComment = (commentId: string) => {
-    setJobComments(jobComments.filter(c => c.id !== commentId));
+    const updatedComments = job.comments.filter(c => c.id !== commentId);
+    updateCommentsInFirestore(updatedComments);
     toast({
       title: "Comment Deleted",
       description: "Your comment has been successfully removed.",
+    });
+  };
+  
+  const handlePostComment = async () => {
+    if (!newComment.trim() || !user) return;
+    const comment: Comment = {
+      id: `comment-${Date.now()}`,
+      author: user,
+      timestamp: new Date(),
+      content: newComment,
+    };
+    const updatedComments = [...job.comments, comment];
+    await updateCommentsInFirestore(updatedComments);
+    setNewComment("");
+     toast({
+      title: "Comment Posted!",
     });
   };
 
@@ -629,7 +748,7 @@ export default function JobDetailPage() {
                     </Avatar>
                     <div>
                         <p className="text-sm font-semibold">{job.jobGiver.anonymousId}</p>
-                        <p className="text-xs text-muted-foreground">Job Giver (Member since {format(job.jobGiver.memberSince, 'MMM yyyy')})</p>
+                        <p className="text-xs text-muted-foreground">Job Giver (Member since {format(toDate(job.jobGiver.memberSince), 'MMM yyyy')})</p>
                     </div>
                 </div>
             </div>
@@ -640,9 +759,9 @@ export default function JobDetailPage() {
             {job.status === 'Open for Bidding' && (
               <>
                 <Separator className="my-6" />
-                <h3 className="font-semibold mb-4">Comments ({jobComments.length})</h3>
+                <h3 className="font-semibold mb-4">Comments ({job.comments.length})</h3>
                 <div className="space-y-6">
-                    {jobComments.map((comment) => {
+                    {job.comments.map((comment) => {
                         const isEditing = editingCommentId === comment.id;
                         return (
                             <CommentDisplay
@@ -665,9 +784,13 @@ export default function JobDetailPage() {
                             <AvatarFallback>{user?.anonymousId.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                            <Textarea placeholder="Ask a question or post a comment..." />
+                            <Textarea 
+                              placeholder="Ask a question or post a comment..." 
+                              value={newComment}
+                              onChange={(e) => setNewComment(e.target.value)}
+                            />
                             <div className="flex justify-end mt-2">
-                               <Button size="sm">Post Comment</Button>
+                               <Button size="sm" onClick={handlePostComment} disabled={!newComment.trim()}>Post Comment</Button>
                             </div>
                         </div>
                     </div>
@@ -678,21 +801,21 @@ export default function JobDetailPage() {
             {(job.status === 'Awarded' || job.status === 'In Progress') && isAwardedInstaller && (
               <>
                 <Separator className="my-6" />
-                <InstallerCompletionSection job={job} onJobUpdate={handleJobUpdate} />
+                <InstallerCompletionSection job={job} onJobUpdate={handleJobUpdate as any} />
               </>
             )}
             
             {job.status === 'Completed' && (
               <>
                   <Separator className="my-6" />
-                  <ReputationImpactCard job={job} />
+                  <ReputationImpactCard job={job} users={users} />
               </>
             )}
           </CardContent>
         </Card>
 
-        {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job}/>}
-        {role === "Job Giver" && <JobGiverBidsSection job={job} onJobUpdate={handleJobUpdate} />}
+        {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate as any} />}
+        {role === "Job Giver" && <JobGiverBidsSection job={job} onJobUpdate={handleJobUpdate as any} />}
 
       </div>
 
@@ -744,7 +867,7 @@ export default function JobDetailPage() {
               <MessageSquare className="h-5 w-5" />
               <div>
                 <p className="text-muted-foreground">Comments</p>
-                <p className="font-semibold">{jobComments.length}</p>
+                <p className="font-semibold">{job.comments.length}</p>
               </div>
             </div>
           </CardContent>

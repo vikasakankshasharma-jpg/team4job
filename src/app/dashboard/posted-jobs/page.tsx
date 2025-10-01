@@ -18,7 +18,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
-import { jobs } from "@/lib/data";
 import {
   Table,
   TableBody,
@@ -39,12 +38,14 @@ import {
 import { MoreHorizontal } from "lucide-react"
 import { useSearchParams } from "next/navigation";
 import { Job } from "@/lib/types";
-import { getStatusVariant } from "@/lib/utils";
+import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-function PostedJobsTable({ jobs, title, description, footerText }: { jobs: Job[], title: string, description: string, footerText: string }) {
+function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
   return (
       <Card>
         <CardHeader>
@@ -67,7 +68,11 @@ function PostedJobsTable({ jobs, title, description, footerText }: { jobs: Job[]
               </TableRow>
             </TableHeader>
             <TableBody>
-              {jobs.map(job => (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center h-24">Loading jobs...</TableCell>
+                </TableRow>
+              ) : jobs.length > 0 ? jobs.map(job => (
                  <TableRow key={job.id}>
                     <TableCell className="font-medium">
                       <Link href={`/dashboard/jobs/${job.id}`} className="hover:underline">{job.title}</Link>
@@ -76,7 +81,7 @@ function PostedJobsTable({ jobs, title, description, footerText }: { jobs: Job[]
                       <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{job.bids.length}</TableCell>
-                    <TableCell className="hidden md:table-cell">{format(new Date(job.postedAt), "MMM d, yyyy")}</TableCell>
+                    <TableCell className="hidden md:table-cell">{format(toDate(job.postedAt), "MMM d, yyyy")}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -98,8 +103,7 @@ function PostedJobsTable({ jobs, title, description, footerText }: { jobs: Job[]
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-              ))}
-               {jobs.length === 0 && (
+              )) : (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center h-24">You haven't posted any jobs in this category.</TableCell>
                 </TableRow>
@@ -122,6 +126,22 @@ export default function PostedJobsPage() {
   const tab = searchParams.get("tab") || "active";
   const { user } = useUser();
   const { setHelp } = useHelp();
+  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (user) {
+      const fetchJobs = async () => {
+        setLoading(true);
+        const q = query(collection(db, "jobs"), where("jobGiver", "==", doc(db, 'users', user.id)));
+        const jobsSnapshot = await getDocs(q);
+        const jobsList = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+        setJobs(jobsList);
+        setLoading(false);
+      };
+      fetchJobs();
+    }
+  }, [user]);
 
    React.useEffect(() => {
     setHelp({
@@ -160,10 +180,9 @@ export default function PostedJobsPage() {
       </Card>
     );
   }
-
-  const myJobs = jobs.filter(job => job.jobGiver.id === user.id);
-  const activeJobs = myJobs.filter(job => job.status !== 'Completed');
-  const archivedJobs = myJobs.filter(job => job.status === 'Completed');
+  
+  const activeJobs = jobs.filter(job => job.status !== 'Completed');
+  const archivedJobs = jobs.filter(job => job.status === 'Completed');
 
   return (
      <Tabs defaultValue={tab}>
@@ -189,6 +208,7 @@ export default function PostedJobsPage() {
             title="My Active Jobs"
             description="Manage your job postings and review bids from installers."
             footerText={`Showing 1-${activeJobs.length} of ${activeJobs.length} active jobs`}
+            loading={loading}
           />
         </TabsContent>
          <TabsContent value="archived">
@@ -197,6 +217,7 @@ export default function PostedJobsPage() {
             title="My Archived Jobs"
             description="A history of your completed projects."
             footerText={`Showing 1-${archivedJobs.length} of ${archivedJobs.length} archived jobs`}
+            loading={loading}
           />
         </TabsContent>
       </Tabs>
