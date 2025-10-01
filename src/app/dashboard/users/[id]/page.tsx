@@ -19,8 +19,7 @@ import { format } from "date-fns";
 import { notFound, useParams } from "next/navigation";
 import { JobCard } from "@/components/job-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { jobs as mockJobs, users as mockUsers } from "@/lib/data";
 import { Job, User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 
@@ -85,40 +84,25 @@ export default function UserProfilePage() {
 
   React.useEffect(() => {
     if (id) {
-      const fetchUserData = async () => {
-        setLoading(true);
-        const userDocRef = doc(db, 'users', id);
-        const userDocSnap = await getDoc(userDocRef);
+      setLoading(true);
+      const user = mockUsers.find(u => u.id === id) as User | undefined;
 
-        if (userDocSnap.exists()) {
-          const user = { id: userDocSnap.id, ...userDocSnap.data() } as User;
-          setProfileUser(user);
+      if (user) {
+        setProfileUser(user);
+        const allJobs = mockJobs as Job[];
 
-          const allJobsQuery = await getDocs(collection(db, "jobs"));
-          const allUsersQuery = await getDocs(collection(db, "users"));
-          const usersList = allUsersQuery.docs.map(d => ({id: d.id, ...d.data()}) as User);
-          const allJobs = allJobsQuery.docs.map(jobDoc => {
-             const jobData = {id: jobDoc.id, ...jobDoc.data()} as Job;
-             const giver = usersList.find(u => u.id === (jobData.jobGiver as any).id);
-             if (giver) jobData.jobGiver = giver;
-             return jobData;
-          });
-
-          if (user.roles.includes('Job Giver')) {
-            const postedJobs = allJobs.filter(j => (j.jobGiver as User).id === user.id);
-            setUserPostedJobs(postedJobs);
-          }
-          if (user.roles.includes('Installer')) {
-            const completedJobs = allJobs.filter(j => j.awardedInstaller === user.id && j.status === "Completed");
-            setUserCompletedJobs(completedJobs);
-          }
-
-        } else {
-          setProfileUser(null);
+        if (user.roles.includes('Job Giver')) {
+          const postedJobs = allJobs.filter(j => (j.jobGiver as User).id === user.id);
+          setUserPostedJobs(postedJobs);
         }
-        setLoading(false);
-      };
-      fetchUserData();
+        if (user.roles.includes('Installer')) {
+          const completedJobs = allJobs.filter(j => j.awardedInstaller === user.id && j.status === "Completed");
+          setUserCompletedJobs(completedJobs);
+        }
+      } else {
+        setProfileUser(null);
+      }
+      setLoading(false);
     }
   }, [id]);
 
@@ -312,3 +296,5 @@ export default function UserProfilePage() {
     </div>
   );
 }
+
+    

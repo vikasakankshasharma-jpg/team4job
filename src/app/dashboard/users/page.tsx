@@ -23,8 +23,7 @@ import { Gem, Medal, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { users as mockUsers } from "@/lib/data";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 
@@ -41,14 +40,9 @@ export default function UsersPage() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-      setUsers(usersList);
-      setLoading(false);
-    };
-    fetchUsers();
+    setLoading(true);
+    setUsers(mockUsers as User[]);
+    setLoading(false);
   }, []);
 
   const handleRowClick = (userId: string) => {
@@ -139,3 +133,5 @@ export default function UsersPage() {
     </Card>
   );
 }
+
+    

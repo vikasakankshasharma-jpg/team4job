@@ -41,10 +41,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
 import { useUser } from "@/hooks/use-user";
-import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { jobs as mockJobs } from "@/lib/data";
 import { Job, User } from "@/lib/types";
-import { toDate } from "@/lib/utils";
 
 // Get unique skills from jobs data for filter - This might need to be dynamic later
 const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz", "vms", "access control"];
@@ -88,22 +86,9 @@ export default function BrowseJobsPage() {
   }, [setHelp]);
   
   React.useEffect(() => {
-    const fetchJobs = async () => {
-      setLoading(true);
-      const jobsSnapshot = await getDocs(collection(db, "jobs"));
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-      
-      const jobsList = jobsSnapshot.docs.map(doc => {
-        const jobData = doc.data() as Job;
-        jobData.jobGiver = usersList.find(u => u.id === (jobData.jobGiver as any).id) || jobData.jobGiver;
-        return { ...jobData, id: doc.id } as Job
-      });
-
-      setJobs(jobsList);
-      setLoading(false);
-    };
-    fetchJobs();
+    setLoading(true);
+    setJobs(mockJobs as Job[]);
+    setLoading(false);
   }, []);
 
   const openJobs = jobs.filter((job) => job.status === "Open for Bidding");
@@ -330,3 +315,5 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
+
+    

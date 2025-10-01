@@ -23,8 +23,7 @@ import {
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
-import { collection, getDocs, query, where, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { jobs as mockJobs, users as mockUsers } from "@/lib/data";
 import { Job, User } from "@/lib/types";
 
 function InstallerDashboard() {
@@ -34,14 +33,9 @@ function InstallerDashboard() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const jobsSnapshot = await getDocs(collection(db, "jobs"));
-      const jobsList = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
-      setJobs(jobsList);
-      setLoading(false);
-    };
-    fetchData();
+    // Using local data
+    setJobs(mockJobs as Job[]);
+    setLoading(false);
   }, []);
 
   React.useEffect(() => {
@@ -75,7 +69,7 @@ function InstallerDashboard() {
 
   const openJobs = jobs.filter(job => job.status === 'Open for Bidding').length;
   const bidsAndAwardedJobs = jobs.filter(job => 
-    job.bids.some(bid => (bid.installer as any).id === user.id) || job.awardedInstaller === user.id
+    job.bids.some(bid => (bid.installer as User).id === user.id) || job.awardedInstaller === user.id
   ).length;
   const jobsWon = jobs.filter(job => job.awardedInstaller === user.id && (job.status === 'Awarded' || job.status === 'In Progress')).length;
 
@@ -154,16 +148,11 @@ function JobGiverDashboard() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
-      setLoading(true);
-      const q = query(collection(db, "jobs"), where("jobGiver", "==", doc(db, 'users', user.id)));
-      const jobsSnapshot = await getDocs(q);
-      const myJobs = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
-      setJobs(myJobs);
-      setLoading(false);
-    };
-    fetchData();
+    if (!user) return;
+    // Using local data
+    const myJobs = mockJobs.filter(j => (j.jobGiver as User).id === user.id) as Job[];
+    setJobs(myJobs);
+    setLoading(false);
   }, [user]);
 
   React.useEffect(() => {
@@ -271,27 +260,22 @@ function AdminDashboard() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      const jobsSnapshot = await getDocs(collection(db, "jobs"));
+    // Using local data
+    const jobsList = mockJobs as Job[];
+    const usersList = mockUsers as User[];
 
-      const jobsList = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
-      
-      const totalUsers = usersSnapshot.size;
-      const totalJobs = jobsSnapshot.size;
-      const totalBids = jobsList.reduce((sum, job) => sum + (job.bids?.length || 0), 0);
-      const completedJobValue = jobsList
-        .filter(job => job.status === 'Completed' && job.awardedInstaller)
-        .reduce((sum, job) => {
-          const winningBid = job.bids.find(bid => (bid.installer as any).id === job.awardedInstaller);
-          return sum + (winningBid?.amount || 0);
-        }, 0);
+    const totalUsers = usersList.length;
+    const totalJobs = jobsList.length;
+    const totalBids = jobsList.reduce((sum, job) => sum + (job.bids?.length || 0), 0);
+    const completedJobValue = jobsList
+      .filter(job => job.status === 'Completed' && job.awardedInstaller)
+      .reduce((sum, job) => {
+        const winningBid = job.bids.find(bid => (bid.installer as User).id === job.awardedInstaller);
+        return sum + (winningBid?.amount || 0);
+      }, 0);
 
-      setStats({ totalUsers, totalJobs, totalBids, completedJobValue });
-      setLoading(false);
-    };
-    fetchData();
+    setStats({ totalUsers, totalJobs, totalBids, completedJobValue });
+    setLoading(false);
   }, []);
 
   React.useEffect(() => {
@@ -399,3 +383,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    

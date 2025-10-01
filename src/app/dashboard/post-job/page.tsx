@@ -30,8 +30,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
-import { addDoc, collection, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { jobs } from "@/lib/data";
 
 const jobSchema = z.object({
   jobTitle: z
@@ -114,7 +113,7 @@ export default function PostJobPage() {
   };
 
 
-  async function onSubmit(values: z.infer<typeof jobSchema>) {
+  function onSubmit(values: z.infer<typeof jobSchema>) {
     if (!user) {
         toast({ title: "Error", description: "You must be logged in to post a job.", variant: "destructive" });
         return;
@@ -122,11 +121,13 @@ export default function PostJobPage() {
     
     // Generate a 6-digit OTP
     const completionOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const newJobId = `JOB-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     const newJob = {
+      id: newJobId,
       title: values.jobTitle,
       description: values.jobDescription,
-      jobGiver: doc(db, 'users', user.id),
+      jobGiver: user,
       location: `${values.location}, India`,
       budget: { min: values.budgetMin, max: values.budgetMax },
       status: 'Open for Bidding' as const,
@@ -137,23 +138,16 @@ export default function PostJobPage() {
       comments: [],
       completionOtp: completionOtp,
     };
+    
+    // This is a mock implementation. In a real app, you'd send this to your backend.
+    jobs.unshift(newJob);
 
-    try {
-        const docRef = await addDoc(collection(db, "jobs"), newJob);
-        toast({
-            title: "Job Posted Successfully!",
-            description: "Your job is now live and open for bidding.",
-        });
-        form.reset();
-        router.push(`/dashboard/jobs/${docRef.id}`);
-    } catch (error) {
-        console.error("Error posting job: ", error);
-        toast({
-            title: "Failed to Post Job",
-            description: "An error occurred while creating your job. Please try again.",
-            variant: "destructive"
-        })
-    }
+    toast({
+        title: "Job Posted Successfully!",
+        description: "Your job is now live and open for bidding.",
+    });
+    form.reset();
+    router.push(`/dashboard/jobs/${newJob.id}`);
   }
 
   return (
@@ -293,8 +287,7 @@ export default function PostJobPage() {
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center justify-between">
-                        <FormLabel>Minimum Budget (₹)</FormLabel>
-                         {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                        <FormLabel>Minimum Budget (₹)</FormLabel>                         {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                       </div>
                       <FormControl>
                         <Input type="number" placeholder="e.g., 10000" {...field} className={cn(isGenerating && "opacity-50")} />
@@ -333,3 +326,5 @@ export default function PostJobPage() {
     </div>
   );
 }
+
+    

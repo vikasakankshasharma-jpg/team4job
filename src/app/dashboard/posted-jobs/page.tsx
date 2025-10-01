@@ -37,13 +37,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal } from "lucide-react"
 import { useSearchParams } from "next/navigation";
-import { Job } from "@/lib/types";
+import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { jobs as mockJobs } from "@/lib/data";
 
 function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
   return (
@@ -131,15 +130,10 @@ export default function PostedJobsPage() {
 
   React.useEffect(() => {
     if (user) {
-      const fetchJobs = async () => {
-        setLoading(true);
-        const q = query(collection(db, "jobs"), where("jobGiver", "==", doc(db, 'users', user.id)));
-        const jobsSnapshot = await getDocs(q);
-        const jobsList = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
-        setJobs(jobsList);
-        setLoading(false);
-      };
-      fetchJobs();
+      setLoading(true);
+      const userJobs = mockJobs.filter(j => (j.jobGiver as User).id === user.id) as Job[];
+      setJobs(userJobs);
+      setLoading(false);
     }
   }, [user]);
 
@@ -223,3 +217,5 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
+
+    
