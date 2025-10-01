@@ -89,18 +89,18 @@ function SeedDatabaseCard() {
             <CardHeader>
                 <CardTitle>Database</CardTitle>
                 <CardDescription>
-                    Populate your Firestore database with the initial mock data.
+                    Populate your Firestore database with the initial mock data. This button is currently non-functional.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="flex items-center justify-between rounded-lg border p-3">
                     <div>
-                        <Label>Seed Database (Disabled)</Label>
+                        <Label>Seed Database</Label>
                         <p className="text-xs text-muted-foreground">
-                           This feature is temporarily unavailable.
+                           Click to populate your database with mock data.
                         </p>
                     </div>
-                    <Button onClick={handleSeedDatabase} disabled={true}>
+                    <Button onClick={handleSeedDatabase} disabled={isSeeding}>
                         {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Seed Data
                     </Button>
