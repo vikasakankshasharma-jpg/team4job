@@ -19,11 +19,9 @@ import { format } from "date-fns";
 import { notFound, useParams } from "next/navigation";
 import { JobCard } from "@/components/job-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Job, User, FirestoreJob, FirestoreUser } from "@/lib/types";
+import { Job, User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, getDoc, DocumentReference, onSnapshot } from "firebase/firestore";
-
+import { users as allMockUsers, jobs as allMockJobs } from "@/lib/data";
 
 const tierIcons = {
   Bronze: <Medal className="h-6 w-6 text-yellow-700" />,
@@ -85,46 +83,23 @@ export default function UserProfilePage() {
 
   React.useEffect(() => {
     if (id) {
-        const userDocRef = doc(db, "users", id);
-        const unsubscribeUser = onSnapshot(userDocRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const user = { id: docSnap.id, ...docSnap.data() } as User;
-                setProfileUser(user);
-            } else {
-                setProfileUser(null);
-            }
-            setLoading(false);
-        });
-
-        return () => unsubscribeUser();
+        const user = allMockUsers.find(u => u.id === id);
+        setProfileUser(user || null);
+        setLoading(false);
     }
   }, [id]);
 
   React.useEffect(() => {
     if (profileUser) {
-        const userRef = doc(db, 'users', profileUser.id);
-        
         if (profileUser.roles.includes('Job Giver')) {
-            const qPosted = query(collection(db, "jobs"), where("jobGiver", "==", userRef));
-            const unsubPosted = onSnapshot(qPosted, async (snapshot) => {
-                const jobs = snapshot.docs.map(d => ({id: d.id, ...d.data()}) as Job);
-                setUserPostedJobs(jobs);
-            });
-            return () => unsubPosted();
+            const postedJobs = allMockJobs.filter(job => (job.jobGiver as User).id === profileUser.id);
+            setUserPostedJobs(postedJobs);
         }
 
         if (profileUser.roles.includes('Installer')) {
-            const qCompleted = query(collection(db, "jobs"), where("awardedInstaller", "==", profileUser.id), where("status", "==", "Completed"));
-            const unsubCompleted = onSnapshot(qCompleted, async (snapshot) => {
-                const jobsData = await Promise.all(snapshot.docs.map(async (docSnap) => {
-                    const firestoreJob = { id: docSnap.id, ...docSnap.data() } as FirestoreJob;
-                    const jobGiverSnap = await getDoc(firestoreJob.jobGiver as DocumentReference);
-                    const jobGiver = jobGiverSnap.exists() ? { id: jobGiverSnap.id, ...jobGiverSnap.data() } as FirestoreUser : null;
-                    return { ...firestoreJob, jobGiver: jobGiver } as Job;
-                }));
-                setUserCompletedJobs(jobsData.filter(j => j.jobGiver));
-            });
-            return () => unsubCompleted();
+            const awardedId = profileUser.id;
+            const completedJobs = allMockJobs.filter(job => job.status === 'Completed' && ((job.awardedInstaller as User)?.id === awardedId || job.awardedInstaller === awardedId));
+            setUserCompletedJobs(completedJobs);
         }
     }
   }, [profileUser]);
@@ -319,5 +294,3 @@ export default function UserProfilePage() {
     </div>
   );
 }
-
-    

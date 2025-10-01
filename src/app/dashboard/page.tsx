@@ -23,54 +23,36 @@ import {
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
-import { Job, User, FirestoreJob } from "@/lib/types";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, onSnapshot, doc } from "firebase/firestore";
+import { Job, User } from "@/lib/types";
+import { jobs as allMockJobs, users as allMockUsers } from "@/lib/data";
 
 function InstallerDashboard() {
   const { user } = useUser();
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ openJobs: 0, myBids: 0, jobsWon: 0 });
-  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (!user) return;
-    setLoading(true);
-
-    const qOpenJobs = query(collection(db, "jobs"), where("status", "==", "Open for Bidding"));
-    const qMyActivity = collection(db, "jobs");
     
-    const unsubOpenJobs = onSnapshot(qOpenJobs, (snapshot) => {
-        setStats(prev => ({ ...prev, openJobs: snapshot.size }));
+    const openJobs = allMockJobs.filter(j => j.status === 'Open for Bidding').length;
+    
+    let myBidsCount = 0;
+    let jobsWonCount = 0;
+
+    allMockJobs.forEach(job => {
+        const userHasBid = job.bids.some(bid => (bid.installer as User).id === user.id);
+        const awardedId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User)?.id;
+        const userIsAwarded = awardedId === user.id;
+
+        if (userHasBid || userIsAwarded) {
+            myBidsCount++;
+        }
+        if (userIsAwarded && (job.status === 'Awarded' || job.status === 'In Progress')) {
+            jobsWonCount++;
+        }
     });
 
-    const unsubMyActivity = onSnapshot(qMyActivity, (snapshot) => {
-        let bidsCount = 0;
-        let wonCount = 0;
-        const userRef = doc(db, 'users', user.id);
-
-        snapshot.forEach(doc => {
-            const job = doc.data() as FirestoreJob;
-            const userHasBid = job.bids.some(bid => bid.installer.id === user.id);
-            const userIsAwarded = job.awardedInstaller === user.id;
-
-            if (userHasBid || userIsAwarded) {
-                bidsCount++;
-            }
-            if (userIsAwarded && (job.status === 'Awarded' || job.status === 'In Progress')) {
-                wonCount++;
-            }
-        });
-
-        setStats(prev => ({ ...prev, myBids: bidsCount, jobsWon: wonCount }));
-        setLoading(false);
-    });
-
-    return () => {
-        unsubOpenJobs();
-        unsubMyActivity();
-    };
-
+    setStats({ openJobs, myBids: myBidsCount, jobsWon: jobsWonCount });
   }, [user]);
 
   React.useEffect(() => {
@@ -100,7 +82,7 @@ function InstallerDashboard() {
   }, [setHelp]);
 
 
-  if (!user || loading) return null; // Can add a skeleton loader here later
+  if (!user) return null; // Can add a skeleton loader here later
 
   return (
     <>
@@ -173,33 +155,26 @@ function JobGiverDashboard() {
   const { user } = useUser();
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ activeJobs: 0, completedJobs: 0, totalBids: 0 });
-  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (!user) return;
-    setLoading(true);
+    
+    let active = 0;
+    let completed = 0;
+    let bids = 0;
 
-    const userRef = doc(db, 'users', user.id);
-    const q = query(collection(db, "jobs"), where("jobGiver", "==", userRef));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        let active = 0;
-        let completed = 0;
-        let bids = 0;
-        snapshot.forEach(doc => {
-            const job = doc.data() as FirestoreJob;
+    allMockJobs.forEach(job => {
+        if ((job.jobGiver as User).id === user.id) {
             if (job.status !== 'Completed') {
                 active++;
             } else {
                 completed++;
             }
             bids += job.bids.length;
-        });
-        setStats({ activeJobs: active, completedJobs: completed, totalBids: bids });
-        setLoading(false);
+        }
     });
 
-    return () => unsubscribe();
+    setStats({ activeJobs: active, completedJobs: completed, totalBids: bids });
   }, [user]);
 
   React.useEffect(() => {
@@ -228,7 +203,7 @@ function JobGiverDashboard() {
     });
   }, [setHelp]);
 
-  if (!user || loading) return null;
+  if (!user) return null;
   
   return (
     <>
@@ -300,37 +275,25 @@ function JobGiverDashboard() {
 function AdminDashboard() {
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, totalBids: 0, completedJobValue: 0 });
-  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    setLoading(true);
-    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
-        setStats(prev => ({...prev, totalUsers: snapshot.size}));
-    });
+    const totalUsers = allMockUsers.length;
+    const totalJobs = allMockJobs.length;
+    let totalBids = 0;
+    let completedValue = 0;
 
-    const unsubJobs = onSnapshot(collection(db, "jobs"), (snapshot) => {
-        let totalJobs = snapshot.size;
-        let totalBids = 0;
-        let completedValue = 0;
-
-        snapshot.forEach(doc => {
-            const job = doc.data() as FirestoreJob;
-            totalBids += job.bids?.length || 0;
-            if (job.status === 'Completed' && job.awardedInstaller) {
-                const winningBid = job.bids.find(bid => bid.installer.id === job.awardedInstaller);
-                if (winningBid) {
-                    completedValue += winningBid.amount;
-                }
+    allMockJobs.forEach(job => {
+        totalBids += job.bids?.length || 0;
+        if (job.status === 'Completed' && job.awardedInstaller) {
+            const awardedId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User).id;
+            const winningBid = job.bids.find(bid => (bid.installer as User).id === awardedId);
+            if (winningBid) {
+                completedValue += winningBid.amount;
             }
-        });
-        setStats(prev => ({ ...prev, totalJobs, totalBids, completedJobValue: completedValue }));
-        setLoading(false);
+        }
     });
 
-    return () => {
-        unsubUsers();
-        unsubJobs();
-    };
+    setStats({ totalUsers, totalJobs, totalBids, completedJobValue: completedValue });
   }, []);
 
   React.useEffect(() => {
@@ -358,8 +321,6 @@ function AdminDashboard() {
       )
     });
   }, [setHelp]);
-
-  if (loading) return null;
 
   return (
     <>
@@ -438,5 +399,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
