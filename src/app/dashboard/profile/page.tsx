@@ -44,8 +44,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Job, User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { collection, doc, getDocs, updateDoc, where, query } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { jobs as mockJobs } from "@/lib/data";
 
 
 const tierIcons = {
@@ -89,16 +88,7 @@ function EditProfileForm({ user, onSave }) {
         },
     });
 
-    async function onSubmit(values: z.infer<typeof editProfileSchema>) {
-        const updatedData = {
-            name: values.name,
-            pincodes: {
-                residential: values.residentialPincode,
-                office: values.officePincode || "",
-            }
-        };
-        const userRef = doc(db, 'users', user.id);
-        await updateDoc(userRef, updatedData);
+    function onSubmit(values: z.infer<typeof editProfileSchema>) {
         onSave(values);
         toast({
             title: "Profile Updated",
@@ -188,7 +178,7 @@ function InstallerOnboardingDialog({ user, onSave }) {
         },
     });
 
-    async function onSubmit(values: z.infer<typeof installerOnboardingSchema>) {
+    function onSubmit(values: z.infer<typeof installerOnboardingSchema>) {
         onSave(values);
         toast({
             title: "Installer Profile Created!",
@@ -255,18 +245,14 @@ export default function ProfilePage() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const fetchCompletedJobs = async () => {
-      if (role !== 'Installer' || !user) {
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      const jobsQuery = query(collection(db, "jobs"), where("awardedInstaller", "==", user.id), where("status", "==", "Completed"));
-      const querySnapshot = await getDocs(jobsQuery);
-      setJobsCompletedCount(querySnapshot.size);
+    if (role !== 'Installer' || !user) {
       setLoading(false);
-    };
-    fetchCompletedJobs();
+      return;
+    }
+    setLoading(true);
+    const completedJobs = mockJobs.filter(j => j.awardedInstaller === user.id && j.status === "Completed");
+    setJobsCompletedCount(completedJobs.length);
+    setLoading(false);
   }, [user, role]);
   
   if (!user || loading) {
@@ -296,11 +282,12 @@ export default function ProfilePage() {
     }
   };
 
-  const handleInstallerOnboarding = async (values: z.infer<typeof installerOnboardingSchema>) => {
+  const handleInstallerOnboarding = (values: z.infer<typeof installerOnboardingSchema>) => {
     if (setUser && setRole && user) {
-        const updatedData = {
-          roles: [...user.roles, 'Installer'],
-          'pincodes.residential': values.pincode,
+        const updatedUser = {
+          ...user,
+          roles: [...user.roles, 'Installer'] as User['roles'],
+          pincodes: { ...user.pincodes, residential: values.pincode },
           installerProfile: {
             tier: 'Bronze' as const,
             points: 0,
@@ -311,24 +298,18 @@ export default function ProfilePage() {
             reputationHistory: [],
           }
         };
-
-        const userRef = doc(db, 'users', user.id);
-        await updateDoc(userRef, updatedData);
-        
-        setUser(prev => prev ? ({ ...prev, ...updatedData }) : null);
+        setUser(updatedUser);
         setRole('Installer');
     }
   };
 
-  const handleBecomeJobGiver = async () => {
+  const handleBecomeJobGiver = () => {
     if (setUser && setRole && user) {
-        const updatedData = {
-            roles: [...user.roles, 'Job Giver']
+        const updatedUser = {
+            ...user,
+            roles: [...user.roles, 'Job Giver'] as User['roles']
         };
-        const userRef = doc(db, 'users', user.id);
-        await updateDoc(userRef, updatedData);
-      
-        setUser(prev => prev ? ({ ...prev, ...updatedData }) : null);
+        setUser(updatedUser);
         setRole('Job Giver');
         toast({
             title: "Job Giver Role Activated!",
@@ -558,3 +539,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

@@ -1,6 +1,4 @@
 
-import { DocumentReference } from "firebase/firestore";
-
 export type User = {
   id: string;
   name: string;
@@ -33,14 +31,14 @@ export type User = {
 
 export type Comment = {
   id: string;
-  author: User | DocumentReference;
+  author: User;
   timestamp: Date;
   content: string;
 };
 
 export type Bid = {
   id:string;
-  installer: User | DocumentReference;
+  installer: User;
   amount: number;
   timestamp: Date;
   coverLetter?: string;
@@ -50,7 +48,7 @@ export type Job = {
   id: string;
   title: string;
   description: string;
-  jobGiver: User | DocumentReference;
+  jobGiver: User;
   location: string; // Pincode
   budget: {
     min: number;

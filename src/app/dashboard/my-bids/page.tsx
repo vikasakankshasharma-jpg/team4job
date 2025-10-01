@@ -37,9 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-
+import { jobs as mockJobs } from "@/lib/data";
 
 type MyBidRowProps = {
   bid: Bid & { jobTitle: string; jobId: string; jobStatus: Job['status'], wasPlaced: boolean };
@@ -153,25 +151,9 @@ function MyBidsPageContent() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const fetchJobs = async () => {
-      setLoading(true);
-      const jobsSnapshot = await getDocs(collection(db, "jobs"));
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-      
-      const jobsList = jobsSnapshot.docs.map(doc => {
-        const jobData = doc.data() as Job;
-        // Resolve references
-        jobData.jobGiver = usersList.find(u => u.id === (jobData.jobGiver as any).id) || jobData.jobGiver;
-        jobData.bids = jobData.bids.map(bid => ({ ...bid, installer: usersList.find(u => u.id === (bid.installer as any).id) || bid.installer }));
-        return { ...jobData, id: doc.id } as Job
-      });
-
-      setJobs(jobsList);
-      setLoading(false);
-    };
-
-    fetchJobs();
+    setLoading(true);
+    setJobs(mockJobs as Job[]);
+    setLoading(false);
   }, []);
 
   React.useEffect(() => {
@@ -242,7 +224,7 @@ function MyBidsPageContent() {
   };
   
  const myBids = jobs.map(job => {
-    const myBid = job.bids.find(bid => bid.installer.id === user.id);
+    const myBid = job.bids.find(bid => (bid.installer as User).id === user.id);
     
     if (myBid || job.awardedInstaller === user.id) {
       return {
@@ -380,3 +362,5 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
+
+    

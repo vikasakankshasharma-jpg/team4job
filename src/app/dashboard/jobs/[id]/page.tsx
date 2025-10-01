@@ -56,8 +56,7 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { jobs as mockJobs, users as mockUsers } from "@/lib/data";
 
 
 function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Job) => void }) {
@@ -70,9 +69,7 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
         status: 'Completed' as const,
         rating: 5, // Default rating, can be changed by job giver
       };
-      const jobRef = doc(db, 'jobs', job.id);
-      await updateDoc(jobRef, updatedData);
-      
+      // In a real app, this would be an API call to update the database
       const updatedJob = { ...job, ...updatedData };
       onJobUpdate(updatedJob);
       
@@ -179,12 +176,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
       coverLetter: bidProposal
     };
 
-    const jobRef = doc(db, 'jobs', job.id);
     const newBids = [...job.bids, newBid];
-    await updateDoc(jobRef, {
-      bids: newBids
-    });
-    
     onJobUpdate({ bids: newBids });
 
     toast({ title: "Bid Placed!", description: "Your bid has been submitted successfully." });
@@ -268,7 +260,8 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
 
 function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected, showRanking, canAward }: { bid: Bid, job: Job, onSelectInstaller: (installerId: string) => void, onAwardJob: (installerId: string) => void, rank: number, isSelected: boolean, showRanking: boolean, canAward: boolean }) {
     const [timeAgo, setTimeAgo] = React.useState('');
-    const isAwardedToThisBidder = job.awardedInstaller === bid.installer.id;
+    const installer = bid.installer as User;
+    const isAwardedToThisBidder = job.awardedInstaller === installer.id;
     const isJobAwarded = !!job.awardedInstaller;
 
     React.useEffect(() => {
@@ -283,22 +276,22 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                 <div className="flex items-center gap-3">
                     <Avatar>
                        {isAwardedToThisBidder ? (
-                            <AvatarImage src={bid.installer.realAvatarUrl} alt={bid.installer.name} />
+                            <AvatarImage src={installer.realAvatarUrl} alt={installer.name} />
                        ) : (
-                           <AnimatedAvatar svg={bid.installer.avatarUrl} />
+                           <AnimatedAvatar svg={installer.avatarUrl} />
                        )}
-                        <AvatarFallback>{isAwardedToThisBidder ? bid.installer.name.substring(0, 2) : bid.installer.anonymousId.substring(0, 2)}</AvatarFallback>
+                        <AvatarFallback>{isAwardedToThisBidder ? installer.name.substring(0, 2) : installer.anonymousId.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
-                            <p className="font-semibold">{isAwardedToThisBidder ? bid.installer.name : showRanking ? `Position #${rank}` : bid.installer.anonymousId}</p>
+                            <p className="font-semibold">{isAwardedToThisBidder ? installer.name : showRanking ? `Position #${rank}` : installer.anonymousId}</p>
                             {!isJobAwarded && showRanking && rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
-                            <span>{bid.installer.installerProfile?.rating} ({bid.installer.installerProfile?.reviews} reviews)</span>
-                            {!isAwardedToThisBidder && <span className="font-mono">{bid.installer.anonymousId}</span>}
-                            {bid.installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
+                            <span>{installer.installerProfile?.rating} ({installer.installerProfile?.reviews} reviews)</span>
+                            {!isAwardedToThisBidder && <span className="font-mono">{installer.anonymousId}</span>}
+                            {installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
                         </div>
                     </div>
                 </div>
@@ -311,7 +304,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
             <div className="mt-4 flex items-center gap-2">
                  <Button 
                     size="sm" 
-                    onClick={() => canAward ? onAwardJob(bid.installer.id) : onSelectInstaller(bid.installer.id)}
+                    onClick={() => canAward ? onAwardJob(installer.id) : onSelectInstaller(installer.id)}
                     disabled={isJobAwarded}
                     variant={isAwardedToThisBidder ? 'secondary' : 'default'}
                  >
@@ -330,28 +323,13 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
 function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Job) => void }) {
     const { toast } = useToast();
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>(job.selectedInstallers?.map(i => i.installerId) || []);
-    const [users, setUsers] = React.useState<User[]>([]);
-
-    React.useEffect(() => {
-        const fetchUsers = async () => {
-            const usersSnapshot = await getDocs(collection(db, 'users'));
-            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-            setUsers(usersList);
-        };
-        fetchUsers();
-    }, []);
-
-    const canAwardDirectly = true; // Simplified logic, always allow awarding
-
+    
     const handleSelectInstaller = async (installerId: string) => {
         const newSelected = [...selectedInstallers, installerId];
         setSelectedInstallers(newSelected);
         
-        const updatedJobData = { selectedInstallers: newSelected.map((id, index) => ({ installerId: id, rank: index + 1 })) };
-        const jobRef = doc(db, 'jobs', job.id);
-        await updateDoc(jobRef, updatedJobData);
-        
-        onJobUpdate({ ...job, ...updatedJobData });
+        const updatedJobData = { ...job, selectedInstallers: newSelected.map((id, index) => ({ installerId: id, rank: index + 1 })) };
+        onJobUpdate(updatedJobData as Job);
         
         toast({
             title: "Installer Selected",
@@ -360,14 +338,11 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
     };
     
     const handleAwardJob = async (installerId: string) => {
-        const installer = users.find(u => u.id === installerId);
+        const installer = mockUsers.find(u => u.id === installerId);
         if (!installer) return;
 
-        const updatedJobData = { awardedInstaller: installerId, status: 'Awarded' as Job['status'] };
-        const jobRef = doc(db, 'jobs', job.id);
-        await updateDoc(jobRef, updatedJobData);
-
-        onJobUpdate({ ...job, ...updatedJobData });
+        const updatedJobData = { ...job, awardedInstaller: installerId, status: 'Awarded' as Job['status'] };
+        onJobUpdate(updatedJobData as Job);
 
         toast({
             title: "Job Awarded!",
@@ -377,7 +352,7 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
     };
 
     const calculateBidScore = (bid: Bid, job: Job) => {
-        const profile = bid.installer.installerProfile;
+        const profile = (bid.installer as User).installerProfile;
         if (!profile) return -Infinity;
         const priceRange = job.budget.max - job.budget.min;
         const priceScore = priceRange > 0 ? (job.budget.max - bid.amount) / priceRange : 1;
@@ -415,7 +390,7 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
             onSelectInstaller={handleSelectInstaller}
             onAwardJob={handleAwardJob}
             rank={index + 1}
-            isSelected={selectedInstallers.includes(bid.installer.id)}
+            isSelected={selectedInstallers.includes((bid.installer as User).id)}
             showRanking={true} // Always show ranking for consistency
             canAward={true} // Always allow awarding
           />
@@ -473,12 +448,12 @@ function PageSkeleton() {
   );
 }
 
-function ReputationImpactCard({ job, users }: { job: Job, users: User[] }) {
+function ReputationImpactCard({ job }: { job: Job }) {
   if (job.status !== 'Completed' || !job.awardedInstaller || !job.rating) {
     return null;
   }
 
-  const installer = users.find(u => u.id === job.awardedInstaller);
+  const installer = mockUsers.find(u => u.id === job.awardedInstaller);
   const ratingPoints = job.rating === 5 ? 20 : job.rating === 4 ? 10 : 0;
   const completionPoints = 50;
   const totalPoints = completionPoints + ratingPoints;
@@ -522,6 +497,7 @@ function ReputationImpactCard({ job, users }: { job: Job, users: User[] }) {
 
 function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handleDeleteComment, handleCancelEdit, handleSaveEdit, editingContent, setEditingContent }) {
     const [timeAgo, setTimeAgo] = React.useState('');
+    const author = comment.author as User;
 
     React.useEffect(() => {
         if (comment.timestamp) {
@@ -532,15 +508,15 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
     return (
         <div key={comment.id} className="flex gap-3">
             <Avatar className="h-9 w-9">
-                <AnimatedAvatar svg={comment.author.avatarUrl} />
-                <AvatarFallback>{comment.author.anonymousId.substring(0, 2)}</AvatarFallback>
+                <AnimatedAvatar svg={author.avatarUrl} />
+                <AvatarFallback>{author.anonymousId.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
                 {!isEditing ? (
                 <>
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm">{comment.author.anonymousId}</p>
+                        <p className="font-semibold text-sm">{author.anonymousId}</p>
                         <p className="text-xs text-muted-foreground">{timeAgo}</p>
                         </div>
                         {canEdit && (
@@ -593,7 +569,6 @@ export default function JobDetailPage() {
   const { toast } = useToast();
   
   const [job, setJob] = React.useState<Job | null | undefined>(undefined);
-  const [users, setUsers] = React.useState<User[]>([]);
   const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
   const [editingContent, setEditingContent] = React.useState("");
   const [newComment, setNewComment] = React.useState("");
@@ -602,58 +577,21 @@ export default function JobDetailPage() {
   const [deadlineAbsolute, setDeadlineAbsolute] = React.useState('');
   const [jobStartDate, setJobStartDate] = React.useState('');
 
-  const fetchJobAndUsers = React.useCallback(async () => {
+  React.useEffect(() => {
     if (!id) return;
+    const foundJob = mockJobs.find(j => j.id === id) as Job | undefined;
+    setJob(foundJob);
     
-    // Fetch all users to resolve references
-    const usersSnapshot = await getDocs(collection(db, 'users'));
-    const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-    setUsers(usersList);
-
-    // Fetch the specific job
-    const jobDocRef = doc(db, 'jobs', id);
-    const jobDocSnap = await getDoc(jobDocRef);
-
-    if (jobDocSnap.exists()) {
-      const jobData = { id: jobDocSnap.id, ...jobDocSnap.data() } as Job;
-
-      // Resolve user references in jobGiver, bids, and comments
-      const resolveUser = (userId: string | User) => {
-        if (typeof userId !== 'string') return userId; // Already resolved
-        const foundUser = usersList.find(u => u.id === userId);
-        if(foundUser) return foundUser;
-        // Handle cases where user might be from a sub-object like in a bid
-        if ((userId as any).id) {
-             const foundUserById = usersList.find(u => u.id === (userId as any).id);
-             if(foundUserById) return foundUserById;
-        }
-        return userId;
-      };
-
-      jobData.jobGiver = resolveUser(jobData.jobGiver as any);
-      jobData.bids = jobData.bids.map(bid => ({
-        ...bid,
-        installer: resolveUser(bid.installer as any)
-      }));
-       jobData.comments = jobData.comments.map(comment => ({
-        ...comment,
-        author: resolveUser(comment.author as any)
-      }));
-
-      setJob(jobData);
-      setDeadlineRelative(formatDistanceToNow(toDate(jobData.deadline), { addSuffix: true }));
-      setDeadlineAbsolute(format(toDate(jobData.deadline), "MMM d, yyyy"));
-      if(jobData.jobStartDate){
-        setJobStartDate(format(toDate(jobData.jobStartDate), "MMM d, yyyy"));
+    if (foundJob) {
+      setDeadlineRelative(formatDistanceToNow(toDate(foundJob.deadline), { addSuffix: true }));
+      setDeadlineAbsolute(format(toDate(foundJob.deadline), "MMM d, yyyy"));
+      if(foundJob.jobStartDate){
+        setJobStartDate(format(toDate(foundJob.jobStartDate), "MMM d, yyyy"));
       }
     } else {
-      setJob(null);
+        setJob(null);
     }
   }, [id]);
-
-  React.useEffect(() => {
-    fetchJobAndUsers();
-  }, [fetchJobAndUsers]);
 
   const handleJobUpdate = (updatedPart: Partial<Job>) => {
     if (job) {
@@ -680,14 +618,7 @@ export default function JobDetailPage() {
     setEditingContent("");
   };
 
-  const updateCommentsInFirestore = async (updatedComments: Comment[]) => {
-    const jobRef = doc(db, 'jobs', job.id);
-    // Convert User objects back to references before storing
-    const commentsToStore = updatedComments.map(c => ({
-      ...c,
-      author: doc(db, 'users', c.author.id)
-    }));
-    await updateDoc(jobRef, { comments: commentsToStore });
+  const updateComments = (updatedComments: Comment[]) => {
     handleJobUpdate({ comments: updatedComments });
   };
 
@@ -695,7 +626,7 @@ export default function JobDetailPage() {
     const updatedComments = job.comments.map(c => 
       c.id === commentId ? { ...c, content: editingContent, timestamp: new Date() } : c
     );
-    updateCommentsInFirestore(updatedComments);
+    updateComments(updatedComments);
     setEditingCommentId(null);
     setEditingContent("");
     toast({
@@ -706,7 +637,7 @@ export default function JobDetailPage() {
 
   const handleDeleteComment = (commentId: string) => {
     const updatedComments = job.comments.filter(c => c.id !== commentId);
-    updateCommentsInFirestore(updatedComments);
+    updateComments(updatedComments);
     toast({
       title: "Comment Deleted",
       description: "Your comment has been successfully removed.",
@@ -722,7 +653,7 @@ export default function JobDetailPage() {
       content: newComment,
     };
     const updatedComments = [...job.comments, comment];
-    await updateCommentsInFirestore(updatedComments);
+    updateComments(updatedComments);
     setNewComment("");
      toast({
       title: "Comment Posted!",
@@ -730,6 +661,7 @@ export default function JobDetailPage() {
   };
 
   const isAwardedInstaller = role === "Installer" && user.id === job.awardedInstaller;
+  const jobGiver = job.jobGiver as User;
 
   return (
     <div className="grid gap-8 md:grid-cols-3">
@@ -743,12 +675,12 @@ export default function JobDetailPage() {
                 </div>
                 <div className="flex items-center gap-3">
                     <Avatar>
-                        <AnimatedAvatar svg={job.jobGiver.avatarUrl} />
-                        <AvatarFallback>{job.jobGiver.anonymousId.substring(0, 2)}</AvatarFallback>
+                        <AnimatedAvatar svg={jobGiver.avatarUrl} />
+                        <AvatarFallback>{jobGiver.anonymousId.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <p className="text-sm font-semibold">{job.jobGiver.anonymousId}</p>
-                        <p className="text-xs text-muted-foreground">Job Giver (Member since {format(toDate(job.jobGiver.memberSince), 'MMM yyyy')})</p>
+                        <p className="text-sm font-semibold">{jobGiver.anonymousId}</p>
+                        <p className="text-xs text-muted-foreground">Job Giver (Member since {format(toDate(jobGiver.memberSince), 'MMM yyyy')})</p>
                     </div>
                 </div>
             </div>
@@ -768,7 +700,7 @@ export default function JobDetailPage() {
                                 key={comment.id}
                                 comment={comment}
                                 isEditing={isEditing}
-                                canEdit={user?.id === comment.author.id}
+                                canEdit={user?.id === (comment.author as User).id}
                                 handleEditComment={handleEditComment}
                                 handleDeleteComment={handleDeleteComment}
                                 handleCancelEdit={handleCancelEdit}
@@ -808,7 +740,7 @@ export default function JobDetailPage() {
             {job.status === 'Completed' && (
               <>
                   <Separator className="my-6" />
-                  <ReputationImpactCard job={job} users={users} />
+                  <ReputationImpactCard job={job} />
               </>
             )}
           </CardContent>
@@ -877,3 +809,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
