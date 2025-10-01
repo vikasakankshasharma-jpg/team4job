@@ -27,7 +27,7 @@ import { useUser } from "@/hooks/use-user";
 import { useState } from "react";
 import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import type { User, FirestoreUser } from "@/lib/types";
+import type { User } from "@/lib/types";
 import {
   initiateAadharVerification,
   confirmAadharVerification,
@@ -35,8 +35,6 @@ import {
 } from "@/ai/flows/aadhar-verification";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { db } from "@/lib/firebase";
-import { doc, setDoc, getDocs, collection, query, where } from "firebase/firestore";
 
 
 const formSchema = z.object({
@@ -156,69 +154,13 @@ export function SignUpForm() {
         return;
     }
 
-    // Check if email already exists in Firestore
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("email", "==", values.email.toLowerCase()));
-    const querySnapshot = await getDocs(q);
-    if (!querySnapshot.empty) {
-        form.setError("email", { type: "manual", message: "This email is already in use." });
-        return;
-    }
-    
-    const newUserId = `user-${Date.now()}`;
-    let newAnonymousId = '';
-    let roles: User['roles'] = [];
-
-    switch(values.role) {
-      case 'Installer':
-        newAnonymousId = `Installer-${Math.floor(1000 + Math.random() * 9000)}`;
-        roles = ['Installer'];
-        break;
-      case 'Job Giver':
-        newAnonymousId = `JobGiver-${Math.floor(1000 + Math.random() * 9000)}`;
-        roles = ['Job Giver'];
-        break;
-      case 'Both (Job Giver & Installer)':
-        newAnonymousId = `User-${Math.floor(1000 + Math.random() * 9000)}`;
-        roles = ['Job Giver', 'Installer'];
-        break;
-    }
-
-    const randomAvatar = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
-    
-    const newUser: FirestoreUser = {
-      id: newUserId,
-      name: values.name,
-      email: values.email,
-      mobile: values.mobile,
-      anonymousId: newAnonymousId,
-      pincodes: { residential: values.pincode || '' },
-      roles: roles,
-      memberSince: new Date(),
-      avatarUrl: randomAvatar.imageUrl,
-      realAvatarUrl: `https://picsum.photos/seed/${values.name.split(' ')[0]}/100/100`,
-    };
-
-    if (values.role === 'Installer' || values.role === 'Both (Job Giver & Installer)') {
-      newUser.installerProfile = {
-        tier: 'Bronze',
-        points: 0,
-        skills: [],
-        rating: 0,
-        reviews: 0,
-        verified: verificationStep === 'verified',
-        reputationHistory: [],
-        aadharData: kycData ? { ...kycData } : undefined,
-      };
-    }
-    
-    try {
-        await setDoc(doc(db, "users", newUserId), newUser);
-        login(values.email);
-        router.push("/dashboard");
-    } catch(e) {
-        console.error("Error creating user: ", e);
-        toast({ title: "Signup Failed", description: "Could not create your account. Please try again.", variant: "destructive" });
+    // In a real app, this would save to a database and check for existing emails.
+    // For this mock version, we just log in the user.
+    const success = await login(values.email, values);
+    if (success) {
+      router.push("/dashboard");
+    } else {
+      form.setError("email", { type: "manual", message: "This email is already in use by an existing user." });
     }
   }
 
@@ -502,9 +444,7 @@ export function SignUpForm() {
         {(role === "Installer" || role === "Both (Job Giver & Installer)") && renderInstallerForm()}
         {role === "Job Giver" && renderJobGiverForm()}
 
-      </form>
+      </form> Nor
     </Form>
   );
 }
-
-    

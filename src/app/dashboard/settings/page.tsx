@@ -33,8 +33,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { db } from "@/lib/firebase"
-import { collection, doc, writeBatch, Timestamp } from "firebase/firestore"
 import { jobs as mockJobs, users as mockUsers } from "@/lib/data"
 import { Loader2 } from "lucide-react"
 
@@ -78,70 +76,12 @@ function SeedDatabaseCard() {
 
     const handleSeedDatabase = async () => {
         setIsSeeding(true);
-        try {
-            const batch = writeBatch(db);
-
-            // Seed users
-            const usersCollection = collection(db, "users");
-            mockUsers.forEach(user => {
-                const userDoc = doc(usersCollection, user.id);
-                // Ensure all date-like fields are Timestamps
-                const firestoreUser = {
-                    ...user,
-                    memberSince: user.memberSince instanceof Date 
-                        ? Timestamp.fromDate(user.memberSince) 
-                        : user.memberSince, // Assume it's already a Timestamp if not a Date
-                };
-                batch.set(userDoc, firestoreUser);
-            });
-
-            // Seed jobs
-            const jobsCollection = collection(db, "jobs");
-            mockJobs.forEach(job => {
-                const jobDoc = doc(jobsCollection, job.id);
-                const jobData = {
-                    ...job,
-                    jobGiver: doc(db, 'users', (job.jobGiver as any).id),
-                    postedAt: job.postedAt instanceof Date ? Timestamp.fromDate(job.postedAt) : job.postedAt,
-                    deadline: job.deadline instanceof Date ? Timestamp.fromDate(job.deadline) : job.deadline,
-                    jobStartDate: job.jobStartDate ? (job.jobStartDate instanceof Date ? Timestamp.fromDate(job.jobStartDate) : job.jobStartDate) : undefined,
-                    bids: job.bids.map(bid => ({
-                        ...bid,
-                        installer: doc(db, 'users', (bid.installer as any).id),
-                        timestamp: bid.timestamp instanceof Date ? Timestamp.fromDate(bid.timestamp) : bid.timestamp,
-                    })),
-                    comments: job.comments.map(comment => ({
-                        ...comment,
-                        author: doc(db, 'users', (comment.author as any).id),
-                        timestamp: comment.timestamp instanceof Date ? Timestamp.fromDate(comment.timestamp) : comment.timestamp,
-                    }))
-                };
-                
-                // Remove awardedInstaller if it's not a string ID
-                if (job.awardedInstaller && typeof job.awardedInstaller !== 'string') {
-                    jobData.awardedInstaller = (job.awardedInstaller as any).id;
-                }
-
-                batch.set(jobDoc, jobData);
-            });
-
-            await batch.commit();
-
-            toast({
-                title: "Database Seeded!",
-                description: "Your Firestore database has been populated with mock data.",
-                variant: "success",
-            });
-        } catch (error) {
-            console.error("Error seeding database: ", error);
-            toast({
-                title: "Seeding Failed",
-                description: "Could not seed the database. Check the console for errors.",
-                variant: "destructive",
-            });
-        } finally {
-            setIsSeeding(false);
-        }
+        toast({
+            title: "Feature Disabled",
+            description: "Database seeding is currently disabled due to a configuration issue.",
+            variant: "destructive",
+        });
+        setIsSeeding(false);
     };
 
     return (
@@ -155,12 +95,12 @@ function SeedDatabaseCard() {
             <CardContent>
                 <div className="flex items-center justify-between rounded-lg border p-3">
                     <div>
-                        <Label>Seed Database</Label>
+                        <Label>Seed Database (Disabled)</Label>
                         <p className="text-xs text-muted-foreground">
-                           Click this to upload all users and jobs.
+                           This feature is temporarily unavailable.
                         </p>
                     </div>
-                    <Button onClick={handleSeedDatabase} disabled={isSeeding}>
+                    <Button onClick={handleSeedDatabase} disabled={true}>
                         {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Seed Data
                     </Button>

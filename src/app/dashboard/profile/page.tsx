@@ -44,9 +44,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Job, User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
-
+import { jobs as allMockJobs } from "@/lib/data";
 
 const tierIcons = {
   Bronze: <Medal className="h-6 w-6 text-yellow-700" />,
@@ -243,28 +241,20 @@ export default function ProfilePage() {
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   const { toast } = useToast();
   const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
-  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (role !== 'Installer' || !user) {
-      setLoading(false);
       return;
     }
-    setLoading(true);
-    const fetchCompletedJobs = async () => {
-        const q = query(
-            collection(db, "jobs"), 
-            where("awardedInstaller", "==", user.id), 
-            where("status", "==", "Completed")
-        );
-        const querySnapshot = await getDocs(q);
-        setJobsCompletedCount(querySnapshot.size);
-        setLoading(false);
-    }
-    fetchCompletedJobs();
+    
+    const completedJobs = allMockJobs.filter(job => 
+        job.status === 'Completed' && 
+        ((job.awardedInstaller as User)?.id === user.id || job.awardedInstaller === user.id)
+    );
+    setJobsCompletedCount(completedJobs.length);
   }, [user, role]);
   
-  if (!user || loading) {
+  if (!user) {
     return <div>Loading...</div>;
   }
   
@@ -548,5 +538,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

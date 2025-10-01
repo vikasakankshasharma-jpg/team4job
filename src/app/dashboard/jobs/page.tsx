@@ -41,9 +41,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
 import { useUser } from "@/hooks/use-user";
-import { Job, FirestoreJob, FirestoreUser } from "@/lib/types";
-import { db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, getDoc, DocumentReference } from "firebase/firestore";
+import { jobs as allMockJobs } from "@/lib/data";
+import type { Job } from "@/lib/types";
 
 // Get unique skills from jobs data for filter - This might need to be dynamic later
 const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz", "vms", "access control"];
@@ -51,8 +50,8 @@ const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz"
 
 export default function BrowseJobsPage() {
   const { user } = useUser();
-  const [jobs, setJobs] = React.useState<Job[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [jobs, setJobs] = React.useState<Job[]>(allMockJobs);
+  const [loading, setLoading] = React.useState(false); // Kept for UI consistency, but not fetching async
   const [searchPincode, setSearchPincode] = React.useState("");
   const [budget, setBudget] = React.useState([0, 150000]);
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
@@ -86,29 +85,7 @@ export default function BrowseJobsPage() {
     });
   }, [setHelp]);
   
-  React.useEffect(() => {
-    setLoading(true);
-    const q = query(collection(db, "jobs"), where("status", "==", "Open for Bidding"));
-    
-    const unsubscribe = onSnapshot(q, async (querySnapshot) => {
-        const jobsData = await Promise.all(querySnapshot.docs.map(async (docSnap) => {
-            const firestoreJob = { id: docSnap.id, ...docSnap.data() } as FirestoreJob;
-            const jobGiverSnap = await getDoc(firestoreJob.jobGiver as DocumentReference);
-            const jobGiver = jobGiverSnap.exists() ? { id: jobGiverSnap.id, ...jobGiverSnap.data() } as FirestoreUser : null;
-
-            return {
-                ...firestoreJob,
-                jobGiver: jobGiver,
-            } as Job;
-        }));
-        setJobs(jobsData.filter(j => j.jobGiver));
-        setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const openJobs = jobs;
+  const openJobs = jobs.filter(job => job.status === 'Open for Bidding');
 
   const filterJobs = (jobsToFilter: typeof jobs) => {
     return jobsToFilter.filter((job) => {
@@ -332,5 +309,3 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
-
-    

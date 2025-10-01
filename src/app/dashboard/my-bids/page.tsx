@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Award, IndianRupee, ListFilter, X } from "lucide-react";
-import { Job, Bid, User, FirestoreJob } from "@/lib/types";
+import { Job, Bid, User } from "@/lib/types";
 import React from "react";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
@@ -37,9 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, getDocs, doc, getDoc, DocumentReference } from "firebase/firestore";
-
+import { jobs as allMockJobs } from "@/lib/data";
 
 type MyBidRowProps = {
   bid: Bid & { jobTitle: string; jobId: string; jobStatus: Job['status'], wasPlaced: boolean };
@@ -149,42 +147,7 @@ function MyBidsPageContent() {
   const pathname = usePathname();
   let statusFilter = searchParams.get('status');
   const { setHelp } = useHelp();
-  const [jobs, setJobs] = React.useState<Job[]>([]);
-  const [loading, setLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    if (!user) {
-        setLoading(false);
-        return;
-    };
-    
-    setLoading(true);
-    const userRef = doc(db, "users", user.id);
-    const q = query(
-      collection(db, "jobs"),
-      where("bids", "array-contains-any", [ { installer: userRef } ])
-      // Firestore limitation: cannot query for "OR" on different fields.
-      // We will fetch all jobs where user has bid OR has been awarded, then filter client-side.
-    );
-
-    const unsubscribe = onSnapshot(collection(db, "jobs"), async (snapshot) => {
-        const jobsData: Job[] = [];
-        for (const docSnap of snapshot.docs) {
-            const job = { id: docSnap.id, ...docSnap.data() } as Job;
-            const userHasBid = job.bids.some(bid => (bid.installer as unknown as DocumentReference).id === user.id);
-            const userIsAwarded = job.awardedInstaller === user.id;
-
-            if (userHasBid || userIsAwarded) {
-                 jobsData.push(job);
-            }
-        }
-        setJobs(jobsData);
-        setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
+  const [jobs, setJobs] = React.useState<Job[]>(allMockJobs);
 
   React.useEffect(() => {
     setHelp({
@@ -223,7 +186,7 @@ function MyBidsPageContent() {
       statusFilter = 'Completed & Won';
   }
   
-  if (!user || loading) {
+  if (!user) {
     return (
       <Card>
         <CardHeader>
@@ -254,7 +217,7 @@ function MyBidsPageContent() {
   };
   
  const myBids = jobs.map(job => {
-    const myBid = job.bids.find(bid => (bid.installer as unknown as DocumentReference).id === user.id);
+    const myBid = job.bids.find(bid => (bid.installer as User).id === user.id);
     
     if (myBid || job.awardedInstaller === user.id) {
       return {
@@ -273,9 +236,11 @@ function MyBidsPageContent() {
   }).filter((bid): bid is Bid & { jobTitle: string; jobId: string; jobStatus: Job['status']; wasPlaced: boolean } => bid !== null)
     .sort((a,b) => toDate(b.timestamp).getTime() - toDate(a.timestamp).getTime());
 
- const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: string | undefined; }): string => {
+ const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: string | User; }): string => {
     if (!job || !user) return "Unknown";
-    const won = job.awardedInstaller === user.id;
+    const awardedId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User)?.id;
+    const won = awardedId === user.id;
+
     if (won) {
         if (job.status === 'Completed') return 'Completed & Won';
         if (job.status === 'In Progress') return 'In Progress';
@@ -392,5 +357,3 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
-
-    

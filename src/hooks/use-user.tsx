@@ -4,8 +4,9 @@
 import { User } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, onSnapshot, doc } from "firebase/firestore";
+import { users as mockUsers } from "@/lib/data";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
+
 
 type Role = "Job Giver" | "Installer" | "Admin";
 
@@ -14,7 +15,7 @@ type UserContextType = {
   role: Role;
   setUser: React.Dispatch<React.SetStateAction<User | null>> | null;
   setRole: (role: Role) => void;
-  login: (email: string) => Promise<boolean>;
+  login: (email: string, signupData?: any) => Promise<boolean>;
   logout: () => void;
 };
 
@@ -31,25 +32,21 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem('loggedInUserId');
-    if (storedUserId) {
-        const userDocRef = doc(db, 'users', storedUserId);
-        const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const loggedInUser = { id: docSnap.id, ...docSnap.data() } as User;
-                setUser(loggedInUser);
-                const storedRole = localStorage.getItem('userRole') as Role;
-                if (storedRole && loggedInUser.roles.includes(storedRole)) {
-                    setRoleState(storedRole);
-                } else {
-                    const initialRole = loggedInUser.roles.includes("Admin") ? "Admin" : loggedInUser.roles.includes("Installer") ? "Installer" : "Job Giver";
-                    setRoleState(initialRole);
-                }
+    const storedUserEmail = localStorage.getItem('loggedInUserEmail');
+    if (storedUserEmail) {
+        const foundUser = mockUsers.find(u => u.email.toLowerCase() === storedUserEmail.toLowerCase());
+        if (foundUser) {
+            setUser(foundUser);
+            const storedRole = localStorage.getItem('userRole') as Role;
+            if (storedRole && foundUser.roles.includes(storedRole)) {
+                setRoleState(storedRole);
             } else {
-                logout(); // User not found in DB, clear local state
+                const initialRole = foundUser.roles.includes("Admin") ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
+                setRoleState(initialRole);
             }
-        });
-        return () => unsubscribe();
+        } else {
+            logout();
+        }
     }
   }, []);
 
@@ -68,17 +65,63 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   }, [role, pathname, user, router]);
 
 
-  const login = async (email: string) => {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("email", "==", email.toLowerCase()));
-    const querySnapshot = await getDocs(q);
+  const login = async (email: string, signupData: any = null) => {
+    let foundUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
 
-    if (!querySnapshot.empty) {
-        const userDoc = querySnapshot.docs[0];
-        const foundUser = { id: userDoc.id, ...userDoc.data() } as User;
-        
+    if (!foundUser && signupData) {
+      // Create a new user (mock)
+      const newUserId = `user-${Date.now()}`;
+      let newAnonymousId = '';
+      let roles: User['roles'] = [];
+
+      switch(signupData.role) {
+        case 'Installer':
+          newAnonymousId = `Installer-${Math.floor(1000 + Math.random() * 9000)}`;
+          roles = ['Installer'];
+          break;
+        case 'Job Giver':
+          newAnonymousId = `JobGiver-${Math.floor(1000 + Math.random() * 9000)}`;
+          roles = ['Job Giver'];
+          break;
+        case 'Both (Job Giver & Installer)':
+          newAnonymousId = `User-${Math.floor(1000 + Math.random() * 9000)}`;
+          roles = ['Job Giver', 'Installer'];
+          break;
+      }
+      
+      const randomAvatar = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
+
+      const newUser: User = {
+        id: newUserId,
+        name: signupData.name,
+        email: signupData.email,
+        mobile: signupData.mobile,
+        anonymousId: newAnonymousId,
+        pincodes: { residential: signupData.pincode || '' },
+        roles: roles,
+        memberSince: new Date(),
+        avatarUrl: randomAvatar.imageUrl,
+        realAvatarUrl: `https://picsum.photos/seed/${signupData.name.split(' ')[0]}/100/100`,
+      };
+
+      if (signupData.role === 'Installer' || signupData.role === 'Both (Job Giver & Installer)') {
+        newUser.installerProfile = {
+          tier: 'Bronze',
+          points: 0,
+          skills: [],
+          rating: 0,
+          reviews: 0,
+          verified: true, // Mock as verified
+          reputationHistory: [],
+        };
+      }
+      mockUsers.push(newUser);
+      foundUser = newUser;
+    }
+    
+    if (foundUser) {
         setUser(foundUser);
-        localStorage.setItem('loggedInUserId', foundUser.id);
+        localStorage.setItem('loggedInUserEmail', foundUser.email);
         const initialRole = foundUser.roles.includes("Admin") ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
         setRoleState(initialRole);
         localStorage.setItem('userRole', initialRole);
@@ -89,7 +132,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('loggedInUserId');
+    localStorage.removeItem('loggedInUserEmail');
     localStorage.removeItem('userRole');
   };
 
@@ -114,5 +157,3 @@ export const useUser = () => {
   }
   return context;
 };
-
-    

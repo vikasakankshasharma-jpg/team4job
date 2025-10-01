@@ -25,8 +25,8 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { users as mockUsers } from "@/lib/data";
+
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
@@ -37,20 +37,8 @@ const tierIcons: Record<string, React.ReactNode> = {
 
 export default function UsersPage() {
   const router = useRouter();
-  const [users, setUsers] = React.useState<User[]>([]);
-  const [loading, setLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    setLoading(true);
-    const usersCollection = collection(db, "users");
-    const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
-        const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as User[];
-        setUsers(usersData);
-        setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const [users, setUsers] = React.useState<User[]>(mockUsers);
+  const [loading, setLoading] = React.useState(false);
 
   const handleRowClick = (userId: string) => {
     router.push(`/dashboard/users/${userId}`);
@@ -140,5 +128,3 @@ export default function UsersPage() {
     </Card>
   );
 }
-
-    

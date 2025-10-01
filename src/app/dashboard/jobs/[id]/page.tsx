@@ -43,7 +43,8 @@ import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bid, Job, Comment, User, FirestoreJob, FirestoreUser, FirestoreBid, FirestoreComment } from "@/lib/types";
+import { Bid, Job, Comment, User } from "@/lib/types";
+import { jobs, users } from "@/lib/data";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import {
@@ -56,15 +57,9 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove, DocumentReference, serverTimestamp, Timestamp } from "firebase/firestore";
 
-async function fetchReferencedDoc<T>(ref: DocumentReference): Promise<T | null> {
-    const docSnap = await getDoc(ref);
-    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as T : null;
-}
 
-function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<FirestoreJob>) => void }) {
+function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
   const { toast } = useToast();
   const [otp, setOtp] = React.useState('');
 
@@ -74,7 +69,6 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
         status: 'Completed' as const,
         rating: 5, // Default rating, can be changed by job giver
       };
-      // In a real app, this would be an API call to update the database
       onJobUpdate(updatedData);
       
       toast({
@@ -158,7 +152,7 @@ function JobGiverOTPCard({ job }: { job: Job }) {
   );
 }
 
-function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<FirestoreJob>) => void }) {
+function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [bidProposal, setBidProposal] = React.useState("");
@@ -172,15 +166,15 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
       toast({ title: "Missing Information", description: "Please provide both a bid amount and a proposal.", variant: "destructive" });
       return;
     }
-    const newBid: FirestoreBid = {
+    const newBid: Bid = {
       id: `bid-${job.id}-${user.id}`,
-      installer: doc(db, 'users', user.id),
+      installer: user,
       amount: Number(bidAmount),
-      timestamp: serverTimestamp(),
+      timestamp: new Date(),
       coverLetter: bidProposal
     };
 
-    onJobUpdate({ bids: arrayUnion(newBid) as any });
+    onJobUpdate({ bids: [...job.bids, newBid] });
 
     toast({ title: "Bid Placed!", description: "Your bid has been submitted successfully." });
   };
@@ -323,7 +317,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
     );
 }
 
-function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<FirestoreJob>) => void }) {
+function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
     const { toast } = useToast();
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>(job.selectedInstallers?.map(i => i.installerId) || []);
     
@@ -572,7 +566,9 @@ export default function JobDetailPage() {
   const id = params.id as string;
   const { toast } = useToast();
   
-  const [job, setJob] = React.useState<Job | null | undefined>(undefined);
+  const [allJobs, setAllJobs] = React.useState<Job[]>(jobs);
+  const job = allJobs.find(j => j.id === id);
+
   const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
   const [editingContent, setEditingContent] = React.useState("");
   const [newComment, setNewComment] = React.useState("");
@@ -582,63 +578,25 @@ export default function JobDetailPage() {
   const [jobStartDate, setJobStartDate] = React.useState('');
 
   React.useEffect(() => {
-    if (!id) return;
-    const jobDocRef = doc(db, "jobs", id);
-
-    const unsubscribe = onSnapshot(jobDocRef, async (docSnap) => {
-        if (docSnap.exists()) {
-            const firestoreJob = { id: docSnap.id, ...docSnap.data() } as FirestoreJob;
-
-            const jobGiver = await fetchReferencedDoc<FirestoreUser>(firestoreJob.jobGiver as DocumentReference);
-            
-            const bids = await Promise.all(
-                firestoreJob.bids.map(async (bid) => {
-                    const installer = await fetchReferencedDoc<FirestoreUser>(bid.installer as DocumentReference);
-                    return { ...bid, installer } as Bid;
-                })
-            );
-
-            const comments = await Promise.all(
-                firestoreJob.comments.map(async (comment) => {
-                    const author = await fetchReferencedDoc<FirestoreUser>(comment.author as DocumentReference);
-                    return { ...comment, author } as Comment;
-                })
-            );
-            
-            const populatedJob: Job = {
-                ...firestoreJob,
-                jobGiver: jobGiver!,
-                bids,
-                comments
-            };
-
-            setJob(populatedJob);
-            setDeadlineRelative(formatDistanceToNow(toDate(populatedJob.deadline), { addSuffix: true }));
-            setDeadlineAbsolute(format(toDate(populatedJob.deadline), "MMM d, yyyy"));
-            if(populatedJob.jobStartDate){
-                setJobStartDate(format(toDate(populatedJob.jobStartDate), "MMM d, yyyy"));
-            }
-        } else {
-            setJob(null);
-        }
-    });
-
-    return () => unsubscribe();
-  }, [id]);
-
-  const handleJobUpdate = (updatedPart: Partial<FirestoreJob>) => {
     if (job) {
-      const jobDocRef = doc(db, "jobs", job.id);
-      updateDoc(jobDocRef, updatedPart);
+        setDeadlineRelative(formatDistanceToNow(toDate(job.deadline), { addSuffix: true }));
+        setDeadlineAbsolute(format(toDate(job.deadline), "MMM d, yyyy"));
+        if(job.jobStartDate){
+            setJobStartDate(format(toDate(job.jobStartDate), "MMM d, yyyy"));
+        }
+    }
+  }, [job]);
+
+  const handleJobUpdate = (updatedPart: Partial<Job>) => {
+    if (job) {
+      setAllJobs(currentJobs => currentJobs.map(j => j.id === job.id ? {...j, ...updatedPart} : j));
     }
   };
 
-  if (job === undefined || !user) {
+  if (!job || !user) {
+    // In a real app with async data, show a skeleton
+    if(!job) notFound();
     return <PageSkeleton />;
-  }
-
-  if (job === null) {
-    notFound();
   }
   
   const handleEditComment = (commentId: string, content: string) => {
@@ -652,15 +610,7 @@ export default function JobDetailPage() {
   };
 
   const updateComments = (updatedComments: Comment[]) => {
-     if (job) {
-        const jobDocRef = doc(db, "jobs", job.id);
-        const firestoreComments = updatedComments.map(c => ({
-            ...c,
-            author: doc(db, 'users', (c.author as User).id),
-            timestamp: c.timestamp instanceof Date ? c.timestamp : (c.timestamp as Timestamp).toDate(),
-        }));
-        updateDoc(jobDocRef, { comments: firestoreComments });
-    }
+    handleJobUpdate({ comments: updatedComments });
   };
 
   const handleSaveEdit = (commentId: string) => {
@@ -687,14 +637,14 @@ export default function JobDetailPage() {
   
   const handlePostComment = async () => {
     if (!newComment.trim() || !user || !job) return;
-    const comment: FirestoreComment = {
+    const comment: Comment = {
       id: `comment-${Date.now()}`,
-      author: doc(db, 'users', user.id),
-      timestamp: serverTimestamp(),
+      author: user,
+      timestamp: new Date(),
       content: newComment,
     };
     
-    handleJobUpdate({ comments: arrayUnion(comment) as any });
+    handleJobUpdate({ comments: [...job.comments, comment] });
 
     setNewComment("");
      toast({
@@ -851,5 +801,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    

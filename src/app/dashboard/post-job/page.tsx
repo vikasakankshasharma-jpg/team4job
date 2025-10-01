@@ -30,8 +30,6 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, doc, serverTimestamp } from "firebase/firestore";
 
 const jobSchema = z.object({
   jobTitle: z
@@ -120,44 +118,17 @@ export default function PostJobPage() {
         return;
     }
     
-    // Generate a 6-digit OTP
-    const completionOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    const newJobId = `JOB-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    // In a real app, this would save to a database.
+    // For this mock version, we just show a success message.
+    const newJobId = `JOB-${Date.now()}`;
+    console.log("New Job Submitted:", { id: newJobId, ...values, jobGiver: user.id });
 
-    const newJob = {
-      id: newJobId, // This is just for local consistency, Firestore generates its own ID
-      title: values.jobTitle,
-      description: values.jobDescription,
-      jobGiver: doc(db, 'users', user.id),
-      location: `${values.location}, India`,
-      budget: { min: values.budgetMin, max: values.budgetMax },
-      status: 'Open for Bidding' as const,
-      deadline: new Date(values.deadline),
-      jobStartDate: new Date(values.jobStartDate),
-      postedAt: serverTimestamp(),
-      bids: [],
-      comments: [],
-      completionOtp: completionOtp,
-    };
-    
-    try {
-        const jobsCollection = collection(db, "jobs");
-        const docRef = await addDoc(jobsCollection, newJob);
-
-        toast({
-            title: "Job Posted Successfully!",
-            description: "Your job is now live and open for bidding.",
-        });
-        form.reset();
-        router.push(`/dashboard/jobs/${docRef.id}`);
-    } catch (error) {
-        console.error("Error posting job: ", error);
-        toast({
-            title: "Failed to post job",
-            description: "An error occurred while saving your job. Please try again.",
-            variant: "destructive"
-        });
-    }
+    toast({
+        title: "Job Posted Successfully! (Mock)",
+        description: "Your job is now live and open for bidding.",
+    });
+    form.reset();
+    router.push(`/dashboard/posted-jobs`);
   }
 
   return (
@@ -336,5 +307,3 @@ export default function PostJobPage() {
     </div>
   );
 }
-
-    
