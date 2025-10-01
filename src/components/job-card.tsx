@@ -15,7 +15,7 @@ import type { Job } from "@/lib/types";
 import { MapPin, IndianRupee, Clock, Users } from "lucide-react";
 import Link from "next/link";
 import { format, formatDistanceToNow } from 'date-fns';
-import { getStatusVariant } from "@/lib/utils";
+import { getStatusVariant, toDate } from "@/lib/utils";
 import React from "react";
 import { AnimatedAvatar } from "./ui/animated-avatar";
 
@@ -29,10 +29,10 @@ export function JobCard({ job }: JobCardProps) {
 
   React.useEffect(() => {
     if (job.deadline) {
-      setTimeRemaining(formatDistanceToNow(new Date(job.deadline), { addSuffix: true }));
+      setTimeRemaining(formatDistanceToNow(toDate(job.deadline), { addSuffix: true }));
     }
     if (job.postedAt) {
-      setPostedAt(formatDistanceToNow(new Date(job.postedAt), { addSuffix: true }));
+      setPostedAt(formatDistanceToNow(toDate(job.postedAt), { addSuffix: true }));
     }
   }, [job.deadline, job.postedAt]);
 
@@ -77,7 +77,7 @@ export function JobCard({ job }: JobCardProps) {
             <div>
               <p className="font-semibold text-sm text-foreground">{job.jobGiver.anonymousId}</p>
               <p className="text-xs text-muted-foreground">
-                Member since {format(job.jobGiver.memberSince, 'MMM yyyy')}
+                Member since {format(toDate(job.jobGiver.memberSince), 'MMM yyyy')}
               </p>
             </div>
         </div>

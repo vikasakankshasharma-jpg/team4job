@@ -9,7 +9,6 @@ import {
   CardTitle,
   CardFooter
 } from "@/components/ui/card";
-import { jobs, users } from "@/lib/data";
 import {
   Table,
   TableBody,
@@ -22,9 +21,9 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Award, IndianRupee, ListFilter, X } from "lucide-react";
-import { Job, Bid } from "@/lib/types";
+import { Job, Bid, User } from "@/lib/types";
 import React from "react";
-import { getStatusVariant } from "@/lib/utils";
+import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
@@ -38,25 +37,26 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
+import { collection, getDocs, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 
 type MyBidRowProps = {
   bid: Bid & { jobTitle: string; jobId: string; jobStatus: Job['status'], wasPlaced: boolean };
+  job?: Job;
+  user?: User | null;
 }
 
-function MyBidRow({ bid }: MyBidRowProps) {
+function MyBidRow({ bid, job, user }: MyBidRowProps) {
     const [timeAgo, setTimeAgo] = React.useState('');
-    const { user } = useUser();
 
     React.useEffect(() => {
         if (bid.timestamp && bid.wasPlaced) {
-            setTimeAgo(formatDistanceToNow(new Date(bid.timestamp), { addSuffix: true }));
+            setTimeAgo(formatDistanceToNow(toDate(bid.timestamp), { addSuffix: true }));
         } else if (!bid.wasPlaced) {
              setTimeAgo('Awarded Directly');
         }
     }, [bid.timestamp, bid.wasPlaced]);
-
-    const job = jobs.find(j => j.id === bid.jobId);
     
     const getMyBidStatus = (): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
         if (!job || !user) return { text: "Unknown", variant: "secondary" };
@@ -149,6 +149,30 @@ function MyBidsPageContent() {
   const pathname = usePathname();
   let statusFilter = searchParams.get('status');
   const { setHelp } = useHelp();
+  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchJobs = async () => {
+      setLoading(true);
+      const jobsSnapshot = await getDocs(collection(db, "jobs"));
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+      
+      const jobsList = jobsSnapshot.docs.map(doc => {
+        const jobData = doc.data() as Job;
+        // Resolve references
+        jobData.jobGiver = usersList.find(u => u.id === (jobData.jobGiver as any).id) || jobData.jobGiver;
+        jobData.bids = jobData.bids.map(bid => ({ ...bid, installer: usersList.find(u => u.id === (bid.installer as any).id) || bid.installer }));
+        return { ...jobData, id: doc.id } as Job
+      });
+
+      setJobs(jobsList);
+      setLoading(false);
+    };
+
+    fetchJobs();
+  }, []);
 
   React.useEffect(() => {
     setHelp({
@@ -187,7 +211,7 @@ function MyBidsPageContent() {
       statusFilter = 'Completed & Won';
   }
   
-  if (!user) {
+  if (!user || loading) {
     return (
       <Card>
         <CardHeader>
@@ -197,7 +221,7 @@ function MyBidsPageContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Please log in to see your bids.</p>
+          <p>Please wait while we fetch your data.</p>
         </CardContent>
       </Card>
     );
@@ -220,7 +244,6 @@ function MyBidsPageContent() {
  const myBids = jobs.map(job => {
     const myBid = job.bids.find(bid => bid.installer.id === user.id);
     
-    // Include the job if the user bid on it OR if it was awarded to them (even without a bid)
     if (myBid || job.awardedInstaller === user.id) {
       return {
         id: myBid?.id || `direct-award-${job.id}`,
@@ -236,7 +259,7 @@ function MyBidsPageContent() {
     }
     return null;
   }).filter((bid): bid is Bid & { jobTitle: string; jobId: string; jobStatus: Job['status']; wasPlaced: boolean } => bid !== null)
-    .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    .sort((a,b) => toDate(b.timestamp).getTime() - toDate(a.timestamp).getTime());
 
  const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: string | undefined; }): string => {
     if (!job || !user) return "Unknown";
@@ -323,9 +346,10 @@ function MyBidsPageContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredBids.map(bid => (
-                <MyBidRow key={bid.id} bid={bid} />
-              ))}
+              {filteredBids.map(bid => {
+                const job = jobs.find(j => j.id === bid.jobId);
+                return <MyBidRow key={bid.id} bid={bid} job={job} user={user} />
+              })}
                {filteredBids.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center h-24">

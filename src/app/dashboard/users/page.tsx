@@ -17,12 +17,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { users } from "@/lib/data";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { Gem, Medal, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
+import React from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { User } from "@/lib/types";
+import { toDate } from "@/lib/utils";
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
@@ -33,6 +37,19 @@ const tierIcons: Record<string, React.ReactNode> = {
 
 export default function UsersPage() {
   const router = useRouter();
+  const [users, setUsers] = React.useState<User[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+      setUsers(usersList);
+      setLoading(false);
+    };
+    fetchUsers();
+  }, []);
 
   const handleRowClick = (userId: string) => {
     router.push(`/dashboard/users/${userId}`);
@@ -57,62 +74,68 @@ export default function UsersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id} onClick={() => handleRowClick(user.id)} className="cursor-pointer">
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9">
-                      <AnimatedAvatar svg={user.avatarUrl} />
-                      <AvatarFallback>{user.anonymousId.substring(0, 2)}</AvatarFallback>
-                    </Avatar>
-                    <div className="font-medium">
-                        <p>{user.anonymousId}</p>
-                        <p className="text-sm text-muted-foreground">{`user-${user.id.substring(user.id.length-4)}@example.com`}</p>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1 sm:flex-row">
-                    {user.roles.map(role => (
-                        <Badge key={role} variant="outline">{role}</Badge>
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">
-                    {format(user.memberSince, 'MMM, yyyy')}
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">
-                    {user.installerProfile ? (
-                        <div className="flex items-center gap-2">
-                           {tierIcons[user.installerProfile.tier]}
-                            {user.installerProfile.tier}
-                            {user.installerProfile.verified && <ShieldCheck className="h-4 w-4 text-green-600" title="Verified"/>}
-                        </div>
-                    ) : (
-                        <span className="text-muted-foreground">—</span>
-                    )}
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">
-                    {user.installerProfile ? (
-                        <span>{user.installerProfile.rating}/5 ({user.installerProfile.reviews})</span>
-                    ) : (
-                        <span className="text-muted-foreground">—</span>
-                    )}
-                </TableCell>
-                <TableCell className="text-right">
-                    {user.installerProfile ? (
-                        <span className="font-semibold">{user.installerProfile.points.toLocaleString()} pts</span>
-                     ) : (
-                        <span className="text-muted-foreground">—</span>
-                    )}
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  Loading users...
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              users.map((user) => (
+                <TableRow key={user.id} onClick={() => handleRowClick(user.id)} className="cursor-pointer">
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AnimatedAvatar svg={user.avatarUrl} />
+                        <AvatarFallback>{user.anonymousId.substring(0, 2)}</AvatarFallback>
+                      </Avatar>
+                      <div className="font-medium">
+                          <p>{user.anonymousId}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1 sm:flex-row">
+                      {user.roles.map(role => (
+                          <Badge key={role} variant="outline">{role}</Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                      {format(toDate(user.memberSince), 'MMM, yyyy')}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                      {user.installerProfile ? (
+                          <div className="flex items-center gap-2">
+                             {tierIcons[user.installerProfile.tier]}
+                              {user.installerProfile.tier}
+                              {user.installerProfile.verified && <ShieldCheck className="h-4 w-4 text-green-600" title="Verified"/>}
+                          </div>
+                      ) : (
+                          <span className="text-muted-foreground">—</span>
+                      )}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                      {user.installerProfile ? (
+                          <span>{user.installerProfile.rating}/5 ({user.installerProfile.reviews})</span>
+                      ) : (
+                          <span className="text-muted-foreground">—</span>
+                      )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                      {user.installerProfile ? (
+                          <span className="font-semibold">{user.installerProfile.points.toLocaleString()} pts</span>
+                       ) : (
+                          <span className="text-muted-foreground">—</span>
+                      )}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>
     </Card>
   );
 }
-
-    

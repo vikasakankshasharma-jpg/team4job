@@ -26,7 +26,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { jobs } from "@/lib/data";
 import { JobCard } from "@/components/job-card";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
@@ -42,13 +41,19 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
 import { useUser } from "@/hooks/use-user";
+import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Job, User } from "@/lib/types";
+import { toDate } from "@/lib/utils";
 
-// Get unique skills from jobs data for filter
-const allSkills = Array.from(new Set(jobs.flatMap(job => job.description.toLowerCase().match(/ip camera|nvr setup|cabling|troubleshooting|ptz|vms|access control/g) || [])));
+// Get unique skills from jobs data for filter - This might need to be dynamic later
+const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz", "vms", "access control"];
 
 
 export default function BrowseJobsPage() {
   const { user } = useUser();
+  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [searchPincode, setSearchPincode] = React.useState("");
   const [budget, setBudget] = React.useState([0, 150000]);
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
@@ -82,6 +87,25 @@ export default function BrowseJobsPage() {
     });
   }, [setHelp]);
   
+  React.useEffect(() => {
+    const fetchJobs = async () => {
+      setLoading(true);
+      const jobsSnapshot = await getDocs(collection(db, "jobs"));
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+      
+      const jobsList = jobsSnapshot.docs.map(doc => {
+        const jobData = doc.data() as Job;
+        jobData.jobGiver = usersList.find(u => u.id === (jobData.jobGiver as any).id) || jobData.jobGiver;
+        return { ...jobData, id: doc.id } as Job
+      });
+
+      setJobs(jobsList);
+      setLoading(false);
+    };
+    fetchJobs();
+  }, []);
+
   const openJobs = jobs.filter((job) => job.status === "Open for Bidding");
 
   const filterJobs = (jobsToFilter: typeof jobs) => {
@@ -248,7 +272,7 @@ export default function BrowseJobsPage() {
                 </div>
                  {filteredJobs.length === 0 && (
                   <div className="text-center py-10">
-                    <p className="text-muted-foreground">No jobs found matching your criteria.</p>
+                    <p className="text-muted-foreground">{loading ? "Loading jobs..." : "No jobs found matching your criteria."}</p>
                   </div>
                 )}
             </CardContent>
@@ -291,7 +315,7 @@ export default function BrowseJobsPage() {
                 </div>
                  {filteredRecommendedJobs.length === 0 && (
                   <div className="text-center py-10">
-                    <p className="text-muted-foreground">No recommended jobs found for the selected filter.</p>
+                    <p className="text-muted-foreground">{loading ? "Loading jobs..." : "No recommended jobs found for the selected filter."}</p>
                   </div>
                 )}
             </CardContent>
@@ -306,5 +330,3 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
-
-    
