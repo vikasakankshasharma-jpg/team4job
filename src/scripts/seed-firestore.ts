@@ -2,11 +2,10 @@
 import * as admin from 'firebase-admin';
 import { jobs as mockJobs, users as mockUsers } from '../src/lib/data';
 import { firebaseConfig } from '../src/lib/firebase-config';
-import { User, Job } from '../src/lib/types';
+import type { User } from '../src/lib/types';
 
-// IMPORTANT: Before running this script, you must download a service account key
-// from your Firebase project settings and save it as `serviceAccountKey.json`
-// in the root directory of this project.
+// IMPORTANT: Before running this script, you must have the `serviceAccountKey.json`
+// file in the root directory of your project.
 
 try {
   const serviceAccount = require('../../serviceAccountKey.json');
@@ -27,114 +26,65 @@ try {
   process.exit(1);
 }
 
-
 const db = admin.firestore();
-
-// Function to get an auth client that bypasses security rules
-async function getAdminAuth() {
-    const auth = admin.auth();
-    const { credential } = admin.app().options;
-    if (!credential) {
-      throw new Error('Firebase Admin SDK not initialized with a credential.');
-    }
-    // This part is a bit of a workaround to get a token for the service account itself.
-    // In a normal setup this isn't necessary, but we are being explicit to override rules.
-    const token = await (credential as any).getAccessToken();
-    const customToken = await auth.createCustomToken('admin-uid', { admin: true });
-    return { customToken, token };
-}
-
 
 async function seedCollection(collectionName: string, data: any[]) {
   console.log(`\nSeeding collection: ${collectionName}...`);
   const collectionRef = db.collection(collectionName);
   
-  // Start a new batched write
-  let batch = db.batch();
   let operationCount = 0;
-  
-  // It's safer to delete and then add in separate transaction batches.
-  console.log(`  Querying existing documents in ${collectionName} to delete...`);
-  const snapshot = await collectionRef.get();
-  if (!snapshot.empty) {
-    console.log(`  Deleting ${snapshot.size} existing documents...`);
-    snapshot.docs.forEach(doc => {
-      batch.delete(doc.ref);
-      operationCount++;
-      if (operationCount >= 499) { // Firestore batch limit is 500 operations
-        batch.commit();
-        batch = db.batch();
-        operationCount = 0;
-      }
-    });
-    if (operationCount > 0) {
-      await batch.commit();
-    }
-    console.log('  Deletion complete.');
-  } else {
-    console.log('  No existing documents to delete.');
-  }
-
-  // Add new documents in batches
-  console.log(`  Adding ${data.length} new documents...`);
-  batch = db.batch();
-  operationCount = 0;
-
   for (const item of data) {
-    const docRef = collectionRef.doc(item.id);
-    const firestoreData = { ...item };
-    delete firestoreData.id; // Don't store the ID in the document body
+    try {
+      const docRef = collectionRef.doc(item.id);
+      const firestoreData = { ...item };
+      delete firestoreData.id; // The ID is the doc name, not part of the data.
 
-    // Convert nested objects/arrays (bids, comments) and references
-    if (firestoreData.bids) {
-        firestoreData.bids.forEach((bid: any) => {
-            if (bid.installer && bid.installer.id) {
-                bid.installer = db.doc(`users/${bid.installer.id}`);
-            }
-        });
+      // Convert nested references
+      if (collectionName === 'jobs') {
+          if (firestoreData.jobGiver && firestoreData.jobGiver.id) {
+            firestoreData.jobGiver = db.doc(`users/${firestoreData.jobGiver.id}`);
+          }
+          if (firestoreData.bids) {
+              firestoreData.bids.forEach((bid: any) => {
+                  if (bid.installer && bid.installer.id) {
+                      bid.installer = db.doc(`users/${bid.installer.id}`);
+                  }
+              });
+          }
+          if (firestoreData.comments) {
+              firestoreData.comments.forEach((comment: any) => {
+                  if (comment.author && comment.author.id) {
+                      comment.author = db.doc(`users/${comment.author.id}`);
+                  }
+              });
+          }
+      }
+      
+      await docRef.set(firestoreData);
+      operationCount++;
+    } catch (error) {
+       console.error(`  [ERROR] Failed to write document ${item.id} to ${collectionName}.`);
+       throw error; // Re-throw the error to stop the script
     }
-
-    if (firestoreData.comments) {
-        firestoreData.comments.forEach((comment: any) => {
-            if (comment.author && comment.author.id) {
-                comment.author = db.doc(`users/${comment.author.id}`);
-            }
-        });
-    }
-
-    if (firestoreData.jobGiver && firestoreData.jobGiver.id) {
-      firestoreData.jobGiver = db.doc(`users/${firestoreData.jobGiver.id}`);
-    }
-
-    batch.set(docRef, firestoreData);
-    operationCount++;
-    if (operationCount >= 499) {
-      await batch.commit();
-      batch = db.batch();
-      operationCount = 0;
-    }
-  }
-
-  if (operationCount > 0) {
-    await batch.commit();
   }
   
-  console.log(`✅ Collection '${collectionName}' seeded successfully.`);
+  console.log(`✅ Wrote ${operationCount} documents to '${collectionName}' successfully.`);
 }
 
 async function main() {
   try {
-    console.log('Attempting to seed database with admin privileges...');
-    
     await seedCollection('users', mockUsers);
-    
+
+    // Prepare jobs data with references
     const jobsToSeed = mockJobs.map(job => {
         const jobCopy = { ...job };
-        
-        jobCopy.bids = job.bids.map(bid => ({ ...bid, installer: { id: (bid.installer as User).id } }));
-        jobCopy.comments = job.comments.map(comment => ({ ...comment, author: { id: (comment.author as User).id } }));
         jobCopy.jobGiver = { id: (job.jobGiver as User).id };
-
+        if(job.bids) {
+            jobCopy.bids = job.bids.map(bid => ({ ...bid, installer: { id: (bid.installer as User).id } }));
+        }
+        if(job.comments) {
+            jobCopy.comments = job.comments.map(comment => ({ ...comment, author: { id: (comment.author as User).id } }));
+        }
         return jobCopy;
     });
 
@@ -142,13 +92,13 @@ async function main() {
 
     console.log('\nDatabase seeding complete! Your Firestore database now contains the mock data.');
   } catch (error: any) {
-    console.error('\n[ERROR] An error occurred during the seeding process:');
-    // Provide a more detailed error log
-    console.error(`  Error Code: ${error.code}`);
-    console.error(`  Error Details: ${error.details || error.message}`);
-    if (error.code === 7 || (error.details && error.details.includes('PERMISSION_DENIED'))) {
-        console.error('\n[DIAGNOSIS] This is a PERMISSION_DENIED error. This can happen if the service account is missing the "Cloud Datastore User" or "Editor" role in Google Cloud IAM, or if there is an organization policy blocking access.');
-        console.error('Please check the IAM settings for your project in the Google Cloud Console.');
+    console.error('\n[FATAL ERROR] The seeding process failed and was stopped.');
+    if (error.code === 7 || (error.message && error.message.includes('PERMISSION_DENIED'))) {
+        console.error('\n[DIAGNOSIS] This is a PERMISSION_DENIED error.');
+        console.error('This means the service account key you are using does not have the correct permissions to write to Firestore.');
+        console.error('Please go to the Google Cloud Console for your project, find the IAM settings, and ensure the service account has the "Cloud Datastore User" or "Editor" role.');
+    } else {
+       console.error('  Error Details:', error.message);
     }
     process.exit(1);
   }
