@@ -23,9 +23,10 @@ import { Gem, Medal, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React from "react";
-import { users as mockUsers } from "@/lib/data";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
@@ -41,8 +42,14 @@ export default function UsersPage() {
 
   React.useEffect(() => {
     setLoading(true);
-    setUsers(mockUsers as User[]);
-    setLoading(false);
+    const usersCollection = collection(db, "users");
+    const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
+        const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as User[];
+        setUsers(usersData);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const handleRowClick = (userId: string) => {

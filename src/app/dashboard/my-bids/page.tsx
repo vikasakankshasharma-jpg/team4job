@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Award, IndianRupee, ListFilter, X } from "lucide-react";
-import { Job, Bid, User } from "@/lib/types";
+import { Job, Bid, User, FirestoreJob } from "@/lib/types";
 import React from "react";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
@@ -37,7 +37,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { jobs as mockJobs } from "@/lib/data";
+import { db } from "@/lib/firebase";
+import { collection, query, where, onSnapshot, getDocs, doc, getDoc, DocumentReference } from "firebase/firestore";
+
 
 type MyBidRowProps = {
   bid: Bid & { jobTitle: string; jobId: string; jobStatus: Job['status'], wasPlaced: boolean };
@@ -151,10 +153,38 @@ function MyBidsPageContent() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
+    if (!user) {
+        setLoading(false);
+        return;
+    };
+    
     setLoading(true);
-    setJobs(mockJobs as Job[]);
-    setLoading(false);
-  }, []);
+    const userRef = doc(db, "users", user.id);
+    const q = query(
+      collection(db, "jobs"),
+      where("bids", "array-contains-any", [ { installer: userRef } ])
+      // Firestore limitation: cannot query for "OR" on different fields.
+      // We will fetch all jobs where user has bid OR has been awarded, then filter client-side.
+    );
+
+    const unsubscribe = onSnapshot(collection(db, "jobs"), async (snapshot) => {
+        const jobsData: Job[] = [];
+        for (const docSnap of snapshot.docs) {
+            const job = { id: docSnap.id, ...docSnap.data() } as Job;
+            const userHasBid = job.bids.some(bid => (bid.installer as unknown as DocumentReference).id === user.id);
+            const userIsAwarded = job.awardedInstaller === user.id;
+
+            if (userHasBid || userIsAwarded) {
+                 jobsData.push(job);
+            }
+        }
+        setJobs(jobsData);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
 
   React.useEffect(() => {
     setHelp({
@@ -224,7 +254,7 @@ function MyBidsPageContent() {
   };
   
  const myBids = jobs.map(job => {
-    const myBid = job.bids.find(bid => (bid.installer as User).id === user.id);
+    const myBid = job.bids.find(bid => (bid.installer as unknown as DocumentReference).id === user.id);
     
     if (myBid || job.awardedInstaller === user.id) {
       return {

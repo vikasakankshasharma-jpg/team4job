@@ -44,7 +44,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Job, User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { jobs as mockJobs } from "@/lib/data";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 
 const tierIcons = {
@@ -250,9 +251,17 @@ export default function ProfilePage() {
       return;
     }
     setLoading(true);
-    const completedJobs = mockJobs.filter(j => j.awardedInstaller === user.id && j.status === "Completed");
-    setJobsCompletedCount(completedJobs.length);
-    setLoading(false);
+    const fetchCompletedJobs = async () => {
+        const q = query(
+            collection(db, "jobs"), 
+            where("awardedInstaller", "==", user.id), 
+            where("status", "==", "Completed")
+        );
+        const querySnapshot = await getDocs(q);
+        setJobsCompletedCount(querySnapshot.size);
+        setLoading(false);
+    }
+    fetchCompletedJobs();
   }, [user, role]);
   
   if (!user || loading) {
@@ -439,7 +448,7 @@ export default function ProfilePage() {
                                 <Progress value={progressPercentage} className="h-2"/>
                              </div>
                         )}
-                        {installerProfile.reputationHistory && (
+                        {installerProfile.reputationHistory && installerProfile.reputationHistory.length > 0 && (
                              <Card>
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center gap-2">

@@ -1,6 +1,8 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Job } from "./types";
+import { Timestamp } from "firebase/firestore";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -24,6 +26,9 @@ export const getStatusVariant = (status: Job['status']): "default" | "secondary"
     }
 }
 
-export const toDate = (timestamp: Date): Date => {
+export const toDate = (timestamp: Date | Timestamp): Date => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
   return timestamp;
 };

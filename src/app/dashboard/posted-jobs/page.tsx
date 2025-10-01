@@ -37,12 +37,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal } from "lucide-react"
 import { useSearchParams } from "next/navigation";
-import { Job, User } from "@/lib/types";
+import { Job, User, FirestoreJob } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
-import { jobs as mockJobs } from "@/lib/data";
+import { db } from "@/lib/firebase";
+import { collection, query, where, onSnapshot, doc } from "firebase/firestore";
+
 
 function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
   return (
@@ -131,9 +133,15 @@ export default function PostedJobsPage() {
   React.useEffect(() => {
     if (user) {
       setLoading(true);
-      const userJobs = mockJobs.filter(j => (j.jobGiver as User).id === user.id) as Job[];
-      setJobs(userJobs);
-      setLoading(false);
+      const userRef = doc(db, 'users', user.id);
+      const q = query(collection(db, "jobs"), where("jobGiver", "==", userRef));
+
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const userJobs = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})) as Job[];
+        setJobs(userJobs);
+        setLoading(false);
+      });
+      return () => unsubscribe();
     }
   }, [user]);
 
