@@ -11,12 +11,11 @@ import { initializeApp } from 'firebase/app';
  * is enforced by Security Rules or Firebase App Check.
  */
 export const firebaseConfig = {
-  "projectId": "studio-1890574003-16f26",
-  "appId": "1:849721048101:web:1ac8f3551a09921cd7d3cc",
+  "projectId": "device-streaming-3cdc40df",
+  "appId": "1:110428286869210001262:web:1ac8f3551a09921cd7d3cc",
   "apiKey": "AIzaSyDEYoBGZnewG0uorkXvCUOSHbtVDu9VPGc",
-  "authDomain": "studio-1890574003-16f26.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "849721048101"
+  "authDomain": "device-streaming-3cdc40df.firebaseapp.com",
+  "messagingSenderId": "110428286869210001262"
 };
 
 // Initialize Firebase
