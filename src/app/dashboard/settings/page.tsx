@@ -85,9 +85,12 @@ function SeedDatabaseCard() {
             const usersCollection = collection(db, "users");
             mockUsers.forEach(user => {
                 const userDoc = doc(usersCollection, user.id);
+                // Ensure all date-like fields are Timestamps
                 const firestoreUser = {
                     ...user,
-                    memberSince: Timestamp.fromDate(user.memberSince instanceof Date ? user.memberSince : new Date(user.memberSince)),
+                    memberSince: user.memberSince instanceof Date 
+                        ? Timestamp.fromDate(user.memberSince) 
+                        : user.memberSince, // Assume it's already a Timestamp if not a Date
                 };
                 batch.set(userDoc, firestoreUser);
             });
@@ -99,20 +102,26 @@ function SeedDatabaseCard() {
                 const jobData = {
                     ...job,
                     jobGiver: doc(db, 'users', (job.jobGiver as any).id),
-                    postedAt: Timestamp.fromDate(job.postedAt instanceof Date ? job.postedAt : new Date(job.postedAt)),
-                    deadline: Timestamp.fromDate(job.deadline instanceof Date ? job.deadline : new Date(job.deadline)),
-                    jobStartDate: job.jobStartDate ? Timestamp.fromDate(job.jobStartDate instanceof Date ? job.jobStartDate : new Date(job.jobStartDate)) : undefined,
+                    postedAt: job.postedAt instanceof Date ? Timestamp.fromDate(job.postedAt) : job.postedAt,
+                    deadline: job.deadline instanceof Date ? Timestamp.fromDate(job.deadline) : job.deadline,
+                    jobStartDate: job.jobStartDate ? (job.jobStartDate instanceof Date ? Timestamp.fromDate(job.jobStartDate) : job.jobStartDate) : undefined,
                     bids: job.bids.map(bid => ({
                         ...bid,
                         installer: doc(db, 'users', (bid.installer as any).id),
-                        timestamp: Timestamp.fromDate(bid.timestamp instanceof Date ? bid.timestamp : new Date(bid.timestamp)),
+                        timestamp: bid.timestamp instanceof Date ? Timestamp.fromDate(bid.timestamp) : bid.timestamp,
                     })),
                     comments: job.comments.map(comment => ({
                         ...comment,
                         author: doc(db, 'users', (comment.author as any).id),
-                        timestamp: Timestamp.fromDate(comment.timestamp instanceof Date ? comment.timestamp : new Date(comment.timestamp)),
+                        timestamp: comment.timestamp instanceof Date ? Timestamp.fromDate(comment.timestamp) : comment.timestamp,
                     }))
                 };
+                
+                // Remove awardedInstaller if it's not a string ID
+                if (job.awardedInstaller && typeof job.awardedInstaller !== 'string') {
+                    jobData.awardedInstaller = (job.awardedInstaller as any).id;
+                }
+
                 batch.set(jobDoc, jobData);
             });
 
