@@ -43,7 +43,7 @@ import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bid, Job, Comment, User } from "@/lib/types";
+import { Bid, Job, Comment, User, FirestoreJob, FirestoreUser, FirestoreBid, FirestoreComment } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import {
@@ -56,10 +56,15 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { jobs as mockJobs, users as mockUsers } from "@/lib/data";
+import { db } from "@/lib/firebase";
+import { collection, doc, getDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove, DocumentReference, serverTimestamp, Timestamp } from "firebase/firestore";
 
+async function fetchReferencedDoc<T>(ref: DocumentReference): Promise<T | null> {
+    const docSnap = await getDoc(ref);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as T : null;
+}
 
-function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Job) => void }) {
+function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<FirestoreJob>) => void }) {
   const { toast } = useToast();
   const [otp, setOtp] = React.useState('');
 
@@ -70,8 +75,7 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
         rating: 5, // Default rating, can be changed by job giver
       };
       // In a real app, this would be an API call to update the database
-      const updatedJob = { ...job, ...updatedData };
-      onJobUpdate(updatedJob);
+      onJobUpdate(updatedData);
       
       toast({
         title: "Job Completed!",
@@ -154,7 +158,7 @@ function JobGiverOTPCard({ job }: { job: Job }) {
   );
 }
 
-function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
+function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<FirestoreJob>) => void }) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [bidProposal, setBidProposal] = React.useState("");
@@ -168,16 +172,15 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
       toast({ title: "Missing Information", description: "Please provide both a bid amount and a proposal.", variant: "destructive" });
       return;
     }
-    const newBid: Bid = {
+    const newBid: FirestoreBid = {
       id: `bid-${job.id}-${user.id}`,
-      installer: user,
+      installer: doc(db, 'users', user.id),
       amount: Number(bidAmount),
-      timestamp: new Date(),
+      timestamp: serverTimestamp(),
       coverLetter: bidProposal
     };
 
-    const newBids = [...job.bids, newBid];
-    onJobUpdate({ bids: newBids });
+    onJobUpdate({ bids: arrayUnion(newBid) as any });
 
     toast({ title: "Bid Placed!", description: "Your bid has been submitted successfully." });
   };
@@ -320,7 +323,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
     );
 }
 
-function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Job) => void }) {
+function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<FirestoreJob>) => void }) {
     const { toast } = useToast();
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>(job.selectedInstallers?.map(i => i.installerId) || []);
     
@@ -328,8 +331,7 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
         const newSelected = [...selectedInstallers, installerId];
         setSelectedInstallers(newSelected);
         
-        const updatedJobData = { ...job, selectedInstallers: newSelected.map((id, index) => ({ installerId: id, rank: index + 1 })) };
-        onJobUpdate(updatedJobData as Job);
+        onJobUpdate({ selectedInstallers: newSelected.map((id, index) => ({ installerId: id, rank: index + 1 })) });
         
         toast({
             title: "Installer Selected",
@@ -338,11 +340,10 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
     };
     
     const handleAwardJob = async (installerId: string) => {
-        const installer = mockUsers.find(u => u.id === installerId);
+        const installer = job.bids.find(b => (b.installer as User).id === installerId)?.installer as User;
         if (!installer) return;
 
-        const updatedJobData = { ...job, awardedInstaller: installerId, status: 'Awarded' as Job['status'] };
-        onJobUpdate(updatedJobData as Job);
+        onJobUpdate({ awardedInstaller: installerId, status: 'Awarded' });
 
         toast({
             title: "Job Awarded!",
@@ -453,7 +454,10 @@ function ReputationImpactCard({ job }: { job: Job }) {
     return null;
   }
 
-  const installer = mockUsers.find(u => u.id === job.awardedInstaller);
+  const installerId = (job.awardedInstaller as User)?.id || job.awardedInstaller;
+  const winningBid = job.bids.find(b => (b.installer as User).id === installerId);
+  const installer = winningBid?.installer as User;
+
   const ratingPoints = job.rating === 5 ? 20 : job.rating === 4 ? 10 : 0;
   const completionPoints = 50;
   const totalPoints = completionPoints + ratingPoints;
@@ -579,24 +583,53 @@ export default function JobDetailPage() {
 
   React.useEffect(() => {
     if (!id) return;
-    const foundJob = mockJobs.find(j => j.id === id) as Job | undefined;
-    setJob(foundJob);
-    
-    if (foundJob) {
-      setDeadlineRelative(formatDistanceToNow(toDate(foundJob.deadline), { addSuffix: true }));
-      setDeadlineAbsolute(format(toDate(foundJob.deadline), "MMM d, yyyy"));
-      if(foundJob.jobStartDate){
-        setJobStartDate(format(toDate(foundJob.jobStartDate), "MMM d, yyyy"));
-      }
-    } else {
-        setJob(null);
-    }
+    const jobDocRef = doc(db, "jobs", id);
+
+    const unsubscribe = onSnapshot(jobDocRef, async (docSnap) => {
+        if (docSnap.exists()) {
+            const firestoreJob = { id: docSnap.id, ...docSnap.data() } as FirestoreJob;
+
+            const jobGiver = await fetchReferencedDoc<FirestoreUser>(firestoreJob.jobGiver as DocumentReference);
+            
+            const bids = await Promise.all(
+                firestoreJob.bids.map(async (bid) => {
+                    const installer = await fetchReferencedDoc<FirestoreUser>(bid.installer as DocumentReference);
+                    return { ...bid, installer } as Bid;
+                })
+            );
+
+            const comments = await Promise.all(
+                firestoreJob.comments.map(async (comment) => {
+                    const author = await fetchReferencedDoc<FirestoreUser>(comment.author as DocumentReference);
+                    return { ...comment, author } as Comment;
+                })
+            );
+            
+            const populatedJob: Job = {
+                ...firestoreJob,
+                jobGiver: jobGiver!,
+                bids,
+                comments
+            };
+
+            setJob(populatedJob);
+            setDeadlineRelative(formatDistanceToNow(toDate(populatedJob.deadline), { addSuffix: true }));
+            setDeadlineAbsolute(format(toDate(populatedJob.deadline), "MMM d, yyyy"));
+            if(populatedJob.jobStartDate){
+                setJobStartDate(format(toDate(populatedJob.jobStartDate), "MMM d, yyyy"));
+            }
+        } else {
+            setJob(null);
+        }
+    });
+
+    return () => unsubscribe();
   }, [id]);
 
-  const handleJobUpdate = (updatedPart: Partial<Job>) => {
+  const handleJobUpdate = (updatedPart: Partial<FirestoreJob>) => {
     if (job) {
-      const newJob = { ...job, ...updatedPart };
-      setJob(newJob);
+      const jobDocRef = doc(db, "jobs", job.id);
+      updateDoc(jobDocRef, updatedPart);
     }
   };
 
@@ -619,7 +652,15 @@ export default function JobDetailPage() {
   };
 
   const updateComments = (updatedComments: Comment[]) => {
-    handleJobUpdate({ comments: updatedComments });
+     if (job) {
+        const jobDocRef = doc(db, "jobs", job.id);
+        const firestoreComments = updatedComments.map(c => ({
+            ...c,
+            author: doc(db, 'users', (c.author as User).id),
+            timestamp: c.timestamp instanceof Date ? c.timestamp : (c.timestamp as Timestamp).toDate(),
+        }));
+        updateDoc(jobDocRef, { comments: firestoreComments });
+    }
   };
 
   const handleSaveEdit = (commentId: string) => {
@@ -645,22 +686,23 @@ export default function JobDetailPage() {
   };
   
   const handlePostComment = async () => {
-    if (!newComment.trim() || !user) return;
-    const comment: Comment = {
+    if (!newComment.trim() || !user || !job) return;
+    const comment: FirestoreComment = {
       id: `comment-${Date.now()}`,
-      author: user,
-      timestamp: new Date(),
+      author: doc(db, 'users', user.id),
+      timestamp: serverTimestamp(),
       content: newComment,
     };
-    const updatedComments = [...job.comments, comment];
-    updateComments(updatedComments);
+    
+    handleJobUpdate({ comments: arrayUnion(comment) as any });
+
     setNewComment("");
      toast({
       title: "Comment Posted!",
     });
   };
 
-  const isAwardedInstaller = role === "Installer" && user.id === job.awardedInstaller;
+  const isAwardedInstaller = role === "Installer" && user.id === ((job.awardedInstaller as User)?.id || job.awardedInstaller);
   const jobGiver = job.jobGiver as User;
 
   return (
@@ -733,7 +775,7 @@ export default function JobDetailPage() {
             {(job.status === 'Awarded' || job.status === 'In Progress') && isAwardedInstaller && (
               <>
                 <Separator className="my-6" />
-                <InstallerCompletionSection job={job} onJobUpdate={handleJobUpdate as any} />
+                <InstallerCompletionSection job={job} onJobUpdate={handleJobUpdate} />
               </>
             )}
             
@@ -746,8 +788,8 @@ export default function JobDetailPage() {
           </CardContent>
         </Card>
 
-        {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate as any} />}
-        {role === "Job Giver" && <JobGiverBidsSection job={job} onJobUpdate={handleJobUpdate as any} />}
+        {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
+        {role === "Job Giver" && <JobGiverBidsSection job={job} onJobUpdate={handleJobUpdate} />}
 
       </div>
 

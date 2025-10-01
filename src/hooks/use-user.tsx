@@ -1,9 +1,11 @@
 
 "use client";
 
-import { users, type User } from "@/lib/data";
+import { User } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, onSnapshot, doc } from "firebase/firestore";
 
 type Role = "Job Giver" | "Installer" | "Admin";
 
@@ -12,7 +14,7 @@ type UserContextType = {
   role: Role;
   setUser: React.Dispatch<React.SetStateAction<User | null>> | null;
   setRole: (role: Role) => void;
-  login: (email: string) => boolean;
+  login: (email: string) => Promise<boolean>;
   logout: () => void;
 };
 
@@ -31,17 +33,23 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const storedUserId = localStorage.getItem('loggedInUserId');
     if (storedUserId) {
-        const loggedInUser = users.find(u => u.id === storedUserId);
-        if (loggedInUser) {
-            setUser(loggedInUser);
-            const storedRole = localStorage.getItem('userRole') as Role;
-            if (storedRole && loggedInUser.roles.includes(storedRole)) {
-                setRoleState(storedRole);
+        const userDocRef = doc(db, 'users', storedUserId);
+        const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const loggedInUser = { id: docSnap.id, ...docSnap.data() } as User;
+                setUser(loggedInUser);
+                const storedRole = localStorage.getItem('userRole') as Role;
+                if (storedRole && loggedInUser.roles.includes(storedRole)) {
+                    setRoleState(storedRole);
+                } else {
+                    const initialRole = loggedInUser.roles.includes("Admin") ? "Admin" : loggedInUser.roles.includes("Installer") ? "Installer" : "Job Giver";
+                    setRoleState(initialRole);
+                }
             } else {
-                const initialRole = loggedInUser.roles.includes("Admin") ? "Admin" : loggedInUser.roles.includes("Installer") ? "Installer" : "Job Giver";
-                setRoleState(initialRole);
+                logout(); // User not found in DB, clear local state
             }
-        }
+        });
+        return () => unsubscribe();
     }
   }, []);
 
@@ -60,15 +68,21 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   }, [role, pathname, user, router]);
 
 
-  const login = (email: string) => {
-    const foundUser = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('loggedInUserId', foundUser.id);
-      const initialRole = foundUser.roles.includes("Admin") ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
-      setRoleState(initialRole);
-      localStorage.setItem('userRole', initialRole);
-      return true;
+  const login = async (email: string) => {
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("email", "==", email.toLowerCase()));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        const foundUser = { id: userDoc.id, ...userDoc.data() } as User;
+        
+        setUser(foundUser);
+        localStorage.setItem('loggedInUserId', foundUser.id);
+        const initialRole = foundUser.roles.includes("Admin") ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
+        setRoleState(initialRole);
+        localStorage.setItem('userRole', initialRole);
+        return true;
     }
     return false;
   };
@@ -100,3 +114,5 @@ export const useUser = () => {
   }
   return context;
 };
+
+    

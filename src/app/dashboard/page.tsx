@@ -23,20 +23,55 @@ import {
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
-import { jobs as mockJobs, users as mockUsers } from "@/lib/data";
-import { Job, User } from "@/lib/types";
+import { Job, User, FirestoreJob } from "@/lib/types";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, onSnapshot, doc } from "firebase/firestore";
 
 function InstallerDashboard() {
   const { user } = useUser();
   const { setHelp } = useHelp();
-  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [stats, setStats] = React.useState({ openJobs: 0, myBids: 0, jobsWon: 0 });
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // Using local data
-    setJobs(mockJobs as Job[]);
-    setLoading(false);
-  }, []);
+    if (!user) return;
+    setLoading(true);
+
+    const qOpenJobs = query(collection(db, "jobs"), where("status", "==", "Open for Bidding"));
+    const qMyActivity = collection(db, "jobs");
+    
+    const unsubOpenJobs = onSnapshot(qOpenJobs, (snapshot) => {
+        setStats(prev => ({ ...prev, openJobs: snapshot.size }));
+    });
+
+    const unsubMyActivity = onSnapshot(qMyActivity, (snapshot) => {
+        let bidsCount = 0;
+        let wonCount = 0;
+        const userRef = doc(db, 'users', user.id);
+
+        snapshot.forEach(doc => {
+            const job = doc.data() as FirestoreJob;
+            const userHasBid = job.bids.some(bid => bid.installer.id === user.id);
+            const userIsAwarded = job.awardedInstaller === user.id;
+
+            if (userHasBid || userIsAwarded) {
+                bidsCount++;
+            }
+            if (userIsAwarded && (job.status === 'Awarded' || job.status === 'In Progress')) {
+                wonCount++;
+            }
+        });
+
+        setStats(prev => ({ ...prev, myBids: bidsCount, jobsWon: wonCount }));
+        setLoading(false);
+    });
+
+    return () => {
+        unsubOpenJobs();
+        unsubMyActivity();
+    };
+
+  }, [user]);
 
   React.useEffect(() => {
     setHelp({
@@ -65,14 +100,7 @@ function InstallerDashboard() {
   }, [setHelp]);
 
 
-  if (!user || loading) return null;
-
-  const openJobs = jobs.filter(job => job.status === 'Open for Bidding').length;
-  const bidsAndAwardedJobs = jobs.filter(job => 
-    job.bids.some(bid => (bid.installer as User).id === user.id) || job.awardedInstaller === user.id
-  ).length;
-  const jobsWon = jobs.filter(job => job.awardedInstaller === user.id && (job.status === 'Awarded' || job.status === 'In Progress')).length;
-
+  if (!user || loading) return null; // Can add a skeleton loader here later
 
   return (
     <>
@@ -84,7 +112,7 @@ function InstallerDashboard() {
               <Briefcase className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{openJobs}</div>
+              <div className="text-2xl font-bold">{stats.openJobs}</div>
               <p className="text-xs text-muted-foreground">
                 Jobs currently accepting bids
               </p>
@@ -98,7 +126,7 @@ function InstallerDashboard() {
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+{bidsAndAwardedJobs}</div>
+              <div className="text-2xl font-bold">+{stats.myBids}</div>
               <p className="text-xs text-muted-foreground">
                 Your bids and awarded jobs
               </p>
@@ -112,7 +140,7 @@ function InstallerDashboard() {
               <UserCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+{jobsWon}</div>
+              <div className="text-2xl font-bold">+{stats.jobsWon}</div>
               <p className="text-xs text-muted-foreground">
                 Active jobs awarded to you
               </p>
@@ -144,15 +172,34 @@ function InstallerDashboard() {
 function JobGiverDashboard() {
   const { user } = useUser();
   const { setHelp } = useHelp();
-  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [stats, setStats] = React.useState({ activeJobs: 0, completedJobs: 0, totalBids: 0 });
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (!user) return;
-    // Using local data
-    const myJobs = mockJobs.filter(j => (j.jobGiver as User).id === user.id) as Job[];
-    setJobs(myJobs);
-    setLoading(false);
+    setLoading(true);
+
+    const userRef = doc(db, 'users', user.id);
+    const q = query(collection(db, "jobs"), where("jobGiver", "==", userRef));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        let active = 0;
+        let completed = 0;
+        let bids = 0;
+        snapshot.forEach(doc => {
+            const job = doc.data() as FirestoreJob;
+            if (job.status !== 'Completed') {
+                active++;
+            } else {
+                completed++;
+            }
+            bids += job.bids.length;
+        });
+        setStats({ activeJobs: active, completedJobs: completed, totalBids: bids });
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   React.useEffect(() => {
@@ -183,10 +230,6 @@ function JobGiverDashboard() {
 
   if (!user || loading) return null;
   
-  const activeJobs = jobs.filter(job => job.status !== 'Completed').length;
-  const completedJobs = jobs.filter(job => job.status === 'Completed').length;
-  const totalBids = jobs.reduce((acc, job) => acc + job.bids.length, 0);
-
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
@@ -197,7 +240,7 @@ function JobGiverDashboard() {
               <Briefcase className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeJobs}</div>
+              <div className="text-2xl font-bold">{stats.activeJobs}</div>
               <p className="text-xs text-muted-foreground">
                 Jobs not yet completed
               </p>
@@ -211,7 +254,7 @@ function JobGiverDashboard() {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalBids}</div>
+              <div className="text-2xl font-bold">{stats.totalBids}</div>
               <p className="text-xs text-muted-foreground">
                 Across all your job postings
               </p>
@@ -225,7 +268,7 @@ function JobGiverDashboard() {
               <UserCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+{completedJobs}</div>
+              <div className="text-2xl font-bold">+{stats.completedJobs}</div>
               <p className="text-xs text-muted-foreground">
                 Successfully finished projects
               </p>
@@ -260,22 +303,34 @@ function AdminDashboard() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // Using local data
-    const jobsList = mockJobs as Job[];
-    const usersList = mockUsers as User[];
+    setLoading(true);
+    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+        setStats(prev => ({...prev, totalUsers: snapshot.size}));
+    });
 
-    const totalUsers = usersList.length;
-    const totalJobs = jobsList.length;
-    const totalBids = jobsList.reduce((sum, job) => sum + (job.bids?.length || 0), 0);
-    const completedJobValue = jobsList
-      .filter(job => job.status === 'Completed' && job.awardedInstaller)
-      .reduce((sum, job) => {
-        const winningBid = job.bids.find(bid => (bid.installer as User).id === job.awardedInstaller);
-        return sum + (winningBid?.amount || 0);
-      }, 0);
+    const unsubJobs = onSnapshot(collection(db, "jobs"), (snapshot) => {
+        let totalJobs = snapshot.size;
+        let totalBids = 0;
+        let completedValue = 0;
 
-    setStats({ totalUsers, totalJobs, totalBids, completedJobValue });
-    setLoading(false);
+        snapshot.forEach(doc => {
+            const job = doc.data() as FirestoreJob;
+            totalBids += job.bids?.length || 0;
+            if (job.status === 'Completed' && job.awardedInstaller) {
+                const winningBid = job.bids.find(bid => bid.installer.id === job.awardedInstaller);
+                if (winningBid) {
+                    completedValue += winningBid.amount;
+                }
+            }
+        });
+        setStats(prev => ({ ...prev, totalJobs, totalBids, completedJobValue: completedValue }));
+        setLoading(false);
+    });
+
+    return () => {
+        unsubUsers();
+        unsubJobs();
+    };
   }, []);
 
   React.useEffect(() => {

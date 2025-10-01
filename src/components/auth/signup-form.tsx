@@ -26,9 +26,8 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { useState } from "react";
 import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
-import { users } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import type { User } from "@/lib/types";
+import type { User, FirestoreUser } from "@/lib/types";
 import {
   initiateAadharVerification,
   confirmAadharVerification,
@@ -36,15 +35,13 @@ import {
 } from "@/ai/flows/aadhar-verification";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { db } from "@/lib/firebase";
+import { doc, setDoc, getDocs, collection, query, where } from "firebase/firestore";
 
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Invalid email address." }).refine(email => {
-    return !users.some(user => user.email.toLowerCase() === email.toLowerCase());
-  }, {
-    message: "This email is already in use.",
-  }),
+  email: z.string().email({ message: "Invalid email address." }),
   password: z
     .string()
     .min(6, { message: "Password must be at least 6 characters." }),
@@ -153,13 +150,22 @@ export function SignUpForm() {
   };
 
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     if ((values.role === 'Installer' || values.role === 'Both (Job Giver & Installer)') && verificationStep !== 'verified') {
         form.setError("aadhar", { type: "manual", message: "Please complete Aadhar verification." });
         return;
     }
+
+    // Check if email already exists in Firestore
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("email", "==", values.email.toLowerCase()));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+        form.setError("email", { type: "manual", message: "This email is already in use." });
+        return;
+    }
     
-    const newUserId = `user-${users.length + 1}`;
+    const newUserId = `user-${Date.now()}`;
     let newAnonymousId = '';
     let roles: User['roles'] = [];
 
@@ -180,7 +186,7 @@ export function SignUpForm() {
 
     const randomAvatar = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
     
-    const newUser: User = {
+    const newUser: FirestoreUser = {
       id: newUserId,
       name: values.name,
       email: values.email,
@@ -205,10 +211,15 @@ export function SignUpForm() {
         aadharData: kycData ? { ...kycData } : undefined,
       };
     }
-
-    users.push(newUser);
-    login(values.email);
-    router.push("/dashboard");
+    
+    try {
+        await setDoc(doc(db, "users", newUserId), newUser);
+        login(values.email);
+        router.push("/dashboard");
+    } catch(e) {
+        console.error("Error creating user: ", e);
+        toast({ title: "Signup Failed", description: "Could not create your account. Please try again.", variant: "destructive" });
+    }
   }
 
   const isAadharValid = aadharValue && /^\d{12}$/.test(aadharValue) && form.getFieldState('aadhar').isDirty && !form.getFieldState('aadhar').invalid;
@@ -495,3 +506,5 @@ export function SignUpForm() {
     </Form>
   );
 }
+
+    

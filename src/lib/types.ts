@@ -1,4 +1,6 @@
 
+import type { DocumentReference, Timestamp } from 'firebase/firestore';
+
 export type User = {
   id: string;
   name: string;
@@ -12,7 +14,7 @@ export type User = {
     office?: string;
   };
   roles: ('Job Giver' | 'Installer' | 'Admin')[];
-  memberSince: Date;
+  memberSince: Date | Timestamp;
   installerProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;
@@ -29,35 +31,50 @@ export type User = {
   };
 };
 
+export type FirestoreUser = Omit<User, 'memberSince'> & {
+  memberSince: Timestamp;
+};
+
 export type Comment = {
   id: string;
-  author: User;
-  timestamp: Date;
+  author: User | DocumentReference;
+  timestamp: Date | Timestamp;
   content: string;
+};
+
+export type FirestoreComment = Omit<Comment, 'author' | 'timestamp'> & {
+  author: DocumentReference;
+  timestamp: Timestamp;
 };
 
 export type Bid = {
   id:string;
-  installer: User;
+  installer: User | DocumentReference;
   amount: number;
-  timestamp: Date;
+  timestamp: Date | Timestamp;
   coverLetter?: string;
 };
+
+export type FirestoreBid = Omit<Bid, 'installer' | 'timestamp'> & {
+    installer: DocumentReference;
+    timestamp: Timestamp;
+};
+
 
 export type Job = {
   id: string;
   title: string;
   description: string;
-  jobGiver: User;
+  jobGiver: User | DocumentReference;
   location: string; // Pincode
   budget: {
     min: number;
     max: number;
   };
   status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled';
-  deadline: Date;
-  jobStartDate?: Date;
-  postedAt: Date;
+  deadline: Date | Timestamp;
+  jobStartDate?: Date | Timestamp;
+  postedAt: Date | Timestamp;
   bids: Bid[];
   comments: Comment[];
   selectedInstallers?: { installerId: string, rank: number }[];
@@ -65,3 +82,12 @@ export type Job = {
   rating?: number;
   completionOtp?: string;
 };
+
+export type FirestoreJob = Omit<Job, 'jobGiver' | 'deadline' | 'jobStartDate' | 'postedAt' | 'bids' | 'comments'> & {
+    jobGiver: DocumentReference;
+    deadline: Timestamp;
+    jobStartDate?: Timestamp;
+    postedAt: Timestamp;
+    bids: FirestoreBid[];
+    comments: FirestoreComment[];
+}

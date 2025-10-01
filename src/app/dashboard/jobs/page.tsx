@@ -41,8 +41,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
 import { useUser } from "@/hooks/use-user";
-import { jobs as mockJobs } from "@/lib/data";
-import { Job, User } from "@/lib/types";
+import { Job, FirestoreJob, FirestoreUser } from "@/lib/types";
+import { db } from "@/lib/firebase";
+import { collection, query, where, onSnapshot, getDoc, DocumentReference } from "firebase/firestore";
 
 // Get unique skills from jobs data for filter - This might need to be dynamic later
 const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz", "vms", "access control"];
@@ -87,11 +88,27 @@ export default function BrowseJobsPage() {
   
   React.useEffect(() => {
     setLoading(true);
-    setJobs(mockJobs as Job[]);
-    setLoading(false);
+    const q = query(collection(db, "jobs"), where("status", "==", "Open for Bidding"));
+    
+    const unsubscribe = onSnapshot(q, async (querySnapshot) => {
+        const jobsData = await Promise.all(querySnapshot.docs.map(async (docSnap) => {
+            const firestoreJob = { id: docSnap.id, ...docSnap.data() } as FirestoreJob;
+            const jobGiverSnap = await getDoc(firestoreJob.jobGiver as DocumentReference);
+            const jobGiver = jobGiverSnap.exists() ? { id: jobGiverSnap.id, ...jobGiverSnap.data() } as FirestoreUser : null;
+
+            return {
+                ...firestoreJob,
+                jobGiver: jobGiver,
+            } as Job;
+        }));
+        setJobs(jobsData.filter(j => j.jobGiver));
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const openJobs = jobs.filter((job) => job.status === "Open for Bidding");
+  const openJobs = jobs;
 
   const filterJobs = (jobsToFilter: typeof jobs) => {
     return jobsToFilter.filter((job) => {
@@ -120,7 +137,7 @@ export default function BrowseJobsPage() {
     if (!user) return [];
     
     return openJobs.filter(job => {
-        const residentialMatch = job.location.includes(user.pincodes.residential);
+        const residentialMatch = user.pincodes.residential && job.location.includes(user.pincodes.residential);
         const officeMatch = user.pincodes.office && job.location.includes(user.pincodes.office);
 
         if (recommendedPincodeFilter === "all") {

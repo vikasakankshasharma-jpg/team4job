@@ -33,6 +33,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { db } from "@/lib/firebase"
+import { collection, doc, writeBatch } from "firebase/firestore"
+import { jobs as mockJobs, users as mockUsers } from "@/lib/data"
+import { Loader2 } from "lucide-react"
 
 function ThemeSelector() {
     const { theme, setTheme } = useTheme()
@@ -66,6 +70,87 @@ function ThemeSelector() {
             </Select>
         </div>
     )
+}
+
+function SeedDatabaseCard() {
+    const { toast } = useToast();
+    const [isSeeding, setIsSeeding] = React.useState(false);
+
+    const handleSeedDatabase = async () => {
+        setIsSeeding(true);
+        try {
+            const batch = writeBatch(db);
+
+            // Seed users
+            const usersCollection = collection(db, "users");
+            mockUsers.forEach(user => {
+                const userDoc = doc(usersCollection, user.id);
+                batch.set(userDoc, user);
+            });
+
+            // Seed jobs
+            const jobsCollection = collection(db, "jobs");
+            mockJobs.forEach(job => {
+                const jobDoc = doc(jobsCollection, job.id);
+                // Important: Convert user objects to Firestore references
+                const jobData = {
+                    ...job,
+                    jobGiver: doc(db, 'users', job.jobGiver.id),
+                    bids: job.bids.map(bid => ({
+                        ...bid,
+                        installer: doc(db, 'users', bid.installer.id)
+                    })),
+                    comments: job.comments.map(comment => ({
+                        ...comment,
+                        author: doc(db, 'users', comment.author.id)
+                    }))
+                };
+                batch.set(jobDoc, jobData);
+            });
+
+            await batch.commit();
+
+            toast({
+                title: "Database Seeded!",
+                description: "Your Firestore database has been populated with mock data.",
+                variant: "success",
+            });
+        } catch (error) {
+            console.error("Error seeding database: ", error);
+            toast({
+                title: "Seeding Failed",
+                description: "Could not seed the database. Check the console for errors.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSeeding(false);
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Database</CardTitle>
+                <CardDescription>
+                    Populate your Firestore database with the initial mock data.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                    <div>
+                        <Label>Seed Database</Label>
+                        <p className="text-xs text-muted-foreground">
+                           Click this to upload all users and jobs.
+                        </p>
+                    </div>
+                    <Button onClick={handleSeedDatabase} disabled={isSeeding}>
+                        {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Seed Data
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
 }
 
 export default function SettingsPage() {
@@ -118,6 +203,9 @@ export default function SettingsPage() {
                             </CardContent>
                         </Card>
                     </div>
+
+                    <SeedDatabaseCard />
+
                      <Card>
                         <CardHeader>
                             <CardTitle>Account Management</CardTitle>
@@ -178,3 +266,5 @@ export default function SettingsPage() {
         </div>
     )
 }
+
+    

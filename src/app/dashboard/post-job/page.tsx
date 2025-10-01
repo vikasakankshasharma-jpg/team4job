@@ -30,7 +30,8 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
-import { jobs } from "@/lib/data";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, doc, serverTimestamp } from "firebase/firestore";
 
 const jobSchema = z.object({
   jobTitle: z
@@ -113,7 +114,7 @@ export default function PostJobPage() {
   };
 
 
-  function onSubmit(values: z.infer<typeof jobSchema>) {
+  async function onSubmit(values: z.infer<typeof jobSchema>) {
     if (!user) {
         toast({ title: "Error", description: "You must be logged in to post a job.", variant: "destructive" });
         return;
@@ -124,30 +125,39 @@ export default function PostJobPage() {
     const newJobId = `JOB-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     const newJob = {
-      id: newJobId,
+      id: newJobId, // This is just for local consistency, Firestore generates its own ID
       title: values.jobTitle,
       description: values.jobDescription,
-      jobGiver: user,
+      jobGiver: doc(db, 'users', user.id),
       location: `${values.location}, India`,
       budget: { min: values.budgetMin, max: values.budgetMax },
       status: 'Open for Bidding' as const,
       deadline: new Date(values.deadline),
       jobStartDate: new Date(values.jobStartDate),
-      postedAt: new Date(),
+      postedAt: serverTimestamp(),
       bids: [],
       comments: [],
       completionOtp: completionOtp,
     };
     
-    // This is a mock implementation. In a real app, you'd send this to your backend.
-    jobs.unshift(newJob);
+    try {
+        const jobsCollection = collection(db, "jobs");
+        const docRef = await addDoc(jobsCollection, newJob);
 
-    toast({
-        title: "Job Posted Successfully!",
-        description: "Your job is now live and open for bidding.",
-    });
-    form.reset();
-    router.push(`/dashboard/jobs/${newJob.id}`);
+        toast({
+            title: "Job Posted Successfully!",
+            description: "Your job is now live and open for bidding.",
+        });
+        form.reset();
+        router.push(`/dashboard/jobs/${docRef.id}`);
+    } catch (error) {
+        console.error("Error posting job: ", error);
+        toast({
+            title: "Failed to post job",
+            description: "An error occurred while saving your job. Please try again.",
+            variant: "destructive"
+        });
+    }
   }
 
   return (
