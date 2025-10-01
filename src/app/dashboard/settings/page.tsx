@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { db } from "@/lib/firebase"
-import { collection, doc, writeBatch } from "firebase/firestore"
+import { collection, doc, writeBatch, Timestamp } from "firebase/firestore"
 import { jobs as mockJobs, users as mockUsers } from "@/lib/data"
 import { Loader2 } from "lucide-react"
 
@@ -85,24 +85,32 @@ function SeedDatabaseCard() {
             const usersCollection = collection(db, "users");
             mockUsers.forEach(user => {
                 const userDoc = doc(usersCollection, user.id);
-                batch.set(userDoc, user);
+                const firestoreUser = {
+                    ...user,
+                    memberSince: Timestamp.fromDate(user.memberSince instanceof Date ? user.memberSince : new Date(user.memberSince)),
+                };
+                batch.set(userDoc, firestoreUser);
             });
 
             // Seed jobs
             const jobsCollection = collection(db, "jobs");
             mockJobs.forEach(job => {
                 const jobDoc = doc(jobsCollection, job.id);
-                // Important: Convert user objects to Firestore references
                 const jobData = {
                     ...job,
-                    jobGiver: doc(db, 'users', job.jobGiver.id),
+                    jobGiver: doc(db, 'users', (job.jobGiver as any).id),
+                    postedAt: Timestamp.fromDate(job.postedAt instanceof Date ? job.postedAt : new Date(job.postedAt)),
+                    deadline: Timestamp.fromDate(job.deadline instanceof Date ? job.deadline : new Date(job.deadline)),
+                    jobStartDate: job.jobStartDate ? Timestamp.fromDate(job.jobStartDate instanceof Date ? job.jobStartDate : new Date(job.jobStartDate)) : undefined,
                     bids: job.bids.map(bid => ({
                         ...bid,
-                        installer: doc(db, 'users', bid.installer.id)
+                        installer: doc(db, 'users', (bid.installer as any).id),
+                        timestamp: Timestamp.fromDate(bid.timestamp instanceof Date ? bid.timestamp : new Date(bid.timestamp)),
                     })),
                     comments: job.comments.map(comment => ({
                         ...comment,
-                        author: doc(db, 'users', comment.author.id)
+                        author: doc(db, 'users', (comment.author as any).id),
+                        timestamp: Timestamp.fromDate(comment.timestamp instanceof Date ? comment.timestamp : new Date(comment.timestamp)),
                     }))
                 };
                 batch.set(jobDoc, jobData);
@@ -266,5 +274,3 @@ export default function SettingsPage() {
         </div>
     )
 }
-
-    
