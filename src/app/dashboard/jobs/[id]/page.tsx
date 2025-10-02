@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useUser } from "@/hooks/use-user";
@@ -726,66 +725,61 @@ export default function JobDetailPage() {
     setLoading(true);
 
     const fetchJob = async () => {
-        const jobDocRef = doc(db, 'jobs', id);
-        const jobSnapshot = await getDoc(jobDocRef);
+        try {
+            const jobDocRef = doc(db, 'jobs', id);
+            const jobSnapshot = await getDoc(jobDocRef);
 
-        if (jobSnapshot.exists()) {
-            const jobData = jobSnapshot.data();
-
-            // Populate jobGiver
-            const jobGiverSnap = await getDoc(jobData.jobGiver);
-            const jobGiver = { id: jobGiverSnap.id, ...jobGiverSnap.data() } as User;
-
-            // Populate bids with installer data
-            const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => {
-                const installerSnap = await getDoc(bid.installer);
-                return {
-                    ...bid,
-                    id: `${id}-${installerSnap.id}`,
-                    installer: { id: installerSnap.id, ...installerSnap.data() },
-                    timestamp: toDate(bid.timestamp),
-                } as Bid;
-            }));
-
-            // Populate comments with author data
-            const comments = await Promise.all((jobData.comments || []).map(async (comment: any) => {
-                const authorSnap = await getDoc(comment.author);
-                return {
-                    ...comment,
-                    id: comment.id || `${id}-comment-${Math.random()}`,
-                    author: { id: authorSnap.id, ...authorSnap.data() },
-                    timestamp: toDate(comment.timestamp),
-                } as Comment;
-            }));
+            if (!jobSnapshot.exists()) {
+                setJob(null);
+                setLoading(false);
+                return;
+            }
             
-            // Populate private messages with author data
-            const privateMessages = await Promise.all((jobData.privateMessages || []).map(async (message: any) => {
-                const authorSnap = await getDoc(message.author);
-                return {
-                    ...message,
-                    id: message.id || `${id}-pm-${Math.random()}`,
-                    author: { id: authorSnap.id, ...authorSnap.data() },
-                    timestamp: toDate(message.timestamp),
-                } as PrivateMessage;
-            }));
+            const jobData = jobSnapshot.data();
+            
+            const userCache: { [key: string]: User } = {};
+            const getUser = async (ref: DocumentReference): Promise<User> => {
+                if (userCache[ref.id]) return userCache[ref.id];
+                const userSnap = await getDoc(ref);
+                const userData = { id: userSnap.id, ...userSnap.data() } as User;
+                userCache[ref.id] = userData;
+                return userData;
+            }
 
-            const fullJobData = {
+            const jobGiver = await getUser(jobData.jobGiver);
+
+            const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
+                ...bid,
+                id: `${id}-${bid.installer.id}`,
+                installer: await getUser(bid.installer),
+            })));
+
+            const comments = await Promise.all((jobData.comments || []).map(async (comment: any) => ({
+                ...comment,
+                id: comment.id || `${id}-comment-${Math.random()}`,
+                author: await getUser(comment.author),
+            })));
+            
+            const privateMessages = await Promise.all((jobData.privateMessages || []).map(async (message: any) => ({
+                ...message,
+                id: message.id || `${id}-pm-${Math.random()}`,
+                author: await getUser(message.author),
+            })));
+
+            setJob({
                 ...jobData,
                 id: jobSnapshot.id,
                 jobGiver,
                 bids,
                 comments,
                 privateMessages,
-                postedAt: toDate(jobData.postedAt),
-                deadline: toDate(jobData.deadline),
-                jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
-            } as Job;
-
-            setJob(fullJobData);
-        } else {
-            setJob(null); // Triggers notFound()
+            } as Job);
+        } catch (error) {
+            console.error("Failed to fetch job details:", error);
+            setJob(null);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     fetchJob();
@@ -901,7 +895,7 @@ export default function JobDetailPage() {
 
   const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
   const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || role === 'Job Giver' || role === 'Admin');
-  const canUsePrivateMessages = (isJobGiver || isAwardedInstaller || role === 'Admin') && (job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed');
+  const canUsePrivateMessages = (isJobGiver || isAwardedInstaller || role === 'Admin') && ['Awarded', 'In Progress', 'Completed'].includes(job.status);
   
   return (
     <div className="grid gap-8 md:grid-cols-3">
@@ -1217,3 +1211,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    

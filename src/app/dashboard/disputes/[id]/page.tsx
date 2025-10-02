@@ -24,7 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dispute, DisputeMessage, User, DisputeAttachment } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import Link from "next/link";
-import { doc, getDoc, updateDoc, arrayUnion, collection, onSnapshot, DocumentData } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 
@@ -106,30 +106,28 @@ export default function DisputeDetailPage() {
     const disputeRef = doc(db, 'disputes', id);
     const unsubscribe = onSnapshot(disputeRef, async (docSnap) => {
       if (docSnap.exists()) {
-        const disputeData = { 
-          id: docSnap.id, 
-          ...docSnap.data(),
-          createdAt: toDate(docSnap.data().createdAt),
-        } as Dispute;
+        const disputeData = { id: docSnap.id, ...docSnap.data() } as Dispute;
         
-        setDispute(disputeData);
+        const allUserIds = new Set([
+            disputeData.parties.jobGiverId, 
+            disputeData.parties.installerId,
+            ...disputeData.messages.map(m => m.authorId)
+        ]);
 
-        // Fetch user data if not already fetched
-        const userIdsToFetch = [disputeData.parties.jobGiverId, disputeData.parties.installerId];
-        const newUsers = { ...involvedUsers };
-        let userFetched = false;
-        for (const userId of userIdsToFetch) {
-            if (!newUsers[userId]) {
+        const usersToFetch = Array.from(allUserIds).filter(userId => !involvedUsers[userId]);
+
+        if (usersToFetch.length > 0) {
+            const newUsers = { ...involvedUsers };
+            for (const userId of usersToFetch) {
                 const userSnap = await getDoc(doc(db, 'users', userId));
                 if (userSnap.exists()) {
                     newUsers[userId] = { id: userSnap.id, ...userSnap.data() } as User;
-                    userFetched = true;
                 }
             }
-        }
-        if (userFetched) {
             setInvolvedUsers(newUsers);
         }
+        
+        setDispute(disputeData);
 
       } else {
         setDispute(null);
@@ -245,7 +243,7 @@ export default function DisputeDetailPage() {
                     <div key={index} className="flex gap-3">
                       <Avatar className="h-9 w-9">
                         {author && <AnimatedAvatar svg={author.avatarUrl} />}
-                        <AvatarFallback>{message.authorRole.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{author ? author.name.charAt(0) : '?'}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex justify-between items-center">
@@ -351,7 +349,7 @@ export default function DisputeDetailPage() {
             </div>
              <div className="flex justify-between">
               <span className="text-muted-foreground">Raised On</span>
-              <span className="font-semibold">{format(dispute.createdAt, "MMM d, yyyy")}</span>
+              <span className="font-semibold">{format(toDate(dispute.createdAt), "MMM d, yyyy")}</span>
             </div>
             {dispute.resolvedAt && (
                 <div className="flex justify-between">
