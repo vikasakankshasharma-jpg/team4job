@@ -318,8 +318,9 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
     );
 }
 
-function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
+function BidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
     const { toast } = useToast();
+    const { role } = useUser();
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>(job.selectedInstallers?.map(i => i.installerId) || []);
     
     const handleSelectInstaller = async (installerId: string) => {
@@ -368,7 +369,7 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
 
 
   return (
-    <Card>
+    <Card id="bids-section">
       <CardHeader>
         <CardTitle>Received Bids ({job.bids.length})</CardTitle>
         <CardDescription>
@@ -386,8 +387,8 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
             onAwardJob={handleAwardJob}
             rank={index + 1}
             isSelected={selectedInstallers.includes((bid.installer as User).id)}
-            showRanking={true} // Always show ranking for consistency
-            canAward={true} // Always allow awarding
+            showRanking={role === 'Job Giver'}
+            canAward={role === 'Job Giver'}
           />
         ))}
       </CardContent>
@@ -791,7 +792,7 @@ export default function JobDetailPage() {
         </Card>
 
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
-        {role === "Job Giver" && <JobGiverBidsSection job={job} onJobUpdate={handleJobUpdate} />}
+        {(role === "Job Giver" || role === "Admin") && <BidsSection job={job} onJobUpdate={handleJobUpdate} />}
 
       </div>
 
@@ -858,13 +859,23 @@ export default function JobDetailPage() {
                   </div>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              <Users className="h-5 w-5" />
-              <div>
-                <p className="text-muted-foreground">Bids</p>
-                <p className="font-semibold">{job.bids.length} Received</p>
+            {role === 'Admin' ? (
+              <Link href="#bids-section" className="flex items-center gap-3 cursor-pointer">
+                <Users className="h-5 w-5" />
+                <div>
+                  <p className="text-muted-foreground">Bids</p>
+                  <p className="font-semibold hover:underline">{job.bids.length} Received</p>
+                </div>
+              </Link>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Users className="h-5 w-5" />
+                <div>
+                  <p className="text-muted-foreground">Bids</p>
+                  <p className="font-semibold">{job.bids.length} Received</p>
+                </div>
               </div>
-            </div>
+            )}
              <div className="flex items-center gap-3">
               <MessageSquare className="h-5 w-5" />
               <div>
@@ -879,3 +890,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
