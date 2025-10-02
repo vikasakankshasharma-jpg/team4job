@@ -7,7 +7,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "The unique identifier for the user."
+          "description": "The unique identifier for the user, in the format [ROLE]-[YYYYMMDD]-[RANDOM]."
         },
         "name": {
           "type": "string",

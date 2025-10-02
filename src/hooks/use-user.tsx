@@ -88,24 +88,32 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         const userDoc = querySnapshot.docs[0];
         foundUser = { id: userDoc.id, ...userDoc.data(), memberSince: userDoc.data().memberSince.toDate() } as User;
     } else if (signupData) {
-      const newUserId = `user-${Math.random().toString(36).substring(2, 9)}`;
       let newAnonymousId = '';
       let roles: User['roles'] = [];
+      let rolePrefix = '';
 
       switch(signupData.role) {
         case 'Installer':
           newAnonymousId = `Installer-${Math.floor(1000 + Math.random() * 9000)}`;
           roles = ['Installer'];
+          rolePrefix = 'INSTALLER';
           break;
         case 'Job Giver':
           newAnonymousId = `JobGiver-${Math.floor(1000 + Math.random() * 9000)}`;
           roles = ['Job Giver'];
+          rolePrefix = 'JOBGIVER';
           break;
         case 'Both (Job Giver & Installer)':
           newAnonymousId = `User-${Math.floor(1000 + Math.random() * 9000)}`;
           roles = ['Job Giver', 'Installer'];
+          rolePrefix = 'USER';
           break;
       }
+
+      const today = new Date();
+      const datePart = today.toISOString().slice(0, 10).replace(/-/g, '');
+      const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
+      const newUserId = `${rolePrefix}-${datePart}-${randomPart}`;
       
       const randomAvatar = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
 
@@ -178,4 +186,3 @@ export const useUser = () => {
   }
   return context;
 };
-
