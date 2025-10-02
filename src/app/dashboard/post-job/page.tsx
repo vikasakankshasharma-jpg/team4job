@@ -41,6 +41,7 @@ const jobSchema = z.object({
     .min(50, { message: "Description must be at least 50 characters." }),
   skills: z.string().min(1, { message: "Please provide at least one skill." }),
   location: z.string().min(8, { message: "Please select a pincode and post office." }),
+  fullAddress: z.string().min(10, { message: "Please enter a full address." }),
   budgetMin: z.coerce.number().min(1, { message: "Minimum budget must be at least 1." }),
   budgetMax: z.coerce.number().min(1, { message: "Maximum budget must be at least 1." }),
   deadline: z.string().min(1, { message: "Please select a bidding deadline." }),
@@ -73,6 +74,7 @@ export default function PostJobPage() {
       jobDescription: "",
       skills: "",
       location: "",
+      fullAddress: "",
       budgetMin: 0,
       budgetMax: 0,
     },
@@ -242,6 +244,20 @@ export default function PostJobPage() {
                     placeholder="e.g. 110001"
                     control={form.control}
                  />
+                 <FormField
+                    control={form.control}
+                    name="fullAddress"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Full Address</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="Enter the full street address for the job location..." {...field} />
+                        </FormControl>
+                        <FormDescription>This will only be visible to you and the awarded installer.</FormDescription>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
                  <FormField
                     control={form.control}
                     name="deadline"

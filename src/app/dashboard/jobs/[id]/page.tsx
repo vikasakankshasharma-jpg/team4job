@@ -762,18 +762,18 @@ export default function JobDetailPage() {
                 </p>
               </div>
             </div>
-             <div className="flex items-center gap-3">
-              <MapPin className="h-5 w-5" />
+             <div className="flex items-start gap-3">
+              <MapPin className="h-5 w-5 mt-1" />
               <div>
                 <p className="text-muted-foreground">Location</p>
-                {role === 'Admin' ? (
+                {role === 'Admin' && job.fullAddress ? (
                   <Link 
-                    href={`https://www.google.com/maps/search/?api=1&query=${job.location.split(',')[0]}`}
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.fullAddress)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-semibold hover:underline"
                   >
-                    {job.location}
+                    {job.fullAddress}
                   </Link>
                 ) : (
                   <p className="font-semibold">{job.location}</p>
@@ -815,5 +815,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    

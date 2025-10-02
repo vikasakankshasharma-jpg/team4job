@@ -432,6 +432,7 @@ export const jobs: Job[] = [
     description: "We are looking for a professional installer to set up a comprehensive surveillance system for our new office. The job involves installing 8 high-definition IP cameras covering both indoor and outdoor areas. The installer will also be responsible for setting up the Network Video Recorder (NVR), configuring motion detection, and enabling remote viewing access on mobile devices. All equipment will be provided, but the installer must supply their own tools and manage all cabling and mounting.",
     jobGiver: findUser('user-2'),
     location: '400001, Mumbai',
+    fullAddress: '2nd Floor, Oberoi Complex, Andheri East, Mumbai, Maharashtra 400001',
     budget: { min: 10000, max: 20000 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
@@ -447,6 +448,7 @@ export const jobs: Job[] = [
     description: "Upgrading an existing 4-camera analog system to a modern 6-camera IP system. The job requires removing the old DVR and cameras, and installing new IP cameras with a new NVR. The installer should be able to advise on optimal camera placement for maximum coverage of the sales floor and entrance/exit points. Experience with POS integration is a plus.",
     jobGiver: findUser('user-1'),
     location: '110001, Delhi',
+    fullAddress: 'Shop No. 12, Connaught Place, New Delhi, Delhi 110001',
     budget: { min: 8000, max: 15000 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
@@ -462,6 +464,7 @@ export const jobs: Job[] = [
     description: "Seeking an installer for a standard 4-camera setup for a single-family home. Cameras to be placed at the front door, back door, driveway, and backyard. Simple setup with a DVR and mobile viewing required. Straightforward project for an experienced residential installer.",
     jobGiver: findUser('user-2'),
     location: '600001, Chennai',
+    fullAddress: '15, 3rd Main Road, Besant Nagar, Chennai, Tamil Nadu 600090',
     status: 'Awarded',
     awardedInstaller: 'user-3',
     deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Bidding ended 2 days ago
@@ -477,6 +480,7 @@ export const jobs: Job[] = [
     description: "Need a technician to perform a full system check on our 16-camera setup. This includes cleaning lenses, checking all connections, ensuring the NVR is recording properly, and verifying that remote access is functional. The system is 2 years old.",
     jobGiver: findUser('user-1'),
     location: '500001, Hyderabad',
+    fullAddress: 'Plot 42, Jubilee Hills, Hyderabad, Telangana 500033',
     budget: { min: 2000, max: 4000 },
     status: 'Completed',
     awardedInstaller: 'user-1',
@@ -494,6 +498,7 @@ export const jobs: Job[] = [
     description: 'We require a comprehensive surveillance solution for our new logistics warehouse. This involves installing 32 Pan-Tilt-Zoom (PTZ) cameras at strategic locations, setting up a centralized monitoring station with a Video Management System (VMS), and ensuring full wireless coverage across the facility. Only verified installers with experience in large-scale industrial projects should apply.',
     jobGiver: findUser('user-6'),
     location: '400050, Mumbai',
+    fullAddress: 'Unit 5, Shakti Logistics Park, Bhiwandi, Thane, Maharashtra 421302',
     budget: { min: 40000, max: 75000 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
@@ -509,6 +514,7 @@ export const jobs: Job[] = [
     description: 'Looking for a discreet security camera installation for a high-end boutique. The project requires 4-6 cameras, some of which must be covert or hidden. Aesthetics are very important. The system should be accessible remotely and have high-quality recording capabilities.',
     jobGiver: findUser('user-8'),
     location: '500032, Hyderabad',
+    fullAddress: 'Shop 3, Road No. 36, Jubilee Hills, Hyderabad, Telangana 500032',
     budget: { min: 9000, max: 18000 },
     status: 'Awarded',
     awardedInstaller: 'user-1',
@@ -525,6 +531,7 @@ export const jobs: Job[] = [
     description: 'Need to install one or two solar-powered 4G cameras to monitor a remote agricultural property. The location has no power or Wi-Fi. The installer must provide a complete solution including the solar panel, battery, and 4G camera setup. ',
     jobGiver: findUser('user-2'),
     location: '800001, Patna',
+    fullAddress: 'Near NH31, Bihta, Patna, Bihar 801103',
     budget: { min: 15000, max: 25000 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 12 * 24 * 60 * 60 * 1000), // 12 days from now
@@ -540,6 +547,7 @@ export const jobs: Job[] = [
     description: 'We are seeking bids for a full security overall for a 50-unit apartment building. This includes installing cameras in all common areas (lobbies, hallways, parking) and setting up an access control system for the main entrance. The job will be awarded to a company that can handle both aspects.',
     jobGiver: findUser('user-6'),
     location: '110001, Delhi',
+    fullAddress: 'DLF Crest, Sector 54, Gurugram, Haryana 122011',
     budget: { min: 80000, max: 150000 },
     status: 'In Progress',
     awardedInstaller: 'user-5',
@@ -556,6 +564,7 @@ export const jobs: Job[] = [
     description: 'This is for a new house construction. Need 4 cameras installed. 2 outdoor, 2 indoor. All wiring needs to be concealed. The job giver will provide cameras and NVR.',
     jobGiver: findUser('user-6'),
     location: '400050, Mumbai',
+    fullAddress: 'Villa 23, Hiranandani Gardens, Powai, Mumbai, Maharashtra 400076',
     budget: { min: 5000, max: 9000 },
     status: 'Cancelled',
     awardedInstaller: 'user-1',
@@ -572,6 +581,7 @@ export const jobs: Job[] = [
     description: 'Installation of 15 cameras, access control on 5 doors, and a central monitoring room setup for a corporate office. High-end equipment required.',
     jobGiver: findUser('user-6'),
     location: '500032, Hyderabad',
+    fullAddress: 'Cyber Towers, HITEC City, Hyderabad, Telangana 500081',
     budget: { min: 20000, max: 30000 },
     status: 'Completed',
     awardedInstaller: 'user-1',
@@ -589,6 +599,7 @@ export const jobs: Job[] = [
     description: 'Full overhaul of a school campus security system. Requires 20+ cameras, NVR, and integration with an existing alert system.',
     jobGiver: findUser('user-2'),
     location: '110001, Delhi',
+    fullAddress: 'Modern School, Barakhamba Road, New Delhi, Delhi 110001',
     budget: { min: 50000, max: 80000 },
     status: 'Completed',
     awardedInstaller: 'user-1',
@@ -606,6 +617,7 @@ export const jobs: Job[] = [
     description: 'We need to link the camera systems of two adjacent buildings. This requires setting up a point-to-point wireless bridge. The distance is approximately 200 meters with clear line of sight. The goal is to have a unified view of cameras from both buildings on a single NVR.',
     jobGiver: findUser('user-1'),
     location: '500001, Hyderabad',
+    fullAddress: 'Gachibowli Financial District, Nanakramguda, Hyderabad, Telangana 500032',
     budget: { min: 25000, max: 40000 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 9 * 24 * 60 * 60 * 1000), // 9 days from now
@@ -621,6 +633,7 @@ export const jobs: Job[] = [
     description: 'Our 8-camera NVR has stopped recording on 3 channels. The live view is working fine, but no footage is being saved from the affected cameras. We need an experienced technician to diagnose and fix the issue. Might be a hard drive issue or configuration problem.',
     jobGiver: findUser('user-8'),
     location: '500032, Hyderabad',
+    fullAddress: 'My Home Bhooja, Raidurg, Hyderabad, Telangana 500081',
     budget: { min: 2000, max: 3500 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000), // 4 days from now
@@ -636,6 +649,7 @@ export const jobs: Job[] = [
     description: 'Setting up 4 dome cameras inside a small cafe and 2 bullet cameras for the exterior. Need clear footage of the entrance and seating areas. The job includes all wiring and setup on a new NVR system.',
     jobGiver: findUser('user-2'),
     location: '600001, Chennai',
+    fullAddress: 'Amethyst Cafe, Whites Road, Royapettah, Chennai, Tamil Nadu 600014',
     budget: { min: 15000, max: 22000 },
     status: 'Completed',
     awardedInstaller: 'user-3',
@@ -653,6 +667,7 @@ export const jobs: Job[] = [
     description: 'This is a job where the bidding period has ended, but the job giver has not yet selected an installer. It should appear as "Bidding Closed".',
     jobGiver: findUser('user-6'),
     location: '800001, Patna',
+    fullAddress: 'Fraser Road Area, Patna, Bihar 800001',
     budget: { min: 5000, max: 10000 },
     status: 'Bidding Closed',
     deadline: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // Bidding ended 1 day ago
@@ -676,6 +691,7 @@ export const jobs: Job[] = [
     description: 'This is a job posted in a niche area that received no bids before the deadline expired. It should show as "Unbid".',
     jobGiver: findUser('user-6'),
     location: '799001, Agartala',
+    fullAddress: 'MBB College Area, Agartala, Tripura 799004',
     budget: { min: 6000, max: 12000 },
     status: 'Unbid',
     deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Bidding ended 2 days ago
