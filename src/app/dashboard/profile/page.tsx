@@ -45,7 +45,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Job, User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { collection, query, where, getDocs, DocumentReference } from "firebase/firestore";
+import { collection, query, where, getDocs, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 
@@ -252,12 +252,12 @@ export default function ProfilePage() {
 
     const fetchCompletedJobs = async () => {
         const jobsRef = collection(db, 'jobs');
-        const awardedInstallerRef = user.id;
+        const userRef = doc(db, 'users', user.id); 
 
         const q = query(
             jobsRef,
             where('status', '==', 'Completed'),
-            where('awardedInstaller', '==', awardedInstallerRef)
+            where('awardedInstaller', '==', userRef)
         );
 
         const querySnapshot = await getDocs(q);
