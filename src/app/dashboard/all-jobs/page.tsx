@@ -17,15 +17,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { Job, User } from "@/lib/types";
-import { getStatusVariant, toDate } from "@/lib/utils";
+import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { jobs as mockJobs } from "@/lib/data";
 import { useUser } from "@/hooks/use-user";
 import { format } from "date-fns";
-import { IndianRupee } from "lucide-react";
+import { IndianRupee, ListFilter, Calendar as CalendarIcon, X } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
+import type { DateRange } from "react-day-picker";
 
 export default function AllJobsPage() {
   const router = useRouter();
@@ -33,6 +38,7 @@ export default function AllJobsPage() {
   const [jobs, setJobs] = React.useState<Job[]>(mockJobs);
   const [loading, setLoading] = React.useState(false);
   const { searchQuery } = useSearch();
+  const [date, setDate] = React.useState<DateRange | undefined>(undefined);
 
   React.useEffect(() => {
     if (role && role !== 'Admin') {
@@ -42,13 +48,26 @@ export default function AllJobsPage() {
 
   const filteredJobs = React.useMemo(() => {
     const cleanedQuery = searchQuery.trim().toLowerCase().replace(/ /g, '-');
-    if (!cleanedQuery) return jobs;
-    return jobs.filter(job => 
-      job.title.toLowerCase().includes(cleanedQuery) ||
-      job.id.toLowerCase().includes(cleanedQuery) ||
-      (job.jobGiver as User)?.anonymousId?.toLowerCase().includes(cleanedQuery)
-    );
-  }, [jobs, searchQuery]);
+    
+    let filtered = jobs;
+
+    if (cleanedQuery) {
+        filtered = filtered.filter(job => 
+            job.title.toLowerCase().includes(cleanedQuery) ||
+            job.id.toLowerCase().includes(cleanedQuery) ||
+            (job.jobGiver as User)?.anonymousId?.toLowerCase().includes(cleanedQuery)
+        );
+    }
+
+    if (date?.from && date?.to) {
+        filtered = filtered.filter(job => {
+            const postedDate = toDate(job.postedAt);
+            return postedDate >= date.from! && postedDate <= date.to!;
+        });
+    }
+
+    return filtered;
+  }, [jobs, searchQuery, date]);
 
   if (role !== 'Admin') {
     return (
@@ -62,11 +81,82 @@ export default function AllJobsPage() {
     router.push(`/dashboard/jobs/${jobId}`);
   };
 
+  const clearFilters = () => {
+    setDate(undefined);
+  }
+  
+  const activeFiltersCount = [
+    date !== undefined
+  ].filter(Boolean).length;
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>All Jobs</CardTitle>
-        <CardDescription>A list of all jobs created on the platform. Click on a row to view details.</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+            <CardTitle>All Jobs</CardTitle>
+            <CardDescription>A list of all jobs created on the platform. Click on a row to view details.</CardDescription>
+        </div>
+         <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1">
+                  <ListFilter className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Filter
+                  </span>
+                  {activeFiltersCount > 0 && <Badge variant="secondary" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">{activeFiltersCount}</Badge>}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-auto p-4 space-y-4">
+                <DropdownMenuLabel>Filter by Posted Date</DropdownMenuLabel>
+                <DropdownMenuSeparator className="-mx-4" />
+                
+                 <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="date"
+                        variant={"outline"}
+                        className={cn(
+                          "w-[300px] justify-start text-left font-normal",
+                          !date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date?.from ? (
+                          date.to ? (
+                            <>
+                              {format(date.from, "LLL dd, y")} -{" "}
+                              {format(date.to, "LLL dd, y")}
+                            </>
+                          ) : (
+                            format(date.from, "LLL dd, y")
+                          )
+                        ) : (
+                          <span>Pick a date range</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={date?.from}
+                        selected={date}
+                        onSelect={setDate}
+                        numberOfMonths={2}
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+              </DropdownMenuContent>
+            </DropdownMenu>
+             {activeFiltersCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="h-4 w-4 mr-1" />
+                Clear
+              </Button>
+            )}
+          </div>
       </CardHeader>
       <CardContent>
         <Table>
