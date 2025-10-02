@@ -16,8 +16,9 @@ export const getStatusVariant = (status: Job['status']): "default" | "secondary"
         case 'Unbid':
             return 'outline';
         case 'Awarded':
-        case 'In Progress':
             return 'info';
+        case 'In Progress':
+            return 'default';
         case 'Completed':
             return 'secondary';
         case 'Cancelled':
