@@ -75,6 +75,40 @@ export function Header() {
   const navItems = getNavItems();
   const breadcrumbSegments = pathname.split('/').filter(Boolean);
 
+  const renderBreadcrumbs = () => {
+    if (role === 'Admin' && pathname.startsWith('/dashboard/jobs/')) {
+       return (
+        <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                    <Link href="/dashboard/all-jobs">All Jobs</Link>
+                </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+                <BreadcrumbPage>{breadcrumbSegments[breadcrumbSegments.length - 1]}</BreadcrumbPage>
+            </BreadcrumbItem>
+        </>
+       )
+    }
+
+    return breadcrumbSegments.slice(1).map((segment, index) => (
+        <React.Fragment key={segment}>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+            {index === breadcrumbSegments.length - 2 ? (
+            <BreadcrumbPage className="capitalize">{segment.replace('-', ' ')}</BreadcrumbPage>
+            ) : (
+            <BreadcrumbLink asChild>
+                <Link href={`/${breadcrumbSegments.slice(0, index + 2).join('/')}`} className="capitalize">{segment.replace('-', ' ')}</Link>
+            </BreadcrumbLink>
+            )}
+        </BreadcrumbItem>
+        </React.Fragment>
+    ))
+  }
+
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
       <Sheet>
@@ -136,20 +170,7 @@ export function Header() {
               <Link href="/dashboard">Dashboard</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-          {breadcrumbSegments.slice(1).map((segment, index) => (
-             <React.Fragment key={segment}>
-              <BreadcrumbSeparator />
-               <BreadcrumbItem>
-                 {index === breadcrumbSegments.length - 2 ? (
-                    <BreadcrumbPage className="capitalize">{segment.replace('-', ' ')}</BreadcrumbPage>
-                 ) : (
-                  <BreadcrumbLink asChild>
-                    <Link href={`/${breadcrumbSegments.slice(0, index + 2).join('/')}`} className="capitalize">{segment.replace('-', ' ')}</Link>
-                  </BreadcrumbLink>
-                 )}
-              </BreadcrumbItem>
-            </React.Fragment>
-          ))}
+          {renderBreadcrumbs()}
         </BreadcrumbList>
       </Breadcrumb>
       <div className="relative ml-auto flex items-center gap-2 md:grow-0">
