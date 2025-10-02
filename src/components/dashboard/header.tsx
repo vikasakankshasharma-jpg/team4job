@@ -31,6 +31,7 @@ import { useUser } from "@/hooks/use-user";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../theme-toggle";
 import { HelpDialog } from "../help-dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
@@ -82,7 +83,7 @@ export function Header() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="sm:max-w-xs">
-           <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
+           <SheetTitle><VisuallyHidden>Mobile Navigation Menu</VisuallyHidden></SheetTitle>
           <nav className="grid gap-6 text-lg font-medium">
             <Link
               href="#"
