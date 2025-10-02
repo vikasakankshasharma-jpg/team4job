@@ -3,7 +3,7 @@ import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { config } from 'dotenv';
 import { jobs as mockJobs } from '../data';
-import { users as mockUsers } from '../types';
+import { users as mockUsers } from '../data';
 import type { Job, User } from '../types';
 
 config();
