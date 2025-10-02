@@ -41,13 +41,15 @@ import {
   AlertOctagon,
   FileIcon,
   X,
+  Send,
+  Lock,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bid, Job, Comment, User, JobAttachment } from "@/lib/types";
+import { Bid, Job, Comment, User, JobAttachment, PrivateMessage } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import {
@@ -101,7 +103,7 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
         <CardTitle>Complete This Job</CardTitle>
         <CardDescription>
           Once the job is finished to the client's satisfaction, enter the
-          Job Completion OTP provided by the Job Giver to mark it as complete. You can post photos or videos of the completed work in the comments section below as proof.
+          Job Completion OTP provided by the Job Giver to mark it as complete. You can post photos or videos of the completed work as proof in the private messages section below.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -292,7 +294,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
     const isAdmin = role === 'Admin';
     const showRealIdentity = isAdmin || isAwardedToThisBidder;
 
-    const installerName = showRealIdentity ? installer.name : (showRanking ? `Position #${rank}` : `Installer #${rank}`);
+    const installerName = showRealIdentity ? installer.name : `Installer #${rank}`;
 
     return (
         <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && showRanking && rank === 1 ? 'border-primary' : ''}`}>
@@ -304,7 +306,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                        ) : (
                            <AnimatedAvatar svg={installer.avatarUrl} />
                        )}
-                        <AvatarFallback>{showRealIdentity ? installer.name.substring(0, 2) : `P${rank}`}</AvatarFallback>
+                        <AvatarFallback>{showRealIdentity ? installer.name.substring(0, 2) : `I${rank}`}</AvatarFallback>
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
@@ -342,7 +344,6 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                           </>
                       ) : canAward ? 'Award Job' : isSelected ? 'Selected' : 'Select Installer'}
                   </Button>
-                  <Button size="sm" variant="outline">Message</Button>
               </div>
             )}
         </div>
@@ -537,7 +538,7 @@ function ReputationImpactCard({ job }: { job: Job }) {
   )
 }
 
-function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handleDeleteComment, handleCancelEdit, handleSaveEdit, editingContent, setEditingContent }) {
+function CommentDisplay({ comment }: { comment: Comment }) {
     const [timeAgo, setTimeAgo] = React.useState('');
     const author = comment.author as User;
 
@@ -554,68 +555,13 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
                 <AvatarFallback>{author.name.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
-                {!isEditing ? (
-                <>
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
                         <p className="font-semibold text-sm">{author.name}</p>
-                        <p className="text-xs text-muted-foreground">{timeAgo}</p>
-                        </div>
-                        {canEdit && (
-                            <div className="flex items-center">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={() => handleEditComment(comment, comment.content)}
-                                >
-                                    <Pencil className="h-4 w-4 text-muted-foreground" />
-                                    <span className="sr-only">Edit comment</span>
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={() => handleDeleteComment(comment)}
-                                >
-                                    <Trash2 className="h-4 w-4 text-muted-foreground" />
-                                    <span className="sr-only">Delete comment</span>
-                                </Button>
-                            </div>
-                        )}
                     </div>
-                    <div className="text-sm mt-1 text-foreground">{comment.content}</div>
-                      {comment.attachments && comment.attachments.length > 0 && (
-                        <div className="mt-2 space-y-2">
-                           <p className="font-semibold text-xs mb-2 text-muted-foreground">Attachments:</p>
-                           {comment.attachments.map((file, fileIdx) => (
-                             <a 
-                               key={fileIdx} 
-                               href={file.fileUrl} 
-                               target="_blank" 
-                               rel="noopener noreferrer" 
-                               className="flex items-center gap-2 text-primary hover:underline bg-primary/10 p-2 rounded-md text-xs"
-                             >
-                               <FileIcon className="h-4 w-4" />
-                               <span>{file.fileName}</span>
-                             </a>
-                           ))}
-                        </div>
-                      )}
-                </>
-                ) : (
-                    <div className="space-y-2">
-                        <Textarea 
-                            value={editingContent}
-                            onChange={(e) => setEditingContent(e.target.value)}
-                            className="min-h-24"
-                        />
-                        <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Cancel</Button>
-                            <Button size="sm" onClick={() => handleSaveEdit(comment)}>Save</Button>
-                        </div>
-                    </div>
-                )}
+                    <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                </div>
+                <div className="text-sm mt-1 text-foreground">{comment.content}</div>
             </div>
         </div>
     );
@@ -767,10 +713,10 @@ export default function JobDetailPage() {
   const [job, setJob] = React.useState<Job | null>(null);
   const [loading, setLoading] = React.useState(true);
 
-  const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
-  const [editingContent, setEditingContent] = React.useState("");
   const [newComment, setNewComment] = React.useState("");
-  const [commentAttachments, setCommentAttachments] = React.useState<File[]>([]);
+
+  const [newPrivateMessage, setNewPrivateMessage] = React.useState("");
+  const [privateMessageAttachments, setPrivateMessageAttachments] = React.useState<File[]>([]);
   
   const [deadlineRelative, setDeadlineRelative] = React.useState('');
   const [deadlineAbsolute, setDeadlineAbsolute] = React.useState('');
@@ -811,6 +757,17 @@ export default function JobDetailPage() {
                     timestamp: toDate(comment.timestamp),
                 } as Comment;
             }));
+            
+            // Populate private messages with author data
+            const privateMessages = await Promise.all((jobData.privateMessages || []).map(async (message: any) => {
+                const authorSnap = await getDoc(message.author);
+                return {
+                    ...message,
+                    id: message.id || `${id}-pm-${Math.random()}`,
+                    author: { id: authorSnap.id, ...authorSnap.data() },
+                    timestamp: toDate(message.timestamp),
+                } as PrivateMessage;
+            }));
 
             const fullJobData = {
                 ...jobData,
@@ -818,6 +775,7 @@ export default function JobDetailPage() {
                 jobGiver,
                 bids,
                 comments,
+                privateMessages,
                 postedAt: toDate(jobData.postedAt),
                 deadline: toDate(jobData.deadline),
                 jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
@@ -853,97 +811,13 @@ export default function JobDetailPage() {
     }
   };
   
-  const handleEditComment = (comment: Comment, content: string) => {
-    setEditingCommentId(comment.id);
-    setEditingContent(content);
-  };
-  
-  const handleCancelEdit = () => {
-    setEditingCommentId(null);
-    setEditingContent("");
-  };
-
-  const handleSaveEdit = async (commentToUpdate: Comment) => {
-    if (!job) return;
-    
-    const jobRef = doc(db, "jobs", job.id);
-    
-    // Create a new comment object for the update
-    const updatedCommentObject = {
-      ...commentToUpdate,
-      content: editingContent,
-      timestamp: new Date(),
-      author: doc(db, 'users', (commentToUpdate.author as User).id)
-    };
-
-    // Filter out the old comment and add the updated one
-    const newCommentsForFirestore = (job.comments || [])
-        .filter(c => c.id !== commentToUpdate.id)
-        .map(c => ({...c, author: doc(db, 'users', (c.author as User).id)}))
-    
-    newCommentsForFirestore.push(updatedCommentObject);
-
-    await updateDoc(jobRef, { comments: newCommentsForFirestore });
-
-    const updatedCommentsForUI = (job.comments || []).map(c => 
-      c.id === commentToUpdate.id ? { ...c, content: editingContent, timestamp: new Date() } : c
-    );
-    handleJobUpdate({ comments: updatedCommentsForUI });
-    
-    setEditingCommentId(null);
-    setEditingContent("");
-    toast({
-      title: "Comment Updated",
-      description: "Your comment has been successfully updated.",
-    });
-  };
-
-  const handleDeleteComment = async (commentToDelete: Comment) => {
-    if (!job) return;
-    const jobRef = doc(db, "jobs", job.id);
-    const commentObjectForFirestore = {
-      ...commentToDelete,
-      author: doc(db, 'users', (commentToDelete.author as User).id)
-    };
-
-    await updateDoc(jobRef, {
-      comments: arrayRemove(commentObjectForFirestore)
-    });
-    
-    const updatedComments = (job.comments || []).filter(c => c.id !== commentToDelete.id);
-    handleJobUpdate({ comments: updatedComments });
-
-    toast({
-      title: "Comment Deleted",
-      description: "Your comment has been successfully removed.",
-    });
-  };
-  
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      setCommentAttachments(prev => [...prev, ...Array.from(event.target.files!)]);
-    }
-  };
-
-  const removeAttachment = (fileName: string) => {
-    setCommentAttachments(prev => prev.filter(file => file.name !== fileName));
-  };
-  
   const handlePostComment = async () => {
-    if ((!newComment.trim() && commentAttachments.length === 0) || !user || !job) return;
-
-    // Mock upload process for attachments
-    const uploadedAttachments: JobAttachment[] = commentAttachments.map(file => ({
-        fileName: file.name,
-        fileUrl: '#', // Placeholder URL
-        fileType: file.type,
-    }));
+    if (!newComment.trim() || !user || !job) return;
 
     const newCommentObject: Omit<Comment, 'id' | 'author'> & {author: DocumentReference} = {
       author: doc(db, 'users', user.id),
       timestamp: new Date(),
       content: newComment,
-      attachments: uploadedAttachments,
     };
     
     const jobRef = doc(db, "jobs", job.id);
@@ -960,12 +834,57 @@ export default function JobDetailPage() {
     handleJobUpdate({ comments: [...(job.comments || []), fullNewComment] });
 
     setNewComment("");
-    setCommentAttachments([]);
      toast({
       title: "Comment Posted!",
     });
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setPrivateMessageAttachments(prev => [...prev, ...Array.from(event.target.files!)]);
+    }
+  };
+
+  const removeAttachment = (fileName: string) => {
+    setPrivateMessageAttachments(prev => prev.filter(file => file.name !== fileName));
+  };
+  
+  const handlePostPrivateMessage = async () => {
+    if ((!newPrivateMessage.trim() && privateMessageAttachments.length === 0) || !user || !job) return;
+
+    // Mock upload process for attachments
+    const uploadedAttachments: JobAttachment[] = privateMessageAttachments.map(file => ({
+        fileName: file.name,
+        fileUrl: '#', // Placeholder URL
+        fileType: file.type,
+    }));
+
+    const newMessageObject: Omit<PrivateMessage, 'id' | 'author'> & {author: DocumentReference} = {
+      author: doc(db, 'users', user.id),
+      timestamp: new Date(),
+      content: newPrivateMessage,
+      attachments: uploadedAttachments,
+    };
+    
+    const jobRef = doc(db, "jobs", job.id);
+    await updateDoc(jobRef, {
+        privateMessages: arrayUnion(newMessageObject)
+    });
+
+    const fullNewMessage: PrivateMessage = {
+      ...newMessageObject,
+      id: `pm-${Date.now()}`,
+      author: user,
+    };
+    
+    handleJobUpdate({ privateMessages: [...(job.privateMessages || []), fullNewMessage] });
+
+    setNewPrivateMessage("");
+    setPrivateMessageAttachments([]);
+     toast({
+      title: "Message Sent!",
+    });
+  };
 
   if (loading) {
     return <PageSkeleton />;
@@ -981,8 +900,9 @@ export default function JobDetailPage() {
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
 
   const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
-  const canComment = isJobGiver || isAwardedInstaller || role === 'Admin' || (job.status === 'Open for Bidding' && role === 'Installer');
-
+  const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || role === 'Job Giver' || role === 'Admin');
+  const canUsePrivateMessages = (isJobGiver || isAwardedInstaller || role === 'Admin') && (job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed');
+  
   return (
     <div className="grid gap-8 md:grid-cols-3">
       <div className="md:col-span-2 grid gap-8">
@@ -1031,39 +951,64 @@ export default function JobDetailPage() {
               </>
             )}
 
-            {canComment && (
+            {canUsePrivateMessages && (
               <>
                 <Separator className="my-6" />
-                <h3 className="font-semibold mb-4">Comments ({job.comments?.length || 0})</h3>
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Lock className="h-5 w-5" /> Private Messages
+                </h3>
                 <div className="space-y-6">
-                    {(job.comments || []).map((comment) => {
-                        const isEditing = editingCommentId === comment.id;
-                        const canEdit = user?.id === (comment.author as User).id
+                    {(job.privateMessages || []).map((message, idx) => {
+                        const author = message.author as User;
+                        const timeAgo = formatDistanceToNow(toDate(message.timestamp), { addSuffix: true });
+
                         return (
-                            <CommentDisplay
-                                key={comment.id}
-                                comment={comment}
-                                isEditing={isEditing}
-                                canEdit={canEdit}
-                                handleEditComment={handleEditComment}
-                                handleDeleteComment={handleDeleteComment}
-                                handleCancelEdit={handleCancelEdit}
-                                handleSaveEdit={handleSaveEdit}
-                                editingContent={editingContent}
-                                setEditingContent={setEditingContent}
-                            />
+                            <div key={idx} className="flex gap-3">
+                                <Avatar className="h-9 w-9">
+                                    <AvatarImage src={author.realAvatarUrl} />
+                                    <AvatarFallback>{author.name.substring(0,2)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-center">
+                                        <p className="font-semibold text-sm">{author.name}</p>
+                                        <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                                    </div>
+                                    <div className="text-sm mt-1 text-foreground bg-accent/30 p-3 rounded-lg space-y-3">
+                                       {message.content && <p>{message.content}</p>}
+                                       {message.attachments && message.attachments.length > 0 && (
+                                         <div>
+                                           <p className="font-semibold text-xs mb-2">Attachments:</p>
+                                           <div className="space-y-2">
+                                              {message.attachments.map((file, fileIdx) => (
+                                                <a 
+                                                  key={fileIdx} 
+                                                  href={file.fileUrl} 
+                                                  target="_blank" 
+                                                  rel="noopener noreferrer" 
+                                                  className="flex items-center gap-2 text-primary hover:underline bg-primary/10 p-2 rounded-md text-xs"
+                                                >
+                                                  <FileIcon className="h-4 w-4" />
+                                                  <span>{file.fileName}</span>
+                                                </a>
+                                              ))}
+                                           </div>
+                                         </div>
+                                       )}
+                                    </div>
+                                </div>
+                            </div>
                         )
                     })}
                      <div className="flex gap-3">
                         <Avatar className="h-9 w-9">
-                            <AnimatedAvatar svg={user?.avatarUrl} />
+                            <AvatarImage src={user.realAvatarUrl} />
                             <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 space-y-2">
                             <Textarea 
-                              placeholder="Ask a question or post a comment..." 
-                              value={newComment}
-                              onChange={(e) => setNewComment(e.target.value)}
+                              placeholder="Send a private message..." 
+                              value={newPrivateMessage}
+                              onChange={(e) => setNewPrivateMessage(e.target.value)}
                             />
                              <input
                                 type="file"
@@ -1072,9 +1017,9 @@ export default function JobDetailPage() {
                                 multiple
                                 className="hidden"
                               />
-                             {commentAttachments.length > 0 && (
+                             {privateMessageAttachments.length > 0 && (
                                 <div className="space-y-2">
-                                    {commentAttachments.map(file => (
+                                    {privateMessageAttachments.map(file => (
                                         <div key={file.name} className="flex items-center justify-between text-xs bg-muted p-2 rounded-md">
                                             <span>{file.name}</span>
                                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeAttachment(file.name)}>
@@ -1089,10 +1034,43 @@ export default function JobDetailPage() {
                                     <Paperclip className="mr-2 h-4 w-4" />
                                     Attach
                                 </Button>
-                                <Button size="sm" onClick={handlePostComment} disabled={!newComment.trim() && commentAttachments.length === 0}>Post Comment</Button>
+                                <Button size="sm" onClick={handlePostPrivateMessage} disabled={!newPrivateMessage.trim() && privateMessageAttachments.length === 0}>
+                                  <Send className="mr-2 h-4 w-4" />
+                                  Send
+                                </Button>
                             </div>
                         </div>
                     </div>
+                </div>
+              </>
+            )}
+
+            {job.status === "Open for Bidding" && (
+              <>
+                <Separator className="my-6" />
+                <h3 className="font-semibold mb-4">Public Comments ({job.comments?.length || 0})</h3>
+                <div className="space-y-6">
+                    {(job.comments || []).map((comment) => (
+                        <CommentDisplay key={comment.id} comment={comment} />
+                    ))}
+                    {canPostPublicComment && (
+                         <div className="flex gap-3">
+                            <Avatar className="h-9 w-9">
+                                <AnimatedAvatar svg={user?.avatarUrl} />
+                                <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 space-y-2">
+                                <Textarea 
+                                  placeholder="Ask a public question about the job..." 
+                                  value={newComment}
+                                  onChange={(e) => setNewComment(e.target.value)}
+                                />
+                                <div className="flex justify-end">
+                                    <Button size="sm" onClick={handlePostComment} disabled={!newComment.trim()}>Post Comment</Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
               </>
             )}
@@ -1114,7 +1092,7 @@ export default function JobDetailPage() {
         </Card>
 
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
-        {(role === "Job Giver" || role === "Admin") && <BidsSection job={job} onJobUpdate={handleJobUpdate} />}
+        {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && <BidsSection job={job} onJobUpdate={handleJobUpdate} />}
 
       </div>
 
@@ -1201,7 +1179,7 @@ export default function JobDetailPage() {
              <div className="flex items-center gap-3">
               <MessageSquare className="h-5 w-5" />
               <div>
-                <p className="text-muted-foreground">Comments</p>
+                <p className="text-muted-foreground">Public Comments</p>
                 <p className="font-semibold">{job.comments?.length || 0}</p>
               </div>
             </div>

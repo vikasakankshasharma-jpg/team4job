@@ -172,6 +172,18 @@
             "$ref": "#/entities/JobAttachment"
           },
           "description": "A list of files attached to the job posting."
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/Comment"
+          }
+        },
+        "privateMessages": {
+            "type": "array",
+            "items": {
+                "$ref": "#/entities/PrivateMessage"
+            }
         }
       },
       "required": ["id", "title", "description", "jobGiver", "location", "budget", "status", "deadline", "postedAt"]
@@ -210,7 +222,7 @@
     },
     "Comment": {
       "title": "Comment",
-      "description": "A comment on a job posting.",
+      "description": "A public comment on a job posting, visible during the bidding phase.",
       "type": "object",
       "properties": {
         "author": {
@@ -222,6 +234,31 @@
         },
         "content": {
           "type": "string"
+        }
+      },
+      "required": ["author", "timestamp", "content"]
+    },
+     "PrivateMessage": {
+      "title": "Private Message",
+      "description": "A private message on a job between the job giver and awarded installer.",
+      "type": "object",
+      "properties": {
+        "author": {
+          "$ref": "#/entities/UserProfile"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content": {
+          "type": "string"
+        },
+         "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/JobAttachment"
+          },
+          "description": "A list of files attached to the message."
         }
       },
       "required": ["author", "timestamp", "content"]
@@ -322,7 +359,7 @@
       "schema": {
         "$ref": "#/entities/Job"
       },
-      "description": "Stores all job postings. Bids and comments are embedded within each job document."
+      "description": "Stores all job postings. Bids, public comments, and private messages are embedded within each job document."
     },
     "/disputes/{disputeId}": {
       "schema": {
