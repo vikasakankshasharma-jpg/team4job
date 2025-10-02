@@ -2,7 +2,7 @@
   "entities": {
     "UserProfile": {
       "title": "User Profile",
-      "description": "Represents a user's profile information.",
+      "description": "Represents a user's profile information, including roles and platform-specific data.",
       "type": "object",
       "properties": {
         "id": {
@@ -74,7 +74,7 @@
     },
     "InstallerProfile": {
       "title": "Installer Profile",
-      "description": "Specific profile details for users who are installers.",
+      "description": "Specific profile details for users who are installers, tracking their reputation and skills.",
       "type": "object",
       "properties": {
         "tier": {
@@ -104,7 +104,7 @@
     },
     "Job": {
       "title": "Job",
-      "description": "Represents a job posting on the platform.",
+      "description": "Represents a job posting on the platform, including all associated data like bids and messages.",
       "type": "object",
       "properties": {
         "id": {
@@ -190,7 +190,7 @@
     },
     "JobAttachment": {
       "title": "Job Attachment",
-      "description": "Represents a file attached to a job posting.",
+      "description": "Represents a file attached to a job posting to provide more context.",
       "type": "object",
       "properties": {
         "fileName": { "type": "string" },
@@ -222,7 +222,7 @@
     },
     "Comment": {
       "title": "Comment",
-      "description": "A public comment on a job posting, visible during the bidding phase.",
+      "description": "A public comment on a job posting, visible to all during the bidding phase.",
       "type": "object",
       "properties": {
         "author": {
@@ -240,7 +240,7 @@
     },
      "PrivateMessage": {
       "title": "Private Message",
-      "description": "A private message on a job between the job giver and awarded installer.",
+      "description": "A private message on a job between the job giver and the awarded installer.",
       "type": "object",
       "properties": {
         "author": {
@@ -265,7 +265,7 @@
     },
     "Dispute": {
       "title": "Dispute",
-      "description": "Represents a dispute raised for a job between a Job Giver and an Installer.",
+      "description": "Represents a dispute raised for a job between a Job Giver and an Installer, mediated by an Admin.",
       "type": "object",
       "properties": {
         "jobId": {
@@ -316,7 +316,7 @@
     },
     "DisputeMessage": {
       "title": "Dispute Message",
-      "description": "A message within a dispute thread.",
+      "description": "A message within a dispute thread, visible to both parties and the admin.",
       "type": "object",
       "properties": {
         "authorId": { "type": "string" },
@@ -328,14 +328,14 @@
             "items": {
                 "$ref": "#/entities/DisputeAttachment"
             },
-            "description": "A list of files attached to the message."
+            "description": "A list of files attached to the message as evidence."
         }
       },
       "required": ["authorId", "authorRole", "content", "timestamp"]
     },
     "DisputeAttachment": {
         "title": "Dispute Attachment",
-        "description": "Represents a file attached to a dispute message.",
+        "description": "Represents a file attached to a dispute message as evidence.",
         "type": "object",
         "properties": {
             "fileName": { "type": "string" },
@@ -365,7 +365,7 @@
       "schema": {
         "$ref": "#/entities/Dispute"
       },
-      "description": "Stores all dispute records for jobs."
+      "description": "Stores all dispute records for jobs, including the full communication history."
     }
   }
 }
