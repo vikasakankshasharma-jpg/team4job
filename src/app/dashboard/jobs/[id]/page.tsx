@@ -269,6 +269,8 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
         }
     }, [bid.timestamp]);
 
+    const installerName = isAwardedToThisBidder ? installer.name : showRanking ? `Position #${rank}` : installer.anonymousId;
+
     return (
         <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && showRanking && rank === 1 ? 'border-primary' : ''}`}>
             <div className="flex justify-between items-start">
@@ -283,7 +285,11 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
-                            <p className="font-semibold">{isAwardedToThisBidder ? installer.name : showRanking ? `Position #${rank}` : installer.anonymousId}</p>
+                           {role === 'Admin' ? (
+                                <Link href={`/dashboard/users/${installer.id}`} className="font-semibold hover:underline">{installer.anonymousId}</Link>
+                           ) : (
+                                <p className="font-semibold">{installerName}</p>
+                           )}
                             {!isJobAwarded && showRanking && rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -376,7 +382,7 @@ function BidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob:
       <CardHeader>
         <CardTitle>Received Bids ({job.bids.length})</CardTitle>
         <CardDescription>
-          {job.awardedInstaller ? 'An installer has been selected for this job.' : 
+          {role === 'Admin' ? 'Reviewing bids placed on this job.' : job.awardedInstaller ? 'An installer has been selected for this job.' : 
           'Review the bids and award the job to the best installer.'}
         </CardDescription>
       </CardHeader>
@@ -893,6 +899,8 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
 
     
 
