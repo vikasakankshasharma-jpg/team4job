@@ -1135,23 +1135,10 @@ export default function JobDetailPage() {
             </div>
              <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5" />
-               {role === 'Admin' ? (
-                   <EditDateDialog
-                      job={job}
-                      onJobUpdate={handleJobUpdate}
-                      triggerElement={
-                          <div className="cursor-pointer">
-                              <p className="text-muted-foreground">Work Starts</p>
-                              <p className="font-semibold">{jobStartDate}</p>
-                          </div>
-                      }
-                  />
-              ) : (
-                  <div>
-                      <p className="text-muted-foreground">Work Starts</p>
-                      <p className="font-semibold">{jobStartDate}</p>
-                  </div>
-              )}
+              <div>
+                  <p className="text-muted-foreground">Work Starts</p>
+                  <p className="font-semibold">{jobStartDate}</p>
+              </div>
             </div>
             {role === 'Admin' ? (
               <Link href="#bids-section" className="flex items-center gap-3 cursor-pointer">
@@ -1211,5 +1198,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
