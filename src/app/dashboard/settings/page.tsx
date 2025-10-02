@@ -153,7 +153,7 @@ export default function SettingsPage() {
                                         <AlertDialogDescription>
                                             This action cannot be undone. This will permanently delete your
                                             account and remove your data from our servers.
-                                        </AlexdrtDialogDescription>
+                                        </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
