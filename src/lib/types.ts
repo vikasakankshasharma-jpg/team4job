@@ -74,6 +74,7 @@ export type Job = {
   jobStartDate?: Date | Timestamp;
   postedAt: Date | Timestamp;
   bids: Bid[];
+  bidderIds?: string[]; // New field for efficient queries
   comments: Comment[];
   privateMessages?: PrivateMessage[];
   attachments?: JobAttachment[];

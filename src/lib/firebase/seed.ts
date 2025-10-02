@@ -73,6 +73,8 @@ async function seedDatabase() {
         timestamp: Timestamp.fromDate(new Date(bid.timestamp)),
       }));
 
+      const bidderIds = job.bids.map(bid => bid.installer.id);
+
       const commentsWithRefs = job.comments.map(comment => ({
         ...comment,
         author: db.collection('users').doc(comment.author.id),
@@ -86,6 +88,7 @@ async function seedDatabase() {
         jobStartDate: job.jobStartDate ? Timestamp.fromDate(new Date(job.jobStartDate)) : null,
         jobGiver: jobGiverRef,
         bids: bidsWithRefs,
+        bidderIds: bidderIds,
         comments: commentsWithRefs,
       };
 
