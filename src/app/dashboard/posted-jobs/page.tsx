@@ -178,8 +178,9 @@ export default function PostedJobsPage() {
     );
   }
   
-  const activeJobs = jobs.filter(job => job.status !== 'Completed');
-  const archivedJobs = jobs.filter(job => job.status === 'Completed');
+  const activeJobs = jobs.filter(job => job.status !== 'Completed' && job.status !== 'Cancelled');
+  const archivedJobs = jobs.filter(job => job.status === 'Completed' || job.status === 'Cancelled');
+
 
   return (
      <Tabs defaultValue={tab}>
@@ -212,7 +213,7 @@ export default function PostedJobsPage() {
           <PostedJobsTable 
             jobs={archivedJobs}
             title="My Archived Jobs"
-            description="A history of your completed projects."
+            description="A history of your completed or cancelled projects."
             footerText={`Showing 1-${archivedJobs.length} of ${archivedJobs.length} archived jobs`}
             loading={loading}
           />
