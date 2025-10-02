@@ -138,7 +138,7 @@ export default function AllJobsPage() {
               <TableHead>Status</TableHead>
               <TableHead className="hidden sm:table-cell">Job Giver</TableHead>
               <TableHead className="hidden md:table-cell">Bids</TableHead>
-              <TableHead className="hidden lg:table-cell">Award Type</TableHead>
+              <TableHead className="hidden lg:table-cell">Job Origin</TableHead>
               <TableHead className="text-right flex items-center gap-2 justify-end">
                 Posted
                 {activeFiltersCount > 0 && (
@@ -172,7 +172,7 @@ export default function AllJobsPage() {
                 <TableCell className="p-1 hidden lg:table-cell">
                     <Select value={filters.awardType} onValueChange={value => handleFilterChange('awardType', value)}>
                         <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="Filter by Award Type..." />
+                            <SelectValue placeholder="Filter by Origin..." />
                         </SelectTrigger>
                         <SelectContent>
                             {awardTypes.map(type => (
@@ -225,7 +225,7 @@ export default function AllJobsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   Loading jobs...
                 </TableCell>
               </TableRow>
@@ -255,7 +255,7 @@ export default function AllJobsPage() {
               ))
             ) : (
                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                       No jobs found for your search.
                     </TableCell>
                   </TableRow>
@@ -266,5 +266,3 @@ export default function AllJobsPage() {
     </Card>
   );
 }
-
-    
