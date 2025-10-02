@@ -432,7 +432,7 @@ export const jobs: Job[] = [
     description: "We are looking for a professional installer to set up a comprehensive surveillance system for our new office. The job involves installing 8 high-definition IP cameras covering both indoor and outdoor areas. The installer will also be responsible for setting up the Network Video Recorder (NVR), configuring motion detection, and enabling remote viewing access on mobile devices. All equipment will be provided, but the installer must supply their own tools and manage all cabling and mounting.",
     jobGiver: findUser('user-2'),
     location: '400001, Kalbadevi',
-    fullAddress: '2nd Floor, Oberoi Complex, Andheri East, Mumbai, Maharashtra 400001',
+    fullAddress: '2nd Floor, Oberoi Complex, Kalbadevi, Mumbai, Maharashtra 400001',
     budget: { min: 10000, max: 20000 },
     status: 'Open for Bidding',
     deadline: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
@@ -567,7 +567,6 @@ export const jobs: Job[] = [
     fullAddress: 'Villa 23, Hiranandani Gardens, Powai, Mumbai, Maharashtra 400076',
     budget: { min: 5000, max: 9000 },
     status: 'Cancelled',
-    awardedInstaller: 'user-1',
     deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Bidding ended 2 days ago
     jobStartDate: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000), // Was supposed to start tomorrow
     postedAt: new Date(now.getTime() - 9 * 24 * 60 * 60 * 1000), // 9 days ago
@@ -687,16 +686,17 @@ export const jobs: Job[] = [
   },
   {
     id: 'JOB-20240919-X1Y2',
-    title: 'Unbid Job Example',
-    description: 'This is a job posted in a niche area that received no bids before the deadline expired. It should show as "Unbid".',
+    title: 'Direct Award Job Example',
+    description: 'This is a job that was awarded directly to an installer, bypassing the public bidding process. The job should appear as "Awarded".',
     jobGiver: findUser('user-6'),
     location: '799001, Agartala H.O',
     fullAddress: 'MBB College Area, Agartala, Tripura 799004',
     budget: { min: 6000, max: 12000 },
-    status: 'Unbid',
-    deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Bidding ended 2 days ago
-    jobStartDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000), // Was supposed to start in 5 days
-    postedAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+    status: 'Awarded',
+    awardedInstaller: 'user-7',
+    deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+    jobStartDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000), 
+    postedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
     bids: [],
     comments: [],
     completionOtp: '102030',

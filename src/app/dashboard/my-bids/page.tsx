@@ -160,13 +160,13 @@ function MyBidsPageContent() {
         title: 'My Bids Guide',
         content: (
             <div className="space-y-4 text-sm">
-                <p>This page tracks every job you have bid on. Here’s what the different statuses mean:</p>
+                <p>This page tracks every job you have bid on or been awarded. Here’s what the different statuses mean:</p>
                 <ul className="list-disc space-y-2 pl-5">
                     <li>
                         <span className="font-semibold">Bidded:</span> You have placed a bid, and the job is still open for other installers to bid on.
                     </li>
                     <li>
-                        <span className="font-semibold">Awarded:</span> Congratulations! The Job Giver has chosen you for the project. The job is ready to be started.
+                        <span className="font-semibold">Awarded:</span> Congratulations! The Job Giver has chosen you for the project. The job is ready to be started. This can happen through bidding or a Direct Award.
                     </li>
                     <li>
                         <span className="font-semibold">In Progress:</span> You have started working on an awarded job.

@@ -45,13 +45,24 @@ const jobSchema = z.object({
   fullAddress: z.string().min(10, { message: "Please enter a full address." }),
   budgetMin: z.coerce.number().min(1, { message: "Minimum budget must be at least 1." }),
   budgetMax: z.coerce.number().min(1, { message: "Maximum budget must be at least 1." }),
-  deadline: z.string().min(1, { message: "Please select a bidding deadline." }),
+  deadline: z.string().refine((val) => new Date(val) > new Date(), {
+    message: "Deadline must be in the future.",
+  }).or(z.literal("")),
   jobStartDate: z.string().min(1, { message: "Please select a job start date." }),
   directAwardInstallerId: z.string().optional(),
 }).refine(data => data.budgetMax > data.budgetMin, {
     message: "Maximum budget must be greater than minimum budget.",
     path: ["budgetMax"],
-}).refine(data => new Date(data.jobStartDate) >= new Date(data.deadline), {
+}).refine(data => {
+    if (data.directAwardInstallerId) return true;
+    return data.deadline !== "";
+}, {
+    message: "Bidding deadline is required unless you are using Direct Award.",
+    path: ["deadline"],
+}).refine(data => {
+    if (!data.deadline) return true; // Skip if no deadline (direct award)
+    return new Date(data.jobStartDate) >= new Date(data.deadline);
+}, {
     message: "Job start date must be on or after the bidding deadline.",
     path: ["jobStartDate"],
 });
@@ -79,11 +90,13 @@ export default function PostJobPage() {
       fullAddress: "",
       budgetMin: 0,
       budgetMax: 0,
+      deadline: "",
       directAwardInstallerId: "",
     },
   });
 
   const jobTitle = useWatch({ control: form.control, name: "jobTitle" });
+  const directAwardInstallerId = useWatch({ control: form.control, name: "directAwardInstallerId" });
   const jobTitleState = form.getFieldState("jobTitle");
   const isJobTitleValid = jobTitle && !jobTitleState.invalid;
 
@@ -134,7 +147,22 @@ export default function PostJobPage() {
     // For this mock version, we just show a success message.
     const newJobId = `JOB-${Date.now()}`;
     const status = values.directAwardInstallerId ? "Awarded" : "Open for Bidding";
-    console.log("New Job Submitted:", { id: newJobId, ...values, jobGiver: user.id, status });
+    const jobData = { 
+        id: newJobId, 
+        ...values, 
+        jobGiver: user.id, 
+        status,
+        bids: [],
+        comments: [],
+        postedAt: new Date(),
+    };
+
+    if (values.directAwardInstallerId) {
+        jobData.awardedInstaller = values.directAwardInstallerId;
+        jobData.deadline = new Date(); // Set deadline to now for direct award
+    }
+    
+    console.log("New Job Submitted:", jobData);
 
     toast({
         title: "Job Posted Successfully! (Mock)",
@@ -269,7 +297,7 @@ export default function PostJobPage() {
                     <FormItem>
                         <FormLabel>Bidding Deadline</FormLabel>
                         <FormControl>
-                         <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} />
+                         <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardInstallerId} />
                         </FormControl>
                          <FormDescription>Not applicable if you are using Direct Award.</FormDescription>
                         <FormMessage />
@@ -283,7 +311,7 @@ export default function PostJobPage() {
                     <FormItem>
                         <FormLabel>Job Work Start Date</FormLabel>
                         <FormControl>
-                         <Input type="date" {...field} min={form.getValues('deadline')} />
+                         <Input type="date" {...field} min={form.getValues('deadline') || new Date().toISOString().split("T")[0]} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -361,12 +389,13 @@ export default function PostJobPage() {
             <Button variant="outline" type="button" onClick={() => form.reset()}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isGenerating}>Post Job</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting || isGenerating}>
+                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Post Job
+            </Button>
           </div>
         </form>
       </Form>
     </div>
   );
 }
-
-    
