@@ -104,7 +104,8 @@ export default function UsersPage() {
         filtered = filtered.filter(user =>
             user.name.toLowerCase().includes(searchTerm) ||
             user.email.toLowerCase().includes(searchTerm) ||
-            user.anonymousId.toLowerCase().includes(searchTerm)
+            user.anonymousId.toLowerCase().includes(searchTerm) ||
+            user.mobile.includes(searchTerm)
         );
     }
     if (filters.role !== 'all') {
@@ -160,7 +161,7 @@ export default function UsersPage() {
         <div className="flex flex-col gap-2 mb-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
                 <Input 
-                    placeholder="Filter by name, email, ID..." 
+                    placeholder="Filter by name, email, ID, mobile..." 
                     value={filters.search} 
                     onChange={e => handleFilterChange('search', e.target.value)} 
                     className="h-8 lg:col-span-2" 
@@ -289,5 +290,3 @@ export default function UsersPage() {
     </Card>
   );
 }
-
-    
