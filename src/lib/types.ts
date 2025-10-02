@@ -34,6 +34,7 @@ export type Comment = {
   author: User | DocumentReference;
   timestamp: Date | Timestamp;
   content: string;
+  attachments?: JobAttachment[];
 };
 
 export type Bid = {

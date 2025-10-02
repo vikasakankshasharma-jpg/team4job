@@ -40,13 +40,14 @@ import {
   Copy,
   AlertOctagon,
   FileIcon,
+  X,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bid, Job, Comment, User } from "@/lib/types";
+import { Bid, Job, Comment, User, JobAttachment } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import {
@@ -100,7 +101,7 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
         <CardTitle>Complete This Job</CardTitle>
         <CardDescription>
           Once the job is finished to the client's satisfaction, enter the
-          Job Completion OTP provided by the Job Giver to mark it as complete.
+          Job Completion OTP provided by the Job Giver to mark it as complete. You can post photos or videos of the completed work in the comments section below as proof.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -583,7 +584,24 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
                             </div>
                         )}
                     </div>
-                    <p className="text-sm mt-1 text-foreground">{comment.content}</p>
+                    <div className="text-sm mt-1 text-foreground">{comment.content}</div>
+                      {comment.attachments && comment.attachments.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                           <p className="font-semibold text-xs mb-2 text-muted-foreground">Attachments:</p>
+                           {comment.attachments.map((file, fileIdx) => (
+                             <a 
+                               key={fileIdx} 
+                               href={file.fileUrl} 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               className="flex items-center gap-2 text-primary hover:underline bg-primary/10 p-2 rounded-md text-xs"
+                             >
+                               <FileIcon className="h-4 w-4" />
+                               <span>{file.fileName}</span>
+                             </a>
+                           ))}
+                        </div>
+                      )}
                 </>
                 ) : (
                     <div className="space-y-2">
@@ -744,6 +762,7 @@ export default function JobDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   const [job, setJob] = React.useState<Job | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -751,6 +770,7 @@ export default function JobDetailPage() {
   const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
   const [editingContent, setEditingContent] = React.useState("");
   const [newComment, setNewComment] = React.useState("");
+  const [commentAttachments, setCommentAttachments] = React.useState<File[]>([]);
   
   const [deadlineRelative, setDeadlineRelative] = React.useState('');
   const [deadlineAbsolute, setDeadlineAbsolute] = React.useState('');
@@ -899,12 +919,31 @@ export default function JobDetailPage() {
     });
   };
   
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setCommentAttachments(prev => [...prev, ...Array.from(event.target.files!)]);
+    }
+  };
+
+  const removeAttachment = (fileName: string) => {
+    setCommentAttachments(prev => prev.filter(file => file.name !== fileName));
+  };
+  
   const handlePostComment = async () => {
-    if (!newComment.trim() || !user || !job) return;
+    if ((!newComment.trim() && commentAttachments.length === 0) || !user || !job) return;
+
+    // Mock upload process for attachments
+    const uploadedAttachments: JobAttachment[] = commentAttachments.map(file => ({
+        fileName: file.name,
+        fileUrl: '#', // Placeholder URL
+        fileType: file.type,
+    }));
+
     const newCommentObject: Omit<Comment, 'id' | 'author'> & {author: DocumentReference} = {
       author: doc(db, 'users', user.id),
       timestamp: new Date(),
       content: newComment,
+      attachments: uploadedAttachments,
     };
     
     const jobRef = doc(db, "jobs", job.id);
@@ -921,6 +960,7 @@ export default function JobDetailPage() {
     handleJobUpdate({ comments: [...(job.comments || []), fullNewComment] });
 
     setNewComment("");
+    setCommentAttachments([]);
      toast({
       title: "Comment Posted!",
     });
@@ -941,6 +981,7 @@ export default function JobDetailPage() {
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
 
   const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
+  const canComment = isJobGiver || isAwardedInstaller || role === 'Admin' || (job.status === 'Open for Bidding' && role === 'Installer');
 
   return (
     <div className="grid gap-8 md:grid-cols-3">
@@ -990,7 +1031,7 @@ export default function JobDetailPage() {
               </>
             )}
 
-            {job.status === 'Open for Bidding' && (
+            {canComment && (
               <>
                 <Separator className="my-6" />
                 <h3 className="font-semibold mb-4">Comments ({job.comments?.length || 0})</h3>
@@ -1018,14 +1059,37 @@ export default function JobDetailPage() {
                             <AnimatedAvatar svg={user?.avatarUrl} />
                             <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-2">
                             <Textarea 
                               placeholder="Ask a question or post a comment..." 
                               value={newComment}
                               onChange={(e) => setNewComment(e.target.value)}
                             />
-                            <div className="flex justify-end mt-2">
-                               <Button size="sm" onClick={handlePostComment} disabled={!newComment.trim()}>Post Comment</Button>
+                             <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                multiple
+                                className="hidden"
+                              />
+                             {commentAttachments.length > 0 && (
+                                <div className="space-y-2">
+                                    {commentAttachments.map(file => (
+                                        <div key={file.name} className="flex items-center justify-between text-xs bg-muted p-2 rounded-md">
+                                            <span>{file.name}</span>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeAttachment(file.name)}>
+                                                <X className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="flex justify-between items-center">
+                                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                                    <Paperclip className="mr-2 h-4 w-4" />
+                                    Attach
+                                </Button>
+                                <Button size="sm" onClick={handlePostComment} disabled={!newComment.trim() && commentAttachments.length === 0}>Post Comment</Button>
                             </div>
                         </div>
                     </div>
