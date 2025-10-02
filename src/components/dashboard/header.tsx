@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { usePathname } from "next/navigation";
 import { UserNav } from "@/components/user-nav";
 import { useUser } from "@/hooks/use-user";
@@ -51,7 +51,6 @@ const adminNavItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
     { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
-    { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
 export function Header() {
@@ -84,7 +83,9 @@ export function Header() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="sm:max-w-xs">
-           <SheetTitle><VisuallyHidden>Mobile Navigation Menu</VisuallyHidden></SheetTitle>
+           <SheetTitle>
+             <VisuallyHidden>Mobile Navigation Menu</VisuallyHidden>
+           </SheetTitle>
           <nav className="grid gap-6 text-lg font-medium">
             <Link
               href="#"
@@ -105,6 +106,15 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
+             <Link
+                href="/dashboard/profile"
+                className={cn("flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
+                  pathname === '/dashboard/profile' && "text-foreground"
+                )}
+              >
+                <UserIcon className="h-5 w-5" />
+                Profile
+              </Link>
              <Link
                 href="/dashboard/settings"
                 className={cn("flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
