@@ -165,7 +165,7 @@ function JobGiverDashboard() {
 
     allMockJobs.forEach(job => {
         if ((job.jobGiver as User).id === user.id) {
-            if (job.status !== 'Completed') {
+            if (job.status !== 'Completed' && job.status !== 'Cancelled') {
                 active++;
             } else {
                 completed++;
@@ -326,28 +326,32 @@ function AdminDashboard() {
     <>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers}</div>
-            <p className="text-xs text-muted-foreground">
-              Installers & Job Givers
-            </p>
-          </CardContent>
+          <Link href="/dashboard/users">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                Installers & Job Givers
+              </p>
+            </CardContent>
+          </Link>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalJobs}</div>
-            <p className="text-xs text-muted-foreground">
-              Jobs posted on the platform
-            </p>
-          </CardContent>
+          <Link href="/dashboard/all-jobs">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalJobs}</div>
+              <p className="text-xs text-muted-foreground">
+                Jobs posted on the platform
+              </p>
+            </CardContent>
+          </Link>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -397,3 +401,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
