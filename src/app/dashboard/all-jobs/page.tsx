@@ -1,6 +1,7 @@
 
 "use client";
 
+import React from "react";
 import {
   Card,
   CardContent,
@@ -16,29 +17,42 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
-import React from "react";
+import { format } from "date-fns";
+import type { DateRange } from "react-day-picker";
+import { Calendar as CalendarIcon, X } from "lucide-react";
+
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { jobs as mockJobs } from "@/lib/data";
 import { useUser } from "@/hooks/use-user";
-import { format } from "date-fns";
-import { IndianRupee, ListFilter, Calendar as CalendarIcon, X } from "lucide-react";
-import { useSearch } from "@/hooks/use-search";
-import type { DateRange } from "react-day-picker";
+
+const initialFilters = {
+    jobId: "",
+    pincode: "",
+    status: "all",
+    jobGiver: "",
+    date: undefined as DateRange | undefined,
+};
 
 export default function AllJobsPage() {
   const router = useRouter();
   const { role } = useUser();
-  const [jobs, setJobs] = React.useState<Job[]>(mockJobs);
+  const [jobs] = React.useState<Job[]>(mockJobs);
   const [loading, setLoading] = React.useState(false);
-  const { searchQuery } = useSearch();
-  const [date, setDate] = React.useState<DateRange | undefined>(undefined);
+  const [filters, setFilters] = React.useState(initialFilters);
 
   React.useEffect(() => {
     if (role && role !== 'Admin') {
@@ -46,28 +60,35 @@ export default function AllJobsPage() {
     }
   }, [role, router]);
 
+  const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
+    setFilters(prev => ({ ...prev, [filterName]: value }));
+  };
+
   const filteredJobs = React.useMemo(() => {
-    const cleanedQuery = searchQuery.trim().toLowerCase().replace(/ /g, '-');
-    
     let filtered = jobs;
 
-    if (cleanedQuery) {
-        filtered = filtered.filter(job => 
-            job.title.toLowerCase().includes(cleanedQuery) ||
-            job.id.toLowerCase().includes(cleanedQuery) ||
-            (job.jobGiver as User)?.anonymousId?.toLowerCase().includes(cleanedQuery)
-        );
+    if (filters.jobId) {
+        filtered = filtered.filter(job => job.id.toLowerCase().includes(filters.jobId.toLowerCase()));
     }
-
-    if (date?.from && date?.to) {
+    if (filters.pincode) {
+        filtered = filtered.filter(job => job.location.toLowerCase().includes(filters.pincode.toLowerCase()));
+    }
+    if (filters.status !== 'all') {
+        filtered = filtered.filter(job => job.status === filters.status);
+    }
+    if (filters.jobGiver) {
+        filtered = filtered.filter(job => (job.jobGiver as User)?.anonymousId?.toLowerCase().includes(filters.jobGiver.toLowerCase()));
+    }
+    if (filters.date?.from) {
+        const to = filters.date.to || filters.date.from; // If only one day is selected, use it as range
         filtered = filtered.filter(job => {
             const postedDate = toDate(job.postedAt);
-            return postedDate >= date.from! && postedDate <= date.to!;
+            return postedDate >= filters.date!.from! && postedDate <= to;
         });
     }
 
     return filtered;
-  }, [jobs, searchQuery, date]);
+  }, [jobs, filters]);
 
   if (role !== 'Admin') {
     return (
@@ -82,81 +103,20 @@ export default function AllJobsPage() {
   };
 
   const clearFilters = () => {
-    setDate(undefined);
+    setFilters(initialFilters);
   }
   
-  const activeFiltersCount = [
-    date !== undefined
-  ].filter(Boolean).length;
+  const activeFiltersCount = Object.values(filters).filter(value => 
+    value !== "" && value !== "all" && value !== undefined
+  ).length;
+  
+  const jobStatuses = ["All", ...Array.from(new Set(mockJobs.map(j => j.status)))];
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-            <CardTitle>All Jobs</CardTitle>
-            <CardDescription>A list of all jobs created on the platform. Click on a row to view details.</CardDescription>
-        </div>
-         <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-1">
-                  <ListFilter className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Filter
-                  </span>
-                  {activeFiltersCount > 0 && <Badge variant="secondary" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">{activeFiltersCount}</Badge>}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-auto p-4 space-y-4">
-                <DropdownMenuLabel>Filter by Posted Date</DropdownMenuLabel>
-                <DropdownMenuSeparator className="-mx-4" />
-                
-                 <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        id="date"
-                        variant={"outline"}
-                        className={cn(
-                          "w-[300px] justify-start text-left font-normal",
-                          !date && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date?.from ? (
-                          date.to ? (
-                            <>
-                              {format(date.from, "LLL dd, y")} -{" "}
-                              {format(date.to, "LLL dd, y")}
-                            </>
-                          ) : (
-                            format(date.from, "LLL dd, y")
-                          )
-                        ) : (
-                          <span>Pick a date range</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="end">
-                      <Calendar
-                        initialFocus
-                        mode="range"
-                        defaultMonth={date?.from}
-                        selected={date}
-                        onSelect={setDate}
-                        numberOfMonths={2}
-                      />
-                    </PopoverContent>
-                  </Popover>
-
-              </DropdownMenuContent>
-            </DropdownMenu>
-             {activeFiltersCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
-                <X className="h-4 w-4 mr-1" />
-                Clear
-              </Button>
-            )}
-          </div>
+      <CardHeader>
+        <CardTitle>All Jobs</CardTitle>
+        <CardDescription>A list of all jobs created on the platform. Click on a row to view details.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -168,7 +128,79 @@ export default function AllJobsPage() {
               <TableHead>Status</TableHead>
               <TableHead className="hidden sm:table-cell">Job Giver</TableHead>
               <TableHead className="hidden md:table-cell">Bids</TableHead>
-              <TableHead className="text-right">Posted</TableHead>
+              <TableHead className="text-right flex items-center gap-2 justify-end">
+                Posted
+                {activeFiltersCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-auto px-2 py-1 text-xs">
+                    <X className="h-3 w-3 mr-1" />
+                    Clear Filters ({activeFiltersCount})
+                  </Button>
+                )}
+              </TableHead>
+            </TableRow>
+             <TableRow className="hover:bg-transparent">
+                <TableCell className="p-1"></TableCell>
+                <TableCell className="p-1">
+                    <Input placeholder="Filter by Job ID..." value={filters.jobId} onChange={e => handleFilterChange('jobId', e.target.value)} className="h-8" />
+                </TableCell>
+                <TableCell className="p-1">
+                    <Input placeholder="Filter by Pincode..." value={filters.pincode} onChange={e => handleFilterChange('pincode', e.target.value)} className="h-8" />
+                </TableCell>
+                 <TableCell className="p-1">
+                    <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
+                        <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="Filter by status..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {jobStatuses.map(status => (
+                                <SelectItem key={status} value={status.toLowerCase()}>{status}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </TableCell>
+                <TableCell className="p-1 hidden sm:table-cell">
+                    <Input placeholder="Filter by Job Giver..." value={filters.jobGiver} onChange={e => handleFilterChange('jobGiver', e.target.value)} className="h-8" />
+                </TableCell>
+                <TableCell className="p-1 hidden md:table-cell"></TableCell>
+                <TableCell className="p-1 text-right">
+                   <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="date"
+                        variant={"outline"}
+                        size="sm"
+                        className={cn(
+                          "w-full lg:w-[240px] justify-start text-left font-normal h-8",
+                          !filters.date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {filters.date?.from ? (
+                          filters.date.to ? (
+                            <>
+                              {format(filters.date.from, "LLL dd, y")} -{" "}
+                              {format(filters.date.to, "LLL dd, y")}
+                            </>
+                          ) : (
+                            format(filters.date.from, "LLL dd, y")
+                          )
+                        ) : (
+                          <span>Filter by date...</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={filters.date?.from}
+                        selected={filters.date}
+                        onSelect={value => handleFilterChange('date', value)}
+                        numberOfMonths={2}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </TableCell>
             </TableRow>
           </TableHeader>
           <TableBody>
