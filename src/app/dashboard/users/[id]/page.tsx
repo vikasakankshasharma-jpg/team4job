@@ -102,8 +102,8 @@ export default function UserProfilePage() {
   const [userPostedJobs, setUserPostedJobs] = React.useState<Job[]>([]);
   const [userCompletedJobs, setUserCompletedJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [postedJobsView, setPostedJobsView] = React.useState<'grid' | 'list'>('grid');
-  const [completedJobsView, setCompletedJobsView] = React.useState<'grid' | 'list'>('grid');
+  const [postedJobsView, setPostedJobsView] = React.useState<'grid' | 'list'>('list');
+  const [completedJobsView, setCompletedJobsView] = React.useState<'grid' | 'list'>('list');
 
   React.useEffect(() => {
     if (id) {
