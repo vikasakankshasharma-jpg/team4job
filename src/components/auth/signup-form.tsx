@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -25,8 +24,8 @@ import {
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
-import { useState } from "react";
-import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { CheckCircle2, Loader2, ShieldCheck, Camera, Upload } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { User } from "@/lib/types";
 import {
@@ -37,7 +36,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LocationInput } from "@/components/ui/location-input";
-
+import { useIsMobile } from "@/hooks/use-mobile";
+import Image from "next/image";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -50,6 +50,7 @@ const formSchema = z.object({
   pincode: z.string().min(8, { message: "Please select a pincode and post office." }),
   aadhar: z.string().optional(),
   otp: z.string().optional(),
+  realAvatarUrl: z.string().optional(),
 });
 
 
@@ -58,11 +59,30 @@ export function SignUpForm() {
   const { login } = useUser();
   const { toast } = useToast();
   
-  const [verificationStep, setVerificationStep] = useState<"enterAadhar" | "enterOtp" | "verified">("enterAadhar");
+  const [currentStep, setCurrentStep] = useState<"role" | "details" | "photo" | "verification">("role");
+  const [verificationSubStep, setVerificationSubStep] = useState<"enterAadhar" | "enterOtp" | "verified">("enterAadhar");
   const [transactionId, setTransactionId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [kycData, setKycData] = useState<ConfirmAadharOutput['kycData'] | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  const isMobile = useIsMobile();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (currentStep === "photo" && isMobile && !hasCameraPermission) {
+      startCamera();
+    }
+    return () => {
+        if (videoRef.current?.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+        }
+    }
+  }, [currentStep, isMobile]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -76,11 +96,62 @@ export function SignUpForm() {
       pincode: "",
       aadhar: "",
       otp: "",
+      realAvatarUrl: "",
     },
   });
   
   const role = form.watch("role");
   const aadharValue = form.watch("aadhar");
+
+  const startCamera = async () => {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setHasCameraPermission(true);
+        if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+        }
+    } catch (err) {
+        console.error("Error accessing camera:", err);
+        setHasCameraPermission(false);
+        toast({
+            variant: "destructive",
+            title: "Camera Access Denied",
+            description: "Please enable camera permissions to take a photo.",
+        });
+    }
+  };
+
+  const handleCapture = () => {
+    if (videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        const dataUrl = canvas.toDataURL('image/png');
+        setPhoto(dataUrl);
+        form.setValue('realAvatarUrl', dataUrl);
+        if (videoRef.current?.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+        }
+        setHasCameraPermission(false);
+    }
+  };
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if(file) {
+        const reader = new FileReader();
+        reader.onload = (loadEvent) => {
+            const dataUrl = loadEvent.target?.result as string;
+            setPhoto(dataUrl);
+            form.setValue('realAvatarUrl', dataUrl);
+        }
+        reader.readAsDataURL(file);
+    }
+  };
 
   const handleInitiateVerification = async () => {
     setError(null);
@@ -95,7 +166,7 @@ export function SignUpForm() {
       const result = await initiateAadharVerification({ aadharNumber });
       if (result.success) {
         setTransactionId(result.transactionId);
-        setVerificationStep("enterOtp");
+        setVerificationSubStep("enterOtp");
         toast({
           title: "OTP Sent!",
           description: result.message,
@@ -124,7 +195,7 @@ export function SignUpForm() {
     try {
       const result = await confirmAadharVerification({ transactionId, otp: otp || "" });
       if (result.isVerified) {
-        setVerificationStep("verified");
+        setVerificationSubStep("verified");
         toast({
           title: "Verification Successful!",
           description: "Your KYC data has been pre-filled.",
@@ -138,6 +209,7 @@ export function SignUpForm() {
             form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
             form.setValue("pincode", `${result.kycData.pincode}, `, { shouldValidate: true });
         }
+        setCurrentStep("details");
       } else {
         setError(result.message);
       }
@@ -151,17 +223,22 @@ export function SignUpForm() {
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if ((values.role === 'Installer' || values.role === 'Both (Job Giver & Installer)') && verificationStep !== 'verified') {
+    if ((values.role === 'Installer' || values.role === 'Both (Job Giver & Installer)') && verificationSubStep !== 'verified') {
+        setCurrentStep("verification");
         form.setError("aadhar", { type: "manual", message: "Please complete Aadhar verification." });
         return;
     }
+    if(!photo) {
+        setCurrentStep("photo");
+        form.setError("realAvatarUrl", { type: "manual", message: "Please add a profile photo." });
+        return;
+    }
 
-    // In a real app, this would save to a database and check for existing emails.
-    // For this mock version, we just log in the user.
     const success = await login(values.email, values);
     if (success) {
       router.push("/dashboard");
     } else {
+      setCurrentStep("details");
       form.setError("email", { type: "manual", message: "This email is already in use by an existing user." });
     }
   }
@@ -169,16 +246,40 @@ export function SignUpForm() {
   const isAadharValid = aadharValue && /^\d{12}$/.test(aadharValue) && form.getFieldState('aadhar').isDirty && !form.getFieldState('aadhar').invalid;
   const isOtpValid = form.watch('otp') && /^\d{6}$/.test(form.watch('otp')!);
 
-  const renderInstallerForm = () => {
-    if (verificationStep !== 'verified') {
+  const renderRoleStep = () => (
+      <div className="space-y-4">
+        <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+            <FormItem>
+                <FormLabel>I am a...</FormLabel>
+                <Select onValueChange={(value) => field.onChange(value)} defaultValue={field.value}>
+                    <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Select your role" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        <SelectItem value="Job Giver">Job Giver (I want to hire)</SelectItem>
+                        <SelectItem value="Installer">Installer (I want to work)</SelectItem>
+                        <SelectItem value="Both (Job Giver & Installer)">Both (Hire and Work)</SelectItem>
+                    </SelectContent>
+                </Select>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
+        <Button onClick={() => setCurrentStep(role === 'Job Giver' ? 'photo' : 'verification')} className="w-full" disabled={!role}>Next</Button>
+    </div>
+  );
+
+  const renderVerificationStep = () => {
+    if (verificationSubStep !== 'verified') {
         return (
-            <div className="space-y-4 rounded-lg border p-4">
-                 <FormLabel className="text-base font-semibold">
-                    Step 1: Aadhar Verification
-                </FormLabel>
-                <FormDescription>
-                    To ensure a trustworthy platform for everyone, installers are required to complete KYC verification.
-                </FormDescription>
+            <div className="space-y-4">
+                 <h3 className="font-semibold">Step 1: Aadhar Verification</h3>
+                <p className="text-sm text-muted-foreground">
+                    To ensure a trustworthy platform, installers are required to complete KYC verification.
+                </p>
 
                 {error && (
                 <Alert variant="destructive">
@@ -199,10 +300,10 @@ export function SignUpForm() {
                                         placeholder="XXXX XXXX XXXX" 
                                         {...field} 
                                         maxLength={12}
-                                        disabled={verificationStep !== 'enterAadhar'}
+                                        disabled={verificationSubStep !== 'enterAadhar'}
                                     />
                                 </FormControl>
-                                {verificationStep === 'enterAadhar' && (
+                                {verificationSubStep === 'enterAadhar' && (
                                     <Button 
                                         type="button" 
                                         onClick={handleInitiateVerification}
@@ -218,7 +319,7 @@ export function SignUpForm() {
                     )}
                 />
 
-                {verificationStep === "enterOtp" && (
+                {verificationSubStep === "enterOtp" && (
                     <FormField
                         control={form.control}
                         name="otp"
@@ -248,91 +349,78 @@ export function SignUpForm() {
                         )}
                     />
                 )}
+                 <Button variant="outline" onClick={() => setCurrentStep('role')} className="w-full">Back</Button>
             </div>
         )
     }
-
-    return (
-        <>
-            <Alert variant="success" className="mb-4">
-                <ShieldCheck className="h-4 w-4" />
-                <AlertTitle>Aadhar Verified Successfully!</AlertTitle>
-                <AlertDescription>
-                    Please complete your profile. The details from your Aadhar have been pre-filled but can be edited if needed.
-                </AlertDescription>
-            </Alert>
-             <FormLabel className="text-base font-semibold">
-                Step 2: Complete Your Profile
-            </FormLabel>
-            <div className="space-y-4 pt-4">
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Full Name (as per Aadhar)</FormLabel>
-                        <FormControl>
-                            <Input placeholder="John Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                            <Input placeholder="name@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="mobile"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Mobile Number</FormLabel>
-                        <FormControl>
-                            <Input placeholder="10-digit mobile number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <LocationInput
-                        name="pincode"
-                        label="Residential Pincode"
-                        placeholder="e.g. 110001"
-                        control={form.control}
-                    />
-                    <Button type="submit" className="w-full">
-                        Create Account
-                    </Button>
-            </div>
-        </>
-    )
+    return null;
   }
+  
+  const renderPhotoStep = () => (
+    <div className="space-y-4">
+        <h3 className="font-semibold">{role === 'Job Giver' ? 'Step 2: Add a Profile Photo' : 'Step 2: Add a Profile Photo'}</h3>
+        <p className="text-sm text-muted-foreground">A real photo increases trust and helps you get hired.</p>
+        
+        <div className="flex items-center justify-center w-full aspect-video bg-muted rounded-lg overflow-hidden relative">
+            {photo ? (
+                <Image src={photo} alt="Profile preview" layout="fill" objectFit="cover" />
+            ) : isMobile ? (
+                <>
+                <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                {!hasCameraPermission && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white p-4">
+                        <Camera className="h-10 w-10 mb-4" />
+                        <p className="text-center">Camera access is required to take a photo.</p>
+                    </div>
+                )}
+                </>
+            ) : (
+                 <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                    <Upload className="h-10 w-10" />
+                    <p>Upload a photo of yourself</p>
+                 </div>
+            )}
+        </div>
+        
+        <div className="flex gap-2">
+            {isMobile ? (
+                 <>
+                    {photo ? (
+                        <Button variant="outline" onClick={() => { setPhoto(null); startCamera(); }} className="w-full">Retake Photo</Button>
+                    ) : (
+                        <Button onClick={handleCapture} disabled={!hasCameraPermission} className="w-full">
+                            <Camera className="mr-2 h-4 w-4" />
+                            Capture
+                        </Button>
+                    )}
+                 </>
+            ) : (
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
+                    <Upload className="mr-2 h-4 w-4" />
+                    {photo ? 'Change Photo' : 'Upload Photo'}
+                </Button>
+            )}
+        </div>
 
-  const renderJobGiverForm = () => (
+        <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setCurrentStep(role === 'Job Giver' ? 'role' : 'verification')} className="w-full">Back</Button>
+            <Button onClick={() => setCurrentStep("details")} className="w-full" disabled={!photo}>Next</Button>
+        </div>
+         <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+         <canvas ref={canvasRef} className="hidden"></canvas>
+    </div>
+  );
+
+  const renderDetailsStep = () => (
       <div className="space-y-4">
+        <h3 className="font-semibold">{role === 'Job Giver' ? 'Step 3: Your Details' : 'Step 3: Your Details'}</h3>
+        {verificationSubStep === 'verified' && (
+             <Alert variant="success">
+                <ShieldCheck className="h-4 w-4" />
+                <AlertTitle>Aadhar Verified!</AlertTitle>
+                <AlertDescription>Your details have been pre-filled.</AlertDescription>
+            </Alert>
+        )}
         <FormField
           control={form.control}
           name="name"
@@ -391,9 +479,12 @@ export function SignUpForm() {
             placeholder="e.g. 110001"
             control={form.control}
         />
-        <Button type="submit" className="w-full">
-          Create Account
-        </Button>
+        <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setCurrentStep('photo')} className="w-full">Back</Button>
+            <Button type="submit" className="w-full">
+              Create Account
+            </Button>
+        </div>
       </div>
   )
 
@@ -401,37 +492,10 @@ export function SignUpForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-            <FormItem>
-                <FormLabel>I am a...</FormLabel>
-                <Select
-                onValueChange={(value) => {
-                    field.onChange(value);
-                }}
-                defaultValue={field.value}
-                >
-                <FormControl>
-                    <SelectTrigger>
-                    <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                    <SelectItem value="Job Giver">Job Giver (I want to hire)</SelectItem>
-                    <SelectItem value="Installer">Installer (I want to work)</SelectItem>
-                    <SelectItem value="Both (Job Giver & Installer)">Both (Hire and Work)</SelectItem>
-                </SelectContent>
-                </Select>
-                <FormMessage />
-            </FormItem>
-            )}
-        />
-        
-        {(role === "Installer" || role === "Both (Job Giver & Installer)") && renderInstallerForm()}
-        {role === "Job Giver" && renderJobGiverForm()}
-
+        {currentStep === "role" && renderRoleStep()}
+        {currentStep === "verification" && renderVerificationStep()}
+        {currentStep === "photo" && renderPhotoStep()}
+        {currentStep === "details" && renderDetailsStep()}
       </form>
     </Form>
   );
