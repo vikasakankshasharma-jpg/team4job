@@ -54,7 +54,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose
+  DialogClose,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
@@ -75,7 +76,6 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
       toast({
         title: "Job Completed!",
         description: "Congratulations! The job has been marked as complete.",
-        variant: "success",
       });
     } else {
       toast({
@@ -343,7 +343,6 @@ function JobGiverBidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (upd
         toast({
             title: "Job Awarded!",
             description: `You have awarded the job to ${installer.name}.`,
-            variant: "success",
         });
     };
 
@@ -561,6 +560,55 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
     );
 }
 
+function EditDateDialog({ job, onJobUpdate, triggerElement }: { job: Job; onJobUpdate: (updatedPart: Partial<Job>) => void; triggerElement: React.ReactNode }) {
+    const { toast } = useToast();
+    const [newDate, setNewDate] = React.useState<string>(job.jobStartDate ? format(toDate(job.jobStartDate), "yyyy-MM-dd") : "");
+    const [isOpen, setIsOpen] = React.useState(false);
+
+    const handleSave = () => {
+        if (newDate) {
+            onJobUpdate({ jobStartDate: new Date(newDate) });
+            toast({
+                title: "Date Updated",
+                description: `Job start date has been changed to ${format(new Date(newDate), "MMM d, yyyy")}.`,
+            });
+            setIsOpen(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>{triggerElement}</DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Change Job Start Date</DialogTitle>
+                    <DialogDescription>
+                        Select a new start date for this job. The installer will be notified.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="job-start-date">New Start Date</Label>
+                        <Input
+                            id="job-start-date"
+                            type="date"
+                            value={newDate}
+                            onChange={(e) => setNewDate(e.target.value)}
+                            min={format(new Date(), "yyyy-MM-dd")}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleSave} disabled={!newDate}>Save Changes</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export default function JobDetailPage() {
   const { user, role } = useUser();
   const params = useParams();
@@ -576,15 +624,18 @@ export default function JobDetailPage() {
   
   const [deadlineRelative, setDeadlineRelative] = React.useState('');
   const [deadlineAbsolute, setDeadlineAbsolute] = React.useState('');
-  const [jobStartDate, setJobStartDate] = React.useState('');
+
+  const jobStartDate = React.useMemo(() => {
+    if (job?.jobStartDate) {
+      return format(toDate(job.jobStartDate), "MMM d, yyyy");
+    }
+    return 'Not set';
+  }, [job?.jobStartDate]);
 
   React.useEffect(() => {
     if (job) {
         setDeadlineRelative(formatDistanceToNow(toDate(job.deadline), { addSuffix: true }));
         setDeadlineAbsolute(format(toDate(job.deadline), "MMM d, yyyy"));
-        if(job.jobStartDate){
-            setJobStartDate(format(toDate(job.jobStartDate), "MMM d, yyyy"));
-        }
     }
   }, [job]);
 
@@ -789,10 +840,23 @@ export default function JobDetailPage() {
             </div>
              <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5" />
-              <div>
-                <p className="text-muted-foreground">Work Starts</p>
-                <p className="font-semibold">{jobStartDate}</p>
-              </div>
+               {role === 'Admin' ? (
+                   <EditDateDialog
+                      job={job}
+                      onJobUpdate={handleJobUpdate}
+                      triggerElement={
+                          <div className="cursor-pointer">
+                              <p className="text-muted-foreground">Work Starts</p>
+                              <p className="font-semibold">{jobStartDate}</p>
+                          </div>
+                      }
+                  />
+              ) : (
+                  <div>
+                      <p className="text-muted-foreground">Work Starts</p>
+                      <p className="font-semibold">{jobStartDate}</p>
+                  </div>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5" />
