@@ -51,6 +51,7 @@ export type Job = {
   description: string;
   jobGiver: User;
   location: string; // Pincode
+  fullAddress?: string;
   budget: {
     min: number;
     max: number;
