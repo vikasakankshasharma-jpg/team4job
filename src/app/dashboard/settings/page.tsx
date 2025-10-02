@@ -42,7 +42,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { Gem, Medal, Percent, ShieldCheck, IndianRupee } from "lucide-react"
+import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift } from "lucide-react"
 
 function ThemeSelector() {
     const { theme, setTheme } = useTheme()
@@ -262,6 +262,35 @@ function UserReputationSettings() {
                 <CardDescription>Define the rules for the installer reputation system, including points and tier thresholds.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+                 <div className="space-y-4 rounded-lg border p-4">
+                    <h3 className="font-semibold flex items-center gap-2"><Gift className="h-4 w-4" /> New User Onboarding</h3>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                             <Label htmlFor="free-bids">Free Bids for New Installers</Label>
+                             <Input
+                                id="free-bids"
+                                type="number"
+                                defaultValue="10"
+                                min="0"
+                            />
+                             <p className="text-xs text-muted-foreground">
+                               Number of free bids a new installer gets upon signing up.
+                            </p>
+                        </div>
+                         <div className="space-y-2">
+                             <Label htmlFor="free-jobs">Free Posts for New Job Givers</Label>
+                             <Input
+                                id="free-jobs"
+                                type="number"
+                                defaultValue="10"
+                                min="0"
+                            />
+                              <p className="text-xs text-muted-foreground">
+                               Number of free job posts a new job giver gets.
+                            </p>
+                        </div>
+                     </div>
+                </div>
                 <div className="space-y-4 rounded-lg border p-4">
                     <h3 className="font-semibold">Reputation Point System</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
