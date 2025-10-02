@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -194,7 +195,7 @@ export default function UserProfilePage() {
     notFound();
   }
 
-  const { name, email, anonymousId, memberSince, realAvatarUrl, pincodes, roles } = profileUser;
+  const { name, email, id: userId, memberSince, realAvatarUrl, pincodes, roles } = profileUser;
   const installerProfile = profileUser.installerProfile;
   const isInstaller = roles.includes('Installer');
   
@@ -227,7 +228,7 @@ export default function UserProfilePage() {
                  </div>
               </div>
                <div className="flex flex-col mt-1">
-                <p className="text-muted-foreground">{anonymousId}</p>
+                <p className="text-muted-foreground">{userId}</p>
               </div>
 
                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mt-2">
