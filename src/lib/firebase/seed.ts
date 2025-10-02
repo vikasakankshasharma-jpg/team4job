@@ -35,13 +35,20 @@ async function seedDatabase() {
     console.log('Preparing to seed users...');
     mockUsers.forEach((user: Omit<User, 'memberSince'> & { memberSince: Date | string }) => {
       const userRef = db.collection('users').doc(user.id);
-      const userData = {
+      
+      const userData: any = {
         ...user,
         memberSince: Timestamp.fromDate(new Date(user.memberSince)),
       };
+      
+      if (userData.installerProfile && userData.installerProfile.reputationHistory) {
+        userData.installerProfile.reputationHistory = userData.installerProfile.reputationHistory;
+      }
+      
       if (userData.installerProfile?.aadharData) {
         delete userData.installerProfile.aadharData;
       }
+      
       batch.set(userRef, userData);
     });
     console.log(`${mockUsers.length} users prepared for batch write.`);
