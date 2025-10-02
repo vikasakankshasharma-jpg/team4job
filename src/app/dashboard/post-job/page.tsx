@@ -33,6 +33,7 @@ import { useRouter } from "next/navigation";
 import { LocationInput } from "@/components/ui/location-input";
 import { Separator } from "@/components/ui/separator";
 import { JobAttachment } from "@/lib/types";
+import { MapInput } from "@/components/ui/map-input";
 
 const jobSchema = z.object({
   jobTitle: z
@@ -325,20 +326,11 @@ export default function PostJobPage() {
                     placeholder="e.g. 110001"
                     control={form.control}
                  />
-                 <FormField
-                    control={form.control}
+                 <MapInput
                     name="fullAddress"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Full Address</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="Enter the full street address for the job location..." {...field} />
-                        </FormControl>
-                        <FormDescription>This will only be visible to you and the awarded installer.</FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+                    label="Full Address & Map Location"
+                    control={form.control}
+                  />
                  <FormField
                     control={form.control}
                     name="deadline"
