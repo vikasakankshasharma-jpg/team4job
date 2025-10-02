@@ -21,10 +21,12 @@ import { JobCard } from "@/components/job-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
-import { users as allMockUsers, jobs as allMockJobs } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { collection, doc, getDoc, getDocs, query, where, DocumentReference } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
+
 
 const tierIcons = {
   Bronze: <Medal className="h-6 w-6 text-yellow-700" />,
@@ -118,24 +120,69 @@ export default function UserProfilePage() {
 
   React.useEffect(() => {
     if (id) {
-        const user = allMockUsers.find(u => u.id === id);
-        setProfileUser(user || null);
-        setLoading(false);
+        const fetchUser = async () => {
+            const userDocRef = doc(db, 'users', id);
+            const userSnap = await getDoc(userDocRef);
+            if (userSnap.exists()) {
+                const userData = userSnap.data();
+                setProfileUser({
+                    id: userSnap.id,
+                    ...userData,
+                    memberSince: toDate(userData.memberSince),
+                } as User);
+            } else {
+                setProfileUser(null);
+            }
+            setLoading(false);
+        };
+        fetchUser();
     }
   }, [id]);
 
   React.useEffect(() => {
     if (profileUser) {
-        if (profileUser.roles.includes('Job Giver')) {
-            const postedJobs = allMockJobs.filter(job => (job.jobGiver as User).id === profileUser.id);
-            setUserPostedJobs(postedJobs);
-        }
+        const fetchUserJobs = async () => {
+            if (profileUser.roles.includes('Job Giver')) {
+                const userRef = doc(db, 'users', profileUser.id);
+                const q = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
+                const querySnapshot = await getDocs(q);
+                const postedJobs = await Promise.all(querySnapshot.docs.map(async (doc) => {
+                    const jobData = doc.data();
+                    const jobGiverSnap = await getDoc(jobData.jobGiver);
 
-        if (profileUser.roles.includes('Installer')) {
-            const awardedId = profileUser.id;
-            const completedJobs = allMockJobs.filter(job => job.status === 'Completed' && ((job.awardedInstaller as User)?.id === awardedId || job.awardedInstaller === awardedId));
-            setUserCompletedJobs(completedJobs);
-        }
+                    return {
+                        id: doc.id,
+                        ...jobData,
+                        jobGiver: { id: jobGiverSnap.id, ...jobGiverSnap.data() },
+                        postedAt: toDate(jobData.postedAt),
+                        deadline: toDate(jobData.deadline),
+                        jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
+                    } as Job;
+                }));
+                setUserPostedJobs(postedJobs);
+            }
+
+            if (profileUser.roles.includes('Installer')) {
+                const awardedInstallerRef = doc(db, 'users', profileUser.id);
+                const q = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', awardedInstallerRef));
+                const querySnapshot = await getDocs(q);
+                const completedJobs = await Promise.all(querySnapshot.docs.map(async (doc) => {
+                     const jobData = doc.data();
+                    const jobGiverSnap = await getDoc(jobData.jobGiver);
+                     return {
+                        id: doc.id,
+                        ...jobData,
+                        jobGiver: { id: jobGiverSnap.id, ...jobGiverSnap.data() },
+                        postedAt: toDate(jobData.postedAt),
+                        deadline: toDate(jobData.deadline),
+                        jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
+                    } as Job;
+                }));
+                setUserCompletedJobs(completedJobs);
+            }
+        };
+
+        fetchUserJobs();
     }
   }, [profileUser]);
 

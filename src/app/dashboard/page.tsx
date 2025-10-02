@@ -24,7 +24,8 @@ import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
 import { Job, User } from "@/lib/types";
-import { jobs as allMockJobs, users as allMockUsers } from "@/lib/data";
+import { collection, getDocs, query, where, DocumentReference, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 
 function InstallerDashboard() {
   const { user } = useUser();
@@ -33,26 +34,34 @@ function InstallerDashboard() {
 
   React.useEffect(() => {
     if (!user) return;
-    
-    const openJobs = allMockJobs.filter(j => j.status === 'Open for Bidding').length;
-    
-    let myBidsCount = 0;
-    let jobsWonCount = 0;
 
-    allMockJobs.forEach(job => {
-        const userHasBid = job.bids.some(bid => (bid.installer as User).id === user.id);
-        const awardedId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User)?.id;
-        const userIsAwarded = awardedId === user.id;
+    const fetchStats = async () => {
+      const jobsCollection = collection(db, 'jobs');
+      const jobsSnapshot = await getDocs(jobsCollection);
+      const allJobs = jobsSnapshot.docs.map(d => ({id: d.id, ...d.data()}) as Job);
+      
+      const openJobs = allJobs.filter(j => j.status === 'Open for Bidding').length;
+      
+      let myBidsCount = 0;
+      let jobsWonCount = 0;
 
-        if (userHasBid || userIsAwarded) {
-            myBidsCount++;
-        }
-        if (userIsAwarded && (job.status === 'Awarded' || job.status === 'In Progress')) {
-            jobsWonCount++;
-        }
-    });
+      allJobs.forEach(job => {
+          const userHasBid = job.bids.some(bid => (bid.installer as DocumentReference).id === user.id);
+          const awardedId = (job.awardedInstaller as DocumentReference)?.id;
+          const userIsAwarded = awardedId === user.id;
 
-    setStats({ openJobs, myBids: myBidsCount, jobsWon: jobsWonCount });
+          if (userHasBid || userIsAwarded) {
+              myBidsCount++;
+          }
+          if (userIsAwarded && (job.status === 'Awarded' || job.status === 'In Progress')) {
+              jobsWonCount++;
+          }
+      });
+
+      setStats({ openJobs, myBids: myBidsCount, jobsWon: jobsWonCount });
+    };
+
+    fetchStats();
   }, [user]);
 
   React.useEffect(() => {
@@ -159,22 +168,29 @@ function JobGiverDashboard() {
   React.useEffect(() => {
     if (!user) return;
     
-    let active = 0;
-    let completed = 0;
-    let bids = 0;
+    const fetchStats = async () => {
+      const userRef = doc(db, 'users', user.id);
+      const jobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
+      const jobsSnapshot = await getDocs(jobsQuery);
+      
+      let active = 0;
+      let completed = 0;
+      let bids = 0;
 
-    allMockJobs.forEach(job => {
-        if ((job.jobGiver as User).id === user.id) {
-            if (job.status !== 'Completed' && job.status !== 'Cancelled') {
-                active++;
-            } else {
-                completed++;
-            }
-            bids += job.bids.length;
+      jobsSnapshot.forEach(jobDoc => {
+        const job = jobDoc.data() as Job;
+        if (job.status !== 'Completed' && job.status !== 'Cancelled') {
+            active++;
+        } else if (job.status === 'Completed') {
+            completed++;
         }
-    });
+        bids += job.bids?.length || 0;
+      });
 
-    setStats({ activeJobs: active, completedJobs: completed, totalBids: bids });
+      setStats({ activeJobs: active, completedJobs: completed, totalBids: bids });
+    };
+
+    fetchStats();
   }, [user]);
 
   React.useEffect(() => {
@@ -277,23 +293,31 @@ function AdminDashboard() {
   const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, totalBids: 0, completedJobValue: 0 });
 
   React.useEffect(() => {
-    const totalUsers = allMockUsers.length;
-    const totalJobs = allMockJobs.length;
-    let totalBids = 0;
-    let completedValue = 0;
+    const fetchStats = async () => {
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const jobsSnapshot = await getDocs(collection(db, 'jobs'));
 
-    allMockJobs.forEach(job => {
-        totalBids += job.bids?.length || 0;
-        if (job.status === 'Completed' && job.awardedInstaller) {
-            const awardedId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User).id;
-            const winningBid = job.bids.find(bid => (bid.installer as User).id === awardedId);
-            if (winningBid) {
-                completedValue += winningBid.amount;
+        const totalUsers = usersSnapshot.size;
+        const totalJobs = jobsSnapshot.size;
+        let totalBids = 0;
+        let completedValue = 0;
+
+        jobsSnapshot.forEach(jobDoc => {
+            const job = jobDoc.data() as Job;
+            totalBids += job.bids?.length || 0;
+            if (job.status === 'Completed' && job.awardedInstaller) {
+                const awardedId = (job.awardedInstaller as DocumentReference).id;
+                const winningBid = job.bids.find(bid => (bid.installer as DocumentReference).id === awardedId);
+                if (winningBid) {
+                    completedValue += winningBid.amount;
+                }
             }
-        }
-    });
+        });
 
-    setStats({ totalUsers, totalJobs, totalBids, completedJobValue: completedValue });
+        setStats({ totalUsers, totalJobs, totalBids, completedJobValue: completedValue });
+    };
+
+    fetchStats();
   }, []);
 
   React.useEffect(() => {

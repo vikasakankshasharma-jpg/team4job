@@ -1,5 +1,7 @@
 
 
+import { DocumentReference, Timestamp } from "firebase/firestore";
+
 export type User = {
   id: string;
   name: string;
@@ -13,7 +15,7 @@ export type User = {
     office?: string;
   };
   roles: ('Job Giver' | 'Installer' | 'Admin')[];
-  memberSince: Date;
+  memberSince: Date | Timestamp;
   installerProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;
@@ -32,16 +34,16 @@ export type User = {
 
 export type Comment = {
   id: string;
-  author: User;
-  timestamp: Date;
+  author: User | DocumentReference;
+  timestamp: Date | Timestamp;
   content: string;
 };
 
 export type Bid = {
   id:string;
-  installer: User;
+  installer: User | DocumentReference;
   amount: number;
-  timestamp: Date;
+  timestamp: Date | Timestamp;
   coverLetter?: string;
 };
 
@@ -49,7 +51,7 @@ export type Job = {
   id: string;
   title: string;
   description: string;
-  jobGiver: User;
+  jobGiver: User | DocumentReference;
   location: string; // Pincode
   fullAddress?: string;
   budget: {
@@ -57,13 +59,15 @@ export type Job = {
     max: number;
   };
   status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid';
-  deadline: Date;
-  jobStartDate?: Date;
-  postedAt: Date;
+  deadline: Date | Timestamp;
+  jobStartDate?: Date | Timestamp;
+  postedAt: Date | Timestamp;
   bids: Bid[];
   comments: Comment[];
   selectedInstallers?: { installerId: string, rank: number }[];
-  awardedInstaller?: User['id'] | User;
+  awardedInstaller?: User['id'] | User | DocumentReference;
   rating?: number;
   completionOtp?: string;
 };
+
+    

@@ -44,7 +44,6 @@ import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bid, Job, Comment, User } from "@/lib/types";
-import { jobs, users } from "@/lib/data";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import {
@@ -59,6 +58,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, DocumentReference } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 
 
 function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
@@ -71,6 +72,10 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
         status: 'Completed' as const,
         rating: 5, // Default rating, can be changed by job giver
       };
+      
+      const jobRef = doc(db, "jobs", job.id);
+      await updateDoc(jobRef, updatedData);
+
       onJobUpdate(updatedData);
       
       toast({
@@ -167,15 +172,25 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
       toast({ title: "Missing Information", description: "Please provide both a bid amount and a proposal.", variant: "destructive" });
       return;
     }
-    const newBid: Bid = {
-      id: `bid-${job.id}-${user.id}`,
-      installer: user,
+    const newBid: Omit<Bid, 'id' | 'installer'> & { installer: DocumentReference } = {
       amount: Number(bidAmount),
       timestamp: new Date(),
-      coverLetter: bidProposal
+      coverLetter: bidProposal,
+      installer: doc(db, 'users', user.id)
+    };
+    
+    const jobRef = doc(db, "jobs", job.id);
+    await updateDoc(jobRef, {
+        bids: arrayUnion(newBid)
+    });
+
+    const fullNewBid: Bid = {
+        ...newBid,
+        id: `bid-${job.id}-${user.id}`, // Mock id
+        installer: user, // Add full user object for UI update
     };
 
-    onJobUpdate({ bids: [...job.bids, newBid] });
+    onJobUpdate({ bids: [...job.bids, fullNewBid] });
 
     toast({ title: "Bid Placed!", description: "Your bid has been submitted successfully." });
   };
@@ -260,7 +275,8 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
     const { role } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
-    const isAwardedToThisBidder = job.awardedInstaller === installer.id;
+    const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+    const isAwardedToThisBidder = awardedInstallerId === installer.id;
     const isJobAwarded = !!job.awardedInstaller;
 
     React.useEffect(() => {
@@ -337,9 +353,13 @@ function BidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob:
     
     const handleSelectInstaller = async (installerId: string) => {
         const newSelected = [...selectedInstallers, installerId];
+        const newSelectedWithRank = newSelected.map((id, index) => ({ installerId: id, rank: index + 1 }));
+
+        const jobRef = doc(db, "jobs", job.id);
+        await updateDoc(jobRef, { selectedInstallers: newSelectedWithRank });
+
         setSelectedInstallers(newSelected);
-        
-        onJobUpdate({ selectedInstallers: newSelected.map((id, index) => ({ installerId: id, rank: index + 1 })) });
+        onJobUpdate({ selectedInstallers: newSelectedWithRank });
         
         toast({
             title: "Installer Selected",
@@ -351,7 +371,13 @@ function BidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob:
         const installer = job.bids.find(b => (b.installer as User).id === installerId)?.installer as User;
         if (!installer) return;
 
-        onJobUpdate({ awardedInstaller: installerId, status: 'Awarded' });
+        const jobRef = doc(db, "jobs", job.id);
+        await updateDoc(jobRef, {
+            awardedInstaller: doc(db, 'users', installerId),
+            status: 'Awarded'
+        });
+
+        onJobUpdate({ awardedInstaller: doc(db, 'users', installerId), status: 'Awarded' });
 
         toast({
             title: "Job Awarded!",
@@ -392,7 +418,7 @@ function BidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob:
       <CardContent className="space-y-4">
         {sortedBids.map(({ bid }, index) => (
           <JobGiverBid 
-            key={bid.id} 
+            key={(bid.installer as User).id}
             bid={bid} 
             job={job} 
             onSelectInstaller={handleSelectInstaller}
@@ -460,10 +486,12 @@ function ReputationImpactCard({ job }: { job: Job }) {
   if (job.status !== 'Completed' || !job.awardedInstaller || !job.rating) {
     return null;
   }
-
-  const installerId = (job.awardedInstaller as User)?.id || job.awardedInstaller;
-  const winningBid = job.bids.find(b => (b.installer as User).id === installerId);
+  
+  const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+  const winningBid = job.bids.find(b => ((b.installer as DocumentReference)?.id || (b.installer as User)?.id) === awardedInstallerId);
   const installer = winningBid?.installer as User;
+
+  if (!installer) return null;
 
   const ratingPoints = job.rating === 5 ? 20 : job.rating === 4 ? 10 : 0;
   const completionPoints = 50;
@@ -536,7 +564,7 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
                                     variant="ghost"
                                     size="icon"
                                     className="h-7 w-7"
-                                    onClick={() => handleEditComment(comment.id, comment.content)}
+                                    onClick={() => handleEditComment(comment, comment.content)}
                                 >
                                     <Pencil className="h-4 w-4 text-muted-foreground" />
                                     <span className="sr-only">Edit comment</span>
@@ -545,7 +573,7 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
                                     variant="ghost"
                                     size="icon"
                                     className="h-7 w-7"
-                                    onClick={() => handleDeleteComment(comment.id)}
+                                    onClick={() => handleDeleteComment(comment)}
                                 >
                                     <Trash2 className="h-4 w-4 text-muted-foreground" />
                                     <span className="sr-only">Delete comment</span>
@@ -564,7 +592,7 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
                         />
                         <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Cancel</Button>
-                            <Button size="sm" onClick={() => handleSaveEdit(comment.id)}>Save</Button>
+                            <Button size="sm" onClick={() => handleSaveEdit(comment)}>Save</Button>
                         </div>
                     </div>
                 )}
@@ -578,8 +606,10 @@ function EditDateDialog({ job, onJobUpdate, triggerElement }: { job: Job; onJobU
     const [newDate, setNewDate] = React.useState<string>(job.jobStartDate ? format(toDate(job.jobStartDate), "yyyy-MM-dd") : "");
     const [isOpen, setIsOpen] = React.useState(false);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (newDate) {
+            const jobRef = doc(db, "jobs", job.id);
+            await updateDoc(jobRef, { jobStartDate: new Date(newDate) });
             onJobUpdate({ jobStartDate: new Date(newDate) });
             toast({
                 title: "Date Updated",
@@ -628,8 +658,8 @@ export default function JobDetailPage() {
   const id = params.id as string;
   const { toast } = useToast();
   
-  const [allJobs, setAllJobs] = React.useState<Job[]>(jobs);
-  const job = allJobs.find(j => j.id === id);
+  const [job, setJob] = React.useState<Job | null>(null);
+  const [loading, setLoading] = React.useState(true);
 
   const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
   const [editingContent, setEditingContent] = React.useState("");
@@ -637,6 +667,64 @@ export default function JobDetailPage() {
   
   const [deadlineRelative, setDeadlineRelative] = React.useState('');
   const [deadlineAbsolute, setDeadlineAbsolute] = React.useState('');
+
+   React.useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+
+    const fetchJob = async () => {
+        const jobDocRef = doc(db, 'jobs', id);
+        const jobSnapshot = await getDoc(jobDocRef);
+
+        if (jobSnapshot.exists()) {
+            const jobData = jobSnapshot.data();
+
+            // Populate jobGiver
+            const jobGiverSnap = await getDoc(jobData.jobGiver);
+            const jobGiver = { id: jobGiverSnap.id, ...jobGiverSnap.data() } as User;
+
+            // Populate bids with installer data
+            const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => {
+                const installerSnap = await getDoc(bid.installer);
+                return {
+                    ...bid,
+                    id: `${id}-${installerSnap.id}`,
+                    installer: { id: installerSnap.id, ...installerSnap.data() },
+                    timestamp: toDate(bid.timestamp),
+                } as Bid;
+            }));
+
+            // Populate comments with author data
+            const comments = await Promise.all((jobData.comments || []).map(async (comment: any) => {
+                const authorSnap = await getDoc(comment.author);
+                return {
+                    ...comment,
+                    id: comment.id || `${id}-comment-${Math.random()}`,
+                    author: { id: authorSnap.id, ...authorSnap.data() },
+                    timestamp: toDate(comment.timestamp),
+                } as Comment;
+            }));
+
+            const fullJobData = {
+                ...jobData,
+                id: jobSnapshot.id,
+                jobGiver,
+                bids,
+                comments,
+                postedAt: toDate(jobData.postedAt),
+                deadline: toDate(jobData.deadline),
+                jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
+            } as Job;
+
+            setJob(fullJobData);
+        } else {
+            setJob(null); // Triggers notFound()
+        }
+        setLoading(false);
+    };
+
+    fetchJob();
+}, [id]);
 
   const jobStartDate = React.useMemo(() => {
     if (job?.jobStartDate) {
@@ -654,18 +742,12 @@ export default function JobDetailPage() {
 
   const handleJobUpdate = (updatedPart: Partial<Job>) => {
     if (job) {
-      setAllJobs(currentJobs => currentJobs.map(j => j.id === job.id ? {...j, ...updatedPart} : j));
+      setJob(currentJob => currentJob ? {...currentJob, ...updatedPart} : null);
     }
   };
-
-  if (!job || !user) {
-    // In a real app with async data, show a skeleton
-    if(!job) notFound();
-    return <PageSkeleton />;
-  }
   
-  const handleEditComment = (commentId: string, content: string) => {
-    setEditingCommentId(commentId);
+  const handleEditComment = (comment: Comment, content: string) => {
+    setEditingCommentId(comment.id);
     setEditingContent(content);
   };
   
@@ -674,15 +756,33 @@ export default function JobDetailPage() {
     setEditingContent("");
   };
 
-  const updateComments = (updatedComments: Comment[]) => {
-    handleJobUpdate({ comments: updatedComments });
-  };
+  const handleSaveEdit = async (commentToUpdate: Comment) => {
+    if (!job) return;
+    
+    const jobRef = doc(db, "jobs", job.id);
+    
+    // Create a new comment object for the update
+    const updatedCommentObject = {
+      ...commentToUpdate,
+      content: editingContent,
+      timestamp: new Date(),
+      author: doc(db, 'users', (commentToUpdate.author as User).id)
+    };
 
-  const handleSaveEdit = (commentId: string) => {
-    const updatedComments = job.comments.map(c => 
-      c.id === commentId ? { ...c, content: editingContent, timestamp: new Date() } : c
+    // Filter out the old comment and add the updated one
+    const newCommentsForFirestore = job.comments
+        .filter(c => c.id !== commentToUpdate.id)
+        .map(c => ({...c, author: doc(db, 'users', (c.author as User).id)}))
+    
+    newCommentsForFirestore.push(updatedCommentObject);
+
+    await updateDoc(jobRef, { comments: newCommentsForFirestore });
+
+    const updatedCommentsForUI = job.comments.map(c => 
+      c.id === commentToUpdate.id ? { ...c, content: editingContent, timestamp: new Date() } : c
     );
-    updateComments(updatedComments);
+    handleJobUpdate({ comments: updatedCommentsForUI });
+    
     setEditingCommentId(null);
     setEditingContent("");
     toast({
@@ -691,9 +791,21 @@ export default function JobDetailPage() {
     });
   };
 
-  const handleDeleteComment = (commentId: string) => {
-    const updatedComments = job.comments.filter(c => c.id !== commentId);
-    updateComments(updatedComments);
+  const handleDeleteComment = async (commentToDelete: Comment) => {
+    if (!job) return;
+    const jobRef = doc(db, "jobs", job.id);
+    const commentObjectForFirestore = {
+      ...commentToDelete,
+      author: doc(db, 'users', (commentToDelete.author as User).id)
+    };
+
+    await updateDoc(jobRef, {
+      comments: arrayRemove(commentObjectForFirestore)
+    });
+    
+    const updatedComments = job.comments.filter(c => c.id !== commentToDelete.id);
+    handleJobUpdate({ comments: updatedComments });
+
     toast({
       title: "Comment Deleted",
       description: "Your comment has been successfully removed.",
@@ -702,14 +814,24 @@ export default function JobDetailPage() {
   
   const handlePostComment = async () => {
     if (!newComment.trim() || !user || !job) return;
-    const comment: Comment = {
-      id: `comment-${Date.now()}`,
-      author: user,
+    const newCommentObject: Omit<Comment, 'id' | 'author'> & {author: DocumentReference} = {
+      author: doc(db, 'users', user.id),
       timestamp: new Date(),
       content: newComment,
     };
     
-    handleJobUpdate({ comments: [...job.comments, comment] });
+    const jobRef = doc(db, "jobs", job.id);
+    await updateDoc(jobRef, {
+        comments: arrayUnion(newCommentObject)
+    });
+
+    const fullNewComment: Comment = {
+      ...newCommentObject,
+      id: `comment-${Date.now()}`,
+      author: user,
+    };
+    
+    handleJobUpdate({ comments: [...job.comments, fullNewComment] });
 
     setNewComment("");
      toast({
@@ -717,7 +839,17 @@ export default function JobDetailPage() {
     });
   };
 
-  const isAwardedInstaller = role === "Installer" && user.id === ((job.awardedInstaller as User)?.id || job.awardedInstaller);
+
+  if (loading) {
+    return <PageSkeleton />;
+  }
+
+  if (!job || !user) {
+    notFound();
+  }
+
+  const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+  const isAwardedInstaller = role === "Installer" && user.id === awardedInstallerId;
   const jobGiver = job.jobGiver as User;
 
   return (
@@ -752,12 +884,13 @@ export default function JobDetailPage() {
                 <div className="space-y-6">
                     {job.comments.map((comment) => {
                         const isEditing = editingCommentId === comment.id;
+                        const canEdit = user?.id === (comment.author as User).id
                         return (
                             <CommentDisplay
                                 key={comment.id}
                                 comment={comment}
                                 isEditing={isEditing}
-                                canEdit={user?.id === (comment.author as User).id}
+                                canEdit={canEdit}
                                 handleEditComment={handleEditComment}
                                 handleDeleteComment={handleDeleteComment}
                                 handleCancelEdit={handleCancelEdit}
@@ -902,9 +1035,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
-
-    
 
     

@@ -44,7 +44,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Job, User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { jobs as allMockJobs } from "@/lib/data";
+import { collection, query, where, getDocs, DocumentReference } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
+
 
 const tierIcons = {
   Bronze: <Medal className="h-6 w-6 text-yellow-700" />,
@@ -246,12 +248,22 @@ export default function ProfilePage() {
     if (role !== 'Installer' || !user) {
       return;
     }
-    
-    const completedJobs = allMockJobs.filter(job => 
-        job.status === 'Completed' && 
-        ((job.awardedInstaller as User)?.id === user.id || job.awardedInstaller === user.id)
-    );
-    setJobsCompletedCount(completedJobs.length);
+
+    const fetchCompletedJobs = async () => {
+        const jobsRef = collection(db, 'jobs');
+        const awardedInstallerRef = user.id;
+
+        const q = query(
+            jobsRef,
+            where('status', '==', 'Completed'),
+            where('awardedInstaller', '==', awardedInstallerRef)
+        );
+
+        const querySnapshot = await getDocs(q);
+        setJobsCompletedCount(querySnapshot.size);
+    };
+
+    fetchCompletedJobs();
   }, [user, role]);
   
   if (!user) {
@@ -538,3 +550,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
