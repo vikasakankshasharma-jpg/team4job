@@ -267,9 +267,27 @@
         "authorId": { "type": "string" },
         "authorRole": { "type": "string", "enum": ["Job Giver", "Installer", "Admin"] },
         "content": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "timestamp": { "type": "string", "format": "date-time" },
+        "attachments": {
+            "type": "array",
+            "items": {
+                "$ref": "#/entities/DisputeAttachment"
+            },
+            "description": "A list of files attached to the message."
+        }
       },
       "required": ["authorId", "authorRole", "content", "timestamp"]
+    },
+    "DisputeAttachment": {
+        "title": "Dispute Attachment",
+        "description": "Represents a file attached to a dispute message.",
+        "type": "object",
+        "properties": {
+            "fileName": { "type": "string" },
+            "fileUrl": { "type": "string", "format": "uri" },
+            "fileType": { "type": "string" }
+        },
+        "required": ["fileName", "fileUrl", "fileType"]
     }
   },
   "auth": {
@@ -296,3 +314,5 @@
     }
   }
 }
+
+    

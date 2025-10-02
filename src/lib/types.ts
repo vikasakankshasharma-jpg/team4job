@@ -68,11 +68,18 @@ export type Job = {
   disputeId?: string;
 };
 
+export type DisputeAttachment = {
+  fileName: string;
+  fileUrl: string; // This would be a Firebase Storage URL in a real app
+  fileType: string;
+};
+
 export type DisputeMessage = {
   authorId: string;
   authorRole: Role;
   content: string;
   timestamp: Date | Timestamp;
+  attachments?: DisputeAttachment[];
 }
 
 export type Dispute = {
@@ -92,4 +99,6 @@ export type Dispute = {
 };
 
 export type Role = "Job Giver" | "Installer" | "Admin";
+    
+
     
