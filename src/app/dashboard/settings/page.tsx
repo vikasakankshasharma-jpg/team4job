@@ -80,6 +80,9 @@ function ThemeSelector() {
 
 function PersonalSettingsCard() {
     const { toast } = useToast()
+    const [deleteConfirmation, setDeleteConfirmation] = React.useState("")
+    const isDeleteDisabled = deleteConfirmation !== "Delete"
+    
     return (
         <div className="space-y-6">
             <Card>
@@ -149,14 +152,24 @@ function PersonalSettingsCard() {
                                 <AlertDialogHeader>
                                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete your
-                                    account and remove your data from our servers.
+                                    This action cannot be undone. To confirm, please type{" "}
+                                    <span className="font-semibold text-foreground">Delete</span> in the box below.
                                 </AlertDialogDescription>
                                 </AlertDialogHeader>
+                                <div className="py-2">
+                                    <Input 
+                                        id="delete-confirm"
+                                        placeholder="Type 'Delete' to confirm"
+                                        value={deleteConfirmation}
+                                        onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                    />
+                                </div>
                                 <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel onClick={() => setDeleteConfirmation("")}>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
+                                    disabled={isDeleteDisabled}
                                     onClick={() => {
+                                        if (isDeleteDisabled) return;
                                         toast({
                                             title: "Account Deletion Requested",
                                             description: "Your account is scheduled for deletion. This is a simulated action.",
