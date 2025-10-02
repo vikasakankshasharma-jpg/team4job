@@ -68,7 +68,7 @@ export default function AllJobsPage() {
     let filtered = jobs;
 
     if (filters.jobId) {
-        filtered = filtered.filter(job => job.id.toLowerCase().includes(filters.jobId.toLowerCase()));
+        filtered = filtered.filter(job => job.id.toLowerCase().includes(filters.jobId.toLowerCase().replace(/\s/g, '-')));
     }
     if (filters.pincode) {
         filtered = filtered.filter(job => job.location.toLowerCase().includes(filters.pincode.toLowerCase()));

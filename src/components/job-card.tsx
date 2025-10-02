@@ -49,6 +49,8 @@ export function JobCard({ job }: JobCardProps) {
         return 'View Job Details';
       case 'Completed':
         return 'View Archived Job';
+      case 'Unbid':
+        return 'View Job';
       default:
         return 'View Job';
     }
@@ -105,7 +107,7 @@ export function JobCard({ job }: JobCardProps) {
         </div>
       </CardContent>
       <CardFooter className="flex flex-col items-center gap-2">
-        <Button asChild className="w-full" variant={job.status === 'Completed' ? "outline" : buttonVariant}>
+        <Button asChild className="w-full" variant={job.status === 'Completed' || job.status === 'Unbid' ? "outline" : buttonVariant}>
           <Link href={`/dashboard/jobs/${job.id}`}>{buttonText}</Link>
         </Button>
       </CardFooter>
