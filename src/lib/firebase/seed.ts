@@ -1,28 +1,24 @@
 
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { jobs as mockJobs } from '../data';
-import { users as mockUsers } from '../data';
+import { config } from 'dotenv';
+import { jobs as mockJobs, users as mockUsers } from '../data';
 import type { Job, User } from '../types';
-import * as fs from 'fs';
-import * as path from 'path';
+
+// Load environment variables from .env file
+config();
 
 async function seedDatabase() {
   try {
     console.log('Initializing Firebase Admin SDK...');
     
-    const serviceAccountPath = path.resolve(process.cwd(), 'src/lib/firebase/service-account.json');
-    
-    if (!fs.existsSync(serviceAccountPath)) {
-        throw new Error("service-account.json not found at 'src/lib/firebase/service-account.json'. Please ensure the file exists and contains your Firebase service account credentials.");
-    }
-    
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-    // This is the critical fix: programmatically replace escaped newlines with literal newlines.
-    if (serviceAccount.private_key) {
-      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    if (!serviceAccountString) {
+      throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY not found in .env file. Please ensure the variable is set and contains your entire Firebase service account JSON.");
     }
+    
+    const serviceAccount = JSON.parse(serviceAccountString);
 
     initializeApp({
       credential: cert(serviceAccount),
