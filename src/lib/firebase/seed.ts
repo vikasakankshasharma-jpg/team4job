@@ -19,7 +19,7 @@ async function seedDatabase() {
     
     const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
 
-    // The private_key in JSON is often escaped with \\n, we need to replace it with a literal \n
+    // This is the critical fix: programmatically replace escaped newlines with literal newlines.
     if (serviceAccount.private_key) {
       serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
