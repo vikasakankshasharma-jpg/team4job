@@ -21,7 +21,8 @@ import {
   IndianRupee,
   BarChart2,
   PieChart,
-  TrendingUp
+  TrendingUp,
+  LineChart
 } from "lucide-react";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
@@ -29,7 +30,7 @@ import React from "react";
 import { Job, User } from "@/lib/types";
 import { collection, getDocs, query, where, DocumentReference, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, Pie, Cell } from "recharts"
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, Pie, Cell, ComposedChart, YAxis, Legend, Line } from "recharts"
 import {
   ChartContainer,
   ChartTooltip,
@@ -413,6 +414,8 @@ function AdminDashboard() {
   const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, totalBids: 0, completedJobValue: 0 });
   const [jobStatusData, setJobStatusData] = React.useState<any[]>([]);
   const [userGrowthData, setUserGrowthData] = React.useState<any[]>([]);
+  const [platformActivityData, setPlatformActivityData] = React.useState<any[]>([]);
+
 
   const jobStatusChartConfig = {
     count: {
@@ -430,6 +433,12 @@ function AdminDashboard() {
       color: "hsl(var(--primary))",
     },
   } satisfies ChartConfig
+  
+  const platformActivityChartConfig = {
+    jobs: { label: "Jobs", color: "hsl(var(--chart-1))" },
+    bids: { label: "Bids", color: "hsl(var(--chart-2))" },
+    value: { label: "Value", color: "hsl(var(--primary))" },
+  } satisfies ChartConfig;
 
 
   React.useEffect(() => {
@@ -444,17 +453,40 @@ function AdminDashboard() {
 
         const statuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Completed': 0, 'Cancelled': 0, 'Bidding Closed': 0, 'Awarded': 0 };
 
+        const activityData: { [key: string]: { jobs: number, bids: number, value: number } } = {};
+
+        const last6Months = Array.from({ length: 6 }, (_, i) => {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            return d.toLocaleString('default', { month: 'short', year: '2-digit' });
+        }).reverse();
+
+        last6Months.forEach(month => {
+            activityData[month] = { jobs: 0, bids: 0, value: 0 };
+        });
+
         jobsSnapshot.forEach(jobDoc => {
             const job = jobDoc.data() as Job;
+            const jobMonth = new Date(job.postedAt.seconds * 1000).toLocaleString('default', { month: 'short', year: '2-digit' });
+            
             totalBids += job.bids?.length || 0;
             if (statuses[job.status] !== undefined) {
                statuses[job.status]++;
             }
+
+            if (activityData[jobMonth]) {
+                activityData[jobMonth].jobs++;
+                activityData[jobMonth].bids += job.bids?.length || 0;
+            }
+
             if (job.status === 'Completed' && job.awardedInstaller) {
                 const awardedId = (job.awardedInstaller as DocumentReference).id;
                 const winningBid = job.bids.find(bid => (bid.installer as DocumentReference).id === awardedId);
                 if (winningBid) {
                     completedValue += winningBid.amount;
+                    if (activityData[jobMonth]) {
+                        activityData[jobMonth].value += winningBid.amount;
+                    }
                 }
             }
         });
@@ -463,17 +495,16 @@ function AdminDashboard() {
         usersSnapshot.forEach(userDoc => {
             const user = userDoc.data() as User;
             const month = new Date(user.memberSince.seconds * 1000).toLocaleString('default', { month: 'short', year: '2-digit' });
-            growthData[month] = (growthData[month] || 0) + 1;
+            if (growthData[month]) {
+              growthData[month]++;
+            } else if (last6Months.includes(month)) {
+              growthData[month] = 1;
+            }
         });
-
-        const last6Months = Array.from({ length: 6 }, (_, i) => {
-            const d = new Date();
-            d.setMonth(d.getMonth() - i);
-            return d.toLocaleString('default', { month: 'short', year: '2-digit' });
-        }).reverse();
 
         setUserGrowthData(last6Months.map(month => ({ month, users: growthData[month] || 0 })));
         setJobStatusData(Object.entries(statuses).map(([name, value]) => ({ name, count: value })));
+        setPlatformActivityData(Object.entries(activityData).map(([month, data]) => ({ month, ...data })));
         setStats({ totalUsers, totalJobs, totalBids, completedJobValue: completedValue });
     };
 
@@ -563,7 +594,28 @@ function AdminDashboard() {
         </Card>
       </div>
 
-       <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-2">
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><LineChart className="h-5 w-5" /> Platform Activity</CardTitle>
+                <CardDescription>Jobs, Bids, and Completed Value over the last 6 months.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={platformActivityChartConfig} className="h-64 w-full">
+                    <ComposedChart data={platformActivityData}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                        <YAxis yAxisId="left" orientation="left" stroke="hsl(var(--chart-1))" />
+                        <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--primary))" />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Legend />
+                        <Bar dataKey="jobs" fill="var(--color-jobs)" yAxisId="left" name="Jobs" radius={4} />
+                        <Bar dataKey="bids" fill="var(--color-bids)" yAxisId="left" name="Bids" radius={4} />
+                        <Line type="monotone" dataKey="value" stroke="var(--color-value)" yAxisId="right" name="Value (₹)" />
+                    </ComposedChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><BarChart2 className="h-5 w-5" /> Jobs Overview</CardTitle>
@@ -649,3 +701,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
