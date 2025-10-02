@@ -51,7 +51,7 @@ const jobGiverNavItems = [
 const adminNavItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
-    { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
+    { href: "/dashboard/all-jobs", icon: Briefcase, label: "Jobs" },
 ];
 
 export function Header() {
@@ -77,19 +77,23 @@ export function Header() {
 
   const renderBreadcrumbs = () => {
     if (role === 'Admin') {
-      if (pathname.startsWith('/dashboard/jobs/')) {
-        return (
+      if (pathname.startsWith('/dashboard/all-jobs')) {
+         return (
           <>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href="/dashboard/all-jobs">All Jobs</Link>
+                <Link href="/dashboard/all-jobs">Jobs</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>JOB-{breadcrumbSegments[breadcrumbSegments.length - 1].split('-').pop()}</BreadcrumbPage>
-            </BreadcrumbItem>
+            {pathname !== '/dashboard/all-jobs' && (
+                 <>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                    <BreadcrumbPage>JOB-{breadcrumbSegments[breadcrumbSegments.length - 1].split('-').pop()}</BreadcrumbPage>
+                    </BreadcrumbItem>
+                 </>
+            )}
           </>
         );
       }
@@ -105,6 +109,16 @@ export function Header() {
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>{breadcrumbSegments[breadcrumbSegments.length - 1]}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </>
+        );
+      }
+       if(pathname.startsWith('/dashboard/users')) {
+         return (
+          <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Users</BreadcrumbPage>
             </BreadcrumbItem>
           </>
         );
