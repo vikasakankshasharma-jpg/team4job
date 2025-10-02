@@ -4,8 +4,7 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { config } from 'dotenv';
 import { jobs as mockJobs } from '../data';
 import { users as mockUsers } from '../data';
-import type { Job, User, Comment, Bid } from '../types';
-import serviceAccount from './service-account.json';
+import type { Job, User } from '../types';
 
 config();
 
@@ -13,13 +12,21 @@ async function seedDatabase() {
   try {
     console.log('Initializing Firebase Admin SDK...');
     
-    if (!serviceAccount) {
-        throw new Error("service-account.json file is missing or empty.");
+    // Construct credentials from individual environment variables
+    const serviceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      // Replace the escaped newlines in the private key
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    };
+
+    if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
+        throw new Error("Missing Firebase environment variables (PROJECT_ID, CLIENT_EMAIL, PRIVATE_KEY). Please check your .env file.");
     }
 
     initializeApp({
       credential: cert(serviceAccount as any),
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      projectId: serviceAccount.projectId,
     });
     
     const db = getFirestore();
@@ -35,6 +42,10 @@ async function seedDatabase() {
         ...user,
         memberSince: Timestamp.fromDate(new Date(user.memberSince)),
       };
+      // Omit sensitive aadharData if it exists
+      if (userData.installerProfile?.aadharData) {
+        delete userData.installerProfile.aadharData;
+      }
       batch.set(userRef, userData);
     });
     console.log(`${mockUsers.length} users prepared for batch write.`);
@@ -45,7 +56,13 @@ async function seedDatabase() {
       const jobRef = db.collection('jobs').doc(job.id);
 
       const jobGiverRef = db.collection('users').doc(job.jobGiver.id);
-      const awardedInstallerRef = job.awardedInstaller ? db.collection('users').doc(typeof job.awardedInstaller === 'string' ? job.awardedInstaller : job.awardedInstaller.id) : null;
+      
+      let awardedInstallerRef = null;
+      if (job.awardedInstaller) {
+        const awardedInstallerId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : job.awardedInstaller.id;
+        awardedInstallerRef = db.collection('users').doc(awardedInstallerId);
+      }
+
 
       const bidsWithRefs = job.bids.map(bid => ({
         ...bid,
@@ -71,10 +88,20 @@ async function seedDatabase() {
 
       if (awardedInstallerRef) {
         jobData.awardedInstaller = awardedInstallerRef;
-      } else {
-        // Ensure the property does not exist if there is no awarded installer
+      }
+      
+      // Ensure the property does not exist if it's not set
+      if (!jobData.awardedInstaller) {
         delete jobData.awardedInstaller;
       }
+       if (!jobData.selectedInstallers) {
+        delete jobData.selectedInstallers;
+      }
+      if (!jobData.rating) {
+        delete jobData.rating;
+      }
+
+
       batch.set(jobRef, jobData);
     });
     console.log(`${mockJobs.length} jobs prepared for batch write.`);
