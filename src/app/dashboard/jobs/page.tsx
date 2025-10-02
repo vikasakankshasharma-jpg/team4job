@@ -43,13 +43,15 @@ import { useHelp } from "@/hooks/use-help";
 import { useUser } from "@/hooks/use-user";
 import { jobs as allMockJobs } from "@/lib/data";
 import type { Job } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 // Get unique skills from jobs data for filter - This might need to be dynamic later
 const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz", "vms", "access control"];
 
 
 export default function BrowseJobsPage() {
-  const { user } = useUser();
+  const { user, role } = useUser();
+  const router = useRouter();
   const [jobs, setJobs] = React.useState<Job[]>(allMockJobs);
   const [loading, setLoading] = React.useState(false); // Kept for UI consistency, but not fetching async
   const [searchPincode, setSearchPincode] = React.useState("");
@@ -57,6 +59,12 @@ export default function BrowseJobsPage() {
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
   const [recommendedPincodeFilter, setRecommendedPincodeFilter] = React.useState("all");
   const { setHelp } = useHelp();
+
+  React.useEffect(() => {
+    if (role === 'Admin') {
+      router.push('/dashboard');
+    }
+  }, [role, router]);
 
   React.useEffect(() => {
     setHelp({
@@ -152,6 +160,13 @@ export default function BrowseJobsPage() {
     selectedSkills.length > 0
   ].filter(Boolean).length;
 
+  if (role === 'Admin') {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground">Redirecting...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
