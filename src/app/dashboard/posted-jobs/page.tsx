@@ -96,6 +96,9 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                            <DropdownMenuItem asChild><Link href={`/dashboard/jobs/${job.id}`}>View Details</Link></DropdownMenuItem>
+                           {job.status === 'Unbid' && (
+                             <DropdownMenuItem>Repost Job</DropdownMenuItem>
+                           )}
                           <DropdownMenuItem>Edit</DropdownMenuItem>
                           <DropdownMenuItem>Close Bidding</DropdownMenuItem>
                         </DropdownMenuContent>

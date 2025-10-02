@@ -670,6 +670,19 @@ export const jobs: Job[] = [
     comments: [],
     completionOtp: '135790',
   },
+  {
+    id: 'JOB-20240919-X1Y2',
+    title: 'Unbid Job Example',
+    description: 'This is a job posted in a niche area that received no bids before the deadline expired. It should show as "Unbid".',
+    jobGiver: findUser('user-6'),
+    location: '799001, Agartala',
+    budget: { min: 6000, max: 12000 },
+    status: 'Unbid',
+    deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Bidding ended 2 days ago
+    jobStartDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000), // Was supposed to start in 5 days
+    postedAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+    bids: [],
+    comments: [],
+    completionOtp: '102030',
+  },
 ];
-
-    

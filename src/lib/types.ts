@@ -55,7 +55,7 @@ export type Job = {
     min: number;
     max: number;
   };
-  status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled';
+  status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid';
   deadline: Date;
   jobStartDate?: Date;
   postedAt: Date;
