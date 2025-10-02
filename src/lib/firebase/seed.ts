@@ -4,7 +4,7 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { config } from 'dotenv';
 import { jobs as mockJobs } from '../data';
 import { users as mockUsers } from '../data';
-import type { Job, User } from '../types';
+import type { Job, User, Comment, Bid } from '../types';
 
 config();
 
@@ -17,7 +17,7 @@ async function seedDatabase() {
         throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set. Please provide it in your .env file.");
     }
 
-    const parsedServiceAccount = JSON.parse(serviceAccountKey);
+    const parsedServiceAccount = JSON.parse(serviceAccountKey.replace(/\\n/g, '\n'));
 
     initializeApp({
       credential: cert(parsedServiceAccount),
