@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, doc, getDoc, DocumentReference } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, DocumentReference, query, where, or } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 
@@ -61,16 +61,13 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     const getMyBidStatus = (): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
         if (!job || !user) return { text: "Unknown", variant: "secondary" };
         
-        const awardedId = job.awardedInstaller instanceof DocumentReference 
-            ? job.awardedInstaller.id 
-            : (job.awardedInstaller as User)?.id;
+        const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
         
         const won = awardedId === user.id;
 
         if (won) {
             if (job.status === 'Completed') return { text: 'Completed & Won', variant: 'success' };
-            if (job.status === 'In Progress') return { text: 'In Progress', variant: 'info' };
-            if (job.status === 'Awarded') return { text: 'Awarded', variant: 'success' };
+            if (job.status === 'In Progress' || job.status === 'Awarded') return { text: 'Awarded', variant: 'success' };
         }
 
         if (job.status === 'Cancelled') return { text: 'Cancelled', variant: 'destructive' };
@@ -87,9 +84,7 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     const calculatePoints = () => {
         if (!job || job.status !== 'Completed') return null;
 
-        const awardedId = job.awardedInstaller instanceof DocumentReference 
-            ? job.awardedInstaller.id 
-            : (job.awardedInstaller as User)?.id;
+        const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
 
         if (awardedId !== user?.id || !job.rating) {
             return null;
@@ -147,7 +142,6 @@ const bidStatuses = [
     "All",
     "Bidded",
     "Awarded",
-    "In Progress",
     "Completed & Won",
     "Not Selected",
     "Cancelled"
@@ -171,36 +165,44 @@ function MyBidsPageContent() {
   }, [role, router]);
   
   React.useEffect(() => {
-    const fetchJobs = async () => {
+    const fetchMyJobs = async () => {
         if (!user) return;
         setLoading(true);
         try {
-            const jobsCollection = collection(db, 'jobs');
-            const jobSnapshot = await getDocs(jobsCollection);
-            const jobListPromises = jobSnapshot.docs.map(async (jobDoc) => {
-                const jobData = jobDoc.data();
+            const userRef = doc(db, 'users', user.id);
+            const jobsRef = collection(db, 'jobs');
+            
+            // Query for jobs where the user is the awarded installer OR has placed a bid.
+            const q = query(jobsRef, or(
+                where('awardedInstaller', '==', userRef),
+                where('bidderIds', 'array-contains', user.id)
+            ));
+
+            const querySnapshot = await getDocs(q);
+            const jobList = await Promise.all(querySnapshot.docs.map(async (doc) => {
+                const jobData = doc.data();
                 
-                 const bids = await Promise.all((jobData.bids || []).map(async (bidRef: any) => {
-                    const installerDoc = await getDoc(bidRef.installer);
+                // Fetch full installer objects for bids
+                const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => {
+                    const installerSnap = await getDoc(bid.installer);
                     return {
-                        ...bidRef,
-                        id: bidRef.id || `${jobDoc.id}-${installerDoc.id}`,
-                        installer: { id: installerDoc.id, ...installerDoc.data() },
-                        timestamp: bidRef.timestamp.toDate(),
+                        ...bid,
+                        id: `${doc.id}-${installerSnap.id}`,
+                        installer: { id: installerSnap.id, ...installerSnap.data() } as User,
+                        timestamp: toDate(bid.timestamp),
                     };
                 }));
 
                 return {
-                    id: jobDoc.id,
+                    id: doc.id,
                     ...jobData,
                     bids,
-                    postedAt: jobData.postedAt.toDate(),
-                    deadline: jobData.deadline.toDate(),
-                    jobStartDate: jobData.jobStartDate?.toDate(),
+                    postedAt: toDate(jobData.postedAt),
+                    deadline: toDate(jobData.deadline),
+                    jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
                 } as Job;
-            });
-            const allJobs = await Promise.all(jobListPromises);
-            setJobs(allJobs);
+            }));
+            setJobs(jobList);
 
         } catch (error) {
             console.error("Error fetching jobs and bids:", error);
@@ -208,8 +210,12 @@ function MyBidsPageContent() {
             setLoading(false);
         }
     };
-    fetchJobs();
-}, [user]);
+    if (user && role === 'Installer') {
+        fetchMyJobs();
+    } else {
+        setLoading(false);
+    }
+}, [user, role]);
 
   React.useEffect(() => {
     setHelp({
@@ -272,25 +278,14 @@ function MyBidsPageContent() {
   
  const myBids = jobs.map(job => {
     const myBid = job.bids.find(bid => (bid.installer as User).id === user.id);
-    
-    const awardedId = job.awardedInstaller instanceof DocumentReference 
-        ? job.awardedInstaller.id 
-        : (job.awardedInstaller as User)?.id;
+    const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
     const isAwardedToMe = awardedId === user.id;
 
     if (myBid || isAwardedToMe) {
-      let winningBidAmount = 0;
-      if (isAwardedToMe) {
-          const winningBid = job.bids.find(b => (b.installer as User).id === awardedId);
-          if (winningBid) {
-              winningBidAmount = winningBid.amount;
-          }
-      }
-
       return {
         id: myBid?.id || `direct-award-${job.id}`,
         installer: user,
-        amount: myBid?.amount || winningBidAmount || 0,
+        amount: myBid?.amount || (isAwardedToMe ? job.bids.find(b => ((b.installer as User).id === awardedId))?.amount || 0 : 0),
         timestamp: myBid?.timestamp || toDate(job.postedAt),
         coverLetter: myBid?.coverLetter || "Job awarded directly.",
         jobTitle: job.title,
@@ -306,15 +301,12 @@ function MyBidsPageContent() {
  const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: DocumentReference | User; }): string => {
     if (!job || !user) return "Unknown";
     
-    const awardedId = job.awardedInstaller instanceof DocumentReference 
-        ? job.awardedInstaller.id 
-        : (job.awardedInstaller as User)?.id;
+    const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
     const won = awardedId === user.id;
 
     if (won) {
         if (job.status === 'Completed') return 'Completed & Won';
-        if (job.status === 'In Progress') return 'In Progress';
-        if (job.status === 'Awarded') return 'Awarded';
+        if (job.status === 'In Progress' || job.status === 'Awarded') return 'Awarded';
     }
     if (job.status === 'Cancelled') return 'Cancelled';
     if (job.status === 'Open for Bidding') return 'Bidded';
@@ -331,10 +323,6 @@ function MyBidsPageContent() {
     const bidStatus = getMyBidStatusText(job);
     if (!statusFilter || statusFilter === 'All') {
         return true;
-    }
-
-    if (statusFilter === 'Awarded') {
-        return bidStatus === 'Awarded' || bidStatus === 'In Progress';
     }
 
     return bidStatus === statusFilter;
@@ -434,4 +422,3 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
-

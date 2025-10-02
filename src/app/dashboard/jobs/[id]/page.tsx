@@ -63,7 +63,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, DocumentReference, addDoc, collection } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, DocumentReference, addDoc, collection, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 
@@ -185,9 +185,13 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
     };
     
     const jobRef = doc(db, "jobs", job.id);
-    await updateDoc(jobRef, {
-        bids: arrayUnion(newBid)
+    
+    const batch = writeBatch(db);
+    batch.update(jobRef, {
+        bids: arrayUnion(newBid),
+        bidderIds: arrayUnion(user.id)
     });
+    await batch.commit();
 
     const fullNewBid: Bid = {
         ...newBid,
@@ -195,7 +199,10 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
         installer: user, // Add full user object for UI update
     };
 
-    onJobUpdate({ bids: [...(job.bids || []), fullNewBid] });
+    onJobUpdate({ 
+        bids: [...(job.bids || []), fullNewBid],
+        bidderIds: [...(job.bidderIds || []), user.id] 
+    });
 
     toast({ title: "Bid Placed!", description: "Your bid has been submitted successfully." });
   };

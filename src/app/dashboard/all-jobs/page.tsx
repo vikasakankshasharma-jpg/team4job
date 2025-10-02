@@ -64,7 +64,7 @@ function getJobType(job: Job) {
 };
 
 function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) => void }) {
-    const jobGiverId = (job.jobGiver as DocumentReference)?.id || (job.jobGiver as User)?.id;
+    const jobGiverName = (job.jobGiver as User)?.name || 'N/A';
 
     return (
         <Card onClick={() => onRowClick(job.id)} className="cursor-pointer">
@@ -78,7 +78,7 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
             <CardContent className="text-sm space-y-3">
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Job Giver</span>
-                    <span className="font-medium">{jobGiverId || 'N/A'}</span>
+                    <span className="font-medium">{jobGiverName}</span>
                 </div>
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Bids</span>
@@ -118,12 +118,32 @@ export default function AllJobsPage() {
       try {
         const jobsCollection = collection(db, 'jobs');
         const jobSnapshot = await getDocs(jobsCollection);
+        
+        const userCache: { [key: string]: User } = {};
+        const getUser = async (ref: DocumentReference): Promise<User> => {
+            if (userCache[ref.id]) return userCache[ref.id];
+            const userSnap = await getDoc(ref);
+            const userData = { id: userSnap.id, ...userSnap.data() } as User;
+            userCache[ref.id] = userData;
+            return userData;
+        }
+
         const jobList = await Promise.all(jobSnapshot.docs.map(async (jobDoc) => {
           const jobData = jobDoc.data() as DocumentData;
+          
+          const jobGiver = await getUser(jobData.jobGiver);
+
+          const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
+                ...bid,
+                id: `${jobDoc.id}-${bid.installer.id}`,
+                installer: await getUser(bid.installer),
+            })));
           
           return {
             ...jobData,
             id: jobDoc.id,
+            jobGiver,
+            bids
           } as Job;
         }));
 
@@ -172,8 +192,8 @@ export default function AllJobsPage() {
     if (filters.jobGiver) {
         const giverFilter = filters.jobGiver.toLowerCase();
         filtered = filtered.filter(job => {
-            const jobGiverId = (job.jobGiver as DocumentReference)?.id || (job.jobGiver as User)?.id;
-            return jobGiverId?.toLowerCase().includes(giverFilter);
+            const jobGiverName = (job.jobGiver as User)?.name || '';
+            return jobGiverName.toLowerCase().includes(giverFilter);
         });
     }
      if (filters.jobType !== 'all') {
@@ -200,8 +220,8 @@ export default function AllJobsPage() {
             valB = b.status.toLowerCase();
             break;
           case 'jobGiver':
-            valA = (a.jobGiver as DocumentReference)?.id || (a.jobGiver as User)?.id || '';
-            valB = (b.jobGiver as DocumentReference)?.id || (b.jobGiver as User)?.id || '';
+            valA = (a.jobGiver as User)?.name || '';
+            valB = (b.jobGiver as User)?.name || '';
             break;
           case 'bids':
             valA = a.bids?.length || 0;
@@ -282,7 +302,7 @@ export default function AllJobsPage() {
                         ))}
                     </SelectContent>
                 </Select>
-                <Input placeholder="Filter by Job Giver ID..." value={filters.jobGiver} onChange={e => handleFilterChange('jobGiver', e.target.value)} className="h-8" />
+                <Input placeholder="Filter by Job Giver Name..." value={filters.jobGiver} onChange={e => handleFilterChange('jobGiver', e.target.value)} className="h-8" />
                  <Select value={filters.jobType} onValueChange={value => handleFilterChange('jobType', value)}>
                     <SelectTrigger className="h-8 text-xs">
                         <SelectValue placeholder="Filter by Type..." />
@@ -401,7 +421,9 @@ export default function AllJobsPage() {
                         <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
                       </TableCell>
                       <TableCell>
-                        {(job.jobGiver as DocumentReference)?.id || 'N/A'}
+                        <Link href={`/dashboard/users/${(job.jobGiver as User).id}`} className="hover:underline" onClick={e => e.stopPropagation()}>
+                            {(job.jobGiver as User).name}
+                        </Link>
                       </TableCell>
                       <TableCell>
                         {job.bids?.length || 0}
@@ -443,5 +465,3 @@ export default function AllJobsPage() {
     </Card>
   );
 }
-
-    

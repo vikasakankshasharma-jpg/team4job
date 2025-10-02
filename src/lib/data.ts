@@ -256,212 +256,6 @@ threeDaysAgo.setDate(now.getDate() - 3);
 
 const findUser = (id: string) => users.find(u => u.id === id)!;
 
-const comments: {[key: string]: Comment[]} = {
-  'JOB-20240920-1A3B': [
-    {
-      id: 'comment-1-1',
-      author: findUser('INSTALLER-20230510-CARL'),
-      timestamp: twoDaysAgo,
-      content: "What brand of cameras are you planning to use? And is wiring already in place?",
-    },
-    {
-      id: 'comment-1-2',
-      author: findUser('JOBGIVER-20230120-BREN'),
-      timestamp: yesterday,
-      content: "Hi there, we're open to suggestions, but leaning towards Hikvision. No existing wiring, it needs to be run from scratch.",
-    },
-    {
-      id: 'comment-1-3',
-      author: findUser('USER-20220815-ALEXJ'),
-      timestamp: yesterday,
-      content: "Is the building construction concrete or drywall? It will affect the cabling time.",
-    },
-     {
-      id: 'comment-1-4',
-      author: findUser('JOBGIVER-20230120-BREN'),
-      timestamp: yesterday,
-      content: "It's a mix. Mostly drywall interiors with a concrete exterior.",
-    }
-  ],
-  'JOB-20240924-4D5E': [
-    {
-      id: 'comment-5-1',
-      author: findUser('INSTALLER-20240301-DIAN'),
-      timestamp: threeDaysAgo,
-      content: "Is this a single warehouse or multiple buildings?",
-    },
-     {
-      id: 'comment-5-2',
-      author: findUser('JOBGIVER-20220430-FION'),
-      timestamp: twoDaysAgo,
-      content: "It's a single large warehouse, approximately 50,000 sq ft.",
-    }
-  ],
-   'JOB-20240925-P2Q3': [
-    {
-      id: 'comment-12-1',
-      author: findUser('USER-20220815-ALEXJ'),
-      timestamp: yesterday,
-      content: "I've reviewed the requirements. This seems straightforward. I can start on Monday.",
-    },
-  ],
-};
-
-const bids: {[key: string]: Bid[]} = {
-  'JOB-20240920-1A3B': [
-    {
-      id: 'bid-1-1',
-      installer: findUser('USER-20220815-ALEXJ'),
-      amount: 14000,
-      timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      coverLetter: "With over 5 years of experience in IP camera systems and NVR setups, I can ensure a professional and clean installation. My bid includes all necessary cabling and configuration for remote viewing.",
-    },
-    {
-      id: 'bid-1-2',
-      installer: findUser('INSTALLER-20230510-CARL'),
-      amount: 12500,
-      timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-      coverLetter: "I am confident I can complete this job to your satisfaction. I have experience with all major brands and can provide a cost-effective solution without compromising on quality.",
-    },
-    {
-      id: 'bid-1-3',
-      installer: findUser('INSTALLER-20211111-ETHA'),
-      amount: 18000,
-      timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000), // 4 hours ago
-      coverLetter: "As a Platinum tier installer specializing in advanced systems, I can offer a premium installation with optimized camera placement and robust network configuration for flawless performance. My bid reflects a higher quality of service and components.",
-    },
-  ],
-  'JOB-20240922-2B4C': [
-     {
-      id: 'bid-2-1',
-      installer: findUser('INSTALLER-20240301-DIAN'),
-      amount: 9000,
-      timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      coverLetter: "I can handle this upgrade efficiently. I'll ensure the new IP system is perfectly integrated.",
-    },
-  ],
-  'JOB-20240915-3C5D': [
-     {
-      id: 'bid-3-1',
-      installer: findUser('INSTALLER-20230510-CARL'),
-      amount: 7500,
-      timestamp: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-      coverLetter: "I specialize in residential installations and can complete this quickly and cleanly. I guarantee a user-friendly setup for your mobile devices.",
-    },
-  ],
-  'JOB-20240924-4D5E': [
-     {
-      id: 'bid-5-1',
-      installer: findUser('INSTALLER-20211111-ETHA'),
-      amount: 48000,
-      timestamp: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-      coverLetter: "My team has extensive experience with large-scale warehouse projects. We use high-quality cabling and network gear to ensure reliable coverage across the entire area. We can also set up advanced analytics like line-crossing detection.",
-    },
-    {
-      id: 'bid-5-2',
-      installer: findUser('INSTALLER-20230801-GEOR'),
-      amount: 45000,
-      timestamp: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000 + 3600000), // 3 days ago + 1 hour
-      coverLetter: "I have installed systems in 5 warehouses in the last year. My bid is competitive and I can start next week.",
-    },
-  ],
-  'JOB-20240917-5E6F': [
-      {
-      id: 'bid-6-1',
-      installer: findUser('USER-20220815-ALEXJ'),
-      amount: 11000,
-      timestamp: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
-      coverLetter: "I'm a Gold-tier installer with experience in retail environments. I can ensure minimal disruption to your business operations during the installation.",
-    },
-  ],
-  'JOB-20240918-8J9K': [
-    {
-      id: 'bid-9-1',
-      installer: findUser('USER-20220815-ALEXJ'),
-      amount: 6000,
-      timestamp: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000), // 8 days ago
-      coverLetter: "I can handle this residential setup. My work is clean and I will ensure you are happy with the camera placements.",
-    }
-  ],
-  'JOB-20240801-K2L3': [
-     {
-      id: 'bid-10-1',
-      installer: findUser('USER-20220815-ALEXJ'),
-      amount: 22000,
-      timestamp: new Date('2024-08-03T10:00:00Z'),
-      coverLetter: "Completed this project successfully.",
-    },
-  ],
-   'JOB-20240925-P2Q3': [
-    {
-      id: 'bid-12-1',
-      installer: findUser('USER-20220815-ALEXJ'),
-      amount: 28000,
-      timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-      coverLetter: "I have experience with multi-building wireless bridges and can ensure a seamless, unified system. My bid includes high-grade outdoor-rated equipment.",
-    },
-    {
-      id: 'bid-12-2',
-      installer: findUser('INSTALLER-20230510-CARL'),
-      amount: 26500,
-      timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000 + 3600000), // 1 day ago + 1 hour
-      coverLetter: "My team can handle this campus-wide installation, including all trenching and cabling required for the fiber link between buildings.",
-    },
-  ],
-  'JOB-20240928-R4S5': [
-    {
-      id: 'bid-13-1',
-      installer: findUser('INSTALLER-20240301-DIAN'),
-      amount: 2800,
-      timestamp: new Date(now.getTime() - 1 * 60 * 60 * 1000), // 1 hour ago
-      coverLetter: "I can troubleshoot your NVR and camera connectivity issues. I have a feeling it might be a network switch problem. I can diagnose and fix it.",
-    },
-  ],
-  'JOB-20240910-T6U7': [
-      {
-      id: 'bid-14-1',
-      installer: findUser('INSTALLER-20230510-CARL'),
-      amount: 19000,
-      timestamp: new Date('2024-09-11T10:00:00Z'),
-      coverLetter: "My team and I can handle this.",
-    },
-  ]
-};
-
-const privateMessages: {[key: string]: PrivateMessage[]} = {
-    'JOB-20240915-3C5D': [
-        {
-            id: 'pm-3-1',
-            author: findUser('JOBGIVER-20230120-BREN'),
-            timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
-            content: 'Hi Carlos, thanks for accepting the job. Can you start on the scheduled date?',
-        },
-        {
-            id: 'pm-3-2',
-            author: findUser('INSTALLER-20230510-CARL'),
-            timestamp: new Date(now.getTime() - 20 * 60 * 60 * 1000),
-            content: 'Yes, absolutely. I will be at the site at 9 AM sharp. I will need access to the main power panel.',
-        }
-    ],
-    'JOB-20240910-T6U7': [
-        {
-            id: 'pm-14-1',
-            author: findUser('INSTALLER-20230510-CARL'),
-            timestamp: new Date('2024-09-16T17:00:00Z'),
-            content: 'Hi Brenda, the installation is complete. Everything is tested and working perfectly. Here are some photos of the final setup. Please let me know if you need anything else before I request the completion OTP.',
-            attachments: [
-                { fileName: 'cafe_camera_1.jpg', fileUrl: '#', fileType: 'image/jpeg' },
-                { fileName: 'nvr_setup.jpg', fileUrl: '#', fileType: 'image/jpeg' },
-            ]
-        },
-        {
-            id: 'pm-14-2',
-            author: findUser('JOBGIVER-20230120-BREN'),
-            timestamp: new Date('2024-09-16T18:30:00Z'),
-            content: 'Looks great, Carlos! Thank you for the quick and clean work. The completion OTP is 246810.',
-        }
-    ]
-};
 
 export const jobs: Job[] = [
   {
@@ -476,8 +270,55 @@ export const jobs: Job[] = [
     deadline: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
     jobStartDate: new Date(now.getTime() + 9 * 24 * 60 * 60 * 1000), // 9 days from now
     postedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-    bids: bids['JOB-20240920-1A3B'],
-    comments: comments['JOB-20240920-1A3B'] || [],
+    bids: [
+      {
+        id: 'bid-1-1',
+        installer: findUser('USER-20220815-ALEXJ'),
+        amount: 14000,
+        timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        coverLetter: "With over 5 years of experience in IP camera systems and NVR setups, I can ensure a professional and clean installation. My bid includes all necessary cabling and configuration for remote viewing.",
+      },
+      {
+        id: 'bid-1-2',
+        installer: findUser('INSTALLER-20230510-CARL'),
+        amount: 12500,
+        timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+        coverLetter: "I am confident I can complete this job to your satisfaction. I have experience with all major brands and can provide a cost-effective solution without compromising on quality.",
+      },
+      {
+        id: 'bid-1-3',
+        installer: findUser('INSTALLER-20211111-ETHA'),
+        amount: 18000,
+        timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000), // 4 hours ago
+        coverLetter: "As a Platinum tier installer specializing in advanced systems, I can offer a premium installation with optimized camera placement and robust network configuration for flawless performance. My bid reflects a higher quality of service and components.",
+      },
+    ],
+    comments: [
+      {
+        id: 'comment-1-1',
+        author: findUser('INSTALLER-20230510-CARL'),
+        timestamp: twoDaysAgo,
+        content: "What brand of cameras are you planning to use? And is wiring already in place?",
+      },
+      {
+        id: 'comment-1-2',
+        author: findUser('JOBGIVER-20230120-BREN'),
+        timestamp: yesterday,
+        content: "Hi there, we're open to suggestions, but leaning towards Hikvision. No existing wiring, it needs to be run from scratch.",
+      },
+      {
+        id: 'comment-1-3',
+        author: findUser('USER-20220815-ALEXJ'),
+        timestamp: yesterday,
+        content: "Is the building construction concrete or drywall? It will affect the cabling time.",
+      },
+       {
+        id: 'comment-1-4',
+        author: findUser('JOBGIVER-20230120-BREN'),
+        timestamp: yesterday,
+        content: "It's a mix. Mostly drywall interiors with a concrete exterior.",
+      }
+    ],
     completionOtp: '349871',
   },
   {
@@ -492,7 +333,15 @@ export const jobs: Job[] = [
     deadline: new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
     jobStartDate: new Date(now.getTime() + 12 * 24 * 60 * 60 * 1000), // 12 days from now
     postedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-    bids: bids['JOB-20240922-2B4C'] || [],
+    bids: [
+       {
+        id: 'bid-2-1',
+        installer: findUser('INSTALLER-20240301-DIAN'),
+        amount: 9000,
+        timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        coverLetter: "I can handle this upgrade efficiently. I'll ensure the new IP system is perfectly integrated.",
+      },
+    ],
     comments: [],
     completionOtp: '846201',
   },
@@ -508,9 +357,30 @@ export const jobs: Job[] = [
     deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Bidding ended 2 days ago
     jobStartDate: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000), // Starts in 2 days
     postedAt: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000), // 12 days ago
-    bids: bids['JOB-20240915-3C5D'],
+    bids: [
+       {
+        id: 'bid-3-1',
+        installer: findUser('INSTALLER-20230510-CARL'),
+        amount: 7500,
+        timestamp: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+        coverLetter: "I specialize in residential installations and can complete this quickly and cleanly. I guarantee a user-friendly setup for your mobile devices.",
+      },
+    ],
     comments: [],
-    privateMessages: privateMessages['JOB-20240915-3C5D'],
+    privateMessages: [
+        {
+            id: 'pm-3-1',
+            author: findUser('JOBGIVER-20230120-BREN'),
+            timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+            content: 'Hi Carlos, thanks for accepting the job. Can you start on the scheduled date?',
+        },
+        {
+            id: 'pm-3-2',
+            author: findUser('INSTALLER-20230510-CARL'),
+            timestamp: new Date(now.getTime() - 20 * 60 * 60 * 1000),
+            content: 'Yes, absolutely. I will be at the site at 9 AM sharp. I will need access to the main power panel.',
+        }
+    ],
     completionOtp: '554289',
   },
   {
@@ -544,8 +414,36 @@ export const jobs: Job[] = [
     deadline: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
     jobStartDate: new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000), // 20 days from now
     postedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-    bids: bids['JOB-20240924-4D5E'],
-    comments: comments['JOB-20240924-4D5E'] || [],
+    bids: [
+       {
+        id: 'bid-5-1',
+        installer: findUser('INSTALLER-20211111-ETHA'),
+        amount: 48000,
+        timestamp: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        coverLetter: "My team has extensive experience with large-scale warehouse projects. We use high-quality cabling and network gear to ensure reliable coverage across the entire area. We can also set up advanced analytics like line-crossing detection.",
+      },
+      {
+        id: 'bid-5-2',
+        installer: findUser('INSTALLER-20230801-GEOR'),
+        amount: 45000,
+        timestamp: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000 + 3600000), // 3 days ago + 1 hour
+        coverLetter: "I have installed systems in 5 warehouses in the last year. My bid is competitive and I can start next week.",
+      },
+    ],
+    comments: [
+      {
+        id: 'comment-5-1',
+        author: findUser('INSTALLER-20240301-DIAN'),
+        timestamp: threeDaysAgo,
+        content: "Is this a single warehouse or multiple buildings?",
+      },
+       {
+        id: 'comment-5-2',
+        author: findUser('JOBGIVER-20220430-FION'),
+        timestamp: twoDaysAgo,
+        content: "It's a single large warehouse, approximately 50,000 sq ft.",
+      }
+    ],
     attachments: [
         { fileName: 'warehouse_floor_plan.pdf', fileUrl: '#', fileType: 'application/pdf'},
         { fileName: 'site_photo_1.jpg', fileUrl: '#', fileType: 'image/jpeg'},
@@ -565,7 +463,15 @@ export const jobs: Job[] = [
     deadline: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // Bidding ended 3 days ago
     jobStartDate: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000), // Starts tomorrow
     postedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-    bids: bids['JOB-20240917-5E6F'],
+    bids: [
+        {
+        id: 'bid-6-1',
+        installer: findUser('USER-20220815-ALEXJ'),
+        amount: 11000,
+        timestamp: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+        coverLetter: "I'm a Gold-tier installer with experience in retail environments. I can ensure minimal disruption to your business operations during the installation.",
+      },
+    ],
     comments: [],
     completionOtp: '123789',
   },
@@ -615,7 +521,15 @@ export const jobs: Job[] = [
     deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Bidding ended 2 days ago
     jobStartDate: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000), // Was supposed to start tomorrow
     postedAt: new Date(now.getTime() - 9 * 24 * 60 * 60 * 1000), // 9 days ago
-    bids: bids['JOB-20240918-8J9K'],
+    bids: [
+      {
+        id: 'bid-9-1',
+        installer: findUser('USER-20220815-ALEXJ'),
+        amount: 6000,
+        timestamp: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000), // 8 days ago
+        coverLetter: "I can handle this residential setup. My work is clean and I will ensure you are happy with the camera placements.",
+      }
+    ],
     comments: [],
     completionOtp: '753159',
   },
@@ -633,7 +547,15 @@ export const jobs: Job[] = [
     deadline: new Date('2024-08-05T23:59:59Z'), // Old date
     jobStartDate: new Date('2024-08-07T09:00:00Z'), // Old date
     postedAt: new Date('2024-08-01T14:00:00Z'), // Old date
-    bids: bids['JOB-20240801-K2L3'],
+    bids: [
+       {
+        id: 'bid-10-1',
+        installer: findUser('USER-20220815-ALEXJ'),
+        amount: 22000,
+        timestamp: new Date('2024-08-03T10:00:00Z'),
+        coverLetter: "Completed this project successfully.",
+      },
+    ],
     comments: [],
     completionOtp: '852963',
   },
@@ -667,8 +589,30 @@ export const jobs: Job[] = [
     deadline: new Date(now.getTime() + 9 * 24 * 60 * 60 * 1000), // 9 days from now
     jobStartDate: new Date(now.getTime() + 11 * 24 * 60 * 60 * 1000), // 11 days from now
     postedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-    bids: bids['JOB-20240925-P2Q3'],
-    comments: comments['JOB-20240925-P2Q3'] || [],
+    bids: [
+      {
+        id: 'bid-12-1',
+        installer: findUser('USER-20220815-ALEXJ'),
+        amount: 28000,
+        timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+        coverLetter: "I have experience with multi-building wireless bridges and can ensure a seamless, unified system. My bid includes high-grade outdoor-rated equipment.",
+      },
+      {
+        id: 'bid-12-2',
+        installer: findUser('INSTALLER-20230510-CARL'),
+        amount: 26500,
+        timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000 + 3600000), // 1 day ago + 1 hour
+        coverLetter: "My team can handle this campus-wide installation, including all trenching and cabling required for the fiber link between buildings.",
+      },
+    ],
+    comments: [
+      {
+        id: 'comment-12-1',
+        author: findUser('USER-20220815-ALEXJ'),
+        timestamp: yesterday,
+        content: "I've reviewed the requirements. This seems straightforward. I can start on Monday.",
+      },
+    ],
     completionOtp: '357159',
   },
   {
@@ -683,7 +627,15 @@ export const jobs: Job[] = [
     deadline: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000), // 4 days from now
     jobStartDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
     postedAt: new Date(now.getTime() - 12 * 60 * 60 * 1000), // 12 hours ago
-    bids: bids['JOB-20240928-R4S5'],
+    bids: [
+      {
+        id: 'bid-13-1',
+        installer: findUser('INSTALLER-20240301-DIAN'),
+        amount: 2800,
+        timestamp: new Date(now.getTime() - 1 * 60 * 60 * 1000), // 1 hour ago
+        coverLetter: "I can troubleshoot your NVR and camera connectivity issues. I have a feeling it might be a network switch problem. I can diagnose and fix it.",
+      },
+    ],
     comments: [],
     completionOtp: '486246',
   },
@@ -701,8 +653,33 @@ export const jobs: Job[] = [
     deadline: new Date('2024-09-12T23:59:59Z'), // Old date
     jobStartDate: new Date('2024-09-15T09:00:00Z'), // Old date
     postedAt: new Date('2024-09-10T09:00:00Z'), // Old date
-    bids: bids['JOB-20240910-T6U7'],
-    privateMessages: privateMessages['JOB-20240910-T6U7'],
+    bids: [
+        {
+        id: 'bid-14-1',
+        installer: findUser('INSTALLER-20230510-CARL'),
+        amount: 19000,
+        timestamp: new Date('2024-09-11T10:00:00Z'),
+        coverLetter: "My team and I can handle this.",
+      },
+    ],
+    privateMessages: [
+        {
+            id: 'pm-14-1',
+            author: findUser('INSTALLER-20230510-CARL'),
+            timestamp: new Date('2024-09-16T17:00:00Z'),
+            content: 'Hi Brenda, the installation is complete. Everything is tested and working perfectly. Here are some photos of the final setup. Please let me know if you need anything else before I request the completion OTP.',
+            attachments: [
+                { fileName: 'cafe_camera_1.jpg', fileUrl: '#', fileType: 'image/jpeg' },
+                { fileName: 'nvr_setup.jpg', fileUrl: '#', fileType: 'image/jpeg' },
+            ]
+        },
+        {
+            id: 'pm-14-2',
+            author: findUser('JOBGIVER-20230120-BREN'),
+            timestamp: new Date('2024-09-16T18:30:00Z'),
+            content: 'Looks great, Carlos! Thank you for the quick and clean work. The completion OTP is 246810.',
+        }
+    ],
     comments: [],
     completionOtp: '246810',
   },
