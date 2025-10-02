@@ -42,14 +42,23 @@ import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
-import { jobs as allMockJobs } from "@/lib/data";
+import { collection, getDocs, query, where, DocumentReference } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
+
 
 function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
   
   const getJobType = (job: Job) => {
     if (!job.awardedInstaller) return 'N/A';
-    const awardedInstallerId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User).id;
-    const bidderIds = job.bids.map(b => (b.installer as User).id);
+
+    const awardedInstallerId = job.awardedInstaller instanceof DocumentReference 
+        ? job.awardedInstaller.id 
+        : (job.awardedInstaller as User).id;
+
+    const bidderIds = job.bids.map(b => {
+        return b.installer instanceof DocumentReference ? b.installer.id : (b.installer as User).id
+    });
+    
     return bidderIds.includes(awardedInstallerId) ? 'Bidding' : 'Direct';
   };
 
@@ -151,13 +160,33 @@ export default function PostedJobsPage() {
   }, [role, router]);
 
   React.useEffect(() => {
-    if (user) {
+    if (user && role === 'Job Giver') {
       setLoading(true);
-      const userJobs = allMockJobs.filter(job => (job.jobGiver as User).id === user.id);
-      setJobs(userJobs);
-      setLoading(false);
+      const fetchPostedJobs = async () => {
+        try {
+          const userRef = new DocumentReference(db, `users/${user.id}`);
+          const jobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
+          const querySnapshot = await getDocs(jobsQuery);
+          const userJobs = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            postedAt: doc.data().postedAt.toDate(),
+            deadline: doc.data().deadline.toDate(),
+            jobStartDate: doc.data().jobStartDate?.toDate(),
+          } as Job));
+          setJobs(userJobs);
+        } catch (err) {
+            console.error("Error fetching posted jobs:", err);
+        } finally {
+            setLoading(false);
+        }
+      };
+
+      fetchPostedJobs();
+    } else {
+        setLoading(false);
     }
-  }, [user]);
+  }, [user, role]);
 
    React.useEffect(() => {
     setHelp({
@@ -235,3 +264,4 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
+

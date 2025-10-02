@@ -4,7 +4,8 @@
 import { User } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { users as mockUsers } from "@/lib/data";
+import { collection, query, where, getDocs, doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 
@@ -34,19 +35,30 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const storedUserEmail = localStorage.getItem('loggedInUserEmail');
     if (storedUserEmail) {
-        const foundUser = mockUsers.find(u => u.email.toLowerCase() === storedUserEmail.toLowerCase());
-        if (foundUser) {
-            setUser(foundUser);
-            const storedRole = localStorage.getItem('userRole') as Role;
-            if (storedRole && foundUser.roles.includes(storedRole)) {
-                setRoleState(storedRole);
+        const fetchUser = async () => {
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("email", "==", storedUserEmail.toLowerCase()));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                const userDoc = querySnapshot.docs[0];
+                const foundUser = {
+                    id: userDoc.id,
+                    ...userDoc.data(),
+                    memberSince: userDoc.data().memberSince.toDate()
+                } as User;
+                setUser(foundUser);
+                const storedRole = localStorage.getItem('userRole') as Role;
+                if (storedRole && foundUser.roles.includes(storedRole)) {
+                    setRoleState(storedRole);
+                } else {
+                    const initialRole = foundUser.roles.includes("Admin") ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
+                    setRoleState(initialRole);
+                }
             } else {
-                const initialRole = foundUser.roles.includes("Admin") ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
-                setRoleState(initialRole);
+                logout();
             }
-        } else {
-            logout();
-        }
+        };
+        fetchUser();
     }
   }, []);
 
@@ -66,10 +78,16 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   const login = async (email: string, signupData: any = null) => {
-    let foundUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-    if (!foundUser && signupData) {
-      // Create a new user (mock)
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("email", "==", email.toLowerCase()));
+    const querySnapshot = await getDocs(q);
+    
+    let foundUser: User | null = null;
+    
+    if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        foundUser = { id: userDoc.id, ...userDoc.data(), memberSince: userDoc.data().memberSince.toDate() } as User;
+    } else if (signupData) {
       const newUserId = `user-${Date.now()}`;
       let newAnonymousId = '';
       let roles: User['roles'] = [];
@@ -103,9 +121,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         avatarUrl: randomAvatar.imageUrl,
         realAvatarUrl: `https://picsum.photos/seed/${signupData.name.split(' ')[0]}/100/100`,
       };
-
+      
+      const userToSave: any = { ...newUser };
       if (signupData.role === 'Installer' || signupData.role === 'Both (Job Giver & Installer)') {
-        newUser.installerProfile = {
+        userToSave.installerProfile = {
           tier: 'Bronze',
           points: 0,
           skills: [],
@@ -115,8 +134,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
           reputationHistory: [],
         };
       }
-      mockUsers.push(newUser);
+      
+      await setDoc(doc(db, "users", newUserId), userToSave);
       foundUser = newUser;
+
     }
     
     if (foundUser) {
@@ -157,3 +178,4 @@ export const useUser = () => {
   }
   return context;
 };
+

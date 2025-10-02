@@ -37,7 +37,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { jobs as allMockJobs } from "@/lib/data";
+import { collection, getDocs, doc, getDoc, DocumentReference } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
+
 
 type MyBidRowProps = {
   bid: Bid & { jobTitle: string; jobId: string; jobStatus: Job['status'], wasPlaced: boolean };
@@ -58,8 +60,12 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     
     const getMyBidStatus = (): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
         if (!job || !user) return { text: "Unknown", variant: "secondary" };
-
-        const won = job.awardedInstaller === user.id;
+        
+        const awardedId = job.awardedInstaller instanceof DocumentReference 
+            ? job.awardedInstaller.id 
+            : (job.awardedInstaller as User)?.id;
+        
+        const won = awardedId === user.id;
 
         if (won) {
             if (job.status === 'Completed') return { text: 'Completed & Won', variant: 'success' };
@@ -79,9 +85,16 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     }
     
     const calculatePoints = () => {
-        if (!job || job.status !== 'Completed' || job.awardedInstaller !== user?.id || !job.rating) {
+        if (!job || job.status !== 'Completed') return null;
+
+        const awardedId = job.awardedInstaller instanceof DocumentReference 
+            ? job.awardedInstaller.id 
+            : (job.awardedInstaller as User)?.id;
+
+        if (awardedId !== user?.id || !job.rating) {
             return null;
         }
+
         const ratingPoints = job.rating === 5 ? 20 : job.rating === 4 ? 10 : 0;
         const completionPoints = 50;
         return completionPoints + ratingPoints;
@@ -147,13 +160,56 @@ function MyBidsPageContent() {
   const pathname = usePathname();
   let statusFilter = searchParams.get('status');
   const { setHelp } = useHelp();
-  const [jobs, setJobs] = React.useState<Job[]>(allMockJobs);
+  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
 
   React.useEffect(() => {
     if (role === 'Admin') {
       router.push('/dashboard');
     }
   }, [role, router]);
+  
+  React.useEffect(() => {
+    const fetchJobs = async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            const jobsCollection = collection(db, 'jobs');
+            const jobSnapshot = await getDocs(jobsCollection);
+            const jobListPromises = jobSnapshot.docs.map(async (jobDoc) => {
+                const jobData = jobDoc.data();
+                
+                 const bids = await Promise.all((jobData.bids || []).map(async (bidRef: any) => {
+                    const installerDoc = await getDoc(bidRef.installer);
+                    return {
+                        ...bidRef,
+                        id: bidRef.id || `${jobDoc.id}-${installerDoc.id}`,
+                        installer: { id: installerDoc.id, ...installerDoc.data() },
+                        timestamp: bidRef.timestamp.toDate(),
+                    };
+                }));
+
+                return {
+                    id: jobDoc.id,
+                    ...jobData,
+                    bids,
+                    postedAt: jobData.postedAt.toDate(),
+                    deadline: jobData.deadline.toDate(),
+                    jobStartDate: jobData.jobStartDate?.toDate(),
+                } as Job;
+            });
+            const allJobs = await Promise.all(jobListPromises);
+            setJobs(allJobs);
+
+        } catch (error) {
+            console.error("Error fetching jobs and bids:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    fetchJobs();
+}, [user]);
 
   React.useEffect(() => {
     setHelp({
@@ -216,7 +272,10 @@ function MyBidsPageContent() {
   
  const myBids = jobs.map(job => {
     const myBid = job.bids.find(bid => (bid.installer as User).id === user.id);
-    const awardedId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User)?.id;
+    
+    const awardedId = job.awardedInstaller instanceof DocumentReference 
+        ? job.awardedInstaller.id 
+        : (job.awardedInstaller as User)?.id;
     const isAwardedToMe = awardedId === user.id;
 
     if (myBid || isAwardedToMe) {
@@ -232,7 +291,7 @@ function MyBidsPageContent() {
         id: myBid?.id || `direct-award-${job.id}`,
         installer: user,
         amount: myBid?.amount || winningBidAmount || 0,
-        timestamp: myBid?.timestamp || job.postedAt,
+        timestamp: myBid?.timestamp || toDate(job.postedAt),
         coverLetter: myBid?.coverLetter || "Job awarded directly.",
         jobTitle: job.title,
         jobId: job.id,
@@ -244,9 +303,12 @@ function MyBidsPageContent() {
   }).filter((bid): bid is Bid & { jobTitle: string; jobId: string; jobStatus: Job['status']; wasPlaced: boolean } => bid !== null)
     .sort((a,b) => toDate(b.timestamp).getTime() - toDate(a.timestamp).getTime());
 
- const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: string | User; }): string => {
+ const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: DocumentReference | User; }): string => {
     if (!job || !user) return "Unknown";
-    const awardedId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User)?.id;
+    
+    const awardedId = job.awardedInstaller instanceof DocumentReference 
+        ? job.awardedInstaller.id 
+        : (job.awardedInstaller as User)?.id;
     const won = awardedId === user.id;
 
     if (won) {
@@ -331,11 +393,18 @@ function MyBidsPageContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredBids.map(bid => {
-                const job = jobs.find(j => j.id === bid.jobId);
-                return <MyBidRow key={bid.id} bid={bid} job={job} user={user} />
-              })}
-               {filteredBids.length === 0 && (
+              {loading ? (
+                 <TableRow>
+                  <TableCell colSpan={6} className="text-center h-24">
+                    Loading your bids from Firestore...
+                  </TableCell>
+                </TableRow>
+              ) : filteredBids.length > 0 ? (
+                filteredBids.map(bid => {
+                  const job = jobs.find(j => j.id === bid.jobId);
+                  return <MyBidRow key={bid.id} bid={bid} job={job} user={user} />
+                })
+              ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center h-24">
                     {statusFilter && statusFilter !== 'All'
@@ -365,3 +434,4 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
+
