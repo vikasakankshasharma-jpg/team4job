@@ -35,6 +35,7 @@ import {
 } from "@/ai/flows/aadhar-verification";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { LocationInput } from "@/components/ui/location-input";
 
 
 const formSchema = z.object({
@@ -45,7 +46,7 @@ const formSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters." }),
   role: z.enum(["Job Giver", "Installer", "Both (Job Giver & Installer)"]),
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
-  pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
+  pincode: z.string().min(8, { message: "Please select a pincode and post office." }),
   aadhar: z.string().optional(),
   otp: z.string().optional(),
 });
@@ -315,18 +316,11 @@ export function SignUpForm() {
                         </FormItem>
                     )}
                     />
-                    <FormField
-                    control={form.control}
-                    name="pincode"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Residential Pincode</FormLabel>
-                        <FormControl>
-                            <Input placeholder="e.g., 110001" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
+                    <LocationInput
+                        name="pincode"
+                        label="Residential Pincode"
+                        placeholder="e.g. 110001"
+                        control={form.control}
                     />
                     <Button type="submit" className="w-full">
                         Create Account
@@ -390,19 +384,12 @@ export function SignUpForm() {
             </FormItem>
           )}
         />
-        <FormField
-            control={form.control}
+        <LocationInput
             name="pincode"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Pincode</FormLabel>
-                <FormControl>
-                    <Input placeholder="e.g., 110001" {...field} />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
+            label="Pincode"
+            placeholder="e.g. 110001"
+            control={form.control}
+        />
         <Button type="submit" className="w-full">
           Create Account
         </Button>
