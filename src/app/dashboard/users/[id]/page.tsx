@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -47,17 +47,28 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+const wasJobAwardedDirectly = (job: Job) => {
+    return (job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') && job.bids.length === 0;
+};
+
 function JobListItem({ job }: { job: Job }) {
+  const isDirectAward = wasJobAwardedDirectly(job);
   return (
     <Link href={`/dashboard/jobs/${job.id}`} className="block hover:bg-accent rounded-lg p-4 -mx-4">
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start gap-4">
         <div className="flex-1">
           <p className="font-semibold">{job.title}</p>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
             <span>Posted: {format(toDate(job.postedAt), "MMM d, yyyy")}</span>
             <span className="flex items-center gap-1">
               {job.bids.length} Bids
             </span>
+            {job.awardedInstaller && (
+              <span className="flex items-center gap-1">
+                <Award className="h-3 w-3" />
+                {isDirectAward ? 'Direct Award' : 'Bidding'}
+              </span>
+            )}
           </div>
         </div>
         <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
@@ -102,8 +113,8 @@ export default function UserProfilePage() {
   const [userPostedJobs, setUserPostedJobs] = React.useState<Job[]>([]);
   const [userCompletedJobs, setUserCompletedJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [postedJobsView, setPostedJobsView] = React.useState<'grid' | 'list'>('list');
-  const [completedJobsView, setCompletedJobsView] = React.useState<'grid' | 'list'>('list');
+  const [postedJobsView, setPostedJobsView] = React.useState<'list' | 'grid'>('list');
+  const [completedJobsView, setCompletedJobsView] = React.useState<'list' | 'grid'>('list');
 
   React.useEffect(() => {
     if (id) {
@@ -298,20 +309,20 @@ export default function UserProfilePage() {
               </div>
                <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
                   <Button
-                      variant={postedJobsView === 'grid' ? 'secondary' : 'ghost'}
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => setPostedJobsView('grid')}
-                  >
-                      <Grid className="h-4 w-4" />
-                  </Button>
-                  <Button
                       variant={postedJobsView === 'list' ? 'secondary' : 'ghost'}
                       size="icon"
                       className="h-7 w-7"
                        onClick={() => setPostedJobsView('list')}
                   >
                       <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                      variant={postedJobsView === 'grid' ? 'secondary' : 'ghost'}
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setPostedJobsView('grid')}
+                  >
+                      <Grid className="h-4 w-4" />
                   </Button>
               </div>
             </div>
@@ -345,6 +356,14 @@ export default function UserProfilePage() {
                 <CardDescription>{name} has successfully completed {userCompletedJobs.length} jobs.</CardDescription>
               </div>
                <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
+                   <Button
+                      variant={completedJobsView === 'list' ? 'secondary' : 'ghost'}
+                      size="icon"
+                      className="h-7 w-7"
+                       onClick={() => setCompletedJobsView('list')}
+                  >
+                      <List className="h-4 w-4" />
+                  </Button>
                   <Button
                       variant={completedJobsView === 'grid' ? 'secondary' : 'ghost'}
                       size="icon"
@@ -352,14 +371,6 @@ export default function UserProfilePage() {
                       onClick={() => setCompletedJobsView('grid')}
                   >
                       <Grid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                      variant={completedJobsView === 'list' ? 'secondary' : 'ghost'}
-                      size="icon"
-                      className="h-7 w-7"
-                       onClick={() => setCompletedJobsView('list')}
-                  >
-                      <List className="h-4 w-4" />
                   </Button>
               </div>
             </div>
