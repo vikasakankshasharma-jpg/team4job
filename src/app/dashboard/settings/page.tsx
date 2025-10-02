@@ -33,6 +33,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { useUser } from "@/hooks/use-user"
+import { Input } from "@/components/ui/input"
 
 function ThemeSelector() {
     const { theme, setTheme } = useTheme()
@@ -68,8 +70,54 @@ function ThemeSelector() {
     )
 }
 
+function AdminSettings() {
+    const { toast } = useToast();
+    const [commission, setCommission] = React.useState(10); // Default commission
+
+    const handleSaveAdminSettings = () => {
+        // Here you would typically save the settings to your backend/database
+        console.log("Admin settings saved:", { commission });
+        toast({
+            title: "Platform Settings Saved",
+            description: `The commission rate has been set to ${commission}%.`,
+        });
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Platform Settings</CardTitle>
+                <CardDescription>
+                    Global settings for the application. Only visible to Admins.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="commission-rate">Platform Commission Rate (%)</Label>
+                    <Input 
+                        id="commission-rate"
+                        type="number"
+                        value={commission}
+                        onChange={(e) => setCommission(Number(e.target.value))}
+                        min="0"
+                        max="100"
+                        placeholder="e.g., 10"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        The percentage the platform takes from each completed job's value.
+                    </p>
+                </div>
+            </CardContent>
+            <CardFooter className="border-t px-6 py-4">
+                <Button onClick={handleSaveAdminSettings}>Save Platform Settings</Button>
+            </CardFooter>
+        </Card>
+    )
+}
+
 export default function SettingsPage() {
     const { toast } = useToast()
+    const { isAdmin } = useUser();
 
     return (
         <div className="grid gap-6">
@@ -176,6 +224,8 @@ export default function SettingsPage() {
                     </Card>
                 </CardContent>
             </Card>
+
+            {isAdmin && <AdminSettings />}
         </div>
     )
 }

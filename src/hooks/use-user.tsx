@@ -14,6 +14,7 @@ type Role = "Job Giver" | "Installer" | "Admin";
 type UserContextType = {
   user: User | null;
   role: Role;
+  isAdmin: boolean;
   setUser: React.Dispatch<React.SetStateAction<User | null>> | null;
   setRole: (role: Role) => void;
   login: (email: string, signupData?: any) => Promise<boolean>;
@@ -29,6 +30,7 @@ const jobGiverPaths = ['/dashboard/posted-jobs', '/dashboard/post-job'];
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Installer");
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -48,10 +50,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
                 } as User;
                 setUser(foundUser);
                 const storedRole = localStorage.getItem('userRole') as Role;
+                const isAdminUser = foundUser.roles.includes("Admin");
+                setIsAdmin(isAdminUser);
                 if (storedRole && foundUser.roles.includes(storedRole)) {
                     setRoleState(storedRole);
                 } else {
-                    const initialRole = foundUser.roles.includes("Admin") ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
+                    const initialRole = isAdminUser ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
                     setRoleState(initialRole);
                 }
             } else {
@@ -88,23 +92,19 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         const userDoc = querySnapshot.docs[0];
         foundUser = { id: userDoc.id, ...userDoc.data(), memberSince: userDoc.data().memberSince.toDate() } as User;
     } else if (signupData) {
-      let newAnonymousId = '';
       let roles: User['roles'] = [];
       let rolePrefix = '';
 
       switch(signupData.role) {
         case 'Installer':
-          newAnonymousId = `Installer-${Math.floor(1000 + Math.random() * 9000)}`;
           roles = ['Installer'];
           rolePrefix = 'INSTALLER';
           break;
         case 'Job Giver':
-          newAnonymousId = `JobGiver-${Math.floor(1000 + Math.random() * 9000)}`;
           roles = ['Job Giver'];
           rolePrefix = 'JOBGIVER';
           break;
         case 'Both (Job Giver & Installer)':
-          newAnonymousId = `User-${Math.floor(1000 + Math.random() * 9000)}`;
           roles = ['Job Giver', 'Installer'];
           rolePrefix = 'USER';
           break;
@@ -122,7 +122,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         name: signupData.name,
         email: signupData.email,
         mobile: signupData.mobile,
-        anonymousId: newAnonymousId,
         pincodes: { residential: signupData.pincode || '' },
         roles: roles,
         memberSince: new Date(),
@@ -151,7 +150,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     if (foundUser) {
         setUser(foundUser);
         localStorage.setItem('loggedInUserEmail', foundUser.email);
-        const initialRole = foundUser.roles.includes("Admin") ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
+        const isAdminUser = foundUser.roles.includes("Admin");
+        setIsAdmin(isAdminUser);
+        const initialRole = isAdminUser ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
         setRoleState(initialRole);
         localStorage.setItem('userRole', initialRole);
         return true;
@@ -161,6 +162,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = () => {
     setUser(null);
+    setIsAdmin(false);
     localStorage.removeItem('loggedInUserEmail');
     localStorage.removeItem('userRole');
   };
@@ -173,7 +175,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, role, setRole, login, logout, setUser }}>
+    <UserContext.Provider value={{ user, role, isAdmin, setRole, login, logout, setUser }}>
       {children}
     </UserContext.Provider>
   );
