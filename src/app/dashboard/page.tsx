@@ -22,15 +22,16 @@ import {
   BarChart2,
   PieChart,
   TrendingUp,
-  LineChart
+  LineChart,
+  AlertOctagon,
 } from "lucide-react";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
-import { Job, User } from "@/lib/types";
+import { Job, User, Dispute } from "@/lib/types";
 import { collection, getDocs, query, where, DocumentReference, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, Pie, Cell, ComposedChart, YAxis, Legend, Line } from "recharts"
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, Pie, Cell, ComposedChart, YAxis, Legend, Line, Tooltip } from "recharts"
 import {
   ChartContainer,
   ChartTooltip,
@@ -55,6 +56,12 @@ const bidStatusColors: { [key: string]: string } = {
   'Completed & Won': 'hsl(var(--primary))',
   'Not Selected': 'hsl(var(--destructive))',
   'Cancelled': 'hsl(var(--muted-foreground))',
+};
+
+const disputeStatusColors: { [key: string]: string } = {
+  'Open': 'hsl(var(--destructive))',
+  'Under Review': 'hsl(var(--warning))',
+  'Resolved': 'hsl(var(--success))',
 };
 
 
@@ -227,14 +234,14 @@ function InstallerDashboard() {
                   innerRadius={60}
                   strokeWidth={5}
               >
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
                   {bidStatusData.map((entry) => (
                       <Cell key={`cell-${entry.name}`} fill={entry.fill} />
                   ))}
               </Pie>
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
             </ChartContainer>
           </CardContent>
         </Card>
@@ -393,14 +400,14 @@ function JobGiverDashboard() {
           <CardContent>
              <ChartContainer config={jobStatusChartConfig} className="mx-auto aspect-square h-64">
                 <Pie data={jobStatusData} dataKey="count" nameKey="name" innerRadius={60} strokeWidth={5}>
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
                     {jobStatusData.map((entry) => (
                       <Cell key={`cell-${entry.name}`} fill={entry.fill} />
                     ))}
                 </Pie>
-                 <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
-                />
             </ChartContainer>
           </CardContent>
         </Card>
@@ -411,16 +418,15 @@ function JobGiverDashboard() {
 
 function AdminDashboard() {
   const { setHelp } = useHelp();
-  const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, totalBids: 0, completedJobValue: 0 });
+  const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, openDisputes: 0, completedJobValue: 0 });
   const [jobStatusData, setJobStatusData] = React.useState<any[]>([]);
   const [userGrowthData, setUserGrowthData] = React.useState<any[]>([]);
   const [platformActivityData, setPlatformActivityData] = React.useState<any[]>([]);
+  const [disputeStatusData, setDisputeStatusData] = React.useState<any[]>([]);
 
 
   const jobStatusChartConfig = {
-    count: {
-      label: "Jobs",
-    },
+    count: { label: "Jobs" },
     ...Object.keys(jobStatusColors).reduce((acc, status) => {
       acc[status] = { label: status, color: jobStatusColors[status] };
       return acc;
@@ -428,16 +434,21 @@ function AdminDashboard() {
   } satisfies ChartConfig
 
   const userGrowthChartConfig = {
-    users: {
-      label: "New Users",
-      color: "hsl(var(--primary))",
-    },
+    users: { label: "New Users", color: "hsl(var(--primary))" },
   } satisfies ChartConfig
   
   const platformActivityChartConfig = {
-    jobs: { label: "Jobs", color: "hsl(var(--chart-1))" },
-    bids: { label: "Bids", color: "hsl(var(--chart-2))" },
-    value: { label: "Value", color: "hsl(var(--primary))" },
+    jobs: { label: "Jobs Created", color: "hsl(var(--chart-1))" },
+    bids: { label: "Bids Placed", color: "hsl(var(--chart-2))" },
+    value: { label: "Completed Value", color: "hsl(var(--primary))" },
+  } satisfies ChartConfig;
+
+  const disputeStatusChartConfig = {
+    count: { label: "Disputes" },
+    ...Object.keys(disputeStatusColors).reduce((acc, status) => {
+      acc[status] = { label: status, color: disputeStatusColors[status] };
+      return acc;
+    }, {} as ChartConfig),
   } satisfies ChartConfig;
 
 
@@ -445,18 +456,20 @@ function AdminDashboard() {
     const fetchStats = async () => {
         const usersSnapshot = await getDocs(collection(db, 'users'));
         const jobsSnapshot = await getDocs(collection(db, 'jobs'));
+        const disputesSnapshot = await getDocs(collection(db, 'disputes'));
 
         const totalUsers = usersSnapshot.size;
         const totalJobs = jobsSnapshot.size;
-        let totalBids = 0;
         let completedValue = 0;
-
-        const statuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Completed': 0, 'Cancelled': 0, 'Bidding Closed': 0, 'Awarded': 0 };
+        let openDisputes = 0;
+        
+        const jobStatuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Completed': 0, 'Cancelled': 0, 'Bidding Closed': 0, 'Awarded': 0 };
+        const disputeStatuses: { [key: string]: number } = { 'Open': 0, 'Under Review': 0, 'Resolved': 0 };
 
         const activityData: { [key: string]: { jobs: number, bids: number, value: number } } = {};
-
         const last6Months = Array.from({ length: 6 }, (_, i) => {
             const d = new Date();
+            d.setDate(1); // Set to start of month to avoid timezone issues
             d.setMonth(d.getMonth() - i);
             return d.toLocaleString('default', { month: 'short', year: '2-digit' });
         }).reverse();
@@ -469,9 +482,8 @@ function AdminDashboard() {
             const job = jobDoc.data() as Job;
             const jobMonth = new Date(job.postedAt.seconds * 1000).toLocaleString('default', { month: 'short', year: '2-digit' });
             
-            totalBids += job.bids?.length || 0;
-            if (statuses[job.status] !== undefined) {
-               statuses[job.status]++;
+            if (jobStatuses[job.status] !== undefined) {
+               jobStatuses[job.status]++;
             }
 
             if (activityData[jobMonth]) {
@@ -491,6 +503,16 @@ function AdminDashboard() {
             }
         });
 
+        disputesSnapshot.forEach(disputeDoc => {
+            const dispute = disputeDoc.data() as Dispute;
+            if (disputeStatuses[dispute.status] !== undefined) {
+                disputeStatuses[dispute.status]++;
+            }
+            if (dispute.status === 'Open') {
+                openDisputes++;
+            }
+        });
+
         const growthData: { [key: string]: number } = {};
         usersSnapshot.forEach(userDoc => {
             const user = userDoc.data() as User;
@@ -503,9 +525,10 @@ function AdminDashboard() {
         });
 
         setUserGrowthData(last6Months.map(month => ({ month, users: growthData[month] || 0 })));
-        setJobStatusData(Object.entries(statuses).map(([name, value]) => ({ name, count: value })));
+        setJobStatusData(Object.entries(jobStatuses).map(([name, value]) => ({ name, count: value })));
+        setDisputeStatusData(Object.entries(disputeStatuses).map(([name, value]) => ({ name, count: value, fill: disputeStatusColors[name] })));
         setPlatformActivityData(Object.entries(activityData).map(([month, data]) => ({ month, ...data })));
-        setStats({ totalUsers, totalJobs, totalBids, completedJobValue: completedValue });
+        setStats({ totalUsers, totalJobs, openDisputes, completedJobValue: completedValue });
     };
 
     fetchStats();
@@ -525,13 +548,13 @@ function AdminDashboard() {
               <span className="font-semibold">Total Jobs:</span> The total number of jobs ever created on the platform.
             </li>
             <li>
-              <span className="font-semibold">Total Bids:</span> The sum of all bids placed across all jobs.
+              <span className="font-semibold">Open Disputes:</span> The number of active disputes requiring your attention.
             </li>
             <li>
               <span className="font-semibold">Completed Job Value:</span> The total monetary value of all successfully completed jobs.
             </li>
           </ul>
-          <p>Use the navigation menu to access detailed views like the User Directory.</p>
+          <p>Use the charts to track growth, activity, and platform health. Use the navigation menu to access detailed views like the User Directory and All Jobs list.</p>
         </div>
       )
     });
@@ -569,16 +592,18 @@ function AdminDashboard() {
           </Link>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Bids</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalBids}</div>
-            <p className="text-xs text-muted-foreground">
-              Bids placed on all jobs
-            </p>
-          </CardContent>
+           <Link href="/dashboard/disputes">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Open Disputes</CardTitle>
+              <AlertOctagon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.openDisputes}</div>
+              <p className="text-xs text-muted-foreground">
+                Cases requiring review
+              </p>
+            </CardContent>
+          </Link>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -598,7 +623,7 @@ function AdminDashboard() {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><LineChart className="h-5 w-5" /> Platform Activity</CardTitle>
-                <CardDescription>Jobs, Bids, and Completed Value over the last 6 months.</CardDescription>
+                <CardDescription>Jobs created, bids placed, and completed value over the last 6 months.</CardDescription>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={platformActivityChartConfig} className="h-64 w-full">
@@ -607,7 +632,7 @@ function AdminDashboard() {
                         <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
                         <YAxis yAxisId="left" orientation="left" stroke="hsl(var(--chart-1))" />
                         <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--primary))" />
-                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Tooltip content={<ChartTooltipContent />} />
                         <Legend />
                         <Bar dataKey="jobs" fill="var(--color-jobs)" yAxisId="left" name="Jobs" radius={4} />
                         <Bar dataKey="bids" fill="var(--color-bids)" yAxisId="left" name="Bids" radius={4} />
@@ -618,29 +643,8 @@ function AdminDashboard() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><BarChart2 className="h-5 w-5" /> Jobs Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={jobStatusChartConfig} className="h-64 w-full">
-              <BarChart data={jobStatusData} accessibilityLayer>
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
-                />
-                <Bar dataKey="count" radius={5}>
-                   {jobStatusData.map((entry) => (
-                      <Cell key={`cell-${entry.name}`} fill={jobStatusColors[entry.name]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
             <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> User Growth</CardTitle>
+            <CardDescription>New user sign-ups over the last 6 months.</CardDescription>
           </CardHeader>
           <CardContent>
              <ChartContainer config={userGrowthChartConfig} className="h-64 w-full">
@@ -664,6 +668,42 @@ function AdminDashboard() {
                   stroke="var(--color-users)"
                 />
               </AreaChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><BarChart2 className="h-5 w-5" /> Jobs Status Overview</CardTitle>
+            <CardDescription>A snapshot of all jobs currently on the platform by their status.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={jobStatusChartConfig} className="h-64 w-full">
+              <BarChart data={jobStatusData} accessibilityLayer>
+                <CartesianGrid vertical={false} />
+                <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.substring(0, 3)} />
+                <Tooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="count" radius={5}>
+                   {jobStatusData.map((entry) => (
+                      <Cell key={`cell-${entry.name}`} fill={jobStatusColors[entry.name]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><AlertOctagon className="h-5 w-5" /> Disputes Overview</CardTitle>
+            <CardDescription>Current status of all dispute resolution cases.</CardDescription>
+          </CardHeader>
+          <CardContent>
+             <ChartContainer config={disputeStatusChartConfig} className="mx-auto aspect-square h-64">
+                <Pie data={disputeStatusData} dataKey="count" nameKey="name" innerRadius={60} strokeWidth={5}>
+                    <Tooltip content={<ChartTooltipContent hideLabel />} />
+                    {disputeStatusData.map((entry) => (
+                      <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                    ))}
+                </Pie>
             </ChartContainer>
           </CardContent>
         </Card>
@@ -701,5 +741,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
