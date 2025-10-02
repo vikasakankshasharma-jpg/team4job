@@ -12,6 +12,7 @@ import {
   Users as UsersIcon,
   User as UserIcon,
   LifeBuoy,
+  FileText,
 } from "lucide-react";
 import * as React from "react";
 import {
@@ -38,6 +39,7 @@ const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/jobs", icon: Search, label: "Browse Jobs" },
   { href: "/dashboard/my-bids", icon: Briefcase, label: "My Bids" },
+  { href: "/dashboard/reports", icon: FileText, label: "Reports" },
   { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
@@ -45,6 +47,7 @@ const jobGiverNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job" },
   { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs" },
+  { href: "/dashboard/reports", icon: FileText, label: "Reports" },
   { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
@@ -52,6 +55,7 @@ const adminNavItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
     { href: "/dashboard/all-jobs", icon: Briefcase, label: "Jobs" },
+    { href: "/dashboard/reports", icon: FileText, label: "Reports" },
 ];
 
 export function Header() {
