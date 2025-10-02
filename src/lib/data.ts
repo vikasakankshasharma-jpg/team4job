@@ -1,4 +1,5 @@
 
+
 import type { User, Job, Bid, Comment, PrivateMessage, Dispute } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
@@ -210,6 +211,37 @@ export const users: User[] = [
         { month: 'Aug', points: 100 },
         { month: 'Sep', points: 50 },
       ]
+    },
+  },
+  {
+    id: 'JOBGIVER-20240401-IVAN',
+    name: 'Ivan Petrov',
+    email: 'ivan.p@example.com',
+    mobile: '9123456789',
+    avatarUrl: PlaceHolderImages.find(p => p.id === 'avatar1')?.imageUrl || '',
+    realAvatarUrl: 'https://picsum.photos/seed/ivan/100/100',
+    pincodes: { residential: '560001, Bangalore G.P.O.' },
+    roles: ['Job Giver'],
+    memberSince: new Date('2024-04-01'),
+  },
+  {
+    id: 'INSTALLER-20240520-JANE',
+    name: 'Jane Doe',
+    email: 'jane.d@example.com',
+    mobile: '9988776655',
+    avatarUrl: PlaceHolderImages.find(p => p.id === 'avatar2')?.imageUrl || '',
+    realAvatarUrl: 'https://picsum.photos/seed/jane/100/100',
+    pincodes: { residential: '700001, Kolkata G.P.O.' },
+    roles: ['Installer'],
+    memberSince: new Date('2024-05-20'),
+    installerProfile: {
+      tier: 'Bronze',
+      points: 150,
+      skills: ['Analog HD', 'Troubleshooting', 'Wiring'],
+      rating: 4.2,
+      reviews: 2,
+      verified: true,
+      reputationHistory: []
     },
   },
 ];
@@ -789,3 +821,4 @@ export const disputes: Dispute[] = [
         resolvedAt: new Date('2024-09-04T11:00:00Z'),
     }
 ]
+
