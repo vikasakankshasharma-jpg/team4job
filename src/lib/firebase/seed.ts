@@ -17,7 +17,7 @@ async function seedDatabase() {
         throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set. Please provide it in your .env file.");
     }
 
-    const parsedServiceAccount = JSON.parse(serviceAccountKey.replace(/\\n/g, '\n'));
+    const parsedServiceAccount = JSON.parse(serviceAccountKey);
 
     initializeApp({
       credential: cert(parsedServiceAccount),
