@@ -36,7 +36,6 @@ const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/jobs", icon: Search, label: "Browse Jobs" },
   { href: "/dashboard/my-bids", icon: Briefcase, label: "My Bids" },
-  { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
   { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
@@ -44,15 +43,33 @@ const jobGiverNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job" },
   { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs" },
-  { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
   { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
+];
+
+const adminNavItems = [
+    { href: "/dashboard", icon: Home, label: "Dashboard" },
+    { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
+    { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
 export function Header() {
   const pathname = usePathname();
   const { role } = useUser();
-  const navItems = role === "Installer" ? installerNavItems : jobGiverNavItems;
+  
+  const getNavItems = () => {
+    switch (role) {
+      case "Admin":
+        return adminNavItems;
+      case "Installer":
+        return installerNavItems;
+      case "Job Giver":
+        return jobGiverNavItems;
+      default:
+        return [];
+    }
+  };
 
+  const navItems = getNavItems();
   const breadcrumbSegments = pathname.split('/').filter(Boolean);
 
   return (
