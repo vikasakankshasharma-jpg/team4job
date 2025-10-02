@@ -269,24 +269,27 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
         }
     }, [bid.timestamp]);
 
-    const installerName = isAwardedToThisBidder ? installer.name : showRanking ? `Position #${rank}` : installer.anonymousId;
+    const isAdmin = role === 'Admin';
+    const showRealIdentity = isAdmin || isAwardedToThisBidder;
+
+    const installerName = showRealIdentity ? installer.name : (showRanking ? `Position #${rank}` : installer.anonymousId);
 
     return (
         <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && showRanking && rank === 1 ? 'border-primary' : ''}`}>
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                     <Avatar>
-                       {isAwardedToThisBidder ? (
+                       {showRealIdentity ? (
                             <AvatarImage src={installer.realAvatarUrl} alt={installer.name} />
                        ) : (
                            <AnimatedAvatar svg={installer.avatarUrl} />
                        )}
-                        <AvatarFallback>{isAwardedToThisBidder ? installer.name.substring(0, 2) : installer.anonymousId.substring(0, 2)}</AvatarFallback>
+                        <AvatarFallback>{showRealIdentity ? installer.name.substring(0, 2) : installer.anonymousId.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
-                           {role === 'Admin' ? (
-                                <Link href={`/dashboard/users/${installer.id}`} className="font-semibold hover:underline">{installer.anonymousId}</Link>
+                           {isAdmin ? (
+                                <Link href={`/dashboard/users/${installer.id}`} className="font-semibold hover:underline">{installerName}</Link>
                            ) : (
                                 <p className="font-semibold">{installerName}</p>
                            )}
@@ -295,7 +298,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
                             <span>{installer.installerProfile?.rating} ({installer.installerProfile?.reviews} reviews)</span>
-                            {!isAwardedToThisBidder && <span className="font-mono">{installer.anonymousId}</span>}
+                            {!showRealIdentity && <span className="font-mono">{installer.anonymousId}</span>}
                             {installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
                         </div>
                     </div>
