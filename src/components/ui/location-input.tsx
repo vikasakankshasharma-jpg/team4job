@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FormDescription, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useJsApiLoader } from '@react-google-maps/api';
 
 interface PostOffice {
     Name: string;
@@ -27,9 +28,10 @@ interface LocationInputProps {
     placeholder?: string;
     description?: string;
     control: Control<any>;
+    onLocationGeocoded?: (coords: { lat: number; lng: number }) => void;
 }
 
-export function LocationInput({ name, label, placeholder, description, control }: LocationInputProps) {
+export function LocationInput({ name, label, placeholder, description, control, onLocationGeocoded }: LocationInputProps) {
     const { field, fieldState } = useController({ name, control });
     const { setValue } = useFormContext();
 
@@ -39,18 +41,22 @@ export function LocationInput({ name, label, placeholder, description, control }
     const [error, setError] = useState<string | null>(null);
     const [selectedPostOffice, setSelectedPostOffice] = useState('');
 
-    // When the form field value changes from the outside, update the component state
+    const { isLoaded } = useJsApiLoader({
+        id: 'google-map-script-geocoding',
+        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    });
+
     useEffect(() => {
         if (field.value && typeof field.value === 'string') {
             const [currentPincode, currentPO] = field.value.split(', ');
-            if(currentPincode && currentPincode.length === 6) {
+            if (currentPincode && currentPincode.length === 6) {
                 setPincode(currentPincode);
                 fetchPostOffices(currentPincode);
-                if(currentPO) {
+                if (currentPO) {
                     setSelectedPostOffice(currentPO);
                 }
             } else {
-                 setPincode(field.value);
+                setPincode(field.value);
             }
         }
     }, [field.value]);
@@ -84,7 +90,7 @@ export function LocationInput({ name, label, placeholder, description, control }
     }, []);
 
     const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value.replace(/\D/g, ''); // Allow only digits
+        const value = e.target.value.replace(/\D/g, '');
         setPincode(value);
         setValue(name, value, { shouldValidate: true });
         if (value.length === 6) {
@@ -94,10 +100,21 @@ export function LocationInput({ name, label, placeholder, description, control }
             setSelectedPostOffice('');
         }
     };
-    
+
     const handlePostOfficeChange = (postOfficeName: string) => {
         setSelectedPostOffice(postOfficeName);
-        setValue(name, `${pincode}, ${postOfficeName}`, { shouldValidate: true, shouldDirty: true });
+        const fullLocation = `${pincode}, ${postOfficeName}`;
+        setValue(name, fullLocation, { shouldValidate: true, shouldDirty: true });
+
+        if (isLoaded && onLocationGeocoded) {
+            const geocoder = new window.google.maps.Geocoder();
+            geocoder.geocode({ address: fullLocation }, (results, status) => {
+                if (status === 'OK' && results && results[0].geometry) {
+                    const location = results[0].geometry.location;
+                    onLocationGeocoded({ lat: location.lat(), lng: location.lng() });
+                }
+            });
+        }
     };
 
     return (
@@ -136,4 +153,3 @@ export function LocationInput({ name, label, placeholder, description, control }
         </FormItem>
     );
 }
-
