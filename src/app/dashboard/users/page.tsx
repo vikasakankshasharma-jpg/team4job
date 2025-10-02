@@ -26,6 +26,7 @@ import React from "react";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { users as mockUsers } from "@/lib/data";
+import { useUser } from "@/hooks/use-user";
 
 
 const tierIcons: Record<string, React.ReactNode> = {
@@ -37,8 +38,23 @@ const tierIcons: Record<string, React.ReactNode> = {
 
 export default function UsersPage() {
   const router = useRouter();
+  const { user: currentUser, role } = useUser();
   const [users, setUsers] = React.useState<User[]>(mockUsers);
   const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (role && role !== 'Admin') {
+      router.push('/dashboard');
+    }
+  }, [role, router]);
+
+  if (role !== 'Admin') {
+    return (
+        <div className="flex items-center justify-center h-full">
+            <p className="text-muted-foreground">Redirecting...</p>
+        </div>
+    );
+  }
 
   const handleRowClick = (userId: string) => {
     router.push(`/dashboard/users/${userId}`);
