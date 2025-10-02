@@ -1,22 +1,17 @@
 
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { config } from 'dotenv';
 import { jobs as mockJobs } from '../data';
 import { users as mockUsers } from '../data';
 import type { Job, User } from '../types';
-
-config();
 
 async function seedDatabase() {
   try {
     console.log('Initializing Firebase Admin SDK...');
     
-    // Construct credentials from individual environment variables
     const serviceAccount = {
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      // Replace the escaped newlines in the private key
       privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
     };
 
@@ -34,7 +29,6 @@ async function seedDatabase() {
 
     const batch = db.batch();
 
-    // 1. Seed Users
     console.log('Preparing to seed users...');
     mockUsers.forEach((user: Omit<User, 'memberSince'> & { memberSince: Date | string }) => {
       const userRef = db.collection('users').doc(user.id);
@@ -42,7 +36,6 @@ async function seedDatabase() {
         ...user,
         memberSince: Timestamp.fromDate(new Date(user.memberSince)),
       };
-      // Omit sensitive aadharData if it exists
       if (userData.installerProfile?.aadharData) {
         delete userData.installerProfile.aadharData;
       }
@@ -50,7 +43,6 @@ async function seedDatabase() {
     });
     console.log(`${mockUsers.length} users prepared for batch write.`);
 
-    // 2. Seed Jobs
     console.log('Preparing to seed jobs...');
     mockJobs.forEach((job: Omit<Job, 'postedAt' | 'deadline' | 'jobStartDate' | 'bids' | 'comments' | 'jobGiver' | 'awardedInstaller'> & { postedAt: any; deadline: any; jobStartDate: any; bids: any[]; comments: any[]; jobGiver: any; awardedInstaller?: any }) => {
       const jobRef = db.collection('jobs').doc(job.id);
@@ -90,7 +82,6 @@ async function seedDatabase() {
         jobData.awardedInstaller = awardedInstallerRef;
       }
       
-      // Ensure the property does not exist if it's not set
       if (!jobData.awardedInstaller) {
         delete jobData.awardedInstaller;
       }
@@ -106,7 +97,6 @@ async function seedDatabase() {
     });
     console.log(`${mockJobs.length} jobs prepared for batch write.`);
 
-    // Commit the batch
     console.log('Committing batch write to Firestore...');
     await batch.commit();
     console.log('------------------------------------------');
