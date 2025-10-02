@@ -45,6 +45,11 @@ import { useHelp } from "@/hooks/use-help";
 import { jobs as allMockJobs } from "@/lib/data";
 
 function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
+  
+  const wasAwardedDirectly = (job: Job) => {
+    return job.status === 'Awarded' && job.bids.length === 0;
+  }
+
   return (
       <Card>
         <CardHeader>
@@ -60,6 +65,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
                 <TableHead>Job Title</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Bids</TableHead>
+                <TableHead className="hidden md:table-cell">Award Type</TableHead>
                 <TableHead className="hidden md:table-cell">Posted On</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
@@ -69,7 +75,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center h-24">Loading jobs...</TableCell>
+                  <TableCell colSpan={6} className="text-center h-24">Loading jobs...</TableCell>
                 </TableRow>
               ) : jobs.length > 0 ? jobs.map(job => (
                  <TableRow key={job.id}>
@@ -80,6 +86,9 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
                       <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{job.bids.length}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {job.awardedInstaller ? (wasAwardedDirectly(job) ? 'Direct' : 'Bidding') : 'N/A'}
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">{format(toDate(job.postedAt), "MMM d, yyyy")}</TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -107,7 +116,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
                   </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center h-24">You haven't posted any jobs in this category.</TableCell>
+                  <TableCell colSpan={6} className="text-center h-24">You haven't posted any jobs in this category.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -159,6 +168,9 @@ export default function PostedJobsPage() {
                     </li>
                     <li>
                         <span className="font-semibold">Archived:</span> Shows all your jobs that have been completed. This is your history of successful hires.
+                    </li>
+                     <li>
+                        <span className="font-semibold">Award Type:</span> This column shows how a job was awarded. "Bidding" means you chose from bids, while "Direct" means you awarded it directly to an installer.
                     </li>
                 </ul>
                 <p>
