@@ -13,6 +13,7 @@ import {
   User as UserIcon,
   LifeBuoy,
   FileText,
+  AlertOctagon,
 } from "lucide-react";
 import * as React from "react";
 import {
@@ -55,6 +56,7 @@ const adminNavItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
     { href: "/dashboard/all-jobs", icon: Briefcase, label: "Jobs" },
+    { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
     { href: "/dashboard/reports", icon: FileText, label: "Reports" },
 ];
 
