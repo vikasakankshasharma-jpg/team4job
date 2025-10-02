@@ -19,6 +19,9 @@ import {
   UserCheck,
   Users,
   IndianRupee,
+  BarChart2,
+  PieChart,
+  TrendingUp
 } from "lucide-react";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
@@ -26,11 +29,49 @@ import React from "react";
 import { Job, User } from "@/lib/types";
 import { collection, getDocs, query, where, DocumentReference, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, Pie, Cell } from "recharts"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+
+const jobStatusColors: { [key: string]: string } = {
+  'Open for Bidding': 'hsl(var(--success))',
+  'In Progress': 'hsl(var(--info))',
+  'Awarded': 'hsl(var(--info))',
+  'Bidding Closed': 'hsl(var(--warning))',
+  'Completed': 'hsl(var(--secondary-foreground))',
+  'Cancelled': 'hsl(var(--destructive))',
+};
+
+const bidStatusColors: { [key: string]: string } = {
+  'Bidded': 'hsl(var(--info))',
+  'Awarded': 'hsl(var(--success))',
+  'Completed & Won': 'hsl(var(--primary))',
+  'Not Selected': 'hsl(var(--destructive))',
+  'Cancelled': 'hsl(var(--muted-foreground))',
+};
+
 
 function InstallerDashboard() {
   const { user } = useUser();
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ openJobs: 0, myBids: 0, jobsWon: 0 });
+  const [bidStatusData, setBidStatusData] = React.useState<any[]>([]);
+
+  const bidStatusChartConfig = {
+    count: {
+      label: "Bids",
+    },
+    ...Object.keys(bidStatusColors).reduce((acc, status) => {
+      acc[status] = { label: status, color: bidStatusColors[status] };
+      return acc;
+    }, {} as ChartConfig),
+  } satisfies ChartConfig
 
   React.useEffect(() => {
     if (!user) return;
@@ -44,21 +85,35 @@ function InstallerDashboard() {
       
       let myBidsCount = 0;
       let jobsWonCount = 0;
+      const bidStatuses: { [key: string]: number } = { 'Bidded': 0, 'Awarded': 0, 'Completed & Won': 0, 'Not Selected': 0, 'Cancelled': 0 };
 
       allJobs.forEach(job => {
-          const userHasBid = job.bids.some(bid => (bid.installer as DocumentReference).id === user.id);
+          const myBid = job.bids.some(bid => (bid.installer as DocumentReference).id === user.id);
           const awardedId = (job.awardedInstaller as DocumentReference)?.id;
-          const userIsAwarded = awardedId === user.id;
+          const isAwardedToMe = awardedId === user.id;
 
-          if (userHasBid || userIsAwarded) {
+          if (myBid || isAwardedToMe) {
               myBidsCount++;
+              
+              if (isAwardedToMe) {
+                  if (job.status === 'Completed') bidStatuses['Completed & Won']++;
+                  else if(job.status === 'Awarded' || job.status === 'In Progress') bidStatuses['Awarded']++;
+              } else if (job.status === 'Open for Bidding') {
+                  bidStatuses['Bidded']++;
+              } else if (job.status === 'Cancelled') {
+                  bidStatuses['Cancelled']++;
+              } else {
+                  bidStatuses['Not Selected']++;
+              }
           }
-          if (userIsAwarded && (job.status === 'Awarded' || job.status === 'In Progress')) {
+
+          if (isAwardedToMe && (job.status === 'Awarded' || job.status === 'In Progress')) {
               jobsWonCount++;
           }
       });
-
+      
       setStats({ openJobs, myBids: myBidsCount, jobsWon: jobsWonCount });
+      setBidStatusData(Object.entries(bidStatuses).map(([name, value]) => ({ name, count: value, fill: bidStatusColors[name] })));
     };
 
     fetchStats();
@@ -155,6 +210,33 @@ function InstallerDashboard() {
             </Button>
           </CardContent>
         </Card>
+         <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><PieChart className="h-5 w-5" /> My Bids Overview</CardTitle>
+            <CardDescription>
+              A summary of all your bidding activity.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={bidStatusChartConfig} className="mx-auto aspect-square h-64">
+              <Pie
+                  data={bidStatusData}
+                  dataKey="count"
+                  nameKey="name"
+                  innerRadius={60}
+                  strokeWidth={5}
+              >
+                  {bidStatusData.map((entry) => (
+                      <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                  ))}
+              </Pie>
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent hideLabel />}
+              />
+            </ChartContainer>
+          </CardContent>
+        </Card>
       </div>
     </>
   );
@@ -164,6 +246,17 @@ function JobGiverDashboard() {
   const { user } = useUser();
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ activeJobs: 0, completedJobs: 0, totalBids: 0 });
+  const [jobStatusData, setJobStatusData] = React.useState<any[]>([]);
+
+  const jobStatusChartConfig = {
+    count: {
+      label: "Jobs",
+    },
+    ...Object.keys(jobStatusColors).reduce((acc, status) => {
+      acc[status] = { label: status, color: jobStatusColors[status] };
+      return acc;
+    }, {} as ChartConfig),
+  } satisfies ChartConfig
 
   React.useEffect(() => {
     if (!user) return;
@@ -176,18 +269,24 @@ function JobGiverDashboard() {
       let active = 0;
       let completed = 0;
       let bids = 0;
+      const statuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Completed': 0, 'Cancelled': 0 };
 
       jobsSnapshot.forEach(jobDoc => {
         const job = jobDoc.data() as Job;
         if (job.status !== 'Completed' && job.status !== 'Cancelled') {
             active++;
-        } else if (job.status === 'Completed') {
+        }
+        if (job.status === 'Completed') {
             completed++;
+        }
+        if (statuses[job.status] !== undefined) {
+           statuses[job.status]++;
         }
         bids += job.bids?.length || 0;
       });
-
+      
       setStats({ activeJobs: active, completedJobs: completed, totalBids: bids });
+      setJobStatusData(Object.entries(statuses).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] })));
     };
 
     fetchStats();
@@ -283,6 +382,27 @@ function JobGiverDashboard() {
             </Button>
           </CardContent>
         </Card>
+         <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><PieChart className="h-5 w-5" /> My Jobs Status</CardTitle>
+            <CardDescription>
+              An overview of all the jobs you have posted.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+             <ChartContainer config={jobStatusChartConfig} className="mx-auto aspect-square h-64">
+                <Pie data={jobStatusData} dataKey="count" nameKey="name" innerRadius={60} strokeWidth={5}>
+                    {jobStatusData.map((entry) => (
+                      <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                    ))}
+                </Pie>
+                 <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+            </ChartContainer>
+          </CardContent>
+        </Card>
       </div>
     </>
   );
@@ -291,6 +411,26 @@ function JobGiverDashboard() {
 function AdminDashboard() {
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, totalBids: 0, completedJobValue: 0 });
+  const [jobStatusData, setJobStatusData] = React.useState<any[]>([]);
+  const [userGrowthData, setUserGrowthData] = React.useState<any[]>([]);
+
+  const jobStatusChartConfig = {
+    count: {
+      label: "Jobs",
+    },
+    ...Object.keys(jobStatusColors).reduce((acc, status) => {
+      acc[status] = { label: status, color: jobStatusColors[status] };
+      return acc;
+    }, {} as ChartConfig),
+  } satisfies ChartConfig
+
+  const userGrowthChartConfig = {
+    users: {
+      label: "New Users",
+      color: "hsl(var(--primary))",
+    },
+  } satisfies ChartConfig
+
 
   React.useEffect(() => {
     const fetchStats = async () => {
@@ -302,9 +442,14 @@ function AdminDashboard() {
         let totalBids = 0;
         let completedValue = 0;
 
+        const statuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Completed': 0, 'Cancelled': 0, 'Bidding Closed': 0, 'Awarded': 0 };
+
         jobsSnapshot.forEach(jobDoc => {
             const job = jobDoc.data() as Job;
             totalBids += job.bids?.length || 0;
+            if (statuses[job.status] !== undefined) {
+               statuses[job.status]++;
+            }
             if (job.status === 'Completed' && job.awardedInstaller) {
                 const awardedId = (job.awardedInstaller as DocumentReference).id;
                 const winningBid = job.bids.find(bid => (bid.installer as DocumentReference).id === awardedId);
@@ -314,6 +459,21 @@ function AdminDashboard() {
             }
         });
 
+        const growthData: { [key: string]: number } = {};
+        usersSnapshot.forEach(userDoc => {
+            const user = userDoc.data() as User;
+            const month = new Date(user.memberSince.seconds * 1000).toLocaleString('default', { month: 'short', year: '2-digit' });
+            growthData[month] = (growthData[month] || 0) + 1;
+        });
+
+        const last6Months = Array.from({ length: 6 }, (_, i) => {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            return d.toLocaleString('default', { month: 'short', year: '2-digit' });
+        }).reverse();
+
+        setUserGrowthData(last6Months.map(month => ({ month, users: growthData[month] || 0 })));
+        setJobStatusData(Object.entries(statuses).map(([name, value]) => ({ name, count: value })));
         setStats({ totalUsers, totalJobs, totalBids, completedJobValue: completedValue });
     };
 
@@ -402,6 +562,70 @@ function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+       <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><BarChart2 className="h-5 w-5" /> Jobs Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={jobStatusChartConfig} className="h-64 w-full">
+              <BarChart data={jobStatusData} accessibilityLayer>
+                <CartesianGrid vertical={false} />
+                <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Bar dataKey="count" radius={5}>
+                   {jobStatusData.map((entry) => (
+                      <Cell key={`cell-${entry.name}`} fill={jobStatusColors[entry.name]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> User Growth</CardTitle>
+          </CardHeader>
+          <CardContent>
+             <ChartContainer config={userGrowthChartConfig} className="h-64 w-full">
+              <AreaChart data={userGrowthData} accessibilityLayer margin={{ left: 12, right: 12, top: 10 }}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="dot" />}
+                />
+                <Area
+                  dataKey="users"
+                  type="natural"
+                  fill="var(--color-users)"
+                  fillOpacity={0.4}
+                  stroke="var(--color-users)"
+                />
+              </AreaChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
+      
+       {userGrowthData.length > 0 && userGrowthData[userGrowthData.length - 1].users > 5 && (
+            <Alert>
+                <TrendingUp className="h-4 w-4" />
+                <AlertTitle>Congratulations!</AlertTitle>
+                <AlertDescription>
+                    Your platform is growing! You had {userGrowthData[userGrowthData.length - 1].users} new sign-ups this month. Keep up the great work.
+                </AlertDescription>
+            </Alert>
+       )}
     </>
   );
 }
@@ -425,5 +649,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
