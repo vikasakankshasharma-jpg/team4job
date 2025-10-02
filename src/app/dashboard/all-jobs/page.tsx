@@ -111,6 +111,10 @@ export default function AllJobsPage() {
   ).length;
   
   const jobStatuses = ["All", ...Array.from(new Set(mockJobs.map(j => j.status)))];
+  
+  const wasAwardedDirectly = (job: Job) => {
+    return (job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') && job.bids.length === 0;
+  }
 
   return (
     <Card>
@@ -123,11 +127,10 @@ export default function AllJobsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Job Title</TableHead>
-              <TableHead>Job ID</TableHead>
-              <TableHead>Pincode</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="hidden sm:table-cell">Job Giver</TableHead>
               <TableHead className="hidden md:table-cell">Bids</TableHead>
+              <TableHead className="hidden lg:table-cell">Award Type</TableHead>
               <TableHead className="text-right flex items-center gap-2 justify-end">
                 Posted
                 {activeFiltersCount > 0 && (
@@ -139,12 +142,8 @@ export default function AllJobsPage() {
               </TableHead>
             </TableRow>
              <TableRow className="hover:bg-transparent">
-                <TableCell className="p-1"></TableCell>
                 <TableCell className="p-1">
-                    <Input placeholder="Filter by Job ID..." value={filters.jobId} onChange={e => handleFilterChange('jobId', e.target.value)} className="h-8" />
-                </TableCell>
-                <TableCell className="p-1">
-                    <Input placeholder="Filter by Pincode..." value={filters.pincode} onChange={e => handleFilterChange('pincode', e.target.value)} className="h-8" />
+                    <Input placeholder="Filter by Job Title..." value={filters.jobId} onChange={e => handleFilterChange('jobId', e.target.value)} className="h-8" />
                 </TableCell>
                  <TableCell className="p-1">
                     <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
@@ -162,6 +161,7 @@ export default function AllJobsPage() {
                     <Input placeholder="Filter by Job Giver..." value={filters.jobGiver} onChange={e => handleFilterChange('jobGiver', e.target.value)} className="h-8" />
                 </TableCell>
                 <TableCell className="p-1 hidden md:table-cell"></TableCell>
+                <TableCell className="p-1 hidden lg:table-cell"></TableCell>
                 <TableCell className="p-1 text-right">
                    <Popover>
                     <PopoverTrigger asChild>
@@ -215,12 +215,7 @@ export default function AllJobsPage() {
                 <TableRow key={job.id} onClick={() => handleRowClick(job.id)} className="cursor-pointer">
                   <TableCell>
                      <p className="font-medium">{job.title}</p>
-                  </TableCell>
-                   <TableCell>
                      <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
-                  </TableCell>
-                   <TableCell>
-                     <p className="text-sm text-muted-foreground">{job.location.split(',')[0]}</p>
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
@@ -230,6 +225,9 @@ export default function AllJobsPage() {
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {job.bids?.length || 0}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                     {job.awardedInstaller ? (wasAwardedDirectly(job) ? 'Direct' : 'Bidding') : 'N/A'}
                   </TableCell>
                   <TableCell className="text-right">
                     {format(toDate(job.postedAt), 'MMM d, yyyy')}
