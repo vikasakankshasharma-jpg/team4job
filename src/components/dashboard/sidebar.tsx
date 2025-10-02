@@ -17,6 +17,7 @@ import {
   User as UserIcon,
   Users as UsersIcon,
   FileText,
+  AlertOctagon,
 } from "lucide-react";
 import { Logo } from "@/components/icons";
 import { usePathname } from "next/navigation";
@@ -41,6 +42,7 @@ const adminNavItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
     { href: "/dashboard/all-jobs", icon: Briefcase, label: "Jobs" },
+    { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
     { href: "/dashboard/reports", icon: FileText, label: "Reports" },
     { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];

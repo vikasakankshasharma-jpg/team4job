@@ -161,6 +161,10 @@
         },
         "completionOtp": {
           "type": "string"
+        },
+        "disputeId": {
+          "type": "string",
+          "description": "The ID of the dispute associated with this job, if any."
         }
       },
       "required": ["id", "title", "description", "jobGiver", "location", "budget", "status", "deadline", "postedAt"]
@@ -203,6 +207,69 @@
         }
       },
       "required": ["author", "timestamp", "content"]
+    },
+    "Dispute": {
+      "title": "Dispute",
+      "description": "Represents a dispute raised for a job between a Job Giver and an Installer.",
+      "type": "object",
+      "properties": {
+        "jobId": {
+          "type": "string",
+          "description": "The ID of the job this dispute is related to."
+        },
+        "jobTitle": {
+          "type": "string",
+          "description": "The title of the job in dispute."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Open", "Under Review", "Resolved"],
+          "description": "The current status of the dispute."
+        },
+        "reason": {
+          "type": "string",
+          "description": "The initial reason for raising the dispute."
+        },
+        "parties": {
+          "type": "object",
+          "properties": {
+            "jobGiverId": { "type": "string" },
+            "installerId": { "type": "string" }
+          },
+          "required": ["jobGiverId", "installerId"]
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/DisputeMessage"
+          }
+        },
+        "resolution": {
+          "type": "string",
+          "description": "The final resolution summary provided by the admin."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolvedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["jobId", "jobTitle", "status", "reason", "parties", "createdAt"]
+    },
+    "DisputeMessage": {
+      "title": "Dispute Message",
+      "description": "A message within a dispute thread.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorRole": { "type": "string", "enum": ["Job Giver", "Installer", "Admin"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "authorRole", "content", "timestamp"]
     }
   },
   "auth": {
@@ -220,6 +287,12 @@
         "$ref": "#/entities/Job"
       },
       "description": "Stores all job postings. Bids and comments are embedded within each job document."
+    },
+    "/disputes/{disputeId}": {
+      "schema": {
+        "$ref": "#/entities/Dispute"
+      },
+      "description": "Stores all dispute records for jobs."
     }
   }
 }

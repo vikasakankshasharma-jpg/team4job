@@ -38,6 +38,7 @@ import {
   CalendarDays,
   KeyRound,
   Copy,
+  AlertOctagon,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -59,7 +60,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, DocumentReference } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, DocumentReference, addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 
@@ -191,7 +192,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
         installer: user, // Add full user object for UI update
     };
 
-    onJobUpdate({ bids: [...job.bids, fullNewBid] });
+    onJobUpdate({ bids: [...(job.bids || []), fullNewBid] });
 
     toast({ title: "Bid Placed!", description: "Your bid has been submitted successfully." });
   };
@@ -289,7 +290,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
     const isAdmin = role === 'Admin';
     const showRealIdentity = isAdmin || isAwardedToThisBidder;
 
-    const installerName = showRealIdentity ? installer.name : (showRanking ? `Position #${rank}` : installer.id);
+    const installerName = showRealIdentity ? installer.name : (showRanking ? `Position #${rank}` : `Installer #${rank}`);
 
     return (
         <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && showRanking && rank === 1 ? 'border-primary' : ''}`}>
@@ -315,7 +316,6 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
                             <span>{installer.installerProfile?.rating} ({installer.installerProfile?.reviews} reviews)</span>
-                            {!showRealIdentity && <span className="font-mono">{installer.id}</span>}
                             {installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
                         </div>
                     </div>
@@ -369,7 +369,7 @@ function BidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob:
     };
     
     const handleAwardJob = async (installerId: string) => {
-        const installer = job.bids.find(b => (b.installer as User).id === installerId)?.installer as User;
+        const installer = (job.bids || []).find(b => (b.installer as User).id === installerId)?.installer as User;
         if (!installer) return;
 
         const jobRef = doc(db, "jobs", job.id);
@@ -410,7 +410,7 @@ function BidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob:
   return (
     <Card id="bids-section">
       <CardHeader>
-        <CardTitle>Received Bids ({job.bids.length})</CardTitle>
+        <CardTitle>Received Bids ({job.bids?.length || 0})</CardTitle>
         <CardDescription>
           {role === 'Admin' ? 'Reviewing bids placed on this job.' : job.awardedInstaller ? 'An installer has been selected for this job.' : 
           'Review the bids and award the job to the best installer.'}
@@ -489,7 +489,7 @@ function ReputationImpactCard({ job }: { job: Job }) {
   }
   
   const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
-  const winningBid = job.bids.find(b => ((b.installer as DocumentReference)?.id || (b.installer as User)?.id) === awardedInstallerId);
+  const winningBid = (job.bids || []).find(b => ((b.installer as DocumentReference)?.id || (b.installer as User)?.id) === awardedInstallerId);
   const installer = winningBid?.installer as User;
 
   if (!installer) return null;
@@ -505,7 +505,7 @@ function ReputationImpactCard({ job }: { job: Job }) {
             <Award className="h-5 w-5 text-primary" />
             Reputation Impact
         </CardTitle>
-        <CardDescription>Reputation points awarded to {installer?.id} for this job.</CardDescription>
+        <CardDescription>Reputation points awarded to Installer #{awardedInstallerId.slice(-4)} for this job.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex justify-between items-center text-sm">
@@ -549,14 +549,14 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
         <div key={comment.id} className="flex gap-3">
             <Avatar className="h-9 w-9">
                 <AnimatedAvatar svg={author.avatarUrl} />
-                <AvatarFallback>{author.id.substring(0, 2)}</AvatarFallback>
+                <AvatarFallback>{author.name.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
                 {!isEditing ? (
                 <>
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm">{author.id}</p>
+                        <p className="font-semibold text-sm">{author.name}</p>
                         <p className="text-xs text-muted-foreground">{timeAgo}</p>
                         </div>
                         {canEdit && (
@@ -647,6 +647,91 @@ function EditDateDialog({ job, onJobUpdate, triggerElement }: { job: Job; onJobU
                         <Button variant="outline">Cancel</Button>
                     </DialogClose>
                     <Button onClick={handleSave} disabled={!newDate}>Save Changes</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function RaiseDisputeDialog({ job, user, onJobUpdate, triggerElement }: { job: Job; user: User; onJobUpdate: (updatedPart: Partial<Job>) => void; triggerElement: React.ReactNode; }) {
+    const { toast } = useToast();
+    const [reason, setReason] = React.useState("");
+    const [isOpen, setIsOpen] = React.useState(false);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+    const handleRaiseDispute = async () => {
+        if (!reason.trim()) {
+            toast({ title: "Reason is required", variant: "destructive" });
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+            const jobGiverId = (job.jobGiver as DocumentReference)?.id || (job.jobGiver as User)?.id;
+
+            const disputeData = {
+                jobId: job.id,
+                jobTitle: job.title,
+                status: 'Open' as const,
+                reason,
+                parties: {
+                    jobGiverId,
+                    installerId: awardedInstallerId,
+                },
+                messages: [{
+                    authorId: user.id,
+                    authorRole: user.roles[0],
+                    content: reason,
+                    timestamp: new Date()
+                }],
+                createdAt: new Date(),
+            };
+
+            const disputeRef = await addDoc(collection(db, "disputes"), disputeData);
+            const jobRef = doc(db, "jobs", job.id);
+            await updateDoc(jobRef, { disputeId: disputeRef.id });
+
+            onJobUpdate({ disputeId: disputeRef.id });
+
+            toast({
+                title: "Dispute Raised Successfully",
+                description: "An admin will review your case shortly. You can view the dispute from this page.",
+            });
+            setIsOpen(false);
+        } catch (error) {
+            console.error("Error raising dispute:", error);
+            toast({ title: "Failed to raise dispute", variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>{triggerElement}</DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Raise a Dispute for "{job.title}"</DialogTitle>
+                    <DialogDescription>
+                        Explain the issue clearly. An admin will review the case. This action cannot be undone.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <Textarea
+                        placeholder="Clearly describe the problem, e.g., 'The work was not completed as agreed upon...' or 'Payment has not been released after completion...'"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        rows={5}
+                    />
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline" disabled={isSubmitting}>Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleRaiseDispute} disabled={!reason.trim() || isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Submit Dispute
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -771,7 +856,7 @@ export default function JobDetailPage() {
     };
 
     // Filter out the old comment and add the updated one
-    const newCommentsForFirestore = job.comments
+    const newCommentsForFirestore = (job.comments || [])
         .filter(c => c.id !== commentToUpdate.id)
         .map(c => ({...c, author: doc(db, 'users', (c.author as User).id)}))
     
@@ -779,7 +864,7 @@ export default function JobDetailPage() {
 
     await updateDoc(jobRef, { comments: newCommentsForFirestore });
 
-    const updatedCommentsForUI = job.comments.map(c => 
+    const updatedCommentsForUI = (job.comments || []).map(c => 
       c.id === commentToUpdate.id ? { ...c, content: editingContent, timestamp: new Date() } : c
     );
     handleJobUpdate({ comments: updatedCommentsForUI });
@@ -804,7 +889,7 @@ export default function JobDetailPage() {
       comments: arrayRemove(commentObjectForFirestore)
     });
     
-    const updatedComments = job.comments.filter(c => c.id !== commentToDelete.id);
+    const updatedComments = (job.comments || []).filter(c => c.id !== commentToDelete.id);
     handleJobUpdate({ comments: updatedComments });
 
     toast({
@@ -832,7 +917,7 @@ export default function JobDetailPage() {
       author: user,
     };
     
-    handleJobUpdate({ comments: [...job.comments, fullNewComment] });
+    handleJobUpdate({ comments: [...(job.comments || []), fullNewComment] });
 
     setNewComment("");
      toast({
@@ -852,6 +937,9 @@ export default function JobDetailPage() {
   const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
   const isAwardedInstaller = role === "Installer" && user.id === awardedInstallerId;
   const jobGiver = job.jobGiver as User;
+  const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
+
+  const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
 
   return (
     <div className="grid gap-8 md:grid-cols-3">
@@ -866,10 +954,10 @@ export default function JobDetailPage() {
                 <div className="flex items-center gap-3">
                     <Avatar>
                         <AnimatedAvatar svg={jobGiver.avatarUrl} />
-                        <AvatarFallback>{jobGiver.id.substring(0, 2)}</AvatarFallback>
+                        <AvatarFallback>{jobGiver.name.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <p className="text-sm font-semibold">{jobGiver.id}</p>
+                        <p className="text-sm font-semibold">{jobGiver.name}</p>
                         <p className="text-xs text-muted-foreground">Job Giver (Member since {format(toDate(jobGiver.memberSince), 'MMM yyyy')})</p>
                     </div>
                 </div>
@@ -881,9 +969,9 @@ export default function JobDetailPage() {
             {job.status === 'Open for Bidding' && (
               <>
                 <Separator className="my-6" />
-                <h3 className="font-semibold mb-4">Comments ({job.comments.length})</h3>
+                <h3 className="font-semibold mb-4">Comments ({job.comments?.length || 0})</h3>
                 <div className="space-y-6">
-                    {job.comments.map((comment) => {
+                    {(job.comments || []).map((comment) => {
                         const isEditing = editingCommentId === comment.id;
                         const canEdit = user?.id === (comment.author as User).id
                         return (
@@ -904,7 +992,7 @@ export default function JobDetailPage() {
                      <div className="flex gap-3">
                         <Avatar className="h-9 w-9">
                             <AnimatedAvatar svg={user?.avatarUrl} />
-                            <AvatarFallback>{user?.id.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                             <Textarea 
@@ -1010,7 +1098,7 @@ export default function JobDetailPage() {
                 <Users className="h-5 w-5" />
                 <div>
                   <p className="text-muted-foreground">Bids</p>
-                  <p className="font-semibold hover:underline">{job.bids.length} Received</p>
+                  <p className="font-semibold hover:underline">{job.bids?.length || 0} Received</p>
                 </div>
               </Link>
             ) : (
@@ -1018,7 +1106,7 @@ export default function JobDetailPage() {
                 <Users className="h-5 w-5" />
                 <div>
                   <p className="text-muted-foreground">Bids</p>
-                  <p className="font-semibold">{job.bids.length} Received</p>
+                  <p className="font-semibold">{job.bids?.length || 0} Received</p>
                 </div>
               </div>
             )}
@@ -1026,15 +1114,40 @@ export default function JobDetailPage() {
               <MessageSquare className="h-5 w-5" />
               <div>
                 <p className="text-muted-foreground">Comments</p>
-                <p className="font-semibold">{job.comments.length}</p>
+                <p className="font-semibold">{job.comments?.length || 0}</p>
               </div>
             </div>
           </CardContent>
+          {(canRaiseDispute || job.disputeId) && (
+            <>
+              <Separator />
+              <CardContent className="pt-6">
+                {job.disputeId ? (
+                   <Button asChild className="w-full">
+                       <Link href={`/dashboard/disputes/${job.disputeId}`}>
+                          <AlertOctagon className="mr-2 h-4 w-4" />
+                          View Dispute
+                       </Link>
+                   </Button>
+                ) : (
+                  <RaiseDisputeDialog 
+                    job={job} 
+                    user={user} 
+                    onJobUpdate={handleJobUpdate} 
+                    triggerElement={
+                      <Button variant="destructive" className="w-full">
+                        <AlertOctagon className="mr-2 h-4 w-4" />
+                        Raise a Dispute
+                      </Button>
+                    }
+                  />
+                )}
+              </CardContent>
+            </>
+          )}
         </Card>
         
       </div>
     </div>
   );
 }
-
-    

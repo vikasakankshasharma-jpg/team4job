@@ -26,11 +26,6 @@ export type User = {
     reviews: number;
     verified: boolean;
     reputationHistory?: { month: string; points: number }[];
-    aadharData?: {
-      name: string;
-      mobile: string;
-      pincode: string;
-    };
   };
 };
 
@@ -70,6 +65,31 @@ export type Job = {
   awardedInstaller?: User['id'] | User | DocumentReference;
   rating?: number;
   completionOtp?: string;
+  disputeId?: string;
 };
 
+export type DisputeMessage = {
+  authorId: string;
+  authorRole: Role;
+  content: string;
+  timestamp: Date | Timestamp;
+}
+
+export type Dispute = {
+    id: string;
+    jobId: string;
+    jobTitle: string;
+    status: 'Open' | 'Under Review' | 'Resolved';
+    reason: string;
+    parties: {
+        jobGiverId: string;
+        installerId: string;
+    };
+    messages: DisputeMessage[];
+    resolution?: string;
+    createdAt: Date | Timestamp;
+    resolvedAt?: Date | Timestamp;
+};
+
+export type Role = "Job Giver" | "Installer" | "Admin";
     
