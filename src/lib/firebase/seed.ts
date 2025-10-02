@@ -1,24 +1,26 @@
 
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { config } from 'dotenv';
 import { jobs as mockJobs, users as mockUsers } from '../data';
 import type { Job, User } from '../types';
-
-// Load environment variables from .env file
-config();
+import fs from 'fs';
+import path from 'path';
 
 async function seedDatabase() {
   try {
     console.log('Initializing Firebase Admin SDK...');
-    
-    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-    if (!serviceAccountString) {
-      throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY not found in .env file. Please ensure the variable is set and contains your entire Firebase service account JSON.");
+    const serviceAccountPath = path.resolve(process.cwd(), 'src/lib/firebase/service-account.json');
+
+    if (!fs.existsSync(serviceAccountPath)) {
+      throw new Error(`service-account.json not found at '${serviceAccountPath}'. Please ensure the file exists and contains your Firebase service account credentials.`);
     }
-    
+
+    const serviceAccountString = fs.readFileSync(serviceAccountPath, 'utf8');
     const serviceAccount = JSON.parse(serviceAccountString);
+
+    // This is the critical step to fix the private key format
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
 
     initializeApp({
       credential: cert(serviceAccount),
