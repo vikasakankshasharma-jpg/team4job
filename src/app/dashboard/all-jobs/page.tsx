@@ -73,9 +73,10 @@ export default function AllJobsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Job Title</TableHead>
+              <TableHead>Job ID</TableHead>
+              <TableHead>Pincode</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="hidden sm:table-cell">Job Giver</TableHead>
-              <TableHead className="hidden sm:table-cell">Budget</TableHead>
               <TableHead className="hidden md:table-cell">Bids</TableHead>
               <TableHead className="text-right">Posted</TableHead>
             </TableRow>
@@ -83,7 +84,7 @@ export default function AllJobsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   Loading jobs...
                 </TableCell>
               </TableRow>
@@ -92,18 +93,18 @@ export default function AllJobsPage() {
                 <TableRow key={job.id} onClick={() => handleRowClick(job.id)} className="cursor-pointer">
                   <TableCell>
                      <p className="font-medium">{job.title}</p>
+                  </TableCell>
+                   <TableCell>
                      <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
+                  </TableCell>
+                   <TableCell>
+                     <p className="text-sm text-muted-foreground">{job.location.split(',')[0]}</p>
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {(job.jobGiver as User)?.anonymousId || 'N/A'}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <div className="flex items-center gap-1">
-                        {job.budget ? `₹${job.budget.min.toLocaleString()} - ₹${job.budget.max.toLocaleString()}` : 'N/A'}
-                    </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {job.bids?.length || 0}
@@ -115,7 +116,7 @@ export default function AllJobsPage() {
               ))
             ) : (
                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       No jobs found for your search.
                     </TableCell>
                   </TableRow>
