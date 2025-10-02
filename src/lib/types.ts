@@ -15,6 +15,9 @@ export type User = {
   };
   roles: ('Job Giver' | 'Installer' | 'Admin')[];
   memberSince: Date | Timestamp;
+  freeBids?: number;
+  freeJobs?: number;
+  creditsExpiry?: Date | Timestamp;
   installerProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;

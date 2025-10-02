@@ -13,10 +13,6 @@
           "type": "string",
           "description": "The user's full name."
         },
-        "anonymousId": {
-          "type": "string",
-          "description": "A publicly visible, anonymous identifier for the user."
-        },
         "email": {
           "type": "string",
           "description": "The user's email address.",
@@ -57,11 +53,24 @@
           "type": "string",
           "format": "date-time"
         },
+        "freeBids": {
+          "type": "number",
+          "description": "Number of free bids remaining for a new installer."
+        },
+        "freeJobs": {
+          "type": "number",
+          "description": "Number of free job posts remaining for a new job giver."
+        },
+        "creditsExpiry": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiry date for the free credits."
+        },
         "installerProfile": {
           "$ref": "#/entities/InstallerProfile"
         }
       },
-      "required": ["id", "name", "anonymousId", "email", "mobile", "avatarUrl", "pincodes", "roles", "memberSince"]
+      "required": ["id", "name", "email", "mobile", "avatarUrl", "pincodes", "roles", "memberSince"]
     },
     "InstallerProfile": {
       "title": "Installer Profile",

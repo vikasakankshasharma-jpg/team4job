@@ -94,19 +94,25 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     } else if (signupData) {
       let roles: User['roles'] = [];
       let rolePrefix = '';
+      let freeBids = 0;
+      let freeJobs = 0;
 
       switch(signupData.role) {
         case 'Installer':
           roles = ['Installer'];
           rolePrefix = 'INSTALLER';
+          freeBids = 10;
           break;
         case 'Job Giver':
           roles = ['Job Giver'];
           rolePrefix = 'JOBGIVER';
+          freeJobs = 10;
           break;
         case 'Both (Job Giver & Installer)':
           roles = ['Job Giver', 'Installer'];
           rolePrefix = 'USER';
+          freeBids = 10;
+          freeJobs = 10;
           break;
       }
 
@@ -116,6 +122,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       const newUserId = `${rolePrefix}-${datePart}-${randomPart}`;
       
       const randomAvatar = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
+      
+      const expiryDate = new Date();
+      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
       const newUser: User = {
         id: newUserId,
@@ -127,6 +136,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         memberSince: new Date(),
         avatarUrl: randomAvatar.imageUrl,
         realAvatarUrl: `https://picsum.photos/seed/${signupData.name.split(' ')[0]}/100/100`,
+        freeBids,
+        freeJobs,
+        creditsExpiry: expiryDate,
       };
       
       const userToSave: any = { ...newUser };
