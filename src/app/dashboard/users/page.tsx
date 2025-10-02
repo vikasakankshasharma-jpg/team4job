@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
-import { Gem, Medal, ShieldCheck } from "lucide-react";
+import { Gem, Medal, ShieldCheck, X } from "lucide-react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -28,7 +28,15 @@ import { toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
-
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
@@ -37,11 +45,19 @@ const tierIcons: Record<string, React.ReactNode> = {
   Platinum: <Gem className="h-4 w-4 text-cyan-400" />,
 };
 
+const initialFilters = {
+    search: "",
+    role: "all",
+    tier: "all",
+    verified: "all",
+};
+
 export default function UsersPage() {
   const router = useRouter();
   const { user: currentUser, role } = useUser();
   const [users, setUsers] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [filters, setFilters] = React.useState(initialFilters);
 
   React.useEffect(() => {
     if (role && role !== 'Admin') {
@@ -76,6 +92,35 @@ export default function UsersPage() {
       }
   }, [role]);
 
+  const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
+    setFilters(prev => ({ ...prev, [filterName]: value }));
+  };
+
+  const filteredUsers = React.useMemo(() => {
+    let filtered = users;
+
+    if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        filtered = filtered.filter(user =>
+            user.name.toLowerCase().includes(searchTerm) ||
+            user.email.toLowerCase().includes(searchTerm) ||
+            user.anonymousId.toLowerCase().includes(searchTerm)
+        );
+    }
+    if (filters.role !== 'all') {
+        filtered = filtered.filter(user => user.roles.includes(filters.role as any));
+    }
+    if (filters.tier !== 'all') {
+        filtered = filtered.filter(user => user.installerProfile?.tier === filters.tier);
+    }
+    if (filters.verified !== 'all') {
+        const isVerified = filters.verified === 'true';
+        filtered = filtered.filter(user => !!user.installerProfile?.verified === isVerified);
+    }
+
+    return filtered;
+  }, [users, filters]);
+
   if (role !== 'Admin') {
     return (
         <div className="flex items-center justify-center h-full">
@@ -87,6 +132,22 @@ export default function UsersPage() {
   const handleRowClick = (userId: string) => {
     router.push(`/dashboard/users/${userId}`);
   };
+  
+  const clearFilters = () => {
+    setFilters(initialFilters);
+  }
+
+  const activeFiltersCount = Object.values(filters).filter(value =>
+    value !== "" && value !== "all"
+  ).length;
+
+  const roles = ["All", "Admin", "Installer", "Job Giver"];
+  const tiers = ["All", "Bronze", "Silver", "Gold", "Platinum"];
+  const verificationStatuses = [
+    { value: 'all', label: 'All' },
+    { value: 'true', label: 'Verified' },
+    { value: 'false', label: 'Not Verified' },
+  ];
 
   return (
     <Card>
@@ -95,6 +156,56 @@ export default function UsersPage() {
         <CardDescription>A list of all registered users in the system. Click on a row to view details.</CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Filters Section */}
+        <div className="flex flex-col gap-2 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                <Input 
+                    placeholder="Filter by name, email, ID..." 
+                    value={filters.search} 
+                    onChange={e => handleFilterChange('search', e.target.value)} 
+                    className="h-8 lg:col-span-2" 
+                />
+                <Select value={filters.role} onValueChange={value => handleFilterChange('role', value)}>
+                    <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Filter by Role..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {roles.map(role => (
+                            <SelectItem key={role} value={role === 'All' ? 'all' : role}>{role}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Select value={filters.tier} onValueChange={value => handleFilterChange('tier', value)}>
+                    <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Filter by Tier..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {tiers.map(tier => (
+                            <SelectItem key={tier} value={tier === 'All' ? 'all' : tier}>{tier}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2">
+                    <Select value={filters.verified} onValueChange={value => handleFilterChange('verified', value)}>
+                        <SelectTrigger className="h-8 text-xs flex-1">
+                            <SelectValue placeholder="Filter by Verification..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {verificationStatuses.map(status => (
+                                <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {activeFiltersCount > 0 && (
+                      <Button variant="ghost" size="icon" onClick={clearFilters} className="h-8 w-8 text-xs">
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Clear Filters</span>
+                      </Button>
+                    )}
+                </div>
+            </div>
+        </div>
+
         <Table>
           <TableHeader>
             <TableRow>
@@ -113,8 +224,8 @@ export default function UsersPage() {
                   Loading users...
                 </TableCell>
               </TableRow>
-            ) : (
-              users.map((user) => (
+            ) : filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
                 <TableRow key={user.id} onClick={() => handleRowClick(user.id)} className="cursor-pointer">
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -123,8 +234,8 @@ export default function UsersPage() {
                         <AvatarFallback>{user.anonymousId.substring(0, 2)}</AvatarFallback>
                       </Avatar>
                       <div className="font-medium">
-                          <p>{user.anonymousId}</p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                          <p>{user.name}</p>
+                          <p className="text-sm text-muted-foreground">{user.anonymousId}</p>
                       </div>
                     </div>
                   </TableCell>
@@ -165,6 +276,12 @@ export default function UsersPage() {
                   </TableCell>
                 </TableRow>
               ))
+            ) : (
+               <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  No users found for your search.
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
@@ -173,3 +290,4 @@ export default function UsersPage() {
   );
 }
 
+    
