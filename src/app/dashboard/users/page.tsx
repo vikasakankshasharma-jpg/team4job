@@ -50,6 +50,7 @@ const initialFilters = {
     role: "all",
     tier: "all",
     verified: "all",
+    rating: "all",
 };
 
 export default function UsersPage() {
@@ -118,6 +119,16 @@ export default function UsersPage() {
         const isVerified = filters.verified === 'true';
         filtered = filtered.filter(user => !!user.installerProfile?.verified === isVerified);
     }
+    if (filters.rating !== 'all') {
+        filtered = filtered.filter(user => {
+            const rating = user.installerProfile?.rating || 0;
+            if (filters.rating === '5') return rating === 5;
+            if (filters.rating === '4+') return rating >= 4;
+            if (filters.rating === '3+') return rating >= 3;
+            if (filters.rating === 'unrated') return rating === 0;
+            return true;
+        });
+    }
 
     return filtered;
   }, [users, filters]);
@@ -149,6 +160,13 @@ export default function UsersPage() {
     { value: 'true', label: 'Verified' },
     { value: 'false', label: 'Not Verified' },
   ];
+  const ratingFilters = [
+    { value: 'all', label: 'All Ratings' },
+    { value: '5', label: '5 Stars' },
+    { value: '4+', label: '4 Stars & Up' },
+    { value: '3+', label: '3 Stars & Up' },
+    { value: 'unrated', label: 'Unrated' },
+  ];
 
   return (
     <Card>
@@ -159,7 +177,7 @@ export default function UsersPage() {
       <CardContent>
         {/* Filters Section */}
         <div className="flex flex-col gap-2 mb-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
                 <Input 
                     placeholder="Filter by name, email, ID, mobile..." 
                     value={filters.search} 
@@ -173,6 +191,16 @@ export default function UsersPage() {
                     <SelectContent>
                         {roles.map(role => (
                             <SelectItem key={role} value={role === 'All' ? 'all' : role}>{role}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                 <Select value={filters.rating} onValueChange={value => handleFilterChange('rating', value)}>
+                    <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Filter by Rating..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {ratingFilters.map(rating => (
+                            <SelectItem key={rating.value} value={rating.value}>{rating.label}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
@@ -290,3 +318,5 @@ export default function UsersPage() {
     </Card>
   );
 }
+
+    
