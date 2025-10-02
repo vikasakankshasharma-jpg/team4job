@@ -102,7 +102,7 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
                         {bid.amount.toLocaleString()}
                     </div>
                  ) : (
-                    <span className="text-muted-foreground">—</span>
+                    <span className="text-muted-foreground">Direct Award</span>
                  )}
             </TableCell>
             <TableCell className="hidden md:table-cell">
@@ -216,12 +216,22 @@ function MyBidsPageContent() {
   
  const myBids = jobs.map(job => {
     const myBid = job.bids.find(bid => (bid.installer as User).id === user.id);
-    
-    if (myBid || job.awardedInstaller === user.id) {
+    const awardedId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User)?.id;
+    const isAwardedToMe = awardedId === user.id;
+
+    if (myBid || isAwardedToMe) {
+      let winningBidAmount = 0;
+      if (isAwardedToMe) {
+          const winningBid = job.bids.find(b => (b.installer as User).id === awardedId);
+          if (winningBid) {
+              winningBidAmount = winningBid.amount;
+          }
+      }
+
       return {
         id: myBid?.id || `direct-award-${job.id}`,
         installer: user,
-        amount: myBid?.amount || 0,
+        amount: myBid?.amount || winningBidAmount || 0,
         timestamp: myBid?.timestamp || job.postedAt,
         coverLetter: myBid?.coverLetter || "Job awarded directly.",
         jobTitle: job.title,
