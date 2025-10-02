@@ -135,7 +135,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         roles: roles,
         memberSince: new Date(),
         avatarUrl: randomAvatar.imageUrl,
-        realAvatarUrl: `https://picsum.photos/seed/${signupData.name.split(' ')[0]}/100/100`,
+        realAvatarUrl: signupData.realAvatarUrl,
         freeBids,
         freeJobs,
         creditsExpiry: expiryDate,
