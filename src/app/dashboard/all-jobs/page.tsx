@@ -80,7 +80,7 @@ export default function AllJobsPage() {
                 <TableRow key={job.id} onClick={() => handleRowClick(job.id)} className="cursor-pointer">
                   <TableCell>
                      <p className="font-medium">{job.title}</p>
-                     <p className="text-sm text-muted-foreground">{job.location}</p>
+                     <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
