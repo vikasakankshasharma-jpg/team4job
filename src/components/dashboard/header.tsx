@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../theme-toggle";
 import { HelpDialog } from "../help-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { useSearch } from "@/hooks/use-search";
 
 const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
@@ -56,6 +57,7 @@ const adminNavItems = [
 export function Header() {
   const pathname = usePathname();
   const { role } = useUser();
+  const { searchQuery, setSearchQuery } = useSearch();
   
   const getNavItems = () => {
     switch (role) {
@@ -156,6 +158,8 @@ export function Header() {
           type="search"
           placeholder="Search..."
           className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
       <HelpDialog>

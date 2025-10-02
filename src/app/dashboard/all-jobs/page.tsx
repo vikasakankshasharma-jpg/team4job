@@ -25,18 +25,29 @@ import { jobs as mockJobs } from "@/lib/data";
 import { useUser } from "@/hooks/use-user";
 import { format } from "date-fns";
 import { IndianRupee } from "lucide-react";
+import { useSearch } from "@/hooks/use-search";
 
 export default function AllJobsPage() {
   const router = useRouter();
   const { role } = useUser();
   const [jobs, setJobs] = React.useState<Job[]>(mockJobs);
   const [loading, setLoading] = React.useState(false);
+  const { searchQuery } = useSearch();
 
   React.useEffect(() => {
     if (role && role !== 'Admin') {
       router.push('/dashboard');
     }
   }, [role, router]);
+
+  const filteredJobs = React.useMemo(() => {
+    if (!searchQuery) return jobs;
+    return jobs.filter(job => 
+      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (job.jobGiver as User)?.anonymousId?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [jobs, searchQuery]);
 
   if (role !== 'Admin') {
     return (
@@ -75,8 +86,8 @@ export default function AllJobsPage() {
                   Loading jobs...
                 </TableCell>
               </TableRow>
-            ) : (
-              jobs.map((job) => (
+            ) : filteredJobs.length > 0 ? (
+              filteredJobs.map((job) => (
                 <TableRow key={job.id} onClick={() => handleRowClick(job.id)} className="cursor-pointer">
                   <TableCell>
                      <p className="font-medium">{job.title}</p>
@@ -101,6 +112,12 @@ export default function AllJobsPage() {
                   </TableCell>
                 </TableRow>
               ))
+            ) : (
+                 <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      No jobs found for your search.
+                    </TableCell>
+                  </TableRow>
             )}
           </TableBody>
         </Table>
