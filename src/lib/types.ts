@@ -44,6 +44,12 @@ export type Bid = {
   coverLetter?: string;
 };
 
+export type JobAttachment = {
+  fileName: string;
+  fileUrl: string; // This would be a Firebase Storage URL in a real app
+  fileType: string;
+};
+
 export type Job = {
   id: string;
   title: string;
@@ -61,6 +67,7 @@ export type Job = {
   postedAt: Date | Timestamp;
   bids: Bid[];
   comments: Comment[];
+  attachments?: JobAttachment[];
   selectedInstallers?: { installerId: string, rank: number }[];
   awardedInstaller?: User['id'] | User | DocumentReference;
   rating?: number;
@@ -99,6 +106,4 @@ export type Dispute = {
 };
 
 export type Role = "Job Giver" | "Installer" | "Admin";
-    
-
     

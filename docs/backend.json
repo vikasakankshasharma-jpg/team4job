@@ -165,9 +165,27 @@
         "disputeId": {
           "type": "string",
           "description": "The ID of the dispute associated with this job, if any."
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/JobAttachment"
+          },
+          "description": "A list of files attached to the job posting."
         }
       },
       "required": ["id", "title", "description", "jobGiver", "location", "budget", "status", "deadline", "postedAt"]
+    },
+    "JobAttachment": {
+      "title": "Job Attachment",
+      "description": "Represents a file attached to a job posting.",
+      "type": "object",
+      "properties": {
+        "fileName": { "type": "string" },
+        "fileUrl": { "type": "string", "format": "uri" },
+        "fileType": { "type": "string" }
+      },
+      "required": ["fileName", "fileUrl", "fileType"]
     },
     "Bid": {
       "title": "Bid",
@@ -314,5 +332,3 @@
     }
   }
 }
-
-    
