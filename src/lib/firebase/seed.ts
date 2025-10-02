@@ -50,7 +50,8 @@ async function seedDatabase() {
     mockJobs.forEach((job: Omit<Job, 'postedAt' | 'deadline' | 'jobStartDate' | 'bids' | 'comments' | 'jobGiver' | 'awardedInstaller'> & { postedAt: any; deadline: any; jobStartDate: any; bids: any[]; comments: any[]; jobGiver: any; awardedInstaller?: any }) => {
       const jobRef = db.collection('jobs').doc(job.id);
 
-      const jobGiverRef = db.collection('users').doc(job.jobGiver.id);
+      const jobGiverId = typeof job.jobGiver === 'string' ? job.jobGiver : job.jobGiver.id;
+      const jobGiverRef = db.collection('users').doc(jobGiverId);
       
       let awardedInstallerRef = null;
       if (job.awardedInstaller) {
