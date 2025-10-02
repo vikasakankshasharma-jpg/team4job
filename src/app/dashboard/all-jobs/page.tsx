@@ -33,11 +33,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { Calendar as CalendarIcon, X, Users, Edit } from "lucide-react";
+import { Calendar as CalendarIcon, X } from "lucide-react";
+import { collection, getDocs, doc, getDoc, DocumentData } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
-import { jobs as mockJobs } from "@/lib/data";
 import { useUser } from "@/hooks/use-user";
 
 const initialFilters = {
@@ -51,9 +52,16 @@ const initialFilters = {
 
 function getJobType(job: Job) {
     if (!job.awardedInstaller) return 'N/A';
-    const awardedInstallerId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User).id;
+
+    // The awardedInstaller might be a DocumentReference or a populated object.
+    // For simplicity with Firestore refs, we need a robust check.
+    // This mock logic assumes we've fetched and attached the necessary data.
+    if (!job.bids || job.bids.length === 0) return 'Direct';
+
+    const awardedInstallerId = (job.awardedInstaller as User)?.id || job.awardedInstaller;
     const bidderIds = job.bids.map(b => (b.installer as User).id);
-    return bidderIds.includes(awardedInstallerId) ? 'Bidding' : 'Direct';
+
+    return bidderIds.includes(awardedInstallerId as string) ? 'Bidding' : 'Direct';
 };
 
 function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) => void }) {
@@ -90,15 +98,61 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
 export default function AllJobsPage() {
   const router = useRouter();
   const { role } = useUser();
-  const [jobs] = React.useState<Job[]>(mockJobs);
-  const [loading, setLoading] = React.useState(false);
+  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [filters, setFilters] = React.useState(initialFilters);
+  const [allStatuses, setAllStatuses] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     if (role && role !== 'Admin') {
       router.push('/dashboard');
     }
   }, [role, router]);
+
+  React.useEffect(() => {
+    const fetchJobs = async () => {
+      setLoading(true);
+      try {
+        const jobsCollection = collection(db, 'jobs');
+        const jobSnapshot = await getDocs(jobsCollection);
+        const jobList = await Promise.all(jobSnapshot.docs.map(async (jobDoc) => {
+          const jobData = jobDoc.data() as DocumentData;
+
+          // Fetch referenced jobGiver
+          let jobGiverData: User | null = null;
+          if (jobData.jobGiver) {
+            const giverDoc = await getDoc(jobData.jobGiver);
+            if (giverDoc.exists()) {
+              jobGiverData = giverDoc.data() as User;
+            }
+          }
+          
+          return {
+            ...jobData,
+            id: jobDoc.id,
+            postedAt: (jobData.postedAt)?.toDate(),
+            deadline: (jobData.deadline)?.toDate(),
+            jobStartDate: (jobData.jobStartDate)?.toDate(),
+            jobGiver: jobGiverData,
+          } as Job;
+        }));
+
+        setJobs(jobList);
+        const uniqueStatuses = Array.from(new Set(jobList.map(j => j.status)));
+        setAllStatuses(['All', ...uniqueStatuses]);
+
+      } catch (error) {
+        console.error("Error fetching jobs from Firestore:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (role === 'Admin') {
+      fetchJobs();
+    }
+  }, [role]);
+
 
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
     setFilters(prev => ({ ...prev, [filterName]: value }));
@@ -153,7 +207,6 @@ export default function AllJobsPage() {
     value !== "" && value !== "all" && value !== undefined
   ).length;
   
-  const jobStatuses = ["All", ...Array.from(new Set(mockJobs.map(j => j.status)))];
   const jobTypes = ["All", "Bidding", "Direct"];
   
   return (
@@ -172,7 +225,7 @@ export default function AllJobsPage() {
                         <SelectValue placeholder="Filter by status..." />
                     </SelectTrigger>
                     <SelectContent>
-                        {jobStatuses.map(status => (
+                        {allStatuses.map(status => (
                             <SelectItem key={status} value={status === 'All' ? 'all' : status}>{status}</SelectItem>
                         ))}
                     </SelectContent>
@@ -252,7 +305,7 @@ export default function AllJobsPage() {
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      Loading jobs...
+                      Loading jobs from Firestore...
                     </TableCell>
                   </TableRow>
                 ) : filteredJobs.length > 0 ? (
@@ -293,7 +346,7 @@ export default function AllJobsPage() {
          {/* Mobile Card View */}
          <div className="block lg:hidden">
             {loading ? (
-                <div className="text-center py-10 text-muted-foreground">Loading jobs...</div>
+                <div className="text-center py-10 text-muted-foreground">Loading jobs from Firestore...</div>
             ) : filteredJobs.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {filteredJobs.map((job) => (
@@ -308,4 +361,4 @@ export default function AllJobsPage() {
     </Card>
   );
 }
-  
+

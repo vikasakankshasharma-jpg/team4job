@@ -25,8 +25,9 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { users as mockUsers } from "@/lib/data";
 import { useUser } from "@/hooks/use-user";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 
 
 const tierIcons: Record<string, React.ReactNode> = {
@@ -39,14 +40,41 @@ const tierIcons: Record<string, React.ReactNode> = {
 export default function UsersPage() {
   const router = useRouter();
   const { user: currentUser, role } = useUser();
-  const [users, setUsers] = React.useState<User[]>(mockUsers);
-  const [loading, setLoading] = React.useState(false);
+  const [users, setUsers] = React.useState<User[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (role && role !== 'Admin') {
       router.push('/dashboard');
     }
   }, [role, router]);
+
+  React.useEffect(() => {
+      const fetchUsers = async () => {
+          setLoading(true);
+          try {
+              const usersCollection = collection(db, 'users');
+              const userSnapshot = await getDocs(usersCollection);
+              const userList = userSnapshot.docs.map(doc => {
+                  const data = doc.data();
+                  return {
+                      id: doc.id,
+                      ...data,
+                      memberSince: data.memberSince.toDate(),
+                  } as User;
+              });
+              setUsers(userList);
+          } catch (error) {
+              console.error("Error fetching users:", error);
+          } finally {
+              setLoading(false);
+          }
+      };
+
+      if (role === 'Admin') {
+          fetchUsers();
+      }
+  }, [role]);
 
   if (role !== 'Admin') {
     return (
@@ -144,3 +172,4 @@ export default function UsersPage() {
     </Card>
   );
 }
+

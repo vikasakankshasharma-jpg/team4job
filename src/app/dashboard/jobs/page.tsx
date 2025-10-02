@@ -41,7 +41,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
 import { useUser } from "@/hooks/use-user";
-import { jobs as allMockJobs } from "@/lib/data";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 import type { Job } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
@@ -52,8 +53,8 @@ const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz"
 export default function BrowseJobsPage() {
   const { user, role } = useUser();
   const router = useRouter();
-  const [jobs, setJobs] = React.useState<Job[]>(allMockJobs);
-  const [loading, setLoading] = React.useState(false); // Kept for UI consistency, but not fetching async
+  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [searchPincode, setSearchPincode] = React.useState("");
   const [budget, setBudget] = React.useState([0, 150000]);
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
@@ -92,6 +93,23 @@ export default function BrowseJobsPage() {
         )
     });
   }, [setHelp]);
+
+  React.useEffect(() => {
+    const fetchJobs = async () => {
+      setLoading(true);
+      try {
+        const jobsCollection = collection(db, 'jobs');
+        const jobSnapshot = await getDocs(jobsCollection);
+        const jobList = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+        setJobs(jobList);
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJobs();
+  }, []);
   
   const openJobs = jobs.filter(job => job.status === 'Open for Bidding');
 
@@ -324,3 +342,4 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
+
