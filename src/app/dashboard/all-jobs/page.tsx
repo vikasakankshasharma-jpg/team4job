@@ -90,7 +90,7 @@ export default function AllJobsPage() {
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <div className="flex items-center gap-1">
-                        ₹{job.budget.min.toLocaleString()} - ₹{job.budget.max.toLocaleString()}
+                        {job.budget ? `₹${job.budget.min.toLocaleString()} - ₹${job.budget.max.toLocaleString()}` : 'N/A'}
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
