@@ -135,7 +135,7 @@ export function SignUpForm() {
             setKycData(result.kycData);
             form.setValue("name", result.kycData.name, { shouldValidate: true });
             form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
-            form.setValue("pincode", result.kycData.pincode, { shouldValidate: true });
+            form.setValue("pincode", `${result.kycData.pincode}, `, { shouldValidate: true });
         }
       } else {
         setError(result.message);
@@ -431,7 +431,7 @@ export function SignUpForm() {
         {(role === "Installer" || role === "Both (Job Giver & Installer)") && renderInstallerForm()}
         {role === "Job Giver" && renderJobGiverForm()}
 
-      </form> Nor
+      </form>
     </Form>
   );
 }
