@@ -4,24 +4,29 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { jobs as mockJobs } from '../data';
 import { users as mockUsers } from '../data';
 import type { Job, User } from '../types';
+import * as fs from 'fs';
+import * as path from 'path';
 
 async function seedDatabase() {
   try {
     console.log('Initializing Firebase Admin SDK...');
     
-    const serviceAccount = {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    };
+    const serviceAccountPath = path.resolve(process.cwd(), 'src/lib/firebase/service-account.json');
+    
+    if (!fs.existsSync(serviceAccountPath)) {
+        throw new Error("service-account.json not found at 'src/lib/firebase/service-account.json'. Please ensure the file exists and contains your Firebase service account credentials.");
+    }
+    
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
 
-    if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
-        throw new Error("Missing Firebase environment variables (PROJECT_ID, CLIENT_EMAIL, PRIVATE_KEY). Please check your .env file.");
+    // The private_key in JSON is often escaped with \\n, we need to replace it with a literal \n
+    if (serviceAccount.private_key) {
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
 
     initializeApp({
-      credential: cert(serviceAccount as any),
-      projectId: serviceAccount.projectId,
+      credential: cert(serviceAccount),
+      projectId: serviceAccount.project_id,
     });
     
     const db = getFirestore();
