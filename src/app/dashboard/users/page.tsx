@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
-import { Gem, Medal, ShieldCheck, X } from "lucide-react";
+import { Gem, Medal, ShieldCheck, X, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -53,12 +53,15 @@ const initialFilters = {
     rating: "all",
 };
 
+type SortableKeys = 'name' | 'memberSince' | 'tier' | 'rating' | 'points';
+
 export default function UsersPage() {
   const router = useRouter();
   const { user: currentUser, role } = useUser();
   const [users, setUsers] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [filters, setFilters] = React.useState(initialFilters);
+  const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'memberSince', direction: 'descending' });
 
   React.useEffect(() => {
     if (role && role !== 'Admin') {
@@ -97,7 +100,15 @@ export default function UsersPage() {
     setFilters(prev => ({ ...prev, [filterName]: value }));
   };
 
-  const filteredUsers = React.useMemo(() => {
+  const requestSort = (key: SortableKeys) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+        direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedAndFilteredUsers = React.useMemo(() => {
     let filtered = users;
 
     if (filters.search) {
@@ -130,8 +141,50 @@ export default function UsersPage() {
         });
     }
 
+    if (sortConfig !== null) {
+      filtered.sort((a, b) => {
+        const aVal = a.installerProfile;
+        const bVal = b.installerProfile;
+        let valA, valB;
+        
+        switch (sortConfig.key) {
+            case 'name':
+                valA = a.name;
+                valB = b.name;
+                break;
+            case 'memberSince':
+                valA = toDate(a.memberSince).getTime();
+                valB = toDate(b.memberSince).getTime();
+                break;
+            case 'tier':
+                valA = aVal?.tier || '';
+                valB = bVal?.tier || '';
+                break;
+            case 'rating':
+                valA = aVal?.rating || 0;
+                valB = bVal?.rating || 0;
+                break;
+            case 'points':
+                valA = aVal?.points || 0;
+                valB = bVal?.points || 0;
+                break;
+            default:
+                return 0;
+        }
+
+        if (valA < valB) {
+            return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (valA > valB) {
+            return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+
     return filtered;
-  }, [users, filters]);
+  }, [users, filters, sortConfig]);
 
   if (role !== 'Admin') {
     return (
@@ -167,6 +220,13 @@ export default function UsersPage() {
     { value: '3+', label: '3 Stars & Up' },
     { value: 'unrated', label: 'Unrated' },
   ];
+
+  const getSortIcon = (key: SortableKeys) => {
+    if (!sortConfig || sortConfig.key !== key) {
+        return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />;
+    }
+    return sortConfig.direction === 'ascending' ? '▲' : '▼';
+  };
 
   return (
     <Card>
@@ -238,12 +298,37 @@ export default function UsersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>User</TableHead>
+              <TableHead>
+                 <Button variant="ghost" onClick={() => requestSort('name')}>
+                    User
+                    {getSortIcon('name')}
+                  </Button>
+              </TableHead>
               <TableHead>Roles</TableHead>
-              <TableHead className="hidden sm:table-cell">Member Since</TableHead>
-              <TableHead className="hidden sm:table-cell">Installer Tier</TableHead>
-              <TableHead className="hidden sm:table-cell">Rating</TableHead>
-              <TableHead className="text-right">Reputation</TableHead>
+              <TableHead className="hidden sm:table-cell">
+                <Button variant="ghost" onClick={() => requestSort('memberSince')}>
+                    Member Since
+                    {getSortIcon('memberSince')}
+                </Button>
+              </TableHead>
+              <TableHead className="hidden sm:table-cell">
+                <Button variant="ghost" onClick={() => requestSort('tier')}>
+                    Installer Tier
+                    {getSortIcon('tier')}
+                </Button>
+              </TableHead>
+              <TableHead className="hidden sm:table-cell">
+                <Button variant="ghost" onClick={() => requestSort('rating')}>
+                    Rating
+                    {getSortIcon('rating')}
+                </Button>
+              </TableHead>
+              <TableHead className="text-right">
+                <Button variant="ghost" onClick={() => requestSort('points')}>
+                    Reputation
+                    {getSortIcon('points')}
+                </Button>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -253,8 +338,8 @@ export default function UsersPage() {
                   Loading users...
                 </TableCell>
               </TableRow>
-            ) : filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
+            ) : sortedAndFilteredUsers.length > 0 ? (
+              sortedAndFilteredUsers.map((user) => (
                 <TableRow key={user.id} onClick={() => handleRowClick(user.id)} className="cursor-pointer">
                   <TableCell>
                     <div className="flex items-center gap-3">
