@@ -36,8 +36,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LocationInput } from "@/components/ui/location-input";
-import { useIsMobile } from "@/hooks/use-mobile";
-import Image from "next/image";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -69,11 +67,9 @@ export function SignUpForm() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
-  const isMobile = useIsMobile();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (currentStep === "photo" && isMobile && !hasCameraPermission) {
+    if (currentStep === "photo" && !hasCameraPermission) {
       startCamera();
     }
     return () => {
@@ -82,7 +78,7 @@ export function SignUpForm() {
             stream.getTracks().forEach(track => track.stop());
         }
     }
-  }, [currentStep, isMobile]);
+  }, [currentStep]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -137,19 +133,6 @@ export function SignUpForm() {
             stream.getTracks().forEach(track => track.stop());
         }
         setHasCameraPermission(false);
-    }
-  };
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if(file) {
-        const reader = new FileReader();
-        reader.onload = (loadEvent) => {
-            const dataUrl = loadEvent.target?.result as string;
-            setPhoto(dataUrl);
-            form.setValue('realAvatarUrl', dataUrl);
-        }
-        reader.readAsDataURL(file);
     }
   };
 
@@ -363,8 +346,8 @@ export function SignUpForm() {
         
         <div className="flex items-center justify-center w-full aspect-video bg-muted rounded-lg overflow-hidden relative">
             {photo ? (
-                <Image src={photo} alt="Profile preview" layout="fill" objectFit="cover" />
-            ) : isMobile ? (
+                <img src={photo} alt="Profile preview" className="w-full h-full object-cover" />
+            ) : (
                 <>
                 <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
                 {!hasCameraPermission && (
@@ -374,30 +357,16 @@ export function SignUpForm() {
                     </div>
                 )}
                 </>
-            ) : (
-                 <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                    <Upload className="h-10 w-10" />
-                    <p>Upload a photo of yourself</p>
-                 </div>
             )}
         </div>
         
         <div className="flex gap-2">
-            {isMobile ? (
-                 <>
-                    {photo ? (
-                        <Button variant="outline" onClick={() => { setPhoto(null); startCamera(); }} className="w-full">Retake Photo</Button>
-                    ) : (
-                        <Button onClick={handleCapture} disabled={!hasCameraPermission} className="w-full">
-                            <Camera className="mr-2 h-4 w-4" />
-                            Capture
-                        </Button>
-                    )}
-                 </>
+            {photo ? (
+                <Button variant="outline" onClick={() => { setPhoto(null); startCamera(); }} className="w-full">Retake Photo</Button>
             ) : (
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
-                    <Upload className="mr-2 h-4 w-4" />
-                    {photo ? 'Change Photo' : 'Upload Photo'}
+                <Button onClick={handleCapture} disabled={!hasCameraPermission} className="w-full">
+                    <Camera className="mr-2 h-4 w-4" />
+                    Capture
                 </Button>
             )}
         </div>
@@ -406,7 +375,6 @@ export function SignUpForm() {
             <Button variant="outline" onClick={() => setCurrentStep(role === 'Job Giver' ? 'role' : 'verification')} className="w-full">Back</Button>
             <Button onClick={() => setCurrentStep("details")} className="w-full" disabled={!photo}>Next</Button>
         </div>
-         <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
          <canvas ref={canvasRef} className="hidden"></canvas>
     </div>
   );
