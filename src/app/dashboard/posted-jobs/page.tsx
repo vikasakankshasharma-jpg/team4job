@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal } from "lucide-react"
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
@@ -126,10 +126,17 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
 export default function PostedJobsPage() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "active";
-  const { user } = useUser();
+  const { user, role } = useUser();
+  const router = useRouter();
   const { setHelp } = useHelp();
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
+  
+  React.useEffect(() => {
+    if (role === 'Admin') {
+      router.push('/dashboard');
+    }
+  }, [role, router]);
 
   React.useEffect(() => {
     if (user) {
@@ -162,19 +169,11 @@ export default function PostedJobsPage() {
     });
   }, [setHelp]);
   
-  if (!user) {
+  if (role === 'Admin' || !user) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>My Posted Jobs</CardTitle>
-          <CardDescription>
-            Loading your jobs...
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p>Please log in to see your posted jobs.</p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground">Redirecting...</p>
+      </div>
     );
   }
   
