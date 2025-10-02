@@ -88,7 +88,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         const userDoc = querySnapshot.docs[0];
         foundUser = { id: userDoc.id, ...userDoc.data(), memberSince: userDoc.data().memberSince.toDate() } as User;
     } else if (signupData) {
-      const newUserId = crypto.randomUUID();
+      const newUserId = `user-${Math.random().toString(36).substring(2, 9)}`;
       let newAnonymousId = '';
       let roles: User['roles'] = [];
 
