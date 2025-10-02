@@ -43,6 +43,7 @@ const initialFilters = {
     jobId: "",
     pincode: "",
     status: "all",
+    awardType: "all",
     jobGiver: "",
     date: undefined as DateRange | undefined,
 };
@@ -64,11 +65,18 @@ export default function AllJobsPage() {
     setFilters(prev => ({ ...prev, [filterName]: value }));
   };
 
+  const getAwardType = (job: Job) => {
+    if (!job.awardedInstaller) return 'N/A';
+    const awardedInstallerId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User).id;
+    const bidderIds = job.bids.map(b => (b.installer as User).id);
+    return bidderIds.includes(awardedInstallerId) ? 'Bidding' : 'Direct';
+  };
+
   const filteredJobs = React.useMemo(() => {
     let filtered = jobs;
 
     if (filters.jobId) {
-        filtered = filtered.filter(job => job.id.toLowerCase().includes(filters.jobId.toLowerCase().replace(/\s/g, '-')));
+        filtered = filtered.filter(job => job.title.toLowerCase().includes(filters.jobId.toLowerCase()));
     }
     if (filters.pincode) {
         filtered = filtered.filter(job => job.location.toLowerCase().includes(filters.pincode.toLowerCase()));
@@ -78,6 +86,9 @@ export default function AllJobsPage() {
     }
     if (filters.jobGiver) {
         filtered = filtered.filter(job => (job.jobGiver as User)?.anonymousId?.toLowerCase().includes(filters.jobGiver.toLowerCase()));
+    }
+     if (filters.awardType !== 'all') {
+        filtered = filtered.filter(job => getAwardType(job) === filters.awardType);
     }
     if (filters.date?.from) {
         const to = filters.date.to || filters.date.from; // If only one day is selected, use it as range
@@ -111,14 +122,8 @@ export default function AllJobsPage() {
   ).length;
   
   const jobStatuses = ["All", ...Array.from(new Set(mockJobs.map(j => j.status)))];
+  const awardTypes = ["All", "Bidding", "Direct"];
   
-  const getAwardType = (job: Job) => {
-    if (!job.awardedInstaller) return 'N/A';
-    const awardedInstallerId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User).id;
-    const bidderIds = job.bids.map(b => (b.installer as User).id);
-    return bidderIds.includes(awardedInstallerId) ? 'Bidding' : 'Direct';
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -164,7 +169,18 @@ export default function AllJobsPage() {
                     <Input placeholder="Filter by Job Giver..." value={filters.jobGiver} onChange={e => handleFilterChange('jobGiver', e.target.value)} className="h-8" />
                 </TableCell>
                 <TableCell className="p-1 hidden md:table-cell"></TableCell>
-                <TableCell className="p-1 hidden lg:table-cell"></TableCell>
+                <TableCell className="p-1 hidden lg:table-cell">
+                    <Select value={filters.awardType} onValueChange={value => handleFilterChange('awardType', value)}>
+                        <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="Filter by Award Type..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {awardTypes.map(type => (
+                                <SelectItem key={type} value={type === 'All' ? 'all' : type}>{type}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </TableCell>
                 <TableCell className="p-1 text-right">
                    <Popover>
                     <PopoverTrigger asChild>
