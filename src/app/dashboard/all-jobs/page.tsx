@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -32,7 +33,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { Calendar as CalendarIcon, X } from "lucide-react";
+import { Calendar as CalendarIcon, X, Users, Edit } from "lucide-react";
 
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
@@ -47,6 +48,44 @@ const initialFilters = {
     jobGiver: "",
     date: undefined as DateRange | undefined,
 };
+
+function getJobType(job: Job) {
+    if (!job.awardedInstaller) return 'N/A';
+    const awardedInstallerId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User).id;
+    const bidderIds = job.bids.map(b => (b.installer as User).id);
+    return bidderIds.includes(awardedInstallerId) ? 'Bidding' : 'Direct';
+};
+
+function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) => void }) {
+    return (
+        <Card onClick={() => onRowClick(job.id)} className="cursor-pointer">
+            <CardHeader>
+                <div className="flex justify-between items-start">
+                    <CardTitle className="text-base leading-tight pr-4">{job.title}</CardTitle>
+                    <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
+                </div>
+                <CardDescription className="font-mono text-xs pt-1">{job.id}</CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm space-y-3">
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Job Giver</span>
+                    <span className="font-medium">{(job.jobGiver as User)?.anonymousId || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Bids</span>
+                    <span className="font-medium">{job.bids?.length || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Job Type</span>
+                    <span className="font-medium">{getJobType(job)}</span>
+                </div>
+            </CardContent>
+            <CardFooter className="text-xs text-muted-foreground">
+                Posted on {format(toDate(job.postedAt), 'MMM d, yyyy')}
+            </CardFooter>
+        </Card>
+    )
+}
 
 export default function AllJobsPage() {
   const router = useRouter();
@@ -63,13 +102,6 @@ export default function AllJobsPage() {
 
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
     setFilters(prev => ({ ...prev, [filterName]: value }));
-  };
-
-  const getJobType = (job: Job) => {
-    if (!job.awardedInstaller) return 'N/A';
-    const awardedInstallerId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User).id;
-    const bidderIds = job.bids.map(b => (b.installer as User).id);
-    return bidderIds.includes(awardedInstallerId) ? 'Bidding' : 'Direct';
   };
 
   const filteredJobs = React.useMemo(() => {
@@ -128,68 +160,42 @@ export default function AllJobsPage() {
     <Card>
       <CardHeader>
         <CardTitle>All Jobs</CardTitle>
-        <CardDescription>A list of all jobs created on the platform. Click on a row to view details.</CardDescription>
+        <CardDescription>A list of all jobs created on the platform. Click on a job to view details.</CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Job Title</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden sm:table-cell">Job Giver</TableHead>
-              <TableHead className="hidden md:table-cell">Bids</TableHead>
-              <TableHead className="hidden lg:table-cell">Job Type</TableHead>
-              <TableHead className="text-right flex items-center gap-2 justify-end">
-                Posted
-                {activeFiltersCount > 0 && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-auto px-2 py-1 text-xs">
-                    <X className="h-3 w-3 mr-1" />
-                    Clear Filters ({activeFiltersCount})
-                  </Button>
-                )}
-              </TableHead>
-            </TableRow>
-             <TableRow className="hover:bg-transparent">
-                <TableCell className="p-1">
-                    <Input placeholder="Filter by Job Title..." value={filters.jobId} onChange={e => handleFilterChange('jobId', e.target.value)} className="h-8" />
-                </TableCell>
-                 <TableCell className="p-1">
-                    <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
-                        <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="Filter by status..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {jobStatuses.map(status => (
-                                <SelectItem key={status} value={status === 'All' ? 'all' : status}>{status}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </TableCell>
-                <TableCell className="p-1 hidden sm:table-cell">
-                    <Input placeholder="Filter by Job Giver..." value={filters.jobGiver} onChange={e => handleFilterChange('jobGiver', e.target.value)} className="h-8" />
-                </TableCell>
-                <TableCell className="p-1 hidden md:table-cell"></TableCell>
-                <TableCell className="p-1 hidden lg:table-cell">
-                    <Select value={filters.jobType} onValueChange={value => handleFilterChange('jobType', value)}>
-                        <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="Filter by Type..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {jobTypes.map(type => (
-                                <SelectItem key={type} value={type === 'All' ? 'all' : type}>{type}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </TableCell>
-                <TableCell className="p-1 text-right">
-                   <Popover>
+        {/* Filters Section - visible on all screen sizes */}
+        <div className="flex flex-col gap-2 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+                <Input placeholder="Filter by Job Title..." value={filters.jobId} onChange={e => handleFilterChange('jobId', e.target.value)} className="h-8 lg:col-span-1" />
+                <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
+                    <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Filter by status..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {jobStatuses.map(status => (
+                            <SelectItem key={status} value={status === 'All' ? 'all' : status}>{status}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Input placeholder="Filter by Job Giver..." value={filters.jobGiver} onChange={e => handleFilterChange('jobGiver', e.target.value)} className="h-8" />
+                 <Select value={filters.jobType} onValueChange={value => handleFilterChange('jobType', value)}>
+                    <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Filter by Type..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {jobTypes.map(type => (
+                            <SelectItem key={type} value={type === 'All' ? 'all' : type}>{type}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         id="date"
                         variant={"outline"}
                         size="sm"
                         className={cn(
-                          "w-full lg:w-[240px] justify-start text-left font-normal h-8",
+                          "w-full justify-start text-left font-normal h-8",
                           !filters.date && "text-muted-foreground"
                         )}
                       >
@@ -218,51 +224,88 @@ export default function AllJobsPage() {
                         numberOfMonths={2}
                       />
                     </PopoverContent>
-                  </Popover>
-                </TableCell>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  Loading jobs...
-                </TableCell>
-              </TableRow>
-            ) : filteredJobs.length > 0 ? (
-              filteredJobs.map((job) => (
-                <TableRow key={job.id} onClick={() => handleRowClick(job.id)} className="cursor-pointer">
-                  <TableCell>
-                     <p className="font-medium">{job.title}</p>
-                     <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {(job.jobGiver as User)?.anonymousId || 'N/A'}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {job.bids?.length || 0}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                     {getJobType(job)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {format(toDate(job.postedAt), 'MMM d, yyyy')}
-                  </TableCell>
+                </Popover>
+
+                {activeFiltersCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs">
+                    <X className="h-3 w-3 mr-1" />
+                    Clear Filters ({activeFiltersCount})
+                  </Button>
+                )}
+            </div>
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden lg:block">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>Job Title</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Job Giver</TableHead>
+                  <TableHead>Bids</TableHead>
+                  <TableHead>Job Type</TableHead>
+                  <TableHead className="text-right">Posted</TableHead>
                 </TableRow>
-              ))
-            ) : (
-                 <TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      No jobs found for your search.
+                      Loading jobs...
                     </TableCell>
                   </TableRow>
+                ) : filteredJobs.length > 0 ? (
+                  filteredJobs.map((job) => (
+                    <TableRow key={job.id} onClick={() => handleRowClick(job.id)} className="cursor-pointer">
+                      <TableCell>
+                         <p className="font-medium">{job.title}</p>
+                         <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {(job.jobGiver as User)?.anonymousId || 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {job.bids?.length || 0}
+                      </TableCell>
+                      <TableCell>
+                         {getJobType(job)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {format(toDate(job.postedAt), 'MMM d, yyyy')}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                     <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                          No jobs found for your search.
+                        </TableCell>
+                      </TableRow>
+                )}
+              </TableBody>
+            </Table>
+        </div>
+
+         {/* Mobile Card View */}
+         <div className="block lg:hidden">
+            {loading ? (
+                <div className="text-center py-10 text-muted-foreground">Loading jobs...</div>
+            ) : filteredJobs.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {filteredJobs.map((job) => (
+                        <JobCard key={job.id} job={job} onRowClick={handleRowClick} />
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-10 text-muted-foreground">No jobs found for your search.</div>
             )}
-          </TableBody>
-        </Table>
+         </div>
       </CardContent>
     </Card>
   );
 }
+  
