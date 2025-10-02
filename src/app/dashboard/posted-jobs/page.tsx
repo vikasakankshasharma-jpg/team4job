@@ -46,7 +46,7 @@ import { jobs as allMockJobs } from "@/lib/data";
 
 function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
   
-  const getAwardType = (job: Job) => {
+  const getJobType = (job: Job) => {
     if (!job.awardedInstaller) return 'N/A';
     const awardedInstallerId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User).id;
     const bidderIds = job.bids.map(b => (b.installer as User).id);
@@ -68,7 +68,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
                 <TableHead>Job Title</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Bids</TableHead>
-                <TableHead className="hidden md:table-cell">Award Type</TableHead>
+                <TableHead className="hidden md:table-cell">Job Type</TableHead>
                 <TableHead className="hidden md:table-cell">Posted On</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
@@ -90,7 +90,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{job.bids.length}</TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {getAwardType(job)}
+                      {getJobType(job)}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{format(toDate(job.postedAt), "MMM d, yyyy")}</TableCell>
                     <TableCell>
@@ -173,7 +173,7 @@ export default function PostedJobsPage() {
                         <span className="font-semibold">Archived:</span> Shows all your jobs that have been completed. This is your history of successful hires.
                     </li>
                      <li>
-                        <span className="font-semibold">Award Type:</span> This column shows how a job was awarded. "Bidding" means you chose from bids, while "Direct" means you awarded it directly to an installer.
+                        <span className="font-semibold">Job Type:</span> This column shows how a job was awarded. "Bidding" means you chose from bids, while "Direct" means you awarded it directly to an installer.
                     </li>
                 </ul>
                 <p>
