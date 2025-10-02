@@ -34,7 +34,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { Calendar as CalendarIcon, X, ArrowUpDown } from "lucide-react";
-import { collection, getDocs, doc, getDoc, DocumentData } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, DocumentData, DocumentReference } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 import { Job, User } from "@/lib/types";
@@ -55,18 +55,17 @@ type SortableKeys = 'title' | 'status' | 'jobGiver' | 'bids' | 'jobType' | 'post
 function getJobType(job: Job) {
     if (!job.awardedInstaller) return 'N/A';
 
-    // The awardedInstaller might be a DocumentReference or a populated object.
-    // For simplicity with Firestore refs, we need a robust check.
-    // This mock logic assumes we've fetched and attached the necessary data.
+    const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
     if (!job.bids || job.bids.length === 0) return 'Direct';
 
-    const awardedInstallerId = (job.awardedInstaller as User)?.id || job.awardedInstaller;
     const bidderIds = job.bids.map(b => (b.installer as User).id);
 
     return bidderIds.includes(awardedInstallerId as string) ? 'Bidding' : 'Direct';
 };
 
 function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) => void }) {
+    const jobGiverId = (job.jobGiver as DocumentReference)?.id || (job.jobGiver as User)?.id;
+
     return (
         <Card onClick={() => onRowClick(job.id)} className="cursor-pointer">
             <CardHeader>
@@ -79,7 +78,7 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
             <CardContent className="text-sm space-y-3">
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Job Giver</span>
-                    <span className="font-medium">{(job.jobGiver as User)?.id || 'N/A'}</span>
+                    <span className="font-medium">{jobGiverId || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Bids</span>
@@ -121,23 +120,10 @@ export default function AllJobsPage() {
         const jobSnapshot = await getDocs(jobsCollection);
         const jobList = await Promise.all(jobSnapshot.docs.map(async (jobDoc) => {
           const jobData = jobDoc.data() as DocumentData;
-
-          // Fetch referenced jobGiver
-          let jobGiverData: User | null = null;
-          if (jobData.jobGiver) {
-            const giverDoc = await getDoc(jobData.jobGiver);
-            if (giverDoc.exists()) {
-              jobGiverData = { id: giverDoc.id, ...giverDoc.data() } as User;
-            }
-          }
           
           return {
             ...jobData,
             id: jobDoc.id,
-            postedAt: (jobData.postedAt)?.toDate(),
-            deadline: (jobData.deadline)?.toDate(),
-            jobStartDate: (jobData.jobStartDate)?.toDate(),
-            jobGiver: jobGiverData,
           } as Job;
         }));
 
@@ -184,7 +170,11 @@ export default function AllJobsPage() {
         filtered = filtered.filter(job => job.status === filters.status);
     }
     if (filters.jobGiver) {
-        filtered = filtered.filter(job => (job.jobGiver as User)?.id?.toLowerCase().includes(filters.jobGiver.toLowerCase()));
+        const giverFilter = filters.jobGiver.toLowerCase();
+        filtered = filtered.filter(job => {
+            const jobGiverId = (job.jobGiver as DocumentReference)?.id || (job.jobGiver as User)?.id;
+            return jobGiverId?.toLowerCase().includes(giverFilter);
+        });
     }
      if (filters.jobType !== 'all') {
         filtered = filtered.filter(job => getJobType(job) === filters.jobType);
@@ -210,8 +200,8 @@ export default function AllJobsPage() {
             valB = b.status.toLowerCase();
             break;
           case 'jobGiver':
-            valA = (a.jobGiver as User)?.id?.toLowerCase() || '';
-            valB = (b.jobGiver as User)?.id?.toLowerCase() || '';
+            valA = (a.jobGiver as DocumentReference)?.id || (a.jobGiver as User)?.id || '';
+            valB = (b.jobGiver as DocumentReference)?.id || (b.jobGiver as User)?.id || '';
             break;
           case 'bids':
             valA = a.bids?.length || 0;
@@ -411,7 +401,7 @@ export default function AllJobsPage() {
                         <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
                       </TableCell>
                       <TableCell>
-                        {(job.jobGiver as User)?.id || 'N/A'}
+                        {(job.jobGiver as DocumentReference)?.id || 'N/A'}
                       </TableCell>
                       <TableCell>
                         {job.bids?.length || 0}
