@@ -41,7 +41,7 @@ export default function AllJobsPage() {
   }, [role, router]);
 
   const filteredJobs = React.useMemo(() => {
-    const cleanedQuery = searchQuery.trim().toLowerCase();
+    const cleanedQuery = searchQuery.trim().toLowerCase().replace(/ /g, '-');
     if (!cleanedQuery) return jobs;
     return jobs.filter(job => 
       job.title.toLowerCase().includes(cleanedQuery) ||
