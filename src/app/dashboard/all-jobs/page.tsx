@@ -33,7 +33,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { Calendar as CalendarIcon, X } from "lucide-react";
+import { Calendar as CalendarIcon, X, ArrowUpDown } from "lucide-react";
 import { collection, getDocs, doc, getDoc, DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
@@ -49,6 +49,8 @@ const initialFilters = {
     jobGiver: "",
     date: undefined as DateRange | undefined,
 };
+
+type SortableKeys = 'title' | 'status' | 'jobGiver' | 'bids' | 'jobType' | 'postedAt';
 
 function getJobType(job: Job) {
     if (!job.awardedInstaller) return 'N/A';
@@ -102,6 +104,8 @@ export default function AllJobsPage() {
   const [loading, setLoading] = React.useState(true);
   const [filters, setFilters] = React.useState(initialFilters);
   const [allStatuses, setAllStatuses] = React.useState<string[]>([]);
+  const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'postedAt', direction: 'descending' });
+
 
   React.useEffect(() => {
     if (role && role !== 'Admin') {
@@ -158,7 +162,16 @@ export default function AllJobsPage() {
     setFilters(prev => ({ ...prev, [filterName]: value }));
   };
 
-  const filteredJobs = React.useMemo(() => {
+  const requestSort = (key: SortableKeys) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+        direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+
+  const filteredAndSortedJobs = React.useMemo(() => {
     let filtered = jobs;
 
     if (filters.jobId) {
@@ -184,8 +197,50 @@ export default function AllJobsPage() {
         });
     }
 
+    if (sortConfig !== null) {
+      filtered.sort((a, b) => {
+        let valA, valB;
+        switch (sortConfig.key) {
+          case 'title':
+            valA = a.title.toLowerCase();
+            valB = b.title.toLowerCase();
+            break;
+          case 'status':
+            valA = a.status.toLowerCase();
+            valB = b.status.toLowerCase();
+            break;
+          case 'jobGiver':
+            valA = (a.jobGiver as User)?.anonymousId?.toLowerCase() || '';
+            valB = (b.jobGiver as User)?.anonymousId?.toLowerCase() || '';
+            break;
+          case 'bids':
+            valA = a.bids?.length || 0;
+            valB = b.bids?.length || 0;
+            break;
+          case 'jobType':
+            valA = getJobType(a).toLowerCase();
+            valB = getJobType(b).toLowerCase();
+            break;
+          case 'postedAt':
+            valA = toDate(a.postedAt).getTime();
+            valB = toDate(b.postedAt).getTime();
+            break;
+          default:
+            return 0;
+        }
+
+        if (valA < valB) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (valA > valB) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
     return filtered;
-  }, [jobs, filters]);
+  }, [jobs, filters, sortConfig]);
 
   if (role !== 'Admin') {
     return (
@@ -208,6 +263,13 @@ export default function AllJobsPage() {
   ).length;
   
   const jobTypes = ["All", "Bidding", "Direct"];
+
+  const getSortIcon = (key: SortableKeys) => {
+    if (!sortConfig || sortConfig.key !== key) {
+        return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />;
+    }
+    return sortConfig.direction === 'ascending' ? '▲' : '▼';
+  };
   
   return (
     <Card>
@@ -293,12 +355,42 @@ export default function AllJobsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead>Job Title</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Job Giver</TableHead>
-                  <TableHead>Bids</TableHead>
-                  <TableHead>Job Type</TableHead>
-                  <TableHead className="text-right">Posted</TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('title')}>
+                      Job Title
+                      {getSortIcon('title')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('status')}>
+                      Status
+                      {getSortIcon('status')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('jobGiver')}>
+                      Job Giver
+                      {getSortIcon('jobGiver')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('bids')}>
+                      Bids
+                      {getSortIcon('bids')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('jobType')}>
+                      Job Type
+                      {getSortIcon('jobType')}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-right">
+                    <Button variant="ghost" onClick={() => requestSort('postedAt')}>
+                      Posted
+                      {getSortIcon('postedAt')}
+                    </Button>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -308,8 +400,8 @@ export default function AllJobsPage() {
                       Loading jobs from Firestore...
                     </TableCell>
                   </TableRow>
-                ) : filteredJobs.length > 0 ? (
-                  filteredJobs.map((job) => (
+                ) : filteredAndSortedJobs.length > 0 ? (
+                  filteredAndSortedJobs.map((job) => (
                     <TableRow key={job.id} onClick={() => handleRowClick(job.id)} className="cursor-pointer">
                       <TableCell>
                          <p className="font-medium">{job.title}</p>
@@ -347,9 +439,9 @@ export default function AllJobsPage() {
          <div className="block lg:hidden">
             {loading ? (
                 <div className="text-center py-10 text-muted-foreground">Loading jobs from Firestore...</div>
-            ) : filteredJobs.length > 0 ? (
+            ) : filteredAndSortedJobs.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {filteredJobs.map((job) => (
+                    {filteredAndSortedJobs.map((job) => (
                         <JobCard key={job.id} job={job} onRowClick={handleRowClick} />
                     ))}
                 </div>
@@ -361,4 +453,3 @@ export default function AllJobsPage() {
     </Card>
   );
 }
-
