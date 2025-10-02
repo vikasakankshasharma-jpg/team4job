@@ -56,8 +56,14 @@ const jobSchema = z.object({
 export default function PostJobPage() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
-  const { user } = useUser();
+  const { user, role } = useUser();
   const router = useRouter();
+
+  React.useEffect(() => {
+    if (role === 'Admin') {
+      router.push('/dashboard');
+    }
+  }, [role, router]);
 
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
@@ -130,6 +136,14 @@ export default function PostJobPage() {
     });
     form.reset();
     router.push(`/dashboard/posted-jobs`);
+  }
+
+  if (role === 'Admin') {
+    return (
+        <div className="flex items-center justify-center h-full">
+            <p className="text-muted-foreground">Redirecting...</p>
+        </div>
+    );
   }
 
   return (

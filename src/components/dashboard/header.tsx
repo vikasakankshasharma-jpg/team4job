@@ -76,21 +76,39 @@ export function Header() {
   const breadcrumbSegments = pathname.split('/').filter(Boolean);
 
   const renderBreadcrumbs = () => {
-    if (role === 'Admin' && pathname.startsWith('/dashboard/jobs/')) {
-       return (
-        <>
+    if (role === 'Admin') {
+      if (pathname.startsWith('/dashboard/jobs/')) {
+        return (
+          <>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                    <Link href="/dashboard/all-jobs">All Jobs</Link>
-                </BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <Link href="/dashboard/all-jobs">All Jobs</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-                <BreadcrumbPage>{breadcrumbSegments[breadcrumbSegments.length - 1]}</BreadcrumbPage>
+              <BreadcrumbPage>JOB-{breadcrumbSegments[breadcrumbSegments.length - 1].split('-').pop()}</BreadcrumbPage>
             </BreadcrumbItem>
-        </>
-       )
+          </>
+        );
+      }
+      if (pathname.startsWith('/dashboard/users/')) {
+        return (
+          <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/dashboard/users">Users</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{breadcrumbSegments[breadcrumbSegments.length - 1]}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </>
+        );
+      }
     }
 
     return breadcrumbSegments.slice(1).map((segment, index) => (

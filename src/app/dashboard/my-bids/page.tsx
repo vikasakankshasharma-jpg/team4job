@@ -141,13 +141,19 @@ const bidStatuses = [
 ];
 
 function MyBidsPageContent() {
-  const { user } = useUser();
+  const { user, role } = useUser();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   let statusFilter = searchParams.get('status');
   const { setHelp } = useHelp();
   const [jobs, setJobs] = React.useState<Job[]>(allMockJobs);
+
+  React.useEffect(() => {
+    if (role === 'Admin') {
+      router.push('/dashboard');
+    }
+  }, [role, router]);
 
   React.useEffect(() => {
     setHelp({
@@ -186,19 +192,11 @@ function MyBidsPageContent() {
       statusFilter = 'Completed & Won';
   }
   
-  if (!user) {
+  if (role === 'Admin' || !user) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>My Bids</CardTitle>
-          <CardDescription>
-            Loading your bids...
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p>Please wait while we fetch your data.</p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground">Redirecting...</p>
+      </div>
     );
   }
 
