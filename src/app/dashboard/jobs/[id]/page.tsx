@@ -39,6 +39,7 @@ import {
   KeyRound,
   Copy,
   AlertOctagon,
+  FileIcon,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -966,6 +967,29 @@ export default function JobDetailPage() {
           <CardContent>
             <p className="text-foreground">{job.description}</p>
             
+            {job.attachments && job.attachments.length > 0 && (
+              <>
+                <Separator className="my-6" />
+                <div>
+                  <h3 className="font-semibold mb-4">Attachments</h3>
+                  <div className="space-y-2">
+                    {job.attachments.map((file, idx) => (
+                      <a 
+                        key={idx} 
+                        href={file.fileUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="flex items-center gap-2 text-primary hover:underline bg-primary/10 p-2 rounded-md text-sm"
+                      >
+                        <FileIcon className="h-4 w-4" />
+                        <span>{file.fileName}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
             {job.status === 'Open for Bidding' && (
               <>
                 <Separator className="my-6" />

@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Loader2, UserPlus } from "lucide-react";
+import { Zap, Loader2, UserPlus, Paperclip, X } from "lucide-react";
 import { generateJobDetails } from "@/ai/flows/generate-job-details";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
@@ -32,6 +32,7 @@ import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { LocationInput } from "@/components/ui/location-input";
 import { Separator } from "@/components/ui/separator";
+import { JobAttachment } from "@/lib/types";
 
 const jobSchema = z.object({
   jobTitle: z
@@ -72,6 +73,8 @@ export default function PostJobPage() {
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { user, role } = useUser();
   const router = useRouter();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [attachments, setAttachments] = React.useState<File[]>([]);
 
   React.useEffect(() => {
     if (role === 'Admin') {
@@ -136,6 +139,16 @@ export default function PostJobPage() {
     }
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setAttachments(prev => [...prev, ...Array.from(event.target.files!)]);
+    }
+  };
+
+  const removeAttachment = (fileName: string) => {
+    setAttachments(prev => prev.filter(file => file.name !== fileName));
+  };
+
 
   async function onSubmit(values: z.infer<typeof jobSchema>) {
     if (!user) {
@@ -143,8 +156,13 @@ export default function PostJobPage() {
         return;
     }
     
-    // In a real app, this would save to a database.
-    // For this mock version, we just show a success message.
+    // Mock upload process
+    const uploadedAttachments: JobAttachment[] = attachments.map(file => ({
+        fileName: file.name,
+        fileUrl: `#`, // In real app, this would be the URL from Firebase Storage
+        fileType: file.type,
+    }));
+
     const newJobId = `JOB-${Date.now()}`;
     const status = values.directAwardInstallerId ? "Awarded" : "Open for Bidding";
     const jobData = { 
@@ -155,6 +173,7 @@ export default function PostJobPage() {
         bids: [],
         comments: [],
         postedAt: new Date(),
+        attachments: uploadedAttachments,
     };
 
     if (values.directAwardInstallerId) {
@@ -169,6 +188,7 @@ export default function PostJobPage() {
         description: `Your job is now ${status === 'Awarded' ? 'awarded' : 'live and open for bidding'}.`,
     });
     form.reset();
+    setAttachments([]);
     router.push(`/dashboard/posted-jobs`);
   }
 
@@ -269,6 +289,35 @@ export default function PostJobPage() {
                   </FormItem>
                 )}
               />
+              <div className="space-y-4">
+                  <FormLabel>Attachments</FormLabel>
+                  <FormDescription>
+                      Upload photos, videos, or documents to provide more details about the job site.
+                  </FormDescription>
+                  <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      multiple
+                      className="hidden"
+                  />
+                   {attachments.length > 0 && (
+                      <div className="space-y-2">
+                          {attachments.map(file => (
+                              <div key={file.name} className="flex items-center justify-between text-sm bg-muted p-2 rounded-md">
+                                  <span>{file.name}</span>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeAttachment(file.name)}>
+                                      <X className="h-3 w-3" />
+                                  </Button>
+                              </div>
+                          ))}
+                      </div>
+                  )}
+                  <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                      <Paperclip className="mr-2 h-4 w-4" />
+                      Add Attachments
+                  </Button>
+              </div>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                  <LocationInput
                     name="location"
