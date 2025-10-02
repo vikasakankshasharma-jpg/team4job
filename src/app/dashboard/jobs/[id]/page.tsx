@@ -257,6 +257,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
 }
 
 function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected, showRanking, canAward }: { bid: Bid, job: Job, onSelectInstaller: (installerId: string) => void, onAwardJob: (installerId: string) => void, rank: number, isSelected: boolean, showRanking: boolean, canAward: boolean }) {
+    const { role } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
     const isAwardedToThisBidder = job.awardedInstaller === installer.id;
@@ -299,21 +300,23 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                 </div>
             </div>
             <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
-            <div className="mt-4 flex items-center gap-2">
-                 <Button 
-                    size="sm" 
-                    onClick={() => canAward ? onAwardJob(installer.id) : onSelectInstaller(installer.id)}
-                    disabled={isJobAwarded}
-                    variant={isAwardedToThisBidder ? 'secondary' : 'default'}
-                 >
-                    {isAwardedToThisBidder ? (
-                        <>
-                            <Award className="mr-2 h-4 w-4" /> Awarded
-                        </>
-                    ) : canAward ? 'Award Job' : isSelected ? 'Selected' : 'Select Installer'}
-                </Button>
-                <Button size="sm" variant="outline">Message</Button>
-            </div>
+            {role === 'Job Giver' && (
+              <div className="mt-4 flex items-center gap-2">
+                  <Button 
+                      size="sm" 
+                      onClick={() => canAward ? onAwardJob(installer.id) : onSelectInstaller(installer.id)}
+                      disabled={isJobAwarded}
+                      variant={isAwardedToThisBidder ? 'secondary' : 'default'}
+                  >
+                      {isAwardedToThisBidder ? (
+                          <>
+                              <Award className="mr-2 h-4 w-4" /> Awarded
+                          </>
+                      ) : canAward ? 'Award Job' : isSelected ? 'Selected' : 'Select Installer'}
+                  </Button>
+                  <Button size="sm" variant="outline">Message</Button>
+              </div>
+            )}
         </div>
     );
 }
@@ -890,5 +893,7 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
 
     
