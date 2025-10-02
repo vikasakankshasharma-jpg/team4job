@@ -76,6 +76,8 @@ export default function PostJobPage() {
   const router = useRouter();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = React.useState<File[]>([]);
+  const [mapCenter, setMapCenter] = React.useState<{lat: number, lng: number} | null>(null);
+
 
   React.useEffect(() => {
     if (role === 'Admin') {
@@ -325,11 +327,13 @@ export default function PostJobPage() {
                     label="Location (Pincode)"
                     placeholder="e.g. 110001"
                     control={form.control}
+                    onLocationGeocoded={setMapCenter}
                  />
                  <MapInput
                     name="fullAddress"
                     label="Full Address & Map Location"
                     control={form.control}
+                    center={mapCenter}
                   />
                  <FormField
                     control={form.control}

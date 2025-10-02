@@ -14,7 +14,6 @@ const containerStyle = {
   borderRadius: '0.5rem',
 };
 
-// A default center for the map (New Delhi)
 const defaultCenter = {
   lat: 28.6139,
   lng: 77.2090
@@ -24,20 +23,36 @@ interface MapInputProps {
     name: string;
     label: string;
     control: Control<any>;
+    center?: { lat: number; lng: number } | null;
 }
 
-export function MapInput({ name, label, control }: MapInputProps) {
+export function MapInput({ name, label, control, center: propCenter }: MapInputProps) {
   const { field: addressField, fieldState: addressFieldState } = useController({ name, control });
-  const { setValue, watch } = useFormContext();
+  const { setValue } = useFormContext();
 
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [marker, setMarker] = useState<google.maps.LatLngLiteral | null>(null);
-  const [center, setCenter] = useState(defaultCenter);
+  const [center, setCenter] = useState(propCenter || defaultCenter);
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
   });
+
+  useEffect(() => {
+    if (propCenter && map) {
+      setCenter(propCenter);
+      setMarker(propCenter);
+      map.panTo(propCenter);
+      
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ location: propCenter }, (results, status) => {
+        if (status === 'OK' && results && results[0]) {
+          setValue(name, results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
+        }
+      });
+    }
+  }, [propCenter, map, setValue, name]);
 
   const onMapClick = useCallback((e: google.maps.MapMouseEvent) => {
     if (e.latLng) {
@@ -83,7 +98,6 @@ export function MapInput({ name, label, control }: MapInputProps) {
     }
   }
 
-
   if (!isLoaded) {
     return (
         <FormItem>
@@ -108,7 +122,7 @@ export function MapInput({ name, label, control }: MapInputProps) {
         <GoogleMap
             mapContainerStyle={containerStyle}
             center={center}
-            zoom={12}
+            zoom={15}
             onLoad={onMapLoad}
             onUnmount={onUnmount}
             onClick={onMapClick}
