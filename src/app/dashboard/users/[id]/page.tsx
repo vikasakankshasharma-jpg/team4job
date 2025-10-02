@@ -103,6 +103,7 @@ export default function UserProfilePage() {
   const [userCompletedJobs, setUserCompletedJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [postedJobsView, setPostedJobsView] = React.useState<'grid' | 'list'>('grid');
+  const [completedJobsView, setCompletedJobsView] = React.useState<'grid' | 'list'>('grid');
 
   React.useEffect(() => {
     if (id) {
@@ -338,18 +339,50 @@ export default function UserProfilePage() {
       {isInstaller && (
         <Card>
           <CardHeader>
-            <CardTitle>Completed Jobs</CardTitle>
-            <CardDescription>{name} has successfully completed {userCompletedJobs.length} jobs.</CardDescription>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Completed Jobs</CardTitle>
+                <CardDescription>{name} has successfully completed {userCompletedJobs.length} jobs.</CardDescription>
+              </div>
+               <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
+                  <Button
+                      variant={completedJobsView === 'grid' ? 'secondary' : 'ghost'}
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setCompletedJobsView('grid')}
+                  >
+                      <Grid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                      variant={completedJobsView === 'list' ? 'secondary' : 'ghost'}
+                      size="icon"
+                      className="h-7 w-7"
+                       onClick={() => setCompletedJobsView('list')}
+                  >
+                      <List className="h-4 w-4" />
+                  </Button>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-             {userCompletedJobs.length > 0 ? userCompletedJobs.map(job => (
-                <JobCard key={job.id} job={job} />
-             )) : <p className="text-muted-foreground col-span-full">This installer has not completed any jobs yet.</p>}
+          <CardContent>
+             {userCompletedJobs.length > 0 ? (
+               completedJobsView === 'grid' ? (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {userCompletedJobs.map(job => (
+                    <JobCard key={job.id} job={job} />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {userCompletedJobs.map(job => (
+                    <JobListItem key={job.id} job={job} />
+                  ))}
+                </div>
+              )
+            ) : <p className="text-muted-foreground col-span-full">This installer has not completed any jobs yet.</p>}
           </CardContent>
         </Card>
       )}
     </div>
   );
 }
-
-  
