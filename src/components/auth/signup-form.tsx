@@ -35,7 +35,7 @@ import {
 } from "@/ai/flows/aadhar-verification";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { LocationInput } from "@/components/ui/location-input";
+import { MapInput } from "@/components/ui/map-input";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -45,7 +45,7 @@ const formSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters." }),
   role: z.enum(["Job Giver", "Installer", "Both (Job Giver & Installer)"]),
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
-  pincode: z.string().min(8, { message: "Please select a pincode and post office." }),
+  fullAddress: z.string().min(10, { message: "Please select a valid address." }),
   aadhar: z.string().optional(),
   otp: z.string().optional(),
   realAvatarUrl: z.string().optional(),
@@ -69,7 +69,7 @@ export function SignUpForm() {
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
 
   useEffect(() => {
-    if (currentStep === "photo" && !hasCameraPermission) {
+    if (currentStep === "photo") {
       startCamera();
     }
     return () => {
@@ -89,7 +89,7 @@ export function SignUpForm() {
       password: "",
       role: undefined,
       mobile: "",
-      pincode: "",
+      fullAddress: "",
       aadhar: "",
       otp: "",
       realAvatarUrl: "",
@@ -190,7 +190,8 @@ export function SignUpForm() {
             setKycData(result.kycData);
             form.setValue("name", result.kycData.name, { shouldValidate: true });
             form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
-            form.setValue("pincode", `${result.kycData.pincode}, `, { shouldValidate: true });
+            // Cannot set full address from just pincode, but we can pre-fill pincode if MapInput is adapted
+            // For now, let's keep this as it is. User will use the map.
         }
         setCurrentStep("details");
       } else {
@@ -441,10 +442,9 @@ export function SignUpForm() {
             </FormItem>
           )}
         />
-        <LocationInput
-            name="pincode"
-            label="Pincode"
-            placeholder="e.g. 110001"
+        <MapInput
+            name="fullAddress"
+            label="Residential Address"
             control={form.control}
         />
         <div className="flex gap-2">
