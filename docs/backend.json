@@ -1,0 +1,217 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile information.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique identifier for the user.",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's full name."
+        },
+        "anonymousId": {
+          "type": "string",
+          "description": "A publicly visible, anonymous identifier for the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "mobile": {
+          "type": "string",
+          "description": "The user's 10-digit mobile number."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL for the user's anonymous SVG avatar."
+        },
+        "realAvatarUrl": {
+          "type": "string",
+          "description": "URL for the user's real profile picture."
+        },
+        "pincodes": {
+          "type": "object",
+          "properties": {
+            "residential": {
+              "type": "string"
+            },
+            "office": {
+              "type": "string"
+            }
+          },
+          "required": ["residential"]
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["Job Giver", "Installer", "Admin"]
+          }
+        },
+        "memberSince": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "installerProfile": {
+          "$ref": "#/entities/InstallerProfile"
+        }
+      },
+      "required": ["id", "name", "anonymousId", "email", "mobile", "avatarUrl", "pincodes", "roles", "memberSince"]
+    },
+    "InstallerProfile": {
+      "title": "Installer Profile",
+      "description": "Specific profile details for users who are installers.",
+      "type": "object",
+      "properties": {
+        "tier": {
+          "type": "string",
+          "enum": ["Bronze", "Silver", "Gold", "Platinum"]
+        },
+        "points": {
+          "type": "number"
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rating": {
+          "type": "number"
+        },
+        "reviews": {
+          "type": "number"
+        },
+        "verified": {
+          "type": "boolean"
+        }
+      },
+      "required": ["tier", "points", "skills", "rating", "reviews", "verified"]
+    },
+    "Job": {
+      "title": "Job",
+      "description": "Represents a job posting on the platform.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "jobGiver": {
+          "$ref": "#/entities/UserProfile"
+        },
+        "location": {
+          "type": "string"
+        },
+        "fullAddress": {
+          "type": "string"
+        },
+        "budget": {
+          "type": "object",
+          "properties": {
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            }
+          },
+          "required": ["min", "max"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid"]
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "jobStartDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "postedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "awardedInstaller": {
+          "$ref": "#/entities/UserProfile"
+        },
+        "rating": {
+          "type": "number"
+        },
+        "completionOtp": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "title", "description", "jobGiver", "location", "budget", "status", "deadline", "postedAt"]
+    },
+    "Bid": {
+      "title": "Bid",
+      "description": "Represents a bid made by an installer on a job.",
+      "type": "object",
+      "properties": {
+        "installer": {
+          "$ref": "#/entities/UserProfile"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "coverLetter": {
+          "type": "string"
+        }
+      },
+      "required": ["installer", "amount", "timestamp"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A comment on a job posting.",
+      "type": "object",
+      "properties": {
+        "author": {
+          "$ref": "#/entities/UserProfile"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content": {
+          "type": "string"
+        }
+      },
+      "required": ["author", "timestamp", "content"]
+    }
+  },
+  "auth": {
+    "providers": ["email"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Stores individual user profiles."
+    },
+    "/jobs/{jobId}": {
+      "schema": {
+        "$ref": "#/entities/Job"
+      },
+      "description": "Stores all job postings. Bids and comments are embedded within each job document."
+    }
+  }
+}
