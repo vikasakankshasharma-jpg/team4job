@@ -41,11 +41,12 @@ export default function AllJobsPage() {
   }, [role, router]);
 
   const filteredJobs = React.useMemo(() => {
-    if (!searchQuery) return jobs;
+    const cleanedQuery = searchQuery.trim().toLowerCase();
+    if (!cleanedQuery) return jobs;
     return jobs.filter(job => 
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (job.jobGiver as User)?.anonymousId?.toLowerCase().includes(searchQuery.toLowerCase())
+      job.title.toLowerCase().includes(cleanedQuery) ||
+      job.id.toLowerCase().includes(cleanedQuery) ||
+      (job.jobGiver as User)?.anonymousId?.toLowerCase().includes(cleanedQuery)
     );
   }, [jobs, searchQuery]);
 
