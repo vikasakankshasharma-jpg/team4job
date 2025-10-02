@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -20,8 +20,11 @@ import { notFound, useParams } from "next/navigation";
 import { JobCard } from "@/components/job-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Job, User } from "@/lib/types";
-import { toDate } from "@/lib/utils";
+import { getStatusVariant, toDate } from "@/lib/utils";
 import { users as allMockUsers, jobs as allMockJobs } from "@/lib/data";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 const tierIcons = {
   Bronze: <Medal className="h-6 w-6 text-yellow-700" />,
@@ -43,6 +46,25 @@ const chartConfig = {
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig
+
+function JobListItem({ job }: { job: Job }) {
+  return (
+    <Link href={`/dashboard/jobs/${job.id}`} className="block hover:bg-accent rounded-lg p-4 -mx-4">
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          <p className="font-semibold">{job.title}</p>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+            <span>Posted: {format(toDate(job.postedAt), "MMM d, yyyy")}</span>
+            <span className="flex items-center gap-1">
+              {job.bids.length} Bids
+            </span>
+          </div>
+        </div>
+        <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
+      </div>
+    </Link>
+  )
+}
 
 function PageSkeleton() {
   return (
@@ -80,6 +102,7 @@ export default function UserProfilePage() {
   const [userPostedJobs, setUserPostedJobs] = React.useState<Job[]>([]);
   const [userCompletedJobs, setUserCompletedJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [postedJobsView, setPostedJobsView] = React.useState<'grid' | 'list'>('grid');
 
   React.useEffect(() => {
     if (id) {
@@ -267,13 +290,47 @@ export default function UserProfilePage() {
       {roles.includes('Job Giver') && (
         <Card>
           <CardHeader>
-            <CardTitle>Posted Jobs</CardTitle>
-            <CardDescription>{name} has posted {userPostedJobs.length} jobs.</CardDescription>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Posted Jobs</CardTitle>
+                <CardDescription>{name} has posted {userPostedJobs.length} jobs.</CardDescription>
+              </div>
+               <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
+                  <Button
+                      variant={postedJobsView === 'grid' ? 'secondary' : 'ghost'}
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setPostedJobsView('grid')}
+                  >
+                      <Grid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                      variant={postedJobsView === 'list' ? 'secondary' : 'ghost'}
+                      size="icon"
+                      className="h-7 w-7"
+                       onClick={() => setPostedJobsView('list')}
+                  >
+                      <List className="h-4 w-4" />
+                  </Button>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-             {userPostedJobs.length > 0 ? userPostedJobs.map(job => (
-                <JobCard key={job.id} job={job} />
-             )) : <p className="text-muted-foreground col-span-full">This user has not posted any jobs yet.</p>}
+          <CardContent>
+            {userPostedJobs.length > 0 ? (
+               postedJobsView === 'grid' ? (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {userPostedJobs.map(job => (
+                    <JobCard key={job.id} job={job} />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {userPostedJobs.map(job => (
+                    <JobListItem key={job.id} job={job} />
+                  ))}
+                </div>
+              )
+            ) : <p className="text-muted-foreground col-span-full">This user has not posted any jobs yet.</p>}
           </CardContent>
         </Card>
       )}
@@ -294,3 +351,5 @@ export default function UserProfilePage() {
     </div>
   );
 }
+
+  
