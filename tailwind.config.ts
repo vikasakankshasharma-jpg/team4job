@@ -46,8 +46,8 @@ export default {
           foreground: 'hsl(var(--destructive-foreground))',
         },
         success: {
-          DEFAULT: 'hsl(var(--success))',
-          foreground: 'hsl(var(--success-foreground))',
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
         },
         warning: {
           DEFAULT: 'hsl(var(--warning))',
@@ -109,3 +109,5 @@ export default {
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
+
+  
