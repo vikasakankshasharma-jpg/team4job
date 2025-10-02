@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useUser } from "@/hooks/use-user";
@@ -288,7 +289,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
     const isAdmin = role === 'Admin';
     const showRealIdentity = isAdmin || isAwardedToThisBidder;
 
-    const installerName = showRealIdentity ? installer.name : (showRanking ? `Position #${rank}` : installer.anonymousId);
+    const installerName = showRealIdentity ? installer.name : (showRanking ? `Position #${rank}` : installer.id);
 
     return (
         <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && showRanking && rank === 1 ? 'border-primary' : ''}`}>
@@ -300,7 +301,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                        ) : (
                            <AnimatedAvatar svg={installer.avatarUrl} />
                        )}
-                        <AvatarFallback>{showRealIdentity ? installer.name.substring(0, 2) : installer.anonymousId.substring(0, 2)}</AvatarFallback>
+                        <AvatarFallback>{showRealIdentity ? installer.name.substring(0, 2) : `P${rank}`}</AvatarFallback>
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
@@ -314,7 +315,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
                             <span>{installer.installerProfile?.rating} ({installer.installerProfile?.reviews} reviews)</span>
-                            {!showRealIdentity && <span className="font-mono">{installer.anonymousId}</span>}
+                            {!showRealIdentity && <span className="font-mono">{installer.id}</span>}
                             {installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
                         </div>
                     </div>
@@ -504,7 +505,7 @@ function ReputationImpactCard({ job }: { job: Job }) {
             <Award className="h-5 w-5 text-primary" />
             Reputation Impact
         </CardTitle>
-        <CardDescription>Reputation points awarded to {installer?.anonymousId} for this job.</CardDescription>
+        <CardDescription>Reputation points awarded to {installer?.id} for this job.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex justify-between items-center text-sm">
@@ -548,14 +549,14 @@ function CommentDisplay({ comment, isEditing, canEdit, handleEditComment, handle
         <div key={comment.id} className="flex gap-3">
             <Avatar className="h-9 w-9">
                 <AnimatedAvatar svg={author.avatarUrl} />
-                <AvatarFallback>{author.anonymousId.substring(0, 2)}</AvatarFallback>
+                <AvatarFallback>{author.id.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
                 {!isEditing ? (
                 <>
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm">{author.anonymousId}</p>
+                        <p className="font-semibold text-sm">{author.id}</p>
                         <p className="text-xs text-muted-foreground">{timeAgo}</p>
                         </div>
                         {canEdit && (
@@ -865,10 +866,10 @@ export default function JobDetailPage() {
                 <div className="flex items-center gap-3">
                     <Avatar>
                         <AnimatedAvatar svg={jobGiver.avatarUrl} />
-                        <AvatarFallback>{jobGiver.anonymousId.substring(0, 2)}</AvatarFallback>
+                        <AvatarFallback>{jobGiver.id.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <p className="text-sm font-semibold">{jobGiver.anonymousId}</p>
+                        <p className="text-sm font-semibold">{jobGiver.id}</p>
                         <p className="text-xs text-muted-foreground">Job Giver (Member since {format(toDate(jobGiver.memberSince), 'MMM yyyy')})</p>
                     </div>
                 </div>
@@ -903,7 +904,7 @@ export default function JobDetailPage() {
                      <div className="flex gap-3">
                         <Avatar className="h-9 w-9">
                             <AnimatedAvatar svg={user?.avatarUrl} />
-                            <AvatarFallback>{user?.anonymousId.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{user?.id.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                             <Textarea 

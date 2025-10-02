@@ -5,7 +5,6 @@ import { DocumentReference, Timestamp } from "firebase/firestore";
 export type User = {
   id: string;
   name: string;
-  anonymousId: string;
   email: string;
   mobile: string;
   avatarUrl: string;

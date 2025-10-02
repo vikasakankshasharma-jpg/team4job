@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -11,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import type { Job } from "@/lib/types";
+import type { Job, User } from "@/lib/types";
 import { MapPin, IndianRupee, Clock, Users } from "lucide-react";
 import Link from "next/link";
 import { format, formatDistanceToNow } from 'date-fns';
@@ -58,6 +59,7 @@ export function JobCard({ job }: JobCardProps) {
 
   const buttonText = getButtonText(job.status);
   const buttonVariant = statusVariant === 'success' ? 'success' : statusVariant === 'warning' ? 'warning' : statusVariant === 'info' ? 'info' : 'default';
+  const jobGiver = job.jobGiver as User;
 
   return (
     <Card className="flex flex-col relative">
@@ -73,13 +75,13 @@ export function JobCard({ job }: JobCardProps) {
         </div>
          <div className="flex items-center gap-3 pt-4">
             <Avatar className="h-9 w-9">
-              <AnimatedAvatar svg={job.jobGiver.avatarUrl} />
-              <AvatarFallback>{job.jobGiver.anonymousId.substring(0, 2)}</AvatarFallback>
+              <AnimatedAvatar svg={jobGiver.avatarUrl} />
+              <AvatarFallback>{jobGiver.id.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold text-sm text-foreground">{job.jobGiver.anonymousId}</p>
+              <p className="font-semibold text-sm text-foreground">{jobGiver.id}</p>
               <p className="text-xs text-muted-foreground">
-                Member since {format(toDate(job.jobGiver.memberSince), 'MMM yyyy')}
+                Member since {format(toDate(jobGiver.memberSince), 'MMM yyyy')}
               </p>
             </div>
         </div>

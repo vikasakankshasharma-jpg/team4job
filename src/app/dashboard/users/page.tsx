@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -116,7 +117,7 @@ export default function UsersPage() {
         filtered = filtered.filter(user =>
             user.name.toLowerCase().includes(searchTerm) ||
             user.email.toLowerCase().includes(searchTerm) ||
-            user.anonymousId.toLowerCase().includes(searchTerm) ||
+            user.id.toLowerCase().includes(searchTerm) ||
             user.mobile.includes(searchTerm)
         );
     }
@@ -173,10 +174,10 @@ export default function UsersPage() {
         }
 
         if (valA < valB) {
-            return sortConfig.direction === 'ascending' ? -1 : 1;
+          return sortConfig.direction === 'ascending' ? -1 : 1;
         }
         if (valA > valB) {
-            return sortConfig.direction === 'ascending' ? 1 : -1;
+          return sortConfig.direction === 'ascending' ? 1 : -1;
         }
         return 0;
       });
@@ -345,11 +346,11 @@ export default function UsersPage() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
                         <AnimatedAvatar svg={user.avatarUrl} />
-                        <AvatarFallback>{user.anonymousId.substring(0, 2)}</AvatarFallback>
+                        <AvatarFallback>{user.id.substring(0, 2)}</AvatarFallback>
                       </Avatar>
                       <div className="font-medium">
                           <p>{user.name}</p>
-                          <p className="text-sm text-muted-foreground">{user.anonymousId}</p>
+                          <p className="text-sm text-muted-foreground">{user.id}</p>
                       </div>
                     </div>
                   </TableCell>
