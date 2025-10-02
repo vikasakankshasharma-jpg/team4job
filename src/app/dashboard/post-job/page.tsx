@@ -30,6 +30,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
+import { LocationInput } from "@/components/ui/location-input";
 
 const jobSchema = z.object({
   jobTitle: z
@@ -39,7 +40,7 @@ const jobSchema = z.object({
     .string()
     .min(50, { message: "Description must be at least 50 characters." }),
   skills: z.string().min(1, { message: "Please provide at least one skill." }),
-  location: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit pincode." }),
+  location: z.string().min(8, { message: "Please select a pincode and post office." }),
   budgetMin: z.coerce.number().min(1, { message: "Minimum budget must be at least 1." }),
   budgetMax: z.coerce.number().min(1, { message: "Maximum budget must be at least 1." }),
   deadline: z.string().min(1, { message: "Please select a bidding deadline." }),
@@ -221,19 +222,12 @@ export default function PostJobPage() {
                 )}
               />
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                 <FormField
-                    control={form.control}
+                 <LocationInput
                     name="location"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Location (Pincode)</FormLabel>
-                        <FormControl>
-                        <Input placeholder="e.g., 110001" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+                    label="Location (Pincode)"
+                    placeholder="e.g. 110001"
+                    control={form.control}
+                 />
                  <FormField
                     control={form.control}
                     name="deadline"
