@@ -57,6 +57,7 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 
 
 function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
@@ -765,7 +766,18 @@ export default function JobDetailPage() {
               <MapPin className="h-5 w-5" />
               <div>
                 <p className="text-muted-foreground">Location</p>
-                <p className="font-semibold">{job.location}</p>
+                {role === 'Admin' ? (
+                  <Link 
+                    href={`https://www.google.com/maps/search/?api=1&query=${job.location.split(',')[0]}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold hover:underline"
+                  >
+                    {job.location}
+                  </Link>
+                ) : (
+                  <p className="font-semibold">{job.location}</p>
+                )}
               </div>
             </div>
              <div className="flex items-center gap-3">
@@ -803,3 +815,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
