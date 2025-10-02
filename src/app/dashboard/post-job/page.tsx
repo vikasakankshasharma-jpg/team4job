@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Loader2 } from "lucide-react";
+import { Zap, Loader2, UserPlus } from "lucide-react";
 import { generateJobDetails } from "@/ai/flows/generate-job-details";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { LocationInput } from "@/components/ui/location-input";
+import { Separator } from "@/components/ui/separator";
 
 const jobSchema = z.object({
   jobTitle: z
@@ -46,6 +47,7 @@ const jobSchema = z.object({
   budgetMax: z.coerce.number().min(1, { message: "Maximum budget must be at least 1." }),
   deadline: z.string().min(1, { message: "Please select a bidding deadline." }),
   jobStartDate: z.string().min(1, { message: "Please select a job start date." }),
+  directAwardInstallerId: z.string().optional(),
 }).refine(data => data.budgetMax > data.budgetMin, {
     message: "Maximum budget must be greater than minimum budget.",
     path: ["budgetMax"],
@@ -77,6 +79,7 @@ export default function PostJobPage() {
       fullAddress: "",
       budgetMin: 0,
       budgetMax: 0,
+      directAwardInstallerId: "",
     },
   });
 
@@ -130,11 +133,12 @@ export default function PostJobPage() {
     // In a real app, this would save to a database.
     // For this mock version, we just show a success message.
     const newJobId = `JOB-${Date.now()}`;
-    console.log("New Job Submitted:", { id: newJobId, ...values, jobGiver: user.id });
+    const status = values.directAwardInstallerId ? "Awarded" : "Open for Bidding";
+    console.log("New Job Submitted:", { id: newJobId, ...values, jobGiver: user.id, status });
 
     toast({
         title: "Job Posted Successfully! (Mock)",
-        description: "Your job is now live and open for bidding.",
+        description: `Your job is now ${status === 'Awarded' ? 'awarded' : 'live and open for bidding'}.`,
     });
     form.reset();
     router.push(`/dashboard/posted-jobs`);
@@ -156,12 +160,12 @@ export default function PostJobPage() {
         </h1>
       </div>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
           <Card>
             <CardHeader>
               <CardTitle>Job Details</CardTitle>
               <CardDescription>
-                Start with a clear title, then click the AI button to fill out the rest.
+                Fill in the details for your job posting. Use the AI generator for a quick start.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -267,6 +271,7 @@ export default function PostJobPage() {
                         <FormControl>
                          <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} />
                         </FormControl>
+                         <FormDescription>Not applicable if you are using Direct Award.</FormDescription>
                         <FormMessage />
                     </FormItem>
                     )}
@@ -320,7 +325,39 @@ export default function PostJobPage() {
               </div>
             </CardContent>
           </Card>
-          <div className="flex items-center justify-end gap-2 pt-6">
+           <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <UserPlus className="h-5 w-5" />
+                        Direct Award (Optional)
+                    </CardTitle>
+                    <CardDescription>
+                        Know a great installer? Skip the bidding process and award this job directly to them by entering their public Installer ID.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <FormField
+                        control={form.control}
+                        name="directAwardInstallerId"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Installer's Public ID</FormLabel>
+                            <FormControl>
+                            <Input
+                                placeholder="e.g., Installer-8421"
+                                {...field}
+                            />
+                            </FormControl>
+                             <FormDescription>
+                                If you fill this in, the job will be private and only visible to this installer. Public bidding will be disabled.
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </CardContent>
+            </Card>
+          <div className="flex items-center justify-end gap-2">
             <Button variant="outline" type="button" onClick={() => form.reset()}>
               Cancel
             </Button>
@@ -331,3 +368,5 @@ export default function PostJobPage() {
     </div>
   );
 }
+
+    
