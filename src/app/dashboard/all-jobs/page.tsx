@@ -79,7 +79,7 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
             <CardContent className="text-sm space-y-3">
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Job Giver</span>
-                    <span className="font-medium">{(job.jobGiver as User)?.anonymousId || 'N/A'}</span>
+                    <span className="font-medium">{(job.jobGiver as User)?.id || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Bids</span>
@@ -127,7 +127,7 @@ export default function AllJobsPage() {
           if (jobData.jobGiver) {
             const giverDoc = await getDoc(jobData.jobGiver);
             if (giverDoc.exists()) {
-              jobGiverData = giverDoc.data() as User;
+              jobGiverData = { id: giverDoc.id, ...giverDoc.data() } as User;
             }
           }
           
@@ -184,7 +184,7 @@ export default function AllJobsPage() {
         filtered = filtered.filter(job => job.status === filters.status);
     }
     if (filters.jobGiver) {
-        filtered = filtered.filter(job => (job.jobGiver as User)?.anonymousId?.toLowerCase().includes(filters.jobGiver.toLowerCase()));
+        filtered = filtered.filter(job => (job.jobGiver as User)?.id?.toLowerCase().includes(filters.jobGiver.toLowerCase()));
     }
      if (filters.jobType !== 'all') {
         filtered = filtered.filter(job => getJobType(job) === filters.jobType);
@@ -210,8 +210,8 @@ export default function AllJobsPage() {
             valB = b.status.toLowerCase();
             break;
           case 'jobGiver':
-            valA = (a.jobGiver as User)?.anonymousId?.toLowerCase() || '';
-            valB = (b.jobGiver as User)?.anonymousId?.toLowerCase() || '';
+            valA = (a.jobGiver as User)?.id?.toLowerCase() || '';
+            valB = (b.jobGiver as User)?.id?.toLowerCase() || '';
             break;
           case 'bids':
             valA = a.bids?.length || 0;
@@ -274,7 +274,7 @@ export default function AllJobsPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>All Jobs</CardTitle>
+        <CardTitle>Jobs</CardTitle>
         <CardDescription>A list of all jobs created on the platform. Click on a job to view details.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -292,7 +292,7 @@ export default function AllJobsPage() {
                         ))}
                     </SelectContent>
                 </Select>
-                <Input placeholder="Filter by Job Giver..." value={filters.jobGiver} onChange={e => handleFilterChange('jobGiver', e.target.value)} className="h-8" />
+                <Input placeholder="Filter by Job Giver ID..." value={filters.jobGiver} onChange={e => handleFilterChange('jobGiver', e.target.value)} className="h-8" />
                  <Select value={filters.jobType} onValueChange={value => handleFilterChange('jobType', value)}>
                     <SelectTrigger className="h-8 text-xs">
                         <SelectValue placeholder="Filter by Type..." />
@@ -411,7 +411,7 @@ export default function AllJobsPage() {
                         <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
                       </TableCell>
                       <TableCell>
-                        {(job.jobGiver as User)?.anonymousId || 'N/A'}
+                        {(job.jobGiver as User)?.id || 'N/A'}
                       </TableCell>
                       <TableCell>
                         {job.bids?.length || 0}
@@ -453,3 +453,5 @@ export default function AllJobsPage() {
     </Card>
   );
 }
+
+    
