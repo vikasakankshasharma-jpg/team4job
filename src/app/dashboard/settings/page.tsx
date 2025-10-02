@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -36,7 +35,13 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/hooks/use-user"
 import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+import { Gem, Medal, Percent, ShieldCheck, IndianRupee } from "lucide-react"
 
 function ThemeSelector() {
     const { theme, setTheme } = useTheme()
@@ -75,161 +80,252 @@ function ThemeSelector() {
 function PersonalSettingsCard() {
     const { toast } = useToast()
     return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Appearance</CardTitle>
+                    <CardDescription>Customize the look and feel of the application.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ThemeSelector />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Notifications</CardTitle>
+                    <CardDescription>Manage how you receive notifications.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                            <Label>Email Notifications</Label>
+                            <p className="text-xs text-muted-foreground">
+                                Receive emails about job updates and bids.
+                            </p>
+                        </div>
+                        <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                            <Label>Push Notifications</Label>
+                            <p className="text-xs text-muted-foreground">
+                                Get real-time alerts on your device.
+                            </p>
+                        </div>
+                        <Switch />
+                    </div>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Account Management</CardTitle>
+                    <CardDescription>
+                        Manage your account settings and data.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between rounded-lg border p-3">
+                        <div>
+                            <Label>Change Password</Label>
+                            <p className="text-xs text-muted-foreground">
+                                Update your account password.
+                            </p>
+                        </div>
+                        <Button variant="outline">Change Password</Button>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-3">
+                        <div>
+                            <Label className="text-destructive">Delete Account</Label>
+                            <p className="text-xs text-destructive/70">
+                                Permanently delete your account and all associated data.
+                            </p>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive">Delete Account</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete your
+                                    account and remove your data from our servers.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={() => {
+                                        toast({
+                                            title: "Account Deletion Requested",
+                                            description: "Your account is scheduled for deletion. This is a simulated action.",
+                                            variant: "destructive"
+                                        })
+                                    }}
+                                >
+                                    Continue
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function MonetizationSettings() {
+    return (
         <Card>
             <CardHeader>
-                <CardTitle>Personal Settings</CardTitle>
-                <CardDescription>
-                    Manage your personal account and app preferences.
-                </CardDescription>
+                <CardTitle>Monetization</CardTitle>
+                <CardDescription>Configure how the platform generates revenue through commissions, subscriptions, and bid bundles.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Appearance</CardTitle>
-                            <CardDescription>Customize the look and feel of the application.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <ThemeSelector />
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Notifications</CardTitle>
-                            <CardDescription>Manage how you receive notifications.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                                <div className="space-y-0.5">
-                                    <Label>Email Notifications</Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Receive emails about job updates and bids.
-                                    </p>
-                                </div>
-                                <Switch defaultChecked />
-                            </div>
-                            <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                                <div className="space-y-0.5">
-                                    <Label>Push Notifications</Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Get real-time alerts on your device.
-                                    </p>
-                                </div>
-                                <Switch />
-                            </div>
-                        </CardContent>
-                    </Card>
+                <div className="space-y-2">
+                    <Label htmlFor="commission-rate" className="flex items-center gap-2"><Percent className="h-4 w-4" /> Platform Commission Rate</Label>
+                    <div className="flex items-center gap-2">
+                        <Input
+                            id="commission-rate"
+                            type="number"
+                            defaultValue="10"
+                            min="0"
+                            max="100"
+                            className="max-w-[100px]"
+                        />
+                         <span className="text-muted-foreground">%</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        The percentage the platform takes from each completed job's value.
+                    </p>
                 </div>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Account Management</CardTitle>
-                        <CardDescription>
-                            Manage your account settings and data.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between rounded-lg border p-3">
-                            <div>
-                                <Label>Change Password</Label>
-                                <p className="text-xs text-muted-foreground">
-                                    Update your account password.
-                                </p>
-                            </div>
-                            <Button variant="outline">Change Password</Button>
-                        </div>
-                        <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-3">
-                            <div>
-                                <Label className="text-destructive">Delete Account</Label>
-                                <p className="text-xs text-destructive/70">
-                                    Permanently delete your account and all associated data.
-                                </p>
-                            </div>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive">Delete Account</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete your
-                                        account and remove your data from our servers.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                        onClick={() => {
-                                            toast({
-                                                title: "Account Deletion Requested",
-                                                description: "Your account is scheduled for deletion. This is a simulated action.",
-                                                variant: "destructive"
-                                            })
-                                        }}
-                                    >
-                                        Continue
-                                    </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                    </CardContent>
-                </Card>
+                 <div className="space-y-4 rounded-lg border p-4">
+                    <h3 className="font-semibold">Subscription Plans</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                         <Label>Installer Pro Plan (₹/year)</Label>
+                         <Input type="number" defaultValue="2999" />
+                       </div>
+                        <div className="space-y-2">
+                         <Label>Job Giver Business Plan (₹/year)</Label>
+                         <Input type="number" defaultValue="4999" />
+                       </div>
+                    </div>
+                 </div>
+                 <div className="space-y-4 rounded-lg border p-4">
+                    <h3 className="font-semibold">Bid Bundles (1-Year Validity)</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <div className="space-y-2">
+                         <Label>10 Bids (₹)</Label>
+                         <Input type="number" defaultValue="500" />
+                       </div>
+                        <div className="space-y-2">
+                         <Label>25 Bids (₹)</Label>
+                         <Input type="number" defaultValue="1100" />
+                       </div>
+                         <div className="space-y-2">
+                         <Label>50 Bids (₹)</Label>
+                         <Input type="number" defaultValue="2000" />
+                       </div>
+                    </div>
+                 </div>
             </CardContent>
+            <CardFooter>
+                 <Button>Save Monetization Settings</Button>
+            </CardFooter>
         </Card>
     );
 }
 
-function AdminPlatformSettings() {
-    const { toast } = useToast();
-    const [commission, setCommission] = React.useState(10);
-
-    const handleSaveAdminSettings = () => {
-        console.log("Admin settings saved:", { commission });
-        toast({
-            title: "Platform Settings Saved",
-            description: `The commission rate has been set to ${commission}%.`,
-        });
-    };
-
+function UserReputationSettings() {
     return (
-         <Card>
+        <Card>
             <CardHeader>
-                <CardTitle>Platform Settings</CardTitle>
-                <CardDescription>
-                    Manage global settings for the application, such as monetization and content rules.
-                </CardDescription>
+                <CardTitle>User & Reputation</CardTitle>
+                <CardDescription>Define the rules for the installer reputation system, including points and tier thresholds.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">Monetization</CardTitle>
-                        <CardDescription>
-                           Configure how the platform generates revenue.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                <div className="space-y-4 rounded-lg border p-4">
+                    <h3 className="font-semibold">Reputation Point System</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                         <Label>Points for Job Completion</Label>
+                         <Input type="number" defaultValue="50" />
+                       </div>
+                       <div className="space-y-2">
+                         <Label>Points for 5-Star Rating</Label>
+                         <Input type="number" defaultValue="20" />
+                       </div>
+                        <div className="space-y-2">
+                         <Label>Points for 4-Star Rating</Label>
+                         <Input type="number" defaultValue="10" />
+                       </div>
                          <div className="space-y-2">
-                            <Label htmlFor="commission-rate">Platform Commission Rate (%)</Label>
-                            <Input
-                                id="commission-rate"
-                                type="number"
-                                value={commission}
-                                onChange={(e) => setCommission(Number(e.target.value))}
-                                min="0"
-                                max="100"
-                                placeholder="e.g., 10"
-                                className="max-w-xs"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                The percentage the platform takes from each completed job's value.
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
+                         <Label>Penalty for 1-Star Rating</Label>
+                         <Input type="number" defaultValue="-25" />
+                       </div>
+                    </div>
+                 </div>
+                 <div className="space-y-4 rounded-lg border p-4">
+                    <h3 className="font-semibold">Reputation Tier Thresholds (Points Required)</h3>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <div className="space-y-2">
+                         <Label className="flex items-center gap-2"><Medal className="h-4 w-4 text-gray-400" /> Silver</Label>
+                         <Input type="number" defaultValue="500" />
+                       </div>
+                        <div className="space-y-2">
+                         <Label className="flex items-center gap-2"><Gem className="h-4 w-4 text-amber-500" /> Gold</Label>
+                         <Input type="number" defaultValue="1000" />
+                       </div>
+                         <div className="space-y-2">
+                         <Label className="flex items-center gap-2"><Gem className="h-4 w-4 text-cyan-400" /> Platinum</Label>
+                         <Input type="number" defaultValue="2000" />
+                       </div>
+                    </div>
+                 </div>
             </CardContent>
-            <CardFooter className="border-t px-6 py-4">
-                <Button onClick={handleSaveAdminSettings}>Save Platform Settings</Button>
+            <CardFooter>
+                 <Button>Save Reputation Settings</Button>
+            </CardFooter>
+        </Card>
+    );
+}
+
+function PlatformRulesSettings() {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Platform Rules</CardTitle>
+                <CardDescription>Set global rules for job postings, bidding, and content on the platform.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="space-y-2">
+                    <Label htmlFor="min-budget" className="flex items-center gap-2"><IndianRupee className="h-4 w-4" /> Minimum Job Budget</Label>
+                     <div className="flex items-center gap-2">
+                        <Input
+                            id="min-budget"
+                            type="number"
+                            defaultValue="500"
+                            min="0"
+                            className="max-w-[120px]"
+                        />
+                         <span className="text-muted-foreground">₹</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        The minimum budget required for any new job posting.
+                    </p>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="auto-verify" className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Automatic Installer Verification</Label>
+                    <div className="flex items-center space-x-2">
+                        <Switch id="auto-verify" defaultChecked />
+                        <Label htmlFor="auto-verify" className="text-sm font-normal">Enable automatic Aadhar verification for new installers.</Label>
+                    </div>
+                 </div>
+            </CardContent>
+            <CardFooter>
+                 <Button>Save Platform Rules</Button>
             </CardFooter>
         </Card>
     );
@@ -239,16 +335,38 @@ function AdminPlatformSettings() {
 export default function SettingsPage() {
     const { isAdmin } = useUser();
 
+    if (!isAdmin) {
+        return (
+            <div className="grid gap-6">
+                <h1 className="text-3xl font-bold">Settings</h1>
+                <PersonalSettingsCard />
+            </div>
+        )
+    }
+
     return (
         <div className="grid gap-6">
             <h1 className="text-3xl font-bold">Settings</h1>
-            {isAdmin && (
-                <>
-                    <AdminPlatformSettings />
-                    <Separator />
-                </>
-            )}
-            <PersonalSettingsCard />
+            <Tabs defaultValue="platform" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="platform">Platform Rules</TabsTrigger>
+                    <TabsTrigger value="monetization">Monetization</TabsTrigger>
+                    <TabsTrigger value="reputation">User &amp; Reputation</TabsTrigger>
+                    <TabsTrigger value="general">General</TabsTrigger>
+                </TabsList>
+                <TabsContent value="platform">
+                    <PlatformRulesSettings />
+                </TabsContent>
+                <TabsContent value="monetization">
+                    <MonetizationSettings />
+                </TabsContent>
+                <TabsContent value="reputation">
+                    <UserReputationSettings />
+                </TabsContent>
+                <TabsContent value="general">
+                    <PersonalSettingsCard />
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }
