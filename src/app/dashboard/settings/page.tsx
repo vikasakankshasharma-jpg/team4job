@@ -6,9 +6,9 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import {
@@ -36,6 +36,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/hooks/use-user"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
 
 function ThemeSelector() {
     const { theme, setTheme } = useTheme()
@@ -71,12 +72,119 @@ function ThemeSelector() {
     )
 }
 
-function AdminSettings() {
+function PersonalSettingsCard() {
+    const { toast } = useToast()
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Personal Settings</CardTitle>
+                <CardDescription>
+                    Manage your personal account and app preferences.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Appearance</CardTitle>
+                            <CardDescription>Customize the look and feel of the application.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ThemeSelector />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Notifications</CardTitle>
+                            <CardDescription>Manage how you receive notifications.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                                <div className="space-y-0.5">
+                                    <Label>Email Notifications</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        Receive emails about job updates and bids.
+                                    </p>
+                                </div>
+                                <Switch defaultChecked />
+                            </div>
+                            <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                                <div className="space-y-0.5">
+                                    <Label>Push Notifications</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        Get real-time alerts on your device.
+                                    </p>
+                                </div>
+                                <Switch />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Account Management</CardTitle>
+                        <CardDescription>
+                            Manage your account settings and data.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between rounded-lg border p-3">
+                            <div>
+                                <Label>Change Password</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Update your account password.
+                                </p>
+                            </div>
+                            <Button variant="outline">Change Password</Button>
+                        </div>
+                        <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-3">
+                            <div>
+                                <Label className="text-destructive">Delete Account</Label>
+                                <p className="text-xs text-destructive/70">
+                                    Permanently delete your account and all associated data.
+                                </p>
+                            </div>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive">Delete Account</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete your
+                                        account and remove your data from our servers.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={() => {
+                                            toast({
+                                                title: "Account Deletion Requested",
+                                                description: "Your account is scheduled for deletion. This is a simulated action.",
+                                                variant: "destructive"
+                                            })
+                                        }}
+                                    >
+                                        Continue
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                    </CardContent>
+                </Card>
+            </CardContent>
+        </Card>
+    );
+}
+
+function AdminPlatformSettings() {
     const { toast } = useToast();
-    const [commission, setCommission] = React.useState(10); // Default commission
+    const [commission, setCommission] = React.useState(10);
 
     const handleSaveAdminSettings = () => {
-        // Here you would typically save the settings to your backend/database
         console.log("Admin settings saved:", { commission });
         toast({
             title: "Platform Settings Saved",
@@ -85,148 +193,62 @@ function AdminSettings() {
     };
 
     return (
-        <Card>
+         <Card>
             <CardHeader>
                 <CardTitle>Platform Settings</CardTitle>
                 <CardDescription>
-                    Global settings for the application. Only visible to Admins.
+                    Manage global settings for the application, such as monetization and content rules.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                 <div className="space-y-2">
-                    <Label htmlFor="commission-rate">Platform Commission Rate (%)</Label>
-                    <Input 
-                        id="commission-rate"
-                        type="number"
-                        value={commission}
-                        onChange={(e) => setCommission(Number(e.target.value))}
-                        min="0"
-                        max="100"
-                        placeholder="e.g., 10"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                        The percentage the platform takes from each completed job's value.
-                    </p>
-                </div>
+            <CardContent className="space-y-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg">Monetization</CardTitle>
+                        <CardDescription>
+                           Configure how the platform generates revenue.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <div className="space-y-2">
+                            <Label htmlFor="commission-rate">Platform Commission Rate (%)</Label>
+                            <Input
+                                id="commission-rate"
+                                type="number"
+                                value={commission}
+                                onChange={(e) => setCommission(Number(e.target.value))}
+                                min="0"
+                                max="100"
+                                placeholder="e.g., 10"
+                                className="max-w-xs"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                The percentage the platform takes from each completed job's value.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
                 <Button onClick={handleSaveAdminSettings}>Save Platform Settings</Button>
             </CardFooter>
         </Card>
-    )
+    );
 }
 
+
 export default function SettingsPage() {
-    const { toast } = useToast()
     const { isAdmin } = useUser();
 
     return (
         <div className="grid gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Settings</CardTitle>
-                    <CardDescription>
-                        Manage your account and app preferences.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Appearance</CardTitle>
-                                <CardDescription>Customize the look and feel of the application.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <ThemeSelector />
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Notifications</CardTitle>
-                                <CardDescription>Manage how you receive notifications.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                                    <div className="space-y-0.5">
-                                        <Label>Email Notifications</Label>
-                                        <p className="text-xs text-muted-foreground">
-                                            Receive emails about job updates and bids.
-                                        </p>
-                                    </div>
-                                    <Switch defaultChecked />
-                                </div>
-                                <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                                     <div className="space-y-0.5">
-                                        <Label>Push Notifications</Label>
-                                         <p className="text-xs text-muted-foreground">
-                                            Get real-time alerts on your device.
-                                        </p>
-                                    </div>
-                                    <Switch />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Account Management</CardTitle>
-                            <CardDescription>
-                                Manage your account settings and data.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between rounded-lg border p-3">
-                                <div>
-                                    <Label>Change Password</Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Update your account password.
-                                    </p>
-                                </div>
-                                <Button variant="outline">Change Password</Button>
-                            </div>
-                             <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-3">
-                                <div>
-                                    <Label className="text-destructive">Delete Account</Label>
-                                    <p className="text-xs text-destructive/70">
-                                        Permanently delete your account and all associated data.
-                                    </p>
-                                </div>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="destructive">Delete Account</Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This action cannot be undone. This will permanently delete your
-                                            account and remove your data from our servers.
-                                        </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction
-                                            onClick={() => {
-                                                toast({
-                                                    title: "Account Deletion Requested",
-                                                    description: "Your account is scheduled for deletion. This is a simulated action.",
-                                                    variant: "destructive"
-                                                })
-                                            }}
-                                        >
-                                            Continue
-                                        </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </CardContent>
-            </Card>
-
-            {isAdmin && <AdminSettings />}
+            <h1 className="text-3xl font-bold">Settings</h1>
+            {isAdmin && (
+                <>
+                    <AdminPlatformSettings />
+                    <Separator />
+                </>
+            )}
+            <PersonalSettingsCard />
         </div>
     )
 }
