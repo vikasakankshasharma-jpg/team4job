@@ -184,23 +184,38 @@ function MonetizationSettings() {
                 <CardDescription>Configure how the platform generates revenue through commissions, subscriptions, and bid bundles.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="space-y-2">
-                    <Label htmlFor="commission-rate" className="flex items-center gap-2"><Percent className="h-4 w-4" /> Platform Commission Rate</Label>
-                    <div className="flex items-center gap-2">
-                        <Input
-                            id="commission-rate"
-                            type="number"
-                            defaultValue="10"
-                            min="0"
-                            max="100"
-                            className="max-w-[100px]"
-                        />
-                         <span className="text-muted-foreground">%</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                        The percentage the platform takes from each completed job's value.
-                    </p>
+                <div className="space-y-4 rounded-lg border p-4">
+                     <h3 className="font-semibold flex items-center gap-2"><Percent className="h-4 w-4" /> Platform Commission Rates</h3>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                             <Label htmlFor="installer-commission-rate">Installer Commission Rate (%)</Label>
+                             <Input
+                                id="installer-commission-rate"
+                                type="number"
+                                defaultValue="10"
+                                min="0"
+                                max="100"
+                            />
+                             <p className="text-xs text-muted-foreground">
+                                The percentage taken from the installer's earnings.
+                            </p>
+                        </div>
+                         <div className="space-y-2">
+                             <Label htmlFor="jobgiver-commission-rate">Job Giver Fee Rate (%)</Label>
+                             <Input
+                                id="jobgiver-commission-rate"
+                                type="number"
+                                defaultValue="2"
+                                min="0"
+                                max="100"
+                            />
+                              <p className="text-xs text-muted-foreground">
+                                The percentage charged to the job giver on the bid amount.
+                            </p>
+                        </div>
+                     </div>
                 </div>
+
                  <div className="space-y-4 rounded-lg border p-4">
                     <h3 className="font-semibold">Subscription Plans</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -371,5 +386,3 @@ export default function SettingsPage() {
         </div>
     )
 }
-
-    
