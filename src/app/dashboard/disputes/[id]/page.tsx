@@ -16,12 +16,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { AlertOctagon, Send, CheckCircle2, Bot, User as UserIcon, Shield } from "lucide-react";
+import { AlertOctagon, Send, CheckCircle2, Bot, User as UserIcon, Shield, Paperclip, X, File as FileIcon } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dispute, DisputeMessage, User } from "@/lib/types";
+import { Dispute, DisputeMessage, User, DisputeAttachment } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import Link from "next/link";
 import { doc, getDoc, updateDoc, arrayUnion, collection, onSnapshot, DocumentData } from "firebase/firestore";
@@ -90,11 +90,14 @@ export default function DisputeDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [dispute, setDispute] = useState<Dispute | null>(null);
   const [involvedUsers, setInvolvedUsers] = useState<{ [key: string]: User }>({});
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
+
 
   useEffect(() => {
     if (!id) return;
@@ -136,6 +139,16 @@ export default function DisputeDetailPage() {
 
     return () => unsubscribe();
   }, [id]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setAttachments(prev => [...prev, ...Array.from(event.target.files!)]);
+    }
+  };
+
+  const removeAttachment = (fileName: string) => {
+    setAttachments(prev => prev.filter(file => file.name !== fileName));
+  };
   
   if (loading) {
     return <PageSkeleton />;
@@ -151,20 +164,30 @@ export default function DisputeDetailPage() {
   }
 
   const handlePostMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && attachments.length === 0) return;
+
+    // Mock upload process
+    const uploadedAttachments: DisputeAttachment[] = attachments.map(file => ({
+        fileName: file.name,
+        fileUrl: `#`, // In real app, this would be the URL from Firebase Storage
+        fileType: file.type,
+    }));
 
     const message: DisputeMessage = {
         authorId: user.id,
         authorRole: isAdmin ? 'Admin' : (user.roles.includes('Job Giver') ? 'Job Giver' : 'Installer'),
         content: newMessage,
         timestamp: new Date(),
+        attachments: uploadedAttachments,
     };
 
     const disputeRef = doc(db, 'disputes', id);
     await updateDoc(disputeRef, {
         messages: arrayUnion(message)
     });
+
     setNewMessage("");
+    setAttachments([]);
   };
   
   const handleResolveDispute = async () => {
@@ -235,7 +258,28 @@ export default function DisputeDetailPage() {
                           </div>
                           <p className="text-xs text-muted-foreground">{timeAgo}</p>
                         </div>
-                        <p className="text-sm mt-1 text-foreground bg-accent/30 p-3 rounded-lg">{message.content}</p>
+                        <div className="text-sm mt-1 text-foreground bg-accent/30 p-3 rounded-lg space-y-3">
+                           {message.content && <p>{message.content}</p>}
+                           {message.attachments && message.attachments.length > 0 && (
+                             <div>
+                               <p className="font-semibold text-xs mb-2">Attachments:</p>
+                               <div className="space-y-2">
+                                  {message.attachments.map((file, fileIdx) => (
+                                    <a 
+                                      key={fileIdx} 
+                                      href={file.fileUrl} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="flex items-center gap-2 text-primary hover:underline bg-primary/10 p-2 rounded-md text-xs"
+                                    >
+                                      <FileIcon className="h-4 w-4" />
+                                      <span>{file.fileName}</span>
+                                    </a>
+                                  ))}
+                               </div>
+                             </div>
+                           )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -258,8 +302,32 @@ export default function DisputeDetailPage() {
                             onChange={(e) => setNewMessage(e.target.value)}
                             rows={4}
                         />
-                        <div className="mt-2 flex justify-end">
-                            <Button onClick={handlePostMessage} disabled={!newMessage.trim()}>
+                         <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            multiple
+                            className="hidden"
+                        />
+                         {attachments.length > 0 && (
+                            <div className="mt-2 space-y-2">
+                                <p className="text-xs font-semibold">Selected Files:</p>
+                                {attachments.map(file => (
+                                    <div key={file.name} className="flex items-center justify-between text-xs bg-muted p-2 rounded-md">
+                                        <span>{file.name}</span>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeAttachment(file.name)}>
+                                            <X className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <div className="mt-2 flex justify-between">
+                            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                                <Paperclip className="mr-2 h-4 w-4" />
+                                Attach Files
+                            </Button>
+                            <Button onClick={handlePostMessage} disabled={!newMessage.trim() && attachments.length === 0}>
                                 <Send className="mr-2 h-4 w-4" />
                                 Send Message
                             </Button>
@@ -327,3 +395,5 @@ export default function DisputeDetailPage() {
     </div>
   );
 }
+
+    
