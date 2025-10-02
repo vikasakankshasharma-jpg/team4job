@@ -126,12 +126,15 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       const expiryDate = new Date();
       expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
+      const pincodeMatch = signupData.fullAddress.match(/(\d{6})/);
+      const residentialPincode = pincodeMatch ? pincodeMatch[0] : '';
+      
       const newUser: User = {
         id: newUserId,
         name: signupData.name,
         email: signupData.email,
         mobile: signupData.mobile,
-        pincodes: { residential: signupData.pincode || '' },
+        pincodes: { residential: residentialPincode },
         roles: roles,
         memberSince: new Date(),
         avatarUrl: randomAvatar.imageUrl,
