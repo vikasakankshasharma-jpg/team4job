@@ -153,7 +153,7 @@ export default function AllJobsPage() {
                         </SelectTrigger>
                         <SelectContent>
                             {jobStatuses.map(status => (
-                                <SelectItem key={status} value={status.toLowerCase()}>{status}</SelectItem>
+                                <SelectItem key={status} value={status === 'All' ? 'all' : status}>{status}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
