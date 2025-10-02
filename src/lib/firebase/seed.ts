@@ -5,6 +5,7 @@ import { config } from 'dotenv';
 import { jobs as mockJobs } from '../data';
 import { users as mockUsers } from '../data';
 import type { Job, User, Comment, Bid } from '../types';
+import serviceAccount from './service-account.json';
 
 config();
 
@@ -12,15 +13,12 @@ async function seedDatabase() {
   try {
     console.log('Initializing Firebase Admin SDK...');
     
-    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (!serviceAccountKey) {
-        throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set. Please provide it in your .env file.");
+    if (!serviceAccount) {
+        throw new Error("service-account.json file is missing or empty.");
     }
 
-    const parsedServiceAccount = JSON.parse(serviceAccountKey);
-
     initializeApp({
-      credential: cert(parsedServiceAccount),
+      credential: cert(serviceAccount as any),
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     });
     
