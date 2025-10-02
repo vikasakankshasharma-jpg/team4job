@@ -112,9 +112,12 @@ export default function AllJobsPage() {
   
   const jobStatuses = ["All", ...Array.from(new Set(mockJobs.map(j => j.status)))];
   
-  const wasAwardedDirectly = (job: Job) => {
-    return (job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') && job.bids.length === 0;
-  }
+  const getAwardType = (job: Job) => {
+    if (!job.awardedInstaller) return 'N/A';
+    const awardedInstallerId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User).id;
+    const bidderIds = job.bids.map(b => (b.installer as User).id);
+    return bidderIds.includes(awardedInstallerId) ? 'Bidding' : 'Direct';
+  };
 
   return (
     <Card>
@@ -227,7 +230,7 @@ export default function AllJobsPage() {
                     {job.bids?.length || 0}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                     {job.awardedInstaller ? (wasAwardedDirectly(job) ? 'Direct' : 'Bidding') : 'N/A'}
+                     {getAwardType(job)}
                   </TableCell>
                   <TableCell className="text-right">
                     {format(toDate(job.postedAt), 'MMM d, yyyy')}

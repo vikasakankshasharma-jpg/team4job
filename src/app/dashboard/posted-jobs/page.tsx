@@ -46,9 +46,12 @@ import { jobs as allMockJobs } from "@/lib/data";
 
 function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
   
-  const wasAwardedDirectly = (job: Job) => {
-    return job.status === 'Awarded' && job.bids.length === 0;
-  }
+  const getAwardType = (job: Job) => {
+    if (!job.awardedInstaller) return 'N/A';
+    const awardedInstallerId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User).id;
+    const bidderIds = job.bids.map(b => (b.installer as User).id);
+    return bidderIds.includes(awardedInstallerId) ? 'Bidding' : 'Direct';
+  };
 
   return (
       <Card>
@@ -87,7 +90,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{job.bids.length}</TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {job.awardedInstaller ? (wasAwardedDirectly(job) ? 'Direct' : 'Bidding') : 'N/A'}
+                      {getAwardType(job)}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{format(toDate(job.postedAt), "MMM d, yyyy")}</TableCell>
                     <TableCell>
