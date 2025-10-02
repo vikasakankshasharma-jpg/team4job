@@ -1,5 +1,5 @@
 
-import type { User, Job, Bid, Comment } from './types';
+import type { User, Job, Bid, Comment, PrivateMessage, Dispute } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 // Updated to use centralized placeholder images for anonymity
@@ -20,8 +20,7 @@ export const users: User[] = [
   {
     id: 'ADMIN-20240101-VIKAS',
     name: 'Vikas Sharma',
-    anonymousId: 'Admin-0001',
-    email: 'vikaskumarsharma@gmail.com',
+    email: 'vikas@example.com',
     mobile: '9772699395',
     avatarUrl: userAvatars['ADMIN-20240101-VIKAS'],
     realAvatarUrl: 'https://picsum.photos/seed/vikas/100/100',
@@ -32,7 +31,6 @@ export const users: User[] = [
   {
     id: 'USER-20220815-ALEXJ',
     name: 'Alex Johnson',
-    anonymousId: 'Installer-8421',
     email: 'alex.j@example.com',
     mobile: '9876543210',
     avatarUrl: userAvatars['USER-20220815-ALEXJ'],
@@ -54,18 +52,12 @@ export const users: User[] = [
         { month: 'Jul', points: 250 },
         { month: 'Aug', points: 150 },
         { month: 'Sep', points: 200 },
-      ],
-      aadharData: {
-        name: 'Alex Johnson',
-        mobile: '9876543210',
-        pincode: '110001',
-      }
+      ]
     },
   },
   {
     id: 'JOBGIVER-20230120-BREN',
     name: 'Brenda Smith',
-    anonymousId: 'JobGiver-3109',
     email: 'brenda.s@example.com',
     mobile: '9876543211',
     avatarUrl: userAvatars['JOBGIVER-20230120-BREN'],
@@ -77,7 +69,6 @@ export const users: User[] = [
   {
     id: 'INSTALLER-20230510-CARL',
     name: 'Carlos Diaz',
-    anonymousId: 'Installer-5582',
     email: 'carlos.d@example.com',
     mobile: '9876543212',
     avatarUrl: userAvatars['INSTALLER-20230510-CARL'],
@@ -99,18 +90,12 @@ export const users: User[] = [
         { month: 'Jul', points: 100 },
         { month: 'Aug', points: 100 },
         { month: 'Sep', points: 100 },
-      ],
-      aadharData: {
-          name: 'Carlos Diaz',
-          mobile: '9876543212',
-          pincode: '500001'
-      }
+      ]
     },
   },
   {
     id: 'INSTALLER-20240301-DIAN',
     name: 'Diana Prince',
-    anonymousId: 'Installer-7734',
     email: 'diana.p@example.com',
     mobile: '9876543213',
     avatarUrl: userAvatars['INSTALLER-20240301-DIAN'],
@@ -138,7 +123,6 @@ export const users: User[] = [
   {
     id: 'INSTALLER-20211111-ETHA',
     name: 'Ethan Hunt',
-    anonymousId: 'Installer-1007',
     email: 'ethan.h@example.com',
     mobile: '9876543214',
     avatarUrl: userAvatars['INSTALLER-20211111-ETHA'],
@@ -160,18 +144,12 @@ export const users: User[] = [
         { month: 'Jul', points: 350 },
         { month: 'Aug', points: 400 },
         { month: 'Sep', points: 400 },
-      ],
-      aadharData: {
-          name: 'Ethan Hunt',
-          mobile: '9876543214',
-          pincode: '110031'
-      }
+      ]
     },
   },
   {
     id: 'JOBGIVER-20220430-FION',
     name: 'Fiona Glenanne',
-    anonymousId: 'JobGiver-9825',
     email: 'fiona.g@example.com',
     mobile: '9876543215',
     avatarUrl: userAvatars['JOBGIVER-20220430-FION'],
@@ -183,7 +161,6 @@ export const users: User[] = [
   {
     id: 'INSTALLER-20230801-GEOR',
     name: 'George Mason',
-    anonymousId: 'Installer-4829',
     email: 'george.m@example.com',
     mobile: '9876543216',
     avatarUrl: userAvatars['INSTALLER-20230801-GEOR'],
@@ -205,18 +182,12 @@ export const users: User[] = [
         { month: 'Jul', points: 150 },
         { month: 'Aug', points: 150 },
         { month: 'Sep', points: 200 },
-      ],
-      aadharData: {
-          name: 'George Mason',
-          mobile: '9876543216',
-          pincode: '800001'
-      }
+      ]
     },
   },
   {
     id: 'USER-20240110-HANN',
     name: 'Hannah Simone',
-    anonymousId: 'JobGiver-6033',
     email: 'hannah.s@example.com',
     mobile: '9876543217',
     avatarUrl: userAvatars['USER-20240110-HANN'],
@@ -425,6 +396,41 @@ const bids: {[key: string]: Bid[]} = {
   ]
 };
 
+const privateMessages: {[key: string]: PrivateMessage[]} = {
+    'JOB-20240915-3C5D': [
+        {
+            id: 'pm-3-1',
+            author: findUser('JOBGIVER-20230120-BREN'),
+            timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+            content: 'Hi Carlos, thanks for accepting the job. Can you start on the scheduled date?',
+        },
+        {
+            id: 'pm-3-2',
+            author: findUser('INSTALLER-20230510-CARL'),
+            timestamp: new Date(now.getTime() - 20 * 60 * 60 * 1000),
+            content: 'Yes, absolutely. I will be at the site at 9 AM sharp. I will need access to the main power panel.',
+        }
+    ],
+    'JOB-20240910-T6U7': [
+        {
+            id: 'pm-14-1',
+            author: findUser('INSTALLER-20230510-CARL'),
+            timestamp: new Date('2024-09-16T17:00:00Z'),
+            content: 'Hi Brenda, the installation is complete. Everything is tested and working perfectly. Here are some photos of the final setup. Please let me know if you need anything else before I request the completion OTP.',
+            attachments: [
+                { fileName: 'cafe_camera_1.jpg', fileUrl: '#', fileType: 'image/jpeg' },
+                { fileName: 'nvr_setup.jpg', fileUrl: '#', fileType: 'image/jpeg' },
+            ]
+        },
+        {
+            id: 'pm-14-2',
+            author: findUser('JOBGIVER-20230120-BREN'),
+            timestamp: new Date('2024-09-16T18:30:00Z'),
+            content: 'Looks great, Carlos! Thank you for the quick and clean work. The completion OTP is 246810.',
+        }
+    ]
+};
+
 export const jobs: Job[] = [
   {
     id: 'JOB-20240920-1A3B',
@@ -466,12 +472,13 @@ export const jobs: Job[] = [
     location: '600001, Park Town',
     fullAddress: '15, 3rd Main Road, Besant Nagar, Chennai, Tamil Nadu 600090',
     status: 'Awarded',
-    awardedInstaller: 'INSTALLER-20230510-CARL',
+    awardedInstaller: findUser('INSTALLER-20230510-CARL'),
     deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Bidding ended 2 days ago
     jobStartDate: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000), // Starts in 2 days
     postedAt: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000), // 12 days ago
     bids: bids['JOB-20240915-3C5D'],
     comments: [],
+    privateMessages: privateMessages['JOB-20240915-3C5D'],
     completionOtp: '554289',
   },
   {
@@ -483,7 +490,7 @@ export const jobs: Job[] = [
     fullAddress: 'Plot 42, Jubilee Hills, Hyderabad, Telangana 500033',
     budget: { min: 2000, max: 4000 },
     status: 'Completed',
-    awardedInstaller: 'USER-20220815-ALEXJ',
+    awardedInstaller: findUser('USER-20220815-ALEXJ'),
     rating: 5,
     deadline: new Date('2024-08-28T23:59:59Z'), // Old date
     jobStartDate: new Date('2024-09-01T09:00:00Z'), // Old date
@@ -491,6 +498,7 @@ export const jobs: Job[] = [
     bids: [],
     comments: [],
     completionOtp: '112233',
+    disputeId: 'DISPUTE-002',
   },
   {
     id: 'JOB-20240924-4D5E',
@@ -506,6 +514,10 @@ export const jobs: Job[] = [
     postedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
     bids: bids['JOB-20240924-4D5E'],
     comments: comments['JOB-20240924-4D5E'] || [],
+    attachments: [
+        { fileName: 'warehouse_floor_plan.pdf', fileUrl: '#', fileType: 'application/pdf'},
+        { fileName: 'site_photo_1.jpg', fileUrl: '#', fileType: 'image/jpeg'},
+    ],
     completionOtp: '987654',
   },
   {
@@ -517,7 +529,7 @@ export const jobs: Job[] = [
     fullAddress: 'Shop 3, Road No. 36, Jubilee Hills, Hyderabad, Telangana 500032',
     budget: { min: 9000, max: 18000 },
     status: 'Awarded',
-    awardedInstaller: 'USER-20220815-ALEXJ',
+    awardedInstaller: findUser('USER-20220815-ALEXJ'),
     deadline: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // Bidding ended 3 days ago
     jobStartDate: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000), // Starts tomorrow
     postedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
@@ -550,13 +562,14 @@ export const jobs: Job[] = [
     fullAddress: 'DLF Crest, Sector 54, Gurugram, Haryana 122011',
     budget: { min: 80000, max: 150000 },
     status: 'In Progress',
-    awardedInstaller: 'INSTALLER-20211111-ETHA',
+    awardedInstaller: findUser('INSTALLER-20211111-ETHA'),
     deadline: new Date('2024-09-01T23:59:59Z'), // Bidding ended
     jobStartDate: new Date('2024-09-03T09:00:00Z'), // Started
     postedAt: new Date('2024-08-16T11:00:00Z'), // Posted
     bids: [],
     comments: [],
     completionOtp: '963258',
+    disputeId: 'DISPUTE-001',
   },
   {
     id: 'JOB-20240918-8J9K',
@@ -583,7 +596,7 @@ export const jobs: Job[] = [
     fullAddress: 'Cyber Towers, HITEC City, Hyderabad, Telangana 500081',
     budget: { min: 20000, max: 30000 },
     status: 'Completed',
-    awardedInstaller: 'USER-20220815-ALEXJ',
+    awardedInstaller: findUser('USER-20220815-ALEXJ'),
     rating: 4,
     deadline: new Date('2024-08-05T23:59:59Z'), // Old date
     jobStartDate: new Date('2024-08-07T09:00:00Z'), // Old date
@@ -601,7 +614,7 @@ export const jobs: Job[] = [
     fullAddress: 'Modern School, Barakhamba Road, New Delhi, Delhi 110001',
     budget: { min: 50000, max: 80000 },
     status: 'Completed',
-    awardedInstaller: 'USER-20220815-ALEXJ',
+    awardedInstaller: findUser('USER-20220815-ALEXJ'),
     rating: 5,
     deadline: new Date('2024-07-20T23:59:59Z'), // Old date
     jobStartDate: new Date('2024-07-22T09:00:00Z'), // Old date
@@ -651,12 +664,13 @@ export const jobs: Job[] = [
     fullAddress: 'Amethyst Cafe, Whites Road, Royapettah, Chennai, Tamil Nadu 600014',
     budget: { min: 15000, max: 22000 },
     status: 'Completed',
-    awardedInstaller: 'INSTALLER-20230510-CARL',
+    awardedInstaller: findUser('INSTALLER-20230510-CARL'),
     rating: 5,
     deadline: new Date('2024-09-12T23:59:59Z'), // Old date
     jobStartDate: new Date('2024-09-15T09:00:00Z'), // Old date
     postedAt: new Date('2024-09-10T09:00:00Z'), // Old date
     bids: bids['JOB-20240910-T6U7'],
+    privateMessages: privateMessages['JOB-20240910-T6U7'],
     comments: [],
     completionOtp: '246810',
   },
@@ -693,7 +707,7 @@ export const jobs: Job[] = [
     fullAddress: 'MBB College Area, Agartala, Tripura 799004',
     budget: { min: 6000, max: 12000 },
     status: 'Awarded',
-    awardedInstaller: 'INSTALLER-20230801-GEOR',
+    awardedInstaller: findUser('INSTALLER-20230801-GEOR'),
     deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
     jobStartDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000), 
     postedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
@@ -702,3 +716,76 @@ export const jobs: Job[] = [
     completionOtp: '102030',
   },
 ];
+
+export const disputes: Dispute[] = [
+    {
+        id: 'DISPUTE-001',
+        jobId: 'JOB-20240816-7G8H',
+        jobTitle: 'Apartment Complex Access Control & CCTV',
+        status: 'Open',
+        reason: 'The installer is not using the specified brand of cameras (Dahua) and is trying to use a cheaper alternative without my consent. The work has been paused until this is resolved.',
+        parties: {
+            jobGiverId: 'JOBGIVER-20220430-FION',
+            installerId: 'INSTALLER-20211111-ETHA',
+        },
+        messages: [
+            {
+                authorId: 'JOBGIVER-20220430-FION',
+                authorRole: 'Job Giver',
+                content: 'The installer is not using the specified brand of cameras (Dahua) and is trying to use a cheaper alternative without my consent. The work has been paused until this is resolved.',
+                timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+            },
+            {
+                authorId: 'INSTALLER-20211111-ETHA',
+                authorRole: 'Installer',
+                content: 'The Dahua models we agreed upon are on backorder for 3 weeks. I proposed using a comparable Axis model to avoid delays, which is of similar or even better quality. I have attached the spec sheets for comparison.',
+                timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+                attachments: [
+                    { fileName: 'dahua-spec-sheet.pdf', fileUrl: '#', fileType: 'application/pdf' },
+                    { fileName: 'axis-spec-sheet.pdf', fileUrl: '#', fileType: 'application/pdf' },
+                ]
+            }
+        ],
+        createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+    },
+    {
+        id: 'DISPUTE-002',
+        jobId: 'JOB-20240825-4D6E',
+        jobTitle: 'Maintenance and Check-up for existing system',
+        status: 'Resolved',
+        reason: 'Installer is claiming the job is complete, but three of my cameras are still not online. He is demanding the completion OTP.',
+        parties: {
+            jobGiverId: 'USER-20220815-ALEXJ',
+            installerId: 'USER-20220815-ALEXJ', // This is a mistake in mock data, should be a different installer
+        },
+        messages: [
+            {
+                authorId: 'USER-20220815-ALEXJ',
+                authorRole: 'Job Giver',
+                content: 'Installer is claiming the job is complete, but three of my cameras are still not online. He is demanding the completion OTP.',
+                timestamp: new Date('2024-09-02T10:00:00Z'),
+            },
+            {
+                authorId: 'ADMIN-20240101-VIKAS',
+                authorRole: 'Admin',
+                content: 'Thank you for raising this. @Installer, can you please provide evidence that the work was completed as per the job description?',
+                timestamp: new Date('2024-09-02T14:00:00Z'),
+            },
+             {
+                authorId: 'USER-20220815-ALEXJ',
+                authorRole: 'Installer',
+                content: 'My apologies, there was a misunderstanding. The job description was for a system check-up, not a repair. My check-up identified a faulty network switch, which is why 3 cameras are offline. The check-up itself is complete. Replacing the switch would be additional work.',
+                timestamp: new Date('2024-09-03T09:00:00Z'),
+            },
+            {
+                authorId: 'ADMIN-20240101-VIKAS',
+                authorRole: 'Admin',
+                content: "Resolution: The installer's assessment is correct. The original job was for a 'check-up', not a repair. The check-up was performed correctly. The dispute is resolved in favor of the installer. The Job Giver is advised to post a new job for the network switch replacement.",
+                timestamp: new Date('2024-09-04T11:00:00Z'),
+            }
+        ],
+        resolution: "The installer's assessment is correct. The original job was for a 'check-up', not a repair. The check-up was performed correctly. The dispute is resolved in favor of the installer. The Job Giver is advised to post a new job for the network switch replacement.",
+        createdAt: new Date('2024-09-02T10:00:00Z'),
+        resolvedAt: new Date('2024-09-04T11:00:00Z'),
+    }
+]
