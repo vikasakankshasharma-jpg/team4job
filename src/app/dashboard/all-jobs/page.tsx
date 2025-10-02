@@ -43,7 +43,7 @@ const initialFilters = {
     jobId: "",
     pincode: "",
     status: "all",
-    awardType: "all",
+    jobType: "all",
     jobGiver: "",
     date: undefined as DateRange | undefined,
 };
@@ -65,7 +65,7 @@ export default function AllJobsPage() {
     setFilters(prev => ({ ...prev, [filterName]: value }));
   };
 
-  const getAwardType = (job: Job) => {
+  const getJobType = (job: Job) => {
     if (!job.awardedInstaller) return 'N/A';
     const awardedInstallerId = typeof job.awardedInstaller === 'string' ? job.awardedInstaller : (job.awardedInstaller as User).id;
     const bidderIds = job.bids.map(b => (b.installer as User).id);
@@ -87,8 +87,8 @@ export default function AllJobsPage() {
     if (filters.jobGiver) {
         filtered = filtered.filter(job => (job.jobGiver as User)?.anonymousId?.toLowerCase().includes(filters.jobGiver.toLowerCase()));
     }
-     if (filters.awardType !== 'all') {
-        filtered = filtered.filter(job => getAwardType(job) === filters.awardType);
+     if (filters.jobType !== 'all') {
+        filtered = filtered.filter(job => getJobType(job) === filters.jobType);
     }
     if (filters.date?.from) {
         const to = filters.date.to || filters.date.from; // If only one day is selected, use it as range
@@ -122,7 +122,7 @@ export default function AllJobsPage() {
   ).length;
   
   const jobStatuses = ["All", ...Array.from(new Set(mockJobs.map(j => j.status)))];
-  const awardTypes = ["All", "Bidding", "Direct"];
+  const jobTypes = ["All", "Bidding", "Direct"];
   
   return (
     <Card>
@@ -138,7 +138,7 @@ export default function AllJobsPage() {
               <TableHead>Status</TableHead>
               <TableHead className="hidden sm:table-cell">Job Giver</TableHead>
               <TableHead className="hidden md:table-cell">Bids</TableHead>
-              <TableHead className="hidden lg:table-cell">Job Origin</TableHead>
+              <TableHead className="hidden lg:table-cell">Job Type</TableHead>
               <TableHead className="text-right flex items-center gap-2 justify-end">
                 Posted
                 {activeFiltersCount > 0 && (
@@ -170,12 +170,12 @@ export default function AllJobsPage() {
                 </TableCell>
                 <TableCell className="p-1 hidden md:table-cell"></TableCell>
                 <TableCell className="p-1 hidden lg:table-cell">
-                    <Select value={filters.awardType} onValueChange={value => handleFilterChange('awardType', value)}>
+                    <Select value={filters.jobType} onValueChange={value => handleFilterChange('jobType', value)}>
                         <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="Filter by Origin..." />
+                            <SelectValue placeholder="Filter by Type..." />
                         </SelectTrigger>
                         <SelectContent>
-                            {awardTypes.map(type => (
+                            {jobTypes.map(type => (
                                 <SelectItem key={type} value={type === 'All' ? 'all' : type}>{type}</SelectItem>
                             ))}
                         </SelectContent>
@@ -246,7 +246,7 @@ export default function AllJobsPage() {
                     {job.bids?.length || 0}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                     {getAwardType(job)}
+                     {getJobType(job)}
                   </TableCell>
                   <TableCell className="text-right">
                     {format(toDate(job.postedAt), 'MMM d, yyyy')}
