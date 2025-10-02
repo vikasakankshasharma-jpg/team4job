@@ -756,7 +756,9 @@ export default function JobDetailPage() {
               <IndianRupee className="h-5 w-5" />
               <div>
                 <p className="text-muted-foreground">Budget</p>
-                <p className="font-semibold">₹{job.budget.min.toLocaleString()} - ₹{job.budget.max.toLocaleString()}</p>
+                <p className="font-semibold">
+                  {job.budget ? `₹${job.budget.min.toLocaleString()} - ₹${job.budget.max.toLocaleString()}` : 'Not specified'}
+                </p>
               </div>
             </div>
              <div className="flex items-center gap-3">
