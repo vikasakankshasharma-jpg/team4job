@@ -40,6 +40,7 @@ const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/jobs", icon: Search, label: "Browse Jobs" },
   { href: "/dashboard/my-bids", icon: Briefcase, label: "My Bids" },
+  { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
   { href: "/dashboard/reports", icon: FileText, label: "Reports" },
   { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
@@ -48,6 +49,7 @@ const jobGiverNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job" },
   { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs" },
+  { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
   { href: "/dashboard/reports", icon: FileText, label: "Reports" },
   { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];

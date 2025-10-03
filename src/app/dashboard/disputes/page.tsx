@@ -25,6 +25,9 @@ import { db } from "@/lib/firebase/client-config";
 import { Dispute } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
+import Link from "next/link";
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -53,10 +56,15 @@ export default function DisputesPage() {
       let disputesQuery;
       if (isAdmin) {
         disputesQuery = query(collection(db, "disputes"));
-      } else if (role === "Job Giver") {
-        disputesQuery = query(collection(db, "disputes"), where("parties.jobGiverId", "==", user.id));
-      } else if (role === "Installer") {
-        disputesQuery = query(collection(db, "disputes"), where("parties.installerId", "==", user.id));
+      } else {
+        disputesQuery = query(
+          collection(db, "disputes"), 
+          or(
+            where("requesterId", "==", user.id),
+            where("parties.jobGiverId", "==", user.id),
+            where("parties.installerId", "==", user.id)
+          )
+        );
       }
 
       if (disputesQuery) {
@@ -81,21 +89,31 @@ export default function DisputesPage() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Dispute Center</CardTitle>
-        <CardDescription>
-          {isAdmin ? "Review and manage all disputes on the platform." : "A list of all disputes you are involved in."}
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+            <CardTitle>Dispute Center</CardTitle>
+            <CardDescription>
+            {isAdmin ? "Review and manage all disputes on the platform." : "A list of all disputes you are involved in."}
+            </CardDescription>
+        </div>
+        {!isAdmin && (
+            <Button asChild>
+                <Link href="/dashboard/disputes/new">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Create New Ticket
+                </Link>
+            </Button>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Ticket #</TableHead>
-              <TableHead>Subject (Job Title)</TableHead>
+              <TableHead>Subject</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Raised On</TableHead>
-              <TableHead>Involved Parties</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -109,17 +127,14 @@ export default function DisputesPage() {
               disputes.map((dispute) => (
                 <TableRow key={dispute.id} onClick={() => router.push(`/dashboard/disputes/${dispute.id}`)} className="cursor-pointer">
                   <TableCell className="font-mono">#{dispute.id.slice(-6).toUpperCase()}</TableCell>
-                  <TableCell className="font-medium">{dispute.jobTitle}</TableCell>
+                  <TableCell className="font-medium">{dispute.title}</TableCell>
+                  <TableCell>{dispute.category}</TableCell>
                   <TableCell>
                     <Badge variant={getStatusVariant(dispute.status)}>
                       {dispute.status}
                     </Badge>
                   </TableCell>
                   <TableCell>{format(dispute.createdAt, "MMM d, yyyy")}</TableCell>
-                  <TableCell className="font-mono text-xs">
-                    <p>Giver: {dispute.parties.jobGiverId}</p>
-                    <p>Installer: {dispute.parties.installerId}</p>
-                  </TableCell>
                 </TableRow>
               ))
             ) : (
