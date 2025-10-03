@@ -278,7 +278,9 @@ export const jobs: Job[] = [
     address: findUser('JOBGIVER-20230120-BREN').address,
     fullAddress: '2nd Floor, Oberoi Complex, Kalbadevi, Mumbai, Maharashtra 400001',
     budget: { min: 10000, max: 20000 },
-    status: 'Open for Bidding',
+    status: 'In Progress',
+    awardedInstaller: findUser('INSTALLER-20230510-CARL'),
+    acceptanceDeadline: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // Accepted yesterday
     deadline: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
     jobStartDate: new Date(now.getTime() + 9 * 24 * 60 * 60 * 1000), // 9 days from now
     postedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
@@ -370,6 +372,7 @@ export const jobs: Job[] = [
     fullAddress: '15, 3rd Main Road, Besant Nagar, Chennai, Tamil Nadu 600090',
     status: 'Awarded',
     awardedInstaller: findUser('INSTALLER-20230510-CARL'),
+    acceptanceDeadline: new Date(now.getTime() + 12 * 60 * 60 * 1000), // 12 hours left to accept
     deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Bidding ended 2 days ago
     jobStartDate: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000), // Starts in 2 days
     postedAt: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000), // 12 days ago
@@ -389,13 +392,7 @@ export const jobs: Job[] = [
             id: 'pm-3-1',
             author: findUser('JOBGIVER-20230120-BREN'),
             timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
-            content: 'Hi Carlos, thanks for accepting the job. Can you start on the scheduled date?',
-        },
-        {
-            id: 'pm-3-2',
-            author: findUser('INSTALLER-20230510-CARL'),
-            timestamp: new Date(now.getTime() - 20 * 60 * 60 * 1000),
-            content: 'Yes, absolutely. I will be at the site at 9 AM sharp. I will need access to the main power panel.',
+            content: 'Hi Carlos, looking forward to working with you. Please accept the job when you get a moment.',
         }
     ],
     completionOtp: '554289',
@@ -480,8 +477,9 @@ export const jobs: Job[] = [
     address: { house: 'Shop 3, Road No. 36', street: 'Jubilee Hills', cityPincode: '500032, Jubilee Hills', fullAddress: 'Shop 3, Road No. 36, Jubilee Hills, Hyderabad, Telangana 500032' },
     fullAddress: 'Shop 3, Road No. 36, Jubilee Hills, Hyderabad, Telangana 500032',
     budget: { min: 9000, max: 18000 },
-    status: 'Awarded',
+    status: 'In Progress',
     awardedInstaller: findUser('USER-20220815-ALEXJ'),
+    acceptanceDeadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Accepted 2 days ago
     deadline: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // Bidding ended 3 days ago
     jobStartDate: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000), // Starts tomorrow
     postedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
@@ -750,15 +748,16 @@ export const jobs: Job[] = [
   },
   {
     id: 'JOB-20240919-X1Y2',
-    title: 'Direct Award Job Example',
-    description: 'This is a job that was awarded directly to an installer, bypassing the public bidding process. The job should appear as "Awarded".',
+    title: 'Direct Award Job - In Progress',
+    description: 'This is a job that was awarded directly to an installer, bypassing public bidding, and has been accepted.',
     jobGiver: findUser('JOBGIVER-20220430-FION'),
     location: '799001',
     address: { house: 'MBB College Area, Agartala', street: 'Tripura', cityPincode: '799004, Agartala', fullAddress: 'MBB College Area, Agartala, Tripura 799004' },
     fullAddress: 'MBB College Area, Agartala, Tripura 799004',
     budget: { min: 6000, max: 12000 },
-    status: 'Awarded',
+    status: 'In Progress',
     awardedInstaller: findUser('INSTALLER-20230801-GEOR'),
+    acceptanceDeadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // Accepted 2 days ago
     deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
     jobStartDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000), 
     postedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
@@ -766,6 +765,52 @@ export const jobs: Job[] = [
     bidderIds: [],
     comments: [],
     completionOtp: '102030',
+  },
+  {
+    id: 'JOB-20240929-A9B8',
+    title: 'Job Awaiting Acceptance - Expired',
+    description: 'This job was awarded to an installer, but they did not accept it within the 24-hour window.',
+    jobGiver: findUser('USER-20220815-ALEXJ'),
+    location: '400001',
+    address: findUser('USER-20220815-ALEXJ').address,
+    fullAddress: 'Shop No. 12, Janpath Market, Connaught Place, New Delhi, Delhi 110001',
+    budget: { min: 3000, max: 5000 },
+    status: 'Awarded', // Status remains awarded, but UI will show 'Expired'
+    awardedInstaller: findUser('INSTALLER-20240301-DIAN'),
+    acceptanceDeadline: new Date(now.getTime() - 25 * 60 * 60 * 1000), // Expired 1 hour ago
+    deadline: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
+    jobStartDate: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000),
+    postedAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
+    bids: [
+      {
+        id: 'bid-17-1',
+        installer: findUser('INSTALLER-20240301-DIAN'),
+        amount: 4000,
+        timestamp: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
+        coverLetter: "Ready to take on this job.",
+      },
+    ],
+    bidderIds: ['INSTALLER-20240301-DIAN'],
+    comments: [],
+    completionOtp: '789012',
+  },
+  {
+    id: 'JOB-20240920-C7D6',
+    title: 'Unbid Job - Deadline Passed',
+    description: 'This job was posted, but the bidding deadline passed without any installers placing a bid. The status should be Unbid.',
+    jobGiver: findUser('JOBGIVER-20240401-IVAN'),
+    location: '560001',
+    address: findUser('JOBGIVER-20240401-IVAN').address,
+    fullAddress: 'MG Road, Bangalore GPO, 560001, Bangalore G.P.O.',
+    budget: { min: 1000, max: 2000 },
+    status: 'Unbid',
+    deadline: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // Deadline passed yesterday
+    jobStartDate: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000),
+    postedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+    bids: [],
+    bidderIds: [],
+    comments: [],
+    completionOtp: '111222',
   },
 ];
 
@@ -847,6 +892,7 @@ export const disputes: Dispute[] = [
         resolvedAt: new Date('2024-09-04T11:00:00Z'),
     }
 ]
+
 
 
 
