@@ -849,11 +849,11 @@ export default function JobDetailPage() {
     return 'Not set';
   }, [job?.jobStartDate]);
 
-    const bidderRanks = React.useMemo(() => {
-        if (!job || !job.bids) return new Map();
-        const uniqueBidderIds = [...new Set(job.bids.map(b => (b.installer as User).id))];
-        return new Map(uniqueBidderIds.map((id, index) => [id, index + 1]));
-    }, [job]);
+  const bidderRanks = React.useMemo(() => {
+    if (!job || !job.bids) return new Map<string, number>();
+    const uniqueBidderIds = [...new Set(job.bids.map(b => (b.installer as User).id))];
+    return new Map(uniqueBidderIds.map((id, index) => [id, index + 1]));
+  }, [job]);
 
   React.useEffect(() => {
     if (job) {
@@ -1273,5 +1273,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
