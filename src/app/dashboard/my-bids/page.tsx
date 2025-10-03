@@ -176,10 +176,10 @@ function MyBidsPageContent() {
             // Query for jobs where the user is the awarded installer OR has placed a bid.
             const q = query(jobsRef, or(
                 where('awardedInstaller', '==', userRef),
-                where('bidderIds', 'array-contains', user.id)
+                where('bids', 'array-contains-any', [{installer: userRef}]) // This query is not supported by Firestore, we will filter client-side.
             ));
 
-            const querySnapshot = await getDocs(q);
+            const querySnapshot = await getDocs(jobsRef); // Fetch ALL jobs
             const jobList = await Promise.all(querySnapshot.docs.map(async (doc) => {
                 const jobData = doc.data();
                 
@@ -203,7 +203,16 @@ function MyBidsPageContent() {
                     jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
                 } as Job;
             }));
-            setJobs(jobList);
+
+            // Client-side filtering
+            const myJobs = jobList.filter(job => {
+                const isAwardedToMe = (job.awardedInstaller as DocumentReference)?.id === user.id;
+                const hasBidded = job.bids.some(bid => (bid.installer as User)?.id === user.id);
+                return isAwardedToMe || hasBidded;
+            });
+
+
+            setJobs(myJobs);
 
         } catch (error) {
             console.error("Error fetching jobs and bids:", error);
