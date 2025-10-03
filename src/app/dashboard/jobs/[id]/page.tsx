@@ -311,7 +311,7 @@ function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer
         const jobRef = doc(db, "jobs", job.id);
         const jobUpdate = {
             awardedInstaller: doc(db, 'users', installer.id),
-            status: 'In Progress' as const
+            status: 'Awarded' as const
         };
         batch.update(jobRef, jobUpdate);
         
@@ -921,6 +921,9 @@ export default function JobDetailPage() {
   const handlePostPrivateMessage = async () => {
     if ((!newPrivateMessage.trim() && privateMessageAttachments.length === 0) || !user || !job) return;
 
+    const jobRef = doc(db, "jobs", job.id);
+    const batch = writeBatch(db);
+
     // Mock upload process for attachments
     const uploadedAttachments: JobAttachment[] = privateMessageAttachments.map(file => ({
         fileName: file.name,
@@ -935,10 +938,18 @@ export default function JobDetailPage() {
       attachments: uploadedAttachments,
     };
     
-    const jobRef = doc(db, "jobs", job.id);
-    await updateDoc(jobRef, {
+    batch.update(jobRef, {
         privateMessages: arrayUnion(newMessageObject)
     });
+
+    let newStatus = job.status;
+    // If it's the installer's first message on an awarded job, update status
+    if (role === 'Installer' && job.status === 'Awarded') {
+        newStatus = 'In Progress';
+        batch.update(jobRef, { status: newStatus });
+    }
+    
+    await batch.commit();
 
     const fullNewMessage: PrivateMessage = {
       ...newMessageObject,
@@ -946,7 +957,10 @@ export default function JobDetailPage() {
       author: user,
     };
     
-    handleJobUpdate({ privateMessages: [...(job.privateMessages || []), fullNewMessage] });
+    handleJobUpdate({ 
+        privateMessages: [...(job.privateMessages || []), fullNewMessage],
+        status: newStatus
+    });
 
     setNewPrivateMessage("");
     setPrivateMessageAttachments([]);
@@ -1183,7 +1197,7 @@ export default function JobDetailPage() {
       </div>
 
       <div className="space-y-8">
-        {(role === 'Job Giver' && (job.status === 'In Progress')) && (
+        {(role === 'Job Giver' && (job.status === 'In Progress' || job.status === 'Awarded')) && (
             <JobGiverOTPCard job={job} />
         )}
         <Card>
@@ -1290,7 +1304,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
-
-    
