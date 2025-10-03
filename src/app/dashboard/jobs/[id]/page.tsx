@@ -395,7 +395,7 @@ function JobGiverBid({ bid, job, onJobUpdate, rank }: { bid: Bid, job: Job, onJo
     const isAdmin = role === 'Admin';
     const showRealIdentity = isAdmin || isAwardedToThisBidder || job.status === 'Completed';
 
-    const installerName = showRealIdentity ? installer.name : `Installer #${rank}`;
+    const installerName = showRealIdentity ? installer.name : `Bidder #${rank}`;
 
     return (
         <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && rank === 1 ? 'border-primary' : ''}`}>
@@ -407,7 +407,7 @@ function JobGiverBid({ bid, job, onJobUpdate, rank }: { bid: Bid, job: Job, onJo
                        ) : (
                            <AnimatedAvatar svg={installer.avatarUrl} />
                        )}
-                        <AvatarFallback>{showRealIdentity ? installer.name.substring(0, 2) : `I${rank}`}</AvatarFallback>
+                        <AvatarFallback>{showRealIdentity ? installer.name.substring(0, 2) : `B${rank}`}</AvatarFallback>
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
@@ -588,7 +588,7 @@ function ReputationImpactCard({ job }: { job: Job }) {
   )
 }
 
-function CommentDisplay({ comment }: { comment: Comment }) {
+function CommentDisplay({ comment, authorName }: { comment: Comment, authorName: string }) {
     const [timeAgo, setTimeAgo] = React.useState('');
     const author = comment.author as User;
 
@@ -602,12 +602,12 @@ function CommentDisplay({ comment }: { comment: Comment }) {
         <div key={comment.id} className="flex gap-3">
             <Avatar className="h-9 w-9">
                 <AnimatedAvatar svg={author.avatarUrl} />
-                <AvatarFallback>{author.name.substring(0, 2)}</AvatarFallback>
+                <AvatarFallback>{authorName.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm">{author.name}</p>
+                        <p className="font-semibold text-sm">{authorName}</p>
                     </div>
                     <p className="text-xs text-muted-foreground">{timeAgo}</p>
                 </div>
@@ -848,6 +848,12 @@ export default function JobDetailPage() {
     }
     return 'Not set';
   }, [job?.jobStartDate]);
+
+    const bidderRanks = React.useMemo(() => {
+        if (!job || !job.bids) return new Map();
+        const uniqueBidderIds = [...new Set(job.bids.map(b => (b.installer as User).id))];
+        return new Map(uniqueBidderIds.map((id, index) => [id, index + 1]));
+    }, [job]);
 
   React.useEffect(() => {
     if (job) {
@@ -1102,9 +1108,20 @@ export default function JobDetailPage() {
                 <Separator className="my-6" />
                 <h3 className="font-semibold mb-4">Public Comments ({job.comments?.length || 0})</h3>
                 <div className="space-y-6">
-                    {(job.comments || []).map((comment) => (
-                        <CommentDisplay key={comment.id} comment={comment} />
-                    ))}
+                    {(job.comments || []).map((comment) => {
+                        const author = comment.author as User;
+                        const authorId = author.id;
+                        let authorName = author.name;
+
+                        if (author.roles.includes("Installer")) {
+                            const rank = bidderRanks.get(authorId);
+                            authorName = rank ? `Bidder #${rank}` : "Installer";
+                        } else if (authorId === jobGiver.id) {
+                            authorName = "Job Giver";
+                        }
+                        
+                        return <CommentDisplay key={comment.id} comment={comment} authorName={authorName} />;
+                    })}
                     {canPostPublicComment && (
                          <div className="flex gap-3">
                             <Avatar className="h-9 w-9">
@@ -1256,3 +1273,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
