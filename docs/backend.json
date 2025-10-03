@@ -265,16 +265,29 @@
     },
     "Dispute": {
       "title": "Dispute",
-      "description": "Represents a dispute raised for a job between a Job Giver and an Installer, mediated by an Admin.",
+      "description": "Represents a dispute or support ticket raised by a user, which can be mediated by an Admin.",
       "type": "object",
       "properties": {
+        "requesterId": {
+          "type": "string",
+          "description": "The ID of the user who initiated the dispute or request."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Job Dispute", "Billing Inquiry", "Technical Support", "Skill Request", "General Question"],
+          "description": "The category of the dispute or support ticket."
+        },
+        "title": {
+            "type": "string",
+            "description": "The title of the dispute or request."
+        },
         "jobId": {
           "type": "string",
-          "description": "The ID of the job this dispute is related to."
+          "description": "The ID of the job this dispute is related to (optional)."
         },
         "jobTitle": {
           "type": "string",
-          "description": "The title of the job in dispute."
+          "description": "The title of the job in dispute (optional)."
         },
         "status": {
           "type": "string",
@@ -290,8 +303,7 @@
           "properties": {
             "jobGiverId": { "type": "string" },
             "installerId": { "type": "string" }
-          },
-          "required": ["jobGiverId", "installerId"]
+          }
         },
         "messages": {
           "type": "array",
@@ -312,11 +324,11 @@
           "format": "date-time"
         }
       },
-      "required": ["jobId", "jobTitle", "status", "reason", "parties", "createdAt"]
+      "required": ["requesterId", "category", "title", "status", "reason", "createdAt"]
     },
     "DisputeMessage": {
       "title": "Dispute Message",
-      "description": "A message within a dispute thread, visible to both parties and the admin.",
+      "description": "A message within a dispute thread, visible to all parties and the admin.",
       "type": "object",
       "properties": {
         "authorId": { "type": "string" },

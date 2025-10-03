@@ -101,11 +101,14 @@ export type DisputeMessage = {
 
 export type Dispute = {
     id: string;
-    jobId: string;
-    jobTitle: string;
+    requesterId: string;
+    category: "Job Dispute" | "Billing Inquiry" | "Technical Support" | "Skill Request" | "General Question";
+    title: string;
+    jobId?: string;
+    jobTitle?: string;
     status: 'Open' | 'Under Review' | 'Resolved';
     reason: string;
-    parties: {
+    parties?: {
         jobGiverId: string;
         installerId: string;
     };

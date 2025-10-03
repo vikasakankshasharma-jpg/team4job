@@ -109,10 +109,10 @@ export default function DisputeDetailPage() {
         const disputeData = { id: docSnap.id, ...docSnap.data() } as Dispute;
         
         const allUserIds = new Set([
-            disputeData.parties.jobGiverId, 
-            disputeData.parties.installerId,
+            disputeData.requesterId,
+            ...(disputeData.parties ? [disputeData.parties.jobGiverId, disputeData.parties.installerId] : []),
             ...disputeData.messages.map(m => m.authorId)
-        ]);
+        ].filter(Boolean));
 
         const usersToFetch = Array.from(allUserIds).filter(userId => !involvedUsers[userId]);
 
@@ -156,7 +156,7 @@ export default function DisputeDetailPage() {
     notFound();
   }
 
-  const isParty = user.id === dispute.parties.jobGiverId || user.id === dispute.parties.installerId || isAdmin;
+  const isParty = user.id === dispute.requesterId || (dispute.parties && (user.id === dispute.parties.jobGiverId || user.id === dispute.parties.installerId)) || isAdmin;
   if (!isParty) {
     notFound();
   }
@@ -217,7 +217,11 @@ export default function DisputeDetailPage() {
                   Dispute Ticket #{dispute.id.slice(-6).toUpperCase()}
                 </CardTitle>
                 <CardDescription className="mt-2">
-                  Regarding Job: <Link href={`/dashboard/jobs/${dispute.jobId}`} className="font-semibold hover:underline">{dispute.jobTitle}</Link>
+                  {dispute.jobId ? (
+                    <>Regarding Job: <Link href={`/dashboard/jobs/${dispute.jobId}`} className="font-semibold hover:underline">{dispute.jobTitle}</Link></>
+                  ) : (
+                    `Category: ${dispute.category}`
+                  )}
                 </CardDescription>
               </div>
               <Badge variant={getStatusVariant(dispute.status)} className="text-base">
@@ -227,7 +231,7 @@ export default function DisputeDetailPage() {
           </CardHeader>
           <CardContent className="space-y-8">
             <div>
-              <h3 className="font-semibold mb-2">Initial Complaint</h3>
+              <h3 className="font-semibold mb-2">Initial Complaint: {dispute.title}</h3>
               <blockquote className="border-l-4 pl-4 italic text-muted-foreground">
                 {dispute.reason}
               </blockquote>
@@ -358,17 +362,26 @@ export default function DisputeDetailPage() {
                 </div>
             )}
              <Separator />
-            <div className="space-y-3">
-                <h4 className="font-semibold">Parties Involved</h4>
-                <Link href={`/dashboard/users/${dispute.parties.jobGiverId}`} className="block hover:bg-accent p-2 rounded-md">
-                    <p className="font-medium">Job Giver</p>
-                    <p className="text-xs text-muted-foreground font-mono">{dispute.parties.jobGiverId}</p>
+             <div className="space-y-3">
+                 <h4 className="font-semibold">Requester</h4>
+                <Link href={`/dashboard/users/${dispute.requesterId}`} className="block hover:bg-accent p-2 rounded-md">
+                    <p className="font-medium">{involvedUsers[dispute.requesterId]?.name || 'Loading...'}</p>
+                    <p className="text-xs text-muted-foreground font-mono">{dispute.requesterId}</p>
                 </Link>
-                <Link href={`/dashboard/users/${dispute.parties.installerId}`} className="block hover:bg-accent p-2 rounded-md">
-                    <p className="font-medium">Installer</p>
-                    <p className="text-xs text-muted-foreground font-mono">{dispute.parties.installerId}</p>
-                </Link>
-            </div>
+             </div>
+            {dispute.parties && (
+                 <div className="space-y-3">
+                    <h4 className="font-semibold">Parties Involved</h4>
+                    <Link href={`/dashboard/users/${dispute.parties.jobGiverId}`} className="block hover:bg-accent p-2 rounded-md">
+                        <p className="font-medium">Job Giver</p>
+                        <p className="text-xs text-muted-foreground font-mono">{dispute.parties.jobGiverId}</p>
+                    </Link>
+                    <Link href={`/dashboard/users/${dispute.parties.installerId}`} className="block hover:bg-accent p-2 rounded-md">
+                        <p className="font-medium">Installer</p>
+                        <p className="text-xs text-muted-foreground font-mono">{dispute.parties.installerId}</p>
+                    </Link>
+                </div>
+            )}
           </CardContent>
           {isAdmin && dispute.status !== 'Resolved' && (
              <>
@@ -393,5 +406,3 @@ export default function DisputeDetailPage() {
     </div>
   );
 }
-
-    
