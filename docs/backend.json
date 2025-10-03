@@ -71,6 +71,10 @@
           "type": "string",
           "description": "The user's 12-digit Aadhar number, stored after successful KYC."
         },
+        "kycAddress": {
+          "type": "string",
+          "description": "The permanent address fetched from the Aadhar KYC verification."
+        },
         "installerProfile": {
           "$ref": "#/entities/InstallerProfile"
         }
