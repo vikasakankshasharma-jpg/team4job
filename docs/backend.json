@@ -145,6 +145,10 @@
           "type": "string",
           "description": "The primary pincode of the job location."
         },
+        "fullAddress": {
+            "type": "string",
+            "description": "The full, geocoded address for the job."
+        },
         "address": {
           "$ref": "#/entities/Address"
         },
@@ -176,8 +180,20 @@
           "type": "string",
           "format": "date-time"
         },
+        "acceptanceDeadline": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp by which an awarded installer must accept the job."
+        },
         "awardedInstaller": {
           "$ref": "#/entities/UserProfile"
+        },
+        "bidderIds": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "A list of user IDs who have bid on the job, for efficient querying."
         },
         "rating": {
           "type": "number"
