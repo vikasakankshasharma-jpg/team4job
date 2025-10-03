@@ -106,7 +106,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
         const fullLocation = `${pincode}, ${postOfficeName}`;
         setValue(name, fullLocation, { shouldValidate: true, shouldDirty: true });
 
-        if (isLoaded && onLocationGeocoded) {
+        if (isLoaded && onLocationGeocoded && window.google) {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ address: fullLocation }, (results, status) => {
                 if (status === 'OK' && results && results[0].geometry) {
