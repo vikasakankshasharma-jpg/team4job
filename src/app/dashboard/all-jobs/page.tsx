@@ -97,7 +97,7 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
     )
 }
 
-async function fetchAllJobs() {
+const fetchAllJobs = async () => {
     const jobsCollection = collection(db, 'jobs');
     const jobSnapshot = await getDocs(jobsCollection);
     
@@ -110,7 +110,7 @@ async function fetchAllJobs() {
         return userData;
     }
 
-    const jobList = await Promise.all(jobSnapshot.docs.map(async (jobDoc) => {
+    const jobListPromises = jobSnapshot.docs.map(async (jobDoc) => {
       const jobData = jobDoc.data() as DocumentData;
       
       const jobGiver = await getUser(jobData.jobGiver);
@@ -120,10 +120,10 @@ async function fetchAllJobs() {
             installer: await getUser(bid.installer),
         })));
       
-      let awardedInstaller = jobData.awardedInstaller;
-        if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
-            awardedInstaller = await getUser(awardedInstaller);
-        }
+      let awardedInstaller = null;
+      if (jobData.awardedInstaller && jobData.awardedInstaller instanceof DocumentReference) {
+          awardedInstaller = await getUser(jobData.awardedInstaller);
+      }
 
       return {
         ...jobData,
@@ -132,9 +132,11 @@ async function fetchAllJobs() {
         bids,
         awardedInstaller
       } as Job;
-    }));
+    });
+
+    const jobList = await Promise.all(jobListPromises);
     return jobList;
-}
+};
 
 export default function AllJobsPage() {
   const router = useRouter();
@@ -469,3 +471,5 @@ export default function AllJobsPage() {
     </Card>
   );
 }
+
+    

@@ -56,6 +56,20 @@ const initialFilters = {
 
 type SortableKeys = 'name' | 'memberSince' | 'tier' | 'rating' | 'points';
 
+const fetchAllUsers = async () => {
+    const usersCollection = collection(db, 'users');
+    const userSnapshot = await getDocs(usersCollection);
+    const userList = userSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            ...data,
+            memberSince: toDate(data.memberSince),
+        } as User;
+    });
+    return userList;
+};
+
 export default function UsersPage() {
   const router = useRouter();
   const { user: currentUser, role } = useUser();
@@ -71,29 +85,15 @@ export default function UsersPage() {
   }, [role, router]);
 
   React.useEffect(() => {
-      const fetchUsers = async () => {
-          setLoading(true);
-          try {
-              const usersCollection = collection(db, 'users');
-              const userSnapshot = await getDocs(usersCollection);
-              const userList = userSnapshot.docs.map(doc => {
-                  const data = doc.data();
-                  return {
-                      id: doc.id,
-                      ...data,
-                      memberSince: data.memberSince.toDate(),
-                  } as User;
-              });
-              setUsers(userList);
-          } catch (error) {
-              console.error("Error fetching users:", error);
-          } finally {
-              setLoading(false);
-          }
-      };
-
       if (role === 'Admin') {
-          fetchUsers();
+          setLoading(true);
+          fetchAllUsers().then(userList => {
+              setUsers(userList);
+              setLoading(false);
+          }).catch(error => {
+              console.error("Error fetching users:", error);
+              setLoading(false);
+          });
       }
   }, [role]);
 
