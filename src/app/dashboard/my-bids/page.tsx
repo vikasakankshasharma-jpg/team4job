@@ -162,14 +162,18 @@ function MyBidsPageContent() {
 
 
   React.useEffect(() => {
-    if (role === 'Admin') {
+    if (role && role !== 'Admin') {
       router.push('/dashboard');
     }
   }, [role, router]);
   
   React.useEffect(() => {
     const fetchMyJobs = async () => {
-        if (!user) return;
+        if (!user?.id || role !== 'Installer') {
+            setLoading(false);
+            return;
+        }
+        
         setLoading(true);
         try {
             const userRef = doc(db, 'users', user.id);
@@ -238,12 +242,8 @@ function MyBidsPageContent() {
             setLoading(false);
         }
     };
-    if (user && role === 'Installer') {
-        fetchMyJobs();
-    } else if (role && role !== 'Installer') {
-        setLoading(false);
-    }
-}, [user, role]);
+    fetchMyJobs();
+}, [user?.id, role]);
 
   React.useEffect(() => {
     setHelp({
@@ -282,22 +282,14 @@ function MyBidsPageContent() {
       statusFilter = 'Completed & Won';
   }
   
-  if (role === 'Admin' || !user) {
+  if (role === 'Admin' || (role && role !== 'Installer' && !loading)) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">{!user && loading ? 'Loading...' : 'Redirecting...'}</p>
+        <p className="text-muted-foreground">{!user && loading ? 'Loading...' : 'This page is for Installers only.'}</p>
       </div>
     );
   }
   
-  if (role === 'Job Giver') {
-     return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">This page is for Installers. Redirecting...</p>
-      </div>
-    );
-  }
-
   const handleFilterChange = (newStatus: string) => {
     const params = new URLSearchParams(searchParams);
     if (newStatus && newStatus !== 'All') {
@@ -312,7 +304,7 @@ function MyBidsPageContent() {
     router.replace(pathname);
   };
   
- const myBids = jobs.map(job => {
+ const myBids = !user ? [] : jobs.map(job => {
     const myBid = (job.bids || []).find(bid => (bid.installer as User).id === user.id);
     const awardedId = (job.awardedInstaller as User)?.id;
     const isAwardedToMe = awardedId === user.id;
@@ -459,5 +451,3 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
-
-    
