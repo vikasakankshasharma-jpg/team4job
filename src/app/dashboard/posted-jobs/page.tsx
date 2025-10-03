@@ -42,7 +42,7 @@ import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, query, where, DocumentReference } from "firebase/firestore";
+import { collection, getDocs, query, where, DocumentReference, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 
@@ -164,15 +164,15 @@ export default function PostedJobsPage() {
       setLoading(true);
       const fetchPostedJobs = async () => {
         try {
-          const userRef = new DocumentReference(db, `users/${user.id}`);
+          const userRef = doc(db, 'users', user.id);
           const jobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
           const querySnapshot = await getDocs(jobsQuery);
           const userJobs = querySnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
-            postedAt: doc.data().postedAt.toDate(),
-            deadline: doc.data().deadline.toDate(),
-            jobStartDate: doc.data().jobStartDate?.toDate(),
+            postedAt: toDate(doc.data().postedAt),
+            deadline: toDate(doc.data().deadline),
+            jobStartDate: doc.data().jobStartDate ? toDate(doc.data().jobStartDate) : undefined,
           } as Job));
           setJobs(userJobs);
         } catch (err) {
@@ -264,4 +264,3 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
-
