@@ -68,6 +68,7 @@ export function SignUpForm() {
   const [photo, setPhoto] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
 
   useEffect(() => {
@@ -135,6 +136,24 @@ export function SignUpForm() {
             stream.getTracks().forEach(track => track.stop());
         }
         setHasCameraPermission(false);
+    }
+  };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        setPhoto(dataUrl);
+        form.setValue('realAvatarUrl', dataUrl);
+        if (videoRef.current?.srcObject) {
+          const stream = videoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach(track => track.stop());
+        }
+        setHasCameraPermission(false);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -369,7 +388,7 @@ export function SignUpForm() {
                 {!hasCameraPermission && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white p-4">
                         <Camera className="h-10 w-10 mb-4" />
-                        <p className="text-center">Camera access is required to take a photo.</p>
+                        <p className="text-center">Camera access is required. Alternatively, you can upload a file.</p>
                     </div>
                 )}
                 </>
@@ -380,10 +399,23 @@ export function SignUpForm() {
             {photo ? (
                 <Button variant="outline" onClick={() => { setPhoto(null); startCamera(); }} className="w-full">Retake Photo</Button>
             ) : (
-                <Button onClick={handleCapture} disabled={!hasCameraPermission} className="w-full">
-                    <Camera className="mr-2 h-4 w-4" />
-                    Capture
-                </Button>
+                <>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="hidden"
+                    />
+                    <Button onClick={handleCapture} disabled={!hasCameraPermission} className="w-full">
+                        <Camera className="mr-2 h-4 w-4" />
+                        Capture
+                    </Button>
+                     <Button variant="secondary" onClick={() => fileInputRef.current?.click()} className="w-full">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload
+                    </Button>
+                </>
             )}
         </div>
 
@@ -481,5 +513,5 @@ export function SignUpForm() {
         {currentStep === "details" && renderDetailsStep()}
       </form>
     </Form>
-  );
-}
+
+    
