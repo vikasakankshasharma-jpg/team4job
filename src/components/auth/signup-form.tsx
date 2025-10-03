@@ -438,7 +438,7 @@ export function SignUpForm() {
              <Alert variant="success">
                 <ShieldCheck className="h-4 w-4" />
                 <AlertTitle>Aadhar Verified!</AlertTitle>
-                <AlertDescription>Your details have been pre-filled.</AlertDescription>
+                <AlertDescription>Your details have been pre-filled. Please review them before creating your account.</AlertDescription>
             </Alert>
         )}
         <FormField
