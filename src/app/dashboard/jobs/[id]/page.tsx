@@ -42,6 +42,7 @@ import {
   X,
   Send,
   Lock,
+  Wallet,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -73,19 +74,30 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
 
   const handleCompleteJob = async () => {
     if (otp === job.completionOtp) {
-      const updatedData = { 
+      const batch = writeBatch(db);
+      
+      // 1. Update Job Status
+      const jobRef = doc(db, "jobs", job.id);
+      const updatedJobData = { 
         status: 'Completed' as const,
         rating: 5, // Default rating, can be changed by job giver
       };
-      
-      const jobRef = doc(db, "jobs", job.id);
-      await updateDoc(jobRef, updatedData);
+      batch.update(jobRef, updatedJobData);
 
-      onJobUpdate(updatedData);
+      // 2. Update Transaction Status
+      const transactionRef = doc(db, "transactions", `txn-${job.id}`);
+      batch.update(transactionRef, {
+        status: 'Released',
+        releasedAt: new Date(),
+      });
+
+      await batch.commit();
+
+      onJobUpdate(updatedJobData);
       
       toast({
-        title: "Job Completed!",
-        description: "Congratulations! The job has been marked as complete.",
+        title: "Job Completed & Payment Released!",
+        description: "Congratulations! The job has been marked as complete and payment has been released to your account.",
       });
     } else {
       toast({
@@ -102,7 +114,7 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
         <CardTitle>Complete This Job</CardTitle>
         <CardDescription>
           Once the job is finished to the client's satisfaction, enter the
-          Job Completion OTP provided by the Job Giver to mark it as complete. You can post photos or videos of the completed work as proof in the private messages section below.
+          Job Completion OTP provided by the Job Giver to mark it as complete and release the payment from escrow. You can post photos or videos of the completed work as proof in the private messages section below.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -146,7 +158,7 @@ function JobGiverOTPCard({ job }: { job: Job }) {
           Job Completion OTP
         </CardTitle>
         <CardDescription>
-          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete.
+          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payment release from escrow.
         </CardDescription>
       </CardHeader>
       <CardContent className="text-center">
@@ -283,7 +295,86 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   );
 }
 
-function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected, showRanking, canAward }: { bid: Bid, job: Job, onSelectInstaller: (installerId: string) => void, onAwardJob: (installerId: string) => void, rank: number, isSelected: boolean, showRanking: boolean, canAward: boolean }) {
+function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
+    const { toast } = useToast();
+    const [isOpen, setIsOpen] = React.useState(false);
+    const winningBid = job.bids.find(b => (b.installer as User).id === installer.id);
+
+    const handleFundEscrow = async () => {
+        if (!winningBid) return;
+        
+        const batch = writeBatch(db);
+        
+        // 1. Update Job
+        const jobRef = doc(db, "jobs", job.id);
+        const jobUpdate = {
+            awardedInstaller: doc(db, 'users', installer.id),
+            status: 'In Progress' as const
+        };
+        batch.update(jobRef, jobUpdate);
+        
+        // 2. Create Transaction
+        const transactionRef = doc(db, "transactions", `txn-${job.id}`);
+        const transactionData = {
+            id: `txn-${job.id}`,
+            jobId: job.id,
+            payerId: (job.jobGiver as User).id,
+            payeeId: installer.id,
+            amount: winningBid.amount,
+            status: 'Funded' as const,
+            createdAt: new Date(),
+        };
+        batch.set(transactionRef, transactionData);
+        
+        await batch.commit();
+
+        onJobUpdate({ ...jobUpdate, awardedInstaller: doc(db, 'users', installer.id) });
+
+        toast({
+            title: "Escrow Funded!",
+            description: `You have awarded the job to ${installer.name} and funded the escrow. The installer can now begin work.`,
+        });
+        setIsOpen(false);
+    };
+
+    if (!winningBid) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button size="sm">Award Job & Fund Escrow</Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Fund Escrow & Award Job</DialogTitle>
+                    <DialogDescription>
+                        You are about to award this job to <span className="font-bold">{installer.name}</span>. To proceed, you must fund the escrow with the agreed amount.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <div className="flex justify-between items-center p-4 bg-muted rounded-lg">
+                        <span className="text-muted-foreground">Winning Bid Amount</span>
+                        <span className="text-2xl font-bold">₹{winningBid.amount.toLocaleString()}</span>
+                    </div>
+                     <div className="text-xs text-muted-foreground p-2 text-center">
+                        This is a mock transaction. In a real application, you would be redirected to a secure payment gateway. By clicking "Fund Escrow", you are simulating the transfer of funds.
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleFundEscrow}>
+                        <Wallet className="mr-2 h-4 w-4" />
+                        Fund Escrow & Confirm
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function JobGiverBid({ bid, job, onAwardJob, rank }: { bid: Bid, job: Job, onAwardJob: (installerId: string) => void, rank: number }) {
     const { role } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
@@ -298,12 +389,12 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
     }, [bid.timestamp]);
 
     const isAdmin = role === 'Admin';
-    const showRealIdentity = isAdmin || isAwardedToThisBidder;
+    const showRealIdentity = isAdmin || isAwardedToThisBidder || job.status === 'Completed';
 
     const installerName = showRealIdentity ? installer.name : `Installer #${rank}`;
 
     return (
-        <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && showRanking && rank === 1 ? 'border-primary' : ''}`}>
+        <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && rank === 1 ? 'border-primary' : ''}`}>
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                     <Avatar>
@@ -321,7 +412,7 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                            ) : (
                                 <p className="font-semibold">{installerName}</p>
                            )}
-                            {!isJobAwarded && showRanking && rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
+                            {!isJobAwarded && rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
@@ -336,20 +427,9 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
                 </div>
             </div>
             <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
-            {role === 'Job Giver' && (
+            {role === 'Job Giver' && !isJobAwarded && (
               <div className="mt-4 flex items-center gap-2">
-                  <Button 
-                      size="sm" 
-                      onClick={() => canAward ? onAwardJob(installer.id) : onSelectInstaller(installer.id)}
-                      disabled={isJobAwarded}
-                      variant={isAwardedToThisBidder ? 'secondary' : 'default'}
-                  >
-                      {isAwardedToThisBidder ? (
-                          <>
-                              <Award className="mr-2 h-4 w-4" /> Awarded
-                          </>
-                      ) : canAward ? 'Award Job' : isSelected ? 'Selected' : 'Select Installer'}
-                  </Button>
+                   <FundEscrowDialog job={job} installer={installer} onJobUpdate={onAwardJob as any} />
               </div>
             )}
         </div>
@@ -357,44 +437,8 @@ function JobGiverBid({ bid, job, onSelectInstaller, onAwardJob, rank, isSelected
 }
 
 function BidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
-    const { toast } = useToast();
     const { role } = useUser();
-    const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>(job.selectedInstallers?.map(i => i.installerId) || []);
     
-    const handleSelectInstaller = async (installerId: string) => {
-        const newSelected = [...selectedInstallers, installerId];
-        const newSelectedWithRank = newSelected.map((id, index) => ({ installerId: id, rank: index + 1 }));
-
-        const jobRef = doc(db, "jobs", job.id);
-        await updateDoc(jobRef, { selectedInstallers: newSelectedWithRank });
-
-        setSelectedInstallers(newSelected);
-        onJobUpdate({ selectedInstallers: newSelectedWithRank });
-        
-        toast({
-            title: "Installer Selected",
-            description: `Installer has been shortlisted.`,
-        });
-    };
-    
-    const handleAwardJob = async (installerId: string) => {
-        const installer = (job.bids || []).find(b => (b.installer as User).id === installerId)?.installer as User;
-        if (!installer) return;
-
-        const jobRef = doc(db, "jobs", job.id);
-        await updateDoc(jobRef, {
-            awardedInstaller: doc(db, 'users', installerId),
-            status: 'Awarded'
-        });
-
-        onJobUpdate({ awardedInstaller: doc(db, 'users', installerId), status: 'Awarded' });
-
-        toast({
-            title: "Job Awarded!",
-            description: `You have awarded the job to ${installer.name}.`,
-        });
-    };
-
     const calculateBidScore = (bid: Bid, job: Job) => {
         const profile = (bid.installer as User).installerProfile;
         if (!profile) return -Infinity;
@@ -431,12 +475,8 @@ function BidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob:
             key={(bid.installer as User).id}
             bid={bid} 
             job={job} 
-            onSelectInstaller={handleSelectInstaller}
-            onAwardJob={handleAwardJob}
+            onAwardJob={onJobUpdate as any}
             rank={index + 1}
-            isSelected={selectedInstallers.includes((bid.installer as User).id)}
-            showRanking={role === 'Job Giver'}
-            canAward={role === 'Job Giver'}
           />
         ))}
       </CardContent>
@@ -1076,7 +1116,7 @@ export default function JobDetailPage() {
               </>
             )}
 
-            {(job.status === 'Awarded' || job.status === 'In Progress') && isAwardedInstaller && (
+            {(job.status === 'In Progress') && isAwardedInstaller && (
               <>
                 <Separator className="my-6" />
                 <InstallerCompletionSection job={job} onJobUpdate={handleJobUpdate} />
@@ -1098,7 +1138,7 @@ export default function JobDetailPage() {
       </div>
 
       <div className="space-y-8">
-        {(role === 'Job Giver' && (job.status === 'Awarded' || job.status === 'In Progress')) && (
+        {(role === 'Job Giver' && (job.status === 'In Progress')) && (
             <JobGiverOTPCard job={job} />
         )}
         <Card>
