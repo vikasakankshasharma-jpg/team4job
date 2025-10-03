@@ -36,7 +36,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AddressForm } from "@/components/ui/address-form";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, or } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 const addressSchema = z.object({
@@ -272,10 +272,38 @@ export function SignUpForm() {
         return;
     }
 
+    // --- Start: Duplicate Check ---
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, or(
+        where("email", "==", values.email.toLowerCase()),
+        where("mobile", "==", values.mobile)
+    ));
+
+    const querySnapshot = await getDocs(q);
+    let isDuplicate = false;
+    querySnapshot.forEach((doc) => {
+        const existingUser = doc.data();
+        if (existingUser.email.toLowerCase() === values.email.toLowerCase()) {
+            form.setError("email", { type: "manual", message: "This email is already registered." });
+            isDuplicate = true;
+        }
+        if (existingUser.mobile === values.mobile) {
+            form.setError("mobile", { type: "manual", message: "This mobile number is already registered." });
+            isDuplicate = true;
+        }
+    });
+
+    if (isDuplicate) {
+        setCurrentStep("details"); // Make sure user sees the error
+        return;
+    }
+    // --- End: Duplicate Check ---
+
     const success = await login(values.email, values);
     if (success) {
       router.push("/dashboard");
     } else {
+      // This case might still happen in a race condition, so good to keep it.
       setCurrentStep("details");
       form.setError("email", { type: "manual", message: "This email is already in use by an existing user." });
     }
@@ -539,5 +567,3 @@ export function SignUpForm() {
     </Form>
   );
 }
-
-    
