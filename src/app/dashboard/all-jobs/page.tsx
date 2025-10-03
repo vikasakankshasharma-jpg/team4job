@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from "react";
@@ -60,7 +59,7 @@ function getJobType(job: Job) {
     const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
     if (!job.bids || job.bids.length === 0) return 'Direct';
 
-    const bidderIds = job.bids.map(b => (b.installer as User).id);
+    const bidderIds = (job.bids || []).map(b => (b.installer as User).id);
 
     return bidderIds.includes(awardedInstallerId as string) ? 'Bidding' : 'Direct';
 };
@@ -84,7 +83,7 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
                 </div>
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Bids</span>
-                    <span className="font-medium">{job.bids?.length || 0}</span>
+                    <span className="font-medium">{(job.bids || []).length}</span>
                 </div>
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Job Type</span>
@@ -226,8 +225,8 @@ export default function AllJobsPage() {
             valB = (b.jobGiver as User)?.name || '';
             break;
           case 'bids':
-            valA = a.bids?.length || 0;
-            valB = b.bids?.length || 0;
+            valA = (a.bids || []).length;
+            valB = (b.bids || []).length;
             break;
           case 'jobType':
             valA = getJobType(a).toLowerCase();
@@ -428,7 +427,7 @@ export default function AllJobsPage() {
                         </Link>
                       </TableCell>
                       <TableCell>
-                        {job.bids?.length || 0}
+                        {(job.bids || []).length}
                       </TableCell>
                       <TableCell>
                          {getJobType(job)}
