@@ -330,11 +330,11 @@ function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer
         
         await batch.commit();
 
-        onJobUpdate({ ...jobUpdate, awardedInstaller: doc(db, 'users', installer.id) });
+        onJobUpdate({ ...jobUpdate, status: 'Awarded', awardedInstaller: doc(db, 'users', installer.id) });
 
         toast({
             title: "Escrow Funded!",
-            description: `You have awarded the job to ${installer.name} and funded the escrow. The installer can now begin work.`,
+            description: `You have awarded the job to ${installer.name}. The installer can now begin work.`,
         });
         setIsOpen(false);
     };
@@ -808,13 +808,13 @@ export default function JobDetailPage() {
 
             const comments = await Promise.all((jobData.comments || []).map(async (comment: any) => ({
                 ...comment,
-                id: comment.id || `${id}-comment-${Math.random()}`,
+                id: `comment-${doc(db, 'temp').id}`,
                 author: await getUser(comment.author),
             })));
             
             const privateMessages = await Promise.all((jobData.privateMessages || []).map(async (message: any) => ({
                 ...message,
-                id: message.id || `${id}-pm-${Math.random()}`,
+                id: `pm-${doc(db, 'temp').id}`,
                 author: await getUser(message.author),
             })));
 
@@ -1304,3 +1304,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
