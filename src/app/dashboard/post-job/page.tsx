@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
@@ -40,6 +39,7 @@ const addressSchema = z.object({
   street: z.string().min(3, "Please enter a valid street/area."),
   landmark: z.string().optional(),
   cityPincode: z.string().min(8, "Please select a pincode and post office."),
+  fullAddress: z.string().min(10, "Please provide a full address or pin it on the map."),
 });
 
 const jobSchema = z.object({
@@ -103,6 +103,7 @@ export default function PostJobPage() {
         street: "",
         landmark: "",
         cityPincode: "",
+        fullAddress: "",
       },
       budgetMin: 0,
       budgetMax: 0,
@@ -185,6 +186,7 @@ export default function PostJobPage() {
         id: newJobId, 
         ...values, 
         location: pincode.trim(),
+        fullAddress: values.address.fullAddress,
         jobGiver: user.id, 
         status,
         bids: [],
@@ -341,7 +343,9 @@ export default function PostJobPage() {
                   houseName="address.house"
                   streetName="address.street"
                   landmarkName="address.landmark"
+                  fullAddressName="address.fullAddress"
                   onLocationGeocoded={setMapCenter}
+                  mapCenter={mapCenter}
                 />
                  <Separator />
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
