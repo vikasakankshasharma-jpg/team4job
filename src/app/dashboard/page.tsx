@@ -31,6 +31,7 @@ import React from "react";
 import { Job, User, Dispute } from "@/lib/types";
 import { collection, getDocs, query, where, DocumentReference, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
+import { toDate } from "@/lib/utils";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, Pie, Cell, ComposedChart, YAxis, Legend, Line, Tooltip } from "recharts"
 import {
   ChartContainer,
@@ -469,29 +470,32 @@ function AdminDashboard() {
         const jobStatuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Completed': 0, 'Cancelled': 0, 'Bidding Closed': 0, 'Awarded': 0, 'Unbid': 0 };
         const disputeStatuses: { [key: string]: number } = { 'Open': 0, 'Under Review': 0, 'Resolved': 0 };
 
-        const activityData: { [key: string]: { jobs: number, bids: number, value: number } } = {};
         const last6Months = Array.from({ length: 6 }, (_, i) => {
             const d = new Date();
-            d.setDate(1); // Set to start of month to avoid timezone issues
             d.setMonth(d.getMonth() - i);
-            return d.toLocaleString('default', { month: 'short', year: '2-digit' });
+            return {
+                label: d.toLocaleString('default', { month: 'short', year: '2-digit' }),
+                date: new Date(d.getFullYear(), d.getMonth(), 1)
+            };
         }).reverse();
 
+        const activityData: { [key: string]: { jobs: number, bids: number, value: number } } = {};
         last6Months.forEach(month => {
-            activityData[month] = { jobs: 0, bids: 0, value: 0 };
+            activityData[month.label] = { jobs: 0, bids: 0, value: 0 };
         });
 
         jobsSnapshot.forEach(jobDoc => {
             const job = jobDoc.data() as Job;
-            const jobMonth = new Date(job.postedAt.seconds * 1000).toLocaleString('default', { month: 'short', year: '2-digit' });
+            const postedDate = toDate(job.postedAt);
+            const jobMonthLabel = postedDate.toLocaleString('default', { month: 'short', year: '2-digit' });
             
             if (jobStatuses[job.status] !== undefined) {
                jobStatuses[job.status]++;
             }
 
-            if (activityData[jobMonth]) {
-                activityData[jobMonth].jobs++;
-                activityData[jobMonth].bids += (job.bids || []).length;
+            if (activityData[jobMonthLabel]) {
+                activityData[jobMonthLabel].jobs++;
+                activityData[jobMonthLabel].bids += (job.bids || []).length;
             }
 
             if (job.status === 'Completed' && job.awardedInstaller) {
@@ -499,8 +503,8 @@ function AdminDashboard() {
                 const winningBid = (job.bids || []).find(bid => (bid.installer as DocumentReference).id === awardedId);
                 if (winningBid) {
                     completedValue += winningBid.amount;
-                    if (activityData[jobMonth]) {
-                        activityData[jobMonth].value += winningBid.amount;
+                    if (activityData[jobMonthLabel]) {
+                        activityData[jobMonthLabel].value += winningBid.amount;
                     }
                 }
             }
@@ -517,17 +521,20 @@ function AdminDashboard() {
         });
 
         const growthData: { [key: string]: number } = {};
-        usersSnapshot.forEach(userDoc => {
-            const user = userDoc.data() as User;
-            const month = new Date(user.memberSince.seconds * 1000).toLocaleString('default', { month: 'short', year: '2-digit' });
-            if (growthData[month]) {
-              growthData[month]++;
-            } else if (last6Months.includes(month)) {
-              growthData[month] = 1;
-            }
+        last6Months.forEach(month => {
+            growthData[month.label] = 0;
         });
 
-        setUserGrowthData(last6Months.map(month => ({ month, users: growthData[month] || 0 })));
+        usersSnapshot.forEach(userDoc => {
+            const user = userDoc.data() as User;
+            const memberSinceDate = toDate(user.memberSince);
+            const monthLabel = memberSinceDate.toLocaleString('default', { month: 'short', year: '2-digit' });
+            if (growthData[monthLabel] !== undefined) {
+              growthData[monthLabel]++;
+            }
+        });
+        
+        setUserGrowthData(last6Months.map(month => ({ month: month.label, users: growthData[month.label] || 0 })));
         setJobStatusData(Object.entries(jobStatuses).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] })));
         setDisputeStatusData(Object.entries(disputeStatuses).map(([name, value]) => ({ name, count: value, fill: disputeStatusColors[name] })));
         setPlatformActivityData(Object.entries(activityData).map(([month, data]) => ({ month, ...data })));
@@ -744,3 +751,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
