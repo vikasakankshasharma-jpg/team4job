@@ -11,7 +11,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -62,9 +61,6 @@ export function LoginForm() {
                <FormControl>
                   <Input type="email" placeholder="name@example.com" {...field} />
                 </FormControl>
-                <FormDescription>
-                    For this demo, use <span className="font-semibold">vikas@example.com</span> to log in as an Admin.
-                </FormDescription>
               <FormMessage />
             </FormItem>
           )}
