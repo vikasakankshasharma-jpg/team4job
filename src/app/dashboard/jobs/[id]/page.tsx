@@ -398,6 +398,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
     const showRealIdentity = isAdmin || isAwardedToThisBidder;
 
     const installerName = showRealIdentity ? installer.name : anonymousId;
+    const avatar = showRealIdentity ? <AvatarImage src={installer.realAvatarUrl} alt={installer.name} /> : <AnimatedAvatar svg={installer.avatarUrl} />;
     const avatarFallback = showRealIdentity ? installer.name.substring(0, 2) : anonymousId.split('-')[1];
 
     return (
@@ -405,11 +406,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                     <Avatar>
-                       {showRealIdentity ? (
-                            <AvatarImage src={installer.realAvatarUrl} alt={installer.name} />
-                       ) : (
-                           <AnimatedAvatar svg={installer.avatarUrl} />
-                       )}
+                       {avatar}
                         <AvatarFallback>{avatarFallback}</AvatarFallback>
                     </Avatar>
                     <div>
