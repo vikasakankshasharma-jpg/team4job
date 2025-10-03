@@ -18,6 +18,7 @@ export type User = {
   freeBids?: number;
   freeJobs?: number;
   creditsExpiry?: Date | Timestamp;
+  aadharNumber?: string;
   installerProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;

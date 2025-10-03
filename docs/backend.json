@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -65,6 +66,10 @@
           "type": "string",
           "format": "date-time",
           "description": "The expiry date for the free credits."
+        },
+        "aadharNumber": {
+          "type": "string",
+          "description": "The user's 12-digit Aadhar number, stored after successful KYC."
         },
         "installerProfile": {
           "$ref": "#/entities/InstallerProfile"
