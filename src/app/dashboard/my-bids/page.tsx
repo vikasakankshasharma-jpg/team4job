@@ -175,10 +175,13 @@ function MyBidsPageContent() {
             const userRef = doc(db, 'users', user.id);
             const jobsRef = collection(db, 'jobs');
             
-            // This is not an optimal query. Firestore does not support 'array-contains' on nested objects well.
-            // A better data model would include a simple array of bidder IDs on the job document.
-            // We fetch all jobs and filter client-side as a workaround for this demo.
-            const querySnapshot = await getDocs(jobsRef);
+            const q = query(jobsRef, or(
+                where('bidderIds', 'array-contains', user.id),
+                where('awardedInstaller', '==', userRef)
+            ));
+
+            const querySnapshot = await getDocs(q);
+            
             const jobList = await Promise.all(querySnapshot.docs.map(async (doc) => {
                 const jobData = doc.data();
                 
@@ -211,14 +214,18 @@ function MyBidsPageContent() {
                 } as Job;
             }));
 
-            // Client-side filtering
-            const myJobs = jobList.filter(job => {
-                const isAwardedToMe = (job.awardedInstaller as User)?.id === user.id;
-                const hasBidded = job.bids.some(bid => (bid.installer as User)?.id === user.id);
-                return isAwardedToMe || hasBidded;
-            });
+            // Additional client-side filter for direct awards that might not have bids
+             const allJobsSnapshot = await getDocs(collection(db, 'jobs'));
+             const allJobs = allJobsSnapshot.docs.map(doc => doc.data() as Job);
+             const directAwards = allJobs.filter(job => {
+                const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+                return awardedId === user.id && (!job.bids || job.bids.length === 0);
+             });
 
-            setJobs(myJobs);
+            const combinedJobs = [...jobList, ...directAwards];
+            const uniqueJobs = Array.from(new Map(combinedJobs.map(job => [job.id, job])).values());
+            
+            setJobs(uniqueJobs);
 
         } catch (error) {
             console.error("Error fetching jobs and bids:", error);
@@ -244,10 +251,10 @@ function MyBidsPageContent() {
                         <span className="font-semibold">Bidded:</span> You have placed a bid, and the job is still open for other installers to bid on.
                     </li>
                     <li>
-                        <span className="font-semibold">Awarded:</span> Congratulations! The Job Giver has chosen you for the project. The job is ready to be started. This can happen through bidding or a Direct Award.
+                        <span className="font-semibold">Awarded:</span> Congratulations! The Job Giver has chosen you for the project. You must accept the job from the job detail page to proceed.
                     </li>
                     <li>
-                        <span className="font-semibold">In Progress:</span> You have started working on an awarded job.
+                        <span className="font-semibold">In Progress:</span> You have accepted the job and can begin work.
                     </li>
                     <li>
                         <span className="font-semibold">Completed & Won:</span> You have successfully completed the job and received reputation points.
