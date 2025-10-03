@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, doc, getDoc, DocumentReference, query, where, or } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, DocumentReference } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 
@@ -172,55 +172,64 @@ function MyBidsPageContent() {
         if (!user) return;
         setLoading(true);
         try {
-            const userRef = doc(db, 'users', user.id);
-            const jobsRef = collection(db, 'jobs');
-            
-            const q = query(jobsRef, or(
-                where('bids', 'array-contains', { installer: userRef }), // This is a simplified query, Firestore doesn't support this directly on arrays of objects
-                where('awardedInstaller', '==', userRef)
-            ));
-
-            // Due to Firestore limitations, we fetch more broadly and filter client-side
             const allJobsSnapshot = await getDocs(collection(db, 'jobs'));
-            const jobList = await Promise.all(allJobsSnapshot.docs.map(async (doc) => {
-                const jobData = doc.data();
+            const userCache: { [key: string]: User } = {};
+            
+            const getUser = async (ref: DocumentReference): Promise<User> => {
+                if (userCache[ref.id]) return userCache[ref.id];
+                const userSnap = await getDoc(ref);
+                if (!userSnap.exists()) {
+                    throw new Error(`User not found: ${ref.id}`);
+                }
+                const userData = { id: userSnap.id, ...userSnap.data() } as User;
+                userCache[ref.id] = userData;
+                return userData;
+            }
+
+            const jobListPromises = allJobsSnapshot.docs.map(async (jobDoc) => {
+                const jobData = jobDoc.data();
 
                 // Check if user is involved
                 const isAwardedToMe = (jobData.awardedInstaller as DocumentReference)?.id === user.id;
                 const hasBid = (jobData.bids || []).some((bid: any) => bid.installer.id === user.id);
                 if (!isAwardedToMe && !hasBid) return null;
-
                 
-                const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => {
-                    const installerSnap = await getDoc(bid.installer);
-                    return {
-                        ...bid,
-                        id: `${doc.id}-${installerSnap.id}`,
-                        installer: { id: installerSnap.id, ...installerSnap.data() } as User,
-                        timestamp: toDate(bid.timestamp),
-                    };
-                }));
+                try {
+                    const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => {
+                        const installer = await getUser(bid.installer);
+                        return {
+                            ...bid,
+                            id: `${jobDoc.id}-${installer.id}`,
+                            installer: installer,
+                            timestamp: toDate(bid.timestamp),
+                        };
+                    }));
 
-                let awardedInstaller = jobData.awardedInstaller;
-                if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
-                    const installerSnap = await getDoc(awardedInstaller);
-                    if(installerSnap.exists()) {
-                        awardedInstaller = { id: installerSnap.id, ...installerSnap.data()} as User;
+                    let awardedInstaller = jobData.awardedInstaller;
+                    if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
+                        awardedInstaller = await getUser(awardedInstaller);
                     }
+                    
+                    const jobGiver = await getUser(jobData.jobGiver);
+
+                    return {
+                        id: jobDoc.id,
+                        ...jobData,
+                        jobGiver,
+                        bids,
+                        awardedInstaller,
+                        postedAt: toDate(jobData.postedAt),
+                        deadline: toDate(jobData.deadline),
+                        jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
+                    } as Job;
+                } catch(e) {
+                    console.error(`Skipping job ${jobDoc.id} due to error:`, e);
+                    return null;
                 }
+            });
 
-                return {
-                    id: doc.id,
-                    ...jobData,
-                    bids,
-                    awardedInstaller,
-                    postedAt: toDate(jobData.postedAt),
-                    deadline: toDate(jobData.deadline),
-                    jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
-                } as Job;
-            }));
-
-            setJobs(jobList.filter((j): j is Job => j !== null));
+            const jobList = (await Promise.all(jobListPromises)).filter((j): j is Job => j !== null);
+            setJobs(jobList);
 
         } catch (error) {
             console.error("Error fetching jobs and bids:", error);

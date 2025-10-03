@@ -341,6 +341,7 @@ export default function ProfilePage() {
 
   React.useEffect(() => {
     if (role !== 'Installer' || !user) {
+      setJobsCompletedCount(0);
       return;
     }
 
@@ -354,8 +355,12 @@ export default function ProfilePage() {
             where('awardedInstaller', '==', userRef)
         );
 
-        const querySnapshot = await getDocs(q);
-        setJobsCompletedCount(querySnapshot.size);
+        try {
+            const querySnapshot = await getDocs(q);
+            setJobsCompletedCount(querySnapshot.size);
+        } catch (error) {
+            console.error("Error fetching completed jobs:", error);
+        }
     };
 
     fetchCompletedJobs();
