@@ -36,6 +36,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { MapInput } from "@/components/ui/map-input";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -176,6 +178,19 @@ export function SignUpForm() {
     }
 
     try {
+      const aadharNumber = form.getValues("aadhar");
+      
+      // Check if Aadhar number already exists
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("aadharNumber", "==", aadharNumber));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        setError("This Aadhar number is already registered to another account.");
+        setIsLoading(false);
+        return;
+      }
+      
       const result = await confirmAadharVerification({ transactionId, otp: otp || "" });
       if (result.isVerified) {
         setVerificationSubStep("verified");
@@ -193,7 +208,7 @@ export function SignUpForm() {
             // Cannot set full address from just pincode, but we can pre-fill pincode if MapInput is adapted
             // For now, let's keep this as it is. User will use the map.
         }
-        setCurrentStep("details");
+        setCurrentStep("photo");
       } else {
         setError(result.message);
       }
