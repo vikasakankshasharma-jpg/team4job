@@ -38,7 +38,7 @@ export const toDate = (timestamp: any): Date => {
   }
   // Fallback for other types, though this should be avoided
   // by ensuring data is correctly typed.
-  return new Date();
+  return new Date(timestamp);
 };
 
 

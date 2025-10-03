@@ -151,7 +151,7 @@ export default function AllJobsPage() {
 
         setJobs(jobList);
         const uniqueStatuses = Array.from(new Set(jobList.map(j => j.status)));
-        setAllStatuses(['All', ...uniqueStatuses]);
+        setAllStatuses(['All', ...uniqueStatuses.sort()]);
 
       } catch (error) {
         console.error("Error fetching jobs from Firestore:", error);
