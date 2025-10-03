@@ -53,6 +53,8 @@ import {
   Send,
   Lock,
   Wallet,
+  Hourglass,
+  ThumbsDown,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -64,7 +66,7 @@ import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, DocumentReference, addDoc, collection, writeBatch, setDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, DocumentReference, addDoc, collection, writeBatch, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 
@@ -76,7 +78,6 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
     if (otp === job.completionOtp) {
       const batch = writeBatch(db);
       
-      // 1. Update Job Status
       const jobRef = doc(db, "jobs", job.id);
       const updatedJobData = { 
         status: 'Completed' as const,
@@ -84,7 +85,6 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
       };
       batch.update(jobRef, updatedJobData);
 
-      // 2. Update Transaction Status
       const transactionRef = doc(db, "transactions", `txn-${job.id}`);
       const transactionUpdate = {
         status: 'Released' as const,
@@ -307,15 +307,17 @@ function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer
         
         const batch = writeBatch(db);
         
-        // 1. Update Job
         const jobRef = doc(db, "jobs", job.id);
+        const acceptanceDeadline = new Date();
+        acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
+
         const jobUpdate = {
             awardedInstaller: doc(db, 'users', installer.id),
-            status: 'Awarded' as const
+            status: 'Awarded' as const,
+            acceptanceDeadline,
         };
         batch.update(jobRef, jobUpdate);
         
-        // 2. Create Transaction
         const transactionRef = doc(db, "transactions", `txn-${job.id}`);
         const transactionData = {
             id: `txn-${job.id}`,
@@ -330,11 +332,11 @@ function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer
         
         await batch.commit();
 
-        onJobUpdate({ ...jobUpdate, status: 'Awarded', awardedInstaller: doc(db, 'users', installer.id) });
+        onJobUpdate({ ...jobUpdate, status: 'Awarded', awardedInstaller: doc(db, 'users', installer.id), acceptanceDeadline });
 
         toast({
-            title: "Escrow Funded!",
-            description: `You have awarded the job to ${installer.name}. The installer can now begin work.`,
+            title: "Escrow Funded & Job Awarded!",
+            description: `${installer.name} has 24 hours to accept the job.`,
         });
         setIsOpen(false);
     };
@@ -350,7 +352,7 @@ function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer
                 <DialogHeader>
                     <DialogTitle>Fund Escrow & Award Job</DialogTitle>
                     <DialogDescription>
-                        You are about to award this job to <span className="font-bold">{installer.name}</span>. To proceed, you must fund the escrow with the agreed amount.
+                        You are about to award this job to <span className="font-bold">{installer.name}</span>. To proceed, you must fund the escrow with the agreed amount. The installer will have 24 hours to accept.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
@@ -396,7 +398,6 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
 
     const isAdmin = role === 'Admin';
     const isJobGiver = role === 'Job Giver';
-    // Reveal identity if the job is awarded to this bidder, or if the current user is an admin.
     const showRealIdentity = isAdmin || isAwardedToThisBidder;
 
     const installerName = showRealIdentity ? installer.name : anonymousId;
@@ -754,6 +755,98 @@ function RaiseDisputeDialog({ job, user, onJobUpdate, triggerElement }: { job: J
     );
 }
 
+function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
+    const { toast } = useToast();
+    const [timeLeft, setTimeLeft] = React.useState('');
+
+    React.useEffect(() => {
+        if (!job.acceptanceDeadline) return;
+
+        const interval = setInterval(() => {
+            const now = new Date();
+            const deadline = toDate(job.acceptanceDeadline!);
+            const diff = deadline.getTime() - now.getTime();
+
+            if (diff <= 0) {
+                setTimeLeft('Expired');
+                // Here you would trigger the auto-cancellation logic
+                return;
+            }
+
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            setTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [job.acceptanceDeadline]);
+
+    const handleAccept = async () => {
+        const jobRef = doc(db, "jobs", job.id);
+        const update = { status: 'In Progress' as const };
+        await updateDoc(jobRef, update);
+        onJobUpdate(update);
+        toast({ title: 'Job Accepted!', description: 'You can now start communicating with the Job Giver.' });
+    };
+    
+    const handleDecline = async () => {
+        // In a real app, this would also update installer's reputation points.
+        const jobRef = doc(db, "jobs", job.id);
+        const update = { status: 'Open for Bidding' as const, awardedInstaller: null, acceptanceDeadline: null };
+        await updateDoc(jobRef, update);
+        onJobUpdate(update);
+        toast({ title: 'Job Declined', description: 'The job is now open for bidding again.', variant: 'destructive' });
+    };
+
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Awaiting Your Acceptance</CardTitle>
+                <CardDescription>
+                    The Job Giver has awarded this job to you. You must accept it within the time limit to proceed.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-center">
+                 <div className="flex items-center justify-center gap-2 text-lg font-semibold text-amber-600">
+                    <Hourglass className="h-5 w-5" />
+                    Time to accept: {timeLeft}
+                </div>
+                 <p className="text-xs text-muted-foreground">
+                    If you do not accept within the time limit, the job will be automatically declined and it may affect your reputation score.
+                </p>
+            </CardContent>
+            <CardFooter className="flex justify-end gap-2">
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="destructive">
+                            <ThumbsDown className="mr-2 h-4 w-4" />
+                            Decline
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Are you sure you want to decline?</DialogTitle>
+                            <DialogDescription>
+                                Declining a job after being awarded will negatively impact your reputation score. This action cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                            <DialogClose asChild><Button variant="destructive" onClick={handleDecline}>Confirm Decline</Button></DialogClose>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                <Button onClick={handleAccept}>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Accept Job
+                </Button>
+            </CardFooter>
+        </Card>
+    );
+}
+
 export default function JobDetailPage() {
   const { user, role } = useUser();
   const params = useParams();
@@ -922,8 +1015,7 @@ export default function JobDetailPage() {
     if ((!newPrivateMessage.trim() && privateMessageAttachments.length === 0) || !user || !job) return;
 
     const jobRef = doc(db, "jobs", job.id);
-    const batch = writeBatch(db);
-
+    
     // Mock upload process for attachments
     const uploadedAttachments: JobAttachment[] = privateMessageAttachments.map(file => ({
         fileName: file.name,
@@ -938,18 +1030,9 @@ export default function JobDetailPage() {
       attachments: uploadedAttachments,
     };
     
-    batch.update(jobRef, {
+    await updateDoc(jobRef, {
         privateMessages: arrayUnion(newMessageObject)
     });
-
-    let newStatus = job.status;
-    // If it's the installer's first message on an awarded job, update status
-    if (role === 'Installer' && job.status === 'Awarded') {
-        newStatus = 'In Progress';
-        batch.update(jobRef, { status: newStatus });
-    }
-    
-    await batch.commit();
 
     const fullNewMessage: PrivateMessage = {
       ...newMessageObject,
@@ -959,7 +1042,6 @@ export default function JobDetailPage() {
     
     handleJobUpdate({ 
         privateMessages: [...(job.privateMessages || []), fullNewMessage],
-        status: newStatus
     });
 
     setNewPrivateMessage("");
@@ -983,12 +1065,15 @@ export default function JobDetailPage() {
   const isAwardedInstaller = role === "Installer" && user.id === awardedInstallerId;
   const jobGiver = job.jobGiver as User;
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
-
+  
   const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
   const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || role === 'Job Giver' || role === 'Admin');
-  const canUsePrivateMessages = (isJobGiver || isAwardedInstaller || role === 'Admin') && ['Awarded', 'In Progress', 'Completed'].includes(job.status);
+  const canUsePrivateMessages = (isJobGiver || isAwardedInstaller || role === 'Admin') && (job.status === 'In Progress' || job.status === 'Completed');
   
   const showJobGiverRealIdentity = isAwardedInstaller || role === 'Admin';
+  
+  const showInstallerAcceptance = isAwardedInstaller && job.status === 'Awarded';
+
 
   return (
     <div className="grid gap-8 md:grid-cols-3">
@@ -1037,6 +1122,13 @@ export default function JobDetailPage() {
                   </div>
                 </div>
               </>
+            )}
+            
+            {showInstallerAcceptance && (
+                 <>
+                    <Separator className="my-6" />
+                    <InstallerAcceptanceSection job={job} onJobUpdate={handleJobUpdate} />
+                 </>
             )}
 
             {canUsePrivateMessages && (
