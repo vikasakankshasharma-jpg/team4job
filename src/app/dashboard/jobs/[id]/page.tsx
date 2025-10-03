@@ -64,7 +64,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, DocumentReference, addDoc, collection, writeBatch } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, DocumentReference, addDoc, collection, writeBatch, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 
@@ -370,11 +370,10 @@ function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer
                     </Button>
                 </DialogFooter>
             </DialogContent>
-        </Dialog>
     )
 }
 
-function JobGiverBid({ bid, job, onAwardJob, rank }: { bid: Bid, job: Job, onAwardJob: (installerId: string) => void, rank: number }) {
+function JobGiverBid({ bid, job, onJobUpdate, rank }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, rank: number }) {
     const { role } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
@@ -429,7 +428,7 @@ function JobGiverBid({ bid, job, onAwardJob, rank }: { bid: Bid, job: Job, onAwa
             <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
             {role === 'Job Giver' && !isJobAwarded && (
               <div className="mt-4 flex items-center gap-2">
-                   <FundEscrowDialog job={job} installer={installer} onJobUpdate={onAwardJob as any} />
+                   <FundEscrowDialog job={job} installer={installer} onJobUpdate={onJobUpdate as any} />
               </div>
             )}
         </div>
@@ -813,6 +812,11 @@ export default function JobDetailPage() {
                 author: await getUser(message.author),
             })));
 
+            let awardedInstaller = jobData.awardedInstaller;
+            if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
+                awardedInstaller = await getUser(awardedInstaller);
+            }
+
             setJob({
                 ...jobData,
                 id: jobSnapshot.id,
@@ -820,6 +824,7 @@ export default function JobDetailPage() {
                 bids,
                 comments,
                 privateMessages,
+                awardedInstaller,
             } as Job);
         } catch (error) {
             console.error("Failed to fetch job details:", error);
