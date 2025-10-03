@@ -86,10 +86,13 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
 
       // 2. Update Transaction Status
       const transactionRef = doc(db, "transactions", `txn-${job.id}`);
-      batch.update(transactionRef, {
+      const transactionUpdate = {
         status: 'Released',
         releasedAt: new Date(),
-      });
+      };
+      batch.update(transactionRef, transactionUpdate);
+      console.log("TESTING: Mock transaction status updated:", transactionUpdate);
+
 
       await batch.commit();
 
@@ -325,6 +328,7 @@ function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer
             createdAt: new Date(),
         };
         batch.set(transactionRef, transactionData);
+        console.log("TESTING: Mock transaction created:", transactionData);
         
         await batch.commit();
 
@@ -474,7 +478,7 @@ function BidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob:
             key={(bid.installer as User).id}
             bid={bid} 
             job={job} 
-            onAwardJob={onJobUpdate as any}
+            onJobUpdate={onJobUpdate}
             rank={index + 1}
           />
         ))}
@@ -1250,3 +1254,4 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
