@@ -217,7 +217,7 @@ export function SignUpForm() {
       }
       
       const result = await confirmAadharVerification({ transactionId, otp: otp || "" });
-      if (result.isVerified) {
+      if (result.isVerified && result.kycData) {
         setVerificationSubStep("verified");
         toast({
           title: "Verification Successful!",
@@ -226,13 +226,16 @@ export function SignUpForm() {
         });
         form.clearErrors("aadhar");
 
-        if (result.kycData) {
-            setKycData(result.kycData);
-            form.setValue("name", result.kycData.name, { shouldValidate: true });
-            form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
-            // Store the Aadhar pincode separately
-            form.setValue("kycAddress", result.kycData.pincode, { shouldValidate: true });
-        }
+        setKycData(result.kycData);
+        form.setValue("name", result.kycData.name, { shouldValidate: true });
+        form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
+        // Store the permanent Aadhar address
+        form.setValue("kycAddress", result.kycData.pincode, { shouldValidate: true });
+        
+        // Pre-fill the current location fields for user convenience
+        form.setValue("location", result.kycData.pincode, { shouldValidate: true, shouldDirty: true });
+        form.setValue("fullAddress", result.kycData.pincode, { shouldValidate: true, shouldDirty: true });
+        
         setCurrentStep("photo");
       } else {
         setError(result.message);
@@ -440,7 +443,7 @@ export function SignUpForm() {
              <Alert variant="success">
                 <ShieldCheck className="h-4 w-4" />
                 <AlertTitle>Aadhar Verified!</AlertTitle>
-                <AlertDescription>Your Name and Mobile have been pre-filled. Please enter your current address.</AlertDescription>
+                <AlertDescription>Your Name, Mobile, and Address have been pre-filled. You can edit your current address if it's different.</AlertDescription>
             </Alert>
         )}
         <FormField
