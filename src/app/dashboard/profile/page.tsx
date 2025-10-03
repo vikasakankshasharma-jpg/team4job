@@ -43,12 +43,11 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { jobs as allJobs } from "@/lib/data";
+import { jobs as allJobs, allSkills } from "@/lib/data";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { allSkills } from "@/app/dashboard/jobs/page";
 
 
 const tierIcons = {
