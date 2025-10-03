@@ -70,11 +70,11 @@ export function UserNav() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <div className="p-2">
-            <Label htmlFor="role-switcher" className="text-xs text-muted-foreground px-2">Current Role</Label>
+            <Label htmlFor="role-switcher" className="text-xs text-muted-foreground px-2">Current Mode</Label>
             <div className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
-                <span className="text-sm">{role}</span>
+                <span className="text-sm font-semibold">{role === 'Job Giver' ? 'Hiring' : 'Working'}</span>
                 <div className="flex items-center space-x-2">
-                    <Label htmlFor="role-switch" className={cn("text-xs font-bold", role === 'Job Giver' ? 'text-primary' : 'text-muted-foreground')}>Giver</Label>
+                    <Label htmlFor="role-switch" className={cn("text-xs font-bold", role === 'Job Giver' ? 'text-primary' : 'text-muted-foreground')}>Hiring</Label>
                     <Switch 
                         id="role-switch"
                         checked={role === 'Installer'}
@@ -82,7 +82,7 @@ export function UserNav() {
                         disabled={user.roles.length < 2}
                         aria-label="Role switcher"
                     />
-                    <Label htmlFor="role-switch" className={cn("text-xs font-bold", role === 'Installer' ? 'text-primary' : 'text-muted-foreground')}>Installer</Label>
+                    <Label htmlFor="role-switch" className={cn("text-xs font-bold", role === 'Installer' ? 'text-primary' : 'text-muted-foreground')}>Working</Label>
                 </div>
             </div>
         </div>
