@@ -41,12 +41,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
 import { useUser } from "@/hooks/use-user";
-import { jobs } from "@/lib/data";
+import { jobs, allSkills } from "@/lib/data";
 import type { Job } from "@/lib/types";
 import { useRouter } from "next/navigation";
-
-// Get unique skills from jobs data for filter - This might need to be dynamic later
-export const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz", "vms", "access control", "analog cameras", "wireless cameras", "fiber optics", "thermal cameras"];
 
 
 export default function BrowseJobsPage() {
