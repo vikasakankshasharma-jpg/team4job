@@ -963,6 +963,7 @@ export default function JobDetailPage() {
                 <div>
                     <Badge variant={getStatusVariant(job.status)} className="mb-2">{job.status}</Badge>
                     <CardTitle className="text-2xl">{job.title}</CardTitle>
+                    <CardDescription className="font-mono text-sm pt-1">{job.id}</CardDescription>
                 </div>
                 <div className="flex items-center gap-3">
                     <Avatar>
@@ -1255,5 +1256,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
