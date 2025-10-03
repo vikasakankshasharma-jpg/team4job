@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -239,6 +239,47 @@ function InstallerOnboardingDialog({ user, onSave }) {
     );
 }
 
+function SkillsEditor({ initialSkills, onSave }: { initialSkills: string[], onSave: (skills: string[]) => void }) {
+    const [isEditing, setIsEditing] = React.useState(false);
+    const [skills, setSkills] = React.useState(initialSkills.join(', '));
+    
+    const handleSave = () => {
+        onSave(skills.split(',').map(s => s.trim()).filter(Boolean));
+        setIsEditing(false);
+    }
+    
+    if (isEditing) {
+        return (
+            <div className="space-y-2">
+                <Textarea 
+                    value={skills}
+                    onChange={(e) => setSkills(e.target.value)}
+                    placeholder="Enter skills separated by commas"
+                />
+                <div className="flex gap-2">
+                    <Button size="sm" onClick={handleSave}>Save Skills</Button>
+                    <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div>
+            <div className="flex justify-between items-start">
+                <div className="flex flex-wrap gap-2">
+                    {initialSkills.map(skill => (
+                        <Badge key={skill} variant="secondary">{skill}</Badge>
+                    ))}
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)}>
+                    <Pencil className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
+    )
+}
+
 export default function ProfilePage() {
   const { user, role, setUser, setRole } = useUser();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
@@ -293,6 +334,20 @@ export default function ProfilePage() {
       });
     }
   };
+  
+  const handleSkillsSave = (newSkills: string[]) => {
+    if (setUser) {
+        setUser(prevUser => {
+            if (!prevUser || !prevUser.installerProfile) return prevUser;
+            const updatedProfile = { ...prevUser.installerProfile, skills: newSkills };
+            return { ...prevUser, installerProfile: updatedProfile };
+        });
+        toast({
+            title: "Skills Updated",
+            description: "Your list of skills has been saved.",
+        });
+    }
+  }
 
   const handleInstallerOnboarding = (values: z.infer<typeof installerOnboardingSchema>) => {
     if (setUser && setRole && user) {
@@ -506,11 +561,7 @@ export default function ProfilePage() {
 
                 <div>
                     <h4 className="font-semibold mb-3">Skills</h4>
-                    <div className="flex flex-wrap gap-2">
-                        {installerProfile.skills.map(skill => (
-                            <Badge key={skill} variant="secondary">{skill}</Badge>
-                        ))}
-                    </div>
+                    <SkillsEditor initialSkills={installerProfile.skills} onSave={handleSkillsSave} />
                 </div>
             </CardContent>
         </Card>
