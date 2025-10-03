@@ -87,7 +87,7 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
       // 2. Update Transaction Status
       const transactionRef = doc(db, "transactions", `txn-${job.id}`);
       const transactionUpdate = {
-        status: 'Released',
+        status: 'Released' as const,
         releasedAt: new Date(),
       };
       batch.update(transactionRef, transactionUpdate);
@@ -378,7 +378,7 @@ function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer
     );
 }
 
-function JobGiverBid({ bid, job, onJobUpdate, rank }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, rank: number }) {
+function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousId: string }) {
     const { role } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
@@ -393,12 +393,15 @@ function JobGiverBid({ bid, job, onJobUpdate, rank }: { bid: Bid, job: Job, onJo
     }, [bid.timestamp]);
 
     const isAdmin = role === 'Admin';
+    const isJobGiver = role === 'Job Giver';
+    // Reveal identity if the job is awarded to this bidder, or if the current user is an admin.
     const showRealIdentity = isAdmin || isAwardedToThisBidder;
 
-    const installerName = showRealIdentity ? installer.name : `Bidder #${rank}`;
+    const installerName = showRealIdentity ? installer.name : anonymousId;
+    const avatarFallback = showRealIdentity ? installer.name.substring(0, 2) : anonymousId.split('-')[1];
 
     return (
-        <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''} ${!isJobAwarded && rank === 1 ? 'border-primary' : ''}`}>
+        <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''}`}>
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                     <Avatar>
@@ -407,7 +410,7 @@ function JobGiverBid({ bid, job, onJobUpdate, rank }: { bid: Bid, job: Job, onJo
                        ) : (
                            <AnimatedAvatar svg={installer.avatarUrl} />
                        )}
-                        <AvatarFallback>{showRealIdentity ? installer.name.substring(0, 2) : `B${rank}`}</AvatarFallback>
+                        <AvatarFallback>{avatarFallback}</AvatarFallback>
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
@@ -416,7 +419,6 @@ function JobGiverBid({ bid, job, onJobUpdate, rank }: { bid: Bid, job: Job, onJo
                            ) : (
                                 <p className="font-semibold">{installerName}</p>
                            )}
-                            {!isJobAwarded && rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
@@ -431,7 +433,7 @@ function JobGiverBid({ bid, job, onJobUpdate, rank }: { bid: Bid, job: Job, onJo
                 </div>
             </div>
             <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
-            {role === 'Job Giver' && !isJobAwarded && (
+            {isJobGiver && !isJobAwarded && (
               <div className="mt-4 flex items-center gap-2">
                    <FundEscrowDialog job={job} installer={installer} onJobUpdate={onJobUpdate as any} />
               </div>
@@ -440,7 +442,7 @@ function JobGiverBid({ bid, job, onJobUpdate, rank }: { bid: Bid, job: Job, onJo
     );
 }
 
-function BidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
+function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousIdMap: Map<string, string> }) {
     const { role } = useUser();
     
     const calculateBidScore = (bid: Bid, job: Job) => {
@@ -474,13 +476,13 @@ function BidsSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob:
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {sortedBids.map(({ bid }, index) => (
+        {sortedBids.map(({ bid }) => (
           <JobGiverBid 
             key={(bid.installer as User).id}
             bid={bid} 
             job={job} 
             onJobUpdate={onJobUpdate}
-            rank={index + 1}
+            anonymousId={anonymousIdMap.get((bid.installer as User).id) || `Bidder-?`}
           />
         ))}
       </CardContent>
@@ -588,7 +590,7 @@ function ReputationImpactCard({ job }: { job: Job }) {
   )
 }
 
-function CommentDisplay({ comment, authorName }: { comment: Comment, authorName: string }) {
+function CommentDisplay({ comment, authorName, authorAvatar }: { comment: Comment, authorName: string, authorAvatar?: string }) {
     const [timeAgo, setTimeAgo] = React.useState('');
     const author = comment.author as User;
 
@@ -601,7 +603,7 @@ function CommentDisplay({ comment, authorName }: { comment: Comment, authorName:
     return (
         <div key={comment.id} className="flex gap-3">
             <Avatar className="h-9 w-9">
-                <AnimatedAvatar svg={author.avatarUrl} />
+                <AnimatedAvatar svg={authorAvatar || author.avatarUrl} />
                 <AvatarFallback>{authorName.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
@@ -849,11 +851,24 @@ export default function JobDetailPage() {
     return 'Not set';
   }, [job?.jobStartDate]);
 
-  const bidderRanks = React.useMemo(() => {
-    if (!job || !job.bids) return new Map<string, number>();
-    const uniqueBidderIds = [...new Set(job.bids.map(b => (b.installer as User).id))];
-    return new Map(uniqueBidderIds.map((id, index) => [id, index + 1]));
+  const anonymousIdMap = React.useMemo(() => {
+    if (!job || !job.bids) return new Map<string, string>();
+    
+    // Get unique bidder IDs from both bids and comments
+    const bidderIdsFromBids = job.bids.map(b => (b.installer as User).id);
+    const bidderIdsFromComments = (job.comments || [])
+        .map(c => (c.author as User).id)
+        .filter(id => id !== (job.jobGiver as User).id); // Exclude job giver
+        
+    const uniqueBidderIds = [...new Set([...bidderIdsFromBids, ...bidderIdsFromComments])];
+
+    const generateRandomId = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+
+    // Create a consistent random mapping for each unique bidder ID for this specific job
+    return new Map(uniqueBidderIds.map(id => [id, `Bidder-${generateRandomId()}`]));
+
   }, [job]);
+
 
   React.useEffect(() => {
     if (job) {
@@ -1111,16 +1126,17 @@ export default function JobDetailPage() {
                     {(job.comments || []).map((comment) => {
                         const author = comment.author as User;
                         const authorId = author.id;
-                        let authorName = author.name;
+                        let authorName = "Installer";
+                        let authorAvatar = author.avatarUrl;
 
-                        if (author.roles.includes("Installer")) {
-                            const rank = bidderRanks.get(authorId);
-                            authorName = rank ? `Bidder #${rank}` : "Installer";
-                        } else if (authorId === jobGiver.id) {
+                        if (authorId === jobGiver.id) {
                             authorName = "Job Giver";
+                            authorAvatar = jobGiver.avatarUrl;
+                        } else {
+                            authorName = anonymousIdMap.get(authorId) || `Bidder-?`;
                         }
                         
-                        return <CommentDisplay key={comment.id} comment={comment} authorName={authorName} />;
+                        return <CommentDisplay key={comment.id} comment={comment} authorName={authorName} authorAvatar={authorAvatar}/>;
                     })}
                     {canPostPublicComment && (
                          <div className="flex gap-3">
@@ -1161,7 +1177,7 @@ export default function JobDetailPage() {
         </Card>
 
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
-        {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && <BidsSection job={job} onJobUpdate={handleJobUpdate} />}
+        {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
 
       </div>
 
