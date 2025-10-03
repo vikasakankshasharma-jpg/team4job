@@ -97,6 +97,45 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
     )
 }
 
+async function fetchAllJobs() {
+    const jobsCollection = collection(db, 'jobs');
+    const jobSnapshot = await getDocs(jobsCollection);
+    
+    const userCache: { [key: string]: User } = {};
+    const getUser = async (ref: DocumentReference): Promise<User> => {
+        if (userCache[ref.id]) return userCache[ref.id];
+        const userSnap = await getDoc(ref);
+        const userData = { id: userSnap.id, ...userSnap.data() } as User;
+        userCache[ref.id] = userData;
+        return userData;
+    }
+
+    const jobList = await Promise.all(jobSnapshot.docs.map(async (jobDoc) => {
+      const jobData = jobDoc.data() as DocumentData;
+      
+      const jobGiver = await getUser(jobData.jobGiver);
+
+      const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
+            ...bid,
+            installer: await getUser(bid.installer),
+        })));
+      
+      let awardedInstaller = jobData.awardedInstaller;
+        if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
+            awardedInstaller = await getUser(awardedInstaller);
+        }
+
+      return {
+        ...jobData,
+        id: jobDoc.id,
+        jobGiver,
+        bids,
+        awardedInstaller
+      } as Job;
+    }));
+    return jobList;
+}
+
 export default function AllJobsPage() {
   const router = useRouter();
   const { role } = useUser();
@@ -114,58 +153,17 @@ export default function AllJobsPage() {
   }, [role, router]);
 
   React.useEffect(() => {
-    const fetchJobs = async () => {
+    if (role === 'Admin') {
       setLoading(true);
-      try {
-        const jobsCollection = collection(db, 'jobs');
-        const jobSnapshot = await getDocs(jobsCollection);
-        
-        const userCache: { [key: string]: User } = {};
-        const getUser = async (ref: DocumentReference): Promise<User> => {
-            if (userCache[ref.id]) return userCache[ref.id];
-            const userSnap = await getDoc(ref);
-            const userData = { id: userSnap.id, ...userSnap.data() } as User;
-            userCache[ref.id] = userData;
-            return userData;
-        }
-
-        const jobList = await Promise.all(jobSnapshot.docs.map(async (jobDoc) => {
-          const jobData = jobDoc.data() as DocumentData;
-          
-          const jobGiver = await getUser(jobData.jobGiver);
-
-          const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
-                ...bid,
-                installer: await getUser(bid.installer),
-            })));
-          
-          let awardedInstaller = jobData.awardedInstaller;
-            if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
-                awardedInstaller = await getUser(awardedInstaller);
-            }
-
-          return {
-            ...jobData,
-            id: jobDoc.id,
-            jobGiver,
-            bids,
-            awardedInstaller
-          } as Job;
-        }));
-
+      fetchAllJobs().then(jobList => {
         setJobs(jobList);
         const uniqueStatuses = Array.from(new Set(jobList.map(j => j.status)));
         setAllStatuses(['all', ...uniqueStatuses.sort()]);
-
-      } catch (error) {
-        console.error("Error fetching jobs from Firestore:", error);
-      } finally {
         setLoading(false);
-      }
-    };
-
-    if (role === 'Admin') {
-      fetchJobs();
+      }).catch(error => {
+        console.error("Error fetching jobs from Firestore:", error);
+        setLoading(false);
+      });
     }
   }, [role]);
 
