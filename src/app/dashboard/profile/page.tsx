@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useUser } from "@/hooks/use-user";
@@ -41,12 +40,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { jobs as allJobs } from "@/lib/data";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { collection, query, where, getDocs, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { allSkills } from "@/app/dashboard/jobs/page";
@@ -337,34 +336,11 @@ export default function ProfilePage() {
   const { user, role, setUser, setRole } = useUser();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   const { toast } = useToast();
-  const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
 
-  React.useEffect(() => {
-    if (role !== 'Installer' || !user?.id) {
-      setJobsCompletedCount(0);
-      return;
-    }
-
-    const fetchCompletedJobs = async () => {
-        const jobsRef = collection(db, 'jobs');
-        const userRef = doc(db, 'users', user.id); 
-
-        const q = query(
-            jobsRef,
-            where('status', '==', 'Completed'),
-            where('awardedInstaller', '==', userRef)
-        );
-
-        try {
-            const querySnapshot = await getDocs(q);
-            setJobsCompletedCount(querySnapshot.size);
-        } catch (error) {
-            console.error("Error fetching completed jobs:", error);
-        }
-    };
-
-    fetchCompletedJobs();
-  }, [user?.id, role]);
+  const jobsCompletedCount = React.useMemo(() => {
+    if (role !== 'Installer' || !user) return 0;
+    return allJobs.filter(job => job.status === 'Completed' && (job.awardedInstaller as User)?.id === user.id).length;
+  }, [user, role]);
   
   if (!user) {
     return <div>Loading...</div>;

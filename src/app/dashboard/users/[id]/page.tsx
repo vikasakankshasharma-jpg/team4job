@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,13 +19,12 @@ import { format } from "date-fns";
 import { notFound, useParams } from "next/navigation";
 import { JobCard } from "@/components/job-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { jobs as allJobs, users as allUsers } from "@/lib/data";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { collection, doc, getDoc, getDocs, query, where, DocumentReference } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
@@ -126,80 +124,23 @@ export default function UserProfilePage() {
 
   React.useEffect(() => {
     if (id) {
-        const fetchUser = async () => {
-            const userDocRef = doc(db, 'users', id);
-            const userSnap = await getDoc(userDocRef);
-            if (userSnap.exists()) {
-                const userData = userSnap.data();
-                setProfileUser({
-                    id: userSnap.id,
-                    ...userData,
-                } as User);
-            } else {
-                setProfileUser(null);
-            }
-            setLoading(false);
-        };
-        fetchUser();
-    }
-  }, [id]);
+        setLoading(true);
+        const user = allUsers.find(u => u.id === id);
+        setProfileUser(user);
 
-  React.useEffect(() => {
-    if (profileUser) {
-        const fetchUserJobs = async () => {
-
-            const userCache: { [key: string]: User } = {};
-            const getUser = async (ref: DocumentReference): Promise<User> => {
-                if (userCache[ref.id]) return userCache[ref.id];
-                const userSnap = await getDoc(ref);
-                const userData = { id: userSnap.id, ...userSnap.data() } as User;
-                userCache[ref.id] = userData;
-                return userData;
-            }
-
-            const resolveJob = async (doc: any) => {
-                const jobData = doc.data();
-                const jobGiver = await getUser(jobData.jobGiver);
-                
-                let awardedInstaller = jobData.awardedInstaller;
-                if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
-                    awardedInstaller = await getUser(awardedInstaller);
-                }
-
-                const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
-                    ...bid,
-                    installer: await getUser(bid.installer),
-                })));
-
-                return {
-                    id: doc.id,
-                    ...jobData,
-                    jobGiver,
-                    awardedInstaller,
-                    bids,
-                } as Job;
-            }
-
-            if (profileUser.roles.includes('Job Giver')) {
-                const userRef = doc(db, 'users', profileUser.id);
-                const q = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
-                const querySnapshot = await getDocs(q);
-                const postedJobs = await Promise.all(querySnapshot.docs.map(resolveJob));
+        if (user) {
+            if (user.roles.includes('Job Giver')) {
+                const postedJobs = allJobs.filter(j => (j.jobGiver as User).id === user.id);
                 setUserPostedJobs(postedJobs);
             }
-
-            if (profileUser.roles.includes('Installer')) {
-                const awardedInstallerRef = doc(db, 'users', profileUser.id);
-                const q = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', awardedInstallerRef));
-                const querySnapshot = await getDocs(q);
-                const completedJobs = await Promise.all(querySnapshot.docs.map(resolveJob));
+            if (user.roles.includes('Installer')) {
+                const completedJobs = allJobs.filter(j => j.status === 'Completed' && (j.awardedInstaller as User)?.id === user.id);
                 setUserCompletedJobs(completedJobs);
             }
-        };
-
-        fetchUserJobs();
+        }
+        setLoading(false);
     }
-  }, [profileUser]);
+  }, [id]);
 
   if (loading || profileUser === undefined) {
     return <PageSkeleton />;

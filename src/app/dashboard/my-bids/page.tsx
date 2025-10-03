@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Award, IndianRupee, ListFilter, X } from "lucide-react";
+import { jobs } from "@/lib/data";
 import { Job, Bid, User } from "@/lib/types";
 import React from "react";
 import { getStatusVariant, toDate } from "@/lib/utils";
@@ -37,8 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, doc, getDoc, DocumentReference, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
+import { DocumentReference } from "firebase/firestore";
 
 
 type MyBidRowProps = {
@@ -157,93 +157,12 @@ function MyBidsPageContent() {
   const pathname = usePathname();
   let statusFilter = searchParams.get('status');
   const { setHelp } = useHelp();
-  const [jobs, setJobs] = React.useState<Job[]>([]);
-  const [loading, setLoading] = React.useState(true);
-
-
+  
   React.useEffect(() => {
     if (role && role !== 'Admin') {
       router.push('/dashboard');
     }
   }, [role, router]);
-  
-  React.useEffect(() => {
-    const fetchMyJobs = async () => {
-        if (!user?.id || role !== 'Installer') {
-            setLoading(false);
-            return;
-        }
-        
-        setLoading(true);
-        try {
-            const userRef = doc(db, 'users', user.id);
-
-            const biddedJobsQuery = query(collection(db, 'jobs'), where('bidderIds', 'array-contains', user.id));
-            const awardedJobsQuery = query(collection(db, 'jobs'), where('awardedInstaller', '==', userRef));
-
-            const [biddedJobsSnapshot, awardedJobsSnapshot] = await Promise.all([
-                getDocs(biddedJobsQuery),
-                getDocs(awardedJobsQuery)
-            ]);
-
-            const userCache: { [key: string]: User } = {};
-            const getUser = async (ref: DocumentReference): Promise<User> => {
-                if (userCache[ref.id]) return userCache[ref.id];
-                const userSnap = await getDoc(ref);
-                const userData = { id: userSnap.id, ...userSnap.data() } as User;
-                userCache[ref.id] = userData;
-                return userData;
-            }
-            
-            const processSnapshot = async (snapshot: typeof biddedJobsSnapshot) => {
-                 const jobListPromises = snapshot.docs.map(async (jobDoc) => {
-                    const jobData = jobDoc.data();
-
-                    try {
-                        const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
-                            ...bid,
-                            installer: await getUser(bid.installer),
-                        })));
-
-                        let awardedInstaller = jobData.awardedInstaller;
-                        if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
-                            awardedInstaller = await getUser(awardedInstaller);
-                        }
-                        
-                        const jobGiver = await getUser(jobData.jobGiver);
-
-                        return {
-                            id: jobDoc.id,
-                            ...jobData,
-                            jobGiver,
-                            bids,
-                            awardedInstaller,
-                        } as Job;
-                    } catch(e) {
-                        console.error(`Skipping job ${jobDoc.id} due to error:`, e);
-                        return null;
-                    }
-                });
-                return (await Promise.all(jobListPromises)).filter((j): j is Job => j !== null);
-            }
-
-            const biddedJobs = await processSnapshot(biddedJobsSnapshot);
-            const awardedJobs = await processSnapshot(awardedJobsSnapshot);
-
-            const allJobsMap = new Map<string, Job>();
-            biddedJobs.forEach(job => allJobsMap.set(job.id, job));
-            awardedJobs.forEach(job => allJobsMap.set(job.id, job));
-            
-            setJobs(Array.from(allJobsMap.values()));
-
-        } catch (error) {
-            console.error("Error fetching jobs and bids:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-    fetchMyJobs();
-}, [user?.id, role]);
 
   React.useEffect(() => {
     setHelp({
@@ -282,10 +201,10 @@ function MyBidsPageContent() {
       statusFilter = 'Completed & Won';
   }
   
-  if (role === 'Admin' || (role && role !== 'Installer' && !loading)) {
+  if (role === 'Admin' || (role && role !== 'Installer')) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">{!user && loading ? 'Loading...' : 'This page is for Installers only.'}</p>
+        <p className="text-muted-foreground">This page is for Installers only.</p>
       </div>
     );
   }
@@ -410,13 +329,7 @@ function MyBidsPageContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
-                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">
-                    Loading your bids from Firestore...
-                  </TableCell>
-                </TableRow>
-              ) : filteredBids.length > 0 ? (
+              {filteredBids.length > 0 ? (
                 filteredBids.map(bid => {
                   const job = jobs.find(j => j.id === bid.jobId);
                   return <MyBidRow key={bid.id} bid={bid} job={job} user={user} />

@@ -12,9 +12,8 @@ import {
 import { useUser } from "@/hooks/use-user";
 import { Download, Users, Briefcase, IndianRupee, FileText } from "lucide-react";
 import React from "react";
-import { collection, getDocs, query, where, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
-import { Job, User, Bid } from "@/lib/types";
+import { jobs, users, Bid } from "@/lib/data";
+import { Job, User } from "@/lib/types";
 import { toDate, exportToCsv } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -80,9 +79,7 @@ export default function ReportsPage() {
   
   // Admin Report Generators
   const generateAllUsersReport = async () => {
-    const usersSnapshot = await getDocs(collection(db, "users"));
-    const data = usersSnapshot.docs.map(doc => {
-      const user = doc.data() as User;
+    const data = users.map(user => {
       return {
         ID: user.id,
         Name: user.name,
@@ -101,9 +98,7 @@ export default function ReportsPage() {
   };
 
   const generateAllJobsReport = async () => {
-    const jobsSnapshot = await getDocs(collection(db, "jobs"));
-    const data = jobsSnapshot.docs.map(doc => {
-      const job = doc.data() as Job;
+    const data = jobs.map(job => {
       const jobGiver = (job.jobGiver as User)?.id;
       const awardedInstaller = (job.awardedInstaller as User)?.id;
       return {
@@ -125,14 +120,9 @@ export default function ReportsPage() {
   // Installer Report Generators
   const generateEarningsReport = async () => {
     if (!user) return { data: [], filename: '' };
-    const q = query(
-      collection(db, "jobs"),
-      where("awardedInstaller", "==", doc(db, "users", user.id)),
-      where("status", "==", "Completed")
-    );
-    const snapshot = await getDocs(q);
-    const data = snapshot.docs.map(d => {
-      const job = d.data() as Job;
+    const myCompletedJobs = jobs.filter(job => job.status === "Completed" && (job.awardedInstaller as User)?.id === user.id);
+    
+    const data = myCompletedJobs.map(job => {
       const winningBid = job.bids.find(b => ((b.installer as User)?.id) === user.id);
       return {
         JobID: job.id,
@@ -141,16 +131,16 @@ export default function ReportsPage() {
         YourBidAmount: winningBid?.amount || 'Direct Award',
       };
     });
+
     return { data, filename: `earnings-report-${user.id}-${new Date().toISOString().split('T')[0]}.csv` };
   };
 
   // Job Giver Report Generators
   const generateMyJobsReport = async () => {
     if (!user) return { data: [], filename: '' };
-    const q = query(collection(db, "jobs"), where("jobGiver", "==", doc(db, "users", user.id)));
-    const snapshot = await getDocs(q);
-    const data = snapshot.docs.map(d => {
-      const job = d.data() as Job;
+    const myJobs = jobs.filter(job => (job.jobGiver as User)?.id === user.id);
+
+    const data = myJobs.map(job => {
       return {
         JobID: job.id,
         JobTitle: job.title,

@@ -61,13 +61,13 @@ import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { jobs as allJobs } from "@/lib/data";
 import { Bid, Job, Comment, User, JobAttachment, PrivateMessage } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, DocumentReference, addDoc, collection, writeBatch, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
+import { DocumentReference } from "firebase/firestore";
 
 
 function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
@@ -76,25 +76,11 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
 
   const handleCompleteJob = async () => {
     if (otp === job.completionOtp) {
-      const batch = writeBatch(db);
-      
-      const jobRef = doc(db, "jobs", job.id);
       const updatedJobData = { 
         status: 'Completed' as const,
         rating: 5, // Default rating, can be changed by job giver
       };
-      batch.update(jobRef, updatedJobData);
-
-      const transactionRef = doc(db, "transactions", `txn-${job.id}`);
-      const transactionUpdate = {
-        status: 'Released' as const,
-        releasedAt: new Date(),
-      };
-      batch.update(transactionRef, transactionUpdate);
-
-
-      await batch.commit();
-
+      
       onJobUpdate(updatedJobData);
       
       toast({
@@ -191,30 +177,16 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
       toast({ title: "Missing Information", description: "Please provide both a bid amount and a proposal.", variant: "destructive" });
       return;
     }
-    const newBid: Omit<Bid, 'id' | 'installer'> & { installer: DocumentReference } = {
+    const newBid: Bid = {
+      id: `bid-${job.id}-${user.id}`, // Mock id
       amount: Number(bidAmount),
       timestamp: new Date(),
       coverLetter: bidProposal,
-      installer: doc(db, 'users', user.id)
+      installer: user
     };
     
-    const jobRef = doc(db, "jobs", job.id);
-    
-    const batch = writeBatch(db);
-    batch.update(jobRef, {
-        bids: arrayUnion(newBid),
-        bidderIds: arrayUnion(user.id)
-    });
-    await batch.commit();
-
-    const fullNewBid: Bid = {
-        ...newBid,
-        id: `bid-${job.id}-${user.id}`, // Mock id
-        installer: user, // Add full user object for UI update
-    };
-
     onJobUpdate({ 
-        bids: [...(job.bids || []), fullNewBid],
+        bids: [...(job.bids || []), newBid],
         bidderIds: [...(job.bidderIds || []), user.id] 
     });
 
@@ -305,34 +277,16 @@ function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer
     const handleFundEscrow = async () => {
         if (!winningBid) return;
         
-        const batch = writeBatch(db);
-        
-        const jobRef = doc(db, "jobs", job.id);
         const acceptanceDeadline = new Date();
         acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
 
         const jobUpdate = {
-            awardedInstaller: doc(db, 'users', installer.id),
+            awardedInstaller: installer,
             status: 'Awarded' as const,
             acceptanceDeadline,
         };
-        batch.update(jobRef, jobUpdate);
         
-        const transactionRef = doc(db, "transactions", `txn-${job.id}`);
-        const transactionData = {
-            id: `txn-${job.id}`,
-            jobId: job.id,
-            payerId: (job.jobGiver as User).id,
-            payeeId: installer.id,
-            amount: winningBid.amount,
-            status: 'Funded' as const,
-            createdAt: new Date(),
-        };
-        batch.set(transactionRef, transactionData);
-        
-        await batch.commit();
-
-        onJobUpdate({ ...jobUpdate, status: 'Awarded', awardedInstaller: doc(db, 'users', installer.id), acceptanceDeadline });
+        onJobUpdate(jobUpdate);
 
         toast({
             title: "Escrow Funded & Job Awarded!",
@@ -626,8 +580,6 @@ function EditDateDialog({ job, onJobUpdate, triggerElement }: { job: Job; onJobU
 
     const handleSave = async () => {
         if (newDate) {
-            const jobRef = doc(db, "jobs", job.id);
-            await updateDoc(jobRef, { jobStartDate: new Date(newDate) });
             onJobUpdate({ jobStartDate: new Date(newDate) });
             toast({
                 title: "Date Updated",
@@ -682,45 +634,15 @@ function RaiseDisputeDialog({ job, user, onJobUpdate, triggerElement }: { job: J
             return;
         }
         setIsSubmitting(true);
-        try {
-            const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
-            const jobGiverId = (job.jobGiver as DocumentReference)?.id || (job.jobGiver as User)?.id;
-
-            const disputeData = {
-                jobId: job.id,
-                jobTitle: job.title,
-                status: 'Open' as const,
-                reason,
-                parties: {
-                    jobGiverId,
-                    installerId: awardedInstallerId,
-                },
-                messages: [{
-                    authorId: user.id,
-                    authorRole: user.roles[0],
-                    content: reason,
-                    timestamp: new Date()
-                }],
-                createdAt: new Date(),
-            };
-
-            const disputeRef = await addDoc(collection(db, "disputes"), disputeData);
-            const jobRef = doc(db, "jobs", job.id);
-            await updateDoc(jobRef, { disputeId: disputeRef.id });
-
-            onJobUpdate({ disputeId: disputeRef.id });
-
-            toast({
-                title: "Dispute Raised Successfully",
-                description: "An admin will review your case shortly. You can view the dispute from this page.",
-            });
-            setIsOpen(false);
-        } catch (error) {
-            console.error("Error raising dispute:", error);
-            toast({ title: "Failed to raise dispute", variant: "destructive" });
-        } finally {
-            setIsSubmitting(false);
-        }
+        // Mocking the creation of a dispute
+        const newDisputeId = `DISPUTE-${Date.now()}`;
+        onJobUpdate({ disputeId: newDisputeId });
+        toast({
+            title: "Dispute Raised Successfully",
+            description: "An admin will review your case shortly. You can view the dispute from this page.",
+        });
+        setIsOpen(false);
+        setIsSubmitting(false);
     };
 
     return (
@@ -783,18 +705,13 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
     }, [job.acceptanceDeadline]);
 
     const handleAccept = async () => {
-        const jobRef = doc(db, "jobs", job.id);
         const update = { status: 'In Progress' as const };
-        await updateDoc(jobRef, update);
         onJobUpdate(update);
         toast({ title: 'Job Accepted!', description: 'You can now start communicating with the Job Giver.' });
     };
     
     const handleDecline = async () => {
-        // In a real app, this would also update installer's reputation points.
-        const jobRef = doc(db, "jobs", job.id);
-        const update = { status: 'Open for Bidding' as const, awardedInstaller: null, acceptanceDeadline: null };
-        await updateDoc(jobRef, update);
+        const update = { status: 'Open for Bidding' as const, awardedInstaller: undefined, acceptanceDeadline: undefined };
         onJobUpdate(update);
         toast({ title: 'Job Declined', description: 'The job is now open for bidding again.', variant: 'destructive' });
     };
@@ -865,76 +782,12 @@ export default function JobDetailPage() {
   const [deadlineRelative, setDeadlineRelative] = React.useState('');
   const [deadlineAbsolute, setDeadlineAbsolute] = React.useState('');
 
-   React.useEffect(() => {
-    if (!id) return;
+  React.useEffect(() => {
     setLoading(true);
-
-    const fetchJob = async () => {
-        try {
-            const jobDocRef = doc(db, 'jobs', id);
-            const jobSnapshot = await getDoc(jobDocRef);
-
-            if (!jobSnapshot.exists()) {
-                setJob(null);
-                setLoading(false);
-                return;
-            }
-            
-            const jobData = jobSnapshot.data();
-            
-            const userCache: { [key: string]: User } = {};
-            const getUser = async (ref: DocumentReference): Promise<User> => {
-                if (userCache[ref.id]) return userCache[ref.id];
-                const userSnap = await getDoc(ref);
-                const userData = { id: userSnap.id, ...userSnap.data() } as User;
-                userCache[ref.id] = userData;
-                return userData;
-            }
-
-            const jobGiver = await getUser(jobData.jobGiver);
-
-            const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
-                ...bid,
-                id: `${id}-${bid.installer.id}`,
-                installer: await getUser(bid.installer),
-            })));
-
-            const comments = await Promise.all((jobData.comments || []).map(async (comment: any) => ({
-                ...comment,
-                id: `comment-${doc(db, 'temp').id}`,
-                author: await getUser(comment.author),
-            })));
-            
-            const privateMessages = await Promise.all((jobData.privateMessages || []).map(async (message: any) => ({
-                ...message,
-                id: `pm-${doc(db, 'temp').id}`,
-                author: await getUser(message.author),
-            })));
-
-            let awardedInstaller = jobData.awardedInstaller;
-            if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
-                awardedInstaller = await getUser(awardedInstaller);
-            }
-
-            setJob({
-                ...jobData,
-                id: jobSnapshot.id,
-                jobGiver,
-                bids,
-                comments,
-                privateMessages,
-                awardedInstaller,
-            } as Job);
-        } catch (error) {
-            console.error("Failed to fetch job details:", error);
-            setJob(null);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    fetchJob();
-}, [id]);
+    const foundJob = allJobs.find((j) => j.id === id);
+    setJob(foundJob || null);
+    setLoading(false);
+  }, [id]);
 
   const jobStartDate = React.useMemo(() => {
     if (job?.jobStartDate) {
@@ -976,24 +829,14 @@ export default function JobDetailPage() {
   const handlePostComment = async () => {
     if (!newComment.trim() || !user || !job) return;
 
-    const newCommentObject: Omit<Comment, 'id' | 'author'> & {author: DocumentReference} = {
-      author: doc(db, 'users', user.id),
+    const newCommentObject: Comment = {
+      id: `comment-${Date.now()}`,
+      author: user,
       timestamp: new Date(),
       content: newComment,
     };
     
-    const jobRef = doc(db, "jobs", job.id);
-    await updateDoc(jobRef, {
-        comments: arrayUnion(newCommentObject)
-    });
-
-    const fullNewComment: Comment = {
-      ...newCommentObject,
-      id: `comment-${Date.now()}`,
-      author: user,
-    };
-    
-    handleJobUpdate({ comments: [...(job.comments || []), fullNewComment] });
+    handleJobUpdate({ comments: [...(job.comments || []), newCommentObject] });
 
     setNewComment("");
      toast({
@@ -1014,8 +857,6 @@ export default function JobDetailPage() {
   const handlePostPrivateMessage = async () => {
     if ((!newPrivateMessage.trim() && privateMessageAttachments.length === 0) || !user || !job) return;
 
-    const jobRef = doc(db, "jobs", job.id);
-    
     // Mock upload process for attachments
     const uploadedAttachments: JobAttachment[] = privateMessageAttachments.map(file => ({
         fileName: file.name,
@@ -1023,25 +864,16 @@ export default function JobDetailPage() {
         fileType: file.type,
     }));
 
-    const newMessageObject: Omit<PrivateMessage, 'id' | 'author'> & {author: DocumentReference} = {
-      author: doc(db, 'users', user.id),
+    const newMessageObject: PrivateMessage = {
+      id: `pm-${Date.now()}`,
+      author: user,
       timestamp: new Date(),
       content: newPrivateMessage,
       attachments: uploadedAttachments,
     };
     
-    await updateDoc(jobRef, {
-        privateMessages: arrayUnion(newMessageObject)
-    });
-
-    const fullNewMessage: PrivateMessage = {
-      ...newMessageObject,
-      id: `pm-${Date.now()}`,
-      author: user,
-    };
-    
     handleJobUpdate({ 
-        privateMessages: [...(job.privateMessages || []), fullNewMessage],
+        privateMessages: [...(job.privateMessages || []), newMessageObject],
     });
 
     setNewPrivateMessage("");
@@ -1396,5 +1228,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
