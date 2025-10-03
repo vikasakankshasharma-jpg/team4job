@@ -36,6 +36,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { MapInput } from "@/components/ui/map-input";
+import { LocationInput } from "@/components/ui/location-input";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
@@ -47,6 +48,7 @@ const formSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters." }),
   role: z.enum(["Job Giver", "Installer", "Both (Job Giver & Installer)"]),
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
+  location: z.string().min(8, { message: "Please select a pincode and post office." }),
   fullAddress: z.string().min(10, { message: "Please select a valid address." }),
   aadhar: z.string().optional(),
   otp: z.string().optional(),
@@ -70,6 +72,7 @@ export function SignUpForm() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
     if (currentStep === "photo") {
@@ -92,6 +95,7 @@ export function SignUpForm() {
       password: "",
       role: undefined,
       mobile: "",
+      location: "",
       fullAddress: "",
       aadhar: "",
       otp: "",
@@ -489,10 +493,18 @@ export function SignUpForm() {
             </FormItem>
           )}
         />
+        <LocationInput
+            name="location"
+            label="Location (Pincode)"
+            placeholder="e.g. 110001"
+            control={form.control}
+            onLocationGeocoded={setMapCenter}
+        />
         <MapInput
             name="fullAddress"
             label="Residential Address"
             control={form.control}
+            center={mapCenter}
         />
         <div className="flex gap-2">
             <Button variant="outline" onClick={() => setCurrentStep('photo')} className="w-full">Back</Button>
