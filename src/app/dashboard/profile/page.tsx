@@ -340,7 +340,7 @@ export default function ProfilePage() {
   const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
 
   React.useEffect(() => {
-    if (role !== 'Installer' || !user) {
+    if (role !== 'Installer' || !user?.id) {
       setJobsCompletedCount(0);
       return;
     }
@@ -364,7 +364,7 @@ export default function ProfilePage() {
     };
 
     fetchCompletedJobs();
-  }, [user, role]);
+  }, [user?.id, role]);
   
   if (!user) {
     return <div>Loading...</div>;

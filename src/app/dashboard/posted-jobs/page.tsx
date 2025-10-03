@@ -147,50 +147,6 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
   )
 }
 
-const fetchPostedJobs = async (user: User) => {
-    try {
-        const userRef = doc(db, 'users', user.id);
-        const jobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
-        const querySnapshot = await getDocs(jobsQuery);
-
-        const userCache: { [key: string]: User } = {};
-        const getUser = async (ref: DocumentReference): Promise<User> => {
-            if (userCache[ref.id]) return userCache[ref.id];
-            const userSnap = await getDoc(ref);
-            const userData = { id: userSnap.id, ...userSnap.data() } as User;
-            userCache[ref.id] = userData;
-            return userData;
-        }
-
-        const userJobsPromises = querySnapshot.docs.map(async (jobDoc) => {
-            const jobData = jobDoc.data();
-
-            const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
-                ...bid,
-                installer: await getUser(bid.installer),
-            })));
-
-            let awardedInstaller = null;
-            if (jobData.awardedInstaller && jobData.awardedInstaller instanceof DocumentReference) {
-                awardedInstaller = await getUser(jobData.awardedInstaller);
-            }
-
-            return {
-              id: jobDoc.id,
-              ...jobData,
-              bids,
-              awardedInstaller
-            } as Job;
-        });
-
-        const userJobs = await Promise.all(userJobsPromises);
-        return userJobs;
-    } catch (err) {
-        console.error("Error fetching posted jobs:", err);
-        return [];
-    }
-};
-
 export default function PostedJobsPage() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "active";
@@ -201,21 +157,64 @@ export default function PostedJobsPage() {
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
-    if (role === 'Admin') {
+    if (role && role !== 'Admin') {
       router.push('/dashboard');
     }
   }, [role, router]);
 
   React.useEffect(() => {
-    if (user && role === 'Job Giver') {
-      setLoading(true);
-      fetchPostedJobs(user).then(userJobs => {
-          setJobs(userJobs);
-          setLoading(false);
-      });
-    } else if (role && role !== 'Job Giver') {
-        setLoading(false);
-    }
+      const fetchPostedJobs = async () => {
+        if (!user || role !== 'Job Giver') {
+            setLoading(false);
+            return;
+        };
+
+        setLoading(true);
+        try {
+            const userRef = doc(db, 'users', user.id);
+            const jobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
+            const querySnapshot = await getDocs(jobsQuery);
+
+            const userCache: { [key: string]: User } = {};
+            const getUser = async (ref: DocumentReference): Promise<User> => {
+                if (userCache[ref.id]) return userCache[ref.id];
+                const userSnap = await getDoc(ref);
+                const userData = { id: userSnap.id, ...userSnap.data() } as User;
+                userCache[ref.id] = userData;
+                return userData;
+            }
+
+            const userJobsPromises = querySnapshot.docs.map(async (jobDoc) => {
+                const jobData = jobDoc.data();
+
+                const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
+                    ...bid,
+                    installer: await getUser(bid.installer),
+                })));
+
+                let awardedInstaller = null;
+                if (jobData.awardedInstaller && jobData.awardedInstaller instanceof DocumentReference) {
+                    awardedInstaller = await getUser(jobData.awardedInstaller);
+                }
+
+                return {
+                  id: jobDoc.id,
+                  ...jobData,
+                  bids,
+                  awardedInstaller
+                } as Job;
+            });
+
+            const userJobs = await Promise.all(userJobsPromises);
+            setJobs(userJobs);
+        } catch (err) {
+            console.error("Error fetching posted jobs:", err);
+            setJobs([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+    fetchPostedJobs();
   }, [user, role]);
 
    React.useEffect(() => {
@@ -243,7 +242,7 @@ export default function PostedJobsPage() {
     });
   }, [setHelp]);
   
-  if (role === 'Admin' || (role && role !== 'Job Giver')) {
+  if (role === 'Admin' || (role && role !== 'Job Giver' && !loading)) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">Redirecting...</p>
@@ -294,5 +293,3 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
-
-    
