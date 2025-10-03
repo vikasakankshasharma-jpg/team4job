@@ -393,7 +393,7 @@ function JobGiverBid({ bid, job, onJobUpdate, rank }: { bid: Bid, job: Job, onJo
     }, [bid.timestamp]);
 
     const isAdmin = role === 'Admin';
-    const showRealIdentity = isAdmin || isAwardedToThisBidder || job.status === 'Completed';
+    const showRealIdentity = isAdmin || isAwardedToThisBidder;
 
     const installerName = showRealIdentity ? installer.name : `Bidder #${rank}`;
 
@@ -411,7 +411,7 @@ function JobGiverBid({ bid, job, onJobUpdate, rank }: { bid: Bid, job: Job, onJo
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
-                           {isAdmin ? (
+                           {isAdmin || showRealIdentity ? (
                                 <Link href={`/dashboard/users/${installer.id}`} className="font-semibold hover:underline">{installerName}</Link>
                            ) : (
                                 <p className="font-semibold">{installerName}</p>
@@ -977,8 +977,8 @@ export default function JobDetailPage() {
                         <AvatarFallback>{jobGiver.name.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <p className="text-sm font-semibold">{jobGiver.name}</p>
-                        <p className="text-xs text-muted-foreground">Job Giver (Member since {format(toDate(jobGiver.memberSince), 'MMM yyyy')})</p>
+                        <p className="text-sm font-semibold">Job Giver</p>
+                        <p className="text-xs text-muted-foreground font-mono">{jobGiver.id}</p>
                     </div>
                 </div>
             </div>

@@ -79,9 +79,9 @@ export function JobCard({ job }: JobCardProps) {
               <AvatarFallback>{jobGiver.id.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold text-sm text-foreground">{jobGiver.name}</p>
-              <p className="text-xs text-muted-foreground">
-                Member since {format(toDate(jobGiver.memberSince), 'MMM yyyy')}
+              <p className="font-semibold text-sm text-foreground">Job Giver</p>
+              <p className="text-xs text-muted-foreground font-mono">
+                {jobGiver.id}
               </p>
             </div>
         </div>
