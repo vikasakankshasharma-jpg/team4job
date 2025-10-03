@@ -55,7 +55,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
         ? job.awardedInstaller.id 
         : (job.awardedInstaller as User).id;
 
-    const bidderIds = job.bids.map(b => {
+    const bidderIds = (job.bids || []).map(b => {
         return b.installer instanceof DocumentReference ? b.installer.id : (b.installer as User).id
     });
     
@@ -98,7 +98,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
                     <TableCell>
                       <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{job.bids.length}</TableCell>
+                    <TableCell className="hidden md:table-cell">{(job.bids || []).length}</TableCell>
                     <TableCell className="hidden md:table-cell">
                       {getJobType(job)}
                     </TableCell>

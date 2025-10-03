@@ -176,14 +176,20 @@ function MyBidsPageContent() {
             const jobsRef = collection(db, 'jobs');
             
             const q = query(jobsRef, or(
-                where('bidderIds', 'array-contains', user.id),
+                where('bids', 'array-contains', { installer: userRef }), // This is a simplified query, Firestore doesn't support this directly on arrays of objects
                 where('awardedInstaller', '==', userRef)
             ));
 
-            const querySnapshot = await getDocs(q);
-            
-            const jobList = await Promise.all(querySnapshot.docs.map(async (doc) => {
+            // Due to Firestore limitations, we fetch more broadly and filter client-side
+            const allJobsSnapshot = await getDocs(collection(db, 'jobs'));
+            const jobList = await Promise.all(allJobsSnapshot.docs.map(async (doc) => {
                 const jobData = doc.data();
+
+                // Check if user is involved
+                const isAwardedToMe = (jobData.awardedInstaller as DocumentReference)?.id === user.id;
+                const hasBid = (jobData.bids || []).some((bid: any) => bid.installer.id === user.id);
+                if (!isAwardedToMe && !hasBid) return null;
+
                 
                 const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => {
                     const installerSnap = await getDoc(bid.installer);
@@ -214,18 +220,7 @@ function MyBidsPageContent() {
                 } as Job;
             }));
 
-            // Additional client-side filter for direct awards that might not have bids
-             const allJobsSnapshot = await getDocs(collection(db, 'jobs'));
-             const allJobs = allJobsSnapshot.docs.map(doc => doc.data() as Job);
-             const directAwards = allJobs.filter(job => {
-                const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
-                return awardedId === user.id && (!job.bids || job.bids.length === 0);
-             });
-
-            const combinedJobs = [...jobList, ...directAwards];
-            const uniqueJobs = Array.from(new Map(combinedJobs.map(job => [job.id, job])).values());
-            
-            setJobs(uniqueJobs);
+            setJobs(jobList.filter((j): j is Job => j !== null));
 
         } catch (error) {
             console.error("Error fetching jobs and bids:", error);
@@ -300,7 +295,7 @@ function MyBidsPageContent() {
   };
   
  const myBids = jobs.map(job => {
-    const myBid = job.bids.find(bid => (bid.installer as User).id === user.id);
+    const myBid = (job.bids || []).find(bid => (bid.installer as User).id === user.id);
     const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
     const isAwardedToMe = awardedId === user.id;
 
@@ -308,7 +303,7 @@ function MyBidsPageContent() {
       return {
         id: myBid?.id || `direct-award-${job.id}`,
         installer: user,
-        amount: myBid?.amount || (isAwardedToMe ? job.bids.find(b => ((b.installer as User).id === awardedId))?.amount || 0 : 0),
+        amount: myBid?.amount || (isAwardedToMe ? (job.bids || []).find(b => ((b.installer as User).id === awardedId))?.amount || 0 : 0),
         timestamp: myBid?.timestamp || toDate(job.postedAt),
         coverLetter: myBid?.coverLetter || "Job awarded directly.",
         jobTitle: job.title,

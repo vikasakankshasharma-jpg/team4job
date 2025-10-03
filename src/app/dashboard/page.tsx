@@ -44,16 +44,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 const jobStatusColors: { [key: string]: string } = {
   'Open for Bidding': 'hsl(var(--success))',
   'In Progress': 'hsl(var(--info))',
-  'Awarded': 'hsl(var(--info))',
+  'Awarded': 'hsl(var(--primary))',
   'Bidding Closed': 'hsl(var(--warning))',
   'Completed': 'hsl(var(--secondary-foreground))',
   'Cancelled': 'hsl(var(--destructive))',
+  'Unbid': 'hsl(var(--muted-foreground))',
 };
 
 const bidStatusColors: { [key: string]: string } = {
   'Bidded': 'hsl(var(--info))',
   'Awarded': 'hsl(var(--success))',
-  'Completed & Won': 'hsl(var(--primary))',
+  'In Progress': 'hsl(var(--primary))',
+  'Completed & Won': 'hsl(var(--success))',
   'Not Selected': 'hsl(var(--destructive))',
   'Cancelled': 'hsl(var(--muted-foreground))',
 };
@@ -93,10 +95,10 @@ function InstallerDashboard() {
       
       let myBidsCount = 0;
       let jobsWonCount = 0;
-      const bidStatuses: { [key: string]: number } = { 'Bidded': 0, 'Awarded': 0, 'Completed & Won': 0, 'Not Selected': 0, 'Cancelled': 0 };
+      const bidStatuses: { [key: string]: number } = { 'Bidded': 0, 'Awarded': 0, 'In Progress': 0, 'Completed & Won': 0, 'Not Selected': 0, 'Cancelled': 0 };
 
       allJobs.forEach(job => {
-          const myBid = job.bids.some(bid => (bid.installer as DocumentReference).id === user.id);
+          const myBid = (job.bids || []).some(bid => (bid.installer as DocumentReference).id === user.id);
           const awardedId = (job.awardedInstaller as DocumentReference)?.id;
           const isAwardedToMe = awardedId === user.id;
 
@@ -105,7 +107,8 @@ function InstallerDashboard() {
               
               if (isAwardedToMe) {
                   if (job.status === 'Completed') bidStatuses['Completed & Won']++;
-                  else if(job.status === 'Awarded' || job.status === 'In Progress') bidStatuses['Awarded']++;
+                  else if (job.status === 'In Progress') bidStatuses['In Progress']++;
+                  else if(job.status === 'Awarded') bidStatuses['Awarded']++;
               } else if (job.status === 'Open for Bidding') {
                   bidStatuses['Bidded']++;
               } else if (job.status === 'Cancelled') {
@@ -277,7 +280,7 @@ function JobGiverDashboard() {
       let active = 0;
       let completed = 0;
       let bids = 0;
-      const statuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Completed': 0, 'Cancelled': 0 };
+      const statuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Awarded': 0, 'Completed': 0, 'Cancelled': 0, 'Unbid': 0, 'Bidding Closed': 0 };
 
       jobsSnapshot.forEach(jobDoc => {
         const job = jobDoc.data() as Job;
@@ -290,7 +293,7 @@ function JobGiverDashboard() {
         if (statuses[job.status] !== undefined) {
            statuses[job.status]++;
         }
-        bids += job.bids?.length || 0;
+        bids += (job.bids || []).length;
       });
       
       setStats({ activeJobs: active, completedJobs: completed, totalBids: bids });
@@ -463,7 +466,7 @@ function AdminDashboard() {
         let completedValue = 0;
         let openDisputes = 0;
         
-        const jobStatuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Completed': 0, 'Cancelled': 0, 'Bidding Closed': 0, 'Awarded': 0 };
+        const jobStatuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Completed': 0, 'Cancelled': 0, 'Bidding Closed': 0, 'Awarded': 0, 'Unbid': 0 };
         const disputeStatuses: { [key: string]: number } = { 'Open': 0, 'Under Review': 0, 'Resolved': 0 };
 
         const activityData: { [key: string]: { jobs: number, bids: number, value: number } } = {};
@@ -488,12 +491,12 @@ function AdminDashboard() {
 
             if (activityData[jobMonth]) {
                 activityData[jobMonth].jobs++;
-                activityData[jobMonth].bids += job.bids?.length || 0;
+                activityData[jobMonth].bids += (job.bids || []).length;
             }
 
             if (job.status === 'Completed' && job.awardedInstaller) {
                 const awardedId = (job.awardedInstaller as DocumentReference).id;
-                const winningBid = job.bids.find(bid => (bid.installer as DocumentReference).id === awardedId);
+                const winningBid = (job.bids || []).find(bid => (bid.installer as DocumentReference).id === awardedId);
                 if (winningBid) {
                     completedValue += winningBid.amount;
                     if (activityData[jobMonth]) {
@@ -525,7 +528,7 @@ function AdminDashboard() {
         });
 
         setUserGrowthData(last6Months.map(month => ({ month, users: growthData[month] || 0 })));
-        setJobStatusData(Object.entries(jobStatuses).map(([name, value]) => ({ name, count: value })));
+        setJobStatusData(Object.entries(jobStatuses).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] })));
         setDisputeStatusData(Object.entries(disputeStatuses).map(([name, value]) => ({ name, count: value, fill: disputeStatusColors[name] })));
         setPlatformActivityData(Object.entries(activityData).map(([month, data]) => ({ month, ...data })));
         setStats({ totalUsers, totalJobs, openDisputes, completedJobValue: completedValue });
