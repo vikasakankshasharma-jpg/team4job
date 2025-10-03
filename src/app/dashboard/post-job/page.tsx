@@ -321,7 +321,8 @@ export default function PostJobPage() {
                       Add Attachments
                   </Button>
               </div>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <Separator />
+               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                  <LocationInput
                     name="location"
                     label="Location (Pincode)"
@@ -335,7 +336,10 @@ export default function PostJobPage() {
                     control={form.control}
                     center={mapCenter}
                   />
-                 <FormField
+                </div>
+                 <Separator />
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField
                     control={form.control}
                     name="deadline"
                     render={({ field }) => (
