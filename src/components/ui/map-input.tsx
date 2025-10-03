@@ -3,10 +3,11 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useFormContext, useController, Control, useWatch } from 'react-hook-form';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { GoogleMap, Marker } from '@react-google-maps/api';
 import { FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
+import { useGoogleMaps } from '@/hooks/use-google-maps';
 const debounce = require('lodash.debounce');
 
 const containerStyle = {
@@ -35,11 +36,7 @@ export function MapInput({ name, label, control, center: propCenter }: MapInputP
   const [marker, setMarker] = useState<google.maps.LatLngLiteral | null>(propCenter);
   const [center, setCenter] = useState(propCenter || defaultCenter);
 
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: ['places', 'geocoding'],
-  });
+  const { isLoaded } = useGoogleMaps();
 
   const geocodeAddress = useCallback(
     (address: string) => {
