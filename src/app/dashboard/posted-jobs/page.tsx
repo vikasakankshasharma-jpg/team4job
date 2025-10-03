@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -61,7 +62,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
 
     const bidderIds = (job.bids || []).map(b => (b.installer as User).id);
     
-    return bidderIds.includes(awardedInstallerId) ? 'Bidding' : 'Direct';
+    return bidderIds.includes(awardedInstallerId as string) ? 'Bidding' : 'Direct';
   };
 
   return (
@@ -146,6 +147,49 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
   )
 }
 
+const fetchPostedJobs = async (user: User) => {
+    try {
+        const userRef = doc(db, 'users', user.id);
+        const jobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
+        const querySnapshot = await getDocs(jobsQuery);
+
+        const userCache: { [key: string]: User } = {};
+        const getUser = async (ref: DocumentReference): Promise<User> => {
+            if (userCache[ref.id]) return userCache[ref.id];
+            const userSnap = await getDoc(ref);
+            const userData = { id: userSnap.id, ...userSnap.data() } as User;
+            userCache[ref.id] = userData;
+            return userData;
+        }
+
+        const userJobsPromises = querySnapshot.docs.map(async (jobDoc) => {
+            const jobData = jobDoc.data();
+
+            const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
+                ...bid,
+                installer: await getUser(bid.installer),
+            })));
+
+            let awardedInstaller = null;
+            if (jobData.awardedInstaller && jobData.awardedInstaller instanceof DocumentReference) {
+                awardedInstaller = await getUser(jobData.awardedInstaller);
+            }
+
+            return {
+              id: jobDoc.id,
+              ...jobData,
+              bids,
+              awardedInstaller
+            } as Job;
+        });
+
+        const userJobs = await Promise.all(userJobsPromises);
+        return userJobs;
+    } catch (err) {
+        console.error("Error fetching posted jobs:", err);
+        return [];
+    }
+};
 
 export default function PostedJobsPage() {
   const searchParams = useSearchParams();
@@ -165,52 +209,11 @@ export default function PostedJobsPage() {
   React.useEffect(() => {
     if (user && role === 'Job Giver') {
       setLoading(true);
-      const fetchPostedJobs = async () => {
-        try {
-          const userRef = doc(db, 'users', user.id);
-          const jobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
-          const querySnapshot = await getDocs(jobsQuery);
-
-          const userCache: { [key: string]: User } = {};
-          const getUser = async (ref: DocumentReference): Promise<User> => {
-              if (userCache[ref.id]) return userCache[ref.id];
-              const userSnap = await getDoc(ref);
-              const userData = { id: userSnap.id, ...userSnap.data() } as User;
-              userCache[ref.id] = userData;
-              return userData;
-          }
-
-          const userJobs = await Promise.all(querySnapshot.docs.map(async (doc) => {
-            const jobData = doc.data();
-
-            const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
-                ...bid,
-                installer: await getUser(bid.installer),
-            })));
-
-            let awardedInstaller = jobData.awardedInstaller;
-            if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
-                awardedInstaller = await getUser(awardedInstaller);
-            }
-
-            return {
-              id: doc.id,
-              ...jobData,
-              bids,
-              awardedInstaller
-            } as Job
-          }));
-
+      fetchPostedJobs(user).then(userJobs => {
           setJobs(userJobs);
-        } catch (err) {
-            console.error("Error fetching posted jobs:", err);
-        } finally {
-            setLoading(false);
-        }
-      };
-
-      fetchPostedJobs();
-    } else {
+          setLoading(false);
+      });
+    } else if (role && role !== 'Job Giver') {
         setLoading(false);
     }
   }, [user, role]);
@@ -240,7 +243,7 @@ export default function PostedJobsPage() {
     });
   }, [setHelp]);
   
-  if (role === 'Admin' || !user) {
+  if (role === 'Admin' || (role && role !== 'Job Giver')) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">Redirecting...</p>
@@ -291,3 +294,5 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
+
+    
