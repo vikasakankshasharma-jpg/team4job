@@ -2,7 +2,7 @@
 "use client";
 
 import { useFormContext, useController } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "./form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "./form";
 import { Input } from "./input";
 import { LocationInput } from "./location-input";
 import { Separator } from "./separator";
@@ -87,10 +87,15 @@ export function AddressForm({
             </div>
              <MapInput 
                 name={fullAddressName}
-                label="Current Residential Address"
+                label="Set Precise Location on Map (Optional)"
                 control={control}
                 center={mapCenter}
              />
+             <FormDescription>
+                The map is currently optional for testing. You can proceed without interacting with it.
+             </FormDescription>
         </div>
     )
 }
+
+    

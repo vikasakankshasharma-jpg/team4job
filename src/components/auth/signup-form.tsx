@@ -40,11 +40,11 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 const addressSchema = z.object({
-  house: z.string().min(3, "Please enter a valid house/building detail."),
-  street: z.string().min(3, "Please enter a valid street/area."),
+  house: z.string().optional(),
+  street: z.string().optional(),
   landmark: z.string().optional(),
   cityPincode: z.string().min(8, "Please select a pincode and post office."),
-  fullAddress: z.string().min(10, "Please provide a full address or pin it on the map."),
+  fullAddress: z.string().optional(),
 });
 
 
@@ -539,3 +539,5 @@ export function SignUpForm() {
     </Form>
   );
 }
+
+    
