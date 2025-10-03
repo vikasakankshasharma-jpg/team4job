@@ -91,7 +91,6 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
         releasedAt: new Date(),
       };
       batch.update(transactionRef, transactionUpdate);
-      console.log("TESTING: Mock transaction status updated:", transactionUpdate);
 
 
       await batch.commit();
@@ -328,7 +327,6 @@ function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer
             createdAt: new Date(),
         };
         batch.set(transactionRef, transactionData);
-        console.log("TESTING: Mock transaction created:", transactionData);
         
         await batch.commit();
 
@@ -972,6 +970,8 @@ export default function JobDetailPage() {
   const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || role === 'Job Giver' || role === 'Admin');
   const canUsePrivateMessages = (isJobGiver || isAwardedInstaller || role === 'Admin') && ['Awarded', 'In Progress', 'Completed'].includes(job.status);
   
+  const showJobGiverRealIdentity = isAwardedInstaller || role === 'Admin';
+
   return (
     <div className="grid gap-8 md:grid-cols-3">
       <div className="md:col-span-2 grid gap-8">
@@ -985,11 +985,11 @@ export default function JobDetailPage() {
                 </div>
                 <div className="flex items-center gap-3">
                     <Avatar>
-                        <AnimatedAvatar svg={jobGiver.avatarUrl} />
+                        {showJobGiverRealIdentity ? <AvatarImage src={jobGiver.realAvatarUrl} /> : <AnimatedAvatar svg={jobGiver.avatarUrl} />}
                         <AvatarFallback>{jobGiver.name.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <p className="text-sm font-semibold">Job Giver</p>
+                        <p className="text-sm font-semibold">{showJobGiverRealIdentity ? jobGiver.name : 'Job Giver'}</p>
                         <p className="text-xs text-muted-foreground font-mono">{jobGiver.id}</p>
                     </div>
                 </div>
