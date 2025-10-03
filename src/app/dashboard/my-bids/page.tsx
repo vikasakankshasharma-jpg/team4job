@@ -67,7 +67,8 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
 
         if (won) {
             if (job.status === 'Completed') return { text: 'Completed & Won', variant: 'success' };
-            if (job.status === 'In Progress' || job.status === 'Awarded') return { text: 'Awarded', variant: 'success' };
+            if (job.status === 'In Progress') return { text: 'In Progress', variant: 'info' };
+            if (job.status === 'Awarded') return { text: 'Awarded', variant: 'success' };
         }
 
         if (job.status === 'Cancelled') return { text: 'Cancelled', variant: 'destructive' };
@@ -143,6 +144,7 @@ const bidStatuses = [
     "All",
     "Bidded",
     "Awarded",
+    "In Progress",
     "Completed & Won",
     "Not Selected",
     "Cancelled"
@@ -173,17 +175,13 @@ function MyBidsPageContent() {
             const userRef = doc(db, 'users', user.id);
             const jobsRef = collection(db, 'jobs');
             
-            // Query for jobs where the user is the awarded installer OR has placed a bid.
-            const q = query(jobsRef, or(
-                where('awardedInstaller', '==', userRef),
-                where('bids', 'array-contains-any', [{installer: userRef}]) // This query is not supported by Firestore, we will filter client-side.
-            ));
-
-            const querySnapshot = await getDocs(jobsRef); // Fetch ALL jobs
+            // This is not an optimal query. Firestore does not support 'array-contains' on nested objects well.
+            // A better data model would include a simple array of bidder IDs on the job document.
+            // We fetch all jobs and filter client-side as a workaround for this demo.
+            const querySnapshot = await getDocs(jobsRef);
             const jobList = await Promise.all(querySnapshot.docs.map(async (doc) => {
                 const jobData = doc.data();
                 
-                // Fetch full installer objects for bids
                 const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => {
                     const installerSnap = await getDoc(bid.installer);
                     return {
@@ -194,10 +192,19 @@ function MyBidsPageContent() {
                     };
                 }));
 
+                let awardedInstaller = jobData.awardedInstaller;
+                if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
+                    const installerSnap = await getDoc(awardedInstaller);
+                    if(installerSnap.exists()) {
+                        awardedInstaller = { id: installerSnap.id, ...installerSnap.data()} as User;
+                    }
+                }
+
                 return {
                     id: doc.id,
                     ...jobData,
                     bids,
+                    awardedInstaller,
                     postedAt: toDate(jobData.postedAt),
                     deadline: toDate(jobData.deadline),
                     jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
@@ -206,11 +213,10 @@ function MyBidsPageContent() {
 
             // Client-side filtering
             const myJobs = jobList.filter(job => {
-                const isAwardedToMe = (job.awardedInstaller as DocumentReference)?.id === user.id;
+                const isAwardedToMe = (job.awardedInstaller as User)?.id === user.id;
                 const hasBidded = job.bids.some(bid => (bid.installer as User)?.id === user.id);
                 return isAwardedToMe || hasBidded;
             });
-
 
             setJobs(myJobs);
 
@@ -316,7 +322,8 @@ function MyBidsPageContent() {
 
     if (won) {
         if (job.status === 'Completed') return 'Completed & Won';
-        if (job.status === 'In Progress' || job.status === 'Awarded') return 'Awarded';
+        if (job.status === 'In Progress') return 'In Progress';
+        if (job.status === 'Awarded') return 'Awarded';
     }
     if (job.status === 'Cancelled') return 'Cancelled';
     if (job.status === 'Open for Bidding') return 'Bidded';
@@ -432,3 +439,5 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
+
+    
