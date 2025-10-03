@@ -92,6 +92,19 @@ export type Job = {
   rating?: number;
   completionOtp?: string;
   disputeId?: string;
+  selectedInstallers?: { installerId: string, rank: number }[];
+};
+
+export type Transaction = {
+    id: string;
+    jobId: string;
+    payerId: string; // Job Giver
+    payeeId: string; // Installer
+    amount: number;
+    status: 'Funded' | 'Released' | 'Refunded';
+    createdAt: Date | Timestamp;
+    releasedAt?: Date | Timestamp;
+    refundedAt?: Date | Timestamp;
 };
 
 export type DisputeAttachment = {

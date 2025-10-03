@@ -1,6 +1,18 @@
 
 {
   "entities": {
+    "Address": {
+      "title": "Structured Address",
+      "description": "Represents a structured physical address.",
+      "type": "object",
+      "properties": {
+        "house": { "type": "string", "description": "House/Flat number and building name." },
+        "street": { "type": "string", "description": "Street name and area/colony." },
+        "landmark": { "type": "string", "description": "A nearby landmark (optional)." },
+        "cityPincode": { "type": "string", "description": "The city and pincode, e.g., 'Jaipur, 302012'." }
+      },
+      "required": ["house", "street", "cityPincode"]
+    },
     "UserProfile": {
       "title": "User Profile",
       "description": "Represents a user's profile information, including roles and platform-specific data.",
@@ -23,6 +35,7 @@
           "type": "string",
           "description": "The user's 10-digit mobile number."
         },
+        "address": { "$ref": "#/entities/Address" },
         "avatarUrl": {
           "type": "string",
           "description": "URL for the user's anonymous SVG avatar."
@@ -79,7 +92,7 @@
           "$ref": "#/entities/InstallerProfile"
         }
       },
-      "required": ["id", "name", "email", "mobile", "avatarUrl", "pincodes", "roles", "memberSince"]
+      "required": ["id", "name", "email", "mobile", "address", "avatarUrl", "pincodes", "roles", "memberSince"]
     },
     "InstallerProfile": {
       "title": "Installer Profile",
@@ -129,10 +142,11 @@
           "$ref": "#/entities/UserProfile"
         },
         "location": {
-          "type": "string"
+          "type": "string",
+          "description": "The primary pincode of the job location."
         },
-        "fullAddress": {
-          "type": "string"
+        "address": {
+          "$ref": "#/entities/Address"
         },
         "budget": {
           "type": "object",
@@ -193,9 +207,19 @@
             "items": {
                 "$ref": "#/entities/PrivateMessage"
             }
+        },
+        "selectedInstallers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "installerId": { "type": "string" },
+                    "rank": { "type": "number" }
+                }
+            }
         }
       },
-      "required": ["id", "title", "description", "jobGiver", "location", "budget", "status", "deadline", "postedAt"]
+      "required": ["id", "title", "description", "jobGiver", "location", "address", "budget", "status", "deadline", "postedAt"]
     },
     "JobAttachment": {
       "title": "Job Attachment",
@@ -364,6 +388,23 @@
             "fileType": { "type": "string" }
         },
         "required": ["fileName", "fileUrl", "fileType"]
+    },
+    "Transaction": {
+        "title": "Transaction",
+        "description": "Represents a financial transaction for a job, managed via an escrow system.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "jobId": { "type": "string" },
+            "payerId": { "type": "string", "description": "The user ID of the Job Giver." },
+            "payeeId": { "type": "string", "description": "The user ID of the Installer." },
+            "amount": { "type": "number" },
+            "status": { "type": "string", "enum": ["Funded", "Released", "Refunded"] },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "releasedAt": { "type": "string", "format": "date-time" },
+            "refundedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "jobId", "payerId", "payeeId", "amount", "status", "createdAt"]
     }
   },
   "auth": {
@@ -387,6 +428,12 @@
         "$ref": "#/entities/Dispute"
       },
       "description": "Stores all dispute records for jobs, including the full communication history."
+    },
+    "/transactions/{transactionId}": {
+        "schema": {
+            "$ref": "#/entities/Transaction"
+        },
+        "description": "Stores all financial transactions related to jobs."
     }
   }
 }
