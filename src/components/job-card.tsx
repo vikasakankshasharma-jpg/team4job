@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import {
@@ -19,6 +18,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { getStatusVariant, toDate } from "@/lib/utils";
 import React from "react";
 import { AnimatedAvatar } from "./ui/animated-avatar";
+import { CardDescription } from "./ui/card";
 
 type JobCardProps = {
   job: Job;
@@ -66,12 +66,12 @@ export function JobCard({ job }: JobCardProps) {
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <Badge variant={statusVariant} className="capitalize mb-4">
+            <Badge variant={statusVariant} className="capitalize mb-2">
               {job.status}
             </Badge>
-            <CardTitle className="text-lg">{job.title}</CardTitle>
+            <CardTitle className="text-lg leading-tight">{job.title}</CardTitle>
+            <CardDescription className="font-mono text-xs pt-1">{job.id}</CardDescription>
           </div>
-           <span className="text-xs text-muted-foreground font-mono">#{job.id.substring(job.id.lastIndexOf('-') + 1)}</span>
         </div>
          <div className="flex items-center gap-3 pt-4">
             <Avatar className="h-9 w-9">
@@ -79,7 +79,7 @@ export function JobCard({ job }: JobCardProps) {
               <AvatarFallback>{jobGiver.id.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold text-sm text-foreground">{jobGiver.id}</p>
+              <p className="font-semibold text-sm text-foreground">{jobGiver.name}</p>
               <p className="text-xs text-muted-foreground">
                 Member since {format(toDate(jobGiver.memberSince), 'MMM yyyy')}
               </p>
