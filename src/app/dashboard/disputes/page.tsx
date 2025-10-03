@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useUser } from "@/hooks/use-user";
-import { collection, getDocs, query, where, or } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 import { Dispute } from "@/lib/types";
 import { toDate } from "@/lib/utils";
@@ -53,35 +53,32 @@ export default function DisputesPage() {
     setLoading(true);
 
     const fetchDisputes = async () => {
-      let disputesQuery;
-      if (isAdmin) {
-        disputesQuery = query(collection(db, "disputes"));
-      } else {
-        disputesQuery = query(
-          collection(db, "disputes"), 
-          or(
-            where("requesterId", "==", user.id),
-            where("parties.jobGiverId", "==", user.id),
-            where("parties.installerId", "==", user.id)
-          )
-        );
-      }
+      const disputesCollection = collection(db, "disputes");
+      const querySnapshot = await getDocs(disputesCollection);
+      const allDisputes = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: toDate(doc.data().createdAt),
+        resolvedAt: doc.data().resolvedAt ? toDate(doc.data().resolvedAt) : undefined,
+      } as Dispute));
 
-      if (disputesQuery) {
-        const querySnapshot = await getDocs(disputesQuery);
-        const fetchedDisputes = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: toDate(doc.data().createdAt),
-          resolvedAt: doc.data().resolvedAt ? toDate(doc.data().resolvedAt) : undefined,
-        } as Dispute));
-        setDisputes(fetchedDisputes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+      if (isAdmin) {
+        setDisputes(allDisputes);
+      } else {
+        const userDisputes = allDisputes.filter(d => 
+            d.requesterId === user.id ||
+            d.parties?.jobGiverId === user.id ||
+            d.parties?.installerId === user.id
+        );
+        setDisputes(userDisputes);
       }
+      
+      setDisputes(prevDisputes => prevDisputes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
       setLoading(false);
     };
 
     fetchDisputes();
-  }, [user, role, isAdmin]);
+  }, [user, isAdmin]);
 
   if (!user) {
     return <div className="text-center text-muted-foreground">Loading...</div>;
