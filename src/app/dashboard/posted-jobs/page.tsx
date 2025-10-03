@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import {
@@ -38,13 +37,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation";
+import { jobs as allJobs } from "@/lib/data";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, query, where, doc, DocumentReference } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 
 
 function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
@@ -163,58 +161,12 @@ export default function PostedJobsPage() {
   }, [role, router]);
 
   React.useEffect(() => {
-      const fetchPostedJobs = async () => {
-        if (!user || role !== 'Job Giver') {
-            setLoading(false);
-            return;
-        };
-
-        setLoading(true);
-        try {
-            const userRef = doc(db, 'users', user.id);
-            const jobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
-            const querySnapshot = await getDocs(jobsQuery);
-
-            const userCache: { [key: string]: User } = {};
-            const getUser = async (ref: DocumentReference): Promise<User> => {
-                if (userCache[ref.id]) return userCache[ref.id];
-                const userSnap = await getDoc(ref);
-                const userData = { id: userSnap.id, ...userSnap.data() } as User;
-                userCache[ref.id] = userData;
-                return userData;
-            }
-
-            const userJobsPromises = querySnapshot.docs.map(async (jobDoc) => {
-                const jobData = jobDoc.data();
-
-                const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
-                    ...bid,
-                    installer: await getUser(bid.installer),
-                })));
-
-                let awardedInstaller = null;
-                if (jobData.awardedInstaller && jobData.awardedInstaller instanceof DocumentReference) {
-                    awardedInstaller = await getUser(jobData.awardedInstaller);
-                }
-
-                return {
-                  id: jobDoc.id,
-                  ...jobData,
-                  bids,
-                  awardedInstaller
-                } as Job;
-            });
-
-            const userJobs = await Promise.all(userJobsPromises);
-            setJobs(userJobs);
-        } catch (err) {
-            console.error("Error fetching posted jobs:", err);
-            setJobs([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-    fetchPostedJobs();
+    if (user && role === 'Job Giver') {
+      setLoading(true);
+      const userJobs = allJobs.filter(job => (job.jobGiver as User).id === user.id);
+      setJobs(userJobs);
+      setLoading(false);
+    }
   }, [user, role]);
 
    React.useEffect(() => {

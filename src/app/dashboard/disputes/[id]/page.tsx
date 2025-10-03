@@ -18,14 +18,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { AlertOctagon, Send, CheckCircle2, Bot, User as UserIcon, Shield, Paperclip, X, File as FileIcon } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { disputes as allDisputes, users } from "@/lib/data";
 import { Dispute, DisputeMessage, User, DisputeAttachment } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import Link from "next/link";
-import { doc, getDoc, updateDoc, arrayUnion, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 
 const getStatusVariant = (status: Dispute['status']) => {
@@ -97,47 +96,13 @@ export default function DisputeDetailPage() {
   const [newMessage, setNewMessage] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
 
-  const userCache = useRef<{ [key: string]: User }>({});
-
-  const getUser = useCallback(async (userId: string): Promise<User | null> => {
-    if (userCache.current[userId]) return userCache.current[userId];
-    const userSnap = await getDoc(doc(db, 'users', userId));
-    if (userSnap.exists()) {
-        const userData = { id: userSnap.id, ...userSnap.data() } as User;
-        userCache.current[userId] = userData;
-        return userData;
-    }
-    return null;
-  }, []);
-
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-
-    const disputeRef = doc(db, 'disputes', id);
-    const unsubscribe = onSnapshot(disputeRef, async (docSnap) => {
-      if (docSnap.exists()) {
-        const disputeData = { id: docSnap.id, ...docSnap.data() } as Dispute;
-        
-        const allUserIds = new Set([
-            disputeData.requesterId,
-            ...(disputeData.parties ? [disputeData.parties.jobGiverId, disputeData.parties.installerId] : []),
-            ...disputeData.messages.map(m => m.authorId)
-        ].filter(Boolean));
-
-        for (const userId of Array.from(allUserIds)) {
-            await getUser(userId);
-        }
-
-        setDispute(disputeData);
-      } else {
-        setDispute(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [id, getUser]);
+    const foundDispute = allDisputes.find(d => d.id === id);
+    setDispute(foundDispute || null);
+    setLoading(false);
+  }, [id]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -179,34 +144,28 @@ export default function DisputeDetailPage() {
         timestamp: new Date(),
         attachments: uploadedAttachments,
     };
-
-    const disputeRef = doc(db, 'disputes', id);
-    await updateDoc(disputeRef, {
-        messages: arrayUnion(message)
-    });
+    
+    // This would be an update call to Firestore in a real app
+    setDispute(prev => prev ? { ...prev, messages: [...prev.messages, message] } : null);
 
     setNewMessage("");
     setAttachments([]);
   };
   
   const handleResolveDispute = async () => {
-     const disputeRef = doc(db, 'disputes', id);
-     await updateDoc(disputeRef, {
-        status: 'Resolved',
-        resolvedAt: new Date()
-    });
+    setDispute(prev => prev ? { ...prev, status: 'Resolved', resolvedAt: new Date() } : null);
     toast({ title: "Dispute Resolved", description: "This case is now closed." });
   }
 
   const handleReviewDispute = async () => {
-     const disputeRef = doc(db, 'disputes', id);
-     await updateDoc(disputeRef, {
-        status: 'Under Review',
-    });
+    setDispute(prev => prev ? { ...prev, status: 'Under Review' } : null);
     toast({ title: "Dispute Under Review", description: "You are now actively reviewing this case." });
   }
   
-  const involvedUsers = userCache.current;
+  const involvedUsers = users.reduce((acc, u) => {
+    acc[u.id] = u;
+    return acc;
+  }, {} as Record<string, User>);
 
   return (
     <div className="grid gap-8 md:grid-cols-3">

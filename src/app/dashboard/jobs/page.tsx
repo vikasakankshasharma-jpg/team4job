@@ -41,9 +41,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
 import { useUser } from "@/hooks/use-user";
-import { collection, getDocs, doc, getDoc, DocumentReference } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
-import type { Job, User } from "@/lib/types";
+import { jobs } from "@/lib/data";
+import type { Job } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
 // Get unique skills from jobs data for filter - This might need to be dynamic later
@@ -53,8 +52,6 @@ export const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting"
 export default function BrowseJobsPage() {
   const { user, role } = useUser();
   const router = useRouter();
-  const [jobs, setJobs] = React.useState<Job[]>([]);
-  const [loading, setLoading] = React.useState(true);
   const [searchPincode, setSearchPincode] = React.useState("");
   const [budget, setBudget] = React.useState([0, 150000]);
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
@@ -93,38 +90,6 @@ export default function BrowseJobsPage() {
         )
     });
   }, [setHelp]);
-
-  React.useEffect(() => {
-    const fetchJobs = async () => {
-      setLoading(true);
-      try {
-        const jobsCollection = collection(db, 'jobs');
-        const jobSnapshot = await getDocs(jobsCollection);
-        
-        const userCache: { [key: string]: User } = {};
-        const getUser = async (ref: DocumentReference): Promise<User> => {
-            if (userCache[ref.id]) return userCache[ref.id];
-            const userSnap = await getDoc(ref);
-            const userData = { id: userSnap.id, ...userSnap.data() } as User;
-            userCache[ref.id] = userData;
-            return userData;
-        }
-
-        const jobList = await Promise.all(jobSnapshot.docs.map(async (jobDoc) => {
-            const jobData = jobDoc.data();
-            const jobGiver = await getUser(jobData.jobGiver);
-            return { id: jobDoc.id, ...jobData, jobGiver } as Job;
-        }));
-
-        setJobs(jobList);
-      } catch (error) {
-        console.error("Error fetching jobs:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchJobs();
-  }, []);
   
   const openJobs = jobs.filter(job => job.status === 'Open for Bidding');
 
@@ -299,7 +264,7 @@ export default function BrowseJobsPage() {
                 </div>
                  {filteredJobs.length === 0 && (
                   <div className="text-center py-10">
-                    <p className="text-muted-foreground">{loading ? "Loading jobs..." : "No jobs found matching your criteria."}</p>
+                    <p className="text-muted-foreground">No jobs found matching your criteria.</p>
                   </div>
                 )}
             </CardContent>
@@ -342,7 +307,7 @@ export default function BrowseJobsPage() {
                 </div>
                  {filteredRecommendedJobs.length === 0 && (
                   <div className="text-center py-10">
-                    <p className="text-muted-foreground">{loading ? "Loading jobs..." : "No recommended jobs found for the selected filter."}</p>
+                    <p className="text-muted-foreground">No recommended jobs found for the selected filter.</p>
                   </div>
                 )}
             </CardContent>

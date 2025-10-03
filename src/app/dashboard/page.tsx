@@ -28,11 +28,10 @@ import {
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
+import { jobs as allJobs, users as allUsers, disputes as allDisputes } from "@/lib/data";
 import { Job, User, Dispute } from "@/lib/types";
-import { collection, getDocs, query, where, DocumentReference, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 import { toDate } from "@/lib/utils";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, Pie, Cell, ComposedChart, YAxis, Legend, Line, Tooltip } from "recharts"
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, Pie, Cell, ComposedChart, YAxis, Legend, Tooltip } from "recharts"
 import {
   ChartContainer,
   ChartTooltip,
@@ -71,8 +70,53 @@ const disputeStatusColors: { [key: string]: string } = {
 function InstallerDashboard() {
   const { user } = useUser();
   const { setHelp } = useHelp();
-  const [stats, setStats] = React.useState({ openJobs: 0, myBids: 0, jobsWon: 0 });
-  const [bidStatusData, setBidStatusData] = React.useState<any[]>([]);
+
+  const stats = React.useMemo(() => {
+    if (!user) return { openJobs: 0, myBids: 0, jobsWon: 0 };
+    
+    const openJobs = allJobs.filter(j => j.status === 'Open for Bidding').length;
+    let myBidsCount = 0;
+    let jobsWonCount = 0;
+    
+    allJobs.forEach(job => {
+        const myBid = (job.bids || []).some(bid => (bid.installer as User).id === user.id);
+        const isAwardedToMe = (job.awardedInstaller as User)?.id === user.id;
+
+        if (myBid || isAwardedToMe) {
+            myBidsCount++;
+        }
+        if (isAwardedToMe && (job.status === 'Awarded' || job.status === 'In Progress')) {
+            jobsWonCount++;
+        }
+    });
+
+    return { openJobs, myBids: myBidsCount, jobsWon: jobsWonCount };
+  }, [user]);
+
+  const bidStatusData = React.useMemo(() => {
+    if (!user) return [];
+    const bidStatuses: { [key: string]: number } = { 'Bidded': 0, 'Awarded': 0, 'In Progress': 0, 'Completed & Won': 0, 'Not Selected': 0, 'Cancelled': 0 };
+
+    allJobs.forEach(job => {
+        const myBid = (job.bids || []).some(bid => (bid.installer as User).id === user.id);
+        const isAwardedToMe = (job.awardedInstaller as User)?.id === user.id;
+
+        if (myBid || isAwardedToMe) {
+          if (isAwardedToMe) {
+              if (job.status === 'Completed') bidStatuses['Completed & Won']++;
+              else if (job.status === 'In Progress') bidStatuses['In Progress']++;
+              else if(job.status === 'Awarded') bidStatuses['Awarded']++;
+          } else if (job.status === 'Open for Bidding') {
+              bidStatuses['Bidded']++;
+          } else if (job.status === 'Cancelled') {
+              bidStatuses['Cancelled']++;
+          } else {
+              bidStatuses['Not Selected']++;
+          }
+        }
+    });
+    return Object.entries(bidStatuses).map(([name, value]) => ({ name, count: value, fill: bidStatusColors[name] }));
+  }, [user]);
 
   const bidStatusChartConfig = {
     count: {
@@ -83,53 +127,6 @@ function InstallerDashboard() {
       return acc;
     }, {} as ChartConfig),
   } satisfies ChartConfig
-
-  React.useEffect(() => {
-    if (!user) return;
-
-    const fetchStats = async () => {
-      const jobsCollection = collection(db, 'jobs');
-      const jobsSnapshot = await getDocs(jobsCollection);
-      const allJobs = jobsSnapshot.docs.map(d => ({id: d.id, ...d.data()}) as Job);
-      
-      const openJobs = allJobs.filter(j => j.status === 'Open for Bidding').length;
-      
-      let myBidsCount = 0;
-      let jobsWonCount = 0;
-      const bidStatuses: { [key: string]: number } = { 'Bidded': 0, 'Awarded': 0, 'In Progress': 0, 'Completed & Won': 0, 'Not Selected': 0, 'Cancelled': 0 };
-
-      allJobs.forEach(job => {
-          const myBid = (job.bids || []).some(bid => (bid.installer as DocumentReference).id === user.id);
-          const awardedId = (job.awardedInstaller as DocumentReference)?.id;
-          const isAwardedToMe = awardedId === user.id;
-
-          if (myBid || isAwardedToMe) {
-              myBidsCount++;
-              
-              if (isAwardedToMe) {
-                  if (job.status === 'Completed') bidStatuses['Completed & Won']++;
-                  else if (job.status === 'In Progress') bidStatuses['In Progress']++;
-                  else if(job.status === 'Awarded') bidStatuses['Awarded']++;
-              } else if (job.status === 'Open for Bidding') {
-                  bidStatuses['Bidded']++;
-              } else if (job.status === 'Cancelled') {
-                  bidStatuses['Cancelled']++;
-              } else {
-                  bidStatuses['Not Selected']++;
-              }
-          }
-
-          if (isAwardedToMe && (job.status === 'Awarded' || job.status === 'In Progress')) {
-              jobsWonCount++;
-          }
-      });
-      
-      setStats({ openJobs, myBids: myBidsCount, jobsWon: jobsWonCount });
-      setBidStatusData(Object.entries(bidStatuses).map(([name, value]) => ({ name, count: value, fill: bidStatusColors[name] })));
-    };
-
-    fetchStats();
-  }, [user]);
 
   React.useEffect(() => {
     setHelp({
@@ -257,8 +254,41 @@ function InstallerDashboard() {
 function JobGiverDashboard() {
   const { user } = useUser();
   const { setHelp } = useHelp();
-  const [stats, setStats] = React.useState({ activeJobs: 0, completedJobs: 0, totalBids: 0 });
-  const [jobStatusData, setJobStatusData] = React.useState<any[]>([]);
+  
+  const stats = React.useMemo(() => {
+    if (!user) return { activeJobs: 0, completedJobs: 0, totalBids: 0 };
+
+    const myJobs = allJobs.filter(j => (j.jobGiver as User).id === user.id);
+    let active = 0;
+    let completed = 0;
+    let bids = 0;
+
+    myJobs.forEach(job => {
+        if (job.status !== 'Completed' && job.status !== 'Cancelled') {
+            active++;
+        }
+        if (job.status === 'Completed') {
+            completed++;
+        }
+        bids += (job.bids || []).length;
+    });
+    
+    return { activeJobs: active, completedJobs: completed, totalBids: bids };
+  }, [user]);
+
+  const jobStatusData = React.useMemo(() => {
+    if (!user) return [];
+    const myJobs = allJobs.filter(j => (j.jobGiver as User).id === user.id);
+    const statuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Awarded': 0, 'Completed': 0, 'Cancelled': 0, 'Unbid': 0, 'Bidding Closed': 0 };
+
+    myJobs.forEach(job => {
+      if (statuses[job.status] !== undefined) {
+         statuses[job.status]++;
+      }
+    });
+
+    return Object.entries(statuses).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] }));
+  }, [user]);
 
   const jobStatusChartConfig = {
     count: {
@@ -269,40 +299,6 @@ function JobGiverDashboard() {
       return acc;
     }, {} as ChartConfig),
   } satisfies ChartConfig
-
-  React.useEffect(() => {
-    if (!user) return;
-    
-    const fetchStats = async () => {
-      const userRef = doc(db, 'users', user.id);
-      const jobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
-      const jobsSnapshot = await getDocs(jobsQuery);
-      
-      let active = 0;
-      let completed = 0;
-      let bids = 0;
-      const statuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Awarded': 0, 'Completed': 0, 'Cancelled': 0, 'Unbid': 0, 'Bidding Closed': 0 };
-
-      jobsSnapshot.forEach(jobDoc => {
-        const job = jobDoc.data() as Job;
-        if (job.status !== 'Completed' && job.status !== 'Cancelled') {
-            active++;
-        }
-        if (job.status === 'Completed') {
-            completed++;
-        }
-        if (statuses[job.status] !== undefined) {
-           statuses[job.status]++;
-        }
-        bids += (job.bids || []).length;
-      });
-      
-      setStats({ activeJobs: active, completedJobs: completed, totalBids: bids });
-      setJobStatusData(Object.entries(statuses).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] })));
-    };
-
-    fetchStats();
-  }, [user]);
 
   React.useEffect(() => {
     setHelp({
@@ -422,12 +418,94 @@ function JobGiverDashboard() {
 
 function AdminDashboard() {
   const { setHelp } = useHelp();
-  const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, openDisputes: 0, completedJobValue: 0 });
-  const [jobStatusData, setJobStatusData] = React.useState<any[]>([]);
-  const [userGrowthData, setUserGrowthData] = React.useState<any[]>([]);
-  const [platformActivityData, setPlatformActivityData] = React.useState<any[]>([]);
-  const [disputeStatusData, setDisputeStatusData] = React.useState<any[]>([]);
 
+  const stats = React.useMemo(() => {
+    const totalUsers = allUsers.length;
+    const totalJobs = allJobs.length;
+    const openDisputes = allDisputes.filter(d => d.status === 'Open').length;
+    let completedJobValue = 0;
+
+    allJobs.forEach(job => {
+        if (job.status === 'Completed' && job.awardedInstaller) {
+            const awardedId = (job.awardedInstaller as User).id;
+            const winningBid = (job.bids || []).find(bid => (bid.installer as User).id === awardedId);
+            if (winningBid) {
+                completedJobValue += winningBid.amount;
+            }
+        }
+    });
+
+    return { totalUsers, totalJobs, openDisputes, completedJobValue };
+  }, []);
+
+  const { jobStatusData, userGrowthData, platformActivityData, disputeStatusData } = React.useMemo(() => {
+    const jobStatuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Completed': 0, 'Cancelled': 0, 'Bidding Closed': 0, 'Awarded': 0, 'Unbid': 0 };
+    const disputeStatuses: { [key: string]: number } = { 'Open': 0, 'Under Review': 0, 'Resolved': 0 };
+
+    allJobs.forEach(job => {
+        if (jobStatuses[job.status] !== undefined) {
+            jobStatuses[job.status]++;
+        }
+    });
+
+    allDisputes.forEach(dispute => {
+        if (disputeStatuses[dispute.status] !== undefined) {
+            disputeStatuses[dispute.status]++;
+        }
+    });
+    
+    const last6Months = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        return {
+            label: d.toLocaleString('default', { month: 'short', year: '2-digit' }),
+            date: new Date(d.getFullYear(), d.getMonth(), 1)
+        };
+    }).reverse();
+    
+    const activityData: { [key: string]: { jobs: number, bids: number, value: number } } = {};
+    last6Months.forEach(month => {
+        activityData[month.label] = { jobs: 0, bids: 0, value: 0 };
+    });
+
+    allJobs.forEach(job => {
+        const postedDate = toDate(job.postedAt);
+        const jobMonthLabel = postedDate.toLocaleString('default', { month: 'short', year: '2-digit' });
+
+        if (activityData[jobMonthLabel]) {
+            activityData[jobMonthLabel].jobs++;
+            activityData[jobMonthLabel].bids += (job.bids || []).length;
+        }
+
+        if (job.status === 'Completed' && job.awardedInstaller) {
+            const winningBid = (job.bids || []).find(bid => (bid.installer as User).id === (job.awardedInstaller as User).id);
+            if (winningBid && activityData[jobMonthLabel]) {
+                activityData[jobMonthLabel].value += winningBid.amount;
+            }
+        }
+    });
+
+    const growthData: { [key: string]: number } = {};
+    last6Months.forEach(month => {
+        growthData[month.label] = 0;
+    });
+
+    allUsers.forEach(user => {
+        const memberSinceDate = toDate(user.memberSince);
+        const monthLabel = memberSinceDate.toLocaleString('default', { month: 'short', year: '2-digit' });
+        if (growthData[monthLabel] !== undefined) {
+          growthData[monthLabel]++;
+        }
+    });
+
+    return {
+        jobStatusData: Object.entries(jobStatuses).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] })),
+        disputeStatusData: Object.entries(disputeStatuses).map(([name, value]) => ({ name, count: value, fill: disputeStatusColors[name] })),
+        userGrowthData: last6Months.map(month => ({ month: month.label, users: growthData[month.label] || 0 })),
+        platformActivityData: Object.entries(activityData).map(([month, data]) => ({ month, ...data })),
+    }
+
+  }, []);
 
   const jobStatusChartConfig = {
     count: { label: "Jobs" },
@@ -454,95 +532,6 @@ function AdminDashboard() {
       return acc;
     }, {} as ChartConfig),
   } satisfies ChartConfig;
-
-
-  React.useEffect(() => {
-    const fetchStats = async () => {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        const jobsSnapshot = await getDocs(collection(db, 'jobs'));
-        const disputesSnapshot = await getDocs(collection(db, 'disputes'));
-
-        const totalUsers = usersSnapshot.size;
-        const totalJobs = jobsSnapshot.size;
-        let completedValue = 0;
-        let openDisputes = 0;
-        
-        const jobStatuses: { [key: string]: number } = { 'Open for Bidding': 0, 'In Progress': 0, 'Completed': 0, 'Cancelled': 0, 'Bidding Closed': 0, 'Awarded': 0, 'Unbid': 0 };
-        const disputeStatuses: { [key: string]: number } = { 'Open': 0, 'Under Review': 0, 'Resolved': 0 };
-
-        const last6Months = Array.from({ length: 6 }, (_, i) => {
-            const d = new Date();
-            d.setMonth(d.getMonth() - i);
-            return {
-                label: d.toLocaleString('default', { month: 'short', year: '2-digit' }),
-                date: new Date(d.getFullYear(), d.getMonth(), 1)
-            };
-        }).reverse();
-
-        const activityData: { [key: string]: { jobs: number, bids: number, value: number } } = {};
-        last6Months.forEach(month => {
-            activityData[month.label] = { jobs: 0, bids: 0, value: 0 };
-        });
-
-        jobsSnapshot.forEach(jobDoc => {
-            const job = jobDoc.data() as Job;
-            const postedDate = toDate(job.postedAt);
-            const jobMonthLabel = postedDate.toLocaleString('default', { month: 'short', year: '2-digit' });
-            
-            if (jobStatuses[job.status] !== undefined) {
-               jobStatuses[job.status]++;
-            }
-
-            if (activityData[jobMonthLabel]) {
-                activityData[jobMonthLabel].jobs++;
-                activityData[jobMonthLabel].bids += (job.bids || []).length;
-            }
-
-            if (job.status === 'Completed' && job.awardedInstaller) {
-                const awardedId = (job.awardedInstaller as DocumentReference).id;
-                const winningBid = (job.bids || []).find(bid => (bid.installer as DocumentReference).id === awardedId);
-                if (winningBid) {
-                    completedValue += winningBid.amount;
-                    if (activityData[jobMonthLabel]) {
-                        activityData[jobMonthLabel].value += winningBid.amount;
-                    }
-                }
-            }
-        });
-
-        disputesSnapshot.forEach(disputeDoc => {
-            const dispute = disputeDoc.data() as Dispute;
-            if (disputeStatuses[dispute.status] !== undefined) {
-                disputeStatuses[dispute.status]++;
-            }
-            if (dispute.status === 'Open') {
-                openDisputes++;
-            }
-        });
-
-        const growthData: { [key: string]: number } = {};
-        last6Months.forEach(month => {
-            growthData[month.label] = 0;
-        });
-
-        usersSnapshot.forEach(userDoc => {
-            const user = userDoc.data() as User;
-            const memberSinceDate = toDate(user.memberSince);
-            const monthLabel = memberSinceDate.toLocaleString('default', { month: 'short', year: '2-digit' });
-            if (growthData[monthLabel] !== undefined) {
-              growthData[monthLabel]++;
-            }
-        });
-        
-        setUserGrowthData(last6Months.map(month => ({ month: month.label, users: growthData[month.label] || 0 })));
-        setJobStatusData(Object.entries(jobStatuses).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] })));
-        setDisputeStatusData(Object.entries(disputeStatuses).map(([name, value]) => ({ name, count: value, fill: disputeStatusColors[name] })));
-        setPlatformActivityData(Object.entries(activityData).map(([month, data]) => ({ month, ...data })));
-        setStats({ totalUsers, totalJobs, openDisputes, completedJobValue: completedValue });
-    };
-
-    fetchStats();
-  }, []);
 
   React.useEffect(() => {
     setHelp({
@@ -751,5 +740,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    

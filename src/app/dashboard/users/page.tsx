@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import {
@@ -24,11 +23,10 @@ import { Gem, Medal, ShieldCheck, X, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React from "react";
+import { users as allUsers } from "@/lib/data";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -56,19 +54,6 @@ const initialFilters = {
 
 type SortableKeys = 'name' | 'memberSince' | 'tier' | 'rating' | 'points';
 
-const fetchAllUsers = async () => {
-    const usersCollection = collection(db, 'users');
-    const userSnapshot = await getDocs(usersCollection);
-    const userList = userSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            ...data,
-            memberSince: toDate(data.memberSince),
-        } as User;
-    });
-    return userList;
-};
 
 export default function UsersPage() {
   const router = useRouter();
@@ -87,13 +72,8 @@ export default function UsersPage() {
   React.useEffect(() => {
       if (role === 'Admin') {
           setLoading(true);
-          fetchAllUsers().then(userList => {
-              setUsers(userList);
-              setLoading(false);
-          }).catch(error => {
-              console.error("Error fetching users:", error);
-              setLoading(false);
-          });
+          setUsers(allUsers);
+          setLoading(false);
       }
   }, [role]);
 
@@ -404,5 +384,3 @@ export default function UsersPage() {
     </Card>
   );
 }
-
-    

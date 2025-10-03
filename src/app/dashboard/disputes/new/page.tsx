@@ -28,9 +28,8 @@ import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
-import { addDoc, collection } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { disputes } from "@/lib/data";
 
 const disputeSchema = z.object({
   category: z.enum(["Billing Inquiry", "Technical Support", "Skill Request", "General Question"]),
@@ -58,35 +57,32 @@ export default function CreateDisputePage() {
         return;
     }
     
-    try {
-        const disputeData = {
-            requesterId: user.id,
-            category: values.category,
-            title: values.title,
-            reason: values.reason,
-            status: 'Open' as const,
-            messages: [{
-                authorId: user.id,
-                authorRole: role,
-                content: values.reason,
-                timestamp: new Date()
-            }],
-            createdAt: new Date(),
-        };
+    // This is a mock submission. In a real app, this would write to Firestore.
+    const newDisputeId = `DISPUTE-${Date.now()}`;
+    const disputeData = {
+        id: newDisputeId,
+        requesterId: user.id,
+        category: values.category,
+        title: values.title,
+        reason: values.reason,
+        status: 'Open' as const,
+        messages: [{
+            authorId: user.id,
+            authorRole: role,
+            content: values.reason,
+            timestamp: new Date()
+        }],
+        createdAt: new Date(),
+    };
 
-        const disputeRef = await addDoc(collection(db, "disputes"), disputeData);
-        
-        toast({
-            title: "Support Ticket Created",
-            description: "An admin will review your request shortly.",
-        });
+    disputes.unshift(disputeData); // Add to the top of the mock data array
+    
+    toast({
+        title: "Support Ticket Created",
+        description: "An admin will review your request shortly.",
+    });
 
-        router.push(`/dashboard/disputes/${disputeRef.id}`);
-
-    } catch (error) {
-        console.error("Error creating dispute:", error);
-        toast({ title: "Failed to create ticket", variant: "destructive" });
-    }
+    router.push(`/dashboard/disputes/${newDisputeId}`);
   }
 
   if (isAdmin) {

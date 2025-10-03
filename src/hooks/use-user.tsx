@@ -4,8 +4,7 @@
 import { User } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { collection, query, where, getDocs, doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
+import { users as mockUsers, jobs } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 
@@ -37,32 +36,21 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const storedUserEmail = localStorage.getItem('loggedInUserEmail');
     if (storedUserEmail) {
-        const fetchUser = async () => {
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("email", "==", storedUserEmail.toLowerCase()));
-            const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
-                const userDoc = querySnapshot.docs[0];
-                const foundUser = {
-                    id: userDoc.id,
-                    ...userDoc.data(),
-                    memberSince: userDoc.data().memberSince.toDate()
-                } as User;
-                setUser(foundUser);
-                const storedRole = localStorage.getItem('userRole') as Role;
-                const isAdminUser = foundUser.roles.includes("Admin");
-                setIsAdmin(isAdminUser);
-                if (storedRole && foundUser.roles.includes(storedRole)) {
-                    setRoleState(storedRole);
-                } else {
-                    const initialRole = isAdminUser ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
-                    setRoleState(initialRole);
-                }
+        const foundUser = mockUsers.find(u => u.email.toLowerCase() === storedUserEmail.toLowerCase());
+        if (foundUser) {
+            setUser(foundUser);
+            const storedRole = localStorage.getItem('userRole') as Role;
+            const isAdminUser = foundUser.roles.includes("Admin");
+            setIsAdmin(isAdminUser);
+            if (storedRole && foundUser.roles.includes(storedRole)) {
+                setRoleState(storedRole);
             } else {
-                logout();
+                const initialRole = isAdminUser ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
+                setRoleState(initialRole);
             }
-        };
-        fetchUser();
+        } else {
+            logout();
+        }
     }
   }, []);
 
@@ -82,15 +70,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   const login = async (email: string, signupData: any = null) => {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("email", "==", email.toLowerCase()));
-    const querySnapshot = await getDocs(q);
+    let foundUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     
-    let foundUser: User | null = null;
-    
-    if (!querySnapshot.empty) {
-        const userDoc = querySnapshot.docs[0];
-        foundUser = { id: userDoc.id, ...userDoc.data(), memberSince: userDoc.data().memberSince.toDate() } as User;
+    if (foundUser) {
+        // User exists, log them in
     } else if (signupData) {
       let roles: User['roles'] = [];
       let rolePrefix = '';
@@ -147,9 +130,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         kycAddress: signupData.kycAddress,
       };
       
-      const userToSave: any = { ...newUser };
       if (signupData.role === 'Installer' || signupData.role === 'Both (Job Giver & Installer)') {
-        userToSave.installerProfile = {
+        newUser.installerProfile = {
           tier: 'Bronze',
           points: 0,
           skills: [],
@@ -160,7 +142,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         };
       }
       
-      await setDoc(doc(db, "users", newUserId), userToSave);
+      mockUsers.push(newUser);
       foundUser = newUser;
 
     }

@@ -34,9 +34,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { Calendar as CalendarIcon, X, ArrowUpDown } from "lucide-react";
-import { collection, getDocs, doc, getDoc, DocumentData, DocumentReference } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
-
+import { jobs as allJobs } from "@/lib/data";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
@@ -97,47 +95,6 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
     )
 }
 
-const fetchAllJobs = async () => {
-    const jobsCollection = collection(db, 'jobs');
-    const jobSnapshot = await getDocs(jobsCollection);
-    
-    const userCache: { [key: string]: User } = {};
-    const getUser = async (ref: DocumentReference): Promise<User> => {
-        if (userCache[ref.id]) return userCache[ref.id];
-        const userSnap = await getDoc(ref);
-        const userData = { id: userSnap.id, ...userSnap.data() } as User;
-        userCache[ref.id] = userData;
-        return userData;
-    }
-
-    const jobListPromises = jobSnapshot.docs.map(async (jobDoc) => {
-      const jobData = jobDoc.data() as DocumentData;
-      
-      const jobGiver = await getUser(jobData.jobGiver);
-
-      const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
-            ...bid,
-            installer: await getUser(bid.installer),
-        })));
-      
-      let awardedInstaller = null;
-      if (jobData.awardedInstaller && jobData.awardedInstaller instanceof DocumentReference) {
-          awardedInstaller = await getUser(jobData.awardedInstaller);
-      }
-
-      return {
-        ...jobData,
-        id: jobDoc.id,
-        jobGiver,
-        bids,
-        awardedInstaller
-      } as Job;
-    });
-
-    const jobList = await Promise.all(jobListPromises);
-    return jobList;
-};
-
 export default function AllJobsPage() {
   const router = useRouter();
   const { role } = useUser();
@@ -156,16 +113,10 @@ export default function AllJobsPage() {
 
   React.useEffect(() => {
     if (role === 'Admin') {
-      setLoading(true);
-      fetchAllJobs().then(jobList => {
-        setJobs(jobList);
-        const uniqueStatuses = Array.from(new Set(jobList.map(j => j.status)));
+        setJobs(allJobs);
+        const uniqueStatuses = Array.from(new Set(allJobs.map(j => j.status)));
         setAllStatuses(['all', ...uniqueStatuses.sort()]);
         setLoading(false);
-      }).catch(error => {
-        console.error("Error fetching jobs from Firestore:", error);
-        setLoading(false);
-      });
     }
   }, [role]);
 
@@ -413,7 +364,7 @@ export default function AllJobsPage() {
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      Loading jobs from Firestore...
+                      Loading jobs...
                     </TableCell>
                   </TableRow>
                 ) : filteredAndSortedJobs.length > 0 ? (
@@ -456,7 +407,7 @@ export default function AllJobsPage() {
          {/* Mobile Card View */}
          <div className="block lg:hidden">
             {loading ? (
-                <div className="text-center py-10 text-muted-foreground">Loading jobs from Firestore...</div>
+                <div className="text-center py-10 text-muted-foreground">Loading jobs...</div>
             ) : filteredAndSortedJobs.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {filteredAndSortedJobs.map((job) => (
@@ -471,5 +422,3 @@ export default function AllJobsPage() {
     </Card>
   );
 }
-
-    
