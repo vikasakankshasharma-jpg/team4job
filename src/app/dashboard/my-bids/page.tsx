@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, doc, getDoc, DocumentReference, query, where, or } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, DocumentReference, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 
@@ -172,14 +172,16 @@ function MyBidsPageContent() {
         if (!user) return;
         setLoading(true);
         try {
-            const jobsQuery = query(
-                collection(db, 'jobs'),
-                or(
-                    where('bidderIds', 'array-contains', user.id),
-                    where('awardedInstaller', '==', doc(db, 'users', user.id))
-                )
-            );
-            
+            const userRef = doc(db, 'users', user.id);
+
+            const biddedJobsQuery = query(collection(db, 'jobs'), where('bidderIds', 'array-contains', user.id));
+            const awardedJobsQuery = query(collection(db, 'jobs'), where('awardedInstaller', '==', userRef));
+
+            const [biddedJobsSnapshot, awardedJobsSnapshot] = await Promise.all([
+                getDocs(biddedJobsQuery),
+                getDocs(awardedJobsQuery)
+            ]);
+
             const userCache: { [key: string]: User } = {};
             const getUser = async (ref: DocumentReference): Promise<User> => {
                 if (userCache[ref.id]) return userCache[ref.id];
@@ -188,39 +190,47 @@ function MyBidsPageContent() {
                 userCache[ref.id] = userData;
                 return userData;
             }
+            
+            const processSnapshot = async (snapshot: typeof biddedJobsSnapshot) => {
+                 const jobListPromises = snapshot.docs.map(async (jobDoc) => {
+                    const jobData = jobDoc.data();
 
-            const querySnapshot = await getDocs(jobsQuery);
-            const jobListPromises = querySnapshot.docs.map(async (jobDoc) => {
-                const jobData = jobDoc.data();
+                    try {
+                        const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
+                            ...bid,
+                            installer: await getUser(bid.installer),
+                        })));
 
-                try {
-                    const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
-                        ...bid,
-                        installer: await getUser(bid.installer),
-                    })));
+                        let awardedInstaller = jobData.awardedInstaller;
+                        if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
+                            awardedInstaller = await getUser(awardedInstaller);
+                        }
+                        
+                        const jobGiver = await getUser(jobData.jobGiver);
 
-                    let awardedInstaller = jobData.awardedInstaller;
-                    if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
-                        awardedInstaller = await getUser(awardedInstaller);
+                        return {
+                            id: jobDoc.id,
+                            ...jobData,
+                            jobGiver,
+                            bids,
+                            awardedInstaller,
+                        } as Job;
+                    } catch(e) {
+                        console.error(`Skipping job ${jobDoc.id} due to error:`, e);
+                        return null;
                     }
-                    
-                    const jobGiver = await getUser(jobData.jobGiver);
+                });
+                return (await Promise.all(jobListPromises)).filter((j): j is Job => j !== null);
+            }
 
-                    return {
-                        id: jobDoc.id,
-                        ...jobData,
-                        jobGiver,
-                        bids,
-                        awardedInstaller,
-                    } as Job;
-                } catch(e) {
-                    console.error(`Skipping job ${jobDoc.id} due to error:`, e);
-                    return null;
-                }
-            });
+            const biddedJobs = await processSnapshot(biddedJobsSnapshot);
+            const awardedJobs = await processSnapshot(awardedJobsSnapshot);
 
-            const jobList = (await Promise.all(jobListPromises)).filter((j): j is Job => j !== null);
-            setJobs(jobList);
+            const allJobsMap = new Map<string, Job>();
+            biddedJobs.forEach(job => allJobsMap.set(job.id, job));
+            awardedJobs.forEach(job => allJobsMap.set(job.id, job));
+            
+            setJobs(Array.from(allJobsMap.values()));
 
         } catch (error) {
             console.error("Error fetching jobs and bids:", error);
@@ -230,7 +240,7 @@ function MyBidsPageContent() {
     };
     if (user && role === 'Installer') {
         fetchMyJobs();
-    } else {
+    } else if (role && role !== 'Installer') {
         setLoading(false);
     }
 }, [user, role]);
@@ -275,7 +285,15 @@ function MyBidsPageContent() {
   if (role === 'Admin' || !user) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Redirecting...</p>
+        <p className="text-muted-foreground">{!user && loading ? 'Loading...' : 'Redirecting...'}</p>
+      </div>
+    );
+  }
+  
+  if (role === 'Job Giver') {
+     return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground">This page is for Installers. Redirecting...</p>
       </div>
     );
   }
@@ -316,10 +334,10 @@ function MyBidsPageContent() {
   }).filter((bid): bid is Bid & { jobTitle: string; jobId: string; jobStatus: Job['status']; wasPlaced: boolean } => bid !== null)
     .sort((a,b) => toDate(b.timestamp).getTime() - toDate(a.timestamp).getTime());
 
- const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: User; }): string => {
+ const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: User | DocumentReference; }): string => {
     if (!job || !user) return "Unknown";
     
-    const awardedId = (job.awardedInstaller as User)?.id;
+    const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
     const won = awardedId === user.id;
 
     if (won) {
@@ -441,3 +459,5 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
+
+    
