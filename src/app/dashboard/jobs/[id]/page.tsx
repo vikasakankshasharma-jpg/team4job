@@ -17,6 +17,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Calendar,
   Clock,
   IndianRupee,
@@ -52,16 +62,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Bid, Job, Comment, User, JobAttachment, PrivateMessage } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, DocumentReference, addDoc, collection, writeBatch, setDoc } from "firebase/firestore";
@@ -374,7 +374,8 @@ function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer
                     </Button>
                 </DialogFooter>
             </DialogContent>
-    )
+        </Dialog>
+    );
 }
 
 function JobGiverBid({ bid, job, onJobUpdate, rank }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, rank: number }) {
@@ -1255,3 +1256,4 @@ export default function JobDetailPage() {
   );
 }
 
+    
