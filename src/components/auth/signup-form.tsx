@@ -7,11 +7,11 @@ import * as z from "zod";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -36,9 +36,17 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { MapInput } from "@/components/ui/map-input";
-import { LocationInput } from "@/components/ui/location-input";
+import { AddressForm } from "@/components/ui/address-form";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
+
+const addressSchema = z.object({
+  house: z.string().min(3, "Please enter a valid house/building detail."),
+  street: z.string().min(3, "Please enter a valid street/area."),
+  landmark: z.string().optional(),
+  cityPincode: z.string().min(8, "Please select a pincode and post office."),
+});
+
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -48,8 +56,7 @@ const formSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters." }),
   role: z.enum(["Job Giver", "Installer", "Both (Job Giver & Installer)"]),
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
-  location: z.string().min(8, { message: "Please select a pincode and post office." }),
-  fullAddress: z.string().min(10, { message: "Please select a valid address." }),
+  address: addressSchema,
   aadhar: z.string().optional(),
   otp: z.string().optional(),
   realAvatarUrl: z.string().optional(),
@@ -96,8 +103,12 @@ export function SignUpForm() {
       password: "",
       role: undefined,
       mobile: "",
-      location: "",
-      fullAddress: "",
+      address: {
+        house: "",
+        street: "",
+        landmark: "",
+        cityPincode: "",
+      },
       aadhar: "",
       otp: "",
       realAvatarUrl: "",
@@ -205,7 +216,6 @@ export function SignUpForm() {
     try {
       const aadharNumber = form.getValues("aadhar");
       
-      // Check if Aadhar number already exists
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("aadharNumber", "==", aadharNumber));
       const querySnapshot = await getDocs(q);
@@ -229,12 +239,12 @@ export function SignUpForm() {
         setKycData(result.kycData);
         form.setValue("name", result.kycData.name, { shouldValidate: true });
         form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
+        
         // Store the permanent Aadhar address
         form.setValue("kycAddress", result.kycData.pincode, { shouldValidate: true });
         
         // Pre-fill the current location fields for user convenience
-        form.setValue("location", result.kycData.pincode, { shouldValidate: true, shouldDirty: true });
-        form.setValue("fullAddress", result.kycData.pincode, { shouldValidate: true, shouldDirty: true });
+        form.setValue("address.cityPincode", result.kycData.pincode, { shouldValidate: true, shouldDirty: true });
         
         setCurrentStep("photo");
       } else {
@@ -498,18 +508,12 @@ export function SignUpForm() {
             </FormItem>
           )}
         />
-        <LocationInput
-            name="location"
-            label="Current Residential Location (Pincode)"
-            placeholder="e.g. 110001"
-            control={form.control}
+        <AddressForm
+            pincodeName="address.cityPincode"
+            houseName="address.house"
+            streetName="address.street"
+            landmarkName="address.landmark"
             onLocationGeocoded={setMapCenter}
-        />
-        <MapInput
-            name="fullAddress"
-            label="Current Residential Address"
-            control={form.control}
-            center={mapCenter}
         />
         <div className="flex gap-2">
             <Button variant="outline" onClick={() => setCurrentStep('photo')} className="w-full">Back</Button>

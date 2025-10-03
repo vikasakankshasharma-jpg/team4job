@@ -195,7 +195,7 @@ export default function UserProfilePage() {
     notFound();
   }
 
-  const { name, email, id: userId, memberSince, realAvatarUrl, pincodes, roles } = profileUser;
+  const { name, email, id: userId, memberSince, realAvatarUrl, address, roles } = profileUser;
   const installerProfile = profileUser.installerProfile;
   const isInstaller = roles.includes('Installer');
   
@@ -238,14 +238,8 @@ export default function UserProfilePage() {
                 </div>
                  <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
-                    <span>{pincodes.residential} (Home)</span>
+                    <span>{address.cityPincode}</span>
                 </div>
-                 {pincodes.office && (
-                    <div className="flex items-center gap-2">
-                        <Building className="h-4 w-4" />
-                        <span>{pincodes.office} (Office)</span>
-                    </div>
-                 )}
               </div>
             </div>
           </div>

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
@@ -30,10 +31,16 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
-import { LocationInput } from "@/components/ui/location-input";
 import { Separator } from "@/components/ui/separator";
 import { JobAttachment } from "@/lib/types";
-import { MapInput } from "@/components/ui/map-input";
+import { AddressForm } from "@/components/ui/address-form";
+
+const addressSchema = z.object({
+  house: z.string().min(3, "Please enter a valid house/building detail."),
+  street: z.string().min(3, "Please enter a valid street/area."),
+  landmark: z.string().optional(),
+  cityPincode: z.string().min(8, "Please select a pincode and post office."),
+});
 
 const jobSchema = z.object({
   jobTitle: z
@@ -43,8 +50,7 @@ const jobSchema = z.object({
     .string()
     .min(50, { message: "Description must be at least 50 characters." }),
   skills: z.string().min(1, { message: "Please provide at least one skill." }),
-  location: z.string().min(8, { message: "Please select a pincode and post office." }),
-  fullAddress: z.string().min(10, { message: "Please enter a full address." }),
+  address: addressSchema,
   budgetMin: z.coerce.number().min(1, { message: "Minimum budget must be at least 1." }),
   budgetMax: z.coerce.number().min(1, { message: "Maximum budget must be at least 1." }),
   deadline: z.string().refine((val) => new Date(val) > new Date(), {
@@ -92,8 +98,12 @@ export default function PostJobPage() {
       jobTitle: "",
       jobDescription: "",
       skills: "",
-      location: "",
-      fullAddress: "",
+      address: {
+        house: "",
+        street: "",
+        landmark: "",
+        cityPincode: "",
+      },
       budgetMin: 0,
       budgetMax: 0,
       deadline: "",
@@ -168,9 +178,13 @@ export default function PostJobPage() {
 
     const newJobId = `JOB-${Date.now()}`;
     const status = values.directAwardInstallerId ? "Awarded" : "Open for Bidding";
+    
+    const [pincode] = values.address.cityPincode.split(',');
+
     const jobData = { 
         id: newJobId, 
         ...values, 
+        location: pincode.trim(),
         jobGiver: user.id, 
         status,
         bids: [],
@@ -322,21 +336,13 @@ export default function PostJobPage() {
                   </Button>
               </div>
               <Separator />
-               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                 <LocationInput
-                    name="location"
-                    label="Location (Pincode)"
-                    placeholder="e.g. 110001"
-                    control={form.control}
-                    onLocationGeocoded={setMapCenter}
-                 />
-                 <MapInput
-                    name="fullAddress"
-                    label="Full Address & Map Location"
-                    control={form.control}
-                    center={mapCenter}
-                  />
-                </div>
+               <AddressForm
+                  pincodeName="address.cityPincode"
+                  houseName="address.house"
+                  streetName="address.street"
+                  landmarkName="address.landmark"
+                  onLocationGeocoded={setMapCenter}
+                />
                  <Separator />
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <FormField

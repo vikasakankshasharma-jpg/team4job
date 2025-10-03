@@ -2,6 +2,14 @@
 
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
+export type Address = {
+  house: string;
+  street: string;
+  landmark?: string;
+  cityPincode: string; // Combined Pincode and Post Office name
+  fullAddress?: string; // Auto-generated for display
+};
+
 export type User = {
   id: string;
   name: string;
@@ -13,6 +21,7 @@ export type User = {
     residential: string;
     office?: string;
   };
+  address: Address;
   roles: ('Job Giver' | 'Installer' | 'Admin')[];
   memberSince: Date | Timestamp;
   freeBids?: number;
@@ -66,7 +75,7 @@ export type Job = {
   description: string;
   jobGiver: User | DocumentReference;
   location: string; // Pincode
-  fullAddress?: string;
+  address: Address;
   budget: {
     min: number;
     max: number;
@@ -80,7 +89,6 @@ export type Job = {
   comments: Comment[];
   privateMessages?: PrivateMessage[];
   attachments?: JobAttachment[];
-  selectedInstallers?: { installerId: string, rank: number }[];
   awardedInstaller?: User['id'] | User | DocumentReference;
   rating?: number;
   completionOtp?: string;
