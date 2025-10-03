@@ -180,6 +180,11 @@
           "type": "string",
           "format": "date-time"
         },
+        "acceptanceDeadline": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp by which an awarded installer must accept the job."
+        },
         "awardedInstaller": {
           "$ref": "#/entities/UserProfile"
         },

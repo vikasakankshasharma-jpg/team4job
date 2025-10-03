@@ -83,6 +83,7 @@ export type Job = {
   deadline: Date | Timestamp;
   jobStartDate?: Date | Timestamp;
   postedAt: Date | Timestamp;
+  acceptanceDeadline?: Date | Timestamp;
   bids: Bid[];
   bidderIds?: string[];
   comments: Comment[];
