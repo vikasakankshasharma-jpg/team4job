@@ -244,26 +244,6 @@ export const users: User[] = [
       reputationHistory: []
     },
   },
-  {
-    id: 'INSTALLER-20240601-KENT',
-    name: 'Kent Clark',
-    email: 'kent.c@example.com',
-    mobile: '9112233445',
-    avatarUrl: PlaceHolderImages.find(p => p.id === 'avatar3')?.imageUrl || '',
-    realAvatarUrl: 'https://picsum.photos/seed/kent/100/100',
-    pincodes: { residential: '462001, Arera Hills' },
-    roles: ['Installer'],
-    memberSince: new Date('2024-06-01'),
-    installerProfile: {
-      tier: 'Bronze',
-      points: 75,
-      skills: ['IP Cameras', 'Residential Wiring', 'DVR Setup'],
-      rating: 4.8,
-      reviews: 1,
-      verified: true,
-      reputationHistory: []
-    },
-  },
 ];
 
 const now = new Date();
@@ -818,4 +798,5 @@ export const disputes: Dispute[] = [
         resolvedAt: new Date('2024-09-04T11:00:00Z'),
     }
 ]
+
 
