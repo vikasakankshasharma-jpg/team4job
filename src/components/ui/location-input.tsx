@@ -52,21 +52,30 @@ export function LocationInput({ name, label, placeholder, description, control, 
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     });
 
-    useEffect(() => {
-        if (field.value && typeof field.value === 'string') {
-            const [currentPincode, currentPO] = field.value.split(', ');
-            if (currentPincode && currentPincode.length === 6) {
-                setPincode(currentPincode);
-                if (!postOffices.length) {
-                    fetchPostOffices(currentPincode, currentPO);
-                }
-            } else {
-                setPincode(field.value);
-            }
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [field.value]);
+    const handlePostOfficeChange = useCallback((postOfficeName: string, pc: string, poData?: PostOffice) => {
+        const currentPincode = pc || pincode;
+        const currentPOData = poData || postOffices.find(p => p.Name === postOfficeName);
 
+        if (!currentPOData) return;
+
+        setSelectedPostOffice(postOfficeName);
+        setCity(currentPOData.District);
+        setState(currentPOData.State);
+        setCountry(currentPOData.Country);
+        const fullLocation = `${currentPincode}, ${postOfficeName}`;
+        setValue(name, fullLocation, { shouldValidate: true, shouldDirty: true });
+
+        if (isLoaded && onLocationGeocoded && window.google) {
+            const geocoder = new window.google.maps.Geocoder();
+            geocoder.geocode({ address: fullLocation }, (results, status) => {
+                if (status === 'OK' && results && results[0].geometry) {
+                    const location = results[0].geometry.location;
+                    onLocationGeocoded({ lat: location.lat(), lng: location.lng() });
+                }
+            });
+        }
+    }, [pincode, postOffices, setValue, name, isLoaded, onLocationGeocoded]);
+    
     const fetchPostOffices = useCallback(async (currentPincode: string, defaultPO?: string) => {
         if (currentPincode.length !== 6) {
             setPostOffices([]);
@@ -92,8 +101,12 @@ export function LocationInput({ name, label, placeholder, description, control, 
                 setCity(fetchedPOs[0].District);
                 setState(fetchedPOs[0].State);
                 setCountry(fetchedPOs[0].Country);
-                if (defaultPO && fetchedPOs.some(po => po.Name === defaultPO)) {
-                    handlePostOfficeChange(defaultPO, currentPincode, fetchedPOs[0]);
+                
+                if (fetchedPOs.length === 1) {
+                    // If only one post office, auto-select it
+                    handlePostOfficeChange(fetchedPOs[0].Name, currentPincode, fetchedPOs[0]);
+                } else if (defaultPO && fetchedPOs.some(po => po.Name === defaultPO)) {
+                    handlePostOfficeChange(defaultPO, currentPincode, fetchedPOs.find(p => p.Name === defaultPO));
                 }
             } else {
                 setError(data[0].Message || 'Invalid PIN code or no post offices found.');
@@ -103,7 +116,22 @@ export function LocationInput({ name, label, placeholder, description, control, 
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [handlePostOfficeChange]);
+    
+    useEffect(() => {
+        if (field.value && typeof field.value === 'string') {
+            const [currentPincode, currentPO] = field.value.split(', ');
+            if (currentPincode && currentPincode.length === 6) {
+                setPincode(currentPincode);
+                if (!postOffices.length) {
+                    fetchPostOffices(currentPincode, currentPO);
+                }
+            } else {
+                setPincode(field.value);
+            }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [field.value]);
 
     const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/\D/g, '');
@@ -118,30 +146,6 @@ export function LocationInput({ name, label, placeholder, description, control, 
             setCountry('');
         }
         setValue(name, value, { shouldValidate: true });
-    };
-
-    const handlePostOfficeChange = (postOfficeName: string, pc?: string, poData?: PostOffice) => {
-        const currentPincode = pc || pincode;
-        const currentPOData = poData || postOffices.find(p => p.Name === postOfficeName);
-
-        if (!currentPOData) return;
-
-        setSelectedPostOffice(postOfficeName);
-        setCity(currentPOData.District);
-        setState(currentPOData.State);
-        setCountry(currentPOData.Country);
-        const fullLocation = `${currentPincode}, ${postOfficeName}`;
-        setValue(name, fullLocation, { shouldValidate: true, shouldDirty: true });
-
-        if (isLoaded && onLocationGeocoded && window.google) {
-            const geocoder = new window.google.maps.Geocoder();
-            geocoder.geocode({ address: fullLocation }, (results, status) => {
-                if (status === 'OK' && results && results[0].geometry) {
-                    const location = results[0].geometry.location;
-                    onLocationGeocoded({ lat: location.lat(), lng: location.lng() });
-                }
-            });
-        }
     };
 
     return (
@@ -159,9 +163,9 @@ export function LocationInput({ name, label, placeholder, description, control, 
                     {isLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
                 </div>
                 <Select
-                    onValueChange={(value) => handlePostOfficeChange(value)}
+                    onValueChange={(value) => handlePostOfficeChange(value, pincode)}
                     value={selectedPostOffice}
-                    disabled={postOffices.length === 0 || isLoading}
+                    disabled={postOffices.length <= 1 || isLoading}
                 >
                     <SelectTrigger>
                         <SelectValue placeholder="Select Post Office" />
