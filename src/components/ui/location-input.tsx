@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FormDescription, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useJsApiLoader } from '@react-google-maps/api';
+import { useGoogleMaps } from '@/hooks/use-google-maps';
 
 interface PostOffice {
     Name: string;
@@ -46,11 +46,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
     const [state, setState] = useState('');
     const [country, setCountry] = useState('');
 
-
-    const { isLoaded } = useJsApiLoader({
-        id: 'google-map-script',
-        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    });
+    const { isLoaded } = useGoogleMaps();
 
     const handlePostOfficeChange = useCallback((postOfficeName: string, pc: string, poData?: PostOffice) => {
         const currentPincode = pc || pincode;

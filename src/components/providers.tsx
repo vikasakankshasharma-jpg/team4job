@@ -1,8 +1,10 @@
+
 "use client";
 
 import { UserProvider } from "@/hooks/use-user";
 import { ThemeProvider } from "@/components/theme-provider";
 import { HelpProvider } from "@/hooks/use-help";
+import { GoogleMapsProvider } from "@/hooks/use-google-maps";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -13,7 +15,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <UserProvider>
-        <HelpProvider>{children}</HelpProvider>
+        <HelpProvider>
+          <GoogleMapsProvider>
+            {children}
+          </GoogleMapsProvider>
+        </HelpProvider>
       </UserProvider>
     </ThemeProvider>
   );
