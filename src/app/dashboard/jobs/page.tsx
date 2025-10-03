@@ -41,9 +41,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
 import { useUser } from "@/hooks/use-user";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, DocumentReference } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
-import type { Job } from "@/lib/types";
+import type { Job, User } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
 // Get unique skills from jobs data for filter - This might need to be dynamic later
@@ -100,7 +100,22 @@ export default function BrowseJobsPage() {
       try {
         const jobsCollection = collection(db, 'jobs');
         const jobSnapshot = await getDocs(jobsCollection);
-        const jobList = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+        
+        const userCache: { [key: string]: User } = {};
+        const getUser = async (ref: DocumentReference): Promise<User> => {
+            if (userCache[ref.id]) return userCache[ref.id];
+            const userSnap = await getDoc(ref);
+            const userData = { id: userSnap.id, ...userSnap.data() } as User;
+            userCache[ref.id] = userData;
+            return userData;
+        }
+
+        const jobList = await Promise.all(jobSnapshot.docs.map(async (jobDoc) => {
+            const jobData = jobDoc.data();
+            const jobGiver = await getUser(jobData.jobGiver);
+            return { id: jobDoc.id, ...jobData, jobGiver } as Job;
+        }));
+
         setJobs(jobList);
       } catch (error) {
         console.error("Error fetching jobs:", error);
@@ -342,4 +357,3 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
-

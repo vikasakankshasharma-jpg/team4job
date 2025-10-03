@@ -56,7 +56,7 @@ type SortableKeys = 'title' | 'status' | 'jobGiver' | 'bids' | 'jobType' | 'post
 function getJobType(job: Job) {
     if (!job.awardedInstaller) return 'N/A';
 
-    const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+    const awardedInstallerId = (job.awardedInstaller as User)?.id;
     if (!job.bids || job.bids.length === 0) return 'Direct';
 
     const bidderIds = (job.bids || []).map(b => (b.installer as User).id);
@@ -136,21 +136,26 @@ export default function AllJobsPage() {
 
           const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
                 ...bid,
-                id: `${jobDoc.id}-${bid.installer.id}`,
                 installer: await getUser(bid.installer),
             })));
           
+          let awardedInstaller = jobData.awardedInstaller;
+            if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
+                awardedInstaller = await getUser(awardedInstaller);
+            }
+
           return {
             ...jobData,
             id: jobDoc.id,
             jobGiver,
-            bids
+            bids,
+            awardedInstaller
           } as Job;
         }));
 
         setJobs(jobList);
         const uniqueStatuses = Array.from(new Set(jobList.map(j => j.status)));
-        setAllStatuses(['All', ...uniqueStatuses.sort()]);
+        setAllStatuses(['all', ...uniqueStatuses.sort()]);
 
       } catch (error) {
         console.error("Error fetching jobs from Firestore:", error);
@@ -299,7 +304,7 @@ export default function AllJobsPage() {
                     </SelectTrigger>
                     <SelectContent>
                         {allStatuses.map(status => (
-                            <SelectItem key={status} value={status === 'All' ? 'all' : status}>{status}</SelectItem>
+                            <SelectItem key={status} value={status}>{status}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>

@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useUser } from "@/hooks/use-user";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where, or } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 import { Dispute } from "@/lib/types";
 import { toDate } from "@/lib/utils";
@@ -44,7 +44,7 @@ const getStatusVariant = (status: Dispute['status']) => {
 
 export default function DisputesPage() {
   const router = useRouter();
-  const { user, role, isAdmin } = useUser();
+  const { user, isAdmin } = useUser();
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,28 +53,55 @@ export default function DisputesPage() {
     setLoading(true);
 
     const fetchDisputes = async () => {
-      const disputesCollection = collection(db, "disputes");
-      const querySnapshot = await getDocs(disputesCollection);
-      const allDisputes = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: toDate(doc.data().createdAt),
-        resolvedAt: doc.data().resolvedAt ? toDate(doc.data().resolvedAt) : undefined,
-      } as Dispute));
-
+      let disputesQuery;
       if (isAdmin) {
-        setDisputes(allDisputes);
+          disputesQuery = collection(db, "disputes");
       } else {
-        const userDisputes = allDisputes.filter(d => 
-            d.requesterId === user.id ||
-            d.parties?.jobGiverId === user.id ||
-            d.parties?.installerId === user.id
-        );
-        setDisputes(userDisputes);
+          disputesQuery = query(
+              collection(db, "disputes"),
+              or(
+                  where('requesterId', '==', user.id),
+                  where('parties.jobGiverId', '==', user.id),
+                  where('parties.installerId', '==', user.id)
+              )
+          );
       }
-      
-      setDisputes(prevDisputes => prevDisputes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
-      setLoading(false);
+
+      try {
+        const querySnapshot = await getDocs(disputesQuery);
+        const fetchedDisputes = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: toDate(doc.data().createdAt),
+          resolvedAt: doc.data().resolvedAt ? toDate(doc.data().resolvedAt) : undefined,
+        } as Dispute));
+
+        fetchedDisputes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        setDisputes(fetchedDisputes);
+      } catch (e) {
+          console.error("Could not execute query:", e);
+          if (!isAdmin) {
+              // Fallback for non-admin users if 'or' query fails (e.g. requires index)
+              console.log("Falling back to client-side filtering for disputes.");
+              const allDisputesSnapshot = await getDocs(collection(db, "disputes"));
+              const allDisputes = allDisputesSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    createdAt: toDate(doc.data().createdAt),
+                    resolvedAt: doc.data().resolvedAt ? toDate(doc.data().resolvedAt) : undefined,
+                } as Dispute));
+              
+              const userDisputes = allDisputes.filter(d => 
+                  d.requesterId === user.id ||
+                  d.parties?.jobGiverId === user.id ||
+                  d.parties?.installerId === user.id
+              );
+              userDisputes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+              setDisputes(userDisputes);
+          }
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchDisputes();

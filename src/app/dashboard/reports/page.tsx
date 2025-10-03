@@ -12,7 +12,7 @@ import {
 import { useUser } from "@/hooks/use-user";
 import { Download, Users, Briefcase, IndianRupee, FileText } from "lucide-react";
 import React from "react";
-import { collection, getDocs, query, where, DocumentReference } from "firebase/firestore";
+import { collection, getDocs, query, where, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 import { Job, User, Bid } from "@/lib/types";
 import { toDate, exportToCsv } from "@/lib/utils";
@@ -104,8 +104,8 @@ export default function ReportsPage() {
     const jobsSnapshot = await getDocs(collection(db, "jobs"));
     const data = jobsSnapshot.docs.map(doc => {
       const job = doc.data() as Job;
-      const jobGiver = (job.jobGiver as DocumentReference)?.id || (job.jobGiver as User)?.id;
-      const awardedInstaller = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+      const jobGiver = (job.jobGiver as User)?.id;
+      const awardedInstaller = (job.awardedInstaller as User)?.id;
       return {
         ID: job.id,
         Title: job.title,
@@ -133,7 +133,7 @@ export default function ReportsPage() {
     const snapshot = await getDocs(q);
     const data = snapshot.docs.map(d => {
       const job = d.data() as Job;
-      const winningBid = job.bids.find(b => ((b.installer as DocumentReference)?.id) === user.id);
+      const winningBid = job.bids.find(b => ((b.installer as User)?.id) === user.id);
       return {
         JobID: job.id,
         JobTitle: job.title,
@@ -156,7 +156,7 @@ export default function ReportsPage() {
         JobTitle: job.title,
         Status: job.status,
         BidsReceived: job.bids.length,
-        AwardedInstallerID: (job.awardedInstaller as DocumentReference)?.id || 'N/A',
+        AwardedInstallerID: (job.awardedInstaller as User)?.id || 'N/A',
         PostedDate: toDate(job.postedAt).toLocaleDateString(),
       };
     });

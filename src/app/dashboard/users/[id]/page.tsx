@@ -52,7 +52,12 @@ const chartConfig = {
 } satisfies ChartConfig
 
 const wasJobAwardedDirectly = (job: Job) => {
-    return (job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') && job.bids.length === 0;
+    if (!job.awardedInstaller || job.bids.length > 0) return false;
+    
+    const awardedInstallerId = (job.awardedInstaller as User)?.id;
+    const hasBids = (job.bids || []).some(bid => (bid.installer as User).id === awardedInstallerId);
+
+    return !hasBids;
 };
 
 function JobListItem({ job }: { job: Job }) {
@@ -129,7 +134,6 @@ export default function UserProfilePage() {
                 setProfileUser({
                     id: userSnap.id,
                     ...userData,
-                    memberSince: toDate(userData.memberSince),
                 } as User);
             } else {
                 setProfileUser(null);
@@ -143,23 +147,44 @@ export default function UserProfilePage() {
   React.useEffect(() => {
     if (profileUser) {
         const fetchUserJobs = async () => {
+
+            const userCache: { [key: string]: User } = {};
+            const getUser = async (ref: DocumentReference): Promise<User> => {
+                if (userCache[ref.id]) return userCache[ref.id];
+                const userSnap = await getDoc(ref);
+                const userData = { id: userSnap.id, ...userSnap.data() } as User;
+                userCache[ref.id] = userData;
+                return userData;
+            }
+
+            const resolveJob = async (doc: any) => {
+                const jobData = doc.data();
+                const jobGiver = await getUser(jobData.jobGiver);
+                
+                let awardedInstaller = jobData.awardedInstaller;
+                if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
+                    awardedInstaller = await getUser(awardedInstaller);
+                }
+
+                const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
+                    ...bid,
+                    installer: await getUser(bid.installer),
+                })));
+
+                return {
+                    id: doc.id,
+                    ...jobData,
+                    jobGiver,
+                    awardedInstaller,
+                    bids,
+                } as Job;
+            }
+
             if (profileUser.roles.includes('Job Giver')) {
                 const userRef = doc(db, 'users', profileUser.id);
                 const q = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
                 const querySnapshot = await getDocs(q);
-                const postedJobs = await Promise.all(querySnapshot.docs.map(async (doc) => {
-                    const jobData = doc.data();
-                    const jobGiverSnap = await getDoc(jobData.jobGiver);
-
-                    return {
-                        id: doc.id,
-                        ...jobData,
-                        jobGiver: { id: jobGiverSnap.id, ...jobGiverSnap.data() },
-                        postedAt: toDate(jobData.postedAt),
-                        deadline: toDate(jobData.deadline),
-                        jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
-                    } as Job;
-                }));
+                const postedJobs = await Promise.all(querySnapshot.docs.map(resolveJob));
                 setUserPostedJobs(postedJobs);
             }
 
@@ -167,18 +192,7 @@ export default function UserProfilePage() {
                 const awardedInstallerRef = doc(db, 'users', profileUser.id);
                 const q = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', awardedInstallerRef));
                 const querySnapshot = await getDocs(q);
-                const completedJobs = await Promise.all(querySnapshot.docs.map(async (doc) => {
-                     const jobData = doc.data();
-                    const jobGiverSnap = await getDoc(jobData.jobGiver);
-                     return {
-                        id: doc.id,
-                        ...jobData,
-                        jobGiver: { id: jobGiverSnap.id, ...jobGiverSnap.data() },
-                        postedAt: toDate(jobData.postedAt),
-                        deadline: toDate(jobData.deadline),
-                        jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
-                    } as Job;
-                }));
+                const completedJobs = await Promise.all(querySnapshot.docs.map(resolveJob));
                 setUserCompletedJobs(completedJobs);
             }
         };

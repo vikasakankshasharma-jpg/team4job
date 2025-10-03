@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, doc, getDoc, DocumentReference } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, DocumentReference, query, where, or } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 
@@ -61,7 +61,7 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     const getMyBidStatus = (): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
         if (!job || !user) return { text: "Unknown", variant: "secondary" };
         
-        const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+        const awardedId = (job.awardedInstaller as User)?.id;
         
         const won = awardedId === user.id;
 
@@ -85,7 +85,7 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     const calculatePoints = () => {
         if (!job || job.status !== 'Completed') return null;
 
-        const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+        const awardedId = (job.awardedInstaller as User)?.id;
 
         if (awardedId !== user?.id || !job.rating) {
             return null;
@@ -172,38 +172,32 @@ function MyBidsPageContent() {
         if (!user) return;
         setLoading(true);
         try {
-            const allJobsSnapshot = await getDocs(collection(db, 'jobs'));
-            const userCache: { [key: string]: User } = {};
+            const jobsQuery = query(
+                collection(db, 'jobs'),
+                or(
+                    where('bidderIds', 'array-contains', user.id),
+                    where('awardedInstaller', '==', doc(db, 'users', user.id))
+                )
+            );
             
+            const userCache: { [key: string]: User } = {};
             const getUser = async (ref: DocumentReference): Promise<User> => {
                 if (userCache[ref.id]) return userCache[ref.id];
                 const userSnap = await getDoc(ref);
-                if (!userSnap.exists()) {
-                    throw new Error(`User not found: ${ref.id}`);
-                }
                 const userData = { id: userSnap.id, ...userSnap.data() } as User;
                 userCache[ref.id] = userData;
                 return userData;
             }
 
-            const jobListPromises = allJobsSnapshot.docs.map(async (jobDoc) => {
+            const querySnapshot = await getDocs(jobsQuery);
+            const jobListPromises = querySnapshot.docs.map(async (jobDoc) => {
                 const jobData = jobDoc.data();
 
-                // Check if user is involved
-                const isAwardedToMe = (jobData.awardedInstaller as DocumentReference)?.id === user.id;
-                const hasBid = (jobData.bids || []).some((bid: any) => bid.installer.id === user.id);
-                if (!isAwardedToMe && !hasBid) return null;
-                
                 try {
-                    const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => {
-                        const installer = await getUser(bid.installer);
-                        return {
-                            ...bid,
-                            id: `${jobDoc.id}-${installer.id}`,
-                            installer: installer,
-                            timestamp: toDate(bid.timestamp),
-                        };
-                    }));
+                    const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
+                        ...bid,
+                        installer: await getUser(bid.installer),
+                    })));
 
                     let awardedInstaller = jobData.awardedInstaller;
                     if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
@@ -218,9 +212,6 @@ function MyBidsPageContent() {
                         jobGiver,
                         bids,
                         awardedInstaller,
-                        postedAt: toDate(jobData.postedAt),
-                        deadline: toDate(jobData.deadline),
-                        jobStartDate: jobData.jobStartDate ? toDate(jobData.jobStartDate) : undefined,
                     } as Job;
                 } catch(e) {
                     console.error(`Skipping job ${jobDoc.id} due to error:`, e);
@@ -305,7 +296,7 @@ function MyBidsPageContent() {
   
  const myBids = jobs.map(job => {
     const myBid = (job.bids || []).find(bid => (bid.installer as User).id === user.id);
-    const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+    const awardedId = (job.awardedInstaller as User)?.id;
     const isAwardedToMe = awardedId === user.id;
 
     if (myBid || isAwardedToMe) {
@@ -325,10 +316,10 @@ function MyBidsPageContent() {
   }).filter((bid): bid is Bid & { jobTitle: string; jobId: string; jobStatus: Job['status']; wasPlaced: boolean } => bid !== null)
     .sort((a,b) => toDate(b.timestamp).getTime() - toDate(a.timestamp).getTime());
 
- const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: DocumentReference | User; }): string => {
+ const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: User; }): string => {
     if (!job || !user) return "Unknown";
     
-    const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+    const awardedId = (job.awardedInstaller as User)?.id;
     const won = awardedId === user.id;
 
     if (won) {
@@ -450,5 +441,3 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
-
-    
