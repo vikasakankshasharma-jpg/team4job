@@ -7,7 +7,7 @@ import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
-import debounce from 'lodash.debounce';
+const debounce = require('lodash.debounce');
 
 const containerStyle = {
   width: '100%',
