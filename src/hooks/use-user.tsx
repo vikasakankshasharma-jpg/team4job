@@ -126,7 +126,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       const expiryDate = new Date();
       expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
-      const pincodeMatch = signupData.fullAddress.match(/(\d{6})/);
+      const pincodeMatch = signupData.address.cityPincode.match(/(\d{6})/);
       const residentialPincode = pincodeMatch ? pincodeMatch[0] : '';
       
       const newUser: User = {
@@ -135,6 +135,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         email: signupData.email,
         mobile: signupData.mobile,
         pincodes: { residential: residentialPincode },
+        address: signupData.address,
         roles: roles,
         memberSince: new Date(),
         avatarUrl: randomAvatar.imageUrl,

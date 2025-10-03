@@ -1,5 +1,4 @@
 
-
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {
@@ -7,7 +6,7 @@ export type Address = {
   street: string;
   landmark?: string;
   cityPincode: string; // Combined Pincode and Post Office name
-  fullAddress?: string; // Auto-generated for display
+  fullAddress: string; // Auto-generated for display
 };
 
 export type User = {

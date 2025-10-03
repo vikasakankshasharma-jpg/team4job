@@ -35,7 +35,6 @@ import {
 } from "@/ai/flows/aadhar-verification";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { MapInput } from "@/components/ui/map-input";
 import { AddressForm } from "@/components/ui/address-form";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
@@ -45,6 +44,7 @@ const addressSchema = z.object({
   street: z.string().min(3, "Please enter a valid street/area."),
   landmark: z.string().optional(),
   cityPincode: z.string().min(8, "Please select a pincode and post office."),
+  fullAddress: z.string().min(10, "Please provide a full address or pin it on the map."),
 });
 
 
@@ -108,6 +108,7 @@ export function SignUpForm() {
         street: "",
         landmark: "",
         cityPincode: "",
+        fullAddress: "",
       },
       aadhar: "",
       otp: "",
@@ -241,7 +242,7 @@ export function SignUpForm() {
         form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
         
         // Store the permanent Aadhar address
-        form.setValue("kycAddress", result.kycData.pincode, { shouldValidate: true });
+        form.setValue("kycAddress", `Pincode: ${result.kycData.pincode}`, { shouldValidate: true });
         
         // Pre-fill the current location fields for user convenience
         form.setValue("address.cityPincode", result.kycData.pincode, { shouldValidate: true, shouldDirty: true });
@@ -513,7 +514,9 @@ export function SignUpForm() {
             houseName="address.house"
             streetName="address.street"
             landmarkName="address.landmark"
+            fullAddressName="address.fullAddress"
             onLocationGeocoded={setMapCenter}
+            mapCenter={mapCenter}
         />
         <div className="flex gap-2">
             <Button variant="outline" onClick={() => setCurrentStep('photo')} className="w-full">Back</Button>

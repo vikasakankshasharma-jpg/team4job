@@ -6,18 +6,28 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "./form
 import { Input } from "./input";
 import { LocationInput } from "./location-input";
 import { Separator } from "./separator";
-import { Map } from "lucide-react";
+import { MapInput } from "./map-input";
 
 interface AddressFormProps {
     pincodeName: string;
     houseName: string;
     streetName: string;
     landmarkName: string;
+    fullAddressName: string;
     onLocationGeocoded?: (coords: { lat: number; lng: number }) => void;
+    mapCenter?: { lat: number; lng: number } | null;
 }
 
-export function AddressForm({ pincodeName, houseName, streetName, landmarkName, onLocationGeocoded }: AddressFormProps) {
-    const { control } = useFormContext();
+export function AddressForm({ 
+    pincodeName, 
+    houseName, 
+    streetName, 
+    landmarkName, 
+    fullAddressName,
+    onLocationGeocoded,
+    mapCenter
+}: AddressFormProps) {
+    const { control, watch } = useFormContext();
     
     return (
         <div className="space-y-6">
@@ -75,10 +85,12 @@ export function AddressForm({ pincodeName, houseName, streetName, landmarkName, 
                     )}
                 />
             </div>
-             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Map className="h-4 w-4"/>
-                <span>The map will update based on the full address provided.</span>
-            </div>
+             <MapInput 
+                name={fullAddressName}
+                label="Current Residential Address"
+                control={control}
+                center={mapCenter}
+             />
         </div>
     )
 }
