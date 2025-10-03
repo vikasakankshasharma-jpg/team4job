@@ -42,7 +42,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
     const [selectedPostOffice, setSelectedPostOffice] = useState('');
 
     const { isLoaded } = useJsApiLoader({
-        id: 'google-map-script-geocoding',
+        id: 'google-map-script',
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     });
 
