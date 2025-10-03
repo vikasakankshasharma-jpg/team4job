@@ -47,7 +47,7 @@ import type { Job } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
 // Get unique skills from jobs data for filter - This might need to be dynamic later
-const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz", "vms", "access control"];
+export const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz", "vms", "access control", "analog cameras", "wireless cameras", "fiber optics", "thermal cameras"];
 
 
 export default function BrowseJobsPage() {

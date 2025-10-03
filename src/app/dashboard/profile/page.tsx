@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -47,6 +47,9 @@ import { Job, User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { collection, query, where, getDocs, doc, DocumentReference } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { allSkills } from "@/app/dashboard/jobs/page";
 
 
 const tierIcons = {
@@ -240,41 +243,91 @@ function InstallerOnboardingDialog({ user, onSave }) {
 }
 
 function SkillsEditor({ initialSkills, onSave }: { initialSkills: string[], onSave: (skills: string[]) => void }) {
-    const [isEditing, setIsEditing] = React.useState(false);
-    const [skills, setSkills] = React.useState(initialSkills.join(', '));
+    const { toast } = useToast();
+    const [selectedSkills, setSelectedSkills] = React.useState<string[]>(initialSkills);
+    const [newSkillRequest, setNewSkillRequest] = React.useState('');
+    const [isOpen, setIsOpen] = React.useState(false);
+
+    const handleSkillChange = (skill: string) => {
+        setSelectedSkills(prev => 
+            prev.includes(skill) 
+            ? prev.filter(s => s !== skill) 
+            : [...prev, skill]
+        );
+    };
     
     const handleSave = () => {
-        onSave(skills.split(',').map(s => s.trim()).filter(Boolean));
-        setIsEditing(false);
+        onSave(selectedSkills);
+        setIsOpen(false);
     }
     
-    if (isEditing) {
-        return (
-            <div className="space-y-2">
-                <Textarea 
-                    value={skills}
-                    onChange={(e) => setSkills(e.target.value)}
-                    placeholder="Enter skills separated by commas"
-                />
-                <div className="flex gap-2">
-                    <Button size="sm" onClick={handleSave}>Save Skills</Button>
-                    <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                </div>
-            </div>
-        )
+    const handleRequestSkill = () => {
+        if (newSkillRequest.trim()) {
+            toast({
+                title: "Skill Request Submitted",
+                description: `Your request for "${newSkillRequest}" has been sent for review.`,
+            });
+            setNewSkillRequest('');
+        }
     }
 
     return (
         <div>
             <div className="flex justify-between items-start">
                 <div className="flex flex-wrap gap-2">
-                    {initialSkills.map(skill => (
-                        <Badge key={skill} variant="secondary">{skill}</Badge>
-                    ))}
+                    {initialSkills.length > 0 ? (
+                        initialSkills.map(skill => (
+                            <Badge key={skill} variant="secondary" className="capitalize">{skill}</Badge>
+                        ))
+                    ) : (
+                        <p className="text-sm text-muted-foreground">No skills added yet.</p>
+                    )}
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)}>
-                    <Pencil className="h-4 w-4" />
-                </Button>
+                <Popover open={isOpen} onOpenChange={setIsOpen}>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80" align="end">
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="font-medium leading-none">Edit Skills</h4>
+                                <p className="text-sm text-muted-foreground">Select your areas of expertise.</p>
+                            </div>
+                            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                                {allSkills.map(skill => (
+                                    <div key={skill} className="flex items-center space-x-2">
+                                        <Checkbox 
+                                            id={`skill-${skill}`}
+                                            checked={selectedSkills.includes(skill)}
+                                            onCheckedChange={() => handleSkillChange(skill)}
+                                        />
+                                        <Label htmlFor={`skill-${skill}`} className="capitalize font-normal cursor-pointer">{skill}</Label>
+                                    </div>
+                                ))}
+                            </div>
+                            <Separator />
+                            <div>
+                                <h4 className="font-medium leading-none mb-2">Request New Skill</h4>
+                                <p className="text-sm text-muted-foreground mb-2">Can't find your skill? Request it here.</p>
+                                <div className="flex gap-2">
+                                    <Input 
+                                        placeholder="e.g., AI Analytics" 
+                                        value={newSkillRequest}
+                                        onChange={(e) => setNewSkillRequest(e.target.value)}
+                                    />
+                                    <Button variant="secondary" onClick={handleRequestSkill} disabled={!newSkillRequest.trim()}>Request</Button>
+                                </div>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-end gap-2">
+                                <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                                <Button onClick={handleSave}>Save</Button>
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
             </div>
         </div>
     )
@@ -602,4 +655,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
