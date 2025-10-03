@@ -178,8 +178,12 @@ export default function PostJobPage() {
         fileUrl: `#`, // In real app, this would be the URL from Firebase Storage
         fileType: file.type,
     }));
+    
+    const today = new Date();
+    const datePart = today.toISOString().slice(0, 10).replace(/-/g, '');
+    const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const newJobId = `JOB-${datePart}-${randomPart}`;
 
-    const newJobId = `JOB-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
     const status = values.directAwardInstallerId ? "Awarded" : "Open for Bidding";
     
     const [pincode] = values.address.cityPincode.split(',');
