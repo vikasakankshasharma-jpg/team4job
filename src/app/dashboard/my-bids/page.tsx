@@ -102,6 +102,7 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
         <TableRow>
             <TableCell className="font-medium">
                 <Link href={`/dashboard/jobs/${bid.jobId}`} className="hover:underline">{bid.jobTitle}</Link>
+                <p className="text-xs text-muted-foreground font-mono">{bid.jobId}</p>
             </TableCell>
             <TableCell>
                  {bid.amount > 0 ? (
