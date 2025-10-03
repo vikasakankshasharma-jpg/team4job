@@ -42,7 +42,7 @@ import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, query, where, DocumentReference, doc } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, DocumentReference } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
 
 
@@ -51,13 +51,15 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
   const getJobType = (job: Job) => {
     if (!job.awardedInstaller) return 'N/A';
 
-    const awardedInstallerId = job.awardedInstaller instanceof DocumentReference 
-        ? job.awardedInstaller.id 
-        : (job.awardedInstaller as User).id;
+    const awardedInstallerId = (job.awardedInstaller as User)?.id;
+    
+    if (!job.bids || job.bids.length === 0) {
+      // If there are no bids but an installer is awarded, it's a direct award
+      if (awardedInstallerId) return 'Direct';
+      return 'N/A';
+    }
 
-    const bidderIds = (job.bids || []).map(b => {
-        return b.installer instanceof DocumentReference ? b.installer.id : (b.installer as User).id
-    });
+    const bidderIds = (job.bids || []).map(b => (b.installer as User).id);
     
     return bidderIds.includes(awardedInstallerId) ? 'Bidding' : 'Direct';
   };
@@ -168,13 +170,37 @@ export default function PostedJobsPage() {
           const userRef = doc(db, 'users', user.id);
           const jobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', userRef));
           const querySnapshot = await getDocs(jobsQuery);
-          const userJobs = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            postedAt: toDate(doc.data().postedAt),
-            deadline: toDate(doc.data().deadline),
-            jobStartDate: doc.data().jobStartDate ? toDate(doc.data().jobStartDate) : undefined,
-          } as Job));
+
+          const userCache: { [key: string]: User } = {};
+          const getUser = async (ref: DocumentReference): Promise<User> => {
+              if (userCache[ref.id]) return userCache[ref.id];
+              const userSnap = await getDoc(ref);
+              const userData = { id: userSnap.id, ...userSnap.data() } as User;
+              userCache[ref.id] = userData;
+              return userData;
+          }
+
+          const userJobs = await Promise.all(querySnapshot.docs.map(async (doc) => {
+            const jobData = doc.data();
+
+            const bids = await Promise.all((jobData.bids || []).map(async (bid: any) => ({
+                ...bid,
+                installer: await getUser(bid.installer),
+            })));
+
+            let awardedInstaller = jobData.awardedInstaller;
+            if (awardedInstaller && awardedInstaller instanceof DocumentReference) {
+                awardedInstaller = await getUser(awardedInstaller);
+            }
+
+            return {
+              id: doc.id,
+              ...jobData,
+              bids,
+              awardedInstaller
+            } as Job
+          }));
+
           setJobs(userJobs);
         } catch (err) {
             console.error("Error fetching posted jobs:", err);

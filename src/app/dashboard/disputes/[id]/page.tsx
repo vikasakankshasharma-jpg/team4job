@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { AlertOctagon, Send, CheckCircle2, Bot, User as UserIcon, Shield, Paperclip, X, File as FileIcon } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dispute, DisputeMessage, User, DisputeAttachment } from "@/lib/types";
@@ -93,11 +93,22 @@ export default function DisputeDetailPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [dispute, setDispute] = useState<Dispute | null>(null);
-  const [involvedUsers, setInvolvedUsers] = useState<{ [key: string]: User }>({});
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
 
+  const userCache = useRef<{ [key: string]: User }>({});
+
+  const getUser = useCallback(async (userId: string): Promise<User | null> => {
+    if (userCache.current[userId]) return userCache.current[userId];
+    const userSnap = await getDoc(doc(db, 'users', userId));
+    if (userSnap.exists()) {
+        const userData = { id: userSnap.id, ...userSnap.data() } as User;
+        userCache.current[userId] = userData;
+        return userData;
+    }
+    return null;
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -114,21 +125,11 @@ export default function DisputeDetailPage() {
             ...disputeData.messages.map(m => m.authorId)
         ].filter(Boolean));
 
-        const usersToFetch = Array.from(allUserIds).filter(userId => !involvedUsers[userId]);
-
-        if (usersToFetch.length > 0) {
-            const newUsers = { ...involvedUsers };
-            for (const userId of usersToFetch) {
-                const userSnap = await getDoc(doc(db, 'users', userId));
-                if (userSnap.exists()) {
-                    newUsers[userId] = { id: userSnap.id, ...userSnap.data() } as User;
-                }
-            }
-            setInvolvedUsers(newUsers);
+        for (const userId of Array.from(allUserIds)) {
+            await getUser(userId);
         }
-        
-        setDispute(disputeData);
 
+        setDispute(disputeData);
       } else {
         setDispute(null);
       }
@@ -136,7 +137,7 @@ export default function DisputeDetailPage() {
     });
 
     return () => unsubscribe();
-  }, [id]);
+  }, [id, getUser]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -204,6 +205,8 @@ export default function DisputeDetailPage() {
     });
     toast({ title: "Dispute Under Review", description: "You are now actively reviewing this case." });
   }
+  
+  const involvedUsers = userCache.current;
 
   return (
     <div className="grid gap-8 md:grid-cols-3">
@@ -373,11 +376,11 @@ export default function DisputeDetailPage() {
                  <div className="space-y-3">
                     <h4 className="font-semibold">Parties Involved</h4>
                     <Link href={`/dashboard/users/${dispute.parties.jobGiverId}`} className="block hover:bg-accent p-2 rounded-md">
-                        <p className="font-medium">Job Giver</p>
+                        <p className="font-medium">Job Giver: {involvedUsers[dispute.parties.jobGiverId]?.name || '...'}</p>
                         <p className="text-xs text-muted-foreground font-mono">{dispute.parties.jobGiverId}</p>
                     </Link>
                     <Link href={`/dashboard/users/${dispute.parties.installerId}`} className="block hover:bg-accent p-2 rounded-md">
-                        <p className="font-medium">Installer</p>
+                        <p className="font-medium">Installer: {involvedUsers[dispute.parties.installerId]?.name || '...'}</p>
                         <p className="text-xs text-muted-foreground font-mono">{dispute.parties.installerId}</p>
                     </Link>
                 </div>
