@@ -849,17 +849,15 @@ export default function JobDetailPage() {
   const anonymousIdMap = React.useMemo(() => {
     if (!job || !job.bids) return new Map<string, string>();
     
-    // Get unique bidder IDs from both bids and comments
-    const bidderIdsFromBids = job.bids.map(b => (b.installer as User).id);
+    const bidderIdsFromBids = (job.bids || []).map(b => (b.installer as User).id);
     const bidderIdsFromComments = (job.comments || [])
         .map(c => (c.author as User).id)
-        .filter(id => id !== (job.jobGiver as User).id); // Exclude job giver
+        .filter(id => id !== (job.jobGiver as User).id);
         
     const uniqueBidderIds = [...new Set([...bidderIdsFromBids, ...bidderIdsFromComments])];
 
     const generateRandomId = () => Math.random().toString(36).substring(2, 6).toUpperCase();
 
-    // Create a consistent random mapping for each unique bidder ID for this specific job
     return new Map(uniqueBidderIds.map(id => [id, `Bidder-${generateRandomId()}`]));
 
   }, [job]);
