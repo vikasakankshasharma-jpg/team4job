@@ -61,7 +61,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bid, Job, Comment, User, JobAttachment, PrivateMessage } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
-import { getStatusVariant, toDate } from "@/lib/utils";
+import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, DocumentReference, addDoc, collection, writeBatch, setDoc } from "firebase/firestore";
@@ -380,7 +380,11 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
     const { role } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
-    const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+
+    const awardedInstallerId = (job.awardedInstaller instanceof DocumentReference) 
+        ? job.awardedInstaller.id 
+        : (job.awardedInstaller as User)?.id;
+
     const isAwardedToThisBidder = awardedInstallerId === installer.id;
     const isJobAwarded = !!job.awardedInstaller;
 
@@ -400,7 +404,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
     const avatarFallback = showRealIdentity ? installer.name.substring(0, 2) : anonymousId.split('-')[1];
 
     return (
-        <div className={`p-4 rounded-lg border ${isAwardedToThisBidder ? 'border-primary bg-primary/5' : ''}`}>
+        <div className={cn("p-4 rounded-lg border", isAwardedToThisBidder && 'border-primary bg-primary/5')}>
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                     <Avatar>
@@ -959,7 +963,9 @@ export default function JobDetailPage() {
     notFound();
   }
 
-  const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+  const awardedInstallerId = (job.awardedInstaller instanceof DocumentReference) 
+    ? job.awardedInstaller.id 
+    : (job.awardedInstaller as User)?.id;
   const isAwardedInstaller = role === "Installer" && user.id === awardedInstallerId;
   const jobGiver = job.jobGiver as User;
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
@@ -1284,5 +1290,7 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
 
     
