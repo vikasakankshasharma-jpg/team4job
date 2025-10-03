@@ -19,6 +19,7 @@ export type User = {
   freeJobs?: number;
   creditsExpiry?: Date | Timestamp;
   aadharNumber?: string;
+  kycAddress?: string;
   installerProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;

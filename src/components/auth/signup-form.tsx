@@ -53,6 +53,7 @@ const formSchema = z.object({
   aadhar: z.string().optional(),
   otp: z.string().optional(),
   realAvatarUrl: z.string().optional(),
+  kycAddress: z.string().optional(),
 });
 
 
@@ -100,6 +101,7 @@ export function SignUpForm() {
       aadhar: "",
       otp: "",
       realAvatarUrl: "",
+      kycAddress: "",
     },
   });
   
@@ -228,8 +230,8 @@ export function SignUpForm() {
             setKycData(result.kycData);
             form.setValue("name", result.kycData.name, { shouldValidate: true });
             form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
-            // Cannot set full address from just pincode, but we can pre-fill pincode if MapInput is adapted
-            // For now, let's keep this as it is. User will use the map.
+            // Store the Aadhar pincode separately
+            form.setValue("kycAddress", result.kycData.pincode, { shouldValidate: true });
         }
         setCurrentStep("photo");
       } else {
@@ -438,7 +440,7 @@ export function SignUpForm() {
              <Alert variant="success">
                 <ShieldCheck className="h-4 w-4" />
                 <AlertTitle>Aadhar Verified!</AlertTitle>
-                <AlertDescription>Your details have been pre-filled. Please review them before creating your account.</AlertDescription>
+                <AlertDescription>Your Name and Mobile have been pre-filled. Please enter your current address.</AlertDescription>
             </Alert>
         )}
         <FormField
@@ -495,14 +497,14 @@ export function SignUpForm() {
         />
         <LocationInput
             name="location"
-            label="Location (Pincode)"
+            label="Current Residential Location (Pincode)"
             placeholder="e.g. 110001"
             control={form.control}
             onLocationGeocoded={setMapCenter}
         />
         <MapInput
             name="fullAddress"
-            label="Residential Address"
+            label="Current Residential Address"
             control={form.control}
             center={mapCenter}
         />

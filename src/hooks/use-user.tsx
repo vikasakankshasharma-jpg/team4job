@@ -143,6 +143,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         freeJobs,
         creditsExpiry: expiryDate,
         aadharNumber: signupData.aadhar,
+        kycAddress: signupData.kycAddress,
       };
       
       const userToSave: any = { ...newUser };
