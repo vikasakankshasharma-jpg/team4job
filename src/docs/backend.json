@@ -145,6 +145,10 @@
           "type": "string",
           "description": "The primary pincode of the job location."
         },
+        "fullAddress": {
+            "type": "string",
+            "description": "The full, geocoded address for the job."
+        },
         "address": {
           "$ref": "#/entities/Address"
         },
@@ -179,6 +183,13 @@
         "awardedInstaller": {
           "$ref": "#/entities/UserProfile"
         },
+        "bidderIds": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "A list of user IDs who have bid on the job, for efficient querying."
+        },
         "rating": {
           "type": "number"
         },
@@ -206,6 +217,16 @@
             "type": "array",
             "items": {
                 "$ref": "#/entities/PrivateMessage"
+            }
+        },
+        "selectedInstallers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "installerId": { "type": "string" },
+                    "rank": { "type": "number" }
+                }
             }
         }
       },
@@ -378,6 +399,23 @@
             "fileType": { "type": "string" }
         },
         "required": ["fileName", "fileUrl", "fileType"]
+    },
+    "Transaction": {
+        "title": "Transaction",
+        "description": "Represents a financial transaction for a job, managed via an escrow system.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "jobId": { "type": "string" },
+            "payerId": { "type": "string", "description": "The user ID of the Job Giver." },
+            "payeeId": { "type": "string", "description": "The user ID of the Installer." },
+            "amount": { "type": "number" },
+            "status": { "type": "string", "enum": ["Funded", "Released", "Refunded"] },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "releasedAt": { "type": "string", "format": "date-time" },
+            "refundedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "jobId", "payerId", "payeeId", "amount", "status", "createdAt"]
     }
   },
   "auth": {
@@ -401,6 +439,12 @@
         "$ref": "#/entities/Dispute"
       },
       "description": "Stores all dispute records for jobs, including the full communication history."
+    },
+    "/transactions/{transactionId}": {
+        "schema": {
+            "$ref": "#/entities/Transaction"
+        },
+        "description": "Stores all financial transactions related to jobs."
     }
   }
 }
