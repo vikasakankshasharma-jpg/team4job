@@ -93,6 +93,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
                  <TableRow key={job.id}>
                     <TableCell className="font-medium">
                       <Link href={`/dashboard/jobs/${job.id}`} className="hover:underline">{job.title}</Link>
+                       <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
                     </TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
