@@ -501,7 +501,7 @@ export function SignUpForm() {
             </Button>
         </div>
       </div>
-  )
+  );
 
 
   return (
@@ -513,5 +513,5 @@ export function SignUpForm() {
         {currentStep === "details" && renderDetailsStep()}
       </form>
     </Form>
-
-    
+  );
+}
