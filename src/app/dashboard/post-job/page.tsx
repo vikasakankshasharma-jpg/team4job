@@ -33,6 +33,8 @@ import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { JobAttachment } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 
 const addressSchema = z.object({
   house: z.string().min(3, "Please enter a valid house/building detail."),
@@ -177,7 +179,7 @@ export default function PostJobPage() {
         fileType: file.type,
     }));
 
-    const newJobId = `JOB-${Date.now()}`;
+    const newJobId = `JOB-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
     const status = values.directAwardInstallerId ? "Awarded" : "Open for Bidding";
     
     const [pincode] = values.address.cityPincode.split(',');
@@ -187,28 +189,38 @@ export default function PostJobPage() {
         ...values, 
         location: pincode.trim(),
         fullAddress: values.address.fullAddress,
-        jobGiver: user.id, 
+        jobGiver: doc(db, 'users', user.id),
         status,
         bids: [],
         comments: [],
         postedAt: new Date(),
         attachments: uploadedAttachments,
+        completionOtp: Math.floor(100000 + Math.random() * 900000).toString(),
     };
 
     if (values.directAwardInstallerId) {
-        jobData.awardedInstaller = values.directAwardInstallerId;
-        jobData.deadline = new Date(); // Set deadline to now for direct award
+        // @ts-ignore
+        jobData.awardedInstaller = doc(db, 'users', values.directAwardInstallerId);
+        jobData.deadline = new Date().toISOString(); // Set deadline to now for direct award
     }
     
-    console.log("New Job Submitted:", jobData);
-
-    toast({
-        title: "Job Posted Successfully! (Mock)",
-        description: `Your job is now ${status === 'Awarded' ? 'awarded' : 'live and open for bidding'}.`,
-    });
-    form.reset();
-    setAttachments([]);
-    router.push(`/dashboard/posted-jobs`);
+    try {
+        await setDoc(doc(db, "jobs", newJobId), jobData);
+        toast({
+            title: "Job Posted Successfully!",
+            description: `Your job is now ${status === 'Awarded' ? 'awarded' : 'live and open for bidding'}.`,
+        });
+        form.reset();
+        setAttachments([]);
+        router.push(`/dashboard/posted-jobs`);
+    } catch (error) {
+        console.error("Error posting job:", error);
+        toast({
+            title: "Failed to post job",
+            description: "An error occurred while saving your job. Please try again.",
+            variant: "destructive",
+        });
+    }
   }
 
   if (role === 'Admin') {
