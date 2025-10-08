@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -27,6 +29,7 @@ export function LoginForm() {
   const router = useRouter();
   const { login } = useUser();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -36,17 +39,19 @@ export function LoginForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    const success = login(values.email);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    const success = await login(values.email, values.password);
     if (success) {
       router.push("/dashboard");
     } else {
       toast({
         title: "Login Failed",
-        description: "No user found with that email address. Please sign up or try a different email.",
+        description: "Invalid credentials. Please check your email and password.",
         variant: "destructive",
       });
     }
+    setIsLoading(false);
   }
 
   return (
@@ -78,7 +83,8 @@ export function LoginForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Log In
         </Button>
       </form>

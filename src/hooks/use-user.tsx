@@ -3,7 +3,7 @@
 
 import { User } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { app, db } from "@/lib/firebase/client-config";
@@ -15,6 +15,7 @@ type UserContextType = {
   user: User | null;
   role: Role;
   isAdmin: boolean;
+  loading: boolean;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   setRole: (role: Role) => void;
   login: (email: string, password?: string) => Promise<boolean>;
@@ -32,49 +33,59 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start as true
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userDocRef = doc(db, "users", firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const userData = { id: userDoc.id, ...userDoc.data() } as User;
-          setUser(userData);
+        try {
+            const userDocRef = doc(db, "users", firebaseUser.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+              const userData = { id: userDoc.id, ...userDoc.data() } as User;
+              setUser(userData);
 
-          const storedRole = localStorage.getItem('userRole') as Role;
-          const isAdminUser = userData.roles.includes("Admin");
-          setIsAdmin(isAdminUser);
+              const storedRole = localStorage.getItem('userRole') as Role;
+              const isAdminUser = userData.roles.includes("Admin");
+              setIsAdmin(isAdminUser);
 
-          if (isAdminUser) {
-             setRoleState("Admin");
-             localStorage.setItem('userRole', "Admin");
-          } else if (storedRole && userData.roles.includes(storedRole)) {
-            setRoleState(storedRole);
-          } else {
-            const initialRole = userData.roles.includes("Installer") ? "Installer" : "Job Giver";
-            setRoleState(initialRole);
-            localStorage.setItem('userRole', initialRole);
-          }
-        } else {
-          // No user document, log them out
-          await signOut(auth);
-          setUser(null);
+              if (isAdminUser) {
+                 setRoleState("Admin");
+                 localStorage.setItem('userRole', "Admin");
+              } else if (storedRole && userData.roles.includes(storedRole)) {
+                setRoleState(storedRole);
+              } else {
+                const initialRole = userData.roles.includes("Installer") ? "Installer" : "Job Giver";
+                setRoleState(initialRole);
+                localStorage.setItem('userRole', initialRole);
+              }
+            } else {
+              // This case happens if a user exists in Auth but not in Firestore.
+              // Log them out to prevent being stuck.
+              await signOut(auth);
+              setUser(null);
+            }
+        } catch (error) {
+            console.error("Error fetching user document:", error);
+            // Log out on error to prevent being stuck
+            await signOut(auth);
+            setUser(null);
         }
       } else {
         setUser(null);
+        setIsAdmin(false);
       }
-      setLoading(false);
+      setLoading(false); // Set loading to false after user status is determined
     });
+
     return () => unsubscribe();
   }, []);
 
 
   useEffect(() => {
-    if (!user || loading) return;
+    if (loading) return; // Don't run this effect while still loading
     
     const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
     const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
@@ -89,13 +100,18 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   const login = async (email: string, password?: string) => {
-    if (!password) return false;
+    setLoading(true);
+    if (!password) {
+        setLoading(false);
+        return false;
+    }
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // onAuthStateChanged will handle setting user state
+      // onAuthStateChanged will handle setting user state and setLoading(false)
       return true;
     } catch (error) {
       console.error("Login failed:", error);
+      setLoading(false);
       return false;
     }
   };
@@ -105,6 +121,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setIsAdmin(false);
     localStorage.removeItem('userRole');
+    router.push('/login');
   };
 
   const setRole = (newRole: Role) => {
@@ -113,9 +130,20 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem('userRole', newRole);
     }
   };
+  
+  const value = useMemo(() => ({
+    user,
+    role,
+    isAdmin,
+    loading,
+    setUser,
+    setRole,
+    login,
+    logout
+  }), [user, role, isAdmin, loading]);
 
   return (
-    <UserContext.Provider value={{ user, role, isAdmin, setRole, login, logout, setUser }}>
+    <UserContext.Provider value={value}>
       {loading ? 
         <div className="flex h-screen items-center justify-center">
             <p className="text-muted-foreground">Loading...</p>

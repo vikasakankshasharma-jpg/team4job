@@ -41,8 +41,8 @@ import { db } from "@/lib/firebase/client-config";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 
 const addressSchema = z.object({
-  house: z.string().optional(),
-  street: z.string().optional(),
+  house: z.string().min(1, "House/Flat No. is required."),
+  street: z.string().min(3, "Street/Area is required."),
   landmark: z.string().optional(),
   cityPincode: z.string().min(8, "Please select a pincode and post office."),
   fullAddress: z.string().optional(),
@@ -242,10 +242,14 @@ export function SignUpForm() {
         form.setValue("name", result.kycData.name, { shouldValidate: true });
         form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
         
-        form.setValue("kycAddress", `Pincode: ${result.kycData.pincode}`, { shouldValidate: true });
+        // This is a mock address from Aadhar
+        const kycAddr = `Pincode: ${result.kycData.pincode}`;
+        form.setValue("kycAddress", kycAddr, { shouldValidate: true });
         
-        // This is a bit of a hack, we need a better way to handle post office selection
-        form.setValue("address.cityPincode", `${result.kycData.pincode}, ${result.kycData.name} S.O`, { shouldValidate: true, shouldDirty: true });
+        // Pre-fill the current address form with Aadhar pincode to start
+        // We assume the post office name might not come from Aadhar, so we let user select it.
+        const pincode = result.kycData.pincode;
+        form.setValue("address.cityPincode", `${pincode}, `); // Set pincode, leave post office blank
         
         setCurrentStep("photo");
       } else {
@@ -382,7 +386,7 @@ export function SignUpForm() {
             </FormItem>
             )}
         />
-        <Button onClick={() => setCurrentStep(role === 'Job Giver' ? 'photo' : 'verification')} className="w-full" disabled={!role}>Next</Button>
+        <Button onClick={() => setCurrentStep(role === 'Installer' ? 'verification' : 'photo')} className="w-full" disabled={!role}>Next</Button>
     </div>
   );
 
@@ -530,7 +534,7 @@ export function SignUpForm() {
              <Alert variant="success">
                 <ShieldCheck className="h-4 w-4" />
                 <AlertTitle>Aadhar Verified!</AlertTitle>
-                <AlertDescription>Your Name, Mobile, and Address have been pre-filled. You can edit your current address if it's different.</AlertDescription>
+                <AlertDescription>Your Name and Mobile have been pre-filled. Please confirm your address.</AlertDescription>
             </Alert>
         )}
         <FormField
