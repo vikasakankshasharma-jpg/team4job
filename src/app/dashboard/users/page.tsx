@@ -23,7 +23,6 @@ import { Gem, Medal, ShieldCheck, X, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React from "react";
-import { users as allUsers } from "@/lib/data";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
@@ -36,6 +35,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { collection, getDocs, query } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
@@ -70,11 +71,17 @@ export default function UsersPage() {
   }, [role, router]);
 
   React.useEffect(() => {
-      if (role === 'Admin') {
-          setLoading(true);
-          setUsers(allUsers);
-          setLoading(false);
+      async function fetchUsers() {
+        if (role === 'Admin') {
+            setLoading(true);
+            const usersCollection = collection(db, 'users');
+            const userSnapshot = await getDocs(usersCollection);
+            const userList = userSnapshot.docs.map(doc => doc.data() as User);
+            setUsers(userList);
+            setLoading(false);
+        }
       }
+      fetchUsers();
   }, [role]);
 
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {

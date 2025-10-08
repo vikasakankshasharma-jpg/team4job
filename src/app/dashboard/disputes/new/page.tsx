@@ -29,7 +29,8 @@ import React from "react";
 import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { disputes } from "@/lib/data";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 
 const disputeSchema = z.object({
   category: z.enum(["Billing Inquiry", "Technical Support", "Skill Request", "General Question"]),
@@ -57,7 +58,6 @@ export default function CreateDisputePage() {
         return;
     }
     
-    // This is a mock submission. In a real app, this would write to Firestore.
     const newDisputeId = `DISPUTE-${Date.now()}`;
     const disputeData = {
         id: newDisputeId,
@@ -75,7 +75,7 @@ export default function CreateDisputePage() {
         createdAt: new Date(),
     };
 
-    disputes.unshift(disputeData); // Add to the top of the mock data array
+    await setDoc(doc(db, "disputes", newDisputeId), disputeData);
     
     toast({
         title: "Support Ticket Created",

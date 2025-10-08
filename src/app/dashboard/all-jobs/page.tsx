@@ -34,11 +34,12 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { Calendar as CalendarIcon, X, ArrowUpDown } from "lucide-react";
-import { jobs as allJobs } from "@/lib/data";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import Link from "next/link";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 
 const initialFilters = {
     jobId: "",
@@ -112,12 +113,34 @@ export default function AllJobsPage() {
   }, [role, router]);
 
   React.useEffect(() => {
-    if (role === 'Admin') {
-        setJobs(allJobs);
-        const uniqueStatuses = Array.from(new Set(allJobs.map(j => j.status)));
+    async function fetchJobs() {
+      if (role === 'Admin') {
+        const jobsCollection = collection(db, 'jobs');
+        const q = query(jobsCollection);
+        const jobSnapshot = await getDocs(q);
+        const jobList = jobSnapshot.docs.map(doc => doc.data() as Job);
+
+        const usersCollection = collection(db, 'users');
+        const userSnapshot = await getDocs(usersCollection);
+        const userMap = new Map(userSnapshot.docs.map(doc => [doc.id, doc.data() as User]));
+
+        const populatedJobs = jobList.map(job => ({
+          ...job,
+          jobGiver: job.jobGiver ? userMap.get((job.jobGiver as any).id) || job.jobGiver : undefined,
+          awardedInstaller: job.awardedInstaller ? userMap.get((job.awardedInstaller as any).id) || job.awardedInstaller : undefined,
+          bids: (job.bids || []).map(bid => ({
+            ...bid,
+            installer: bid.installer ? userMap.get((bid.installer as any).id) || bid.installer : undefined
+          }))
+        }));
+        
+        setJobs(populatedJobs);
+        const uniqueStatuses = Array.from(new Set(populatedJobs.map(j => j.status)));
         setAllStatuses(['all', ...uniqueStatuses.sort()]);
         setLoading(false);
+      }
     }
+    fetchJobs();
   }, [role]);
 
 

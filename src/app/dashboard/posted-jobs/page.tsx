@@ -37,12 +37,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation";
-import { jobs as allJobs } from "@/lib/data";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
+import { collection, getDocs, query, where, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
+import { DocumentReference } from "firebase/firestore";
 
 
 function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
@@ -50,7 +52,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
   const getJobType = (job: Job) => {
     if (!job.awardedInstaller) return 'N/A';
 
-    const awardedInstallerId = (job.awardedInstaller as User)?.id;
+    const awardedInstallerId = (job.awardedInstaller as User)?.id || (job.awardedInstaller as DocumentReference)?.id;
     
     if (!job.bids || job.bids.length === 0) {
       // If there are no bids but an installer is awarded, it's a direct award
@@ -58,7 +60,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
       return 'N/A';
     }
 
-    const bidderIds = (job.bids || []).map(b => (b.installer as User).id);
+    const bidderIds = (job.bids || []).map(b => (b.installer as User).id || (b.installer as DocumentReference).id);
     
     return bidderIds.includes(awardedInstallerId as string) ? 'Bidding' : 'Direct';
   };
@@ -155,18 +157,23 @@ export default function PostedJobsPage() {
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
-    if (role && role !== 'Admin') {
+    if (role && role === 'Admin') {
       router.push('/dashboard');
     }
   }, [role, router]);
 
   React.useEffect(() => {
-    if (user && role === 'Job Giver') {
-      setLoading(true);
-      const userJobs = allJobs.filter(job => (job.jobGiver as User).id === user.id);
-      setJobs(userJobs);
-      setLoading(false);
+    async function fetchJobs() {
+      if (user && role === 'Job Giver') {
+        setLoading(true);
+        const userJobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', doc(db, 'users', user.id)));
+        const jobSnapshot = await getDocs(userJobsQuery);
+        const jobList = jobSnapshot.docs.map(doc => doc.data() as Job);
+        setJobs(jobList);
+        setLoading(false);
+      }
     }
+    fetchJobs();
   }, [user, role]);
 
    React.useEffect(() => {

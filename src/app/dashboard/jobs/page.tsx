@@ -41,14 +41,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
 import { useUser } from "@/hooks/use-user";
-import { jobs, allSkills } from "@/lib/data";
-import type { Job } from "@/lib/types";
+import { allSkills } from "@/lib/data";
+import type { Job, User } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 
 
 export default function BrowseJobsPage() {
   const { user, role } = useUser();
   const router = useRouter();
+  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [searchPincode, setSearchPincode] = React.useState("");
   const [budget, setBudget] = React.useState([0, 150000]);
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
@@ -60,6 +64,29 @@ export default function BrowseJobsPage() {
       router.push('/dashboard');
     }
   }, [role, router]);
+  
+  const openJobsQuery = query(collection(db, 'jobs'), where('status', '==', 'Open for Bidding'));
+
+  const fetchJobs = React.useCallback(async () => {
+    setLoading(true);
+    const jobSnapshot = await getDocs(openJobsQuery);
+    const userIds = new Set(jobSnapshot.docs.map(doc => (doc.data().jobGiver as any)?.id));
+    const usersSnapshot = await getDocs(query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds))));
+    const userMap = new Map(usersSnapshot.docs.map(doc => [doc.id, doc.data() as User]));
+    const jobList = jobSnapshot.docs.map(doc => {
+      const jobData = doc.data() as Job;
+      return {
+        ...jobData,
+        jobGiver: userMap.get((jobData.jobGiver as any).id) || jobData.jobGiver
+      }
+    });
+    setJobs(jobList);
+    setLoading(false);
+  }, []);
+
+  React.useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
   React.useEffect(() => {
     setHelp({
@@ -88,9 +115,7 @@ export default function BrowseJobsPage() {
     });
   }, [setHelp]);
   
-  const openJobs = jobs.filter(job => job.status === 'Open for Bidding');
-
-  const filterJobs = (jobsToFilter: typeof jobs) => {
+  const filterJobs = (jobsToFilter: Job[]) => {
     return jobsToFilter.filter((job) => {
         // Pincode filter
         if (searchPincode !== "" && !job.location.includes(searchPincode)) {
@@ -111,12 +136,12 @@ export default function BrowseJobsPage() {
     });
   }
 
-  const filteredJobs = filterJobs(openJobs);
+  const filteredJobs = filterJobs(jobs);
 
   const recommendedJobs = React.useMemo(() => {
     if (!user) return [];
     
-    return openJobs.filter(job => {
+    return jobs.filter(job => {
         const residentialMatch = user.pincodes.residential && job.location.includes(user.pincodes.residential);
         const officeMatch = user.pincodes.office && job.location.includes(user.pincodes.office);
 
@@ -131,7 +156,7 @@ export default function BrowseJobsPage() {
         }
         return false;
     });
-  }, [user, openJobs, recommendedPincodeFilter]);
+  }, [user, jobs, recommendedPincodeFilter]);
 
   const filteredRecommendedJobs = filterJobs(recommendedJobs);
 
@@ -267,7 +292,7 @@ export default function BrowseJobsPage() {
             </CardContent>
             <CardFooter>
                <div className="text-xs text-muted-foreground">
-                Showing <strong>1-{filteredJobs.length}</strong> of <strong>{openJobs.length}</strong> jobs
+                Showing <strong>1-{filteredJobs.length}</strong> of <strong>{jobs.length}</strong> jobs
               </div>
             </CardFooter>
           </Card>
