@@ -55,7 +55,7 @@ const formSchema = z.object({
   password: z
     .string()
     .min(6, { message: "Password must be at least 6 characters." }),
-  role: z.enum(["Job Giver", "Installer", "Both (Job Giver & Installer)"]),
+  role: z.enum(["Job Giver", "Installer"]),
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
   address: addressSchema,
   aadhar: z.string().optional(),
@@ -242,10 +242,8 @@ export function SignUpForm() {
         form.setValue("name", result.kycData.name, { shouldValidate: true });
         form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
         
-        // Store the permanent Aadhar address
         form.setValue("kycAddress", `Pincode: ${result.kycData.pincode}`, { shouldValidate: true });
         
-        // Pre-fill the current location fields for user convenience
         form.setValue("address.cityPincode", result.kycData.pincode, { shouldValidate: true, shouldDirty: true });
         
         setCurrentStep("photo");
@@ -264,7 +262,7 @@ export function SignUpForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
-    if ((values.role === 'Installer' || values.role === 'Both (Job Giver & Installer)') && verificationSubStep !== 'verified') {
+    if (values.role === 'Installer' && verificationSubStep !== 'verified') {
         setCurrentStep("verification");
         form.setError("aadhar", { type: "manual", message: "Please complete Aadhar verification." });
         setIsLoading(false);
@@ -277,7 +275,6 @@ export function SignUpForm() {
         return;
     }
 
-    // --- Start: Duplicate Check ---
     const usersRef = collection(db, "users");
     const q = query(usersRef, or(
         where("email", "==", values.email.toLowerCase()),
@@ -299,24 +296,23 @@ export function SignUpForm() {
     });
 
     if (isDuplicate) {
-        setCurrentStep("details"); // Make sure user sees the error
+        setCurrentStep("details");
         setIsLoading(false);
         return;
     }
-    // --- End: Duplicate Check ---
 
     try {
         const auth = getAuth();
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const firebaseUser = userCredential.user;
         
-        const userRoles = values.role === 'Both (Job Giver & Installer)' ? ['Job Giver', 'Installer'] : [values.role];
+        const userRoles = [values.role];
 
         const newUser: Omit<User, 'id'> = {
             name: values.name,
             email: values.email,
             mobile: values.mobile,
-            roles: userRoles,
+            roles: userRoles as User['roles'],
             memberSince: new Date(),
             avatarUrl: PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)].imageUrl,
             realAvatarUrl: values.realAvatarUrl,
@@ -324,7 +320,7 @@ export function SignUpForm() {
             address: values.address,
         };
         
-        if (values.role !== 'Job Giver') {
+        if (values.role === 'Installer') {
             newUser.aadharNumber = values.aadhar;
             newUser.kycAddress = values.kycAddress;
             newUser.installerProfile = {
@@ -340,8 +336,6 @@ export function SignUpForm() {
         
         await setDoc(doc(db, "users", firebaseUser.uid), newUser);
         
-        // This is a simplified login for the demo, which will trigger the useUser hook's onAuthStateChanged
-        // In a real app, you might not need to call login() explicitly if you listen to auth state changes correctly
         const loggedIn = await login(values.email, values.password);
 
         if (loggedIn) {
@@ -373,15 +367,14 @@ export function SignUpForm() {
             name="role"
             render={({ field }) => (
             <FormItem>
-                <FormLabel>I am a...</FormLabel>
+                <FormLabel>I want to...</FormLabel>
                 <Select onValueChange={(value) => field.onChange(value)} defaultValue={field.value}>
                     <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select your role" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Select your primary role" /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                        <SelectItem value="Job Giver">Job Giver (I want to hire)</SelectItem>
-                        <SelectItem value="Installer">Installer (I want to work)</SelectItem>
-                        <SelectItem value="Both (Job Giver & Installer)">Both (Hire and Work)</SelectItem>
+                        <SelectItem value="Job Giver">Hire an Installer</SelectItem>
+                        <SelectItem value="Installer">Find Work as an Installer</SelectItem>
                     </SelectContent>
                 </Select>
                 <FormMessage />
