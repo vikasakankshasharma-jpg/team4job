@@ -4,7 +4,7 @@
 import { User } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { users as mockUsers, jobs } from "@/lib/data";
+import { users as mockUsers } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 
@@ -22,7 +22,7 @@ type UserContextType = {
 
 const UserContext = createContext<UserContextType | null>(null);
 
-const installerPaths = ['/dashboard/my-bids'];
+const installerPaths = ['/dashboard/my-bids', '/dashboard/jobs'];
 const jobGiverPaths = ['/dashboard/posted-jobs', '/dashboard/post-job'];
 
 
