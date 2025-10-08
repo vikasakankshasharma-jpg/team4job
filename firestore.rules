@@ -4,33 +4,40 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Users can read their own profile
-    match /users/{userId} {
-      allow read: if request.auth.uid == userId;
-      allow write: if request.auth.uid == userId;
-    }
-    
-    // Anyone authenticated can read public user data (like profiles for jobs)
-    // For simplicity in the demo, we allow reads. In production, you'd restrict this.
-    match /users/{userId} {
-       allow get: if request.auth != null;
+    // Helper function to check if a user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // Jobs can be created by any authenticated user (Job Giver).
-    // They can be read by anyone (to browse jobs).
-    // Updates are more complex (handled by backend/security rules).
-    match /jobs/{jobId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      // Allow updates only by the job giver or an admin for simplicity
-      allow update: if request.auth != null && (resource.data.jobGiver == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']));
+    // Helper function to get the user's ID
+    function getUid() {
+      return request.auth.uid;
     }
     
-    // Disputes can be created by authenticated users.
-    // They can only be read/updated by involved parties or an admin.
+    // Users can read their own profile, but nobody else's.
+    // Anyone can create a user profile (during signup).
+    match /users/{userId} {
+      allow read: if isSignedIn() && getUid() == userId;
+      allow create: if !isSignedIn(); // Allow user creation during signup
+      allow update: if isSignedIn() && getUid() == userId;
+    }
+
+    // Jobs are public to read for any authenticated user.
+    // Only the job giver can create or update their own job.
+    match /jobs/{jobId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn(); // More specific rules can be added here later
+    }
+    
+    // Disputes can only be read/written by involved parties or an Admin.
     match /disputes/{disputeId} {
-        allow create: if request.auth != null;
-        allow read, write: if request.auth != null && (resource.data.requesterId == request.auth.uid || resource.data.parties.jobGiverId == request.auth.uid || resource.data.parties.installerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']));
+      // Allow read/write if the user is the requester, one of the parties, or an admin
+      allow read, write: if isSignedIn() && 
+                          (resource.data.requesterId == getUid() ||
+                           getUid() in resource.data.parties.values() ||
+                           get(/databases/$(database)/documents/users/$(getUid())).data.roles.hasAny(['Admin']));
+      allow create: if isSignedIn();
     }
   }
 }

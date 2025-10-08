@@ -118,7 +118,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     <UserContext.Provider value={{ user, role, isAdmin, setRole, login, logout, setUser }}>
       {loading ? 
         <div className="flex h-screen items-center justify-center">
-            <p className="text-muted-foreground">Loading user session...</p>
+            <p className="text-muted-foreground">Loading...</p>
         </div>
       : children}
     </UserContext.Provider>
