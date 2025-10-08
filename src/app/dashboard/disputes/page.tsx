@@ -20,13 +20,14 @@ import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useUser } from "@/hooks/use-user";
-import { disputes as allDisputes } from "@/lib/data";
 import { Dispute } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
+import { collection, query, where, getDocs, or } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -49,22 +50,28 @@ export default function DisputesPage() {
 
   useEffect(() => {
     if (!user) return;
-    setLoading(true);
+    async function fetchDisputes() {
+        setLoading(true);
+        const disputesRef = collection(db, "disputes");
+        let q;
+        if (isAdmin) {
+            q = query(disputesRef);
+        } else {
+            q = query(disputesRef, or(
+                where('requesterId', '==', user.id),
+                where('parties.jobGiverId', '==', user.id),
+                where('parties.installerId', '==', user.id)
+            ));
+        }
 
-    let userDisputes;
-    if (isAdmin) {
-        userDisputes = allDisputes;
-    } else {
-        userDisputes = allDisputes.filter(d => 
-            d.requesterId === user.id ||
-            d.parties?.jobGiverId === user.id ||
-            d.parties?.installerId === user.id
-        );
+        const querySnapshot = await getDocs(q);
+        const userDisputes = querySnapshot.docs.map(doc => doc.data() as Dispute);
+        
+        userDisputes.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+        setDisputes(userDisputes);
+        setLoading(false);
     }
-    
-    userDisputes.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
-    setDisputes(userDisputes);
-    setLoading(false);
+    fetchDisputes();
   }, [user, isAdmin]);
 
   if (!user) {

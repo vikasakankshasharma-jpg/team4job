@@ -4,18 +4,20 @@
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
+  CardDescription
 } from "@/components/ui/card";
 import { useUser } from "@/hooks/use-user";
 import { Download, Users, Briefcase, IndianRupee, FileText } from "lucide-react";
 import React from "react";
-import { jobs, users, Bid } from "@/lib/data";
 import { Job, User } from "@/lib/types";
 import { toDate, exportToCsv } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
+import { DocumentReference } from "firebase/firestore";
+
 
 type ReportCardProps = {
   title: string;
@@ -79,6 +81,8 @@ export default function ReportsPage() {
   
   // Admin Report Generators
   const generateAllUsersReport = async () => {
+    const usersSnapshot = await getDocs(collection(db, "users"));
+    const users = usersSnapshot.docs.map(d => d.data() as User);
     const data = users.map(user => {
       return {
         ID: user.id,
@@ -98,9 +102,11 @@ export default function ReportsPage() {
   };
 
   const generateAllJobsReport = async () => {
+    const jobsSnapshot = await getDocs(collection(db, "jobs"));
+    const jobs = jobsSnapshot.docs.map(d => d.data() as Job);
     const data = jobs.map(job => {
-      const jobGiver = (job.jobGiver as User)?.id;
-      const awardedInstaller = (job.awardedInstaller as User)?.id;
+      const jobGiver = (job.jobGiver as DocumentReference)?.id;
+      const awardedInstaller = (job.awardedInstaller as DocumentReference)?.id;
       return {
         ID: job.id,
         Title: job.title,
@@ -120,10 +126,12 @@ export default function ReportsPage() {
   // Installer Report Generators
   const generateEarningsReport = async () => {
     if (!user) return { data: [], filename: '' };
-    const myCompletedJobs = jobs.filter(job => job.status === "Completed" && (job.awardedInstaller as User)?.id === user.id);
+    const q = query(collection(db, "jobs"), where('status', '==', "Completed"), where('awardedInstaller', '==', user.id));
+    const querySnapshot = await getDocs(q);
+    const myCompletedJobs = querySnapshot.docs.map(d => d.data() as Job);
     
     const data = myCompletedJobs.map(job => {
-      const winningBid = job.bids.find(b => ((b.installer as User)?.id) === user.id);
+      const winningBid = job.bids.find(b => ((b.installer as DocumentReference)?.id) === user.id);
       return {
         JobID: job.id,
         JobTitle: job.title,
@@ -138,7 +146,9 @@ export default function ReportsPage() {
   // Job Giver Report Generators
   const generateMyJobsReport = async () => {
     if (!user) return { data: [], filename: '' };
-    const myJobs = jobs.filter(job => (job.jobGiver as User)?.id === user.id);
+    const q = query(collection(db, "jobs"), where('jobGiver', '==', user.id));
+    const querySnapshot = await getDocs(q);
+    const myJobs = querySnapshot.docs.map(d => d.data() as Job);
 
     const data = myJobs.map(job => {
       return {
@@ -146,7 +156,7 @@ export default function ReportsPage() {
         JobTitle: job.title,
         Status: job.status,
         BidsReceived: job.bids.length,
-        AwardedInstallerID: (job.awardedInstaller as User)?.id || 'N/A',
+        AwardedInstallerID: (job.awardedInstaller as DocumentReference)?.id || 'N/A',
         PostedDate: toDate(job.postedAt).toLocaleDateString(),
       };
     });

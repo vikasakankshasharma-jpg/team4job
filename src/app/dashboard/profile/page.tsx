@@ -43,11 +43,14 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { jobs as allJobs, allSkills } from "@/lib/data";
+import { allSkills } from "@/lib/data";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
+import { DocumentReference } from "firebase/firestore";
 
 
 const tierIcons = {
@@ -91,7 +94,14 @@ function EditProfileForm({ user, onSave }) {
         },
     });
 
-    function onSubmit(values: z.infer<typeof editProfileSchema>) {
+    async function onSubmit(values: z.infer<typeof editProfileSchema>) {
+        const userRef = doc(db, 'users', user.id);
+        const updateData = {
+            name: values.name,
+            'pincodes.residential': values.residentialPincode,
+            'pincodes.office': values.officePincode || '',
+        };
+        await updateDoc(userRef, updateData);
         onSave(values);
         toast({
             title: "Profile Updated",
@@ -181,7 +191,23 @@ function InstallerOnboardingDialog({ user, onSave }) {
         },
     });
 
-    function onSubmit(values: z.infer<typeof installerOnboardingSchema>) {
+    async function onSubmit(values: z.infer<typeof installerOnboardingSchema>) {
+        const userRef = doc(db, 'users', user.id);
+        const updateData = {
+            roles: arrayUnion('Installer'),
+            'pincodes.residential': values.pincode,
+            installerProfile: {
+                tier: 'Bronze',
+                points: 0,
+                skills: values.skills.split(',').map(s => s.trim().toLowerCase()),
+                rating: 0,
+                reviews: 0,
+                verified: user.installerProfile?.verified || false,
+                reputationHistory: [],
+            }
+        };
+        await updateDoc(userRef, updateData);
+        
         onSave(values);
         toast({
             title: "Installer Profile Created!",
@@ -240,7 +266,7 @@ function InstallerOnboardingDialog({ user, onSave }) {
     );
 }
 
-function SkillsEditor({ initialSkills, onSave }: { initialSkills: string[], onSave: (skills: string[]) => void }) {
+function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string[], onSave: (skills: string[]) => void, userId: string }) {
     const { toast } = useToast();
     const [selectedSkills, setSelectedSkills] = React.useState<string[]>(initialSkills);
     const [newSkillRequest, setNewSkillRequest] = React.useState('');
@@ -254,7 +280,9 @@ function SkillsEditor({ initialSkills, onSave }: { initialSkills: string[], onSa
         );
     };
     
-    const handleSave = () => {
+    const handleSave = async () => {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, { 'installerProfile.skills': selectedSkills });
         onSave(selectedSkills);
         setIsOpen(false);
     }
@@ -335,10 +363,17 @@ export default function ProfilePage() {
   const { user, role, setUser, setRole } = useUser();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   const { toast } = useToast();
-
-  const jobsCompletedCount = React.useMemo(() => {
-    if (role !== 'Installer' || !user) return 0;
-    return allJobs.filter(job => job.status === 'Completed' && (job.awardedInstaller as User)?.id === user.id).length;
+  const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
+  
+  React.useEffect(() => {
+    async function fetchCompletedJobsCount() {
+        if (role === 'Installer' && user) {
+            const q = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', doc(db, 'users', user.id)));
+            const querySnapshot = await getDocs(q);
+            setJobsCompletedCount(querySnapshot.size);
+        }
+    }
+    fetchCompletedJobsCount();
   }, [user, role]);
   
   if (!user) {
@@ -391,7 +426,7 @@ export default function ProfilePage() {
           installerProfile: {
             tier: 'Bronze' as const,
             points: 0,
-            skills: values.skills.split(',').map(s => s.trim()),
+            skills: values.skills.split(',').map(s => s.trim().toLowerCase()),
             rating: 0,
             reviews: 0,
             verified: user.installerProfile?.verified || false,
@@ -403,12 +438,11 @@ export default function ProfilePage() {
     }
   };
 
-  const handleBecomeJobGiver = () => {
+  const handleBecomeJobGiver = async () => {
     if (setUser && setRole && user) {
-        const updatedUser = {
-            ...user,
-            roles: [...user.roles, 'Job Giver'] as User['roles']
-        };
+        const userRef = doc(db, 'users', user.id);
+        await updateDoc(userRef, { roles: arrayUnion('Job Giver') });
+        const updatedUser = { ...user, roles: [...user.roles, 'Job Giver'] as User['roles'] };
         setUser(updatedUser);
         setRole('Job Giver');
         toast({
@@ -594,7 +628,7 @@ export default function ProfilePage() {
 
                 <div>
                     <h4 className="font-semibold mb-3">Skills</h4>
-                    <SkillsEditor initialSkills={installerProfile.skills} onSave={handleSkillsSave} />
+                    <SkillsEditor initialSkills={installerProfile.skills} onSave={handleSkillsSave} userId={user.id}/>
                 </div>
             </CardContent>
         </Card>

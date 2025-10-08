@@ -21,11 +21,12 @@ import { format, formatDistanceToNow } from "date-fns";
 import React, { useEffect, useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { disputes as allDisputes, users } from "@/lib/data";
 import { Dispute, DisputeMessage, User, DisputeAttachment } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import Link from "next/link";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
+import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "@/lib/firebase/client-config";
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -92,16 +93,45 @@ export default function DisputeDetailPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [dispute, setDispute] = useState<Dispute | null>(null);
+  const [involvedUsers, setInvolvedUsers] = useState<Record<string, User>>({});
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
 
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
-    const foundDispute = allDisputes.find(d => d.id === id);
-    setDispute(foundDispute || null);
-    setLoading(false);
+    async function fetchDispute() {
+        setLoading(true);
+        const disputeRef = doc(db, "disputes", id);
+        const disputeSnap = await getDoc(disputeRef);
+
+        if (!disputeSnap.exists()) {
+            setDispute(null);
+            setLoading(false);
+            return;
+        }
+
+        const disputeData = disputeSnap.data() as Dispute;
+        const userIds = new Set<string>([disputeData.requesterId]);
+        if (disputeData.parties) {
+            userIds.add(disputeData.parties.jobGiverId);
+            userIds.add(disputeData.parties.installerId);
+        }
+        disputeData.messages.forEach(msg => userIds.add(msg.authorId));
+
+        const userDocs = await Promise.all(Array.from(userIds).map(uid => getDoc(doc(db, "users", uid))));
+        const usersMap = userDocs.reduce((acc, userDoc) => {
+            if (userDoc.exists()) {
+                acc[userDoc.id] = userDoc.data() as User;
+            }
+            return acc;
+        }, {} as Record<string, User>);
+        
+        setInvolvedUsers(usersMap);
+        setDispute(disputeData);
+        setLoading(false);
+    }
+    fetchDispute();
   }, [id]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,6 +156,12 @@ export default function DisputeDetailPage() {
   if (!isParty) {
     notFound();
   }
+  
+  const handleUpdateDispute = async (updateData: Partial<Dispute>) => {
+    const disputeRef = doc(db, "disputes", id);
+    await updateDoc(disputeRef, updateData);
+    setDispute(prev => prev ? { ...prev, ...updateData } : null);
+  }
 
   const handlePostMessage = async () => {
     if (!newMessage.trim() && attachments.length === 0) return;
@@ -145,7 +181,9 @@ export default function DisputeDetailPage() {
         attachments: uploadedAttachments,
     };
     
-    // This would be an update call to Firestore in a real app
+    await updateDoc(doc(db, "disputes", id), {
+        messages: arrayUnion(message)
+    });
     setDispute(prev => prev ? { ...prev, messages: [...prev.messages, message] } : null);
 
     setNewMessage("");
@@ -153,19 +191,14 @@ export default function DisputeDetailPage() {
   };
   
   const handleResolveDispute = async () => {
-    setDispute(prev => prev ? { ...prev, status: 'Resolved', resolvedAt: new Date() } : null);
+    await handleUpdateDispute({ status: 'Resolved', resolvedAt: new Date() });
     toast({ title: "Dispute Resolved", description: "This case is now closed." });
   }
 
   const handleReviewDispute = async () => {
-    setDispute(prev => prev ? { ...prev, status: 'Under Review' } : null);
+    await handleUpdateDispute({ status: 'Under Review' });
     toast({ title: "Dispute Under Review", description: "You are now actively reviewing this case." });
   }
-  
-  const involvedUsers = users.reduce((acc, u) => {
-    acc[u.id] = u;
-    return acc;
-  }, {} as Record<string, User>);
 
   return (
     <div className="grid gap-8 md:grid-cols-3">
