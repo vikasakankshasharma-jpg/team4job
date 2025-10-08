@@ -244,7 +244,8 @@ export function SignUpForm() {
         
         form.setValue("kycAddress", `Pincode: ${result.kycData.pincode}`, { shouldValidate: true });
         
-        form.setValue("address.cityPincode", result.kycData.pincode, { shouldValidate: true, shouldDirty: true });
+        // This is a bit of a hack, we need a better way to handle post office selection
+        form.setValue("address.cityPincode", `${result.kycData.pincode}, ${result.kycData.name} S.O`, { shouldValidate: true, shouldDirty: true });
         
         setCurrentStep("photo");
       } else {
@@ -310,7 +311,7 @@ export function SignUpForm() {
 
         const newUser: Omit<User, 'id'> = {
             name: values.name,
-            email: values.email,
+            email: values.email.toLowerCase(),
             mobile: values.mobile,
             roles: userRoles as User['roles'],
             memberSince: new Date(),

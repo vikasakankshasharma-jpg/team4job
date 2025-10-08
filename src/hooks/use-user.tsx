@@ -15,7 +15,7 @@ type UserContextType = {
   user: User | null;
   role: Role;
   isAdmin: boolean;
-  setUser: React.Dispatch<React.SetStateAction<User | null>> | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
   setRole: (role: Role) => void;
   login: (email: string, password?: string) => Promise<boolean>;
   logout: () => void;
