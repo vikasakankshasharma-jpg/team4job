@@ -37,7 +37,7 @@ function LoginPageContent() {
     // Update the URL without reloading the page
     const newSearchParams = new URLSearchParams(searchParams.toString());
     newSearchParams.set("tab", value);
-    router.push(`${pathname}?${newSearchParams.toString()}`);
+    router.replace(`${pathname}?${newSearchParams.toString()}`);
   };
   
   return (
@@ -93,7 +93,7 @@ function LoginPageContent() {
 
 export default function LoginPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center">Loading...</div>}>
             <LoginPageContent />
         </Suspense>
     )

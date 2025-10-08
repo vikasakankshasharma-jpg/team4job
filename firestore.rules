@@ -1,126 +1,80 @@
-/**
- * @fileoverview Firestore Security Rules for Prototyping.
- *
- * Core Philosophy:
- * This ruleset prioritizes secure authorization based on user roles and relationships, while relaxing data validation to allow for rapid prototyping.
- * It enforces strict ownership and role-based access control, ensuring that users can only access resources they are authorized to view or modify.
- *
- * Data Structure:
- * - /users/{userId}: Stores individual user profiles. Access is restricted to the user themselves.
- * - /jobs/{jobId}: Stores job postings, including bids, comments, and messages embedded within the job document. Publicly readable, but writes are restricted to the job giver.
- * - /disputes/{disputeId}: Stores dispute records, accessible only to the involved parties and administrators.
- * - /transactions/{transactionId}: Stores transaction records, accessible only to the involved parties.
- *
- * Key Security Decisions:
- * - User listing is disabled.
- * - Public read access is granted to the `/jobs` collection, but writes are controlled via ownership.
- * - Data validation is minimized to focus on authorization.
- *
- * Denormalization for Authorization:
- * - The `Job` entity requires a `jobGiver` field to determine ownership for write operations.
- */
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * @description Checks if the user is signed in.
-     * @return {boolean} True if the user is signed in, false otherwise.
-     */
-    function isSignedIn() {
+  
+    // UTILITY FUNCTIONS
+    function isAuth() {
       return request.auth != null;
     }
-
-    /**
-     * @description Checks if the authenticated user's ID matches the provided userId.
-     * @param {string} userId - The user ID to compare against.
-     * @return {boolean} True if the user is the owner, false otherwise.
-     */
+    
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-
-    /**
-     * @description Checks if the authenticated user's ID matches the existing resource's owner ID. Also confirms the document exists.
-     * @param {string} userId - The user ID to compare against.
-     * @return {boolean} True if the user is the owner and the document exists, false otherwise.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+    
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+    
+    function isAdmin() {
+      return isAuth() && getUserData(request.auth.uid).roles.hasAny(['Admin']);
     }
 
-    /**
-     * @description Rules for user profiles.
-     * @path /users/{userId}
-     * @allow (create) - A user can create their own profile if the userId matches their auth.uid.
-     * @allow (get, list) - A user can read their own profile.
-     * @allow (update, delete) - A user can update/delete their own profile.
-     * @deny (create) - A user cannot create a profile for another user.
-     * @deny (get, list) - A user cannot read another user's profile.
-     * @deny (update, delete) - A user cannot update/delete another user's profile.
-     * @principle Enforces document ownership for all operations on user profiles.
-     */
+    // USER PROFILES
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      // Anyone can create their own user profile during signup
+      allow create: if isAuth() && isOwner(userId);
+      
+      // Anyone authenticated can read any user's public profile info
+      allow get: if isAuth();
+      
+      // Users can only update their own profile
+      allow update: if isAuth() && isOwner(userId);
+      
+      // Users can delete their own profile
+      allow delete: if isAuth() && isOwner(userId);
     }
-
-    /**
-     * @description Rules for job postings.
-     * @path /jobs/{jobId}
-     * @allow (get, list) - Anyone can read or list job postings.
-     * @allow (create) - Only authenticated users can create job postings, and the jobGiver.id must match their auth.uid.
-     * @allow (update, delete) - Only the job giver can update or delete a job posting.
-     * @deny (create) - Unauthenticated users cannot create job postings.
-     * @deny (update, delete) - Users who are not the job giver cannot update or delete a job posting.
-     * @principle Allows public read access to job postings but restricts write access to the job giver.
-     */
+    
+    // JOBS
     match /jobs/{jobId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.jobGiver.id == request.auth.uid;
-      allow update: if isExistingOwner(resource.data.jobGiver.id);
-      allow delete: if isExistingOwner(resource.data.jobGiver.id);
+      // Any authenticated user can view any job
+      allow get: if isAuth();
+      
+      // Any authenticated user can see the list of jobs
+      allow list: if isAuth();
+      
+      // Only authenticated Job Givers can create jobs
+      allow create: if isAuth() && 'Job Giver' in getUserData(request.auth.uid).roles;
+      
+      // Only the original Job Giver or an Admin can update job details
+      allow update: if isAuth() && (resource.data.jobGiver.id == request.auth.uid || isAdmin());
+      
+      // Only the original Job Giver or an Admin can delete a job
+      allow delete: if isAuth() && (resource.data.jobGiver.id == request.auth.uid || isAdmin());
     }
 
-     /**
-      * @description Rules for disputes.
-      * @path /disputes/{disputeId}
-      * @allow (get, list) - Anyone can read disputes.
-      * @allow (create) - Only authenticated users can create disputes.
-      * @allow (update, delete) - Only the requester or admin can update or delete a dispute.
-      * @deny (create) - Unauthenticated users cannot create disputes.
-      * @deny (update, delete) - Users who are not the requester cannot update or delete a dispute.
-      * @principle Restricts dispute access to the requester.
-      */
+    // DISPUTES
     match /disputes/{disputeId} {
-        allow get: if isSignedIn();
-        allow list: if false;
-        allow create: if isSignedIn();
-        // TODO: Add admin role check for dispute resolution
-        allow update: if isSignedIn() && request.resource.data.requesterId == request.auth.uid && resource != null;
-        allow delete: if false;
-    }
+        // A user can read a dispute if they are the requester, a party to the dispute, or an admin
+        allow get: if isAuth() && (
+            resource.data.requesterId == request.auth.uid ||
+            request.auth.uid in resource.data.parties.values() ||
+            isAdmin()
+        );
 
-    /**
-      * @description Rules for transactions.
-      * @path /transactions/{transactionId}
-      * @allow (get) - Anyone can read transactions.
-      * @allow (list) - No one can list transactions.
-      * @allow (create) - Only authenticated users can create transactions.
-      * @allow (update, delete) - Only the payer or payee can update or delete a transaction.
-      * @deny (create) - Unauthenticated users cannot create transactions.
-      * @deny (update, delete) - Users who are not the payer or payee cannot update or delete a transaction.
-      */
-    match /transactions/{transactionId} {
-        allow get: if isSignedIn();
-        allow list: if false;
-        allow create: if isSignedIn();
-        // TODO: Add escrow logic and admin overrides.
-        allow update: if false;
-        allow delete: if false;
+        // Any authenticated user can create a dispute
+        allow create: if isAuth();
+
+        // Only involved parties or an admin can update a dispute (e.g., add messages)
+        allow update: if isAuth() && (
+            resource.data.requesterId == request.auth.uid ||
+            request.auth.uid in resource.data.parties.values() ||
+            isAdmin()
+        );
+
+        // Only an admin can delete a dispute
+        allow delete: if isAdmin();
     }
   }
 }

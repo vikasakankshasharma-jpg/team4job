@@ -2,11 +2,11 @@
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {
-  house: string;
-  street: string;
+  house?: string;
+  street?: string;
   landmark?: string;
-  cityPincode: string; // Combined Pincode and Post Office name
-  fullAddress: string; // Auto-generated for display
+  cityPincode: string; 
+  fullAddress?: string;
 };
 
 export type User = {
@@ -15,7 +15,7 @@ export type User = {
   email: string;
   mobile: string;
   avatarUrl: string;
-  realAvatarUrl: string;
+  realAvatarUrl?: string;
   pincodes: {
     residential: string;
     office?: string;
@@ -64,7 +64,7 @@ export type Bid = {
 
 export type JobAttachment = {
   fileName: string;
-  fileUrl: string; // This would be a Firebase Storage URL in a real app
+  fileUrl: string;
   fileType: string;
 };
 
@@ -73,8 +73,9 @@ export type Job = {
   title: string;
   description: string;
   jobGiver: User | DocumentReference;
-  location: string; // Pincode
+  location: string;
   fullAddress: string;
+  address: Address;
   budget: {
     min: number;
     max: number;
@@ -89,7 +90,7 @@ export type Job = {
   comments: Comment[];
   privateMessages?: PrivateMessage[];
   attachments?: JobAttachment[];
-  awardedInstaller?: User['id'] | User | DocumentReference;
+  awardedInstaller?: User | DocumentReference;
   rating?: number;
   completionOtp?: string;
   disputeId?: string;
@@ -99,8 +100,8 @@ export type Job = {
 export type Transaction = {
     id: string;
     jobId: string;
-    payerId: string; // Job Giver
-    payeeId: string; // Installer
+    payerId: string;
+    payeeId: string;
     amount: number;
     status: 'Funded' | 'Released' | 'Refunded';
     createdAt: Date | Timestamp;
@@ -110,7 +111,7 @@ export type Transaction = {
 
 export type DisputeAttachment = {
   fileName: string;
-  fileUrl: string; // This would be a Firebase Storage URL in a real app
+  fileUrl: string;
   fileType: string;
 };
 
@@ -142,4 +143,3 @@ export type Dispute = {
 };
 
 export type Role = "Job Giver" | "Installer" | "Admin";
-    

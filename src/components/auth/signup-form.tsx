@@ -36,8 +36,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AddressForm } from "@/components/ui/address-form";
-import { collection, query, where, getDocs, or } from "firebase/firestore";
+import { collection, query, where, getDocs, or, setDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-config";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 
 const addressSchema = z.object({
   house: z.string().optional(),
@@ -261,14 +262,18 @@ export function SignUpForm() {
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+
     if ((values.role === 'Installer' || values.role === 'Both (Job Giver & Installer)') && verificationSubStep !== 'verified') {
         setCurrentStep("verification");
         form.setError("aadhar", { type: "manual", message: "Please complete Aadhar verification." });
+        setIsLoading(false);
         return;
     }
     if(!photo) {
         setCurrentStep("photo");
         form.setError("realAvatarUrl", { type: "manual", message: "Please add a profile photo." });
+        setIsLoading(false);
         return;
     }
 
@@ -295,17 +300,67 @@ export function SignUpForm() {
 
     if (isDuplicate) {
         setCurrentStep("details"); // Make sure user sees the error
+        setIsLoading(false);
         return;
     }
     // --- End: Duplicate Check ---
 
-    const success = await login(values.email, values);
-    if (success) {
-      router.push("/dashboard");
-    } else {
-      // This case might still happen in a race condition, so good to keep it.
-      setCurrentStep("details");
-      form.setError("email", { type: "manual", message: "This email is already in use by an existing user." });
+    try {
+        const auth = getAuth();
+        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+        const firebaseUser = userCredential.user;
+        
+        const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+        
+        const userRoles = values.role === 'Both (Job Giver & Installer)' ? ['Job Giver', 'Installer'] : [values.role];
+        const initialRole = userRoles[0].split(' ')[0].toUpperCase();
+
+        const newUser: Omit<User, 'id'> = {
+            name: values.name,
+            email: values.email,
+            mobile: values.mobile,
+            roles: userRoles,
+            memberSince: new Date(),
+            avatarUrl: PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)].imageUrl,
+            realAvatarUrl: values.realAvatarUrl,
+            pincodes: { residential: values.address.cityPincode.split(',')[0].trim() },
+            address: values.address,
+        };
+        
+        if (values.role !== 'Job Giver') {
+            newUser.aadharNumber = values.aadhar;
+            newUser.kycAddress = values.kycAddress;
+            newUser.installerProfile = {
+                tier: 'Bronze',
+                points: 0,
+                skills: [],
+                rating: 0,
+                reviews: 0,
+                verified: true,
+                reputationHistory: []
+            };
+        }
+        
+        await setDoc(doc(db, "users", firebaseUser.uid), newUser);
+        
+        const success = await login(values.email);
+        if (success) {
+            router.push("/dashboard");
+        } else {
+             throw new Error("Failed to log in after sign up.");
+        }
+
+    } catch(error: any) {
+        if (error.code === 'auth/email-already-in-use') {
+            form.setError("email", { type: "manual", message: "This email is already registered." });
+        } else {
+            console.error("Signup failed:", error);
+            toast({ title: "Sign Up Failed", description: error.message, variant: "destructive" });
+        }
+        setCurrentStep("details");
+    } finally {
+        setIsLoading(false);
     }
   }
 
@@ -548,7 +603,8 @@ export function SignUpForm() {
         />
         <div className="flex gap-2">
             <Button variant="outline" onClick={() => setCurrentStep('photo')} className="w-full">Back</Button>
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Account
             </Button>
         </div>

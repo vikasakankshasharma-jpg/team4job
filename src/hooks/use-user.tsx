@@ -5,7 +5,9 @@ import { User } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { users as mockUsers } from "@/lib/data";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { app, db } from "@/lib/firebase/client-config";
 
 
 type Role = "Job Giver" | "Installer" | "Admin";
@@ -25,38 +27,56 @@ const UserContext = createContext<UserContextType | null>(null);
 const installerPaths = ['/dashboard/my-bids', '/dashboard/jobs'];
 const jobGiverPaths = ['/dashboard/posted-jobs', '/dashboard/post-job'];
 
+const auth = getAuth(app);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    const storedUserEmail = localStorage.getItem('loggedInUserEmail');
-    if (storedUserEmail) {
-        const foundUser = mockUsers.find(u => u.email.toLowerCase() === storedUserEmail.toLowerCase());
-        if (foundUser) {
-            setUser(foundUser);
-            const storedRole = localStorage.getItem('userRole') as Role;
-            const isAdminUser = foundUser.roles.includes("Admin");
-            setIsAdmin(isAdminUser);
-            if (storedRole && foundUser.roles.includes(storedRole)) {
-                setRoleState(storedRole);
-            } else {
-                const initialRole = isAdminUser ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
-                setRoleState(initialRole);
-            }
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userDocRef = doc(db, "users", firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const userData = { id: userDoc.id, ...userDoc.data() } as User;
+          setUser(userData);
+
+          const storedRole = localStorage.getItem('userRole') as Role;
+          const isAdminUser = userData.roles.includes("Admin");
+          setIsAdmin(isAdminUser);
+
+          if (isAdminUser) {
+             setRoleState("Admin");
+             localStorage.setItem('userRole', "Admin");
+          } else if (storedRole && userData.roles.includes(storedRole)) {
+            setRoleState(storedRole);
+          } else {
+            const initialRole = userData.roles.includes("Installer") ? "Installer" : "Job Giver";
+            setRoleState(initialRole);
+            localStorage.setItem('userRole', initialRole);
+          }
         } else {
-            logout();
+          // No user document, log them out
+          await signOut(auth);
+          setUser(null);
         }
-    }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
+
   useEffect(() => {
-    if (!user) return;
-    // Redirect if the user is on a page not allowed for the current role
+    if (!user || loading) return;
+    
     const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
     const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
 
@@ -66,104 +86,38 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     if (role === 'Installer' && isJobGiverPage) {
         router.push('/dashboard');
     }
-  }, [role, pathname, user, router]);
+  }, [role, pathname, user, router, loading]);
 
 
-  const login = async (email: string, signupData: any = null) => {
-    let foundUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
-    if (foundUser) {
-        // User exists, log them in
-    } else if (signupData) {
-      let roles: User['roles'] = [];
-      let rolePrefix = '';
-      let freeBids = 0;
-      let freeJobs = 0;
+  const login = async (email: string) => {
+    // This is a simplified login for the demo that finds a user by email from mock data
+    // A real app would use signInWithEmailAndPassword.
+    const mockUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
 
-      switch(signupData.role) {
-        case 'Installer':
-          roles = ['Installer'];
-          rolePrefix = 'INSTALLER';
-          freeBids = 10;
-          break;
-        case 'Job Giver':
-          roles = ['Job Giver'];
-          rolePrefix = 'JOBGIVER';
-          freeJobs = 10;
-          break;
-        case 'Both (Job Giver & Installer)':
-          roles = ['Job Giver', 'Installer'];
-          rolePrefix = 'USER';
-          freeBids = 10;
-          freeJobs = 10;
-          break;
-      }
+    if (mockUser) {
+        // This is a mock login, we are just setting the user state
+        // onAuthStateChanged will not fire, so we manually do what it would
+        const userDocRef = doc(db, "users", mockUser.id);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+            const userData = { id: userDoc.id, ...userDoc.data() } as User;
+            setUser(userData);
 
-      const today = new Date();
-      const datePart = today.toISOString().slice(0, 10).replace(/-/g, '');
-      const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
-      const newUserId = `${rolePrefix}-${datePart}-${randomPart}`;
-      
-      const randomAvatar = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
-      
-      const expiryDate = new Date();
-      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-
-      const pincodeMatch = signupData.address.cityPincode.match(/(\d{6})/);
-      const residentialPincode = pincodeMatch ? pincodeMatch[0] : '';
-      
-      const newUser: User = {
-        id: newUserId,
-        name: signupData.name,
-        email: signupData.email,
-        mobile: signupData.mobile,
-        pincodes: { residential: residentialPincode },
-        address: signupData.address,
-        roles: roles,
-        memberSince: new Date(),
-        avatarUrl: randomAvatar.imageUrl,
-        realAvatarUrl: signupData.realAvatarUrl,
-        freeBids,
-        freeJobs,
-        creditsExpiry: expiryDate,
-        aadharNumber: signupData.aadhar,
-        kycAddress: signupData.kycAddress,
-      };
-      
-      if (signupData.role === 'Installer' || signupData.role === 'Both (Job Giver & Installer)') {
-        newUser.installerProfile = {
-          tier: 'Bronze',
-          points: 0,
-          skills: [],
-          rating: 0,
-          reviews: 0,
-          verified: true, // Mock as verified
-          reputationHistory: [],
-        };
-      }
-      
-      mockUsers.push(newUser);
-      foundUser = newUser;
-
-    }
-    
-    if (foundUser) {
-        setUser(foundUser);
-        localStorage.setItem('loggedInUserEmail', foundUser.email);
-        const isAdminUser = foundUser.roles.includes("Admin");
-        setIsAdmin(isAdminUser);
-        const initialRole = isAdminUser ? "Admin" : foundUser.roles.includes("Installer") ? "Installer" : "Job Giver";
-        setRoleState(initialRole);
-        localStorage.setItem('userRole', initialRole);
-        return true;
+            const isAdminUser = userData.roles.includes("Admin");
+            const initialRole = isAdminUser ? "Admin" : userData.roles.includes("Installer") ? "Installer" : "Job Giver";
+            setIsAdmin(isAdminUser);
+            setRoleState(initialRole);
+            localStorage.setItem('userRole', initialRole);
+            return true;
+        }
     }
     return false;
   };
 
   const logout = () => {
+    // In a real app: await signOut(auth);
     setUser(null);
     setIsAdmin(false);
-    localStorage.removeItem('loggedInUserEmail');
     localStorage.removeItem('userRole');
   };
 
@@ -176,7 +130,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <UserContext.Provider value={{ user, role, isAdmin, setRole, login, logout, setUser }}>
-      {children}
+      {loading ? 
+        <div className="flex h-screen items-center justify-center">
+            <p className="text-muted-foreground">Loading user session...</p>
+        </div>
+      : children}
     </UserContext.Provider>
   );
 };
