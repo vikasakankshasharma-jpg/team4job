@@ -3,78 +3,34 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // UTILITY FUNCTIONS
-    function isAuth() {
-      return request.auth != null;
-    }
     
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    
-    function getUserData(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data;
-    }
-    
-    function isAdmin() {
-      return isAuth() && getUserData(request.auth.uid).roles.hasAny(['Admin']);
-    }
-
-    // USER PROFILES
+    // Users can read their own profile
     match /users/{userId} {
-      // Anyone can create their own user profile during signup
-      allow create: if isAuth() && isOwner(userId);
-      
-      // Anyone authenticated can read any user's public profile info
-      allow get: if isAuth();
-      
-      // Users can only update their own profile
-      allow update: if isAuth() && isOwner(userId);
-      
-      // Users can delete their own profile
-      allow delete: if isAuth() && isOwner(userId);
+      allow read: if request.auth.uid == userId;
+      allow write: if request.auth.uid == userId;
     }
     
-    // JOBS
-    match /jobs/{jobId} {
-      // Any authenticated user can view any job
-      allow get: if isAuth();
-      
-      // Any authenticated user can see the list of jobs
-      allow list: if isAuth();
-      
-      // Only authenticated Job Givers can create jobs
-      allow create: if isAuth() && 'Job Giver' in getUserData(request.auth.uid).roles;
-      
-      // Only the original Job Giver or an Admin can update job details
-      allow update: if isAuth() && (resource.data.jobGiver.id == request.auth.uid || isAdmin());
-      
-      // Only the original Job Giver or an Admin can delete a job
-      allow delete: if isAuth() && (resource.data.jobGiver.id == request.auth.uid || isAdmin());
+    // Anyone authenticated can read public user data (like profiles for jobs)
+    // For simplicity in the demo, we allow reads. In production, you'd restrict this.
+    match /users/{userId} {
+       allow get: if request.auth != null;
     }
 
-    // DISPUTES
+    // Jobs can be created by any authenticated user (Job Giver).
+    // They can be read by anyone (to browse jobs).
+    // Updates are more complex (handled by backend/security rules).
+    match /jobs/{jobId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      // Allow updates only by the job giver or an admin for simplicity
+      allow update: if request.auth != null && (resource.data.jobGiver == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']));
+    }
+    
+    // Disputes can be created by authenticated users.
+    // They can only be read/updated by involved parties or an admin.
     match /disputes/{disputeId} {
-        // A user can read a dispute if they are the requester, a party to the dispute, or an admin
-        allow get: if isAuth() && (
-            resource.data.requesterId == request.auth.uid ||
-            request.auth.uid in resource.data.parties.values() ||
-            isAdmin()
-        );
-
-        // Any authenticated user can create a dispute
-        allow create: if isAuth();
-
-        // Only involved parties or an admin can update a dispute (e.g., add messages)
-        allow update: if isAuth() && (
-            resource.data.requesterId == request.auth.uid ||
-            request.auth.uid in resource.data.parties.values() ||
-            isAdmin()
-        );
-
-        // Only an admin can delete a dispute
-        allow delete: if isAdmin();
+        allow create: if request.auth != null;
+        allow read, write: if request.auth != null && (resource.data.requesterId == request.auth.uid || resource.data.parties.jobGiverId == request.auth.uid || resource.data.parties.installerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']));
     }
   }
 }

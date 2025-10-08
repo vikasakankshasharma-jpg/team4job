@@ -30,15 +30,39 @@ const adminDb = getFirestore();
 const adminAuth = getAuth();
 
 async function clearCollection(collectionPath: string) {
+  console.log(`Clearing collection: ${collectionPath}...`);
   const collectionRef = adminDb.collection(collectionPath);
   const snapshot = await collectionRef.limit(500).get();
-  if (snapshot.empty) return;
+  if (snapshot.empty) {
+    console.log(`- Collection ${collectionPath} is already empty.`);
+    return;
+  }
 
   const batch = adminDb.batch();
   snapshot.docs.forEach(doc => batch.delete(doc.ref));
   await batch.commit();
   console.log(`- Cleared part of ${collectionPath}. Running again...`);
   await clearCollection(collectionPath);
+}
+
+async function clearAuthUsers() {
+    console.log("\nClearing all authentication users...");
+    try {
+        const listUsersResult = await adminAuth.listUsers(1000);
+        if (listUsersResult.users.length === 0) {
+            console.log("- No auth users to clear.");
+            return;
+        }
+        const uidsToDelete = listUsersResult.users.map(u => u.uid);
+        await adminAuth.deleteUsers(uidsToDelete);
+        console.log(`- Deleted ${uidsToDelete.length} auth users.`);
+        if (listUsersResult.pageToken) {
+            // Recurse if there are more users
+            await clearAuthUsers();
+        }
+    } catch(error) {
+        console.error("Error clearing auth users:", error);
+    }
 }
 
 async function seedAuthUsers(users: User[]) {
@@ -69,7 +93,6 @@ async function seedUserProfiles(users: User[]) {
         const { id, ...userData } = user;
         const userRef = adminDb.collection('users').doc(id);
         
-        // Convert Date objects to Firestore Timestamps
         const firestoreUserData: any = {
             ...userData,
             memberSince: Timestamp.fromDate(new Date(userData.memberSince as Date)),
@@ -86,9 +109,9 @@ async function seedUserProfiles(users: User[]) {
 
 async function seedJobsAndSubcollections() {
     console.log('\nCreating jobs and related data...');
-    const jobGiver = mockUsers.find(u => u.roles.includes('Job Giver'));
-    const installer1 = mockUsers.find(u => u.email === 'vikram.kumar@example.com');
-    const installer2 = mockUsers.find(u => u.email === 'anjali.desai@example.com');
+    const jobGiver = mockUsers.find(u => u.id === 'jobgiver-user-01');
+    const installer1 = mockUsers.find(u => u.id === 'installer-user-01');
+    const installer2 = mockUsers.find(u => u.id === 'installer-user-02');
 
     if (!jobGiver || !installer1 || !installer2) {
         throw new Error("Required mock users not found for seeding.");
@@ -98,6 +121,7 @@ async function seedJobsAndSubcollections() {
     const job1Id = "JOB-20240720-A1B2";
     const job1Ref = adminDb.collection('jobs').doc(job1Id);
     await job1Ref.set({
+        id: job1Id,
         title: "Install 16 Dahua IP Cameras for a Commercial Building",
         description: "We require the installation of 16 Dahua 5MP IP cameras across our 4-story commercial building in Ashok Nagar, Bengaluru. The job includes camera mounting, cabling (Cat6), and NVR configuration. All hardware will be provided.",
         jobGiver: adminDb.doc('users/' + jobGiver.id),
@@ -125,6 +149,7 @@ async function seedJobsAndSubcollections() {
     const job2Id = "JOB-20240615-C3D4";
     const job2Ref = adminDb.collection('jobs').doc(job2Id);
     await job2Ref.set({
+        id: job2Id,
         title: "Factory Security System Overhaul - 32 Cameras",
         description: "Complete overhaul of an existing security system at a factory in Peenya. Requires replacing 32 old analog cameras with new Hikvision IP cameras, setting up a new server room with 2 NVRs, and integrating with our existing network.",
         jobGiver: adminDb.doc('users/' + jobGiver.id),
@@ -142,6 +167,7 @@ async function seedJobsAndSubcollections() {
         ],
         bidderIds: [installer1.id],
         comments: [],
+        privateMessages: [],
         rating: 5,
         completionOtp: "543210",
     });
@@ -150,6 +176,7 @@ async function seedJobsAndSubcollections() {
     const job3Id = "JOB-20240710-E5F6";
     const job3Ref = adminDb.collection('jobs').doc(job3Id);
     await job3Ref.set({
+        id: job3Id,
         title: "Home Security Setup - 4 Wireless Cameras",
         description: "Need a simple home security setup with 4 TP-Link Tapo wireless cameras. Installation should include camera placement, connection to home WiFi, and setup of the mobile app.",
         jobGiver: adminDb.doc('users/' + jobGiver.id),
@@ -178,12 +205,13 @@ async function seedJobsAndSubcollections() {
 
 async function seedDisputes() {
     console.log("\nCreating disputes...");
-    const jobGiver = mockUsers.find(u => u.roles.includes('Job Giver'));
-    const installer = mockUsers.find(u => u.email === 'vikram.kumar@example.com');
+    const jobGiver = mockUsers.find(u => u.id === 'jobgiver-user-01');
+    const installer = mockUsers.find(u => u.id === 'installer-user-01');
     if (!jobGiver || !installer) return;
 
     const disputeId = "DISPUTE-20240701-XYZ1";
     await adminDb.collection('disputes').doc(disputeId).set({
+        id: disputeId,
         requesterId: jobGiver.id,
         category: "Job Dispute",
         title: "Work not completed as per agreement",
@@ -206,9 +234,10 @@ async function seedDisputes() {
 
 async function main() {
   try {
-    console.log('Starting database seeding...');
+    console.log('--- Starting Database Seeding ---');
     
-    // Clear collections
+    // Clear Auth & Firestore
+    await clearAuthUsers();
     await clearCollection('disputes');
     await clearCollection('jobs');
     await clearCollection('users');

@@ -622,5 +622,3 @@ export function SignUpForm() {
     </Form>
   );
 }
-
-    

@@ -8,7 +8,7 @@ import { PlaceHolderImages } from './placeholder-images';
 // The IDs here are placeholders and will be replaced by Firebase Auth UIDs in a real setup.
 export const users: User[] = [
   {
-    id: 'admin-user-id',
+    id: 'admin-user-01',
     name: 'Vikas Akanksha Sharma',
     email: 'vikas.sharma@example.com',
     mobile: '9999999999',
@@ -20,7 +20,7 @@ export const users: User[] = [
     pincodes: { residential: '110001' }
   },
   {
-    id: 'jobgiver-user-id',
+    id: 'jobgiver-user-01',
     name: 'Priya Singh',
     email: 'priya.singh@example.com',
     mobile: '9876543210',
@@ -32,7 +32,7 @@ export const users: User[] = [
     pincodes: { residential: '560001' }
   },
   {
-    id: 'installer-user-id-1',
+    id: 'installer-user-01',
     name: 'Vikram Kumar',
     email: 'vikram.kumar@example.com',
     mobile: '8765432109',
@@ -56,7 +56,7 @@ export const users: User[] = [
     },
   },
    {
-    id: 'both-user-id',
+    id: 'both-user-01',
     name: 'Rohan Mehta',
     email: 'rohan.mehta@example.com',
     mobile: '7654321098',
@@ -80,7 +80,7 @@ export const users: User[] = [
     }
   },
   {
-    id: 'installer-user-id-2',
+    id: 'installer-user-02',
     name: 'Anjali Desai',
     email: 'anjali.desai@example.com',
     mobile: '9012345678',
@@ -104,7 +104,7 @@ export const users: User[] = [
     }
   },
     {
-    id: 'installer-user-id-3',
+    id: 'installer-user-03',
     name: 'Suresh Gupta',
     email: 'suresh.gupta@example.com',
     mobile: '9876543215',
@@ -147,4 +147,3 @@ export let privateMessages: PrivateMessage[] = [
 
 export const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz", "vms", "access control", "analog cameras", "wireless cameras", "fiber optics", "thermal cameras"];
 
-    
