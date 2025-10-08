@@ -181,7 +181,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     // --- JOB 1: Open for Bidding ---
     const job1Id = "JOB-20240720-A1B2";
     const job1Ref = adminDb.collection('jobs').doc(job1Id);
-    const job1Data: Omit<Job, 'bids' | 'comments'> & { bids: Bid[], comments: [], privateMessages: [] } = {
+    const job1Data: Omit<Job, 'bids' | 'comments'|'awardedInstaller'> & { bids: Bid[], comments: [], privateMessages: [] } = {
         id: job1Id,
         title: "Install 16 Dahua IP Cameras for a Commercial Building",
         description: "We require the installation of 16 Dahua 5MP IP cameras across our 4-story commercial building in Ashok Nagar, Bengaluru. The job includes camera mounting, cabling (Cat6), and NVR configuration. All hardware will be provided.",
