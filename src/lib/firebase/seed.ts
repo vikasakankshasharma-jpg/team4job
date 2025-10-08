@@ -14,7 +14,7 @@
  *
  */
 import { initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import type { User, Job, Bid, Dispute } from '../types';
 import { PlaceHolderImages } from '../placeholder-images';
@@ -34,14 +34,14 @@ const adminAuth = getAuth();
 
 const mockUsers: Omit<User, 'id'>[] = [
   {
-    name: 'Vikas Akanksha Sharma',
+    name: 'Vikas Sharma',
     email: 'admin@example.com',
     mobile: '9999999999',
     roles: ['Admin'],
     memberSince: new Date('2024-01-01'),
     avatarUrl: PlaceHolderImages[0].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/admin/200/200',
-    address: { house: '1', street: 'Admin Lane', cityPincode: '110001, Connaught Place', fullAddress: '1 Admin Lane, Connaught Place, New Delhi, 110001' },
+    address: { house: '1', street: 'Admin Lane', cityPincode: '110001, Connaught Place S.O', fullAddress: '1 Admin Lane, Connaught Place, New Delhi, 110001' },
     pincodes: { residential: '110001' }
   },
   {
@@ -52,7 +52,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     memberSince: new Date('2024-02-10'),
     avatarUrl: PlaceHolderImages[1].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/priya/200/200',
-    address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashok Nagar', fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001' },
+    address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O', fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001' },
     pincodes: { residential: '560001' }
   },
   {
@@ -63,7 +63,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     memberSince: new Date('2024-03-15'),
     avatarUrl: PlaceHolderImages[2].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/vikram/200/200',
-    address: { house: '42/C', street: 'Link Road', cityPincode: '400053, Andheri West', fullAddress: '42/C, Link Road, Andheri West, Mumbai, 400053' },
+    address: { house: '42/C', street: 'Link Road', cityPincode: '400053, Andheri West S.O', fullAddress: '42/C, Link Road, Andheri West, Mumbai, 400053' },
     pincodes: { residential: '400053', office: '400063' },
     installerProfile: {
       tier: 'Gold',
@@ -181,14 +181,14 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     // --- JOB 1: Open for Bidding ---
     const job1Id = "JOB-20240720-A1B2";
     const job1Ref = adminDb.collection('jobs').doc(job1Id);
-    const job1Data: Omit<Job, 'bids' | 'comments'|'awardedInstaller'> & { bids: Bid[], comments: [], privateMessages: [] } = {
+    const job1Data = {
         id: job1Id,
         title: "Install 16 Dahua IP Cameras for a Commercial Building",
         description: "We require the installation of 16 Dahua 5MP IP cameras across our 4-story commercial building in Ashok Nagar, Bengaluru. The job includes camera mounting, cabling (Cat6), and NVR configuration. All hardware will be provided.",
         jobGiver: jobGiverRef,
         location: "560001",
         fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001',
-        address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashok Nagar' },
+        address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O' },
         budget: { min: 20000, max: 25000 },
         status: "Open for Bidding",
         deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 5))),
@@ -205,21 +205,21 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     // --- JOB 2: Completed ---
     const job2Id = "JOB-20240615-C3D4";
     const job2Ref = adminDb.collection('jobs').doc(job2Id);
-    const job2Bid: Bid = {
+    const job2Bid = {
         id: `bid-${job2Id}-${installerUID}`,
         installer: installerRef,
         amount: 52000,
         timestamp: Timestamp.fromDate(new Date('2024-06-03')),
         coverLetter: "I have extensive experience with large-scale factory installations and can complete this overhaul efficiently. My team is certified in Hikvision products."
     }
-    const job2Data: Omit<Job, 'bids' | 'comments'> & { bids: Bid[], comments: [], privateMessages: [] } = {
+    const job2Data = {
         id: job2Id,
         title: "Factory Security System Overhaul - 32 Cameras",
         description: "Complete overhaul of an existing security system at a factory in Peenya. Requires replacing 32 old analog cameras with new Hikvision IP cameras, setting up a new server room with 2 NVRs, and integrating with our existing network.",
         jobGiver: jobGiverRef,
         location: "560058",
         fullAddress: 'Peenya Industrial Area, Bengaluru, 560058',
-        address: { house: 'Plot 42', street: 'Peenya Industrial Area', cityPincode: '560058, Peenya' },
+        address: { house: 'Plot 42', street: 'Peenya Industrial Area', cityPincode: '560058, Peenya S.O' },
         budget: { min: 45000, max: 60000 },
         status: "Completed",
         deadline: Timestamp.fromDate(new Date('2024-06-10')),
@@ -238,21 +238,21 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     // --- JOB 3: In Progress ---
     const job3Id = "JOB-20240718-E5F6";
     const job3Ref = adminDb.collection('jobs').doc(job3Id);
-     const job3Bid: Bid = {
+     const job3Bid = {
         id: `bid-${job3Id}-${installerUID}`,
         installer: installerRef,
         amount: 8500,
         timestamp: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 3))),
         coverLetter: "I can handle this residential installation quickly and cleanly. I have the required tools and experience."
     }
-    const job3Data: Omit<Job, 'bids' | 'comments'> & { bids: Bid[], comments: [], privateMessages: [] } = {
+    const job3Data = {
         id: job3Id,
         title: "Residential Villa - 4 PTZ Cameras",
         description: "Installation of 4 outdoor PTZ cameras for a 2-story villa. Requires weather-proof cabling and connection to a cloud-based storage service.",
         jobGiver: jobGiverRef,
-        location: "400053",
-        fullAddress: '42/C, Link Road, Andheri West, Mumbai, 400053',
-        address: { house: 'Villa 17', street: 'Juhu Tara Road', cityPincode: '400049, Juhu' },
+        location: "400049",
+        fullAddress: 'Villa 17, Juhu Tara Road, Juhu, Mumbai, 400049',
+        address: { house: 'Villa 17', street: 'Juhu Tara Road', cityPincode: '400049, Juhu S.O' },
         budget: { min: 8000, max: 12000 },
         status: "In Progress",
         deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 2))),
