@@ -1,43 +1,21 @@
 
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check if a user is authenticated
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Helper function to get the user's ID
-    function getUid() {
-      return request.auth.uid;
-    }
-    
-    // Users can read their own profile, but nobody else's.
-    // Anyone can create a user profile (during signup).
-    match /users/{userId} {
-      allow read: if isSignedIn() && getUid() == userId;
-      allow create: if !isSignedIn(); // Allow user creation during signup
-      allow update: if isSignedIn() && getUid() == userId;
-    }
-
-    // Jobs are public to read for any authenticated user.
-    // Only the job giver can create or update their own job.
+    // Allow public read access to jobs, but restrict writes to authenticated users.
     match /jobs/{jobId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn(); // More specific rules can be added here later
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Users can only read and write their own profile.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Disputes can only be read/written by involved parties or an Admin.
-    match /disputes/{disputeId} {
-      // Allow read/write if the user is the requester, one of the parties, or an admin
-      allow read, write: if isSignedIn() && 
-                          (resource.data.requesterId == getUid() ||
-                           getUid() in resource.data.parties.values() ||
-                           get(/databases/$(database)/documents/users/$(getUid())).data.roles.hasAny(['Admin']));
-      allow create: if isSignedIn();
+    // Allow admins to read/write anything
+    match /{document=**} {
+      allow read, write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']);
     }
   }
 }

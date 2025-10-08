@@ -14,11 +14,12 @@
  *
  */
 import { initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
-import { users as mockUsersData } from '../data';
-import type { User } from '../types';
+import type { User, Job, Bid, Dispute } from '../types';
+import { PlaceHolderImages } from '../placeholder-images';
 
+// IMPORTANT: Make sure the path to your service account key is correct.
 const serviceAccount = require('./service-account.json');
 
 initializeApp({
@@ -27,6 +28,60 @@ initializeApp({
 
 const adminDb = getFirestore();
 const adminAuth = getAuth();
+
+
+// --- Mock Data Definition ---
+
+const mockUsers: Omit<User, 'id'>[] = [
+  {
+    name: 'Vikas Akanksha Sharma',
+    email: 'admin@example.com',
+    mobile: '9999999999',
+    roles: ['Admin'],
+    memberSince: new Date('2024-01-01'),
+    avatarUrl: PlaceHolderImages[0].imageUrl,
+    realAvatarUrl: 'https://picsum.photos/seed/admin/200/200',
+    address: { house: '1', street: 'Admin Lane', cityPincode: '110001, Connaught Place', fullAddress: '1 Admin Lane, Connaught Place, New Delhi, 110001' },
+    pincodes: { residential: '110001' }
+  },
+  {
+    name: 'Priya Singh',
+    email: 'jobgiver@example.com',
+    mobile: '9876543210',
+    roles: ['Job Giver'],
+    memberSince: new Date('2024-02-10'),
+    avatarUrl: PlaceHolderImages[1].imageUrl,
+    realAvatarUrl: 'https://picsum.photos/seed/priya/200/200',
+    address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashok Nagar', fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001' },
+    pincodes: { residential: '560001' }
+  },
+  {
+    name: 'Vikram Kumar',
+    email: 'installer@example.com',
+    mobile: '8765432109',
+    roles: ['Installer', 'Job Giver'],
+    memberSince: new Date('2024-03-15'),
+    avatarUrl: PlaceHolderImages[2].imageUrl,
+    realAvatarUrl: 'https://picsum.photos/seed/vikram/200/200',
+    address: { house: '42/C', street: 'Link Road', cityPincode: '400053, Andheri West', fullAddress: '42/C, Link Road, Andheri West, Mumbai, 400053' },
+    pincodes: { residential: '400053', office: '400063' },
+    installerProfile: {
+      tier: 'Gold',
+      points: 1250,
+      skills: ['ip camera', 'nvr setup', 'cabling', 'troubleshooting', 'ptz', 'vms'],
+      rating: 4.8,
+      reviews: 25,
+      verified: true,
+      reputationHistory: [
+        { month: 'Jan', points: 100 }, { month: 'Feb', points: 350 }, { month: 'Mar', points: 600 },
+        { month: 'Apr', points: 800 }, { month: 'May', points: 1050 }, { month: 'Jun', points: 1250 },
+      ]
+    },
+  }
+];
+
+
+// --- Seeding Functions ---
 
 async function clearCollection(collectionPath: string) {
   console.log(`Clearing collection: ${collectionPath}...`);
@@ -120,25 +175,29 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         throw new Error("Required mock users not found for seeding.");
     }
     
+    const jobGiverRef = adminDb.doc('users/' + jobGiverUID);
+    const installerRef = adminDb.doc('users/' + installerUID);
+
     // --- JOB 1: Open for Bidding ---
     const job1Id = "JOB-20240720-A1B2";
     const job1Ref = adminDb.collection('jobs').doc(job1Id);
-    const job1Data = {
+    const job1Data: Omit<Job, 'bids' | 'comments'> & { bids: Bid[], comments: [], privateMessages: [] } = {
         id: job1Id,
         title: "Install 16 Dahua IP Cameras for a Commercial Building",
         description: "We require the installation of 16 Dahua 5MP IP cameras across our 4-story commercial building in Ashok Nagar, Bengaluru. The job includes camera mounting, cabling (Cat6), and NVR configuration. All hardware will be provided.",
-        jobGiver: adminDb.doc('users/' + jobGiverUID),
+        jobGiver: jobGiverRef,
         location: "560001",
         fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001',
         address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashok Nagar' },
         budget: { min: 20000, max: 25000 },
-        status: "Open for Bidding" as const,
+        status: "Open for Bidding",
         deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 5))),
         postedAt: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 4))),
         jobStartDate: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 10))),
-        bids: [], // Bids will be added later if needed
+        bids: [], 
         bidderIds: [],
         comments: [],
+        privateMessages: [],
         completionOtp: Math.floor(100000 + Math.random() * 900000).toString(),
     };
     await job1Ref.set(job1Data);
@@ -146,21 +205,28 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     // --- JOB 2: Completed ---
     const job2Id = "JOB-20240615-C3D4";
     const job2Ref = adminDb.collection('jobs').doc(job2Id);
-    const job2Data = {
+    const job2Bid: Bid = {
+        id: `bid-${job2Id}-${installerUID}`,
+        installer: installerRef,
+        amount: 52000,
+        timestamp: Timestamp.fromDate(new Date('2024-06-03')),
+        coverLetter: "I have extensive experience with large-scale factory installations and can complete this overhaul efficiently. My team is certified in Hikvision products."
+    }
+    const job2Data: Omit<Job, 'bids' | 'comments'> & { bids: Bid[], comments: [], privateMessages: [] } = {
         id: job2Id,
         title: "Factory Security System Overhaul - 32 Cameras",
         description: "Complete overhaul of an existing security system at a factory in Peenya. Requires replacing 32 old analog cameras with new Hikvision IP cameras, setting up a new server room with 2 NVRs, and integrating with our existing network.",
-        jobGiver: adminDb.doc('users/' + jobGiverUID),
+        jobGiver: jobGiverRef,
         location: "560058",
         fullAddress: 'Peenya Industrial Area, Bengaluru, 560058',
         address: { house: 'Plot 42', street: 'Peenya Industrial Area', cityPincode: '560058, Peenya' },
         budget: { min: 45000, max: 60000 },
-        status: "Completed" as const,
+        status: "Completed",
         deadline: Timestamp.fromDate(new Date('2024-06-10')),
         postedAt: Timestamp.fromDate(new Date('2024-06-01')),
         jobStartDate: Timestamp.fromDate(new Date('2024-06-15')),
-        awardedInstaller: adminDb.doc('users/' + installerUID),
-        bids: [],
+        awardedInstaller: installerRef,
+        bids: [job2Bid],
         bidderIds: [installerUID],
         comments: [],
         privateMessages: [],
@@ -169,8 +235,42 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     };
     await job2Ref.set(job2Data);
 
-    console.log(`- Committed 2 jobs.`);
+    // --- JOB 3: In Progress ---
+    const job3Id = "JOB-20240718-E5F6";
+    const job3Ref = adminDb.collection('jobs').doc(job3Id);
+     const job3Bid: Bid = {
+        id: `bid-${job3Id}-${installerUID}`,
+        installer: installerRef,
+        amount: 8500,
+        timestamp: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 3))),
+        coverLetter: "I can handle this residential installation quickly and cleanly. I have the required tools and experience."
+    }
+    const job3Data: Omit<Job, 'bids' | 'comments'> & { bids: Bid[], comments: [], privateMessages: [] } = {
+        id: job3Id,
+        title: "Residential Villa - 4 PTZ Cameras",
+        description: "Installation of 4 outdoor PTZ cameras for a 2-story villa. Requires weather-proof cabling and connection to a cloud-based storage service.",
+        jobGiver: jobGiverRef,
+        location: "400053",
+        fullAddress: '42/C, Link Road, Andheri West, Mumbai, 400053',
+        address: { house: 'Villa 17', street: 'Juhu Tara Road', cityPincode: '400049, Juhu' },
+        budget: { min: 8000, max: 12000 },
+        status: "In Progress",
+        deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 2))),
+        postedAt: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 7))),
+        jobStartDate: Timestamp.fromDate(new Date()),
+        awardedInstaller: installerRef,
+        bids: [job3Bid],
+        bidderIds: [installerUID],
+        comments: [],
+        privateMessages: [],
+        completionOtp: "987123",
+    };
+    await job3Ref.set(job3Data);
+
+
+    console.log(`- Committed 3 jobs.`);
 }
+
 
 async function main() {
   try {
@@ -183,10 +283,10 @@ async function main() {
     await clearCollection('users');
     
     // Seed Auth and get back the real UIDs
-    const userUIDs = await seedAuthAndGetUIDs(mockUsersData);
+    const userUIDs = await seedAuthAndGetUIDs(mockUsers);
     
     // Seed Firestore Users with the correct UIDs
-    await seedUserProfiles(mockUsersData, userUIDs);
+    await seedUserProfiles(mockUsers, userUIDs);
 
     // Seed Jobs with subcollections
     await seedJobsAndSubcollections(userUIDs);
