@@ -310,11 +310,7 @@ export function SignUpForm() {
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const firebaseUser = userCredential.user;
         
-        const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
-        
         const userRoles = values.role === 'Both (Job Giver & Installer)' ? ['Job Giver', 'Installer'] : [values.role];
-        const initialRole = userRoles[0].split(' ')[0].toUpperCase();
 
         const newUser: Omit<User, 'id'> = {
             name: values.name,
@@ -344,8 +340,11 @@ export function SignUpForm() {
         
         await setDoc(doc(db, "users", firebaseUser.uid), newUser);
         
-        const success = await login(values.email);
-        if (success) {
+        // This is a simplified login for the demo, which will trigger the useUser hook's onAuthStateChanged
+        // In a real app, you might not need to call login() explicitly if you listen to auth state changes correctly
+        const loggedIn = await login(values.email, values.password);
+
+        if (loggedIn) {
             router.push("/dashboard");
         } else {
              throw new Error("Failed to log in after sign up.");
