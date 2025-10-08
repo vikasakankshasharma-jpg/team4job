@@ -41,7 +41,7 @@ const addressSchema = z.object({
   street: z.string().min(3, "Please enter a valid street/area."),
   landmark: z.string().optional(),
   cityPincode: z.string().min(8, "Please select a pincode and post office."),
-  fullAddress: z.string().min(10, "Please provide a full address or pin it on the map."),
+  fullAddress: z.string().optional(),
 });
 
 const jobSchema = z.object({
@@ -110,6 +110,7 @@ export default function PostJobPage() {
       budgetMin: 0,
       budgetMax: 0,
       deadline: "",
+      jobStartDate: "",
       directAwardInstallerId: "",
     },
   });
@@ -188,9 +189,16 @@ export default function PostJobPage() {
     
     const [pincode] = values.address.cityPincode.split(',');
 
-    const jobData = { 
+    const jobData: any = { 
         id: newJobId, 
-        ...values, 
+        title: values.jobTitle,
+        description: values.jobDescription,
+        skills: values.skills,
+        address: values.address,
+        budget: {
+            min: values.budgetMin,
+            max: values.budgetMax,
+        },
         location: pincode.trim(),
         fullAddress: values.address.fullAddress,
         jobGiver: doc(db, 'users', user.id),
@@ -200,12 +208,14 @@ export default function PostJobPage() {
         postedAt: new Date(),
         attachments: uploadedAttachments,
         completionOtp: Math.floor(100000 + Math.random() * 900000).toString(),
+        jobStartDate: new Date(values.jobStartDate),
     };
 
     if (values.directAwardInstallerId) {
-        // @ts-ignore
         jobData.awardedInstaller = doc(db, 'users', values.directAwardInstallerId);
-        jobData.deadline = new Date().toISOString(); // Set deadline to now for direct award
+        jobData.deadline = new Date(); // Set deadline to now for direct award
+    } else {
+        jobData.deadline = new Date(values.deadline);
     }
     
     try {
@@ -227,10 +237,10 @@ export default function PostJobPage() {
     }
   }
 
-  if (role === 'Admin') {
+  if (role === 'Admin' || (role && role !== 'Job Giver')) {
     return (
         <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground">Redirecting...</p>
+            <p className="text-muted-foreground">Only Job Givers can post jobs. Switch roles to continue.</p>
         </div>
     );
   }
@@ -447,7 +457,7 @@ export default function PostJobPage() {
                             <FormLabel>Installer's Public ID</FormLabel>
                             <FormControl>
                             <Input
-                                placeholder="e.g., Installer-8421"
+                                placeholder="e.g., INSTALLER-20240315-0003"
                                 {...field}
                             />
                             </FormControl>
