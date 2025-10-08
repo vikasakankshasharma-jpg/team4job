@@ -5,11 +5,12 @@ import { PlaceHolderImages } from './placeholder-images';
 // --- USERS ---
 // Note: In a real app, passwords would be hashed and never stored in plain text.
 // For this demo, we are not handling passwords in the data file.
+// The IDs here are placeholders and will be replaced by Firebase Auth UIDs in a real setup.
 export const users: User[] = [
   {
-    id: 'ADMIN-20240101-0001',
+    id: 'admin-user-id',
     name: 'Vikas Akanksha Sharma',
-    email: 'vikasakankshasharma@gmail.com',
+    email: 'vikas.sharma@example.com',
     mobile: '9999999999',
     roles: ['Admin'],
     memberSince: new Date('2024-01-01'),
@@ -19,7 +20,7 @@ export const users: User[] = [
     pincodes: { residential: '110001' }
   },
   {
-    id: 'JOBGIVER-20240210-0002',
+    id: 'jobgiver-user-id',
     name: 'Priya Singh',
     email: 'priya.singh@example.com',
     mobile: '9876543210',
@@ -31,7 +32,7 @@ export const users: User[] = [
     pincodes: { residential: '560001' }
   },
   {
-    id: 'INSTALLER-20240315-0003',
+    id: 'installer-user-id-1',
     name: 'Vikram Kumar',
     email: 'vikram.kumar@example.com',
     mobile: '8765432109',
@@ -55,7 +56,7 @@ export const users: User[] = [
     },
   },
    {
-    id: 'USER-20240401-0004',
+    id: 'both-user-id',
     name: 'Rohan Mehta',
     email: 'rohan.mehta@example.com',
     mobile: '7654321098',
@@ -79,7 +80,7 @@ export const users: User[] = [
     }
   },
   {
-    id: 'INSTALLER-20240520-0005',
+    id: 'installer-user-id-2',
     name: 'Anjali Desai',
     email: 'anjali.desai@example.com',
     mobile: '9012345678',
@@ -103,7 +104,7 @@ export const users: User[] = [
     }
   },
     {
-    id: 'INSTALLER-20240601-0006',
+    id: 'installer-user-id-3',
     name: 'Suresh Gupta',
     email: 'suresh.gupta@example.com',
     mobile: '9876543215',
@@ -145,3 +146,5 @@ export let privateMessages: PrivateMessage[] = [
 ];
 
 export const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz", "vms", "access control", "analog cameras", "wireless cameras", "fiber optics", "thermal cameras"];
+
+    
