@@ -364,7 +364,7 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
 }
 
 export default function ProfilePage() {
-  const { user, role, setUser, setRole, loading: userLoading } = useUser();
+  const { user, role, setUser, setRole } = useUser();
   const { db } = useFirebase();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   const { toast } = useToast();
@@ -383,22 +383,23 @@ export default function ProfilePage() {
         setJobsCompletedCount(querySnapshot.size);
         setLoading(false);
     }
-    fetchCompletedJobsCount();
-  }, [user, role, db]);
-  
-  if (userLoading || loading) {
-    return (
-        <div className="flex h-48 items-center justify-center">
-            <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Loading Profile...</span>
-            </div>
-        </div>
-    );
-  }
+    
+    if (user?.id) {
+        fetchCompletedJobsCount();
+    }
+  }, [user?.id, role, db]);
   
   if (!user) {
-    return <div>User not found.</div>;
+    // This case should be handled by the UserProvider, which shows a global loader
+    // or redirects. This return is a fallback.
+    return (
+      <div className="flex h-48 items-center justify-center">
+        <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Loading Profile...</span>
+        </div>
+      </div>
+    );
   }
   
   const installerProfile = user.installerProfile;
