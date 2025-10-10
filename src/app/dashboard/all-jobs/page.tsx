@@ -272,6 +272,7 @@ export default function AllJobsPage() {
         <div className="flex flex-col gap-2 mb-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
                 <Input placeholder="Filter by Job Title..." value={filters.jobId} onChange={e => handleFilterChange('jobId', e.target.value)} className="h-8 lg:col-span-1" />
+                 <Input placeholder="Filter by Pincode..." value={filters.pincode} onChange={e => handleFilterChange('pincode', e.target.value)} className="h-8" />
                 <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
                     <SelectTrigger className="h-8 text-xs">
                         <SelectValue placeholder="Filter by status..." />
@@ -445,3 +446,5 @@ export default function AllJobsPage() {
     </Card>
   );
 }
+
+    
