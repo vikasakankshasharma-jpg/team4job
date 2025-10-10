@@ -384,7 +384,7 @@ export default function ProfilePage() {
   }, [user?.id, role, db]);
   
   if (!user) {
-    return <div>Loading...</div>;
+    return <div>check this</div>;
   }
   
   const installerProfile = user.installerProfile;
