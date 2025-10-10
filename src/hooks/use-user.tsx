@@ -6,7 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { db, getFirebaseApp } from "@/lib/firebase/client-config";
+import { db } from "@/lib/firebase/client-config";
+import { useFirebaseApp } from "@/lib/firebase/use-firebase-app";
 
 
 type Role = "Job Giver" | "Installer" | "Admin";
@@ -34,9 +35,15 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true); // Start as true
   const router = useRouter();
   const pathname = usePathname();
+  const app = useFirebaseApp(); // Get the initialized app instance
 
   useEffect(() => {
-    const auth = getAuth(getFirebaseApp());
+    if (!app) {
+      // Firebase app is not initialized yet, wait.
+      return;
+    }
+
+    const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
@@ -61,14 +68,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
                 localStorage.setItem('userRole', initialRole);
               }
             } else {
-              // This case happens if a user exists in Auth but not in Firestore.
-              // Log them out to prevent being stuck.
               await signOut(auth);
               setUser(null);
             }
         } catch (error) {
             console.error("Error fetching user document:", error);
-            // Log out on error to prevent being stuck
             await signOut(auth);
             setUser(null);
         }
@@ -76,15 +80,15 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(null);
         setIsAdmin(false);
       }
-      setLoading(false); // Set loading to false after user status is determined
+      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [app]); // Rerun effect when app is initialized
 
 
   useEffect(() => {
-    if (loading) return; // Don't run this effect while still loading
+    if (loading) return;
     
     const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
     const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
@@ -99,8 +103,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   const login = async (email: string, password?: string) => {
+    if (!app) return false;
     setLoading(true);
-    const auth = getAuth(getFirebaseApp());
+    const auth = getAuth(app);
     if (!password) {
         setLoading(false);
         return false;
@@ -117,7 +122,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    const auth = getAuth(getFirebaseApp());
+    if (!app) return;
+    const auth = getAuth(app);
     await signOut(auth);
     setUser(null);
     setIsAdmin(false);
@@ -141,7 +147,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     setRole,
     login,
     logout
-  }), [user, role, isAdmin, loading]);
+  }), [user, role, isAdmin, loading, app]);
 
   return (
     <UserContext.Provider value={value}>
