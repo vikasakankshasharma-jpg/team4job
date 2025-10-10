@@ -171,7 +171,8 @@ function MyBidsPageContent() {
       if (!user) return;
       setLoading(true);
       const jobsRef = collection(db, "jobs");
-      const q = query(jobsRef, or(where('bidderIds', 'array-contains', user.id), where('awardedInstaller', '==', doc(db, 'users', user.id))));
+      const installerDocRef = doc(db, 'users', user.id);
+      const q = query(jobsRef, or(where('bidderIds', 'array-contains', user.id), where('awardedInstaller', '==', installerDocRef)));
       const jobSnapshot = await getDocs(q);
       
       const userIds = new Set<string>();
@@ -185,13 +186,14 @@ function MyBidsPageContent() {
       const userMap = new Map<string, User>();
       if (userIds.size > 0) {
         const usersSnapshot = await getDocs(query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds))));
-        usersSnapshot.forEach(doc => userMap.set(doc.id, doc.data() as User));
+        usersSnapshot.forEach(doc => userMap.set(doc.id, { id: doc.id, ...doc.data() } as User));
       }
 
       const jobList = jobSnapshot.docs.map(doc => {
         const jobData = doc.data() as Job;
         return {
           ...jobData,
+          id: doc.id,
           jobGiver: userMap.get((jobData.jobGiver as DocumentReference).id) || jobData.jobGiver,
           awardedInstaller: jobData.awardedInstaller ? userMap.get((jobData.awardedInstaller as DocumentReference).id) || jobData.awardedInstaller : undefined,
           bids: (jobData.bids || []).map(bid => ({ ...bid, installer: userMap.get((bid.installer as DocumentReference).id) || bid.installer }))
@@ -407,3 +409,5 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
+
+    
