@@ -14,47 +14,39 @@ interface FirebaseContextType {
 
 const FirebaseContext = createContext<FirebaseContextType | null>(null);
 
-// This function must be called on the client side.
-function initializeFirebase() {
-  if (getApps().length > 0) {
-    return {
-      app: getApp(),
-      auth: getAuth(getApp()),
-      db: getFirestore(getApp()),
-    };
-  }
-
-  const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+interface FirebaseClientProviderProps {
+  children: React.ReactNode;
+  firebaseConfig: {
+    apiKey?: string;
+    authDomain?: string;
+    projectId?: string;
+    storageBucket?: string;
+    messagingSenderId?: string;
+    appId?: string;
   };
-
-  if (!firebaseConfig.apiKey) {
-    throw new Error("Firebase API Key is missing. Check your environment variables.");
-  }
-  
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  return { app, auth, db };
 }
 
-export function FirebaseClientProvider({ children }: { children: React.ReactNode }) {
+export function FirebaseClientProvider({ children, firebaseConfig }: FirebaseClientProviderProps) {
   const [firebaseInstances, setFirebaseInstances] = useState<FirebaseContextType | null>(null);
 
   useEffect(() => {
-    // This effect runs only on the client, after the component mounts.
-    // This ensures that process.env variables are available.
-    if (typeof window !== "undefined") {
-      const instances = initializeFirebase();
-      setFirebaseInstances(instances);
+    if (!firebaseConfig.apiKey) {
+      console.error("Firebase API Key is missing. The application will not work correctly.");
+      return;
     }
-  }, []);
+
+    let app: FirebaseApp;
+    if (getApps().length === 0) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApp();
+    }
+
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    setFirebaseInstances({ app, auth, db });
+  }, [firebaseConfig]);
 
   const value = useMemo(() => firebaseInstances, [firebaseInstances]);
 
