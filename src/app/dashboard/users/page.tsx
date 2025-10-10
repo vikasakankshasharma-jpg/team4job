@@ -59,7 +59,7 @@ type SortableKeys = 'name' | 'memberSince' | 'tier' | 'rating' | 'points';
 
 export default function UsersPage() {
   const router = useRouter();
-  const { role } = useUser();
+  const { user } = useUser();
   const { db } = useFirebase();
   const [users, setUsers] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -67,24 +67,26 @@ export default function UsersPage() {
   const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'memberSince', direction: 'descending' });
 
   React.useEffect(() => {
-    if (role && role !== 'Admin') {
+    if (user && user.roles[0] !== 'Admin') {
       router.push('/dashboard');
     }
-  }, [role, router]);
+  }, [user, router]);
 
   React.useEffect(() => {
       async function fetchUsers() {
-        if (role === 'Admin') {
+        if (user?.roles[0] === 'Admin') {
             setLoading(true);
             const usersCollection = collection(db, 'users');
             const userSnapshot = await getDocs(usersCollection);
-            const userList = userSnapshot.docs.map(doc => doc.data() as User);
+            const userList = userSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as User);
             setUsers(userList);
             setLoading(false);
         }
       }
-      fetchUsers();
-  }, [role, db]);
+      if (db && user) {
+        fetchUsers();
+      }
+  }, [user, db]);
 
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
     setFilters(prev => ({ ...prev, [filterName]: value }));
@@ -176,7 +178,7 @@ export default function UsersPage() {
     return filtered;
   }, [users, filters, sortConfig]);
 
-  if (role !== 'Admin') {
+  if (!user || user.roles[0] !== 'Admin') {
     return (
         <div className="flex items-center justify-center h-full">
             <p className="text-muted-foreground">Redirecting...</p>
@@ -335,11 +337,11 @@ export default function UsersPage() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
                         <AnimatedAvatar svg={user.avatarUrl} />
-                        <AvatarFallback>{user.id.substring(0, 2)}</AvatarFallback>
+                        <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
                       </Avatar>
                       <div className="font-medium">
                           <p>{user.name}</p>
-                          <p className="text-sm text-muted-foreground">{user.id}</p>
+                          <p className="text-sm text-muted-foreground font-mono">{user.id}</p>
                       </div>
                     </div>
                   </TableCell>
@@ -365,7 +367,7 @@ export default function UsersPage() {
                       )}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                      {user.installerProfile ? (
+                      {user.installerProfile && user.installerProfile.reviews > 0 ? (
                           <span>{user.installerProfile.rating}/5 ({user.installerProfile.reviews})</span>
                       ) : (
                           <span className="text-muted-foreground">—</span>

@@ -378,7 +378,9 @@ export default function ProfilePage() {
             setJobsCompletedCount(querySnapshot.size);
         }
     }
-    fetchCompletedJobsCount();
+    if (db && user?.id) {
+        fetchCompletedJobsCount();
+    }
   }, [user?.id, role, db]);
   
   if (!user) {

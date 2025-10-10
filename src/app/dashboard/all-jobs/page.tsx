@@ -39,7 +39,7 @@ import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { useFirebase } from "@/lib/firebase/client-provider";
 import Link from "next/link";
-import { collection, getDocs, query } from "firebase/firestore";
+import { collection, getDocs, query, DocumentReference } from "firebase/firestore";
 
 const initialFilters = {
     jobId: "",
@@ -55,10 +55,10 @@ type SortableKeys = 'title' | 'status' | 'jobGiver' | 'bids' | 'jobType' | 'post
 function getJobType(job: Job) {
     if (!job.awardedInstaller) return 'N/A';
 
-    const awardedInstallerId = (job.awardedInstaller as User)?.id;
+    const awardedInstallerId = (job.awardedInstaller as User)?.id || (job.awardedInstaller as DocumentReference)?.id;
     if (!job.bids || job.bids.length === 0) return 'Direct';
 
-    const bidderIds = (job.bids || []).map(b => (b.installer as User).id);
+    const bidderIds = (job.bids || []).map(b => (b.installer as User).id || (b.installer as DocumentReference).id);
 
     return bidderIds.includes(awardedInstallerId as string) ? 'Bidding' : 'Direct';
 };
@@ -98,7 +98,7 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
 
 export default function AllJobsPage() {
   const router = useRouter();
-  const { role } = useUser();
+  const { user } = useUser();
   const { db } = useFirebase();
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -108,30 +108,36 @@ export default function AllJobsPage() {
 
 
   React.useEffect(() => {
-    if (role && role !== 'Admin') {
+    if (user && user.roles[0] !== 'Admin') {
       router.push('/dashboard');
     }
-  }, [role, router]);
+  }, [user, router]);
 
   React.useEffect(() => {
     async function fetchJobs() {
-      if (role === 'Admin') {
+      if (user?.roles[0] === 'Admin') {
         const jobsCollection = collection(db, 'jobs');
         const q = query(jobsCollection);
         const jobSnapshot = await getDocs(q);
-        const jobList = jobSnapshot.docs.map(doc => doc.data() as Job);
+        const jobList = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
 
-        const usersCollection = collection(db, 'users');
-        const userSnapshot = await getDocs(usersCollection);
-        const userMap = new Map(userSnapshot.docs.map(doc => [doc.id, doc.data() as User]));
+        const userRefs = new Set<DocumentReference>();
+        jobList.forEach(job => {
+            if (job.jobGiver) userRefs.add(job.jobGiver as DocumentReference);
+            if (job.awardedInstaller) userRefs.add(job.awardedInstaller as DocumentReference);
+            (job.bids || []).forEach(bid => userRefs.add(bid.installer as DocumentReference));
+        });
+        
+        const userDocs = await Promise.all(Array.from(userRefs).map(ref => getDoc(ref)));
+        const usersMap = new Map(userDocs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as User]));
 
         const populatedJobs = jobList.map(job => ({
           ...job,
-          jobGiver: job.jobGiver ? userMap.get((job.jobGiver as any).id) || job.jobGiver : undefined,
-          awardedInstaller: job.awardedInstaller ? userMap.get((job.awardedInstaller as any).id) || job.awardedInstaller : undefined,
+          jobGiver: usersMap.get((job.jobGiver as DocumentReference).id) || job.jobGiver,
+          awardedInstaller: job.awardedInstaller ? usersMap.get((job.awardedInstaller as DocumentReference).id) || job.awardedInstaller : undefined,
           bids: (job.bids || []).map(bid => ({
             ...bid,
-            installer: bid.installer ? userMap.get((bid.installer as any).id) || bid.installer : undefined
+            installer: usersMap.get((bid.installer as DocumentReference).id) || bid.installer
           }))
         }));
         
@@ -141,8 +147,10 @@ export default function AllJobsPage() {
         setLoading(false);
       }
     }
-    fetchJobs();
-  }, [role, db]);
+    if (db && user) {
+        fetchJobs();
+    }
+  }, [user, db]);
 
 
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
@@ -233,7 +241,7 @@ export default function AllJobsPage() {
     return filtered;
   }, [jobs, filters, sortConfig]);
 
-  if (role !== 'Admin') {
+  if (!user || user.roles[0] !== 'Admin') {
     return (
         <div className="flex items-center justify-center h-full">
             <p className="text-muted-foreground">Redirecting...</p>

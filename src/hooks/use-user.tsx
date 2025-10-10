@@ -4,11 +4,10 @@
 import { User } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
-import { onAuthStateChanged, signOut, signInWithEmailAndPassword } from "firebase/auth";
+import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useFirebase } from "@/lib/firebase/client-provider";
 import { Loader2 } from "lucide-react";
-
 
 type Role = "Job Giver" | "Installer" | "Admin";
 
@@ -32,7 +31,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true); // Start as true
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
   const firebaseContext = useFirebase();
@@ -42,7 +41,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     
     const { auth, db } = firebaseContext;
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         try {
             const userDocRef = doc(db, "users", firebaseUser.uid);
@@ -66,19 +65,22 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
                 localStorage.setItem('userRole', initialRole);
               }
             } else {
+              console.error("User document not found for authenticated user:", firebaseUser.uid);
+              // The user is authenticated but has no profile. Log them out.
+              await signOut(auth); 
               setUser(null);
+              setIsAdmin(false);
             }
         } catch (error) {
             console.error("Error fetching user document:", error);
             setUser(null);
-        } finally {
-            setLoading(false);
+            setIsAdmin(false);
         }
       } else {
         setUser(null);
         setIsAdmin(false);
-        setLoading(false);
       }
+      setLoading(false); // Ensure loading is always set to false
     });
 
     return () => unsubscribe();
@@ -109,7 +111,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
     try {
       await signInWithEmailAndPassword(firebaseContext.auth, email, password);
-      // onAuthStateChanged will handle setting user state and setLoading(false)
+      // onAuthStateChanged will handle setting user state, which will trigger setLoading(false)
       return true;
     } catch (error) {
       console.error("Login failed:", error);
@@ -124,6 +126,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setIsAdmin(false);
     localStorage.removeItem('userRole');
+    // No need to setLoading(true) here, onAuthStateChanged will handle it.
     router.push('/login');
   };
 

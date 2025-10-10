@@ -162,10 +162,10 @@ function MyBidsPageContent() {
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
-    if (role && role === 'Admin') {
+    if (user && user.roles[0] === 'Admin') {
       router.push('/dashboard');
     }
-  }, [role, router]);
+  }, [user, router]);
   
   React.useEffect(() => {
     async function fetchJobs() {
@@ -176,17 +176,17 @@ function MyBidsPageContent() {
       const q = query(jobsRef, or(where('bidderIds', 'array-contains', user.id), where('awardedInstaller', '==', installerDocRef)));
       const jobSnapshot = await getDocs(q);
       
-      const userIds = new Set<string>();
+      const userRefs = new Set<DocumentReference>();
       jobSnapshot.forEach(jobDoc => {
           const jobData = jobDoc.data() as Job;
-          if (jobData.jobGiver) userIds.add((jobData.jobGiver as DocumentReference).id);
-          if (jobData.awardedInstaller) userIds.add((jobData.awardedInstaller as DocumentReference).id);
-          (jobData.bids || []).forEach(bid => userIds.add((bid.installer as DocumentReference).id));
+          if (jobData.jobGiver) userRefs.add(jobData.jobGiver as DocumentReference);
+          if (jobData.awardedInstaller) userRefs.add(jobData.awardedInstaller as DocumentReference);
+          (jobData.bids || []).forEach(bid => userRefs.add(bid.installer as DocumentReference));
       });
       
       const userMap = new Map<string, User>();
-      if (userIds.size > 0) {
-        const usersSnapshot = await getDocs(query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds))));
+      if (userRefs.size > 0) {
+        const usersSnapshot = await getDocs(query(collection(db, 'users'), where('__name__', 'in', Array.from(userRefs))));
         usersSnapshot.forEach(doc => userMap.set(doc.id, { id: doc.id, ...doc.data() } as User));
       }
 
@@ -203,7 +203,9 @@ function MyBidsPageContent() {
       setJobs(jobList);
       setLoading(false);
     }
-    fetchJobs();
+    if (db && user) {
+        fetchJobs();
+    }
   }, [user, db]);
 
   React.useEffect(() => {
@@ -243,7 +245,7 @@ function MyBidsPageContent() {
       statusFilter = 'Completed & Won';
   }
   
-  if (role === 'Admin' || (role && role !== 'Installer')) {
+  if (!user || user.roles.includes("Admin") || !user.roles.includes("Installer")) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">This page is for Installers only.</p>
@@ -270,6 +272,7 @@ function MyBidsPageContent() {
     const awardedId = (job.awardedInstaller as User)?.id || (job.awardedInstaller as DocumentReference)?.id;
     const isAwardedToMe = awardedId === user.id;
 
+    // A job is relevant if the user has bid on it OR was awarded it directly.
     if (myBid || isAwardedToMe) {
       return {
         id: myBid?.id || `direct-award-${job.id}`,
@@ -410,7 +413,3 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
-
-    
-
-    
