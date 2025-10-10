@@ -13,21 +13,46 @@
  *  npm run db:seed
  *
  */
-import { initializeApp, cert } from 'firebase-admin/app';
+import { initializeApp, cert, App } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import type { User, Job, Bid, Dispute } from '../types';
 import { PlaceHolderImages } from '../placeholder-images';
+import { config } from 'dotenv';
 
-// IMPORTANT: Make sure the path to your service account key is correct.
-const serviceAccount = require('./service-account.json');
+config(); // Load environment variables
 
-initializeApp({
-  credential: cert(serviceAccount)
-});
+// --- Firebase Admin SDK Initialization ---
 
-const adminDb = getFirestore();
-const adminAuth = getAuth();
+let firebaseApp: App;
+
+if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+        firebaseApp = initializeApp({
+            credential: cert(serviceAccount)
+        });
+        console.log("Firebase Admin SDK initialized using environment variable.");
+    } catch (error) {
+        console.error("Error parsing FIREBASE_SERVICE_ACCOUNT_KEY from .env:", error);
+        process.exit(1);
+    }
+} else {
+    try {
+        const serviceAccount = require('./service-account.json');
+        firebaseApp = initializeApp({
+            credential: cert(serviceAccount)
+        });
+        console.log("Firebase Admin SDK initialized using service-account.json file.");
+    } catch (error) {
+        console.error("Could not initialize Firebase Admin SDK. Ensure either FIREBASE_SERVICE_ACCOUNT_KEY in .env or service-account.json is configured correctly.", error);
+        process.exit(1);
+    }
+}
+
+
+const adminDb = getFirestore(firebaseApp);
+const adminAuth = getAuth(firebaseApp);
 
 
 // --- Mock Data Definition ---
