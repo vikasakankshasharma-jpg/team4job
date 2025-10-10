@@ -45,6 +45,7 @@ import { allSkills } from "@/lib/data";
 import type { Job, User } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import type { DocumentReference } from "firebase/firestore";
 
 
 export default function BrowseJobsPage() {
@@ -69,17 +70,26 @@ export default function BrowseJobsPage() {
     setLoading(true);
     const openJobsQuery = query(collection(db, 'jobs'), where('status', '==', 'Open for Bidding'));
     const jobSnapshot = await getDocs(openJobsQuery);
-    const userIds = new Set(jobSnapshot.docs.map(doc => (doc.data().jobGiver as any)?.id));
+    const userIds = new Set<string>();
+    jobSnapshot.docs.forEach(doc => {
+        const jobGiverRef = doc.data().jobGiver as DocumentReference;
+        if (jobGiverRef?.id) {
+            userIds.add(jobGiverRef.id);
+        }
+    });
     
     if (userIds.size > 0) {
-        const usersSnapshot = await getDocs(query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds))));
+        const usersQuery = query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds)));
+        const usersSnapshot = await getDocs(usersQuery);
         const userMap = new Map(usersSnapshot.docs.map(doc => [doc.id, doc.data() as User]));
+        
         const jobList = jobSnapshot.docs.map(doc => {
           const jobData = doc.data() as Job;
+          const jobGiverId = (jobData.jobGiver as DocumentReference)?.id;
           return {
             ...jobData,
-            jobGiver: userMap.get((jobData.jobGiver as any).id) || jobData.jobGiver
-          }
+            jobGiver: userMap.get(jobGiverId) || jobData.jobGiver
+          };
         });
         setJobs(jobList);
     } else {
@@ -349,3 +359,5 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
+
+    
