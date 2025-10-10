@@ -81,7 +81,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [auth, db]); 
+  }, []); 
 
 
   useEffect(() => {
@@ -142,7 +142,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     setRole,
     login,
     logout
-  }), [user, role, isAdmin, loading, auth, db]);
+  }), [user, role, isAdmin, loading]);
 
   return (
     <UserContext.Provider value={value}>
