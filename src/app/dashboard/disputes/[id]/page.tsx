@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { notFound, useParams } from "next/navigation";
 import {
   Card,
@@ -26,7 +26,6 @@ import { toDate } from "@/lib/utils";
 import Link from "next/link";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -87,6 +86,7 @@ function PageSkeleton() {
 
 export default function DisputeDetailPage() {
   const { user, isAdmin } = useUser();
+  const { db } = useFirebase();
   const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
@@ -132,7 +132,7 @@ export default function DisputeDetailPage() {
         setLoading(false);
     }
     fetchDispute();
-  }, [id]);
+  }, [id, db]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {

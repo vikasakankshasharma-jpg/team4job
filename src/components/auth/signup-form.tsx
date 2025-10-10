@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { useState, useRef, useEffect } from "react";
 import { CheckCircle2, Loader2, ShieldCheck, Camera, Upload } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -37,8 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AddressForm } from "@/components/ui/address-form";
 import { collection, query, where, getDocs, or, setDoc, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 const addressSchema = z.object({
   house: z.string().min(1, "House/Flat No. is required."),
@@ -68,6 +67,7 @@ const formSchema = z.object({
 export function SignUpForm() {
   const router = useRouter();
   const { login } = useUser();
+  const { auth, db } = useFirebase();
   const { toast } = useToast();
   
   const [currentStep, setCurrentStep] = useState<"role" | "details" | "photo" | "verification">("role");
@@ -307,7 +307,6 @@ export function SignUpForm() {
     }
 
     try {
-        const auth = getAuth();
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const firebaseUser = userCredential.user;
         

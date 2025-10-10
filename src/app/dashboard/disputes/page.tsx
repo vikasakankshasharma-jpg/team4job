@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { Dispute } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { format } from "date-fns";
@@ -27,7 +27,6 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { collection, query, where, getDocs, or } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -45,6 +44,7 @@ const getStatusVariant = (status: Dispute['status']) => {
 export default function DisputesPage() {
   const router = useRouter();
   const { user, isAdmin } = useUser();
+  const { db } = useFirebase();
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -72,7 +72,7 @@ export default function DisputesPage() {
         setLoading(false);
     }
     fetchDisputes();
-  }, [user, isAdmin]);
+  }, [user, isAdmin, db]);
 
   if (!user) {
     return <div className="text-center text-muted-foreground">Loading...</div>;

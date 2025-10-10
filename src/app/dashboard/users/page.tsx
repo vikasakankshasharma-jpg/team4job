@@ -25,7 +25,7 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -36,7 +36,6 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { collection, getDocs, query } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
@@ -59,6 +58,7 @@ type SortableKeys = 'name' | 'memberSince' | 'tier' | 'rating' | 'points';
 export default function UsersPage() {
   const router = useRouter();
   const { user: currentUser, role } = useUser();
+  const { db } = useFirebase();
   const [users, setUsers] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [filters, setFilters] = React.useState(initialFilters);
@@ -82,7 +82,7 @@ export default function UsersPage() {
         }
       }
       fetchUsers();
-  }, [role]);
+  }, [role, db]);
 
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
     setFilters(prev => ({ ...prev, [filterName]: value }));
@@ -105,7 +105,7 @@ export default function UsersPage() {
             user.name.toLowerCase().includes(searchTerm) ||
             user.email.toLowerCase().includes(searchTerm) ||
             user.id.toLowerCase().includes(searchTerm) ||
-            user.mobile.includes(searchTerm)
+            (user.mobile && user.mobile.includes(searchTerm))
         );
     }
     if (filters.role !== 'all') {
