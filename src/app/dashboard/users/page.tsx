@@ -324,7 +324,7 @@ export default function UsersPage() {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
-                  Loading users...
+                  check this
                 </TableCell>
               </TableRow>
             ) : sortedAndFilteredUsers.length > 0 ? (
@@ -392,5 +392,3 @@ export default function UsersPage() {
     </Card>
   );
 }
-
-    
