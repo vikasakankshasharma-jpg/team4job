@@ -19,13 +19,15 @@ import { format } from "date-fns";
 import { notFound, useParams } from "next/navigation";
 import { JobCard } from "@/components/job-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { jobs as allJobs, users as allUsers } from "@/lib/data";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useFirebase } from "@/hooks/use-user";
+import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
+import type { DocumentReference } from "firebase/firestore";
 
 
 const tierIcons = {
@@ -115,6 +117,7 @@ function PageSkeleton() {
 export default function UserProfilePage() {
   const params = useParams();
   const id = params.id as string;
+  const { db } = useFirebase();
 
   const [profileUser, setProfileUser] = React.useState<User | null | undefined>(undefined);
   const [userPostedJobs, setUserPostedJobs] = React.useState<Job[]>([]);
@@ -125,22 +128,37 @@ export default function UserProfilePage() {
   React.useEffect(() => {
     if (id) {
         setLoading(true);
-        const user = allUsers.find(u => u.id === id);
-        setProfileUser(user);
+        
+        const fetchUserData = async () => {
+            const userDoc = await getDoc(doc(db, "users", id));
+            if (!userDoc.exists()) {
+                setProfileUser(null);
+                setLoading(false);
+                return;
+            }
+            const user = { id: userDoc.id, ...userDoc.data() } as User;
+            setProfileUser(user);
 
-        if (user) {
+            const jobsRef = collection(db, "jobs");
+            
             if (user.roles.includes('Job Giver')) {
-                const postedJobs = allJobs.filter(j => (j.jobGiver as User).id === user.id);
+                const postedJobsQuery = query(jobsRef, where('jobGiver', '==', userDoc.ref));
+                const postedJobsSnapshot = await getDocs(postedJobsQuery);
+                const postedJobs = postedJobsSnapshot.docs.map(d => d.data() as Job);
                 setUserPostedJobs(postedJobs);
             }
+
             if (user.roles.includes('Installer')) {
-                const completedJobs = allJobs.filter(j => j.status === 'Completed' && (j.awardedInstaller as User)?.id === user.id);
+                const completedJobsQuery = query(jobsRef, where('status', '==', 'Completed'), where('awardedInstaller', '==', userDoc.ref));
+                const completedJobsSnapshot = await getDocs(completedJobsQuery);
+                const completedJobs = completedJobsSnapshot.docs.map(d => d.data() as Job);
                 setUserCompletedJobs(completedJobs);
             }
-        }
-        setLoading(false);
+            setLoading(false);
+        };
+        fetchUserData();
     }
-  }, [id]);
+  }, [id, db]);
 
   if (loading || profileUser === undefined) {
     return <PageSkeleton />;
@@ -375,3 +393,5 @@ export default function UserProfilePage() {
     </div>
   );
 }
+
+    

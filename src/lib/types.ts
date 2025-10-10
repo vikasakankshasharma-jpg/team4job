@@ -143,3 +143,5 @@ export type Dispute = {
 };
 
 export type Role = "Job Giver" | "Installer" | "Admin";
+
+    
