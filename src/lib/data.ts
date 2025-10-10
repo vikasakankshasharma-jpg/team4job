@@ -1,4 +1,5 @@
 import { Job, User, Bid, Comment, Dispute, PrivateMessage } from './types';
+import { PlaceHolderImages } from './placeholder-images';
 
 // This file is now a placeholder. The application fetches data directly from Firestore.
 // The demo data is managed exclusively by the database seeding script
