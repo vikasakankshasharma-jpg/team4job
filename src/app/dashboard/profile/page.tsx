@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -364,27 +364,50 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
 }
 
 export default function ProfilePage() {
-  const { user, role, setUser, setRole } = useUser();
+  const { user, role, setUser, setRole, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   const { toast } = useToast();
   const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
+  const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
+    if (userLoading) {
+      setLoading(true);
+      return;
+    }
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     async function fetchCompletedJobsCount() {
         if (role === 'Installer' && user?.id) {
+            setLoading(true);
             const q = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', doc(db, 'users', user.id)));
             const querySnapshot = await getDocs(q);
             setJobsCompletedCount(querySnapshot.size);
+            setLoading(false);
+        } else {
+          setLoading(false);
         }
     }
-    if (db && user?.id) {
-        fetchCompletedJobsCount();
-    }
-  }, [user?.id, role, db]);
+    fetchCompletedJobsCount();
+  }, [user?.id, role, db, userLoading]);
+  
+  if (userLoading || loading) {
+    return (
+        <div className="flex h-48 items-center justify-center">
+            <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Loading Profile...</span>
+            </div>
+        </div>
+    );
+  }
   
   if (!user) {
-    return <div>check this</div>;
+    return <div>User not found.</div>;
   }
   
   const installerProfile = user.installerProfile;
