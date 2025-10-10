@@ -25,7 +25,8 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/lib/firebase/client-provider";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -391,3 +392,5 @@ export default function UsersPage() {
     </Card>
   );
 }
+
+    

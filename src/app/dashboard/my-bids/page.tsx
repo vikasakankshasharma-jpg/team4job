@@ -24,7 +24,8 @@ import { Award, IndianRupee, ListFilter, X } from "lucide-react";
 import { Job, Bid, User } from "@/lib/types";
 import React from "react";
 import { getStatusVariant, toDate } from "@/lib/utils";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/lib/firebase/client-provider";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   DropdownMenu,
@@ -409,5 +410,7 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
+
+    
 
     

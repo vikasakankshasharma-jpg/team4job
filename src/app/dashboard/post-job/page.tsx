@@ -28,7 +28,8 @@ import { generateJobDetails } from "@/ai/flows/generate-job-details";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { cn } from "@/lib/utils";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/lib/firebase/client-provider";
 import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { JobAttachment } from "@/lib/types";
@@ -484,3 +485,5 @@ export default function PostJobPage() {
     </div>
   );
 }
+
+    

@@ -39,7 +39,8 @@ import { MoreHorizontal } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/lib/firebase/client-provider";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
 import { collection, getDocs, query, where, doc } from "firebase/firestore";
@@ -252,3 +253,5 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
+
+    

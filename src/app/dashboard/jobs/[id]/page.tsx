@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/lib/firebase/client-provider";
 import { notFound, useParams } from "next/navigation";
 import {
   Card,
@@ -1286,3 +1287,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
