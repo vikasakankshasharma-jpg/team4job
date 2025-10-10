@@ -7,6 +7,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from "
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useFirebase } from "@/lib/firebase/client-provider";
+import { Loader2 } from "lucide-react";
 
 
 type Role = "Job Giver" | "Installer" | "Admin";
@@ -34,12 +35,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true); // Start as true
   const router = useRouter();
   const pathname = usePathname();
-  const { auth, db } = useFirebase(); // Get the initialized instances
+  const firebaseContext = useFirebase();
 
   useEffect(() => {
-    if (!auth) {
-      return;
-    }
+    if (!firebaseContext) return;
+    
+    const { auth, db } = firebaseContext;
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -65,6 +66,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
                 localStorage.setItem('userRole', initialRole);
               }
             } else {
+              // This can happen if the user exists in Auth but not in Firestore.
+              // We sign them out to force a clean login/signup flow.
               await signOut(auth);
               setUser(null);
             }
@@ -81,7 +84,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []); 
+  }, [firebaseContext]); 
 
 
   useEffect(() => {
@@ -100,14 +103,14 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   const login = async (email: string, password?: string) => {
-    if (!auth) return false;
+    if (!firebaseContext) return false;
     setLoading(true);
     if (!password) {
         setLoading(false);
         return false;
     }
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(firebaseContext.auth, email, password);
       // onAuthStateChanged will handle setting user state and setLoading(false)
       return true;
     } catch (error) {
@@ -118,8 +121,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    if (!auth) return;
-    await signOut(auth);
+    if (!firebaseContext) return;
+    await signOut(firebaseContext.auth);
     setUser(null);
     setIsAdmin(false);
     localStorage.removeItem('userRole');
@@ -142,13 +145,16 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     setRole,
     login,
     logout
-  }), [user, role, isAdmin, loading]);
+  }), [user, role, isAdmin, loading, firebaseContext]);
 
   return (
     <UserContext.Provider value={value}>
       {loading ? 
         <div className="flex h-screen items-center justify-center">
-            <p className="text-muted-foreground">check this</p>
+            <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Authenticating...</span>
+            </div>
         </div>
       : children}
     </UserContext.Provider>

@@ -5,6 +5,7 @@ import React, { createContext, useContext, useEffect, useState, useMemo } from "
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
+import { Loader2 } from "lucide-react";
 
 interface FirebaseContextType {
   app: FirebaseApp;
@@ -27,7 +28,7 @@ interface FirebaseClientProviderProps {
 }
 
 export function FirebaseClientProvider({ children, firebaseConfig }: FirebaseClientProviderProps) {
-  const [firebaseInstances, setFirebaseInstances] = useState<FirebaseContextType | null>(null);
+  const [instances, setInstances] = useState<FirebaseContextType | null>(null);
 
   useEffect(() => {
     if (!firebaseConfig.apiKey) {
@@ -35,31 +36,26 @@ export function FirebaseClientProvider({ children, firebaseConfig }: FirebaseCli
       return;
     }
 
-    let app: FirebaseApp;
-    if (getApps().length === 0) {
-      app = initializeApp(firebaseConfig);
-    } else {
-      app = getApp();
-    }
-
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     const auth = getAuth(app);
     const db = getFirestore(app);
-
-    setFirebaseInstances({ app, auth, db });
+    
+    setInstances({ app, auth, db });
   }, [firebaseConfig]);
 
-  const value = useMemo(() => firebaseInstances, [firebaseInstances]);
-
-  if (!value) {
+  if (!instances) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p className="text-muted-foreground">Initializing Firebase...</p>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Initializing Firebase...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <FirebaseContext.Provider value={value}>
+    <FirebaseContext.Provider value={instances}>
       {children}
     </FirebaseContext.Provider>
   );
