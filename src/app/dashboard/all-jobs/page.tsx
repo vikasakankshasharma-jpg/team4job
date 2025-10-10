@@ -39,7 +39,7 @@ import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { useFirebase } from "@/lib/firebase/client-provider";
 import Link from "next/link";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, query } from "firebase/firestore";
 
 const initialFilters = {
     jobId: "",
@@ -447,7 +447,3 @@ export default function AllJobsPage() {
     </Card>
   );
 }
-
-    
-
-    

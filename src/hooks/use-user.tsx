@@ -66,8 +66,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
                 localStorage.setItem('userRole', initialRole);
               }
             } else {
-              // This can happen if the user exists in Auth but not in Firestore.
-              // Instead of signing out and causing a loop, just set user to null.
               setUser(null);
             }
         } catch (error) {
