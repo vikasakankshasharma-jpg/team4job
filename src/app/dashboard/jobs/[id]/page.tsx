@@ -851,7 +851,7 @@ export default function JobDetailPage() {
   }, [job?.jobStartDate]);
 
   const anonymousIdMap = React.useMemo(() => {
-    if (!job || !job.bids) return new Map<string, string>();
+    if (!job) return new Map<string, string>();
     
     const bidderIdsFromBids = (job.bids || []).map(b => (b.installer as User).id);
     const bidderIdsFromComments = (job.comments || [])
@@ -860,9 +860,12 @@ export default function JobDetailPage() {
         
     const uniqueBidderIds = [...new Set([...bidderIdsFromBids, ...bidderIdsFromComments])];
 
-    const generateRandomId = () => Math.random().toString(36).substring(2, 6).toUpperCase();
-
-    return new Map(uniqueBidderIds.map(id => [id, `Bidder-${generateRandomId()}`]));
+    const idMap = new Map<string, string>();
+    let counter = 1;
+    uniqueBidderIds.forEach(id => {
+      idMap.set(id, `Bidder-${counter++}`);
+    });
+    return idMap;
 
   }, [job]);
 
@@ -1283,5 +1286,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
