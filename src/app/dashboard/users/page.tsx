@@ -59,7 +59,7 @@ type SortableKeys = 'name' | 'memberSince' | 'tier' | 'rating' | 'points';
 
 export default function UsersPage() {
   const router = useRouter();
-  const { user: currentUser, role } = useUser();
+  const { role } = useUser();
   const { db } = useFirebase();
   const [users, setUsers] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);

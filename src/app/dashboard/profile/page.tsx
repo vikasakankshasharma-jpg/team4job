@@ -82,7 +82,7 @@ const editProfileSchema = z.object({
     officePincode: z.string().optional().refine(val => val === '' || /^\d{6}$/.test(val!), "Must be a 6-digit pincode or empty."),
 });
 
-function EditProfileForm({ user, onSave }) {
+function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) => void }) {
     const { db } = useFirebase();
     const { toast } = useToast();
     const isInstaller = user.roles.includes('Installer');
@@ -183,7 +183,7 @@ const installerOnboardingSchema = z.object({
 });
 
 
-function InstallerOnboardingDialog({ user, onSave }) {
+function InstallerOnboardingDialog({ user, onSave }: { user: User, onSave: (values: any) => void }) {
     const { toast } = useToast();
     const { db } = useFirebase();
     const form = useForm<z.infer<typeof installerOnboardingSchema>>({
@@ -372,7 +372,7 @@ export default function ProfilePage() {
   
   React.useEffect(() => {
     async function fetchCompletedJobsCount() {
-        if (role === 'Installer' && user) {
+        if (role === 'Installer' && user?.id) {
             const q = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', doc(db, 'users', user.id)));
             const querySnapshot = await getDocs(q);
             setJobsCompletedCount(querySnapshot.size);
@@ -424,7 +424,7 @@ export default function ProfilePage() {
 
   const handleInstallerOnboarding = (values: z.infer<typeof installerOnboardingSchema>) => {
     if (setUser && setRole && user) {
-        const updatedUser = {
+        const updatedUser: User = {
           ...user,
           roles: [...user.roles, 'Installer'] as User['roles'],
           pincodes: { ...user.pincodes, residential: values.pincode },
