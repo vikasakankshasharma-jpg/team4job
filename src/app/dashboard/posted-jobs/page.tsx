@@ -158,10 +158,10 @@ export default function PostedJobsPage() {
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
-    if (role && role === 'Admin') {
+    if (user && user.roles[0] === 'Admin') {
       router.push('/dashboard');
     }
-  }, [role, router]);
+  }, [user, router]);
 
   React.useEffect(() => {
     async function fetchJobs() {
@@ -169,12 +169,14 @@ export default function PostedJobsPage() {
         setLoading(true);
         const userJobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', doc(db, 'users', user.id)));
         const jobSnapshot = await getDocs(userJobsQuery);
-        const jobList = jobSnapshot.docs.map(doc => doc.data() as Job);
+        const jobList = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
         setJobs(jobList);
         setLoading(false);
       }
     }
-    fetchJobs();
+    if (db && user) {
+        fetchJobs();
+    }
   }, [user, role, db]);
 
    React.useEffect(() => {
@@ -202,10 +204,10 @@ export default function PostedJobsPage() {
     });
   }, [setHelp]);
   
-  if (role === 'Admin' || (role && role !== 'Job Giver' && !loading)) {
+  if (!user || user.roles.includes("Admin") || !user.roles.includes("Job Giver")) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Redirecting...</p>
+        <p className="text-muted-foreground">This page is for Job Givers only.</p>
       </div>
     );
   }
@@ -253,5 +255,3 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
-
-    

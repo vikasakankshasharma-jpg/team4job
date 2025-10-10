@@ -28,16 +28,12 @@ export function FirebaseClientProvider({ children }: { children: React.ReactNode
   const [instances, setInstances] = useState<FirebaseContextType | null>(null);
 
   useEffect(() => {
-    if (!firebaseConfig.apiKey) {
-      console.error("Firebase API Key is missing. The application will not work correctly.");
-      return;
+    if (typeof window !== "undefined") {
+      const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      setInstances({ app, auth, db });
     }
-
-    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    
-    setInstances({ app, auth, db });
   }, []);
 
   if (!instances) {
@@ -45,7 +41,7 @@ export function FirebaseClientProvider({ children }: { children: React.ReactNode
       <div className="flex h-screen items-center justify-center">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
-          <span>Initializing Firebase...</span>
+          <span>Initializing...</span>
         </div>
       </div>
     );
