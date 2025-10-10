@@ -15,19 +15,16 @@ interface FirebaseContextType {
 
 const FirebaseContext = createContext<FirebaseContextType | null>(null);
 
-interface FirebaseClientProviderProps {
-  children: React.ReactNode;
-  firebaseConfig: {
-    apiKey?: string;
-    authDomain?: string;
-    projectId?: string;
-    storageBucket?: string;
-    messagingSenderId?: string;
-    appId?: string;
-  };
-}
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
 
-export function FirebaseClientProvider({ children, firebaseConfig }: FirebaseClientProviderProps) {
+export function FirebaseClientProvider({ children }: { children: React.ReactNode }) {
   const [instances, setInstances] = useState<FirebaseContextType | null>(null);
 
   useEffect(() => {
@@ -41,7 +38,7 @@ export function FirebaseClientProvider({ children, firebaseConfig }: FirebaseCli
     const db = getFirestore(app);
     
     setInstances({ app, auth, db });
-  }, [firebaseConfig]);
+  }, []);
 
   if (!instances) {
     return (

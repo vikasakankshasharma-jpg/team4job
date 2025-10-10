@@ -9,14 +9,6 @@ import { FirebaseClientProvider } from "@/lib/firebase/client-provider";
 import { FirebaseErrorListener } from "./FirebaseErrorListener";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  };
 
   return (
     <ThemeProvider
@@ -25,7 +17,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <FirebaseClientProvider firebaseConfig={firebaseConfig}>
+      <FirebaseClientProvider>
         <FirebaseErrorListener />
         <UserProvider>
           <HelpProvider>
