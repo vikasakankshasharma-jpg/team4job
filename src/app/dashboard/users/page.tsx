@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -324,7 +325,7 @@ export default function UsersPage() {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
-                  check this
+                  Loading users...
                 </TableCell>
               </TableRow>
             ) : sortedAndFilteredUsers.length > 0 ? (
