@@ -1,8 +1,72 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      // Check if the user has an 'Admin' role in their profile
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']);
+    }
+
+    function isJobGiver(userId) {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.roles.hasAny(['Job Giver']);
+    }
+
+    function isInstaller(userId) {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.roles.hasAny(['Installer']);
+    }
+
+    // Rules for the 'users' collection
+    match /users/{userId} {
+      // Allow anyone to read user profiles (for public profile viewing)
+      allow read: if isSignedIn();
+      
+      // Allow users to create their own profile
+      allow create: if isOwner(userId);
+      
+      // Allow users to update their own profile, or an admin to update any profile
+      allow update: if isOwner(userId) || isAdmin();
+    }
+
+    // Rules for the 'jobs' collection
+    match /jobs/{jobId} {
+      // Allow any signed-in user to read a job
+      allow read: if isSignedIn();
+      
+      // Allow any signed-in user to create a job, but only if they are the jobGiver
+      allow create: if isSignedIn() && isOwner(request.resource.data.jobGiver.id);
+      
+      // Allow the job giver or an admin to update the job
+      allow update: if isSignedIn() && (isOwner(resource.data.jobGiver.id) || isAdmin());
+      
+      // Only admins can delete jobs
+      allow delete: if isAdmin();
+    }
+
+    // Rules for the 'disputes' collection
+    match /disputes/{disputeId} {
+      // Allow creation if the user is signed in
+      allow create: if isSignedIn() && isOwner(request.resource.data.requesterId);
+      
+      // Allow read/write (update) if the user is the requester, an admin, 
+      // or one of the involved parties in the dispute.
+      allow read, update: if isSignedIn() && (
+        isOwner(resource.data.requesterId) ||
+        (resource.data.parties != null && (
+          isOwner(resource.data.parties.jobGiverId) ||
+          isOwner(resource.data.parties.installerId)
+        )) ||
+        isAdmin()
+      );
     }
   }
 }
