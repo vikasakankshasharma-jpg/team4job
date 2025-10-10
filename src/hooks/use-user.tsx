@@ -4,10 +4,9 @@
 import { User } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
-import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword } from "firebase/auth";
+import { onAuthStateChanged, signOut, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
-import { useFirebaseApp } from "@/lib/firebase/use-firebase-app";
+import { useFirebase } from "@/lib/firebase/client-provider";
 
 
 type Role = "Job Giver" | "Installer" | "Admin";
@@ -35,15 +34,13 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true); // Start as true
   const router = useRouter();
   const pathname = usePathname();
-  const app = useFirebaseApp(); // Get the initialized app instance
+  const { auth, db } = useFirebase(); // Get the initialized instances
 
   useEffect(() => {
-    if (!app) {
-      // Firebase app is not initialized yet, wait.
+    if (!auth) {
       return;
     }
 
-    const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
@@ -84,7 +81,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [app]); // Rerun effect when app is initialized
+  }, [auth, db]); 
 
 
   useEffect(() => {
@@ -103,9 +100,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   const login = async (email: string, password?: string) => {
-    if (!app) return false;
+    if (!auth) return false;
     setLoading(true);
-    const auth = getAuth(app);
     if (!password) {
         setLoading(false);
         return false;
@@ -122,8 +118,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    if (!app) return;
-    const auth = getAuth(app);
+    if (!auth) return;
     await signOut(auth);
     setUser(null);
     setIsAdmin(false);
@@ -147,7 +142,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     setRole,
     login,
     logout
-  }), [user, role, isAdmin, loading, app]);
+  }), [user, role, isAdmin, loading, auth, db]);
 
   return (
     <UserContext.Provider value={value}>

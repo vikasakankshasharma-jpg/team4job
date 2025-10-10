@@ -24,7 +24,7 @@ import { Award, IndianRupee, ListFilter, X } from "lucide-react";
 import { Job, Bid, User } from "@/lib/types";
 import React from "react";
 import { getStatusVariant, toDate } from "@/lib/utils";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   DropdownMenu,
@@ -38,7 +38,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
 import { DocumentReference, collection, query, where, getDocs, or, doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 
 
 type MyBidRowProps = {
@@ -152,6 +151,7 @@ const bidStatuses = [
 
 function MyBidsPageContent() {
   const { user, role } = useUser();
+  const { db } = useFirebase();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -201,7 +201,7 @@ function MyBidsPageContent() {
       setLoading(false);
     }
     fetchJobs();
-  }, [user]);
+  }, [user, db]);
 
   React.useEffect(() => {
     setHelp({

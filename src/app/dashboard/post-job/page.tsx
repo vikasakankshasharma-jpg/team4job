@@ -28,13 +28,12 @@ import { generateJobDetails } from "@/ai/flows/generate-job-details";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { cn } from "@/lib/utils";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { JobAttachment } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
 import { doc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 
 const addressSchema = z.object({
   house: z.string().min(3, "Please enter a valid house/building detail."),
@@ -81,6 +80,7 @@ export default function PostJobPage() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { user, role } = useUser();
+  const { db } = useFirebase();
   const router = useRouter();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = React.useState<File[]>([]);

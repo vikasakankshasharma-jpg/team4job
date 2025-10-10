@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -39,7 +39,6 @@ import {
 } from "@/components/ui/chart"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { collection, query, where, getDocs, or, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 import { DocumentReference } from "firebase/firestore";
 
 
@@ -71,6 +70,7 @@ const disputeStatusColors: { [key: string]: string } = {
 
 function InstallerDashboard() {
   const { user } = useUser();
+  const { db } = useFirebase();
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ openJobs: 0, myBids: 0, jobsWon: 0 });
   const [bidStatusData, setBidStatusData] = React.useState<any[]>([]);
@@ -123,7 +123,7 @@ function InstallerDashboard() {
         setBidStatusData(Object.entries(bidStatuses).map(([name, value]) => ({ name, count: value, fill: bidStatusColors[name] })));
     }
     fetchData();
-  }, [user]);
+  }, [user, db]);
 
   const bidStatusChartConfig = {
     count: {
@@ -260,6 +260,7 @@ function InstallerDashboard() {
 
 function JobGiverDashboard() {
   const { user } = useUser();
+  const { db } = useFirebase();
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ activeJobs: 0, completedJobs: 0, totalBids: 0 });
   const [jobStatusData, setJobStatusData] = React.useState<any[]>([]);
@@ -293,7 +294,7 @@ function JobGiverDashboard() {
         setJobStatusData(Object.entries(statuses).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] })));
     }
     fetchData();
-  }, [user]);
+  }, [user, db]);
 
   const jobStatusChartConfig = {
     count: {
@@ -422,6 +423,7 @@ function JobGiverDashboard() {
 }
 
 function AdminDashboard() {
+  const { db } = useFirebase();
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, openDisputes: 0, completedJobValue: 0 });
   const [jobStatusData, setJobStatusData] = React.useState<any[]>([]);
@@ -522,7 +524,7 @@ function AdminDashboard() {
         setPlatformActivityData(Object.entries(activityData).map(([month, data]) => ({ month, ...data })));
     }
     fetchData();
-  }, []);
+  }, [db]);
 
   const jobStatusChartConfig = {
     count: { label: "Jobs" },

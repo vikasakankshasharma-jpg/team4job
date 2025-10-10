@@ -39,11 +39,10 @@ import { MoreHorizontal } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
 import { collection, getDocs, query, where, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 import { DocumentReference } from "firebase/firestore";
 
 
@@ -151,6 +150,7 @@ export default function PostedJobsPage() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "active";
   const { user, role } = useUser();
+  const { db } = useFirebase();
   const router = useRouter();
   const { setHelp } = useHelp();
   const [jobs, setJobs] = React.useState<Job[]>([]);
@@ -174,7 +174,7 @@ export default function PostedJobsPage() {
       }
     }
     fetchJobs();
-  }, [user, role]);
+  }, [user, role, db]);
 
    React.useEffect(() => {
     setHelp({

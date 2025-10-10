@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,7 +49,6 @@ import { toDate } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 import { DocumentReference } from "firebase/firestore";
 
 
@@ -82,6 +81,7 @@ const editProfileSchema = z.object({
 });
 
 function EditProfileForm({ user, onSave }) {
+    const { db } = useFirebase();
     const { toast } = useToast();
     const isInstaller = user.roles.includes('Installer');
 
@@ -183,6 +183,7 @@ const installerOnboardingSchema = z.object({
 
 function InstallerOnboardingDialog({ user, onSave }) {
     const { toast } = useToast();
+    const { db } = useFirebase();
     const form = useForm<z.infer<typeof installerOnboardingSchema>>({
         resolver: zodResolver(installerOnboardingSchema),
         defaultValues: {
@@ -268,6 +269,7 @@ function InstallerOnboardingDialog({ user, onSave }) {
 
 function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string[], onSave: (skills: string[]) => void, userId: string }) {
     const { toast } = useToast();
+    const { db } = useFirebase();
     const [selectedSkills, setSelectedSkills] = React.useState<string[]>(initialSkills);
     const [newSkillRequest, setNewSkillRequest] = React.useState('');
     const [isOpen, setIsOpen] = React.useState(false);
@@ -361,6 +363,7 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
 
 export default function ProfilePage() {
   const { user, role, setUser, setRole } = useUser();
+  const { db } = useFirebase();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   const { toast } = useToast();
   const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
@@ -374,7 +377,7 @@ export default function ProfilePage() {
         }
     }
     fetchCompletedJobsCount();
-  }, [user, role]);
+  }, [user, role, db]);
   
   if (!user) {
     return <div>Loading...</div>;

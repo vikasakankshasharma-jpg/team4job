@@ -40,16 +40,16 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { allSkills } from "@/lib/data";
 import type { Job, User } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 
 
 export default function BrowseJobsPage() {
   const { user, role } = useUser();
+  const { db } = useFirebase();
   const router = useRouter();
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -65,24 +65,29 @@ export default function BrowseJobsPage() {
     }
   }, [role, router]);
   
-  const openJobsQuery = query(collection(db, 'jobs'), where('status', '==', 'Open for Bidding'));
-
   const fetchJobs = React.useCallback(async () => {
     setLoading(true);
+    const openJobsQuery = query(collection(db, 'jobs'), where('status', '==', 'Open for Bidding'));
     const jobSnapshot = await getDocs(openJobsQuery);
     const userIds = new Set(jobSnapshot.docs.map(doc => (doc.data().jobGiver as any)?.id));
-    const usersSnapshot = await getDocs(query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds))));
-    const userMap = new Map(usersSnapshot.docs.map(doc => [doc.id, doc.data() as User]));
-    const jobList = jobSnapshot.docs.map(doc => {
-      const jobData = doc.data() as Job;
-      return {
-        ...jobData,
-        jobGiver: userMap.get((jobData.jobGiver as any).id) || jobData.jobGiver
-      }
-    });
-    setJobs(jobList);
+    
+    if (userIds.size > 0) {
+        const usersSnapshot = await getDocs(query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds))));
+        const userMap = new Map(usersSnapshot.docs.map(doc => [doc.id, doc.data() as User]));
+        const jobList = jobSnapshot.docs.map(doc => {
+          const jobData = doc.data() as Job;
+          return {
+            ...jobData,
+            jobGiver: userMap.get((jobData.jobGiver as any).id) || jobData.jobGiver
+          }
+        });
+        setJobs(jobList);
+    } else {
+        setJobs([]);
+    }
+    
     setLoading(false);
-  }, []);
+  }, [db]);
 
   React.useEffect(() => {
     fetchJobs();

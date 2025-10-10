@@ -5,7 +5,7 @@ import { UserProvider } from "@/hooks/use-user";
 import { ThemeProvider } from "@/components/theme-provider";
 import { HelpProvider } from "@/hooks/use-help";
 import { GoogleMapsProvider } from "@/hooks/use-google-maps";
-import { FirebaseAppProvider } from "@/lib/firebase/use-firebase-app";
+import { FirebaseClientProvider } from "@/lib/firebase/client-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -15,7 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <FirebaseAppProvider>
+      <FirebaseClientProvider>
         <UserProvider>
           <HelpProvider>
             <GoogleMapsProvider>
@@ -23,7 +23,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             </GoogleMapsProvider>
           </HelpProvider>
         </UserProvider>
-      </FirebaseAppProvider>
+      </FirebaseClientProvider>
     </ThemeProvider>
   );
 }

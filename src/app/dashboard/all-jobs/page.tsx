@@ -36,10 +36,9 @@ import type { DateRange } from "react-day-picker";
 import { Calendar as CalendarIcon, X, ArrowUpDown } from "lucide-react";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import Link from "next/link";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 
 const initialFilters = {
     jobId: "",
@@ -99,6 +98,7 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
 export default function AllJobsPage() {
   const router = useRouter();
   const { role } = useUser();
+  const { db } = useFirebase();
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [filters, setFilters] = React.useState(initialFilters);
@@ -141,7 +141,7 @@ export default function AllJobsPage() {
       }
     }
     fetchJobs();
-  }, [role]);
+  }, [role, db]);
 
 
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {

@@ -26,11 +26,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { doc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 
 const disputeSchema = z.object({
   category: z.enum(["Billing Inquiry", "Technical Support", "Skill Request", "General Question"]),
@@ -41,6 +40,7 @@ const disputeSchema = z.object({
 export default function CreateDisputePage() {
   const { toast } = useToast();
   const { user, role, isAdmin } = useUser();
+  const { db } = useFirebase();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof disputeSchema>>({

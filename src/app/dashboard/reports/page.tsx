@@ -8,14 +8,13 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { Download, Users, Briefcase, IndianRupee, FileText } from "lucide-react";
 import React from "react";
 import { Job, User } from "@/lib/types";
 import { toDate, exportToCsv } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase/client-config";
 import { DocumentReference } from "firebase/firestore";
 
 
@@ -51,6 +50,7 @@ function ReportCard({ title, description, icon: Icon, onExport, loading }: Repor
 
 export default function ReportsPage() {
   const { user, role, isAdmin } = useUser();
+  const { db } = useFirebase();
   const [loading, setLoading] = React.useState(false);
   const { toast } = useToast();
 
