@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/lib/firebase/client-provider";
 import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
 

@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/lib/firebase/client-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -672,3 +673,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

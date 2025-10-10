@@ -40,7 +40,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/lib/firebase/client-provider";
 import { allSkills } from "@/lib/data";
 import type { Job, User } from "@/lib/types";
 import { useRouter } from "next/navigation";
@@ -359,5 +360,7 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
+
+    
 
     

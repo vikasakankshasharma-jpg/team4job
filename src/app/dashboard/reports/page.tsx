@@ -8,7 +8,8 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/lib/firebase/client-provider";
 import { Download, Users, Briefcase, IndianRupee, FileText } from "lucide-react";
 import React from "react";
 import { Job, User } from "@/lib/types";
@@ -199,3 +200,5 @@ export default function ReportsPage() {
     </div>
   );
 }
+
+    
