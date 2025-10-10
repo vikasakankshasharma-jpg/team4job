@@ -81,6 +81,28 @@ const mockUsers: Omit<User, 'id'>[] = [
     pincodes: { residential: '560001' }
   },
   {
+    name: 'Ravi Kumar',
+    email: 'just-installer@example.com',
+    mobile: '7654321098',
+    roles: ['Installer'],
+    memberSince: new Date('2024-04-01'),
+    avatarUrl: PlaceHolderImages[3].imageUrl,
+    realAvatarUrl: 'https://picsum.photos/seed/ravi/200/200',
+    address: { house: 'Plot 88', street: 'Sector 18', cityPincode: '122022, Gurgaon S.O', fullAddress: 'Plot 88, Sector 18, Gurgaon, Haryana, 122022' },
+    pincodes: { residential: '122022' },
+    installerProfile: {
+      tier: 'Bronze',
+      points: 150,
+      skills: ['ip camera', 'cabling', 'troubleshooting'],
+      rating: 4.5,
+      reviews: 5,
+      verified: true,
+      reputationHistory: [
+        { month: 'Apr', points: 50 }, { month: 'May', points: 100 }, { month: 'Jun', points: 150 },
+      ]
+    },
+  },
+  {
     name: 'Vikram Kumar',
     email: 'installer@example.com',
     mobile: '8765432109',
@@ -195,17 +217,26 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     console.log('\nCreating jobs and related data...');
     const jobGiverUID = uids['jobgiver@example.com'];
     const installerUID = uids['installer@example.com'];
+    const justInstallerUID = uids['just-installer@example.com'];
 
-    if (!jobGiverUID || !installerUID) {
-        throw new Error("Required mock users not found for seeding.");
+    if (!jobGiverUID || !installerUID || !justInstallerUID) {
+        throw new Error("Required mock users not found for seeding jobs.");
     }
     
     const jobGiverRef = adminDb.doc('users/' + jobGiverUID);
     const installerRef = adminDb.doc('users/' + installerUID);
+    const justInstallerRef = adminDb.doc('users/' + justInstallerUID);
 
     // --- JOB 1: Open for Bidding ---
     const job1Id = "JOB-20240720-A1B2";
     const job1Ref = adminDb.collection('jobs').doc(job1Id);
+     const job1Bid = {
+        id: `bid-${job1Id}-${installerUID}`,
+        installer: installerRef,
+        amount: 22500,
+        timestamp: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 1))),
+        coverLetter: "I'm a Gold-tier installer with 5 years of experience in large commercial projects. I can start next week and ensure a clean, professional installation."
+    }
     const job1Data = {
         id: job1Id,
         title: "Install 16 Dahua IP Cameras for a Commercial Building",
@@ -219,8 +250,8 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 5))),
         postedAt: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 4))),
         jobStartDate: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 10))),
-        bids: [], 
-        bidderIds: [],
+        bids: [job1Bid], 
+        bidderIds: [installerUID],
         comments: [],
         privateMessages: [],
         completionOtp: Math.floor(100000 + Math.random() * 900000).toString(),
@@ -264,8 +295,8 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     const job3Id = "JOB-20240718-E5F6";
     const job3Ref = adminDb.collection('jobs').doc(job3Id);
      const job3Bid = {
-        id: `bid-${job3Id}-${installerUID}`,
-        installer: installerRef,
+        id: `bid-${job3Id}-${justInstallerUID}`,
+        installer: justInstallerRef,
         amount: 8500,
         timestamp: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 3))),
         coverLetter: "I can handle this residential installation quickly and cleanly. I have the required tools and experience."
@@ -283,9 +314,9 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 2))),
         postedAt: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 7))),
         jobStartDate: Timestamp.fromDate(new Date()),
-        awardedInstaller: installerRef,
+        awardedInstaller: justInstallerRef,
         bids: [job3Bid],
-        bidderIds: [installerUID],
+        bidderIds: [justInstallerUID],
         comments: [],
         privateMessages: [],
         completionOtp: "987123",
