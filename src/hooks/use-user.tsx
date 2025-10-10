@@ -67,13 +67,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
               }
             } else {
               // This can happen if the user exists in Auth but not in Firestore.
-              // We sign them out to force a clean login/signup flow.
-              await signOut(auth);
+              // Instead of signing out and causing a loop, just set user to null.
               setUser(null);
             }
         } catch (error) {
             console.error("Error fetching user document:", error);
-            await signOut(auth);
             setUser(null);
         } finally {
             setLoading(false);
