@@ -372,28 +372,19 @@ export default function ProfilePage() {
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
-    if (userLoading) {
-      setLoading(true);
-      return;
-    }
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
     async function fetchCompletedJobsCount() {
-        if (role === 'Installer' && user?.id) {
-            setLoading(true);
-            const q = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', doc(db, 'users', user.id)));
-            const querySnapshot = await getDocs(q);
-            setJobsCompletedCount(querySnapshot.size);
+        if (!user || role !== 'Installer') {
             setLoading(false);
-        } else {
-          setLoading(false);
+            return;
         }
+        setLoading(true);
+        const q = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', doc(db, 'users', user.id)));
+        const querySnapshot = await getDocs(q);
+        setJobsCompletedCount(querySnapshot.size);
+        setLoading(false);
     }
     fetchCompletedJobsCount();
-  }, [user?.id, role, db, userLoading]);
+  }, [user, role, db]);
   
   if (userLoading || loading) {
     return (
