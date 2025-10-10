@@ -1,9 +1,179 @@
 {
-  "entities": {},
+  "entities": {
+    "Address": {
+      "title": "Structured Address",
+      "description": "Represents a structured physical address.",
+      "type": "object",
+      "properties": {
+        "house": { "type": "string", "description": "House/Flat number and building name." },
+        "street": { "type": "string", "description": "Street name and area/colony." },
+        "landmark": { "type": "string", "description": "A nearby landmark (optional)." },
+        "cityPincode": { "type": "string", "description": "The city and pincode, e.g., 'Jaipur, 302012'." }
+      },
+      "required": ["house", "street", "cityPincode"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile information, including roles and platform-specific data.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique identifier for the user, matching the Firebase Auth UID."
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's full name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "mobile": {
+          "type": "string",
+          "description": "The user's 10-digit mobile number."
+        },
+        "address": { "$ref": "#/entities/Address" },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL for the user's anonymous SVG avatar."
+        },
+        "realAvatarUrl": {
+          "type": "string",
+          "description": "URL for the user's real profile picture."
+        },
+        "pincodes": {
+          "type": "object",
+          "properties": {
+            "residential": {
+              "type": "string"
+            },
+            "office": {
+              "type": "string"
+            }
+          },
+          "required": ["residential"]
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["Job Giver", "Installer", "Admin"]
+          }
+        },
+        "memberSince": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "aadharNumber": {
+          "type": "string",
+          "description": "The user's 12-digit Aadhar number, stored after successful KYC."
+        },
+        "kycAddress": {
+          "type": "string",
+          "description": "The permanent address fetched from the Aadhar KYC verification."
+        },
+        "installerProfile": {
+          "$ref": "#/entities/InstallerProfile"
+        }
+      },
+      "required": ["id", "name", "email", "mobile", "address", "avatarUrl", "pincodes", "roles", "memberSince"]
+    },
+    "InstallerProfile": {
+      "title": "Installer Profile",
+      "description": "Specific profile details for users who are installers, tracking their reputation and skills.",
+      "type": "object",
+      "properties": {
+        "tier": {
+          "type": "string",
+          "enum": ["Bronze", "Silver", "Gold", "Platinum"]
+        },
+        "points": {
+          "type": "number"
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rating": {
+          "type": "number"
+        },
+        "reviews": {
+          "type": "number"
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "reputationHistory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "month": { "type": "string" },
+              "points": { "type": "number" }
+            }
+          }
+        }
+      },
+      "required": ["tier", "points", "skills", "rating", "reviews", "verified"]
+    },
+    "Job": {
+      "title": "Job",
+      "description": "Represents a job posting on the platform.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "jobGiver": { "$ref": "#/entities/UserProfile" },
+        "location": { "type": "string", "description": "The primary pincode of the job location." },
+        "fullAddress": { "type": "string", "description": "The full, geocoded address for the job." },
+        "address": { "$ref": "#/entities/Address" },
+        "budget": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "number" },
+            "max": { "type": "number" }
+          },
+          "required": ["min", "max"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid"]
+        },
+        "deadline": { "type": "string", "format": "date-time" },
+        "jobStartDate": { "type": "string", "format": "date-time" },
+        "postedAt": { "type": "string", "format": "date-time" },
+        "awardedInstaller": { "$ref": "#/entities/UserProfile" },
+        "bidderIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "A list of user IDs who have bid on the job, for efficient querying."
+        }
+      },
+      "required": ["id", "title", "description", "jobGiver", "location", "address", "budget", "status", "deadline", "postedAt"]
+    }
+  },
   "auth": {
     "providers": [
       "email"
     ]
   },
-  "firestore": {}
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Stores individual user profiles."
+    },
+    "/jobs/{jobId}": {
+      "schema": {
+        "$ref": "#/entities/Job"
+      },
+      "description": "Stores all job postings."
+    }
+  }
 }
