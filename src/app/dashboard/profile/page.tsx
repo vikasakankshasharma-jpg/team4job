@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useUser } from "@/hooks/use-user";
@@ -378,7 +379,7 @@ export default function ProfilePage() {
         }
     }
     fetchCompletedJobsCount();
-  }, [user, role, db]);
+  }, [user?.id, role, db]);
   
   if (!user) {
     return <div>Loading...</div>;
