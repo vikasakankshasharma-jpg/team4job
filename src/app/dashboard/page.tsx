@@ -81,7 +81,9 @@ function InstallerDashboard() {
 
         const jobsRef = collection(db, "jobs");
         const openJobsQuery = query(jobsRef, where('status', '==', 'Open for Bidding'));
-        const myJobsQuery = query(jobsRef, or(where('bidderIds', 'array-contains', user.id), where('awardedInstaller', '==', doc(db, 'users', user.id))));
+        
+        const installerDocRef = doc(db, 'users', user.id);
+        const myJobsQuery = query(jobsRef, or(where('bidderIds', 'array-contains', user.id), where('awardedInstaller', '==', installerDocRef)));
         
         const [openJobsSnapshot, myJobsSnapshot] = await Promise.all([
             getDocs(openJobsQuery),
