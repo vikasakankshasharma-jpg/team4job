@@ -38,6 +38,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AddressForm } from "@/components/ui/address-form";
 import { collection, query, where, getDocs, or, setDoc, doc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 const addressSchema = z.object({
   house: z.string().min(1, "House/Flat No. is required."),
@@ -338,7 +340,18 @@ export function SignUpForm() {
             };
         }
         
-        await setDoc(doc(db, "users", firebaseUser.uid), newUser);
+        const userDocRef = doc(db, "users", firebaseUser.uid);
+        
+        setDoc(userDocRef, newUser)
+            .catch((serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'create',
+                    requestResourceData: newUser,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            });
+
         
         const loggedIn = await login(values.email, values.password);
 
