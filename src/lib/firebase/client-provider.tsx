@@ -14,39 +14,45 @@ interface FirebaseContextType {
 
 const FirebaseContext = createContext<FirebaseContextType | null>(null);
 
-let firebaseApp: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-
+// This function must be called on the client side.
 function initializeFirebase() {
-  if (getApps().length === 0) {
-    const firebaseConfig = {
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  if (getApps().length > 0) {
+    return {
+      app: getApp(),
+      auth: getAuth(getApp()),
+      db: getFirestore(getApp()),
     };
-    if (!firebaseConfig.apiKey) {
-      throw new Error("Firebase API Key is missing. Check your environment variables.");
-    }
-    firebaseApp = initializeApp(firebaseConfig);
-  } else {
-    firebaseApp = getApp();
   }
-  auth = getAuth(firebaseApp);
-  db = getFirestore(firebaseApp);
+
+  const firebaseConfig = {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  };
+
+  if (!firebaseConfig.apiKey) {
+    throw new Error("Firebase API Key is missing. Check your environment variables.");
+  }
+  
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  return { app, auth, db };
 }
 
 export function FirebaseClientProvider({ children }: { children: React.ReactNode }) {
   const [firebaseInstances, setFirebaseInstances] = useState<FirebaseContextType | null>(null);
 
   useEffect(() => {
-    // This ensures that Firebase is initialized only on the client side.
+    // This effect runs only on the client, after the component mounts.
+    // This ensures that process.env variables are available.
     if (typeof window !== "undefined") {
-      initializeFirebase();
-      setFirebaseInstances({ app: firebaseApp, auth, db });
+      const instances = initializeFirebase();
+      setFirebaseInstances(instances);
     }
   }, []);
 
