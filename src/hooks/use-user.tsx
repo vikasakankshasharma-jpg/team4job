@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { app, db } from "@/lib/firebase/client-config";
+import { db, getFirebaseApp } from "@/lib/firebase/client-config";
 
 
 type Role = "Job Giver" | "Installer" | "Admin";
@@ -27,8 +27,6 @@ const UserContext = createContext<UserContextType | null>(null);
 const installerPaths = ['/dashboard/my-bids', '/dashboard/jobs'];
 const jobGiverPaths = ['/dashboard/posted-jobs', '/dashboard/post-job'];
 
-const auth = getAuth(app);
-
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Installer");
@@ -38,6 +36,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
+    const auth = getAuth(getFirebaseApp());
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
@@ -101,6 +100,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password?: string) => {
     setLoading(true);
+    const auth = getAuth(getFirebaseApp());
     if (!password) {
         setLoading(false);
         return false;
@@ -117,6 +117,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
+    const auth = getAuth(getFirebaseApp());
     await signOut(auth);
     setUser(null);
     setIsAdmin(false);
