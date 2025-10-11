@@ -16,6 +16,7 @@ import {
   FileText,
   AlertOctagon,
   Ticket,
+  Ban,
 } from "lucide-react";
 import * as React from "react";
 import {
@@ -63,6 +64,7 @@ const adminNavItems = [
     { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
     { href: "/dashboard/coupons", icon: Ticket, label: "Coupons" },
     { href: "/dashboard/reports", icon: FileText, label: "Reports" },
+    { href: "/dashboard/blacklist", icon: Ban, label: "Blacklist" },
 ];
 
 export function Header() {

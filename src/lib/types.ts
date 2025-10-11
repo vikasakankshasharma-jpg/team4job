@@ -171,4 +171,13 @@ export type Coupon = {
   validUntil: Date | Timestamp;
   isActive: boolean;
 };
+
+export type BlacklistEntry = {
+    id: string;
+    type: 'user' | 'pincode';
+    value: string;
+    role: 'Any' | 'Installer' | 'Job Giver';
+    reason: string;
+    createdAt: Date | Timestamp;
+};
     

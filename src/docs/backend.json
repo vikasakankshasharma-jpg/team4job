@@ -482,6 +482,37 @@
             "refundedAt": { "type": "string", "format": "date-time" }
         },
         "required": ["id", "jobId", "payerId", "payeeId", "amount", "status", "createdAt"]
+    },
+    "BlacklistEntry": {
+      "title": "Blacklist Entry",
+      "description": "An entry for a blacklisted user ID or pincode.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["user", "pincode"]
+        },
+        "value": {
+          "type": "string",
+          "description": "The User ID or pincode to be blacklisted."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["Any", "Installer", "Job Giver"],
+          "description": "The role for which the blacklist applies."
+        },
+        "reason": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "type", "value", "role", "reason", "createdAt"]
     }
   },
   "auth": {
@@ -523,6 +554,12 @@
         "$ref": "#/entities/Coupon"
       },
       "description": "Stores all promotional coupon codes."
+    },
+    "/blacklist/{blacklistId}": {
+      "schema": {
+        "$ref": "#/entities/BlacklistEntry"
+      },
+      "description": "Stores all blacklisted user IDs and pincodes."
     }
   }
 }

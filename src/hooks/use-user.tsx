@@ -2,11 +2,11 @@
 
 "use client";
 
-import { User, UserStatus } from "@/lib/types";
+import { User, UserStatus, BlacklistEntry } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { useFirebase } from "@/lib/firebase/client-provider";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
@@ -49,9 +49,25 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             const userDocRef = doc(db, "users", firebaseUser.uid);
             const userDoc = await getDoc(userDocRef);
+
+            const blacklistSnapshot = await getDocs(collection(db, "blacklist"));
+            const blacklist = blacklistSnapshot.docs.map(doc => doc.data() as BlacklistEntry);
+            const userBlacklistEntry = blacklist.find(entry => entry.type === 'user' && entry.value === firebaseUser.uid);
+
+
             if (userDoc.exists()) {
               const userData = { id: userDoc.id, ...userDoc.data() } as User;
               
+              const isBlacklisted = userBlacklistEntry && (userBlacklistEntry.role === 'Any' || userData.roles.includes(userBlacklistEntry.role as any));
+              if (isBlacklisted) {
+                  toast({ title: 'Access Denied', description: `Your account is currently restricted. Reason: ${userBlacklistEntry.reason}`, variant: 'destructive' });
+                  await signOut(auth);
+                  setUser(null);
+                  setIsAdmin(false);
+                  setLoading(false);
+                  return;
+              }
+
               if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && new Date() < (userData.suspensionEndDate as any).toDate())) {
                   let message = 'Your account has been deactivated.';
                   if (userData.status === 'suspended') {
