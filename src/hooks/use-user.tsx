@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { User, UserStatus, BlacklistEntry } from "@/lib/types";
@@ -34,7 +33,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true); // This now represents the initial auth check
+  const [authIsPending, setAuthIsPending] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
   const firebaseContext = useFirebase();
@@ -106,8 +105,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(null);
         setIsAdmin(false);
       }
-      // Finished initial auth check
-      setLoading(false);
+      setAuthIsPending(false);
     });
 
     return () => unsubscribe();
@@ -115,9 +113,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   useEffect(() => {
-    if (loading) return; // Don't run any logic until initial auth check is done
+    if (authIsPending) return;
 
-    const isPublicPage = publicPaths.includes(pathname);
+    const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
     
     if (!user && !isPublicPage) {
         router.push('/login');
@@ -135,23 +133,24 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             router.push('/dashboard');
         }
     }
-  }, [role, pathname, user, router, loading]);
+  }, [role, pathname, user, router, authIsPending]);
 
 
   const login = async (email: string, password?: string) => {
     if (!firebaseContext) return false;
-    setLoading(true);
+    
     if (!password) {
-        setLoading(false);
         return false;
     }
     try {
       await signInWithEmailAndPassword(firebaseContext.auth, email, password);
-      // onAuthStateChanged will handle setting the user state and setLoading(false)
+      // onAuthStateChanged will handle setting the user state
       return true;
-    } catch (error) {
-      console.error("Login failed:", error);
-      setLoading(false);
+    } catch (error: any) {
+      // Only log errors that are NOT invalid credentials
+      if (error.code !== 'auth/invalid-credential') {
+        console.error("Login failed:", error);
+      }
       return false;
     }
   };
@@ -176,14 +175,14 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     role,
     isAdmin,
-    loading,
+    loading: authIsPending,
     setUser,
     setRole,
     login,
     logout
-  }), [user, role, isAdmin, loading, firebaseContext]);
+  }), [user, role, isAdmin, authIsPending, firebaseContext]);
 
-  if (loading) {
+  if (authIsPending) {
      return (
         <div className="flex h-screen items-center justify-center">
             <div className="flex items-center gap-2 text-muted-foreground">
