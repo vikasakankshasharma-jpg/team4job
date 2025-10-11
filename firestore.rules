@@ -3,72 +3,66 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions ---
+    // Helper functions to make rules more readable.
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles[0] == 'Admin';
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']);
     }
 
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
+
+    // Default deny all reads and writes, unless explicitly allowed by a rule below.
+    match /{document=**} {
+      allow read, write: if false;
+    }
     
-    function isJobGiver(jobId) {
-      let job = get(/databases/$(database)/documents/jobs/$(jobId)).data;
-      return request.auth.uid == job.jobGiver.id;
+    // Authenticated users can read any document. This is a broad rule
+    // to ensure all application queries for displaying data work correctly.
+    // Write access remains highly restricted by the rules below.
+    match /{document=**} {
+      allow read: if request.auth != null;
     }
 
     // --- User Profiles ---
     match /users/{userId} {
-      // Any authenticated user can view any profile (needed for job/bid details)
-      allow get: if request.auth != null;
-      
-      // Only admins can list all users
-      allow list: if isAdmin();
-
-      // A user can create their own profile
+      // Allow user to create their own profile during signup.
       allow create: if isOwner(userId);
-      
-      // A user can update their own profile, or an admin can
+      // A user can only update their own document.
       allow update: if isOwner(userId) || isAdmin();
-      
-      // Only admins can delete users
+      // Only admins can delete user accounts.
+      allow delete: if isAdmin();
+    }
+    
+    // --- Jobs and Subcollections ---
+    match /jobs/{jobId} {
+      // Any authenticated user can create a job.
+      allow create: if request.auth != null;
+      // Only the job giver or an admin can update the job.
+      allow update: if resource.data.jobGiver.id == request.auth.uid || isAdmin();
+      // Only admins can delete jobs.
       allow delete: if isAdmin();
     }
 
-    // --- Jobs ---
-    match /jobs/{jobId} {
-      // Anyone authenticated can read or list jobs
-      allow get, list: if request.auth != null;
-
-      // Anyone authenticated can create a job
-      allow create: if request.auth != null;
-
-      // Update is allowed if:
-      // 1. You are the Job Giver who created it.
-      // 2. You are the awarded Installer (e.g., to accept the job).
-      // 3. You are an Admin.
-      allow update: if isJobGiver(jobId) || request.auth.uid == resource.data.awardedInstaller.id || isAdmin();
-
-      // Only admins or the original job giver can delete a job
-      allow delete: if isJobGiver(jobId) || isAdmin();
-    }
-    
     // --- Admin-Only Collections ---
     match /disputes/{disputeId} {
-      allow read, write: if isAdmin();
+      allow write: if isAdmin();
     }
     
     match /coupons/{couponId} {
-      allow read, write: if isAdmin();
+      allow write: if isAdmin();
     }
     
     match /blacklist/{blacklistId} {
-      allow read, write: if isAdmin();
+      allow write: if isAdmin();
     }
 
-    // --- All other collections are locked down ---
-    match /{document=**} {
-      allow read, write: if false;
+    match /transactions/{transactionId} {
+        allow write: if isAdmin();
+    }
+
+    match /subscriptionPlans/{planId} {
+        allow write: if isAdmin();
     }
   }
 }
