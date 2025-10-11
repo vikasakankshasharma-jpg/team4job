@@ -39,7 +39,7 @@ import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { useFirebase } from "@/lib/firebase/client-provider";
 import Link from "next/link";
-import { collection, getDocs, query, DocumentReference } from "firebase/firestore";
+import { collection, getDocs, query, DocumentReference, getDoc } from "firebase/firestore";
 
 const initialFilters = {
     jobId: "",
@@ -121,24 +121,35 @@ export default function AllJobsPage() {
         const jobSnapshot = await getDocs(q);
         const jobList = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
 
-        const userRefs = new Set<DocumentReference>();
-        jobList.forEach(job => {
-            if (job.jobGiver) userRefs.add(job.jobGiver as DocumentReference);
-            if (job.awardedInstaller) userRefs.add(job.awardedInstaller as DocumentReference);
-            (job.bids || []).forEach(bid => userRefs.add(bid.installer as DocumentReference));
-        });
+        const usersMap = new Map<string, User>();
         
-        const userDocs = await Promise.all(Array.from(userRefs).map(ref => getDoc(ref)));
-        const usersMap = new Map(userDocs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as User]));
+        const getUser = async (ref: DocumentReference) => {
+            if (usersMap.has(ref.id)) {
+                return usersMap.get(ref.id)!;
+            }
+            const docSnap = await getDoc(ref);
+            if (docSnap.exists()) {
+                const userData = { id: docSnap.id, ...docSnap.data() } as User;
+                usersMap.set(ref.id, userData);
+                return userData;
+            }
+            return ref;
+        };
 
-        const populatedJobs = jobList.map(job => ({
-          ...job,
-          jobGiver: usersMap.get((job.jobGiver as DocumentReference).id) || job.jobGiver,
-          awardedInstaller: job.awardedInstaller ? usersMap.get((job.awardedInstaller as DocumentReference).id) || job.awardedInstaller : undefined,
-          bids: (job.bids || []).map(bid => ({
-            ...bid,
-            installer: usersMap.get((bid.installer as DocumentReference).id) || bid.installer
-          }))
+        const populatedJobs = await Promise.all(jobList.map(async (job) => {
+            const jobGiver = await getUser(job.jobGiver as DocumentReference);
+            const awardedInstaller = job.awardedInstaller ? await getUser(job.awardedInstaller as DocumentReference) : undefined;
+            const bids = await Promise.all((job.bids || []).map(async (bid) => ({
+                ...bid,
+                installer: await getUser(bid.installer as DocumentReference)
+            })));
+
+            return {
+                ...job,
+                jobGiver,
+                awardedInstaller,
+                bids,
+            };
         }));
         
         setJobs(populatedJobs);
