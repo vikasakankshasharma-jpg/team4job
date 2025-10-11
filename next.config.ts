@@ -31,6 +31,21 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    // This is the correct way to enable file watching via polling
+    // which is necessary in some containerized environments
+    fileWatching: {
+      backend: 'chokidar',
+      options: {
+        usePolling: true,
+        interval: 1000,
+      },
+    },
+    // This allows cross-origin requests from the development environment
+    allowedDevOrigins: [
+        "https://6000-firebase-studio-1758725206340.cluster-w5vd22whf5gmav2vgkomwtc4go.cloudworkstations.dev"
+    ]
+  },
 };
 
 export default nextConfig;
