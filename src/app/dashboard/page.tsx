@@ -23,7 +23,7 @@ import {
   BarChart2,
   PieChart,
   TrendingUp,
-  LineChart,
+  LineChart as LineChartIcon,
   AlertOctagon,
 } from "lucide-react";
 import Link from "next/link";
@@ -31,7 +31,7 @@ import { useHelp } from "@/hooks/use-help";
 import React from "react";
 import { Job, User, Dispute } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, Pie, Cell, ComposedChart, YAxis, Legend, Tooltip } from "recharts"
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, Pie, Cell, ComposedChart, YAxis, Legend, Tooltip, Line } from "recharts"
 import {
   ChartContainer,
   ChartTooltip,
@@ -643,7 +643,7 @@ function AdminDashboard() {
       <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-2">
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><LineChart className="h-5 w-5" /> Platform Activity</CardTitle>
+                <CardTitle className="flex items-center gap-2"><LineChartIcon className="h-5 w-5" /> Platform Activity</CardTitle>
                 <CardDescription>Jobs created, bids placed, and completed value over the last 6 months.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -762,5 +762,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
