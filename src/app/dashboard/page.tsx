@@ -25,6 +25,7 @@ import {
   TrendingUp,
   LineChart as LineChartIcon,
   AlertOctagon,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
@@ -39,7 +40,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { collection, query, where, getDocs, or, doc } from "firebase/firestore";
+import { collection, query, where, getDocs, or, doc, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
 
 
@@ -75,11 +76,13 @@ function InstallerDashboard() {
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ openJobs: 0, myBids: 0, jobsWon: 0 });
   const [bidStatusData, setBidStatusData] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     async function fetchData() {
         if (!user || !db) return;
 
+        setLoading(true);
         const jobsRef = collection(db, "jobs");
         const openJobsQuery = query(jobsRef, where('status', '==', 'Open for Bidding'));
         
@@ -123,7 +126,8 @@ function InstallerDashboard() {
             jobsWon: jobsWonCount
         });
 
-        setBidStatusData(Object.entries(bidStatuses).map(([name, value]) => ({ name, count: value, fill: bidStatusColors[name] })));
+        setBidStatusData(Object.entries(bidStatuses).filter(([,value]) => value > 0).map(([name, value]) => ({ name, count: value, fill: bidStatusColors[name] })));
+        setLoading(false);
     }
     fetchData();
   }, [user, db]);
@@ -164,8 +168,13 @@ function InstallerDashboard() {
     });
   }, [setHelp]);
 
-
-  if (!user) return null; // Can add a skeleton loader here later
+  if (loading) {
+      return (
+        <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      )
+  }
 
   return (
     <>
@@ -267,10 +276,12 @@ function JobGiverDashboard() {
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ activeJobs: 0, completedJobs: 0, totalBids: 0 });
   const [jobStatusData, setJobStatusData] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     async function fetchData() {
         if (!user || !db) return;
+        setLoading(true);
         const myJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', doc(db, 'users', user.id)));
         const myJobsSnapshot = await getDocs(myJobsQuery);
         const myJobs = myJobsSnapshot.docs.map(doc => doc.data() as Job);
@@ -294,7 +305,8 @@ function JobGiverDashboard() {
         });
         
         setStats({ activeJobs: active, completedJobs: completed, totalBids: bids });
-        setJobStatusData(Object.entries(statuses).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] })));
+        setJobStatusData(Object.entries(statuses).filter(([,value]) => value > 0).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] })));
+        setLoading(false);
     }
     fetchData();
   }, [user, db]);
@@ -335,7 +347,13 @@ function JobGiverDashboard() {
     });
   }, [setHelp]);
 
-  if (!user) return null;
+  if (loading) {
+      return (
+        <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      )
+  }
   
   return (
     <>
@@ -434,10 +452,12 @@ function AdminDashboard() {
   const [userGrowthData, setUserGrowthData] = React.useState<any[]>([]);
   const [platformActivityData, setPlatformActivityData] = React.useState<any[]>([]);
   const [disputeStatusData, setDisputeStatusData] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
     async function fetchData() {
         if (!user || !db) return;
+        setLoading(true);
         const usersSnapshot = await getDocs(collection(db, "users"));
         const jobsSnapshot = await getDocs(collection(db, "jobs"));
         const disputesSnapshot = await getDocs(collection(db, "disputes"));
@@ -446,11 +466,39 @@ function AdminDashboard() {
         const allJobs = jobsSnapshot.docs.map(d => d.data() as Job);
         const allDisputes = disputesSnapshot.docs.map(d => d.data() as Dispute);
         
+        // Populate awardedInstaller user data for calculating job value
+        const installerIds = new Set<string>();
+        allJobs.forEach(job => {
+            if (job.status === 'Completed' && job.awardedInstaller) {
+                const awardedInstallerId = (job.awardedInstaller as DocumentReference).id;
+                installerIds.add(awardedInstallerId);
+            }
+        });
+
+        const installersData: { [key: string]: User } = {};
+        if (installerIds.size > 0) {
+            // Firestore 'in' query can take up to 30 elements
+            const installerIdChunks = Array.from(installerIds).reduce((acc, item, i) => {
+                const chunkIndex = Math.floor(i/30);
+                if(!acc[chunkIndex]) acc[chunkIndex] = [];
+                acc[chunkIndex].push(item);
+                return acc;
+            }, [] as string[][]);
+
+            for (const chunk of installerIdChunks) {
+                const installersQuery = query(collection(db, "users"), where('__name__', 'in', chunk));
+                const installersSnapshot = await getDocs(installersQuery);
+                installersSnapshot.forEach(doc => {
+                    installersData[doc.id] = doc.data() as User;
+                });
+            }
+        }
+        
         let completedJobValue = 0;
         allJobs.forEach(job => {
             if (job.status === 'Completed' && job.awardedInstaller) {
-                const awardedId = (job.awardedInstaller as DocumentReference).id;
-                const winningBid = (job.bids || []).find(bid => ((bid.installer as DocumentReference)?.id) === awardedId);
+                const awardedInstallerId = (job.awardedInstaller as DocumentReference).id;
+                const winningBid = (job.bids || []).find(bid => ((bid.installer as DocumentReference)?.id) === awardedInstallerId);
                 if (winningBid) {
                     completedJobValue += winningBid.amount;
                 }
@@ -523,10 +571,11 @@ function AdminDashboard() {
             }
         });
 
-        setJobStatusData(Object.entries(jobStatuses).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] })));
-        setDisputeStatusData(Object.entries(disputeStatuses).map(([name, value]) => ({ name, count: value, fill: disputeStatusColors[name] })));
+        setJobStatusData(Object.entries(jobStatuses).filter(([,value]) => value > 0).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] })));
+        setDisputeStatusData(Object.entries(disputeStatuses).filter(([,value]) => value > 0).map(([name, value]) => ({ name, count: value, fill: disputeStatusColors[name] })));
         setUserGrowthData(last6Months.map(month => ({ month: month.label, users: growthData[month.label] || 0 })));
         setPlatformActivityData(Object.entries(activityData).map(([month, data]) => ({ month, ...data })));
+        setLoading(false);
     }
     fetchData();
   }, [user, db]);
@@ -582,6 +631,14 @@ function AdminDashboard() {
       )
     });
   }, [setHelp]);
+
+  if (loading) {
+      return (
+        <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      )
+  }
 
   return (
     <>
@@ -750,7 +807,11 @@ export default function DashboardPage() {
   const { user, role, loading } = useUser();
 
   if (loading || !user) {
-    return null; // Or a spinner
+    return (
+        <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
   }
 
   const isAdmin = role === "Admin";
