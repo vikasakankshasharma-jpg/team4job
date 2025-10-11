@@ -78,7 +78,7 @@ function InstallerDashboard() {
 
   React.useEffect(() => {
     async function fetchData() {
-        if (!user) return;
+        if (!user || !db) return;
 
         const jobsRef = collection(db, "jobs");
         const openJobsQuery = query(jobsRef, where('status', '==', 'Open for Bidding'));
@@ -270,7 +270,7 @@ function JobGiverDashboard() {
 
   React.useEffect(() => {
     async function fetchData() {
-        if (!user) return;
+        if (!user || !db) return;
         const myJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', doc(db, 'users', user.id)));
         const myJobsSnapshot = await getDocs(myJobsQuery);
         const myJobs = myJobsSnapshot.docs.map(doc => doc.data() as Job);
@@ -426,6 +426,7 @@ function JobGiverDashboard() {
 }
 
 function AdminDashboard() {
+  const { user } = useUser();
   const { db } = useFirebase();
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, openDisputes: 0, completedJobValue: 0 });
@@ -436,6 +437,7 @@ function AdminDashboard() {
   
   React.useEffect(() => {
     async function fetchData() {
+        if (!user || !db) return;
         const usersSnapshot = await getDocs(collection(db, "users"));
         const jobsSnapshot = await getDocs(collection(db, "jobs"));
         const disputesSnapshot = await getDocs(collection(db, "disputes"));
@@ -527,7 +529,7 @@ function AdminDashboard() {
         setPlatformActivityData(Object.entries(activityData).map(([month, data]) => ({ month, ...data })));
     }
     fetchData();
-  }, [db]);
+  }, [user, db]);
 
   const jobStatusChartConfig = {
     count: { label: "Jobs" },
@@ -745,10 +747,10 @@ function AdminDashboard() {
 
 
 export default function DashboardPage() {
-  const { user, role } = useUser();
+  const { user, role, loading } = useUser();
 
-  if (!user) {
-    return <div>Loading...</div>; // Or a spinner
+  if (loading || !user) {
+    return null; // Or a spinner
   }
 
   const isAdmin = role === "Admin";
