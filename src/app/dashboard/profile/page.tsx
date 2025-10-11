@@ -12,10 +12,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2 } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2, Ticket } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -46,11 +47,11 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { allSkills } from "@/lib/data";
-import { User } from "@/lib/types";
+import { User, Coupon } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
 
 
@@ -363,35 +364,115 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
     )
 }
 
+function RedeemCouponCard({ user, role, onSubscriptionUpdate }: { user: User, role: 'Installer' | 'Job Giver', onSubscriptionUpdate: () => void }) {
+    const { db } = useFirebase();
+    const { toast } = useToast();
+    const [couponCode, setCouponCode] = React.useState('');
+    const [isLoading, setIsLoading] = React.useState(false);
+    
+    const handleRedeem = async () => {
+        if (!couponCode.trim()) {
+            toast({ title: "Please enter a coupon code.", variant: "destructive" });
+            return;
+        }
+        setIsLoading(true);
+
+        const couponRef = doc(db, "coupons", couponCode.toUpperCase());
+        const couponSnap = await getDoc(couponRef);
+
+        if (!couponSnap.exists()) {
+            toast({ title: "Invalid Coupon Code", description: "The code you entered does not exist.", variant: "destructive" });
+            setIsLoading(false);
+            return;
+        }
+
+        const coupon = couponSnap.data() as Coupon;
+        const now = new Date();
+
+        if (!coupon.isActive || toDate(coupon.validUntil) < now || toDate(coupon.validFrom) > now) {
+            toast({ title: "Coupon Not Valid", description: "This coupon is either inactive or expired.", variant: "destructive" });
+            setIsLoading(false);
+            return;
+        }
+        
+        if (coupon.applicableToRole !== 'Any' && coupon.applicableToRole !== role) {
+            toast({ title: "Coupon Not Applicable", description: `This coupon is only valid for ${coupon.applicableToRole}s.`, variant: "destructive" });
+            setIsLoading(false);
+            return;
+        }
+        
+        // All checks passed, update user subscription
+        const userRef = doc(db, 'users', user.id);
+        const currentExpiry = user.subscription && toDate(user.subscription.expiresAt) > now ? toDate(user.subscription.expiresAt) : now;
+        const newExpiryDate = new Date(currentExpiry.setDate(currentExpiry.getDate() + coupon.durationDays));
+
+        await updateDoc(userRef, {
+            'subscription.planId': coupon.planId,
+            'subscription.planName': coupon.description,
+            'subscription.expiresAt': newExpiryDate
+        });
+        
+        onSubscriptionUpdate();
+        toast({
+            title: "Coupon Redeemed!",
+            description: `Your subscription has been extended by ${coupon.durationDays} days.`,
+            variant: "success"
+        });
+        setCouponCode('');
+        setIsLoading(false);
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Ticket className="h-5 w-5" /> Redeem a Coupon</CardTitle>
+                <CardDescription>Have a coupon code? Enter it here to extend your subscription or get premium features.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex space-x-2">
+                    <Input
+                        placeholder="Enter Coupon Code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        disabled={isLoading}
+                    />
+                    <Button onClick={handleRedeem} disabled={isLoading}>
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Redeem
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function ProfilePage() {
-  const { user, role, setUser, setRole } = useUser();
+  const { user, role, setUser, setRole, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   const { toast } = useToast();
   const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
-  const [loading, setLoading] = React.useState(true);
+  const [loadingJobs, setLoadingJobs] = React.useState(true);
   
-  React.useEffect(() => {
-    async function fetchCompletedJobsCount() {
-        if (!user || role !== 'Installer') {
-            setLoading(false);
-            return;
-        }
-        setLoading(true);
-        const q = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', doc(db, 'users', user.id)));
-        const querySnapshot = await getDocs(q);
-        setJobsCompletedCount(querySnapshot.size);
-        setLoading(false);
+  const fetchJobsData = React.useCallback(async () => {
+    if (!user || role !== 'Installer') {
+      setLoadingJobs(false);
+      return;
     }
-    
+    setLoadingJobs(true);
+    const q = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', doc(db, 'users', user.id)));
+    const querySnapshot = await getDocs(q);
+    setJobsCompletedCount(querySnapshot.size);
+    setLoadingJobs(false);
+  }, [user, role, db]);
+
+  useEffect(() => {
     if (user?.id) {
-        fetchCompletedJobsCount();
+        fetchJobsData();
     }
-  }, [user?.id, role, db]);
+  }, [user?.id, fetchJobsData]);
   
-  if (!user) {
-    // This case should be handled by the UserProvider, which shows a global loader
-    // or redirects. This return is a fallback.
+  if (userLoading) {
     return (
       <div className="flex h-48 items-center justify-center">
         <div className="flex items-center gap-2 text-muted-foreground">
@@ -400,6 +481,11 @@ export default function ProfilePage() {
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    // This should ideally not be reached if the UserProvider redirects correctly.
+    return <div>User not found.</div>
   }
   
   const installerProfile = user.installerProfile;
@@ -474,6 +560,13 @@ export default function ProfilePage() {
         });
     }
   };
+  
+  const onSubscriptionUpdate = async () => {
+    const userDoc = await getDoc(doc(db, 'users', user.id));
+    if (userDoc.exists() && setUser) {
+      setUser({ id: userDoc.id, ...userDoc.data() } as User);
+    }
+  };
 
 
   return (
@@ -527,6 +620,12 @@ export default function ProfilePage() {
                 </Dialog>
               </div>
             </div>
+            {user.subscription && (
+                 <div className="text-right">
+                    <p className="font-semibold">{user.subscription.planName}</p>
+                    <p className="text-sm text-muted-foreground">Expires: {format(toDate(user.subscription.expiresAt), "MMM d, yyyy")}</p>
+                 </div>
+            )}
           </div>
         </CardHeader>
       </Card>
@@ -688,6 +787,9 @@ export default function ProfilePage() {
             </CardContent>
          </Card>
       )}
+
+      <RedeemCouponCard user={user} role={role as 'Installer' | 'Job Giver'} onSubscriptionUpdate={onSubscriptionUpdate} />
+
     </div>
   );
 }

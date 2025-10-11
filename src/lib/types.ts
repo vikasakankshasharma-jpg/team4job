@@ -1,4 +1,5 @@
 
+
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {
@@ -156,4 +157,14 @@ export type SubscriptionPlan = {
   trialPeriodDays?: number;
 };
 
+export type Coupon = {
+  code: string;
+  description: string;
+  planId: string;
+  durationDays: number;
+  applicableToRole: 'Installer' | 'Job Giver' | 'Any';
+  validFrom: Date | Timestamp;
+  validUntil: Date | Timestamp;
+  isActive: boolean;
+};
     

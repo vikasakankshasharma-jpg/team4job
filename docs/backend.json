@@ -1,3 +1,5 @@
+
+
 {
   "entities": {
     "Address": {
@@ -19,7 +21,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "The unique identifier for the user, matching the Firebase Auth UID."
+          "description": "The unique identifier for the user, in the format [ROLE]-[YYYYMMDD]-[RANDOM]."
         },
         "name": {
           "type": "string",
@@ -66,6 +68,14 @@
           "type": "string",
           "format": "date-time"
         },
+        "subscription": {
+          "type": "object",
+          "properties": {
+              "planId": { "type": "string" },
+              "planName": { "type": "string" },
+              "expiresAt": { "type": "string", "format": "date-time" }
+          }
+        },
         "aadharNumber": {
           "type": "string",
           "description": "The user's 12-digit Aadhar number, stored after successful KYC."
@@ -106,37 +116,102 @@
         },
         "verified": {
           "type": "boolean"
-        },
-        "reputationHistory": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "month": { "type": "string" },
-              "points": { "type": "number" }
-            }
-          }
         }
       },
       "required": ["tier", "points", "skills", "rating", "reviews", "verified"]
     },
-    "Job": {
-      "title": "Job",
-      "description": "Represents a job posting on the platform.",
+    "SubscriptionPlan": {
+        "title": "Subscription Plan",
+        "description": "Defines a subscription plan for a user role.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "price": { "type": "number" },
+            "role": { "type": "string", "enum": ["Job Giver", "Installer"] },
+            "features": { "type": "array", "items": { "type": "string" } },
+            "trialPeriodDays": { "type": "number", "description": "Default trial period in days for new users of this role." }
+        },
+        "required": ["id", "name", "price", "role", "features"]
+    },
+    "Coupon": {
+      "title": "Coupon Code",
+      "description": "A promotional code that grants subscription benefits.",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "description": { "type": "string" },
-        "jobGiver": { "$ref": "#/entities/UserProfile" },
-        "location": { "type": "string", "description": "The primary pincode of the job location." },
-        "fullAddress": { "type": "string", "description": "The full, geocoded address for the job." },
-        "address": { "$ref": "#/entities/Address" },
+        "code": {
+          "type": "string",
+          "description": "The unique, user-facing coupon code (e.g., 'WELCOME2024'). Acts as the document ID."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief explanation of what the coupon provides."
+        },
+        "planId": {
+          "type": "string",
+          "description": "The ID of the subscription plan this coupon grants access to."
+        },
+        "durationDays": {
+          "type": "number",
+          "description": "The number of days the subscription is extended for."
+        },
+        "applicableToRole": {
+          "type": "string",
+          "enum": ["Installer", "Job Giver", "Any"],
+          "description": "The user role this coupon can be applied to."
+        },
+        "validFrom": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "isActive": {
+          "type": "boolean"
+        }
+      },
+      "required": ["code", "description", "planId", "durationDays", "applicableToRole", "validFrom", "validUntil", "isActive"]
+    },
+    "Job": {
+      "title": "Job",
+      "description": "Represents a job posting on the platform, including all associated data like bids and messages.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "jobGiver": {
+          "$ref": "#/entities/UserProfile"
+        },
+        "location": {
+          "type": "string",
+          "description": "The primary pincode of the job location."
+        },
+        "fullAddress": {
+            "type": "string",
+            "description": "The full, geocoded address for the job."
+        },
+        "address": {
+          "$ref": "#/entities/Address"
+        },
         "budget": {
           "type": "object",
           "properties": {
-            "min": { "type": "number" },
-            "max": { "type": "number" }
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            }
           },
           "required": ["min", "max"]
         },
@@ -144,23 +219,263 @@
           "type": "string",
           "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid"]
         },
-        "deadline": { "type": "string", "format": "date-time" },
-        "jobStartDate": { "type": "string", "format": "date-time" },
-        "postedAt": { "type": "string", "format": "date-time" },
-        "awardedInstaller": { "$ref": "#/entities/UserProfile" },
+        "deadline": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "jobStartDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "postedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "acceptanceDeadline": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp by which an awarded installer must accept the job."
+        },
+        "awardedInstaller": {
+          "$ref": "#/entities/UserProfile"
+        },
         "bidderIds": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+                "type": "string"
+            },
             "description": "A list of user IDs who have bid on the job, for efficient querying."
+        },
+        "rating": {
+          "type": "number"
+        },
+        "completionOtp": {
+          "type": "string"
+        },
+        "disputeId": {
+          "type": "string",
+          "description": "The ID of the dispute associated with this job, if any."
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/JobAttachment"
+          },
+          "description": "A list of files attached to the job posting."
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/Comment"
+          }
+        },
+        "privateMessages": {
+            "type": "array",
+            "items": {
+                "$ref": "#/entities/PrivateMessage"
+            }
+        },
+        "selectedInstallers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "installerId": { "type": "string" },
+                    "rank": { "type": "number" }
+                }
+            }
         }
       },
       "required": ["id", "title", "description", "jobGiver", "location", "address", "budget", "status", "deadline", "postedAt"]
+    },
+    "JobAttachment": {
+      "title": "Job Attachment",
+      "description": "Represents a file attached to a job posting to provide more context.",
+      "type": "object",
+      "properties": {
+        "fileName": { "type": "string" },
+        "fileUrl": { "type": "string", "format": "uri" },
+        "fileType": { "type": "string" }
+      },
+      "required": ["fileName", "fileUrl", "fileType"]
+    },
+    "Bid": {
+      "title": "Bid",
+      "description": "Represents a bid made by an installer on a job.",
+      "type": "object",
+      "properties": {
+        "installer": {
+          "$ref": "#/entities/UserProfile"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "coverLetter": {
+          "type": "string"
+        }
+      },
+      "required": ["installer", "amount", "timestamp"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A public comment on a job posting, visible to all during the bidding phase.",
+      "type": "object",
+      "properties": {
+        "author": {
+          "$ref": "#/entities/UserProfile"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content": {
+          "type": "string"
+        }
+      },
+      "required": ["author", "timestamp", "content"]
+    },
+     "PrivateMessage": {
+      "title": "Private Message",
+      "description": "A private message on a job between the job giver and the awarded installer.",
+      "type": "object",
+      "properties": {
+        "author": {
+          "$ref": "#/entities/UserProfile"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content": {
+          "type": "string"
+        },
+         "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/JobAttachment"
+          },
+          "description": "A list of files attached to the message."
+        }
+      },
+      "required": ["author", "timestamp", "content"]
+    },
+    "Dispute": {
+      "title": "Dispute",
+      "description": "Represents a dispute or support ticket raised by a user, which can be mediated by an Admin.",
+      "type": "object",
+      "properties": {
+        "requesterId": {
+          "type": "string",
+          "description": "The ID of the user who initiated the dispute or request."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Job Dispute", "Billing Inquiry", "Technical Support", "Skill Request", "General Question"],
+          "description": "The category of the dispute or support ticket."
+        },
+        "title": {
+            "type": "string",
+            "description": "The title of the dispute or request."
+        },
+        "jobId": {
+          "type": "string",
+          "description": "The ID of the job this dispute is related to (optional)."
+        },
+        "jobTitle": {
+          "type": "string",
+          "description": "The title of the job in dispute (optional)."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Open", "Under Review", "Resolved"],
+          "description": "The current status of the dispute."
+        },
+        "reason": {
+          "type": "string",
+          "description": "The initial reason for raising the dispute."
+        },
+        "parties": {
+          "type": "object",
+          "properties": {
+            "jobGiverId": { "type": "string" },
+            "installerId": { "type": "string" }
+          }
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/DisputeMessage"
+          }
+        },
+        "resolution": {
+          "type": "string",
+          "description": "The final resolution summary provided by the admin."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolvedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["requesterId", "category", "title", "status", "reason", "createdAt"]
+    },
+    "DisputeMessage": {
+      "title": "Dispute Message",
+      "description": "A message within a dispute thread, visible to all parties and the admin.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorRole": { "type": "string", "enum": ["Job Giver", "Installer", "Admin"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "attachments": {
+            "type": "array",
+            "items": {
+                "$ref": "#/entities/DisputeAttachment"
+            },
+            "description": "A list of files attached to the message as evidence."
+        }
+      },
+      "required": ["authorId", "authorRole", "content", "timestamp"]
+    },
+    "DisputeAttachment": {
+        "title": "Dispute Attachment",
+        "description": "Represents a file attached to a dispute message as evidence.",
+        "type": "object",
+        "properties": {
+            "fileName": { "type": "string" },
+            "fileUrl": { "type": "string", "format": "uri" },
+            "fileType": { "type": "string" }
+        },
+        "required": ["fileName", "fileUrl", "fileType"]
+    },
+    "Transaction": {
+        "title": "Transaction",
+        "description": "Represents a financial transaction for a job, managed via an escrow system.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "jobId": { "type": "string" },
+            "payerId": { "type": "string", "description": "The user ID of the Job Giver." },
+            "payeeId": { "type": "string", "description": "The user ID of the Installer." },
+            "amount": { "type": "number" },
+            "status": { "type": "string", "enum": ["Funded", "Released", "Refunded"] },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "releasedAt": { "type": "string", "format": "date-time" },
+            "refundedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "jobId", "payerId", "payeeId", "amount", "status", "createdAt"]
     }
   },
   "auth": {
-    "providers": [
-      "email"
-    ]
+    "providers": ["email"]
   },
   "firestore": {
     "/users/{userId}": {
@@ -173,7 +488,33 @@
       "schema": {
         "$ref": "#/entities/Job"
       },
-      "description": "Stores all job postings."
+      "description": "Stores all job postings. Bids, public comments, and private messages are embedded within each job document."
+    },
+    "/disputes/{disputeId}": {
+      "schema": {
+        "$ref": "#/entities/Dispute"
+      },
+      "description": "Stores all dispute records for jobs, including the full communication history."
+    },
+    "/transactions/{transactionId}": {
+        "schema": {
+            "$ref": "#/entities/Transaction"
+        },
+        "description": "Stores all financial transactions related to jobs."
+    },
+    "/subscriptionPlans/{planId}": {
+        "schema": {
+            "$ref": "#/entities/SubscriptionPlan"
+        },
+        "description": "Stores all available subscription plans."
+    },
+    "/coupons/{couponCode}": {
+      "schema": {
+        "$ref": "#/entities/Coupon"
+      },
+      "description": "Stores all promotional coupon codes."
     }
   }
 }
+
+    
