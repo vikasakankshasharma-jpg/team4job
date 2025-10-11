@@ -3,50 +3,70 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // --- Helper Functions ---
     function isAdmin() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles[0] == 'Admin';
     }
 
-    // Users can read/update their own profile, anyone can create (signup).
-    // Listing users is allowed for any authenticated user to fetch related data for jobs/bids.
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isJobGiver(jobId) {
+      let job = get(/databases/$(database)/documents/jobs/$(jobId)).data;
+      return request.auth.uid == job.jobGiver.id;
+    }
+
+    // --- User Profiles ---
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth.uid == userId || isAdmin();
-      allow list: if request.auth != null; // Allow listing for all authenticated users.
+      // Any authenticated user can view any profile (needed for job/bid details)
+      allow get: if request.auth != null;
+      
+      // Only admins can list all users
+      allow list: if isAdmin();
+
+      // A user can create their own profile
+      allow create: if isOwner(userId);
+      
+      // A user can update their own profile, or an admin can
+      allow update: if isOwner(userId) || isAdmin();
+      
+      // Only admins can delete users
       allow delete: if isAdmin();
     }
 
-    // Jobs can be read/listed by anyone authenticated.
-    // Creation is allowed for authenticated users.
-    // Updates are restricted to the job giver, awarded installer, or an admin.
+    // --- Jobs ---
     match /jobs/{jobId} {
-      allow read, list: if request.auth != null;
+      // Anyone authenticated can read or list jobs
+      allow get, list: if request.auth != null;
+
+      // Anyone authenticated can create a job
       allow create: if request.auth != null;
-      allow update: if request.auth.uid == resource.data.jobGiver.id 
-                    || request.auth.uid == resource.data.awardedInstaller.id
-                    || isAdmin();
+
+      // Update is allowed if:
+      // 1. You are the Job Giver who created it.
+      // 2. You are the awarded Installer (e.g., to accept the job).
+      // 3. You are an Admin.
+      allow update: if isJobGiver(jobId) || request.auth.uid == resource.data.awardedInstaller.id || isAdmin();
+
+      // Only admins or the original job giver can delete a job
+      allow delete: if isJobGiver(jobId) || isAdmin();
     }
     
-    // Admins have full access to disputes, coupons, and blacklist.
-    // Users involved in a dispute can also read/update it.
+    // --- Admin-Only Collections ---
     match /disputes/{disputeId} {
-        allow read, update: if request.auth.uid == resource.data.requesterId
-                        || request.auth.uid == resource.data.parties.jobGiverId
-                        || request.auth.uid == resource.data.parties.installerId
-                        || isAdmin();
-        allow list, create, delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
-
+    
     match /coupons/{couponId} {
-        allow read, list, create, update, delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
-
+    
     match /blacklist/{blacklistId} {
-        allow read, list, create, update, delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
-    // Default deny all other access
+    // --- All other collections are locked down ---
     match /{document=**} {
       allow read, write: if false;
     }
