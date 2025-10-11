@@ -67,18 +67,13 @@
           "type": "string",
           "format": "date-time"
         },
-        "freeBids": {
-          "type": "number",
-          "description": "Number of free bids remaining for a new installer."
-        },
-        "freeJobs": {
-          "type": "number",
-          "description": "Number of free job posts remaining for a new job giver."
-        },
-        "creditsExpiry": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The expiry date for the free credits."
+        "subscription": {
+          "type": "object",
+          "properties": {
+              "planId": { "type": "string" },
+              "planName": { "type": "string" },
+              "expiresAt": { "type": "string", "format": "date-time" }
+          }
         },
         "aadharNumber": {
           "type": "string",
@@ -123,6 +118,21 @@
         }
       },
       "required": ["tier", "points", "skills", "rating", "reviews", "verified"]
+    },
+    "SubscriptionPlan": {
+        "title": "Subscription Plan",
+        "description": "Defines a subscription plan for a user role.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "price": { "type": "number" },
+            "role": { "type": "string", "enum": ["Job Giver", "Installer"] },
+            "features": { "type": "array", "items": { "type": "string" } },
+            "trialPeriodDays": { "type": "number", "description": "Default trial period in days for new users of this role." }
+        },
+        "required": ["id", "name", "price", "role", "features"]
     },
     "Job": {
       "title": "Job",
@@ -450,6 +460,14 @@
             "$ref": "#/entities/Transaction"
         },
         "description": "Stores all financial transactions related to jobs."
+    },
+    "/subscriptionPlans/{planId}": {
+        "schema": {
+            "$ref": "#/entities/SubscriptionPlan"
+        },
+        "description": "Stores all available subscription plans."
     }
   }
 }
+
+    

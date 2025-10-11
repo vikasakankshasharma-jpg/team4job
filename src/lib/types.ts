@@ -23,9 +23,11 @@ export type User = {
   address: Address;
   roles: ('Job Giver' | 'Installer' | 'Admin')[];
   memberSince: Date | Timestamp;
-  freeBids?: number;
-  freeJobs?: number;
-  creditsExpiry?: Date | Timestamp;
+  subscription?: {
+    planId: string;
+    planName: string;
+    expiresAt: Date | Timestamp;
+  };
   aadharNumber?: string;
   kycAddress?: string;
   installerProfile?: {
@@ -143,5 +145,15 @@ export type Dispute = {
 };
 
 export type Role = "Job Giver" | "Installer" | "Admin";
+
+export type SubscriptionPlan = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  role: 'Job Giver' | 'Installer';
+  features: string[];
+  trialPeriodDays?: number;
+};
 
     

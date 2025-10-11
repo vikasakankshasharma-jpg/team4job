@@ -277,8 +277,20 @@ function UserReputationSettings() {
             <CardContent className="space-y-6">
                  <div className="space-y-4 rounded-lg border p-4">
                     <h3 className="font-semibold flex items-center gap-2"><Gift className="h-4 w-4" /> New User Onboarding</h3>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
+                             <Label htmlFor="trial-days">Default Trial Period (days)</Label>
+                             <Input
+                                id="trial-days"
+                                type="number"
+                                defaultValue="30"
+                                min="0"
+                            />
+                             <p className="text-xs text-muted-foreground">
+                               Trial length for new Job Givers and Installers.
+                            </p>
+                        </div>
+                         <div className="space-y-2">
                              <Label htmlFor="free-bids">Free Bids for New Installers</Label>
                              <Input
                                 id="free-bids"
@@ -286,8 +298,8 @@ function UserReputationSettings() {
                                 defaultValue="10"
                                 min="0"
                             />
-                             <p className="text-xs text-muted-foreground">
-                               Number of free bids a new installer gets upon signing up.
+                              <p className="text-xs text-muted-foreground">
+                               Number of free bids a new installer gets.
                             </p>
                         </div>
                          <div className="space-y-2">
@@ -295,7 +307,7 @@ function UserReputationSettings() {
                              <Input
                                 id="free-jobs"
                                 type="number"
-                                defaultValue="10"
+                                defaultValue="3"
                                 min="0"
                             />
                               <p className="text-xs text-muted-foreground">
@@ -428,3 +440,5 @@ export default function SettingsPage() {
         </div>
     )
 }
+
+    
