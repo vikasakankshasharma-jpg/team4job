@@ -1,13 +1,15 @@
 
+
 "use client";
 
-import { User } from "@/lib/types";
+import { User, UserStatus } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useFirebase } from "@/lib/firebase/client-provider";
 import { Loader2 } from "lucide-react";
+import { useToast } from "./use-toast";
 
 type Role = "Job Giver" | "Installer" | "Admin";
 
@@ -35,6 +37,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
   const firebaseContext = useFirebase();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!firebaseContext) return;
@@ -48,8 +51,21 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             const userDoc = await getDoc(userDocRef);
             if (userDoc.exists()) {
               const userData = { id: userDoc.id, ...userDoc.data() } as User;
-              setUser(userData);
+              
+              if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && new Date() < (userData.suspensionEndDate as any).toDate())) {
+                  let message = 'Your account has been deactivated.';
+                  if (userData.status === 'suspended') {
+                      message = `Your account is suspended until ${new Date(userData.suspensionEndDate as any).toLocaleString()}.`;
+                  }
+                  toast({ title: 'Access Denied', description: message, variant: 'destructive' });
+                  await signOut(auth);
+                  setUser(null);
+                  setIsAdmin(false);
+                  setLoading(false);
+                  return;
+              }
 
+              setUser(userData);
               const storedRole = localStorage.getItem('userRole') as Role;
               const isAdminUser = userData.roles.includes("Admin");
               setIsAdmin(isAdminUser);
@@ -66,7 +82,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
               }
             } else {
               console.error("User document not found for authenticated user:", firebaseUser.uid);
-              // The user is authenticated but has no profile. Log them out.
               await signOut(auth); 
               setUser(null);
               setIsAdmin(false);
@@ -80,11 +95,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(null);
         setIsAdmin(false);
       }
-      setLoading(false); // Ensure loading is always set to false
+      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [firebaseContext]); 
+  }, [firebaseContext, toast]); 
 
 
   useEffect(() => {
@@ -126,7 +141,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setIsAdmin(false);
     localStorage.removeItem('userRole');
-    // No need to setLoading(true) here, onAuthStateChanged will handle it.
     router.push('/login');
   };
 

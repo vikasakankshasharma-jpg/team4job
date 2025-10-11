@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -323,6 +324,7 @@ export function SignUpForm() {
             mobile: values.mobile,
             roles: userRoles as User['roles'],
             memberSince: new Date(),
+            status: 'active',
             avatarUrl: PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)].imageUrl,
             realAvatarUrl: values.realAvatarUrl,
             pincodes: { residential: values.address.cityPincode.split(',')[0].trim() },

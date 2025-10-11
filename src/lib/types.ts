@@ -10,6 +10,8 @@ export type Address = {
   fullAddress?: string;
 };
 
+export type UserStatus = 'active' | 'suspended' | 'deactivated';
+
 export type User = {
   id: string;
   name: string;
@@ -24,6 +26,8 @@ export type User = {
   address: Address;
   roles: ('Job Giver' | 'Installer' | 'Admin')[];
   memberSince: Date | Timestamp;
+  status: UserStatus;
+  suspensionEndDate?: Date | Timestamp;
   subscription?: {
     planId: string;
     planName: string;

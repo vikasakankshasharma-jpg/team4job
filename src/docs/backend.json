@@ -1,4 +1,5 @@
 
+
 {
   "entities": {
     "Address": {
@@ -63,6 +64,16 @@
             "enum": ["Job Giver", "Installer", "Admin"]
           }
         },
+        "status": {
+          "type": "string",
+          "enum": ["active", "suspended", "deactivated"],
+          "description": "The current status of the user's account."
+        },
+        "suspensionEndDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "If the user is suspended, this is the date their suspension ends."
+        },
         "memberSince": {
           "type": "string",
           "format": "date-time"
@@ -87,7 +98,7 @@
           "$ref": "#/entities/InstallerProfile"
         }
       },
-      "required": ["id", "name", "email", "mobile", "address", "avatarUrl", "pincodes", "roles", "memberSince"]
+      "required": ["id", "name", "email", "mobile", "address", "avatarUrl", "pincodes", "roles", "memberSince", "status"]
     },
     "InstallerProfile": {
       "title": "Installer Profile",
@@ -133,6 +144,46 @@
             "trialPeriodDays": { "type": "number", "description": "Default trial period in days for new users of this role." }
         },
         "required": ["id", "name", "price", "role", "features"]
+    },
+    "Coupon": {
+      "title": "Coupon Code",
+      "description": "A promotional code that grants subscription benefits.",
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "The unique, user-facing coupon code (e.g., 'WELCOME2024'). Acts as the document ID."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief explanation of what the coupon provides."
+        },
+        "planId": {
+          "type": "string",
+          "description": "The ID of the subscription plan this coupon grants access to."
+        },
+        "durationDays": {
+          "type": "number",
+          "description": "The number of days the subscription is extended for."
+        },
+        "applicableToRole": {
+          "type": "string",
+          "enum": ["Installer", "Job Giver", "Any"],
+          "description": "The user role this coupon can be applied to."
+        },
+        "validFrom": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "isActive": {
+          "type": "boolean"
+        }
+      },
+      "required": ["code", "description", "planId", "durationDays", "applicableToRole", "validFrom", "validUntil", "isActive"]
     },
     "Job": {
       "title": "Job",
@@ -466,6 +517,12 @@
             "$ref": "#/entities/SubscriptionPlan"
         },
         "description": "Stores all available subscription plans."
+    },
+    "/coupons/{couponCode}": {
+      "schema": {
+        "$ref": "#/entities/Coupon"
+      },
+      "description": "Stores all promotional coupon codes."
     }
   }
 }
