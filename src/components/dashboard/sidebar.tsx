@@ -20,6 +20,7 @@ import {
   FileText,
   AlertOctagon,
   Ticket,
+  Ban,
 } from "lucide-react";
 import { Logo } from "@/components/icons";
 import { usePathname } from "next/navigation";
@@ -49,6 +50,7 @@ const adminNavItems = [
     { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
     { href: "/dashboard/coupons", icon: Ticket, label: "Coupons" },
     { href: "/dashboard/reports", icon: FileText, label: "Reports" },
+    { href: "/dashboard/blacklist", icon: Ban, label: "Blacklist" },
 ];
 
 export function DashboardSidebar() {
