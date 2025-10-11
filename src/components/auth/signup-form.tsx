@@ -314,6 +314,8 @@ export function SignUpForm() {
         const firebaseUser = userCredential.user;
         
         const userRoles = [values.role];
+        const trialExpiry = new Date();
+        trialExpiry.setDate(trialExpiry.getDate() + 30); // Default 30-day trial
 
         const newUser: Omit<User, 'id'> = {
             name: values.name,
@@ -325,6 +327,11 @@ export function SignUpForm() {
             realAvatarUrl: values.realAvatarUrl,
             pincodes: { residential: values.address.cityPincode.split(',')[0].trim() },
             address: values.address,
+            subscription: {
+                planId: 'trial',
+                planName: 'Free Trial',
+                expiresAt: trialExpiry,
+            }
         };
         
         if (values.role === 'Installer') {

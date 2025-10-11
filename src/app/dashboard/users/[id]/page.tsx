@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -26,8 +26,11 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirebase } from "@/lib/firebase/client-provider";
-import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
+import { collection, query, where, getDocs, getDoc, doc, updateDoc } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 
 const tierIcons = {
@@ -59,6 +62,67 @@ const wasJobAwardedDirectly = (job: Job) => {
 
     return !hasBids;
 };
+
+function ManageSubscriptionDialog({ user, onSubscriptionUpdate }: { user: User, onSubscriptionUpdate: (newExpiry: Date) => void }) {
+    const { toast } = useToast();
+    const { db } = useFirebase();
+    const [days, setDays] = React.useState(30);
+    const [isOpen, setIsOpen] = React.useState(false);
+
+    const handleGrantAccess = async () => {
+        const newExpiryDate = new Date();
+        newExpiryDate.setDate(newExpiryDate.getDate() + days);
+
+        const userRef = doc(db, 'users', user.id);
+        await updateDoc(userRef, {
+            'subscription.planId': 'premium',
+            'subscription.planName': 'Admin Granted Access',
+            'subscription.expiresAt': newExpiryDate,
+        });
+
+        onSubscriptionUpdate(newExpiryDate);
+        toast({
+            title: "Subscription Updated",
+            description: `${user.name} has been granted access for ${days} days.`,
+        });
+        setIsOpen(false);
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Manage Subscription
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Manage Subscription for {user.name}</DialogTitle>
+                    <DialogDescription>
+                        Grant or extend a user's subscription for free. The user will be notified.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <label htmlFor="days" className="text-sm font-medium">Grant Access For (Days)</label>
+                        <Input
+                            id="days"
+                            type="number"
+                            value={days}
+                            onChange={(e) => setDays(Number(e.target.value))}
+                            min="1"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                    <Button onClick={handleGrantAccess}>Grant Access</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 function JobListItem({ job }: { job: Job }) {
   const isDirectAward = wasJobAwardedDirectly(job);
@@ -125,40 +189,50 @@ export default function UserProfilePage() {
   const [loading, setLoading] = React.useState(true);
   const [jobsView, setJobsView] = React.useState<'list' | 'grid'>('list');
 
+  const fetchUserData = React.useCallback(async () => {
+        setLoading(true);
+        const userDoc = await getDoc(doc(db, "users", id));
+        if (!userDoc.exists()) {
+            setProfileUser(null);
+            setLoading(false);
+            return;
+        }
+        const user = { id: userDoc.id, ...userDoc.data() } as User;
+        setProfileUser(user);
+
+        const jobsRef = collection(db, "jobs");
+        
+        if (user.roles.includes('Job Giver')) {
+            const postedJobsQuery = query(jobsRef, where('jobGiver', '==', userDoc.ref));
+            const postedJobsSnapshot = await getDocs(postedJobsQuery);
+            const postedJobs = postedJobsSnapshot.docs.map(d => d.data() as Job);
+            setUserPostedJobs(postedJobs);
+        }
+
+        if (user.roles.includes('Installer')) {
+            const completedJobsQuery = query(jobsRef, where('status', '==', 'Completed'), where('awardedInstaller', '==', userDoc.ref));
+            const completedJobsSnapshot = await getDocs(completedJobsQuery);
+            const completedJobs = completedJobsSnapshot.docs.map(d => d.data() as Job);
+            setUserCompletedJobs(completedJobs);
+        }
+        setLoading(false);
+  }, [id, db]);
+
   React.useEffect(() => {
     if (id) {
-        setLoading(true);
-        
-        const fetchUserData = async () => {
-            const userDoc = await getDoc(doc(db, "users", id));
-            if (!userDoc.exists()) {
-                setProfileUser(null);
-                setLoading(false);
-                return;
-            }
-            const user = { id: userDoc.id, ...userDoc.data() } as User;
-            setProfileUser(user);
-
-            const jobsRef = collection(db, "jobs");
-            
-            if (user.roles.includes('Job Giver')) {
-                const postedJobsQuery = query(jobsRef, where('jobGiver', '==', userDoc.ref));
-                const postedJobsSnapshot = await getDocs(postedJobsQuery);
-                const postedJobs = postedJobsSnapshot.docs.map(d => d.data() as Job);
-                setUserPostedJobs(postedJobs);
-            }
-
-            if (user.roles.includes('Installer')) {
-                const completedJobsQuery = query(jobsRef, where('status', '==', 'Completed'), where('awardedInstaller', '==', userDoc.ref));
-                const completedJobsSnapshot = await getDocs(completedJobsQuery);
-                const completedJobs = completedJobsSnapshot.docs.map(d => d.data() as Job);
-                setUserCompletedJobs(completedJobs);
-            }
-            setLoading(false);
-        };
         fetchUserData();
     }
-  }, [id, db]);
+  }, [id, fetchUserData]);
+  
+  const handleSubscriptionUpdate = (newExpiry: Date) => {
+    setProfileUser(prev => prev ? {
+        ...prev,
+        subscription: {
+            ...prev.subscription!,
+            expiresAt: newExpiry,
+        }
+    } : null);
+  };
 
   if (loading || profileUser === undefined) {
     return <PageSkeleton />;
@@ -168,7 +242,7 @@ export default function UserProfilePage() {
     notFound();
   }
 
-  const { name, email, id: userId, memberSince, realAvatarUrl, address, roles } = profileUser;
+  const { name, email, id: userId, memberSince, realAvatarUrl, address, roles, subscription } = profileUser;
   const installerProfile = profileUser.installerProfile;
   const isInstaller = roles.includes('Installer');
   
@@ -215,8 +289,17 @@ export default function UserProfilePage() {
                 </div>
               </div>
             </div>
+            <ManageSubscriptionDialog user={profileUser} onSubscriptionUpdate={handleSubscriptionUpdate} />
           </div>
         </CardHeader>
+        {subscription && (
+            <CardContent>
+                 <div className="text-sm">
+                    <span className="font-semibold">{subscription.planName}</span>
+                    <span className="text-muted-foreground"> (Expires: {format(toDate(subscription.expiresAt), 'MMM d, yyyy')})</span>
+                </div>
+            </CardContent>
+        )}
       </Card>
       
       {isInstaller && installerProfile && (
