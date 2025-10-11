@@ -28,12 +28,13 @@ const UserContext = createContext<UserContextType | null>(null);
 
 const installerPaths = ['/dashboard/my-bids', '/dashboard/jobs'];
 const jobGiverPaths = ['/dashboard/posted-jobs', '/dashboard/post-job'];
+const publicPaths = ['/login', '/'];
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // This now represents the initial auth check
   const router = useRouter();
   const pathname = usePathname();
   const firebaseContext = useFirebase();
@@ -50,25 +51,20 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             const userDocRef = doc(db, "users", firebaseUser.uid);
             const userDoc = await getDoc(userDocRef);
 
-            const blacklistSnapshot = await getDocs(collection(db, "blacklist"));
-            const blacklist = blacklistSnapshot.docs.map(doc => doc.data() as BlacklistEntry);
-            const userBlacklistEntry = blacklist.find(entry => entry.type === 'user' && entry.value === firebaseUser.uid);
-
-
             if (userDoc.exists()) {
               const userData = { id: userDoc.id, ...userDoc.data() } as User;
               
+              const blacklistSnapshot = await getDocs(collection(db, "blacklist"));
+              const blacklist = blacklistSnapshot.docs.map(doc => doc.data() as BlacklistEntry);
+              const userBlacklistEntry = blacklist.find(entry => entry.type === 'user' && entry.value === firebaseUser.uid);
               const isBlacklisted = userBlacklistEntry && (userBlacklistEntry.role === 'Any' || userData.roles.includes(userBlacklistEntry.role as any));
+
               if (isBlacklisted) {
                   toast({ title: 'Access Denied', description: `Your account is currently restricted. Reason: ${userBlacklistEntry.reason}`, variant: 'destructive' });
                   await signOut(auth);
                   setUser(null);
                   setIsAdmin(false);
-                  setLoading(false);
-                  return;
-              }
-
-              if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && new Date() < (userData.suspensionEndDate as any).toDate())) {
+              } else if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && new Date() < (userData.suspensionEndDate as any).toDate())) {
                   let message = 'Your account has been deactivated.';
                   if (userData.status === 'suspended') {
                       message = `Your account is suspended until ${new Date(userData.suspensionEndDate as any).toLocaleString()}.`;
@@ -77,24 +73,22 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
                   await signOut(auth);
                   setUser(null);
                   setIsAdmin(false);
-                  setLoading(false);
-                  return;
-              }
-
-              setUser(userData);
-              const storedRole = localStorage.getItem('userRole') as Role;
-              const isAdminUser = userData.roles.includes("Admin");
-              setIsAdmin(isAdminUser);
-
-              if (isAdminUser) {
-                 setRoleState("Admin");
-                 localStorage.setItem('userRole', "Admin");
-              } else if (storedRole && userData.roles.includes(storedRole)) {
-                setRoleState(storedRole);
               } else {
-                const initialRole = userData.roles.includes("Installer") ? "Installer" : "Job Giver";
-                setRoleState(initialRole);
-                localStorage.setItem('userRole', initialRole);
+                  setUser(userData);
+                  const storedRole = localStorage.getItem('userRole') as Role;
+                  const isAdminUser = userData.roles.includes("Admin");
+                  setIsAdmin(isAdminUser);
+
+                  if (isAdminUser) {
+                    setRoleState("Admin");
+                    localStorage.setItem('userRole', "Admin");
+                  } else if (storedRole && userData.roles.includes(storedRole)) {
+                    setRoleState(storedRole);
+                  } else {
+                    const initialRole = userData.roles.includes("Installer") ? "Installer" : "Job Giver";
+                    setRoleState(initialRole);
+                    localStorage.setItem('userRole', initialRole);
+                  }
               }
             } else {
               console.error("User document not found for authenticated user:", firebaseUser.uid);
@@ -104,6 +98,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             }
         } catch (error) {
             console.error("Error fetching user document:", error);
+            await signOut(auth);
             setUser(null);
             setIsAdmin(false);
         }
@@ -111,24 +106,34 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(null);
         setIsAdmin(false);
       }
+      // Finished initial auth check
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [firebaseContext, toast]); 
+  }, [firebaseContext, toast]);
 
 
   useEffect(() => {
-    if (loading) return;
-    
-    const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
-    const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
+    if (loading) return; // Don't run any logic until initial auth check is done
 
-    if (role === 'Job Giver' && isInstallerPage) {
-        router.push('/dashboard');
+    const isPublicPage = publicPaths.includes(pathname);
+    
+    if (!user && !isPublicPage) {
+        router.push('/login');
+        return;
     }
-    if (role === 'Installer' && isJobGiverPage) {
-        router.push('/dashboard');
+
+    if (user) {
+        const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
+        const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
+
+        if (role === 'Job Giver' && isInstallerPage) {
+            router.push('/dashboard');
+        }
+        if (role === 'Installer' && isJobGiverPage) {
+            router.push('/dashboard');
+        }
     }
   }, [role, pathname, user, router, loading]);
 
@@ -142,7 +147,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
     try {
       await signInWithEmailAndPassword(firebaseContext.auth, email, password);
-      // onAuthStateChanged will handle setting user state, which will trigger setLoading(false)
+      // onAuthStateChanged will handle setting the user state and setLoading(false)
       return true;
     } catch (error) {
       console.error("Login failed:", error);
@@ -178,16 +183,20 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     logout
   }), [user, role, isAdmin, loading, firebaseContext]);
 
-  return (
-    <UserContext.Provider value={value}>
-      {loading ? 
+  if (loading) {
+     return (
         <div className="flex h-screen items-center justify-center">
             <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span>Loading...</span>
             </div>
         </div>
-      : children}
+      );
+  }
+
+  return (
+    <UserContext.Provider value={value}>
+      {children}
     </UserContext.Provider>
   );
 };
