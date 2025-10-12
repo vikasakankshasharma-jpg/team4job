@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser, initializeAuth, browserLocalPersistence, type Auth } from "firebase/auth";
 import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
-import { doc, getDoc, collection, getDocs, onSnapshot, getFirestore, type Firestore, query, where, or } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, onSnapshot, getFirestore, type Firestore, query, where } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 
@@ -104,7 +104,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   const [roleLoading, setRoleLoading] = useState(true);
 
   const router = useRouter();
@@ -138,7 +138,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      setLoading(true);
+      setAuthLoading(true);
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
@@ -171,18 +171,18 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
              await signOut(auth);
              updateUserState(null);
            }
-           setLoading(false);
+           setAuthLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
             signOut(auth);
             updateUserState(null);
-            setLoading(false);
+            setAuthLoading(false);
         });
 
         return () => unsubscribeDoc();
       } else {
         updateUserState(null);
-        setLoading(false);
+        setAuthLoading(false);
       }
     });
 
@@ -191,7 +191,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
 
 
   useEffect(() => {
-    if (loading || roleLoading) return;
+    if (authLoading || roleLoading) return;
 
     const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
     
@@ -215,14 +215,14 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
             router.push('/dashboard');
         }
     }
-  }, [role, pathname, user, router, loading, roleLoading]);
+  }, [role, pathname, user, router, authLoading, roleLoading]);
 
 
   const login = async (email: string, password?: string) => {
     if (!password) {
         return false;
     }
-    setLoading(true);
+    setAuthLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       return true;
@@ -230,17 +230,17 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
       if (error.code !== 'auth/invalid-credential') {
         console.error("Login failed:", error);
       }
-      setLoading(false);
+      setAuthLoading(false);
       return false;
     }
   };
 
   const logout = async () => {
-    setLoading(true);
+    setAuthLoading(true);
     await signOut(auth);
     updateUserState(null);
     router.push('/login');
-    setLoading(false);
+    setAuthLoading(false);
   };
 
   const setRole = (newRole: Role) => {
@@ -250,7 +250,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
     }
   };
   
-  const isLoadingOverall = loading || roleLoading;
+  const isLoadingOverall = authLoading || roleLoading;
 
   const value = useMemo(() => ({
     user,
@@ -265,7 +265,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
 
   return (
     <UserContext.Provider value={value}>
-      {isLoadingOverall ? (
+      {isLoadingOverall && !publicPaths.some(p => pathname.startsWith(p)) ? (
          <div className="flex h-screen items-center justify-center">
             <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />

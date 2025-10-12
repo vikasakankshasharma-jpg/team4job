@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { DocumentReference, collection, query, where, getDocs, or, doc, getDoc } from "firebase/firestore";
+import { DocumentReference, collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 
 
 type MyBidRowProps = {
@@ -172,12 +172,28 @@ function MyBidsPageContent() {
       setLoading(true);
       const jobsRef = collection(db, "jobs");
       const installerDocRef = doc(db, 'users', user.id);
-      const q = query(jobsRef, or(where('bidderIds', 'array-contains', user.id), where('awardedInstaller', '==', installerDocRef)));
-      const jobSnapshot = await getDocs(q);
+      
+      const biddedJobsQuery = query(jobsRef, where('bidderIds', 'array-contains', user.id));
+      const awardedJobsQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
+
+      const [biddedJobsSnapshot, awardedJobsSnapshot] = await Promise.all([
+          getDocs(biddedJobsQuery),
+          getDocs(awardedJobsQuery)
+      ]);
+      
+      const jobsMap = new Map<string, Job>();
+
+      biddedJobsSnapshot.forEach(doc => {
+          jobsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job);
+      });
+      awardedJobsSnapshot.forEach(doc => {
+          jobsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job);
+      });
+
+      const jobList = Array.from(jobsMap.values());
       
       const userRefs = new Set<DocumentReference>();
-      jobSnapshot.forEach(jobDoc => {
-          const jobData = jobDoc.data() as Job;
+      jobList.forEach(jobData => {
           if (jobData.jobGiver) userRefs.add(jobData.jobGiver as DocumentReference);
           if (jobData.awardedInstaller) userRefs.add(jobData.awardedInstaller as DocumentReference);
           (jobData.bids || []).forEach(bid => userRefs.add(bid.installer as DocumentReference));
@@ -194,19 +210,18 @@ function MyBidsPageContent() {
         });
       }
 
-      const jobList = jobSnapshot.docs.map(doc => {
-        const jobData = doc.data() as Job;
+      const populatedJobList = jobList.map(jobData => {
         const getRefId = (ref: DocumentReference | User) => (ref as DocumentReference)?.id || (ref as User)?.id;
         
         return {
           ...jobData,
-          id: doc.id,
+          id: jobData.id,
           jobGiver: userMap.get(getRefId(jobData.jobGiver)) || jobData.jobGiver,
           awardedInstaller: jobData.awardedInstaller ? userMap.get(getRefId(jobData.awardedInstaller)) || jobData.awardedInstaller : undefined,
           bids: (jobData.bids || []).map(bid => ({ ...bid, installer: userMap.get(getRefId(bid.installer)) || bid.installer }))
         };
       });
-      setJobs(jobList);
+      setJobs(populatedJobList);
       setLoading(false);
     }
     fetchJobs();
