@@ -179,7 +179,7 @@ function PageSkeleton() {
 }
 
 export default function UserProfilePage() {
-  const params = useParams();
+  const params = React.use(useParams());
   const id = params.id as string;
   const { db } = useFirebase();
 
@@ -476,5 +476,3 @@ export default function UserProfilePage() {
     </div>
   );
 }
-
-    

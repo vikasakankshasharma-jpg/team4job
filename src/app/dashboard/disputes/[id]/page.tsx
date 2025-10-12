@@ -88,7 +88,7 @@ function PageSkeleton() {
 export default function DisputeDetailPage() {
   const { user, isAdmin } = useUser();
   const { db } = useFirebase();
-  const params = useParams();
+  const params = React.use(useParams());
   const id = params.id as string;
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -402,5 +402,3 @@ export default function DisputeDetailPage() {
     </div>
   );
 }
-
-    
