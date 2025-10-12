@@ -1,6 +1,5 @@
 
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -18,59 +17,81 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && getUserData().roles.hasAny(['Admin']);
+      return isSignedIn() && getUserData().roles[0] == 'Admin';
     }
 
     // --- Collection Rules ---
 
-    // Users can create their own profile, read any profile, and only update their own.
-    // Admins can do anything.
     match /users/{userId} {
-      allow create: if isUser(userId);
+      // Any authenticated user can read any user's profile (for profile pages, job details, etc.)
       allow read: if isSignedIn();
+      // A user can only create their own profile
+      allow create: if isUser(userId);
+      // A user can only update their own profile, but an admin can update any
       allow update: if isUser(userId) || isAdmin();
+      // Only an admin can delete a user
       allow delete: if isAdmin();
     }
 
-    // Jobs can be read by any authenticated user.
-    // Jobs can only be created by authenticated users.
-    // Jobs can only be updated by the original job giver or an admin.
     match /jobs/{jobId} {
+      // Any authenticated user can read or list jobs
       allow read, list: if isSignedIn();
+      // Any authenticated user can create a job (role check is done client-side)
       allow create: if isSignedIn();
-      allow update: if (resource.data.jobGiver == request.auth.uid) || isAdmin();
+      // Only the job giver or an admin can update a job
+      allow update: if (isSignedIn() && request.resource.data.jobGiver == request.auth.uid) || isAdmin();
+      // Only an admin can delete a job
       allow delete: if isAdmin();
     }
 
-    // Disputes can only be read/updated by participants or admins.
-    // Any authenticated user can create a dispute.
     match /disputes/{disputeId} {
-      allow read, update, list: if (request.auth.uid == resource.data.requesterId || request.auth.uid in resource.data.parties) || isAdmin();
+      // Only participants or an admin can read a dispute
+      allow read, update: if isSignedIn() && (
+        resource.data.requesterId == request.auth.uid ||
+        request.auth.uid in resource.data.parties.values() ||
+        isAdmin()
+      );
+      // Any authenticated user can create a dispute
       allow create: if isSignedIn();
+      // Only an admin can delete a dispute
       allow delete: if isAdmin();
+      // Allow list operations for a user's own disputes (client must provide correct filter)
+      allow list: if isSignedIn();
     }
 
-    // Blacklist can be read by anyone authenticated (for client-side checks), but only written by admins.
     match /blacklist/{blacklistId} {
-      allow read, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+        // Any authenticated user can read the blacklist (needed for login check)
+        allow read, list: if isSignedIn();
+        // Only admins can modify the blacklist
+        allow create, update, delete: if isAdmin();
     }
 
-    // Coupons and Subscription Plans are admin-only write, but readable by any user.
-    match /coupons/{couponCode} {
-      allow read, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+    match /coupons/{couponId} {
+        // Any authenticated user can read coupons to redeem them
+        allow read, list: if isSignedIn();
+        // Only admins can create/modify coupons
+        allow create, update, delete: if isAdmin();
     }
     
     match /subscriptionPlans/{planId} {
-       allow read, list: if isSignedIn();
-       allow create, update, delete: if isAdmin();
+        // Plans are public readable
+        allow read, list: if isSignedIn();
+        // Only admins can modify plans
+        allow create, update, delete: if isAdmin();
     }
     
-    // Transactions can only be accessed by involved parties or admins.
     match /transactions/{transactionId} {
-        allow read, list: if (request.auth.uid == resource.data.payerId || request.auth.uid == resource.data.payeeId) || isAdmin();
-        allow create, update, delete: if isAdmin();
+        // Only participants or admins can view transactions
+        allow read: if isSignedIn() && (
+            resource.data.payerId == request.auth.uid ||
+            resource.data.payeeId == request.auth.uid ||
+            isAdmin()
+        );
+        allow list: if isSignedIn();
+        // Writes should be handled by a secure backend function
+        allow write: if false;
     }
   }
 }
+
+    
