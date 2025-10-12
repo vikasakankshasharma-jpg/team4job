@@ -3,9 +3,9 @@
 
 import { User, UserStatus, BlacklistEntry } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, onSnapshot } from "firebase/firestore";
 import { useFirebase } from "@/lib/firebase/client-provider";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
@@ -39,77 +39,86 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const firebaseContext = useFirebase();
   const { toast } = useToast();
 
+   const updateUserState = useCallback((userData: User | null) => {
+    if (userData) {
+      setUser(userData);
+      const storedRole = localStorage.getItem('userRole') as Role;
+      const isAdminUser = userData.roles.includes("Admin");
+      setIsAdmin(isAdminUser);
+
+      if (isAdminUser) {
+        setRoleState("Admin");
+        localStorage.setItem('userRole', "Admin");
+      } else if (storedRole && userData.roles.includes(storedRole)) {
+        setRoleState(storedRole);
+      } else {
+        const initialRole = userData.roles.includes("Installer") ? "Installer" : "Job Giver";
+        setRoleState(initialRole);
+        localStorage.setItem('userRole', initialRole);
+      }
+    } else {
+      setUser(null);
+      setIsAdmin(false);
+      localStorage.removeItem('userRole');
+    }
+    setAuthIsPending(false);
+  }, []);
+
   useEffect(() => {
     if (!firebaseContext) return;
     
     const { auth, db } = firebaseContext;
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        try {
-            const userDocRef = doc(db, "users", firebaseUser.uid);
-            const userDoc = await getDoc(userDocRef);
+        const userDocRef = doc(db, "users", firebaseUser.uid);
+        
+        // Setting up a real-time listener for the user document
+        const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
+           if (userDoc.exists()) {
+             const userData = { id: userDoc.id, ...userDoc.data() } as User;
+             
+             // This logic can be simplified if blacklist doesn't need to be realtime.
+             // For now, fetching it once on auth change seems reasonable.
+             const blacklistSnapshot = await getDocs(collection(db, "blacklist"));
+             const blacklist = blacklistSnapshot.docs.map(doc => doc.data() as BlacklistEntry);
+             const userBlacklistEntry = blacklist.find(entry => entry.type === 'user' && entry.value === firebaseUser.uid);
+             const isBlacklisted = userBlacklistEntry && (userBlacklistEntry.role === 'Any' || userData.roles.includes(userBlacklistEntry.role as any));
+             
+             if (isBlacklisted) {
+               toast({ title: 'Access Denied', description: `Your account is currently restricted. Reason: ${userBlacklistEntry.reason}`, variant: 'destructive' });
+               await signOut(auth);
+               updateUserState(null);
+             } else if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && new Date() < (userData.suspensionEndDate as any).toDate())) {
+                 let message = 'Your account has been deactivated.';
+                 if (userData.status === 'suspended') {
+                     message = `Your account is suspended until ${new Date(userData.suspensionEndDate as any).toLocaleString()}.`;
+                 }
+                 toast({ title: 'Access Denied', description: message, variant: 'destructive' });
+                 await signOut(auth);
+                 updateUserState(null);
+             } else {
+                 updateUserState(userData);
+             }
+           } else {
+             console.error("User document not found for authenticated user:", firebaseUser.uid);
+             await signOut(auth);
+             updateUserState(null);
+           }
+        }, (error) => {
+            console.error("Error listening to user document:", error);
+            signOut(auth);
+            updateUserState(null);
+        });
 
-            if (userDoc.exists()) {
-              const userData = { id: userDoc.id, ...userDoc.data() } as User;
-              
-              const blacklistSnapshot = await getDocs(collection(db, "blacklist"));
-              const blacklist = blacklistSnapshot.docs.map(doc => doc.data() as BlacklistEntry);
-              const userBlacklistEntry = blacklist.find(entry => entry.type === 'user' && entry.value === firebaseUser.uid);
-              const isBlacklisted = userBlacklistEntry && (userBlacklistEntry.role === 'Any' || userData.roles.includes(userBlacklistEntry.role as any));
-
-              if (isBlacklisted) {
-                  toast({ title: 'Access Denied', description: `Your account is currently restricted. Reason: ${userBlacklistEntry.reason}`, variant: 'destructive' });
-                  await signOut(auth);
-                  setUser(null);
-                  setIsAdmin(false);
-              } else if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && new Date() < (userData.suspensionEndDate as any).toDate())) {
-                  let message = 'Your account has been deactivated.';
-                  if (userData.status === 'suspended') {
-                      message = `Your account is suspended until ${new Date(userData.suspensionEndDate as any).toLocaleString()}.`;
-                  }
-                  toast({ title: 'Access Denied', description: message, variant: 'destructive' });
-                  await signOut(auth);
-                  setUser(null);
-                  setIsAdmin(false);
-              } else {
-                  setUser(userData);
-                  const storedRole = localStorage.getItem('userRole') as Role;
-                  const isAdminUser = userData.roles.includes("Admin");
-                  setIsAdmin(isAdminUser);
-
-                  if (isAdminUser) {
-                    setRoleState("Admin");
-                    localStorage.setItem('userRole', "Admin");
-                  } else if (storedRole && userData.roles.includes(storedRole)) {
-                    setRoleState(storedRole);
-                  } else {
-                    const initialRole = userData.roles.includes("Installer") ? "Installer" : "Job Giver";
-                    setRoleState(initialRole);
-                    localStorage.setItem('userRole', initialRole);
-                  }
-              }
-            } else {
-              console.error("User document not found for authenticated user:", firebaseUser.uid);
-              await signOut(auth); 
-              setUser(null);
-              setIsAdmin(false);
-            }
-        } catch (error) {
-            console.error("Error fetching user document:", error);
-            await signOut(auth);
-            setUser(null);
-            setIsAdmin(false);
-        }
+        return () => unsubscribeDoc(); // Cleanup the document listener on auth state change
       } else {
-        setUser(null);
-        setIsAdmin(false);
+        updateUserState(null);
       }
-      setAuthIsPending(false);
     });
 
-    return () => unsubscribe();
-  }, [firebaseContext, toast]);
+    return () => unsubscribeAuth(); // Cleanup the auth listener on component unmount
+  }, [firebaseContext, toast, updateUserState]);
 
 
   useEffect(() => {
@@ -123,6 +132,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     if (user) {
+        if (pathname === '/login') {
+            router.push('/dashboard');
+        }
+        
         const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
         const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
 
@@ -158,9 +171,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     if (!firebaseContext) return;
     await signOut(firebaseContext.auth);
-    setUser(null);
-    setIsAdmin(false);
-    localStorage.removeItem('userRole');
+    updateUserState(null); // Clear user state
     router.push('/login');
   };
 
@@ -180,7 +191,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     setRole,
     login,
     logout
-  }), [user, role, isAdmin, authIsPending, firebaseContext]);
+  }), [user, role, isAdmin, authIsPending, firebaseContext, login, logout, setRole]);
 
   if (authIsPending) {
      return (
