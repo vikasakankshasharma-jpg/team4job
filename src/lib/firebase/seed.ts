@@ -63,6 +63,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     email: 'admin@example.com',
     mobile: '9999999999',
     roles: ['Admin'],
+    status: 'active',
     memberSince: new Date('2024-01-01'),
     avatarUrl: PlaceHolderImages[0].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/admin/200/200',
@@ -74,6 +75,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     email: 'jobgiver@example.com',
     mobile: '9876543210',
     roles: ['Job Giver'],
+    status: 'active',
     memberSince: new Date('2024-02-10'),
     avatarUrl: PlaceHolderImages[1].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/priya/200/200',
@@ -85,6 +87,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     email: 'installer@example.com',
     mobile: '8765432109',
     roles: ['Installer', 'Job Giver'],
+    status: 'active',
     memberSince: new Date('2024-03-15'),
     avatarUrl: PlaceHolderImages[2].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/vikram/200/200',
@@ -108,6 +111,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     email: 'just-installer@example.com',
     mobile: '7654321098',
     roles: ['Installer'],
+    status: 'active',
     memberSince: new Date('2024-04-01'),
     avatarUrl: PlaceHolderImages[3].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/ravi/200/200',
@@ -130,6 +134,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     email: 'sunita.g@example.com',
     mobile: '9123456789',
     roles: ['Job Giver'],
+    status: 'active',
     memberSince: new Date('2024-05-20'),
     avatarUrl: PlaceHolderImages[4].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/sunita/200/200',
@@ -141,6 +146,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     email: 'arjun.s@example.com',
     mobile: '9988776655',
     roles: ['Installer'],
+    status: 'active',
     memberSince: new Date('2024-06-01'),
     avatarUrl: PlaceHolderImages[5].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/arjun/200/200',
@@ -161,6 +167,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     email: 'anil.k@example.com',
     mobile: '9898989898',
     roles: ['Installer'],
+    status: 'active',
     memberSince: new Date('2024-02-15'),
     avatarUrl: PlaceHolderImages[6].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/anil/200/200',
@@ -244,6 +251,9 @@ async function seedAuthAndGetUIDs(users: Omit<User, 'id'>[]) {
 async function seedUserProfiles(users: Omit<User, 'id'>[], uids: { [email: string]: string }) {
     console.log('\nCreating user profiles in Firestore...');
     const batch = adminDb.batch();
+    const trialExpiry = new Date();
+    trialExpiry.setDate(trialExpiry.getDate() + 30); // Default 30-day trial for all
+
     users.forEach(user => {
         const uid = uids[user.email];
         if (!uid) return;
@@ -252,12 +262,15 @@ async function seedUserProfiles(users: Omit<User, 'id'>[], uids: { [email: strin
         
         const firestoreUserData: any = {
             ...user,
+            id: uid,
             memberSince: Timestamp.fromDate(new Date(user.memberSince as Date)),
+            subscription: {
+                planId: 'trial',
+                planName: 'Free Trial',
+                expiresAt: Timestamp.fromDate(trialExpiry),
+            }
         };
-        if (firestoreUserData.creditsExpiry) {
-            firestoreUserData.creditsExpiry = Timestamp.fromDate(new Date(firestoreUserData.creditsExpiry as Date));
-        }
-
+        
         batch.set(userRef, firestoreUserData);
     });
     await batch.commit();
@@ -421,6 +434,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         address: { house: '42/C', street: 'Link Road', cityPincode: '400053, Andheri West S.O' },
         budget: { min: 1000, max: 2000 },
         status: "Awarded",
+        acceptanceDeadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 1))),
         deadline: Timestamp.fromDate(new Date()),
         postedAt: Timestamp.fromDate(new Date()),
         jobStartDate: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 1))),
@@ -486,6 +500,13 @@ async function seedDisputes(uids: { [email: string]: string }) {
     console.log(`- Committed 2 disputes.`);
 }
 
+async function clearAllCollections() {
+    const collections = ['disputes', 'jobs', 'users', 'blacklist', 'coupons', 'transactions', 'subscriptionPlans'];
+    for (const collection of collections) {
+        await clearCollection(collection);
+    }
+}
+
 
 async function main() {
   try {
@@ -493,9 +514,7 @@ async function main() {
     
     // Clear Auth & Firestore
     await clearAuthUsers();
-    await clearCollection('disputes');
-    await clearCollection('jobs');
-    await clearCollection('users');
+    await clearAllCollections();
     
     // Seed Auth and get back the real UIDs
     const userUIDs = await seedAuthAndGetUIDs(mockUsers);
