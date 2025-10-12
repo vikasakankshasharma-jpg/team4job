@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { HelpProvider } from "@/hooks/use-help";
 import { GoogleMapsProvider } from "@/hooks/use-google-maps";
 import { FirebaseErrorListener } from "./FirebaseErrorListener";
-import { FirebaseAppProvider } from "@/lib/firebase/use-firebase-app";
+import { FirebaseAppProvider } from "@/lib/firebase/use-firebase-app.tsx";
 
 export function Providers({ children }: { children: React.ReactNode }) {
 
