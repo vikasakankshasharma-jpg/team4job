@@ -63,9 +63,9 @@ function InstallerDashboard() {
 
         setLoading(false);
     }
-    if (user && db) {
-      fetchData();
-    }
+    
+    fetchData();
+    
   }, [user, db]);
 
 
@@ -217,9 +217,9 @@ function JobGiverDashboard() {
         setStats({ activeJobs: active, completedJobs: completed, totalBids: bids });
         setLoading(false);
     }
-    if (user && db) {
-        fetchData();
-    }
+    
+    fetchData();
+    
   }, [user, db]);
 
   React.useEffect(() => {
@@ -381,9 +381,9 @@ function AdminDashboard() {
 
         setLoading(false);
     }
-    if (user && db) {
-        fetchData();
-    }
+
+    fetchData();
+    
   }, [user, db]);
 
   React.useEffect(() => {
@@ -505,3 +505,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
