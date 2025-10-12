@@ -23,7 +23,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Progress } from "@/components/ui/progress";
-import React from "react";
+import React, { useEffect } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
