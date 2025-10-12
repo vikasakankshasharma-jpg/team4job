@@ -1,3 +1,4 @@
+
 import { redirect } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import { DashboardSidebar } from '@/components/dashboard/sidebar';
