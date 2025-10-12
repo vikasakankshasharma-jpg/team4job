@@ -413,7 +413,7 @@ function MyBidsPageContent() {
 
 export default function MyBidsPage() {
     return (
-        <React.Suspense fallback={<div>Loading...</div>}>
+        <React.Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>}>
             <MyBidsPageContent />
         </React.Suspense>
     )
