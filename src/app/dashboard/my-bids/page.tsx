@@ -175,6 +175,7 @@ function MyBidsPageContent() {
       
       // Query 1: Jobs where the user has placed a bid.
       const biddedJobsQuery = query(jobsRef, where('bidderIds', 'array-contains', user.id));
+      
       // Query 2: Jobs that were awarded to the user.
       const awardedJobsQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
 
@@ -417,5 +418,3 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
-
-    
