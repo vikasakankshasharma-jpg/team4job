@@ -88,7 +88,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">Loading jobs...</TableCell>
+                  <TableCell colSpan={6} className="text-center h-24"><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></TableCell>
                 </TableRow>
               ) : jobs.length > 0 ? jobs.map(job => (
                  <TableRow key={job.id}>
@@ -156,7 +156,7 @@ export default function PostedJobsPage() {
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
-    if (!userLoading && user && user.roles[0] === 'Admin') {
+    if (!userLoading && user && user.roles.includes('Admin')) {
       router.push('/dashboard');
     }
   }, [user, userLoading, router]);
