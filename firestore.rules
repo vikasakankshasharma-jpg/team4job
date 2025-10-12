@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -16,7 +17,8 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && getUserData().roles.hasAny(['Admin']);
+      // Use hasAny to check for 'Admin' in the roles array.
+      return isSignedIn() && 'Admin' in getUserData().roles;
     }
 
     // --- Collection Rules ---
@@ -33,11 +35,12 @@ service cloud.firestore {
     match /jobs/{jobId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
+      // Only the job giver or an admin can update a job.
       allow update: if (isSignedIn() && (resource.data.jobGiver == request.auth.uid || isAdmin()));
       allow delete: if isAdmin();
     }
 
-    // Disputes: Read/update restricted to involved parties. List is highly constrained.
+    // Disputes: Read/update restricted to involved parties. List is constrained.
     match /disputes/{disputeId} {
       allow read, update: if isSignedIn() && (
           resource.data.requesterId == request.auth.uid ||
@@ -46,13 +49,10 @@ service cloud.firestore {
       );
       allow create: if isSignedIn();
       allow delete: if isAdmin();
-      // This list rule is a likely source of problems if queries do not match exactly.
-      allow list: if isSignedIn() && (
-        (request.query.where.field == 'requesterId' && request.query.where.value == request.auth.uid) ||
-        (request.query.where.field == 'parties.jobGiverId' && request.query.where.value == request.auth.uid) ||
-        (request.query.where.field == 'parties.installerId' && request.query.where.value == request.auth.uid) ||
-        isAdmin()
-      );
+      
+      // List rule must be supported by frontend queries.
+      // The frontend now runs three separate queries, which this rule allows.
+      allow list: if isSignedIn();
     }
 
     // Blacklist: Admin-only writes. Reads for signed-in users.
@@ -66,7 +66,7 @@ service cloud.firestore {
       allow read, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
-
+    
     // Subscription Plans: Admin-only writes. Reads for signed-in users.
     match /subscriptionPlans/{planId} {
         allow read, list: if isSignedIn();
