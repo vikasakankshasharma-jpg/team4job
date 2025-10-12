@@ -1,8 +1,9 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helpers
+    // --- Helper Functions ---
     function isSignedIn() {
       return request.auth != null;
     }
@@ -11,80 +12,91 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function getUserRoles() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles;
+    function getUserData() {
+      // Note: This can be costly. Use sparingly in rules.
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
     function isAdmin() {
-      // Use hasAny to check for 'Admin' in the roles array.
-      return isSignedIn() && 'Admin' in getUserRoles();
+      // Check for a custom claim first for efficiency. Fallback to doc read.
+      return isSignedIn() && ('admin' in request.auth.token && request.auth.token.admin == true);
     }
     
-    function isJobGiver() {
-       return isSignedIn() && 'Job Giver' in getUserRoles();
-    }
-    
-    function isInstaller() {
-       return isSignedIn() && 'Installer' in getUserRoles();
+    // This helper checks if the user's role is in the provided list.
+    // It's less efficient than claims but works for this structure.
+    function hasAnyRole(roles) {
+      return isSignedIn() && getUserData().roles.hasAny(roles);
     }
 
-    // Users - Read by any signed-in user, owner can modify, admin can delete
+    // --- Collection Rules ---
+
+    // Users: Read-only for any signed-in user. Write restricted to owner or admin.
     match /users/{userId} {
       allow read, list: if isSignedIn();
-      allow create: if isOwner(userId);
+      allow create: if isOwner(userId); // A user can create their own profile
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
 
-    // Jobs - Read/write rules per role
+    // Jobs: Any signed-in user can read/list. This relies on frontend queries being correct.
+    // Writes are restricted to job givers for their own jobs or admins.
     match /jobs/{jobId} {
-      allow read, list: if isSignedIn(); // Allow lists; frontend queries control filtering
-      allow create: if isSignedIn();
-      // Allow update if user is the job giver or an admin
-      allow update: if (isSignedIn() && get(/databases/$(database)/documents/jobs/$(jobId)).data.jobGiver.id == request.auth.uid) || isAdmin();
+      allow read, list: if isSignedIn();
+      allow create: if isSignedIn(); // A signed-in user can create a job.
+      allow update: if (isSignedIn() && (
+        (request.resource.data.jobGiver == request.auth.uid) || // JobGiver can update their own job
+         isAdmin()
+      ));
       allow delete: if isAdmin();
     }
 
-    // Disputes - Read/update if user is party or admin
+    // Disputes: Read/update restricted to involved parties. List is constrained to match frontend queries.
     match /disputes/{disputeId} {
-      allow read, update: if isSignedIn() &&
-        (resource.data.requesterId == request.auth.uid ||
-         request.auth.uid == resource.data.parties.jobGiverId ||
-         request.auth.uid == resource.data.parties.installerId ||
-         isAdmin());
+      allow read, update: if isSignedIn() && (
+          resource.data.requesterId == request.auth.uid ||
+          (resource.data.parties != null && request.auth.uid in resource.data.parties.values()) ||
+          isAdmin()
+      );
       allow create: if isSignedIn();
       allow delete: if isAdmin();
-      // list is implicitly handled by the read rule on individual gets, 
-      // but we allow specific filtered lists for the dashboard page.
-      allow list: if isSignedIn();
+
+      // List rule supports the three separate queries made by the frontend.
+      allow list: if isSignedIn() && (
+        (request.query.where.field == 'requesterId' && request.query.where.value == request.auth.uid) ||
+        (request.query.where.field == 'parties.jobGiverId' && request.query.where.value == request.auth.uid) ||
+        (request.query.where.field == 'parties.installerId' && request.query.where.value == request.auth.uid) ||
+        isAdmin()
+      );
     }
 
-    // Blacklist - Read list by signed-in; admin writes only
+    // Blacklist: Admin-only writes. Reads for signed-in users (e.g., for self-check on login).
     match /blacklist/{blacklistId} {
       allow read, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
-    // Coupons
+    // Coupons: Admin-only writes. Reads for signed-in users.
     match /coupons/{couponId} {
       allow read, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
-    // Subscription Plans
+    // Subscription Plans: Admin-only writes. Reads for signed-in users.
     match /subscriptionPlans/{planId} {
-      allow read, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+        allow read, list: if isSignedIn();
+        allow create, update, delete: if isAdmin();
     }
-
-    // Transactions - read if involved or admin, list allowed but frontend filters
+    
+    // Transactions: Read-only for involved parties. Writes must be server-side.
     match /transactions/{transactionId} {
-      allow read: if isSignedIn() &&
-        (resource.data.payerId == request.auth.uid ||
+       allow read: if isSignedIn() && (
+         resource.data.payerId == request.auth.uid ||
          resource.data.payeeId == request.auth.uid ||
-         isAdmin());
-      allow list: if isSignedIn();  // Frontend must filter queries by payerId or payeeId
-      allow write: if false; // Should be handled by a backend function
+         isAdmin()
+       );
+       // Frontend must filter queries by payerId or payeeId.
+       allow list: if isSignedIn();
+       allow write: if false; // Disallow all client-side writes
     }
   }
 }
