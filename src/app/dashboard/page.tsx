@@ -81,11 +81,11 @@ function InstallerDashboard() {
   React.useEffect(() => {
     async function fetchData() {
         if (!user || !db) return;
-
+        
         setLoading(true);
+
         const jobsRef = collection(db, "jobs");
         const openJobsQuery = query(jobsRef, where('status', '==', 'Open for Bidding'));
-        
         const installerDocRef = doc(db, 'users', user.id);
         const myJobsQuery = query(jobsRef, or(where('bidderIds', 'array-contains', user.id), where('awardedInstaller', '==', installerDocRef)));
         
@@ -104,19 +104,22 @@ function InstallerDashboard() {
             const isAwardedToMe = awardedId === user.id;
 
             if (isAwardedToMe) {
-                if (job.status === 'Completed') bidStatuses['Completed & Won']++;
-                else if (job.status === 'In Progress') bidStatuses['In Progress']++;
-                else if (job.status === 'Awarded') bidStatuses['Awarded']++;
+                if (job.status === 'Completed') {
+                    bidStatuses['Completed & Won']++;
+                    jobsWonCount++;
+                } else if (job.status === 'In Progress') {
+                    bidStatuses['In Progress']++;
+                    jobsWonCount++;
+                } else if (job.status === 'Awarded') {
+                    bidStatuses['Awarded']++;
+                    jobsWonCount++;
+                }
             } else if (job.status === 'Open for Bidding') {
                 bidStatuses['Bidded']++;
             } else if (job.status === 'Cancelled') {
                 bidStatuses['Cancelled']++;
             } else {
                 bidStatuses['Not Selected']++;
-            }
-            
-            if (isAwardedToMe && (job.status === 'Awarded' || job.status === 'In Progress')) {
-                jobsWonCount++;
             }
         });
 
@@ -308,7 +311,9 @@ function JobGiverDashboard() {
         setJobStatusData(Object.entries(statuses).filter(([,value]) => value > 0).map(([name, value]) => ({ name, count: value, fill: jobStatusColors[name] })));
         setLoading(false);
     }
-    fetchData();
+    if (user && db) {
+        fetchData();
+    }
   }, [user, db]);
 
   const jobStatusChartConfig = {
@@ -458,47 +463,25 @@ function AdminDashboard() {
     async function fetchData() {
         if (!user || !db) return;
         setLoading(true);
+        
         const usersSnapshot = await getDocs(collection(db, "users"));
         const jobsSnapshot = await getDocs(collection(db, "jobs"));
         const disputesSnapshot = await getDocs(collection(db, "disputes"));
 
-        const allUsers = usersSnapshot.docs.map(d => d.data() as User);
-        const allJobs = jobsSnapshot.docs.map(d => d.data() as Job);
+        const allUsers = usersSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as User));
+        const allJobs = jobsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Job));
         const allDisputes = disputesSnapshot.docs.map(d => d.data() as Dispute);
         
-        // Populate awardedInstaller user data for calculating job value
-        const installerIds = new Set<string>();
-        allJobs.forEach(job => {
-            if (job.status === 'Completed' && job.awardedInstaller) {
-                const awardedInstallerId = (job.awardedInstaller as DocumentReference).id;
-                installerIds.add(awardedInstallerId);
-            }
-        });
+        const usersMap = new Map(allUsers.map(u => [u.id, u]));
 
-        const installersData: { [key: string]: User } = {};
-        if (installerIds.size > 0) {
-            // Firestore 'in' query can take up to 30 elements
-            const installerIdChunks = Array.from(installerIds).reduce((acc, item, i) => {
-                const chunkIndex = Math.floor(i/30);
-                if(!acc[chunkIndex]) acc[chunkIndex] = [];
-                acc[chunkIndex].push(item);
-                return acc;
-            }, [] as string[][]);
-
-            for (const chunk of installerIdChunks) {
-                const installersQuery = query(collection(db, "users"), where('__name__', 'in', chunk));
-                const installersSnapshot = await getDocs(installersQuery);
-                installersSnapshot.forEach(doc => {
-                    installersData[doc.id] = doc.data() as User;
-                });
-            }
-        }
-        
         let completedJobValue = 0;
         allJobs.forEach(job => {
             if (job.status === 'Completed' && job.awardedInstaller) {
                 const awardedInstallerId = (job.awardedInstaller as DocumentReference).id;
-                const winningBid = (job.bids || []).find(bid => ((bid.installer as DocumentReference)?.id) === awardedInstallerId);
+                const winningBid = (job.bids || []).find(bid => {
+                    const bidInstallerId = (bid.installer as DocumentReference)?.id;
+                    return bidInstallerId === awardedInstallerId;
+                });
                 if (winningBid) {
                     completedJobValue += winningBid.amount;
                 }
@@ -549,9 +532,9 @@ function AdminDashboard() {
                 activityData[jobMonthLabel].jobs++;
                 activityData[jobMonthLabel].bids += (job.bids || []).length;
             }
-
             if (job.status === 'Completed' && job.awardedInstaller) {
-                const winningBid = (job.bids || []).find(bid => ((bid.installer as DocumentReference).id) === ((job.awardedInstaller as DocumentReference).id));
+                const awardedInstallerId = (job.awardedInstaller as DocumentReference).id;
+                const winningBid = (job.bids || []).find(bid => ((bid.installer as DocumentReference).id) === awardedInstallerId);
                 if (winningBid && activityData[jobMonthLabel]) {
                     activityData[jobMonthLabel].value += winningBid.amount;
                 }
@@ -577,7 +560,9 @@ function AdminDashboard() {
         setPlatformActivityData(Object.entries(activityData).map(([month, data]) => ({ month, ...data })));
         setLoading(false);
     }
-    fetchData();
+    if (user && db) {
+        fetchData();
+    }
   }, [user, db]);
 
   const jobStatusChartConfig = {
