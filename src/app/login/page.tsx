@@ -20,7 +20,7 @@ import React, { useEffect, useState, Suspense } from "react";
 function LoginPageContent() {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = React.use(useSearchParams());
+  const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") || "login";
   const [activeTab, setActiveTab] = useState(initialTab);
 
