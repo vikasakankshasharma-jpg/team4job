@@ -34,14 +34,15 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const firebaseContext = useFirebase();
   const { toast } = useToast();
 
    const updateUserState = useCallback((userData: User | null) => {
+    setUser(userData);
     if (userData) {
-      setUser(userData);
       const storedRole = localStorage.getItem('userRole') as Role;
       const isAdminUser = userData.roles.includes("Admin");
       setIsAdmin(isAdminUser);
@@ -57,11 +58,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('userRole', initialRole);
       }
     } else {
-      setUser(null);
       setIsAdmin(false);
       localStorage.removeItem('userRole');
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -102,15 +101,21 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
              await signOut(auth);
              updateUserState(null);
            }
+           setAuthChecked(true);
+           setLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
             signOut(auth);
             updateUserState(null);
+            setAuthChecked(true);
+            setLoading(false);
         });
 
         return () => unsubscribeDoc();
       } else {
         updateUserState(null);
+        setAuthChecked(true);
+        setLoading(false);
       }
     });
 
@@ -119,7 +124,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   useEffect(() => {
-    if (loading) return;
+    if (!authChecked) return;
 
     const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
     
@@ -143,7 +148,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             router.push('/dashboard');
         }
     }
-  }, [role, pathname, user, router, loading]);
+  }, [role, pathname, user, router, authChecked]);
 
 
   const login = async (email: string, password?: string) => {
@@ -172,6 +177,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(true);
     await signOut(firebaseContext.auth);
     updateUserState(null);
+    setAuthChecked(false); // Reset auth check on logout
     router.push('/login');
     setLoading(false);
   };
@@ -194,12 +200,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     logout
   }), [user, role, isAdmin, loading, login, logout, setRole]);
 
-  if (loading) {
+  if (!authChecked) {
      return (
         <div className="flex h-screen items-center justify-center">
             <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Loading...</span>
+                <span>Initializing...</span>
             </div>
         </div>
       );
