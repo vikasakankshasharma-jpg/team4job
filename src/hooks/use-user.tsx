@@ -102,7 +102,7 @@ const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs'];
 function UserProviderComponent({ children }: { children: React.ReactNode }) {
   const { auth, db } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
-  const [role, setRoleState] = useState<Role>("Installer");
+  const [role, setRoleState] = useState<Role>("Job Giver");
   const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [roleLoading, setRoleLoading] = useState(true);
@@ -241,7 +241,6 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
   };
   
   const isLoadingOverall = authLoading || (roleLoading && !publicPaths.some(p => pathname.startsWith(p)));
-
 
   const value = useMemo(() => ({
     user,
