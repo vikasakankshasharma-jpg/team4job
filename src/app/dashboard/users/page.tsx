@@ -26,8 +26,7 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -74,7 +73,7 @@ export default function UsersPage() {
 
   React.useEffect(() => {
       async function fetchUsers() {
-        if (user?.roles[0] === 'Admin') {
+        if (user?.roles[0] === 'Admin' && db) {
             setLoading(true);
             const usersCollection = collection(db, 'users');
             const userSnapshot = await getDocs(usersCollection);

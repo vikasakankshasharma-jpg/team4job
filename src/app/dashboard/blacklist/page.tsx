@@ -41,8 +41,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { BlacklistEntry } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import React, { useEffect, useState } from "react";
@@ -227,7 +226,8 @@ export default function BlacklistPage() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchBlacklist = async () => {
+  const fetchBlacklist = React.useCallback(async () => {
+    if (!db) return;
     setLoading(true);
     const q = query(collection(db, "blacklist"), orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
@@ -236,13 +236,13 @@ export default function BlacklistPage() {
     );
     setBlacklist(list);
     setLoading(false);
-  };
+  }, [db]);
 
   useEffect(() => {
     if (isAdmin) {
       fetchBlacklist();
     }
-  }, [isAdmin]);
+  }, [isAdmin, fetchBlacklist]);
 
   const handleRemove = async (id: string, value: string) => {
     if (

@@ -42,7 +42,7 @@ export function getFirebaseApp(): FirebaseApp {
   return firebaseApp;
 }
 
-export const FirebaseAppProvider = ({ children }: { children: React.ReactNode }) => {
+export const FirebaseAppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [app, setApp] = useState<FirebaseApp | null>(null);
 
     useEffect(() => {
@@ -65,4 +65,3 @@ export const useFirebaseApp = () => {
   }
   return context;
 };
-

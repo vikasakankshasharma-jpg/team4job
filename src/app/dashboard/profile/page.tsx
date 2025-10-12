@@ -2,8 +2,7 @@
 
 "use client";
 
-import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +22,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Progress } from "@/components/ui/progress";
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
@@ -454,8 +453,8 @@ export default function ProfilePage() {
   const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
   const [loadingJobs, setLoadingJobs] = React.useState(true);
   
-  const fetchJobsData = React.useCallback(async () => {
-    if (!user || role !== 'Installer') {
+  const fetchJobsData = useCallback(async () => {
+    if (!user || role !== 'Installer' || !db) {
       setLoadingJobs(false);
       return;
     }
@@ -547,7 +546,7 @@ export default function ProfilePage() {
   };
 
   const handleBecomeJobGiver = async () => {
-    if (setUser && setRole && user) {
+    if (setUser && setRole && user && db) {
         const userRef = doc(db, 'users', user.id);
         await updateDoc(userRef, { roles: arrayUnion('Job Giver') });
         const updatedUser = { ...user, roles: [...user.roles, 'Job Giver'] as User['roles'] };
@@ -562,6 +561,7 @@ export default function ProfilePage() {
   };
   
   const onSubscriptionUpdate = async () => {
+    if (!db || !user) return;
     const userDoc = await getDoc(doc(db, 'users', user.id));
     if (userDoc.exists() && setUser) {
       setUser({ id: userDoc.id, ...userDoc.data() } as User);

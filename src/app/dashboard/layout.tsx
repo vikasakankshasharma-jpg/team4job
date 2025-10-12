@@ -10,7 +10,7 @@ export default function DashboardLayout({
 }) {
   return (
     <SearchProvider>
-      <div className="flex min-h-screen w-full bg-muted/40">
+      <div className="flex min-h-screen w-full flex-row bg-muted/40">
         <DashboardSidebar />
         <div className="flex flex-1 flex-col sm:gap-4 sm:py-4 sm:pl-14">
           <Header />

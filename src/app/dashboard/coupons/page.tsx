@@ -21,8 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Edit, Trash2, Loader2, MoreHorizontal } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { Coupon } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { format } from "date-fns";
@@ -306,19 +305,20 @@ export default function CouponsPage() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchCoupons = async () => {
+  const fetchCoupons = React.useCallback(async () => {
+    if (!db) return;
     setLoading(true);
     const querySnapshot = await getDocs(collection(db, "coupons"));
     const couponsList = querySnapshot.docs.map(doc => doc.data() as Coupon);
     setCoupons(couponsList.sort((a,b) => toDate(b.validFrom).getTime() - toDate(a.validFrom).getTime()));
     setLoading(false);
-  };
+  }, [db]);
 
   useEffect(() => {
     if (isAdmin) {
       fetchCoupons();
     }
-  }, [isAdmin]);
+  }, [isAdmin, fetchCoupons]);
 
   const handleDelete = async (code: string) => {
     if (!window.confirm(`Are you sure you want to delete coupon "${code}"? This cannot be undone.`)) return;

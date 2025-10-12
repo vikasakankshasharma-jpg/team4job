@@ -10,14 +10,13 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { Download, Users, Briefcase, IndianRupee, FileText, Calendar as CalendarIcon, X } from "lucide-react";
 import React, { useState } from "react";
 import { Job, User } from "@/lib/types";
 import { toDate, exportToCsv, cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, query, where, QueryConstraint } from "firebase/firestore";
+import { collection, getDocs, query, where, QueryConstraint, doc } from "firebase/firestore";
 import { DocumentReference }from "firebase/firestore";
 import type { DateRange } from "react-day-picker";
 import {
@@ -337,5 +336,3 @@ export default function ReportsPage() {
     </div>
   );
 }
-
-    

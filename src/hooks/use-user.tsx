@@ -1,22 +1,28 @@
 
 "use client";
 
-import { User, UserStatus, BlacklistEntry } from "@/lib/types";
+import { User, BlacklistEntry } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
-import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
-import { doc, getDoc, collection, getDocs, onSnapshot } from "firebase/firestore";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser, initializeAuth, browserLocalPersistence, type Auth } from "firebase/auth";
+import { doc, getDoc, collection, getDocs, onSnapshot, getFirestore, type Firestore } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
+import { useFirebaseApp, getFirebaseApp } from "@/lib/firebase/use-firebase-app";
 
 type Role = "Job Giver" | "Installer" | "Admin";
+
+interface FirebaseInstances {
+  auth: Auth;
+  db: Firestore;
+}
 
 type UserContextType = {
   user: User | null;
   role: Role;
   isAdmin: boolean;
   loading: boolean;
+  firebase: FirebaseInstances | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   setRole: (role: Role) => void;
   login: (email: string, password?: string) => Promise<boolean>;
@@ -30,14 +36,24 @@ const jobGiverPaths = ['/dashboard/posted-jobs', '/dashboard/post-job'];
 const publicPaths = ['/login', '/'];
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
+  const app = useFirebaseApp();
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [firebase, setFirebase] = useState<FirebaseInstances | null>(null);
+
   const router = useRouter();
   const pathname = usePathname();
-  const firebaseContext = useFirebase();
   const { toast } = useToast();
+
+   useEffect(() => {
+    if (app) {
+        const auth = initializeAuth(app, { persistence: browserLocalPersistence });
+        const db = getFirestore(app);
+        setFirebase({ auth, db });
+    }
+  }, [app]);
 
    const updateUserState = useCallback((userData: User | null) => {
     setUser(userData);
@@ -63,11 +79,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!firebaseContext) return;
+    if (!firebase) return;
     
-    const { auth, db } = firebaseContext;
+    const { auth, db } = firebase;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      setLoading(true);
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
@@ -116,7 +133,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => unsubscribeAuth();
-  }, [firebaseContext, toast, updateUserState]);
+  }, [firebase, toast, updateUserState]);
 
 
   useEffect(() => {
@@ -148,18 +165,16 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   const login = async (email: string, password?: string) => {
-    if (!firebaseContext) return false;
+    if (!firebase) return false;
     
     if (!password) {
         return false;
     }
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(firebaseContext.auth, email, password);
-      // onAuthStateChanged will handle setting the user state and setLoading(false)
+      await signInWithEmailAndPassword(firebase.auth, email, password);
       return true;
     } catch (error: any) {
-      // Only log errors that are NOT invalid credentials
       if (error.code !== 'auth/invalid-credential') {
         console.error("Login failed:", error);
       }
@@ -169,9 +184,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    if (!firebaseContext) return;
+    if (!firebase) return;
     setLoading(true);
-    await signOut(firebaseContext.auth);
+    await signOut(firebase.auth);
     updateUserState(null);
     router.push('/login');
     setLoading(false);
@@ -189,13 +204,14 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     role,
     isAdmin,
     loading,
+    firebase,
     setUser,
     setRole,
     login,
     logout
-  }), [user, role, isAdmin, loading, login, logout, setRole]);
+  }), [user, role, isAdmin, loading, firebase, login, logout, setRole]);
 
-  if (loading) {
+  if (!firebase) {
      return (
         <div className="flex h-screen items-center justify-center">
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -220,3 +236,12 @@ export const useUser = () => {
   }
   return context;
 };
+
+// This function is now part of UserProvider, but we keep the export for any components that might use it directly.
+export const useFirebase = () => {
+  const context = useContext(UserContext);
+  if (!context || !context.firebase) {
+    throw new Error("useFirebase must be used within a UserProvider and after Firebase has initialized.");
+  }
+  return context.firebase;
+}
