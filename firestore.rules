@@ -1,6 +1,5 @@
 
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -13,22 +12,17 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Safely get user data from the users collection
-    function getUserData(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data;
-    }
-    
-    function isUserRole(role) {
-       return isSignedIn() && getUserData(request.auth.uid).roles.hasAny([role]);
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
     function isAdmin() {
-      return isUserRole('Admin');
+      return isSignedIn() && getUserData().roles.hasAny(['Admin']);
     }
 
     // --- Collection Rules ---
 
-    // Users: Any signed-in user can read/list profiles. Only the owner or an admin can update.
+    // Users: Read-only for any signed-in user. Write restricted to owner or admin.
     match /users/{userId} {
       allow read, list: if isSignedIn();
       allow create: if isOwner(userId);
@@ -36,39 +30,29 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Jobs: Signed-in users can read/list. Creation is allowed for authenticated users.
-    // Updates are restricted to the job giver or an admin.
+    // Jobs: Any signed-in user can read/list. Writes are restricted.
     match /jobs/{jobId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
-      // Ensure that only the job giver or an admin can update a job.
-      // `request.resource.data` refers to the data after the update.
-      allow update: if (isSignedIn() && request.resource.data.jobGiver == request.auth.uid) || isAdmin();
+      allow update: if (isSignedIn() && (resource.data.jobGiver == request.auth.uid || isAdmin()));
       allow delete: if isAdmin();
     }
 
-    // Disputes:
-    // Read/Update: Allowed if the user is the one who requested it, a party involved, or an admin.
-    // List: Allowed only if the query specifically filters by a field linking to the user, or for admins.
+    // Disputes: Read/update restricted to involved parties. List is highly constrained.
     match /disputes/{disputeId} {
       allow read, update: if isSignedIn() && (
           resource.data.requesterId == request.auth.uid ||
-          (resource.data.parties != null && (
-            resource.data.parties.jobGiverId == request.auth.uid ||
-            resource.data.parties.installerId == request.auth.uid
-          )) ||
+          (resource.data.parties != null && request.auth.uid in resource.data.parties.values()) ||
           isAdmin()
-        );
+      );
       allow create: if isSignedIn();
       allow delete: if isAdmin();
-      
-      // THIS IS THE CRITICAL RULE FOR QUERIES.
-      // It ensures that a user can only list disputes they are a part of.
+      // This list rule is a likely source of problems if queries do not match exactly.
       allow list: if isSignedIn() && (
-          (request.query.where.field == 'requesterId' && request.query.where.value == request.auth.uid) ||
-          (request.query.where.field == 'parties.jobGiverId' && request.query.where.value == request.auth.uid) ||
-          (request.query.where.field == 'parties.installerId' && request.query.where.value == request.auth.uid) ||
-          isAdmin()
+        (request.query.where.field == 'requesterId' && request.query.where.value == request.auth.uid) ||
+        (request.query.where.field == 'parties.jobGiverId' && request.query.where.value == request.auth.uid) ||
+        (request.query.where.field == 'parties.installerId' && request.query.where.value == request.auth.uid) ||
+        isAdmin()
       );
     }
 
@@ -86,8 +70,8 @@ service cloud.firestore {
 
     // Subscription Plans: Admin-only writes. Reads for signed-in users.
     match /subscriptionPlans/{planId} {
-      allow read, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+        allow read, list: if isSignedIn();
+        allow create, update, delete: if isAdmin();
     }
     
     // Transactions: Read-only for involved parties. Writes must be server-side.
@@ -97,10 +81,9 @@ service cloud.firestore {
          resource.data.payeeId == request.auth.uid ||
          isAdmin()
        );
-       // The frontend MUST filter its queries by payerId or payeeId to be secure.
+       // Frontend must filter queries by payerId or payeeId.
        allow list: if isSignedIn();
-       // Disallow all client-side writes to maintain integrity.
-       allow write: if false; 
+       allow write: if false; // Disallow all client-side writes
     }
   }
 }

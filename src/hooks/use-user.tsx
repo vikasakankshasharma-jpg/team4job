@@ -251,7 +251,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
     setRole,
     login,
     logout
-  }), [user, role, isAdmin, isLoadingOverall, login, logout, setRole]);
+  }), [user, role, isAdmin, isLoadingOverall, login, logout, setRole, setUser]);
 
   return (
     <UserContext.Provider value={value}>
