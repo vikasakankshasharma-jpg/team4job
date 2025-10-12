@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { User, BlacklistEntry } from "@/lib/types";
@@ -286,3 +287,4 @@ export const useUser = () => {
   }
   return context;
 };
+
