@@ -16,7 +16,7 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import {
   Table,
@@ -42,7 +42,7 @@ import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, query, where, doc } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
 
 
@@ -156,30 +156,68 @@ export default function PostedJobsPage() {
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
-    if (user && user.roles[0] === 'Admin') {
+    if (!userLoading && user && user.roles[0] === 'Admin') {
       router.push('/dashboard');
     }
-  }, [user, router]);
+  }, [user, userLoading, router]);
 
-  React.useEffect(() => {
-    async function fetchJobs() {
-      if (!db || !user || role !== 'Job Giver') {
-        setLoading(false);
-        return;
-      };
-      
-      setLoading(true);
-      const userJobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', doc(db, 'users', user.id)));
-      const jobSnapshot = await getDocs(userJobsQuery);
-      
-      const jobList = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
-      setJobs(jobList);
+  const fetchJobs = React.useCallback(async () => {
+    if (!db || !user || role !== 'Job Giver') {
       setLoading(false);
+      return;
+    };
+    
+    setLoading(true);
+    const userJobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', doc(db, 'users', user.id)));
+    const jobSnapshot = await getDocs(userJobsQuery);
+    
+    const jobsData = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+    
+    // Efficiently fetch all related user data
+    const userRefs = new Set<DocumentReference>();
+    jobsData.forEach(job => {
+        if (job.awardedInstaller) userRefs.add(job.awardedInstaller as DocumentReference);
+        (job.bids || []).forEach(bid => userRefs.add(bid.installer as DocumentReference));
+    });
+
+    const usersMap = new Map<string, User>();
+    if (userRefs.size > 0) {
+        // Firestore 'in' query is limited to 30 items. We need to chunk it.
+        const userRefArray = Array.from(userRefs);
+        for (let i = 0; i < userRefArray.length; i += 30) {
+            const chunk = userRefArray.slice(i, i + 30);
+            const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
+            const userDocs = await getDocs(usersQuery);
+            userDocs.forEach(docSnap => {
+                if (docSnap.exists()) {
+                    usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
+                }
+            });
+        }
     }
+
+    // Populate job objects with user data
+    const populatedJobs = jobsData.map(job => {
+        const getRefId = (ref: DocumentReference | User) => (ref as DocumentReference)?.id || (ref as User)?.id;
+        return {
+            ...job,
+            awardedInstaller: job.awardedInstaller ? usersMap.get(getRefId(job.awardedInstaller)) || job.awardedInstaller : undefined,
+            bids: (job.bids || []).map(bid => ({
+                ...bid,
+                installer: usersMap.get(getRefId(bid.installer)) || bid.installer
+            })),
+        };
+    });
+
+    setJobs(populatedJobs);
+    setLoading(false);
+  }, [user, role, db]);
+
+   React.useEffect(() => {
     if (!userLoading && db && user) {
         fetchJobs();
     }
-  }, [user, role, db, userLoading]);
+  }, [userLoading, db, user, fetchJobs]);
 
    React.useEffect(() => {
     setHelp({
@@ -206,10 +244,10 @@ export default function PostedJobsPage() {
     });
   }, [setHelp]);
   
-  if (userLoading || (!user && !userLoading)) {
+  if (userLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Loading...</p>
+         <Loader2 className="h-6 w-6 animate-spin" />
       </div>
     );
   }
@@ -222,8 +260,8 @@ export default function PostedJobsPage() {
     );
   }
   
-  const activeJobs = jobs.filter(job => job.status !== 'Completed' && job.status !== 'Cancelled');
-  const archivedJobs = jobs.filter(job => job.status === 'Completed' || job.status === 'Cancelled');
+  const activeJobs = jobs.filter(job => job.status !== 'Completed' && job.status !== 'Cancelled').sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+  const archivedJobs = jobs.filter(job => job.status === 'Completed' || job.status === 'Cancelled').sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
 
 
   return (

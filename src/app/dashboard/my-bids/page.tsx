@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { Award, IndianRupee, ListFilter, X } from "lucide-react";
+import { Award, IndianRupee, ListFilter, X, Loader2 } from "lucide-react";
 import { Job, Bid, User } from "@/lib/types";
 import React from "react";
 import { getStatusVariant, toDate } from "@/lib/utils";
@@ -161,10 +161,10 @@ function MyBidsPageContent() {
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
-    if (user && user.roles[0] === 'Admin') {
+    if (!userLoading && user && user.roles[0] === 'Admin') {
       router.push('/dashboard');
     }
-  }, [user, router]);
+  }, [user, userLoading, router]);
   
   const fetchJobs = React.useCallback(async () => {
       if (!user || !db || role !== 'Installer') return;
@@ -242,10 +242,10 @@ function MyBidsPageContent() {
       statusFilter = 'Completed & Won';
   }
   
-  if (userLoading || (!user && !userLoading)) {
+  if (userLoading) {
       return (
         <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground">Loading...</p>
+             <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       );
   }
