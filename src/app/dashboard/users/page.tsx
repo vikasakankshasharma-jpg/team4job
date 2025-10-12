@@ -57,7 +57,7 @@ type SortableKeys = 'name' | 'memberSince' | 'tier' | 'rating' | 'points';
 
 export default function UsersPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isAdmin } = useUser();
   const { db } = useFirebase();
   const [users, setUsers] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -65,14 +65,14 @@ export default function UsersPage() {
   const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'memberSince', direction: 'descending' });
 
   React.useEffect(() => {
-    if (user && user.roles[0] !== 'Admin') {
+    if (user && !isAdmin) {
       router.push('/dashboard');
     }
-  }, [user, router]);
+  }, [user, isAdmin, router]);
 
   React.useEffect(() => {
       async function fetchUsers() {
-        if (!db || !user || user.roles[0] !== 'Admin') return;
+        if (!db || !user || !isAdmin) return;
         
         setLoading(true);
         const usersCollection = collection(db, 'users');
@@ -81,10 +81,10 @@ export default function UsersPage() {
         setUsers(userList);
         setLoading(false);
       }
-      if (db && user) {
+      if (db && user && isAdmin) {
         fetchUsers();
       }
-  }, [user, db]);
+  }, [user, db, isAdmin]);
 
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
     setFilters(prev => ({ ...prev, [filterName]: value }));
@@ -176,7 +176,7 @@ export default function UsersPage() {
     return filtered;
   }, [users, filters, sortConfig]);
 
-  if (!user || user.roles[0] !== 'Admin') {
+  if (!user || !isAdmin) {
     return (
         <div className="flex items-center justify-center h-full">
             <p className="text-muted-foreground">Redirecting...</p>

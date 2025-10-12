@@ -98,7 +98,7 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
 
 export default function AllJobsPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isAdmin } = useUser();
   const { db } = useFirebase();
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -108,14 +108,14 @@ export default function AllJobsPage() {
 
 
   React.useEffect(() => {
-    if (user && user.roles[0] !== 'Admin') {
+    if (user && !isAdmin) {
       router.push('/dashboard');
     }
-  }, [user, router]);
+  }, [user, isAdmin, router]);
 
   React.useEffect(() => {
     async function fetchJobs() {
-      if (!db || !user || user.roles[0] !== 'Admin') return;
+      if (!db || !user || !isAdmin) return;
       
       setLoading(true);
       const jobsCollection = collection(db, 'jobs');
@@ -130,18 +130,21 @@ export default function AllJobsPage() {
       });
 
       const usersMap = new Map<string, User>();
-      if (userRefs.size > 0) {
-          const userIds = Array.from(userRefs).map(ref => ref.id);
-          // Fetch users in chunks of 10 to avoid firestore limitations
-          for (let i = 0; i < userIds.length; i += 10) {
-              const chunk = userIds.slice(i, i + 10);
-              const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
-              const userDocs = await getDocs(usersQuery);
-              userDocs.forEach(docSnap => {
-                  if (docSnap.exists()) {
-                      usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
-                  }
-              });
+      const userIds = Array.from(userRefs).map(ref => ref.id);
+      
+      if (userIds.length > 0) {
+          // Fetch users in chunks of 30 to stay within query limits
+          for (let i = 0; i < userIds.length; i += 30) {
+              const chunk = userIds.slice(i, i + 30);
+              if (chunk.length > 0) {
+                const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
+                const userDocs = await getDocs(usersQuery);
+                userDocs.forEach(docSnap => {
+                    if (docSnap.exists()) {
+                        usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
+                    }
+                });
+              }
           }
       }
 
@@ -165,10 +168,10 @@ export default function AllJobsPage() {
       setLoading(false);
     }
 
-    if (db && user) {
+    if (db && user && isAdmin) {
         fetchJobs();
     }
-  }, [user, db]);
+  }, [user, db, isAdmin]);
 
 
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
@@ -259,7 +262,7 @@ export default function AllJobsPage() {
     return filtered;
   }, [jobs, filters, sortConfig]);
 
-  if (!user || user.roles[0] !== 'Admin') {
+  if (!user || !isAdmin) {
     return (
         <div className="flex items-center justify-center h-full">
             <p className="text-muted-foreground">Redirecting...</p>
