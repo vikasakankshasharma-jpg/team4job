@@ -60,7 +60,7 @@ export default function DisputesPage() {
             const querySnapshot = await getDocs(q);
             allDisputes = querySnapshot.docs.map(doc => doc.data() as Dispute);
         } else {
-            // Perform three separate queries and merge the results
+            // Perform three separate queries and merge the results client-side
             const q1 = query(disputesRef, where('requesterId', '==', user.id));
             const q2 = query(disputesRef, where('parties.jobGiverId', '==', user.id));
             const q3 = query(disputesRef, where('parties.installerId', '==', user.id));
@@ -152,5 +152,3 @@ export default function DisputesPage() {
     </Card>
   );
 }
-
-    
