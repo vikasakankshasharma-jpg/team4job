@@ -148,7 +148,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
 export default function PostedJobsPage() {
   const searchParams = React.use(useSearchParams());
   const tab = searchParams.get("tab") || "active";
-  const { user, role } = useUser();
+  const { user, role, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const router = useRouter();
   const { setHelp } = useHelp();
@@ -173,10 +173,10 @@ export default function PostedJobsPage() {
       setJobs(jobList);
       setLoading(false);
     }
-    if (db && user) {
+    if (!userLoading && db && user) {
         fetchJobs();
     }
-  }, [user, role, db]);
+  }, [user, role, db, userLoading]);
 
    React.useEffect(() => {
     setHelp({
@@ -203,7 +203,15 @@ export default function PostedJobsPage() {
     });
   }, [setHelp]);
   
-  if (!user || user.roles.includes("Admin") || !user.roles.includes("Job Giver")) {
+  if (userLoading || (!user && !userLoading)) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (role !== 'Job Giver') {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">This page is for Job Givers only.</p>
@@ -254,3 +262,5 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
+
+    
