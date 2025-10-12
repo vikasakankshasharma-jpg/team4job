@@ -33,7 +33,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [authIsPending, setAuthIsPending] = useState(true);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
   const firebaseContext = useFirebase();
@@ -61,7 +61,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       setIsAdmin(false);
       localStorage.removeItem('userRole');
     }
-    setAuthIsPending(false);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -73,13 +73,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
-        // Setting up a real-time listener for the user document
         const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
            if (userDoc.exists()) {
              const userData = { id: userDoc.id, ...userDoc.data() } as User;
              
-             // This logic can be simplified if blacklist doesn't need to be realtime.
-             // For now, fetching it once on auth change seems reasonable.
              const blacklistSnapshot = await getDocs(collection(db, "blacklist"));
              const blacklist = blacklistSnapshot.docs.map(doc => doc.data() as BlacklistEntry);
              const userBlacklistEntry = blacklist.find(entry => entry.type === 'user' && entry.value === firebaseUser.uid);
@@ -111,18 +108,18 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             updateUserState(null);
         });
 
-        return () => unsubscribeDoc(); // Cleanup the document listener on auth state change
+        return () => unsubscribeDoc();
       } else {
         updateUserState(null);
       }
     });
 
-    return () => unsubscribeAuth(); // Cleanup the auth listener on component unmount
+    return () => unsubscribeAuth();
   }, [firebaseContext, toast, updateUserState]);
 
 
   useEffect(() => {
-    if (authIsPending) return;
+    if (loading) return;
 
     const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
     
@@ -146,7 +143,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             router.push('/dashboard');
         }
     }
-  }, [role, pathname, user, router, authIsPending]);
+  }, [role, pathname, user, router, loading]);
 
 
   const login = async (email: string, password?: string) => {
@@ -155,24 +152,28 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     if (!password) {
         return false;
     }
+    setLoading(true);
     try {
       await signInWithEmailAndPassword(firebaseContext.auth, email, password);
-      // onAuthStateChanged will handle setting the user state
+      // onAuthStateChanged will handle setting the user state and setLoading(false)
       return true;
     } catch (error: any) {
       // Only log errors that are NOT invalid credentials
       if (error.code !== 'auth/invalid-credential') {
         console.error("Login failed:", error);
       }
+      setLoading(false);
       return false;
     }
   };
 
   const logout = async () => {
     if (!firebaseContext) return;
+    setLoading(true);
     await signOut(firebaseContext.auth);
-    updateUserState(null); // Clear user state
+    updateUserState(null);
     router.push('/login');
+    setLoading(false);
   };
 
   const setRole = (newRole: Role) => {
@@ -186,14 +187,14 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     role,
     isAdmin,
-    loading: authIsPending,
+    loading,
     setUser,
     setRole,
     login,
     logout
-  }), [user, role, isAdmin, authIsPending, firebaseContext, login, logout, setRole]);
+  }), [user, role, isAdmin, loading, login, logout, setRole]);
 
-  if (authIsPending) {
+  if (loading) {
      return (
         <div className="flex h-screen items-center justify-center">
             <div className="flex items-center gap-2 text-muted-foreground">
