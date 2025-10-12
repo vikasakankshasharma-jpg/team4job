@@ -1,71 +1,51 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check for Admin role
+  
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']);
-    }
-    
-    // Helper function to check if the user is involved in a dispute
-    function isDisputant(dispute) {
-      return request.auth.uid == dispute.requesterId ||
-             request.auth.uid == dispute.parties.jobGiverId ||
-             request.auth.uid == dispute.parties.installerId;
+      return request.auth.token.role == 'Admin';
     }
 
-    // Users Collection
     match /users/{userId} {
-      // Allow anyone to check if a user exists (for signup), but not read the data.
-      allow list: if request.query.getAfter == null;
-      
-      // Allow authenticated users to read any profile.
-      // Allow a user to create their own profile.
-      // Allow a user to update their own profile.
-      allow read, create, update: if request.auth != null && request.auth.uid == userId;
-      
-      // Allow admins to perform any action.
-      allow read, write: if request.auth != null && isAdmin();
+      allow read, list: if request.auth != null;
+      allow create: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId;
     }
 
-    // Jobs Collection
     match /jobs/{jobId} {
-      // Allow any authenticated user to read or create jobs.
       allow read, list, create: if request.auth != null;
-      // Allow a user to update a job only if they are the job giver.
-      allow update: if request.auth != null && request.auth.uid == resource.data.jobGiver.id;
+      allow update: if request.auth != null && resource.data.jobGiver.id == request.auth.uid;
     }
-
-    // Disputes Collection
+    
     match /disputes/{disputeId} {
-      // Allow create for any authenticated user (to raise a dispute).
+      allow read, list: if request.auth != null && (
+        resource.data.requesterId == request.auth.uid ||
+        resource.data.parties.jobGiverId == request.auth.uid ||
+        resource.data.parties.installerId == request.auth.uid ||
+        isAdmin()
+      );
       allow create: if request.auth != null;
-      // Allow list/read only for involved parties or admins.
-      allow list, read: if request.auth != null && (isDisputant(resource.data) || isAdmin());
-      // Allow update only for involved parties or admins.
-      allow update: if request.auth != null && (isDisputant(resource.data) || isAdmin());
+      allow update: if request.auth != null && (
+        resource.data.requesterId == request.auth.uid ||
+        resource.data.parties.jobGiverId == request.auth.uid ||
+        resource.data.parties.installerId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
-    // Blacklist Collection
-    match /blacklist/{blacklistId} {
-        // Allow any authenticated user to read the blacklist (for login checks)
-        allow read: if request.auth != null;
-        // ONLY Admins can write to the blacklist
-        allow write: if request.auth != null && isAdmin();
+    match /blacklist/{entry} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
     }
     
-    // Coupons & Subscription Plans - Admin Only
-    match /coupons/{couponId} {
-      allow read, write: if request.auth != null && isAdmin();
-    }
-    match /subscriptionPlans/{planId} {
-       allow read, write: if request.auth != null && isAdmin();
+    match /coupons/{code} {
+      allow read, write: if isAdmin();
     }
     
-    // Transactions - for future implementation
-    match /transactions/{transactionId} {
-      allow read, write: if false; // Lock down until implemented
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
