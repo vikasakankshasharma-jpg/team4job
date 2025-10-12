@@ -166,8 +166,7 @@ function MyBidsPageContent() {
     }
   }, [user, router]);
   
-  React.useEffect(() => {
-    async function fetchJobs() {
+  const fetchJobs = React.useCallback(async () => {
       if (!user || !db) return;
       setLoading(true);
       const jobsRef = collection(db, "jobs");
@@ -201,7 +200,6 @@ function MyBidsPageContent() {
       
       const userMap = new Map<string, User>();
       if (userRefs.size > 0) {
-        // Fetch all unique users in a single query if possible, or batch requests
         const userDocs = await Promise.all(Array.from(userRefs).map(ref => getDoc(ref)));
         userDocs.forEach(doc => {
             if (doc.exists()) {
@@ -223,9 +221,11 @@ function MyBidsPageContent() {
       });
       setJobs(populatedJobList);
       setLoading(false);
-    }
-    fetchJobs();
   }, [user, db]);
+
+  React.useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
   React.useEffect(() => {
     setHelp({
@@ -433,3 +433,5 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
+
+    
