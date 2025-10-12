@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { User, BlacklistEntry } from "@/lib/types";
@@ -105,13 +104,15 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
 
    const updateUserState = useCallback((userData: User | null) => {
+    setRoleLoading(true);
     setUser(userData);
     if (userData) {
       const storedRole = localStorage.getItem('userRole') as Role;
@@ -132,11 +133,12 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
       setIsAdmin(false);
       localStorage.removeItem('userRole');
     }
+    setRoleLoading(false);
   }, []);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      setAuthLoading(true);
+      setLoading(true);
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
@@ -169,18 +171,18 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
              await signOut(auth);
              updateUserState(null);
            }
-           setAuthLoading(false);
+           setLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
             signOut(auth);
             updateUserState(null);
-            setAuthLoading(false);
+            setLoading(false);
         });
 
         return () => unsubscribeDoc();
       } else {
         updateUserState(null);
-        setAuthLoading(false);
+        setLoading(false);
       }
     });
 
@@ -189,7 +191,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
 
 
   useEffect(() => {
-    if (authLoading) return;
+    if (loading || roleLoading) return;
 
     const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
     
@@ -213,14 +215,14 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
             router.push('/dashboard');
         }
     }
-  }, [role, pathname, user, router, authLoading]);
+  }, [role, pathname, user, router, loading, roleLoading]);
 
 
   const login = async (email: string, password?: string) => {
     if (!password) {
         return false;
     }
-    setAuthLoading(true);
+    setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       return true;
@@ -228,17 +230,17 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
       if (error.code !== 'auth/invalid-credential') {
         console.error("Login failed:", error);
       }
-      setAuthLoading(false);
+      setLoading(false);
       return false;
     }
   };
 
   const logout = async () => {
-    setAuthLoading(true);
+    setLoading(true);
     await signOut(auth);
     updateUserState(null);
     router.push('/login');
-    setAuthLoading(false);
+    setLoading(false);
   };
 
   const setRole = (newRole: Role) => {
@@ -248,20 +250,22 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
     }
   };
   
+  const isLoadingOverall = loading || roleLoading;
+
   const value = useMemo(() => ({
     user,
     role,
     isAdmin,
-    loading: authLoading,
+    loading: isLoadingOverall,
     setUser,
     setRole,
     login,
     logout
-  }), [user, role, isAdmin, authLoading, login, logout, setRole]);
+  }), [user, role, isAdmin, isLoadingOverall, login, logout, setRole]);
 
   return (
     <UserContext.Provider value={value}>
-      {authLoading ? (
+      {isLoadingOverall ? (
          <div className="flex h-screen items-center justify-center">
             <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -287,4 +291,3 @@ export const useUser = () => {
   }
   return context;
 };
-
