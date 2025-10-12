@@ -94,8 +94,6 @@ type UserContextType = {
 
 const UserContext = createContext<UserContextType | null>(null);
 
-const installerPaths = ['/dashboard/my-bids', '/dashboard/jobs'];
-const jobGiverPaths = ['/dashboard/posted-jobs', '/dashboard/post-job'];
 const publicPaths = ['/login', '/'];
 
 
@@ -105,7 +103,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
-  const [roleLoading, setRoleLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(true); // New state for role resolution
 
   const router = useRouter();
   const pathname = usePathname();
@@ -146,13 +144,14 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
            if (userDoc.exists()) {
              const userData = { id: userDoc.id, ...userDoc.data() } as User;
              
-             const blacklistSnapshot = await getDocs(collection(db, "blacklist"));
-             const blacklist = blacklistSnapshot.docs.map(doc => doc.data() as BlacklistEntry);
-             const userBlacklistEntry = blacklist.find(entry => entry.type === 'user' && entry.value === firebaseUser.uid);
-             const isBlacklisted = userBlacklistEntry && (userBlacklistEntry.role === 'Any' || userData.roles.includes(userBlacklistEntry.role as any));
+             // This is an example of a security check you might perform.
+             // Note: For this to work, security rules must allow the user to read this collection/document.
+             const blacklistQuery = query(collection(db, "blacklist"), where("value", "==", firebaseUser.uid), where("type", "==", "user"));
+             const blacklistSnapshot = await getDocs(blacklistQuery);
+             const isBlacklisted = !blacklistSnapshot.empty;
              
              if (isBlacklisted) {
-               toast({ title: 'Access Denied', description: `Your account is currently restricted. Reason: ${userBlacklistEntry.reason}`, variant: 'destructive' });
+               toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
                await signOut(auth);
                updateUserState(null);
              } else if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && new Date() < (userData.suspensionEndDate as any).toDate())) {
@@ -191,16 +190,15 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
 
 
   useEffect(() => {
-    if (authLoading || roleLoading) return;
-
     const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
-    
+    if (authLoading || (roleLoading && !isPublicPage)) return;
+
     if (!user && !isPublicPage) {
         router.push('/login');
         return;
     }
 
-    if (user) {
+    if (user && !isPublicPage) {
         if (pathname === '/login') {
             router.push('/dashboard');
         }

@@ -4,75 +4,72 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper Functions
+    // --- Helper Functions ---
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    function isUser(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    function getUserData(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data;
-    }
-
-    function isRole(role) {
-      return isSignedIn() && getUserData(request.auth.uid).roles.hasAny([role]);
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
     function isAdmin() {
-      return isRole('Admin');
-    }
-    
-    function isDisputeParticipant(dispute) {
-      return request.auth.uid == dispute.requesterId ||
-             (dispute.parties != null && (
-               request.auth.uid == dispute.parties.jobGiverId ||
-               request.auth.uid == dispute.parties.installerId
-             ));
+      return isSignedIn() && getUserData().roles.hasAny(['Admin']);
     }
 
-    // Collection Rules
+    // --- Collection Rules ---
+
+    // Users can create their own profile, read any profile, and only update their own.
+    // Admins can do anything.
     match /users/{userId} {
+      allow create: if isUser(userId);
       allow read: if isSignedIn();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      allow update: if isUser(userId) || isAdmin();
       allow delete: if isAdmin();
     }
-    
+
+    // Jobs can be read by any authenticated user.
+    // Jobs can only be created by authenticated users.
+    // Jobs can only be updated by the original job giver or an admin.
     match /jobs/{jobId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if (isSignedIn() && request.auth.uid == resource.data.jobGiver.id) || isAdmin();
+      allow update: if (resource.data.jobGiver == request.auth.uid) || isAdmin();
       allow delete: if isAdmin();
     }
-    
+
+    // Disputes can only be read/updated by participants or admins.
+    // Any authenticated user can create a dispute.
+    match /disputes/{disputeId} {
+      allow read, update, list: if (request.auth.uid == resource.data.requesterId || request.auth.uid in resource.data.parties) || isAdmin();
+      allow create: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    // Blacklist can be read by anyone authenticated (for client-side checks), but only written by admins.
     match /blacklist/{blacklistId} {
       allow read, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
-    match /coupons/{couponId} {
+    // Coupons and Subscription Plans are admin-only write, but readable by any user.
+    match /coupons/{couponCode} {
       allow read, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
     
     match /subscriptionPlans/{planId} {
-      allow read, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /disputes/{disputeId} {
-      allow read: if isDisputeParticipant(resource.data) || isAdmin();
-      allow create: if isSignedIn();
-      allow update: if isDisputeParticipant(resource.data) || isAdmin();
-      allow delete: if isAdmin();
+       allow read, list: if isSignedIn();
+       allow create, update, delete: if isAdmin();
     }
     
+    // Transactions can only be accessed by involved parties or admins.
     match /transactions/{transactionId} {
-        allow read: if isOwner(resource.data.payerId) || isOwner(resource.data.payeeId) || isAdmin();
-        allow list: if isAdmin();
+        allow read, list: if (request.auth.uid == resource.data.payerId || request.auth.uid == resource.data.payeeId) || isAdmin();
         allow create, update, delete: if isAdmin();
     }
   }
