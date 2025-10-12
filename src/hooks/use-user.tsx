@@ -240,7 +240,8 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
     }
   };
   
-  const isLoadingOverall = authLoading || roleLoading;
+  const isLoadingOverall = authLoading || (roleLoading && !publicPaths.some(p => pathname.startsWith(p)));
+
 
   const value = useMemo(() => ({
     user,
@@ -255,7 +256,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
 
   return (
     <UserContext.Provider value={value}>
-      {isLoadingOverall && !publicPaths.some(p => pathname.startsWith(p)) ? (
+      {isLoadingOverall ? (
          <div className="flex h-screen items-center justify-center">
             <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
