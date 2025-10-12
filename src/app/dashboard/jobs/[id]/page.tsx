@@ -789,7 +789,7 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
 export default function JobDetailPage() {
   const { user, role } = useUser();
   const { db } = useFirebase();
-  const params = useParams();
+  const params = React.use(useParams());
   const id = params.id as string;
   const { toast } = useToast();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -1287,5 +1287,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
