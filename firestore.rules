@@ -1,94 +1,105 @@
 
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
+  
     // --- Helper Functions ---
     function isSignedIn() {
       return request.auth != null;
     }
-
+    
     function isUser(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles;
     }
-
+    
     function isAdmin() {
-      return isSignedIn() && getUserData().roles[0] == 'Admin';
+      return 'Admin' in getUserRole();
     }
-
+    
+    function isJobGiver() {
+      return 'Job Giver' in getUserRole();
+    }
+    
     // --- Collection Rules ---
 
+    // /users/{userId}
     match /users/{userId} {
-      // Any authenticated user can read any user's profile (for profile pages, job details, etc.)
+      // ANY authenticated user can read any other user's profile.
+      // This is necessary for Job Givers to see Installer profiles, etc.
       allow read: if isSignedIn();
-      // A user can only create their own profile
+      
+      // A user can only create their own profile document.
       allow create: if isUser(userId);
-      // A user can only update their own profile, but an admin can update any
-      allow update: if isUser(userId) || isAdmin();
-      // Only an admin can delete a user
+      
+      // A user can only update their own profile.
+      allow update: if isUser(userId);
+      
+      // Only an admin can delete a user document.
       allow delete: if isAdmin();
     }
 
+    // /jobs/{jobId}
     match /jobs/{jobId} {
-      // Any authenticated user can read or list jobs
+      // ANY authenticated user can read or list jobs.
       allow read, list: if isSignedIn();
-      // Any authenticated user can create a job (role check is done client-side)
+      
+      // Any authenticated user can create a job.
       allow create: if isSignedIn();
-      // Only the job giver or an admin can update a job
-      allow update: if (isSignedIn() && request.resource.data.jobGiver == request.auth.uid) || isAdmin();
-      // Only an admin can delete a job
+      
+      // A job can be updated only by its original Job Giver or an Admin.
+      allow update: if (resource.data.jobGiver == request.auth.uid || isAdmin());
+      
+      // Only an Admin can delete a job.
       allow delete: if isAdmin();
     }
 
+    // /disputes/{disputeId}
     match /disputes/{disputeId} {
-      // Only participants or an admin can read a dispute
-      allow read, update: if isSignedIn() && (
-        resource.data.requesterId == request.auth.uid ||
-        request.auth.uid in resource.data.parties.values() ||
-        isAdmin()
-      );
-      // Any authenticated user can create a dispute
+       // A user can create a dispute.
       allow create: if isSignedIn();
-      // Only an admin can delete a dispute
+      
+      // A user can read/update a dispute if they are the requester, a party to it, or an admin.
+      allow read, update: if isSignedIn() && (request.auth.uid == resource.data.requesterId || request.auth.uid in resource.data.parties || isAdmin());
+      
+      // Only an admin can delete a dispute.
       allow delete: if isAdmin();
-      // Allow list operations for a user's own disputes (client must provide correct filter)
-      allow list: if isSignedIn();
     }
 
+    // /blacklist/{blacklistId}
     match /blacklist/{blacklistId} {
-        // Any authenticated user can read the blacklist (needed for login check)
-        allow read, list: if isSignedIn();
-        // Only admins can modify the blacklist
-        allow create, update, delete: if isAdmin();
+        // Any authenticated user can check the blacklist (needed for login security check).
+        allow read: if isSignedIn();
+        // Only admins can write to the blacklist.
+        allow write: if isAdmin();
+    }
+    
+    // /coupons/{couponCode}
+    match /coupons/{couponCode} {
+        // Any authenticated user can read coupon info (e.g., to validate a code).
+        allow read: if isSignedIn();
+        // Only admins can create/update/delete coupons.
+        allow write: if isAdmin();
     }
 
-    match /coupons/{couponId} {
-        // Any authenticated user can read coupons to redeem them
-        allow read, list: if isSignedIn();
-        // Only admins can create/modify coupons
-        allow create, update, delete: if isAdmin();
-    }
-    
+    // /subscriptionPlans/{planId}
     match /subscriptionPlans/{planId} {
-        // Plans are public readable
-        allow read, list: if isSignedIn();
-        // Only admins can modify plans
-        allow create, update, delete: if isAdmin();
+        // Any authenticated user can read subscription plans.
+        allow read: if isSignedIn();
+        // Only admins can modify plans.
+        allow write: if isAdmin();
     }
-    
+
+    // /transactions/{transactionId}
     match /transactions/{transactionId} {
-        // Only participants or admins can view transactions
-        allow read: if isSignedIn() && (
-            resource.data.payerId == request.auth.uid ||
-            resource.data.payeeId == request.auth.uid ||
-            isAdmin()
-        );
-        allow list: if isSignedIn();
-        // Writes should be handled by a secure backend function
+        // A user can read a transaction if they are the payer or payee, or an admin.
+        allow read: if isSignedIn() && (request.auth.uid == resource.data.payerId || request.auth.uid == resource.data.payeeId || isAdmin());
+        
+        // Writes should be handled by a secure backend function.
         allow write: if false;
     }
   }
