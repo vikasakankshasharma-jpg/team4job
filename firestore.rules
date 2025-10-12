@@ -3,74 +3,70 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper functions
-    function isAuth() {
+
+    // Helper Functions
+    function isSignedIn() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
-      return isAuth() && request.auth.uid == userId;
+      return request.auth.uid == userId;
     }
-    
+
     function isAdmin() {
-      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles[0] == 'Admin';
-    }
-    
-    function isDisputeParticipant(dispute) {
-      let isRequester = request.auth.uid == dispute.requesterId;
-      let isParty = request.auth.uid in [dispute.parties.jobGiverId, dispute.parties.installerId];
-      return isRequester || isParty;
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']);
     }
 
-    // Default deny all
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    // --- Collection Rules ---
 
-    // USERS
+    // USERS: Publicly readable, but only the owner can write.
     match /users/{userId} {
-      allow list, read: if isAuth();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId);
     }
     
-    // JOBS
+    // JOBS: Publicly readable, anyone can create, owner can update.
     match /jobs/{jobId} {
-      allow list, read: if isAuth();
-      allow create: if isAuth();
-      allow update: if isAuth() && (resource.data.jobGiver == get(/databases/$(database)/documents/users/$(request.auth.uid)).id || isAdmin());
-      allow delete: if isAdmin();
+      allow read, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.jobGiver.id == request.auth.uid;
     }
-    
-    // BLACKLIST
-    match /blacklist/{entry} {
-      allow list, read: if isAuth();
-      allow create, update, delete: if isAdmin();
-    }
-    
-    // COUPONS & SUBSCRIPTIONS
-    match /coupons/{couponId} {
-      allow read, write: if isAdmin();
-    }
-    
-    match /subscriptionPlans/{planId} {
-       allow read, write: if isAdmin();
-    }
-    
-    // DISPUTES
+
+    // DISPUTES: Readable by participants, creatable by anyone signed in.
     match /disputes/{disputeId} {
-      allow list: if isAuth();
-      allow read: if isAuth() && (isDisputeParticipant(resource.data) || isAdmin());
-      allow create: if isAuth();
-      allow update: if isAuth() && (isDisputeParticipant(resource.data) || isAdmin());
-      allow delete: if isAdmin();
+        function isParticipant() {
+            let disputeData = resource.data;
+            return request.auth.uid == disputeData.requesterId ||
+                   (disputeData.parties != null && (
+                     request.auth.uid == disputeData.parties.jobGiverId ||
+                     request.auth.uid == disputeData.parties.installerId
+                   ));
+        }
+
+        allow read: if (isParticipant() || isAdmin());
+        allow create: if isSignedIn();
+        allow update: if (isParticipant() || isAdmin());
+    }
+
+    // BLACKLIST: Readable by anyone authenticated (for client-side checks), writable only by admin.
+    match /blacklist/{entry} {
+        allow read: if isSignedIn();
+        allow write: if isAdmin();
+    }
+
+    // COUPONS: Admin-only access.
+    match /coupons/{code} {
+        allow read, write: if isAdmin();
     }
     
-     // TRANSACTIONS
-    match /transactions/{transactionId} {
+    // SUBSCRIPTION PLANS: Admin-only access.
+    match /subscriptionPlans/{planId} {
         allow read, write: if isAdmin();
+    }
+    
+    // TRANSACTIONS: No direct client access. Handled by server functions.
+    match /transactions/{transactionId} {
+      allow read, write: if false;
     }
   }
 }

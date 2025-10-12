@@ -43,7 +43,7 @@ import { useUser, useFirebase } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
 import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
-import { DocumentReference } from "firebase/firestore";
+import type { DocumentReference } from "firebase/firestore";
 
 
 function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
@@ -168,34 +168,41 @@ export default function PostedJobsPage() {
         setLoading(true);
         const userJobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', doc(db, 'users', user.id)));
         const jobSnapshot = await getDocs(userJobsQuery);
-        const jobList = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
         
-        // Populate awardedInstaller and bidder details
-        const userRefs = new Set<DocumentReference>();
-        jobList.forEach(job => {
-            if (job.awardedInstaller) userRefs.add(job.awardedInstaller as DocumentReference);
-            (job.bids || []).forEach(bid => userRefs.add(bid.installer as DocumentReference));
+        const jobListWithRefs = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
+        
+        // Collect all unique user references from all jobs
+        const userRefIds = new Set<string>();
+        jobListWithRefs.forEach(job => {
+            if (job.awardedInstaller) userRefIds.add((job.awardedInstaller as DocumentReference).id);
+            (job.bids || []).forEach(bid => userRefIds.add((bid.installer as DocumentReference).id));
         });
 
         const usersMap = new Map<string, User>();
-        if (userRefs.size > 0) {
-            const userDocs = await Promise.all(Array.from(userRefs).map(ref => getDoc(ref)));
-            userDocs.forEach(docSnap => {
-                if (docSnap.exists()) {
-                    usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
-                }
+        if (userRefIds.size > 0) {
+            // Fetch all user documents in a single query
+            const usersQuery = query(collection(db, 'users'), where('__name__', 'in', Array.from(userRefIds)));
+            const usersSnapshot = await getDocs(usersQuery);
+            usersSnapshot.forEach(doc => {
+                usersMap.set(doc.id, { id: doc.id, ...doc.data() } as User);
             });
         }
         
-        const populatedJobs = jobList.map(job => {
-            const getRefId = (ref: DocumentReference | User) => (ref as DocumentReference)?.id || (ref as User)?.id;
+        // Populate the jobs with the fetched user data
+        const populatedJobs = jobListWithRefs.map(job => {
+            const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id;
+            const awardedInstaller = awardedInstallerId ? usersMap.get(awardedInstallerId) : undefined;
+            
+            const populatedBids = (job.bids || []).map(bid => {
+                const installerId = (bid.installer as DocumentReference)?.id;
+                const installer = installerId ? usersMap.get(installerId) : undefined;
+                return { ...bid, installer: installer || bid.installer };
+            });
+
             return {
                 ...job,
-                awardedInstaller: job.awardedInstaller ? usersMap.get(getRefId(job.awardedInstaller)) || job.awardedInstaller : undefined,
-                bids: (job.bids || []).map(bid => ({
-                    ...bid,
-                    installer: usersMap.get(getRefId(bid.installer)) || bid.installer
-                })),
+                awardedInstaller: awardedInstaller || job.awardedInstaller,
+                bids: populatedBids,
             };
         });
 
