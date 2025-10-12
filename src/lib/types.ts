@@ -123,6 +123,7 @@ export type DisputeAttachment = {
 };
 
 export type DisputeMessage = {
+  id: string;
   authorId: string;
   authorRole: Role;
   content: string;
@@ -180,4 +181,5 @@ export type BlacklistEntry = {
     reason: string;
     createdAt: Date | Timestamp;
 };
+    
     

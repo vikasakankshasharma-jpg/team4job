@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from "react";
@@ -158,7 +159,9 @@ export default function AllJobsPage() {
         setLoading(false);
       }
     }
-    fetchJobs();
+    if (db && user) {
+        fetchJobs();
+    }
   }, [user, db]);
 
 
@@ -464,3 +467,5 @@ export default function AllJobsPage() {
     </Card>
   );
 }
+
+    
