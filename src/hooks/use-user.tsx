@@ -95,6 +95,8 @@ type UserContextType = {
 const UserContext = createContext<UserContextType | null>(null);
 
 const publicPaths = ['/login', '/'];
+const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids'];
+const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs'];
 
 
 function UserProviderComponent({ children }: { children: React.ReactNode }) {
@@ -103,7 +105,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
-  const [roleLoading, setRoleLoading] = useState(true); // New state for role resolution
+  const [roleLoading, setRoleLoading] = useState(true);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -144,30 +146,20 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
            if (userDoc.exists()) {
              const userData = { id: userDoc.id, ...userDoc.data() } as User;
              
-             // This is an example of a security check you might perform.
-             // Note: For this to work, security rules must allow the user to read this collection/document.
              const blacklistQuery = query(collection(db, "blacklist"), where("value", "==", firebaseUser.uid), where("type", "==", "user"));
              const blacklistSnapshot = await getDocs(blacklistQuery);
              const isBlacklisted = !blacklistSnapshot.empty;
              
              if (isBlacklisted) {
                toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
-               await signOut(auth);
+               signOut(auth);
                updateUserState(null);
-             } else if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && new Date() < (userData.suspensionEndDate as any).toDate())) {
-                 let message = 'Your account has been deactivated.';
-                 if (userData.status === 'suspended') {
-                     message = `Your account is suspended until ${new Date(userData.suspensionEndDate as any).toLocaleString()}.`;
-                 }
-                 toast({ title: 'Access Denied', description: message, variant: 'destructive' });
-                 await signOut(auth);
-                 updateUserState(null);
              } else {
                  updateUserState(userData);
              }
            } else {
              console.error("User document not found for authenticated user:", firebaseUser.uid);
-             await signOut(auth);
+             signOut(auth);
              updateUserState(null);
            }
            setAuthLoading(false);

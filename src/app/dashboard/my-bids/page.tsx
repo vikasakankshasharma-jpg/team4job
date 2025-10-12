@@ -418,5 +418,3 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
-
-    
