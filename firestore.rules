@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -16,30 +17,40 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Check if user is signed in and has 'Admin' in their roles array.
-      return isSignedIn() && 'Admin' in getUserData().roles;
+      // Check if user exists and has the 'Admin' role
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 'Admin' in getUserData().roles;
     }
     
+    function isRole(role) {
+        return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && role in getUserData().roles;
+    }
+
     // --- Collection Rules ---
 
-    // Users: Read-only for any signed-in user. Write restricted to owner or admin.
+    // Users: Any signed-in user can read/list profiles. Only the owner or an admin can update.
     match /users/{userId} {
       allow read, list: if isSignedIn();
-      allow create: if isOwner(userId);
+      allow create: if isOwner(userId); // A user can create their own profile doc
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
 
-    // Jobs: Any signed-in user can read/list. Writes are restricted.
+    // Jobs: Any signed-in user can list jobs. Creating and updating have specific restrictions.
     match /jobs/{jobId} {
       allow read, list: if isSignedIn();
-      allow create: if isSignedIn();
-      // Allow update if the user is the job giver or an admin.
-      allow update: if (isSignedIn() && (resource.data.jobGiver == request.auth.uid || isAdmin()));
+      allow create: if isSignedIn() && isRole('Job Giver'); // Only Job Givers can create jobs
+      
+      // Update allowed by the job giver, the awarded installer (for specific fields), or an admin.
+      // This is simplified; a real app might have more granular field-level validation.
+      allow update: if (isSignedIn() && (
+                      (resource.data.jobGiver == request.auth.uid) ||
+                      (resource.data.awardedInstaller == request.auth.uid) ||
+                      isAdmin()
+                    ));
       allow delete: if isAdmin();
     }
 
-    // Disputes: Read/update restricted to involved parties. List is highly constrained.
+    // Disputes: Only involved parties or an admin can read/update. Listing is restricted to specific queries.
     match /disputes/{disputeId} {
       allow read, update: if isSignedIn() && (
           resource.data.requesterId == request.auth.uid ||
@@ -48,42 +59,47 @@ service cloud.firestore {
       );
       allow create: if isSignedIn();
       allow delete: if isAdmin();
-      // This list rule is designed to match the specific, simple queries made from the frontend.
-      allow list: if isSignedIn() && (
-        (request.query.where.field == 'requesterId' && request.query.where.value == request.auth.uid) ||
-        (request.query.where.field == 'parties.jobGiverId' && request.query.where.value == request.auth.uid) ||
-        (request.query.where.field == 'parties.installerId' && request.query.where.value == request.auth.uid) ||
-        isAdmin()
-      );
+
+      // THIS IS THE KEY: The `list` rule must exactly match the `where` clauses used on the client.
+      allow list: if isAdmin() || (
+                    isSignedIn() && (
+                      request.query.where.field == 'requesterId' ||
+                      request.query.where.field == 'parties.jobGiverId' ||
+                      request.query.where.field == 'parties.installerId'
+                    )
+                  );
     }
 
-    // Blacklist: Admin-only writes. Reads for signed-in users.
+    // Blacklist: Admin-only write access. Signed-in users can read.
     match /blacklist/{blacklistId} {
       allow read, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
-    // Coupons: Admin-only writes. Reads for signed-in users.
+    // Coupons: Admin-only write access. Signed-in users can read.
     match /coupons/{couponId} {
       allow read, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
-    // Subscription Plans: Admin-only writes. Reads for signed-in users.
+    // Subscription Plans: Admin-only write access. Signed-in users can read.
     match /subscriptionPlans/{planId} {
         allow read, list: if isSignedIn();
         allow create, update, delete: if isAdmin();
     }
     
-    // Transactions: Read-only for involved parties. Writes must be server-side.
+    // Transactions: Read-only for involved parties or admins. No client-side writes.
     match /transactions/{transactionId} {
        allow read: if isSignedIn() && (
          resource.data.payerId == request.auth.uid ||
          resource.data.payeeId == request.auth.uid ||
          isAdmin()
        );
-       // Frontend must filter queries by payerId or payeeId.
-       allow list: if isSignedIn();
+       allow list: if isSignedIn() && (
+                      request.query.where.field == 'payerId' ||
+                      request.query.where.field == 'payeeId' ||
+                      isAdmin()
+                    );
        allow write: if false; // Disallow all client-side writes
     }
   }
