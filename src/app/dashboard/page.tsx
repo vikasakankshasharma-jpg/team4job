@@ -45,19 +45,22 @@ function InstallerDashboard() {
         const jobsRef = collection(db, "jobs");
         const openJobsQuery = query(jobsRef, where('status', '==', 'Open for Bidding'));
         const installerDocRef = doc(db, 'users', user.id);
-        const myJobsQuery = query(jobsRef, or(where('bidderIds', 'array-contains', user.id), where('awardedInstaller', '==', installerDocRef)));
-        const wonJobsQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
-        
-        const [openJobsSnapshot, myJobsSnapshot, wonJobsSnapshot] = await Promise.all([
+
+        const myBidsQuery = query(jobsRef, where('bidderIds', 'array-contains', user.id));
+        const myAwardedQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
+
+        const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot] = await Promise.all([
             getDocs(openJobsQuery),
-            getDocs(myJobsQuery),
-            getDocs(wonJobsQuery)
+            getDocs(myBidsSnapshot),
+            getDocs(myAwardedQuery)
         ]);
+
+        const myJobsSet = new Set([...myBidsSnapshot.docs.map(d => d.id), ...myAwardedSnapshot.docs.map(d => d.id)]);
 
         setStats({
             openJobs: openJobsSnapshot.size,
-            myBids: myJobsSnapshot.size,
-            jobsWon: wonJobsSnapshot.size
+            myBids: myJobsSet.size,
+            jobsWon: myAwardedSnapshot.size
         });
 
         setLoading(false);
