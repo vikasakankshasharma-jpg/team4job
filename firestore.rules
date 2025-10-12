@@ -4,69 +4,74 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper Functions
-    function isSignedIn() {
-      return request.auth != null;
+    // Helper functions
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']);
     }
-
+    
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    function isAdmin() {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']);
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    // --- Collection Rules ---
-
-    // USERS: Publicly readable, but only the owner can write.
+    // Users Collection
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isOwner(userId);
+      // Allow any authenticated user to read any profile (for job details, etc.)
+      allow read, list: if request.auth != null;
+      // Allow a user to create their own profile
+      allow create: if isOwner(userId);
+      // Allow a user to update their own profile
+      allow update: if isOwner(userId);
     }
     
-    // JOBS: Publicly readable, anyone can create, owner can update.
+    // Jobs Collection
     match /jobs/{jobId} {
-      allow read, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource.data.jobGiver.id == request.auth.uid;
+       // Allow any authenticated user to read/list jobs
+      allow read, list: if request.auth != null;
+      // Allow any authenticated user to create a job
+      allow create: if request.auth != null;
+      // Allow update only by the original job giver or an admin
+      allow update: if request.auth != null && (request.auth.uid == resource.data.jobGiver.id || isAdmin());
     }
 
-    // DISPUTES: Readable by participants, creatable by anyone signed in.
+    // Disputes Collection
     match /disputes/{disputeId} {
-        function isParticipant() {
-            let disputeData = resource.data;
-            return request.auth.uid == disputeData.requesterId ||
-                   (disputeData.parties != null && (
-                     request.auth.uid == disputeData.parties.jobGiverId ||
-                     request.auth.uid == disputeData.parties.installerId
-                   ));
-        }
+        // Allow create by any authenticated user
+        allow create: if request.auth != null;
 
-        allow read: if (isParticipant() || isAdmin());
-        allow create: if isSignedIn();
-        allow update: if (isParticipant() || isAdmin());
+        // Allow read/list only by involved parties or admin
+        allow read, list: if request.auth != null && 
+          (
+            request.auth.uid == resource.data.requesterId ||
+            (resource.data.parties != null && request.auth.uid in [resource.data.parties.jobGiverId, resource.data.parties.installerId]) ||
+            isAdmin()
+          );
+
+        // Allow update only by involved parties or admin
+        allow update: if request.auth != null &&
+          (
+            request.auth.uid == resource.data.requesterId ||
+            (resource.data.parties != null && request.auth.uid in [resource.data.parties.jobGiverId, resource.data.parties.installerId]) ||
+            isAdmin()
+          );
     }
 
-    // BLACKLIST: Readable by anyone authenticated (for client-side checks), writable only by admin.
-    match /blacklist/{entry} {
-        allow read: if isSignedIn();
+    // Admin-Only Collections
+    match /blacklist/{docId} {
+        allow read, list: if request.auth != null; // All users need to check this
         allow write: if isAdmin();
     }
-
-    // COUPONS: Admin-only access.
-    match /coupons/{code} {
+    
+    match /coupons/{docId} {
         allow read, write: if isAdmin();
     }
     
-    // SUBSCRIPTION PLANS: Admin-only access.
-    match /subscriptionPlans/{planId} {
+     match /subscriptionPlans/{docId} {
         allow read, write: if isAdmin();
-    }
-    
-    // TRANSACTIONS: No direct client access. Handled by server functions.
-    match /transactions/{transactionId} {
-      allow read, write: if false;
     }
   }
 }
