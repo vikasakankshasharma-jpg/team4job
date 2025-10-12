@@ -34,7 +34,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [role, setRoleState] = useState<Role>("Installer");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const firebaseContext = useFirebase();
@@ -101,20 +100,17 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
              await signOut(auth);
              updateUserState(null);
            }
-           setAuthChecked(true);
            setLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
             signOut(auth);
             updateUserState(null);
-            setAuthChecked(true);
             setLoading(false);
         });
 
         return () => unsubscribeDoc();
       } else {
         updateUserState(null);
-        setAuthChecked(true);
         setLoading(false);
       }
     });
@@ -124,7 +120,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   useEffect(() => {
-    if (!authChecked) return;
+    if (loading) return;
 
     const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
     
@@ -148,7 +144,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             router.push('/dashboard');
         }
     }
-  }, [role, pathname, user, router, authChecked]);
+  }, [role, pathname, user, router, loading]);
 
 
   const login = async (email: string, password?: string) => {
@@ -177,7 +173,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(true);
     await signOut(firebaseContext.auth);
     updateUserState(null);
-    setAuthChecked(false); // Reset auth check on logout
     router.push('/login');
     setLoading(false);
   };
@@ -200,7 +195,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     logout
   }), [user, role, isAdmin, loading, login, logout, setRole]);
 
-  if (!authChecked) {
+  if (loading) {
      return (
         <div className="flex h-screen items-center justify-center">
             <div className="flex items-center gap-2 text-muted-foreground">
