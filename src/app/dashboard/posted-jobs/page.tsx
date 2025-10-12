@@ -148,7 +148,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
 }
 
 export default function PostedJobsPage() {
-  const searchParams = useSearchParams();
+  const searchParams = React.use(useSearchParams());
   const tab = searchParams.get("tab") || "active";
   const { user, role } = useUser();
   const { db } = useFirebase();

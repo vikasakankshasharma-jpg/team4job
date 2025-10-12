@@ -153,7 +153,7 @@ const bidStatuses = [
 function MyBidsPageContent() {
   const { user, role } = useUser();
   const { db } = useFirebase();
-  const searchParams = useSearchParams();
+  const searchParams = React.use(useSearchParams());
   const router = useRouter();
   const pathname = usePathname();
   let statusFilter = searchParams.get('status');
