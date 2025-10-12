@@ -18,13 +18,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { Dispute } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
@@ -43,50 +43,53 @@ const getStatusVariant = (status: Dispute['status']) => {
 
 export default function DisputesPage() {
   const router = useRouter();
-  const { user, isAdmin } = useUser();
+  const { user, isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchDisputes = useCallback(async () => {
     if (!user || !db) return;
-    async function fetchDisputes() {
-        setLoading(true);
-        const disputesRef = collection(db, "disputes");
-        let allDisputes: Dispute[] = [];
+    setLoading(true);
+    const disputesRef = collection(db, "disputes");
+    let allDisputes: Dispute[] = [];
 
-        if (isAdmin) {
-            const q = query(disputesRef);
-            const querySnapshot = await getDocs(q);
-            allDisputes = querySnapshot.docs.map(doc => doc.data() as Dispute);
-        } else {
-            // Perform three separate queries and merge the results client-side
-            const q1 = query(disputesRef, where('requesterId', '==', user.id));
-            const q2 = query(disputesRef, where('parties.jobGiverId', '==', user.id));
-            const q3 = query(disputesRef, where('parties.installerId', '==', user.id));
+    if (isAdmin) {
+        const q = query(disputesRef);
+        const querySnapshot = await getDocs(q);
+        allDisputes = querySnapshot.docs.map(doc => doc.data() as Dispute);
+    } else {
+        const q1 = query(disputesRef, where('requesterId', '==', user.id));
+        const q2 = query(disputesRef, where('parties.jobGiverId', '==', user.id));
+        const q3 = query(disputesRef, where('parties.installerId', '==', user.id));
 
-            const [snap1, snap2, snap3] = await Promise.all([
-                getDocs(q1),
-                getDocs(q2),
-                getDocs(q3)
-            ]);
+        const [snap1, snap2, snap3] = await Promise.all([
+            getDocs(q1),
+            getDocs(q2),
+            getDocs(q3)
+        ]);
 
-            const disputesMap = new Map<string, Dispute>();
-            snap1.forEach(doc => disputesMap.set(doc.id, doc.data() as Dispute));
-            snap2.forEach(doc => disputesMap.set(doc.id, doc.data() as Dispute));
-            snap3.forEach(doc => disputesMap.set(doc.id, doc.data() as Dispute));
-            allDisputes = Array.from(disputesMap.values());
-        }
-
-        allDisputes.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
-        setDisputes(allDisputes);
-        setLoading(false);
+        const disputesMap = new Map<string, Dispute>();
+        snap1.forEach(doc => disputesMap.set(doc.id, doc.data() as Dispute));
+        snap2.forEach(doc => disputesMap.set(doc.id, doc.data() as Dispute));
+        snap3.forEach(doc => disputesMap.set(doc.id, doc.data() as Dispute));
+        allDisputes = Array.from(disputesMap.values());
     }
-    fetchDisputes();
+
+    allDisputes.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+    setDisputes(allDisputes);
+    setLoading(false);
   }, [user, isAdmin, db]);
 
-  if (!user) {
-    return <div className="text-center text-muted-foreground">Loading...</div>;
+
+  useEffect(() => {
+    if (!userLoading && user && db) {
+      fetchDisputes();
+    }
+  }, [userLoading, user, db, fetchDisputes]);
+
+  if (userLoading) {
+    return <div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   }
 
   return (
@@ -122,7 +125,7 @@ export default function DisputesPage() {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
-                  Loading disputes...
+                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                 </TableCell>
               </TableRow>
             ) : disputes.length > 0 ? (
