@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -505,5 +504,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    

@@ -19,8 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { Dispute } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { format } from "date-fns";
@@ -50,7 +49,7 @@ export default function DisputesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !db) return;
     async function fetchDisputes() {
         setLoading(true);
         const disputesRef = collection(db, "disputes");
@@ -142,5 +141,3 @@ export default function DisputesPage() {
     </Card>
   );
 }
-
-    

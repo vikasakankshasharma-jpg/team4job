@@ -24,8 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { useState, useRef, useEffect } from "react";
 import { CheckCircle2, Loader2, ShieldCheck, Camera, Upload } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -642,5 +641,3 @@ export function SignUpForm() {
     </Form>
   );
 }
-
-    

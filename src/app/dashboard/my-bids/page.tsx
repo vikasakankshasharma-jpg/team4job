@@ -24,8 +24,7 @@ import { Award, IndianRupee, ListFilter, X } from "lucide-react";
 import { Job, Bid, User } from "@/lib/types";
 import React from "react";
 import { getStatusVariant, toDate } from "@/lib/utils";
-import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   DropdownMenu,

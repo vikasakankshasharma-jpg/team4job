@@ -36,8 +36,7 @@ import type { DateRange } from "react-day-picker";
 import { Calendar as CalendarIcon, X, ArrowUpDown } from "lucide-react";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
-import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import Link from "next/link";
 import { collection, getDocs, query, DocumentReference, getDoc } from "firebase/firestore";
 
