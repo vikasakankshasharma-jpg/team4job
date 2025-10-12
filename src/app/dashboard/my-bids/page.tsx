@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { DocumentReference, collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { DocumentReference, collection, query, where, getDocs, doc } from "firebase/firestore";
 
 
 type MyBidRowProps = {
@@ -418,3 +418,5 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
+
+    

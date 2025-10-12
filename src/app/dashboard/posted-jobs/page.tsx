@@ -42,7 +42,7 @@ import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, doc } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
 
 
@@ -265,3 +265,5 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
+
+    

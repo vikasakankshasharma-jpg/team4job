@@ -26,7 +26,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
-import { collection, query, where, getDocs, or } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -53,22 +53,33 @@ export default function DisputesPage() {
     async function fetchDisputes() {
         setLoading(true);
         const disputesRef = collection(db, "disputes");
-        let q;
+        let allDisputes: Dispute[] = [];
+
         if (isAdmin) {
-            q = query(disputesRef);
+            const q = query(disputesRef);
+            const querySnapshot = await getDocs(q);
+            allDisputes = querySnapshot.docs.map(doc => doc.data() as Dispute);
         } else {
-            q = query(disputesRef, or(
-                where('requesterId', '==', user.id),
-                where('parties.jobGiverId', '==', user.id),
-                where('parties.installerId', '==', user.id)
-            ));
+            // Perform three separate queries and merge the results
+            const q1 = query(disputesRef, where('requesterId', '==', user.id));
+            const q2 = query(disputesRef, where('parties.jobGiverId', '==', user.id));
+            const q3 = query(disputesRef, where('parties.installerId', '==', user.id));
+
+            const [snap1, snap2, snap3] = await Promise.all([
+                getDocs(q1),
+                getDocs(q2),
+                getDocs(q3)
+            ]);
+
+            const disputesMap = new Map<string, Dispute>();
+            snap1.forEach(doc => disputesMap.set(doc.id, doc.data() as Dispute));
+            snap2.forEach(doc => disputesMap.set(doc.id, doc.data() as Dispute));
+            snap3.forEach(doc => disputesMap.set(doc.id, doc.data() as Dispute));
+            allDisputes = Array.from(disputesMap.values());
         }
 
-        const querySnapshot = await getDocs(q);
-        const userDisputes = querySnapshot.docs.map(doc => doc.data() as Dispute);
-        
-        userDisputes.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
-        setDisputes(userDisputes);
+        allDisputes.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+        setDisputes(allDisputes);
         setLoading(false);
     }
     fetchDisputes();
@@ -141,3 +152,5 @@ export default function DisputesPage() {
     </Card>
   );
 }
+
+    
