@@ -106,13 +106,15 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Job Giver");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [userDocLoading, setUserDocLoading] = useState(true);
 
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
 
    const updateUserState = useCallback((userData: User | null) => {
+    setUserDocLoading(true);
     setUser(userData);
     if (userData) {
       const storedRole = localStorage.getItem('userRole') as Role;
@@ -133,7 +135,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
       setIsAdmin(false);
       localStorage.removeItem('userRole');
     }
-    setLoading(false);
+    setUserDocLoading(false);
   }, []);
 
   useEffect(() => {
@@ -144,12 +146,10 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
         description: `You do not have permission to perform this action. The operation for path '${error.context.path}' was denied.`,
         variant: "destructive"
       });
-      // Optionally redirect or take other actions
-      // router.push('/dashboard');
     });
 
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      setLoading(true);
+      setAuthLoading(true);
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
@@ -172,6 +172,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
              signOut(auth);
              updateUserState(null);
            }
+           setAuthLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
             if (error.code === 'permission-denied') {
@@ -182,11 +183,13 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
             }
             signOut(auth);
             updateUserState(null);
+            setAuthLoading(false);
         });
 
         return () => unsubscribeDoc();
       } else {
         updateUserState(null);
+        setAuthLoading(false);
       }
     });
 
@@ -196,6 +199,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
     }
   }, [auth, db, toast, updateUserState]);
 
+  const loading = authLoading || userDocLoading;
 
   useEffect(() => {
     const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
@@ -228,7 +232,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
     if (!password) {
         return false;
     }
-    setLoading(true);
+    setAuthLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // onAuthStateChanged will handle the user state update
@@ -237,17 +241,16 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
       if (error.code !== 'auth/invalid-credential') {
         console.error("Login failed:", error);
       }
-      setLoading(false);
+      setAuthLoading(false);
       return false;
     }
   };
 
   const logout = async () => {
-    setLoading(true);
+    setAuthLoading(true);
     await signOut(auth);
     updateUserState(null);
     router.push('/login');
-    // setLoading is handled by updateUserState
   };
 
   const setRole = (newRole: Role) => {
