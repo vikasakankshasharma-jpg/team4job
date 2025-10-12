@@ -9,6 +9,8 @@ import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import { doc, getDoc, collection, getDocs, onSnapshot, getFirestore, type Firestore, query, where } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 // --- Firebase App Initialization (Client-side) ---
 
@@ -135,6 +137,17 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    errorEmitter.on('permission-error', (error: FirestorePermissionError) => {
+      console.error("Intercepted Firestore Permission Error:", error);
+      toast({
+        title: "Permission Denied",
+        description: `You do not have permission to perform this action. The operation for path '${error.context.path}' was denied.`,
+        variant: "destructive"
+      });
+      // Optionally redirect or take other actions
+      // router.push('/dashboard');
+    });
+
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       setLoading(true);
       if (firebaseUser) {
@@ -146,14 +159,13 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
              
              const blacklistQuery = query(collection(db, "blacklist"), where("value", "==", firebaseUser.uid), where("type", "==", "user"));
              const blacklistSnapshot = await getDocs(blacklistQuery);
-             const isBlacklisted = !blacklistSnapshot.empty;
              
-             if (isBlacklisted) {
-               toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
-               signOut(auth);
-               updateUserState(null);
+             if (!blacklistSnapshot.empty) {
+                toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
+                signOut(auth);
+                updateUserState(null);
              } else {
-                 updateUserState(userData);
+                updateUserState(userData);
              }
            } else {
              console.error("User document not found for authenticated user:", firebaseUser.uid);
@@ -162,6 +174,12 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
            }
         }, (error) => {
             console.error("Error listening to user document:", error);
+            if (error.code === 'permission-denied') {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                  path: error.toString(), // or a more specific path if available
+                  operation: 'get'
+                }));
+            }
             signOut(auth);
             updateUserState(null);
         });
@@ -172,7 +190,10 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
       }
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+        unsubscribeAuth();
+        errorEmitter.removeAllListeners('permission-error');
+    }
   }, [auth, db, toast, updateUserState]);
 
 
@@ -210,7 +231,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      setLoading(false);
+      // onAuthStateChanged will handle the user state update
       return true;
     } catch (error: any) {
       if (error.code !== 'auth/invalid-credential') {
@@ -226,7 +247,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
     await signOut(auth);
     updateUserState(null);
     router.push('/login');
-    setLoading(false);
+    // setLoading is handled by updateUserState
   };
 
   const setRole = (newRole: Role) => {
@@ -235,23 +256,21 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
       localStorage.setItem('userRole', newRole);
     }
   };
-  
-  const isLoadingOverall = loading;
 
   const value = useMemo(() => ({
     user,
     role,
     isAdmin,
-    loading: isLoadingOverall,
+    loading,
     setUser,
     setRole,
     login,
     logout
-  }), [user, role, isAdmin, isLoadingOverall, login, logout, setRole]);
+  }), [user, role, isAdmin, loading, login, logout, setRole]);
 
   return (
     <UserContext.Provider value={value}>
-      {isLoadingOverall && !publicPaths.some(p => pathname.startsWith(p)) ? (
+      {loading && !publicPaths.some(p => pathname.startsWith(p)) ? (
          <div className="flex h-screen items-center justify-center">
             <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />

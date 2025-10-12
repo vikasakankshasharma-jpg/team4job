@@ -161,7 +161,7 @@ function MyBidsPageContent() {
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
-    if (!userLoading && user && user.roles[0] === 'Admin') {
+    if (!userLoading && user && user.roles.includes('Admin')) {
       router.push('/dashboard');
     }
   }, [user, userLoading, router]);
@@ -182,13 +182,18 @@ function MyBidsPageContent() {
     const awardedJobsQuery = query(jobsRef, where("awardedInstaller", "==", installerDocRef));
 
     const [biddedSnapshot, awardedSnapshot] = await Promise.all([
-      getDocs(biddedJobsQuery),
-      getDocs(awardedJobsQuery),
+      getDocs(biddedJobsQuery).catch(err => { console.error("Bidded jobs query failed:", err); return null; }),
+      getDocs(awardedJobsQuery).catch(err => { console.error("Awarded jobs query failed:", err); return null; }),
     ]);
 
     const jobsMap = new Map<string, Job>();
-    biddedSnapshot.forEach(doc => jobsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job));
-    awardedSnapshot.forEach(doc => jobsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job));
+
+    if (biddedSnapshot) {
+        biddedSnapshot.forEach(doc => jobsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job));
+    }
+    if (awardedSnapshot) {
+        awardedSnapshot.forEach(doc => jobsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job));
+    }
 
     setJobs(Array.from(jobsMap.values()));
     setLoading(false);

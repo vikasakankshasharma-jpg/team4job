@@ -64,9 +64,18 @@ export default function DisputesPage() {
             query(disputesRef, where("parties.installerId", "==", user.id)),
         ];
 
-        const snaps = await Promise.all(queries.map(getDocs));
+        const snaps = await Promise.all(queries.map(q => getDocs(q).catch(err => {
+            console.error("Query failed:", err);
+            return null;
+        })));
+        
         const disputesMap = new Map<string, Dispute>();
-        snaps.forEach(snap => snap.forEach(d => disputesMap.set(d.id, { id: d.id, ...d.data() } as Dispute)));
+        
+        snaps.forEach(snap => {
+            if (snap) {
+                snap.forEach(d => disputesMap.set(d.id, { id: d.id, ...d.data() } as Dispute));
+            }
+        });
         
         const allDisputes = Array.from(disputesMap.values());
         allDisputes.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
