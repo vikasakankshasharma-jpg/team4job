@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from "react";
@@ -39,7 +38,7 @@ import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import Link from "next/link";
-import { collection, getDocs, query, DocumentReference, getDoc } from "firebase/firestore";
+import { collection, getDocs, query, DocumentReference, getDoc, where } from "firebase/firestore";
 
 const initialFilters = {
     jobId: "",
@@ -116,49 +115,56 @@ export default function AllJobsPage() {
 
   React.useEffect(() => {
     async function fetchJobs() {
-      if (user?.roles[0] === 'Admin' && db) {
-        setLoading(true);
-        const jobsCollection = collection(db, 'jobs');
-        const jobSnapshot = await getDocs(query(jobsCollection));
-        const jobList = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
+      if (!db || !user || user.roles[0] !== 'Admin') return;
+      
+      setLoading(true);
+      const jobsCollection = collection(db, 'jobs');
+      const jobSnapshot = await getDocs(query(jobsCollection));
+      const jobList = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
 
-        const userRefs = new Set<DocumentReference>();
-        jobList.forEach(job => {
-            if (job.jobGiver) userRefs.add(job.jobGiver as DocumentReference);
-            if (job.awardedInstaller) userRefs.add(job.awardedInstaller as DocumentReference);
-            (job.bids || []).forEach(bid => userRefs.add(bid.installer as DocumentReference));
-        });
+      const userRefs = new Set<DocumentReference>();
+      jobList.forEach(job => {
+          if (job.jobGiver) userRefs.add(job.jobGiver as DocumentReference);
+          if (job.awardedInstaller) userRefs.add(job.awardedInstaller as DocumentReference);
+          (job.bids || []).forEach(bid => userRefs.add(bid.installer as DocumentReference));
+      });
 
-        const usersMap = new Map<string, User>();
-        if (userRefs.size > 0) {
-            const userDocs = await Promise.all(Array.from(userRefs).map(ref => getDoc(ref)));
-            userDocs.forEach(docSnap => {
-                if (docSnap.exists()) {
-                    usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
-                }
-            });
-        }
-
-        const populatedJobs = jobList.map(job => {
-            const getRefId = (ref: DocumentReference | User) => (ref as DocumentReference)?.id || (ref as User)?.id;
-            
-            return {
-                ...job,
-                jobGiver: usersMap.get(getRefId(job.jobGiver)) || job.jobGiver,
-                awardedInstaller: job.awardedInstaller ? usersMap.get(getRefId(job.awardedInstaller)) || job.awardedInstaller : undefined,
-                bids: (job.bids || []).map(bid => ({
-                    ...bid,
-                    installer: usersMap.get(getRefId(bid.installer)) || bid.installer
-                })),
-            };
-        });
-        
-        setJobs(populatedJobs);
-        const uniqueStatuses = Array.from(new Set(populatedJobs.map(j => j.status)));
-        setAllStatuses(['all', ...uniqueStatuses.sort()]);
-        setLoading(false);
+      const usersMap = new Map<string, User>();
+      if (userRefs.size > 0) {
+          const userIds = Array.from(userRefs).map(ref => ref.id);
+          // Fetch users in chunks of 10 to avoid firestore limitations
+          for (let i = 0; i < userIds.length; i += 10) {
+              const chunk = userIds.slice(i, i + 10);
+              const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
+              const userDocs = await getDocs(usersQuery);
+              userDocs.forEach(docSnap => {
+                  if (docSnap.exists()) {
+                      usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
+                  }
+              });
+          }
       }
+
+      const populatedJobs = jobList.map(job => {
+          const getRefId = (ref: DocumentReference | User) => (ref as DocumentReference)?.id || (ref as User)?.id;
+          
+          return {
+              ...job,
+              jobGiver: usersMap.get(getRefId(job.jobGiver)) || job.jobGiver,
+              awardedInstaller: job.awardedInstaller ? usersMap.get(getRefId(job.awardedInstaller)) || job.awardedInstaller : undefined,
+              bids: (job.bids || []).map(bid => ({
+                  ...bid,
+                  installer: usersMap.get(getRefId(bid.installer)) || bid.installer
+              })),
+          };
+      });
+      
+      setJobs(populatedJobs);
+      const uniqueStatuses = Array.from(new Set(populatedJobs.map(j => j.status)));
+      setAllStatuses(['all', ...uniqueStatuses.sort()]);
+      setLoading(false);
     }
+
     if (db && user) {
         fetchJobs();
     }
@@ -467,5 +473,3 @@ export default function AllJobsPage() {
     </Card>
   );
 }
-
-    

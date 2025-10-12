@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import {
@@ -73,14 +72,14 @@ export default function UsersPage() {
 
   React.useEffect(() => {
       async function fetchUsers() {
-        if (user?.roles[0] === 'Admin' && db) {
-            setLoading(true);
-            const usersCollection = collection(db, 'users');
-            const userSnapshot = await getDocs(query(usersCollection));
-            const userList = userSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as User);
-            setUsers(userList);
-            setLoading(false);
-        }
+        if (!db || !user || user.roles[0] !== 'Admin') return;
+        
+        setLoading(true);
+        const usersCollection = collection(db, 'users');
+        const userSnapshot = await getDocs(query(usersCollection));
+        const userList = userSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as User);
+        setUsers(userList);
+        setLoading(false);
       }
       if (db && user) {
         fetchUsers();
@@ -394,5 +393,3 @@ export default function UsersPage() {
     </Card>
   );
 }
-
-    
