@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -13,19 +12,11 @@ service cloud.firestore {
     }
 
     function getUserData() {
-      // Note: This can be costly. Use sparingly in rules.
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
     function isAdmin() {
-      // Check for a custom claim first for efficiency. Fallback to doc read.
-      return isSignedIn() && ('admin' in request.auth.token && request.auth.token.admin == true);
-    }
-    
-    // This helper checks if the user's role is in the provided list.
-    // It's less efficient than claims but works for this structure.
-    function hasAnyRole(roles) {
-      return isSignedIn() && getUserData().roles.hasAny(roles);
+      return isSignedIn() && getUserData().roles.hasAny(['Admin']);
     }
 
     // --- Collection Rules ---
@@ -33,24 +24,20 @@ service cloud.firestore {
     // Users: Read-only for any signed-in user. Write restricted to owner or admin.
     match /users/{userId} {
       allow read, list: if isSignedIn();
-      allow create: if isOwner(userId); // A user can create their own profile
+      allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
 
-    // Jobs: Any signed-in user can read/list. This relies on frontend queries being correct.
-    // Writes are restricted to job givers for their own jobs or admins.
+    // Jobs: Any signed-in user can read/list. Writes are restricted.
     match /jobs/{jobId} {
       allow read, list: if isSignedIn();
-      allow create: if isSignedIn(); // A signed-in user can create a job.
-      allow update: if (isSignedIn() && (
-        (request.resource.data.jobGiver == request.auth.uid) || // JobGiver can update their own job
-         isAdmin()
-      ));
+      allow create: if isSignedIn();
+      allow update: if (isSignedIn() && (resource.data.jobGiver == request.auth.uid || isAdmin()));
       allow delete: if isAdmin();
     }
 
-    // Disputes: Read/update restricted to involved parties. List is constrained to match frontend queries.
+    // Disputes: Read/update restricted to involved parties. List is highly constrained.
     match /disputes/{disputeId} {
       allow read, update: if isSignedIn() && (
           resource.data.requesterId == request.auth.uid ||
@@ -59,8 +46,7 @@ service cloud.firestore {
       );
       allow create: if isSignedIn();
       allow delete: if isAdmin();
-
-      // List rule supports the three separate queries made by the frontend.
+      // This list rule is a likely source of problems if queries do not match exactly.
       allow list: if isSignedIn() && (
         (request.query.where.field == 'requesterId' && request.query.where.value == request.auth.uid) ||
         (request.query.where.field == 'parties.jobGiverId' && request.query.where.value == request.auth.uid) ||
@@ -69,7 +55,7 @@ service cloud.firestore {
       );
     }
 
-    // Blacklist: Admin-only writes. Reads for signed-in users (e.g., for self-check on login).
+    // Blacklist: Admin-only writes. Reads for signed-in users.
     match /blacklist/{blacklistId} {
       allow read, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
