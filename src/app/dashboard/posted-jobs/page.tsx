@@ -43,7 +43,7 @@ import { useUser } from "@/hooks/use-user";
 import { useFirebase } from "@/lib/firebase/client-provider";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, query, where, doc } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
 
 
@@ -52,7 +52,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
   const getJobType = (job: Job) => {
     if (!job.awardedInstaller) return 'N/A';
 
-    const awardedInstallerId = (job.awardedInstaller as User)?.id || (job.awardedInstaller as DocumentReference)?.id;
+    const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
     
     if (!job.bids || job.bids.length === 0) {
       // If there are no bids but an installer is awarded, it's a direct award
@@ -60,7 +60,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
       return 'N/A';
     }
 
-    const bidderIds = (job.bids || []).map(b => (b.installer as User).id || (b.installer as DocumentReference).id);
+    const bidderIds = (job.bids || []).map(b => (b.installer as DocumentReference)?.id || (b.installer as User)?.id);
     
     return bidderIds.includes(awardedInstallerId as string) ? 'Bidding' : 'Direct';
   };
@@ -165,18 +165,46 @@ export default function PostedJobsPage() {
 
   React.useEffect(() => {
     async function fetchJobs() {
-      if (user && role === 'Job Giver') {
+      if (user && role === 'Job Giver' && db) {
         setLoading(true);
         const userJobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', doc(db, 'users', user.id)));
         const jobSnapshot = await getDocs(userJobsQuery);
         const jobList = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
-        setJobs(jobList);
+        
+        // Populate awardedInstaller and bidder details
+        const userRefs = new Set<DocumentReference>();
+        jobList.forEach(job => {
+            if (job.awardedInstaller) userRefs.add(job.awardedInstaller as DocumentReference);
+            (job.bids || []).forEach(bid => userRefs.add(bid.installer as DocumentReference));
+        });
+
+        const usersMap = new Map<string, User>();
+        if (userRefs.size > 0) {
+            const userDocs = await Promise.all(Array.from(userRefs).map(ref => getDoc(ref)));
+            userDocs.forEach(docSnap => {
+                if (docSnap.exists()) {
+                    usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
+                }
+            });
+        }
+        
+        const populatedJobs = jobList.map(job => {
+            const getRefId = (ref: DocumentReference | User) => (ref as DocumentReference)?.id || (ref as User)?.id;
+            return {
+                ...job,
+                awardedInstaller: job.awardedInstaller ? usersMap.get(getRefId(job.awardedInstaller)) || job.awardedInstaller : undefined,
+                bids: (job.bids || []).map(bid => ({
+                    ...bid,
+                    installer: usersMap.get(getRefId(bid.installer)) || bid.installer
+                })),
+            };
+        });
+
+        setJobs(populatedJobs);
         setLoading(false);
       }
     }
-    if (db && user) {
-        fetchJobs();
-    }
+    fetchJobs();
   }, [user, role, db]);
 
    React.useEffect(() => {
