@@ -163,7 +163,10 @@ export default function PostedJobsPage() {
 
   React.useEffect(() => {
     async function fetchJobs() {
-      if (!db || !user || role !== 'Job Giver') return;
+      if (!db || !user || role !== 'Job Giver') {
+        setLoading(false);
+        return;
+      };
       
       setLoading(true);
       const userJobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', doc(db, 'users', user.id)));
@@ -262,5 +265,3 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
-
-    
