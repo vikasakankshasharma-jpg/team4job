@@ -37,10 +37,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AddressForm } from "@/components/ui/address-form";
-import { collection, query, where, getDocs, or, setDoc, doc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
 
 const addressSchema = z.object({
   house: z.string().min(1, "House/Flat No. is required."),
@@ -219,18 +217,6 @@ export function SignUpForm() {
     }
 
     try {
-      const aadharNumber = form.getValues("aadhar");
-      
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("aadharNumber", "==", aadharNumber));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        setError("This Aadhar number is already registered to another account.");
-        setIsLoading(false);
-        return;
-      }
-      
       const result = await confirmAadharVerification({ transactionId, otp: otp || "" });
       if (result.isVerified && result.kycData) {
         setVerificationSubStep("verified");
@@ -283,32 +269,6 @@ export function SignUpForm() {
         return;
     }
 
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, or(
-        where("email", "==", values.email.toLowerCase()),
-        where("mobile", "==", values.mobile)
-    ));
-
-    const querySnapshot = await getDocs(q);
-    let isDuplicate = false;
-    querySnapshot.forEach((doc) => {
-        const existingUser = doc.data();
-        if (existingUser.email.toLowerCase() === values.email.toLowerCase()) {
-            form.setError("email", { type: "manual", message: "This email is already registered." });
-            isDuplicate = true;
-        }
-        if (existingUser.mobile === values.mobile) {
-            form.setError("mobile", { type: "manual", message: "This mobile number is already registered." });
-            isDuplicate = true;
-        }
-    });
-
-    if (isDuplicate) {
-        setCurrentStep("details");
-        setIsLoading(false);
-        return;
-    }
-
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const firebaseUser = userCredential.user;
@@ -351,16 +311,7 @@ export function SignUpForm() {
         
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
-        setDoc(userDocRef, newUser)
-            .catch((serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: userDocRef.path,
-                    operation: 'create',
-                    requestResourceData: newUser,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
-
+        await setDoc(userDocRef, newUser);
         
         const loggedIn = await login(values.email, values.password);
 
