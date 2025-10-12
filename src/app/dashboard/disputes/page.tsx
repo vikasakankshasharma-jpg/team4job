@@ -52,33 +52,27 @@ export default function DisputesPage() {
     if (!user || !db) return;
     setLoading(true);
     const disputesRef = collection(db, "disputes");
-    let allDisputes: Dispute[] = [];
-
+    
     if (isAdmin) {
         const q = query(disputesRef);
-        const querySnapshot = await getDocs(q);
-        allDisputes = querySnapshot.docs.map(doc => doc.data() as Dispute);
+        const snapshot = await getDocs(q);
+        setDisputes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dispute)));
     } else {
-        // Perform 3 separate queries as Firestore rules do not support 'OR' clauses
-        const q1 = query(disputesRef, where('requesterId', '==', user.id));
-        const q2 = query(disputesRef, where('parties.jobGiverId', '==', user.id));
-        const q3 = query(disputesRef, where('parties.installerId', '==', user.id));
+        const queries = [
+            query(disputesRef, where("requesterId", "==", user.id)),
+            query(disputesRef, where("parties.jobGiverId", "==", user.id)),
+            query(disputesRef, where("parties.installerId", "==", user.id)),
+        ];
 
-        const [snap1, snap2, snap3] = await Promise.all([
-            getDocs(q1),
-            getDocs(q2),
-            getDocs(q3)
-        ]);
-
+        const snaps = await Promise.all(queries.map(getDocs));
         const disputesMap = new Map<string, Dispute>();
-        snap1.forEach(doc => disputesMap.set(doc.id, doc.data() as Dispute));
-        snap2.forEach(doc => disputesMap.set(doc.id, doc.data() as Dispute));
-        snap3.forEach(doc => disputesMap.set(doc.id, doc.data() as Dispute));
-        allDisputes = Array.from(disputesMap.values());
+        snaps.forEach(snap => snap.forEach(d => disputesMap.set(d.id, { id: d.id, ...d.data() } as Dispute)));
+        
+        const allDisputes = Array.from(disputesMap.values());
+        allDisputes.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+        setDisputes(allDisputes);
     }
-
-    allDisputes.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
-    setDisputes(allDisputes);
+    
     setLoading(false);
   }, [user, isAdmin, db]);
 

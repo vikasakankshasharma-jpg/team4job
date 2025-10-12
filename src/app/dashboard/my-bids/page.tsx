@@ -167,36 +167,31 @@ function MyBidsPageContent() {
   }, [user, userLoading, router]);
   
   const fetchJobs = React.useCallback(async () => {
-      if (!user || !db || role !== 'Installer') return;
-      
-      setLoading(true);
-      const jobsRef = collection(db, "jobs");
-      const installerDocRef = doc(db, 'users', user.id);
-      
-      // Query 1: Jobs where the user has placed a bid.
-      const biddedJobsQuery = query(jobsRef, where('bidderIds', 'array-contains', user.id));
-      
-      // Query 2: Jobs that were awarded to the user.
-      const awardedJobsQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
-
-      const [biddedJobsSnapshot, awardedJobsSnapshot] = await Promise.all([
-          getDocs(biddedJobsQuery),
-          getDocs(awardedJobsQuery)
-      ]);
-      
-      const jobsMap = new Map<string, Job>();
-
-      biddedJobsSnapshot.forEach(doc => {
-          jobsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job);
-      });
-      awardedJobsSnapshot.forEach(doc => {
-          jobsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job);
-      });
-
-      const jobList = Array.from(jobsMap.values());
-      
-      setJobs(jobList);
+    if (!user || !db || role !== 'Installer') {
       setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const jobsRef = collection(db, "jobs");
+    const installerDocRef = doc(db, "users", user.id);
+
+    // Query 1: Jobs where user placed a bid
+    const biddedJobsQuery = query(jobsRef, where("bidderIds", "array-contains", user.id));
+    // Query 2: Jobs awarded to this installer
+    const awardedJobsQuery = query(jobsRef, where("awardedInstaller", "==", installerDocRef));
+
+    const [biddedSnapshot, awardedSnapshot] = await Promise.all([
+      getDocs(biddedJobsQuery),
+      getDocs(awardedJobsQuery),
+    ]);
+
+    const jobsMap = new Map<string, Job>();
+    biddedSnapshot.forEach(doc => jobsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job));
+    awardedSnapshot.forEach(doc => jobsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job));
+
+    setJobs(Array.from(jobsMap.values()));
+    setLoading(false);
   }, [user, db, role]);
 
   React.useEffect(() => {

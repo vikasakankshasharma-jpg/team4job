@@ -1,85 +1,90 @@
-
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // --- Helper Functions ---
+
+    // Helpers
     function isSignedIn() {
       return request.auth != null;
     }
-    
-    function isUser(userId) {
+
+    function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function getUserData(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data;
-    }
-
-    function isRole(role) {
-      return isSignedIn() && getUserData(request.auth.uid).roles.hasAny([role]);
+    function getUserRoles() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles;
     }
 
     function isAdmin() {
-      return isRole('Admin');
+      // Use hasAny to check for 'Admin' in the roles array.
+      return isSignedIn() && 'Admin' in getUserRoles();
     }
     
-    // --- Collection Rules ---
+    function isJobGiver() {
+       return isSignedIn() && 'Job Giver' in getUserRoles();
+    }
+    
+    function isInstaller() {
+       return isSignedIn() && 'Installer' in getUserRoles();
+    }
 
+    // Users - Read by any signed-in user, owner can modify, admin can delete
     match /users/{userId} {
-      allow create: if isUser(userId);
-      allow read: if isSignedIn();
-      allow update: if isUser(userId) || isAdmin();
+      allow read, list: if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
 
+    // Jobs - Read/write rules per role
     match /jobs/{jobId} {
-      allow read: if isSignedIn();
+      allow read, list: if isSignedIn(); // Allow lists; frontend queries control filtering
       allow create: if isSignedIn();
-      allow update: if (isSignedIn() && getUserData(request.auth.uid).id == resource.data.jobGiver.id) || isAdmin();
+      // Allow update if user is the job giver or an admin
+      allow update: if (isSignedIn() && get(/databases/$(database)/documents/jobs/$(jobId)).data.jobGiver.id == request.auth.uid) || isAdmin();
       allow delete: if isAdmin();
     }
-    
+
+    // Disputes - Read/update if user is party or admin
     match /disputes/{disputeId} {
-      function isParty() {
-        return request.auth.uid == resource.data.requesterId ||
-               request.auth.uid == resource.data.parties.jobGiverId ||
-               request.auth.uid == resource.data.parties.installerId;
-      }
-      
-      allow read, update: if isSignedIn() && (isParty() || isAdmin());
+      allow read, update: if isSignedIn() &&
+        (resource.data.requesterId == request.auth.uid ||
+         request.auth.uid == resource.data.parties.jobGiverId ||
+         request.auth.uid == resource.data.parties.installerId ||
+         isAdmin());
       allow create: if isSignedIn();
       allow delete: if isAdmin();
-      // List operation is broad for simplicity; client must filter to what user can see
+      // list is implicitly handled by the read rule on individual gets, 
+      // but we allow specific filtered lists for the dashboard page.
       allow list: if isSignedIn();
     }
 
+    // Blacklist - Read list by signed-in; admin writes only
     match /blacklist/{blacklistId} {
-      allow read, list: if isSignedIn(); // All signed-in users must be able to check blacklist for safety
+      allow read, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
+    // Coupons
     match /coupons/{couponId} {
       allow read, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
-    
+
+    // Subscription Plans
     match /subscriptionPlans/{planId} {
       allow read, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
+    // Transactions - read if involved or admin, list allowed but frontend filters
     match /transactions/{transactionId} {
-        function isTransactionParty() {
-            return request.auth.uid == resource.data.payerId || request.auth.uid == resource.data.payeeId;
-        }
-
-        allow read: if isSignedIn() && (isTransactionParty() || isAdmin());
-        // List operation is broad for simplicity; client must filter to what user can see
-        allow list: if isSignedIn();
-        // Transactions should only be created/updated via server-side logic (e.g. Cloud Functions)
-        allow create, update, delete: if false; 
+      allow read: if isSignedIn() &&
+        (resource.data.payerId == request.auth.uid ||
+         resource.data.payeeId == request.auth.uid ||
+         isAdmin());
+      allow list: if isSignedIn();  // Frontend must filter queries by payerId or payeeId
+      allow write: if false; // Should be handled by a backend function
     }
   }
 }
