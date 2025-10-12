@@ -1,5 +1,4 @@
 
-
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {
@@ -62,7 +61,7 @@ export type PrivateMessage = {
 };
 
 export type Bid = {
-  id:string;
+  id: string;
   installer: User | DocumentReference;
   amount: number;
   timestamp: Date | Timestamp;
@@ -181,5 +180,3 @@ export type BlacklistEntry = {
     reason: string;
     createdAt: Date | Timestamp;
 };
-    
-    

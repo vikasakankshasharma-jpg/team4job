@@ -54,7 +54,6 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
     const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
     
     if (!job.bids || job.bids.length === 0) {
-      // If there are no bids but an installer is awarded, it's a direct award
       if (awardedInstallerId) return 'Direct';
       return 'N/A';
     }
@@ -164,53 +163,19 @@ export default function PostedJobsPage() {
 
   React.useEffect(() => {
     async function fetchJobs() {
-      if (user && role === 'Job Giver' && db) {
-        setLoading(true);
-        const userJobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', doc(db, 'users', user.id)));
-        const jobSnapshot = await getDocs(userJobsQuery);
-        
-        const jobListWithRefs = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
-        
-        // Collect all unique user references from all jobs
-        const userRefIds = new Set<string>();
-        jobListWithRefs.forEach(job => {
-            if (job.awardedInstaller) userRefIds.add((job.awardedInstaller as DocumentReference).id);
-            (job.bids || []).forEach(bid => userRefIds.add((bid.installer as DocumentReference).id));
-        });
-
-        const usersMap = new Map<string, User>();
-        if (userRefIds.size > 0) {
-            // Fetch all user documents in a single query
-            const usersQuery = query(collection(db, 'users'), where('__name__', 'in', Array.from(userRefIds)));
-            const usersSnapshot = await getDocs(usersQuery);
-            usersSnapshot.forEach(doc => {
-                usersMap.set(doc.id, { id: doc.id, ...doc.data() } as User);
-            });
-        }
-        
-        // Populate the jobs with the fetched user data
-        const populatedJobs = jobListWithRefs.map(job => {
-            const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id;
-            const awardedInstaller = awardedInstallerId ? usersMap.get(awardedInstallerId) : undefined;
-            
-            const populatedBids = (job.bids || []).map(bid => {
-                const installerId = (bid.installer as DocumentReference)?.id;
-                const installer = installerId ? usersMap.get(installerId) : undefined;
-                return { ...bid, installer: installer || bid.installer };
-            });
-
-            return {
-                ...job,
-                awardedInstaller: awardedInstaller || job.awardedInstaller,
-                bids: populatedBids,
-            };
-        });
-
-        setJobs(populatedJobs);
-        setLoading(false);
-      }
+      if (!db || !user || role !== 'Job Giver') return;
+      
+      setLoading(true);
+      const userJobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', doc(db, 'users', user.id)));
+      const jobSnapshot = await getDocs(userJobsQuery);
+      
+      const jobList = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
+      setJobs(jobList);
+      setLoading(false);
     }
-    fetchJobs();
+    if (db && user) {
+        fetchJobs();
+    }
   }, [user, role, db]);
 
    React.useEffect(() => {

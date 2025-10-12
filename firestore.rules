@@ -2,58 +2,77 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-  
+
+    // Helper functions
     function isAdmin() {
+      // Check if the user has an 'Admin' role in their user document.
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles[0] == 'Admin';
     }
-
-    match /{document=**} {
-      allow read, write: if false;
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
 
+    // USERS
+    // Allow anyone to create their own user document (for signup).
+    // Allow any authenticated user to read any profile (for profile pages, etc.).
+    // Allow a user to only update their own profile.
     match /users/{userId} {
-      allow create: if request.auth.uid == userId;
       allow read: if request.auth != null;
-      allow update: if request.auth.uid == userId;
-      allow delete: if isAdmin();
+      allow list: if request.auth != null;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      // Admin override
+      allow write, delete: if isAdmin();
     }
-    
+
+    // JOBS
+    // Allow any authenticated user to read and list jobs.
+    // Allow any authenticated user to create a job.
+    // Only the job giver can update their own job.
     match /jobs/{jobId} {
-      allow read, list: if request.auth != null;
+      allow read: if request.auth != null;
+      allow list: if request.auth != null;
       allow create: if request.auth != null;
-      allow update: if get(/databases/$(database)/documents/jobs/$(jobId)).data.jobGiver.id == request.auth.uid || isAdmin();
-      allow delete: if isAdmin();
+      allow update: if request.auth.uid == resource.data.jobGiver.id;
+      // Admin override
+      allow write, delete: if isAdmin();
     }
-
+    
+    // DISPUTES
+    // Allow users to create disputes.
+    // Only allow participants (requester, jobGiver, installer) or an Admin to read/update.
     match /disputes/{disputeId} {
-      allow read, list: if request.auth.uid == resource.data.requesterId 
-                  || request.auth.uid == resource.data.parties.jobGiverId
-                  || request.auth.uid == resource.data.parties.installerId
-                  || isAdmin();
-      allow create: if request.auth != null;
-      allow update: if request.auth.uid == resource.data.requesterId 
-                  || request.auth.uid == resource.data.parties.jobGiverId
-                  || request.auth.uid == resource.data.parties.installerId
-                  || isAdmin();
-      allow delete: if isAdmin();
+        allow create: if request.auth != null;
+        allow read, update: if request.auth.uid == resource.data.requesterId || 
+                              request.auth.uid == resource.data.parties.jobGiverId || 
+                              request.auth.uid == resource.data.parties.installerId ||
+                              isAdmin();
+        allow list: if request.auth != null; // Queries must be filtered on the client
+        allow delete: if isAdmin();
     }
 
-    match /blacklist/{blacklistId} {
+    // ADMIN-ONLY COLLECTIONS (write)
+    // Any authenticated user can READ the blacklist to check their status, but only admin can write.
+    match /blacklist/{docId} {
       allow read, list: if request.auth != null;
-      allow write: if isAdmin();
+      allow write, delete, create: if isAdmin();
+    }
+    
+    // Only Admin can read or write coupons and subscription plans.
+    match /coupons/{docId} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /subscriptionPlans/{docId} {
+      allow read, write: if isAdmin();
     }
 
-    match /coupons/{couponId} {
-      allow read, write: if isAdmin();
-    }
-    
-     match /subscriptionPlans/{planId} {
-      allow read, write: if isAdmin();
-    }
-    
+    // TRANSACTIONS
+    // Only admin can read/write all transactions for reporting.
+    // Users can likely not read this collection directly anyway.
     match /transactions/{transactionId} {
         allow read, write: if isAdmin();
     }
   }
 }
-    
