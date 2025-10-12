@@ -199,8 +199,10 @@ function MyBidsPageContent() {
   }, [user, db, role]);
 
   React.useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+    if(user && db) {
+        fetchJobs();
+    }
+  }, [fetchJobs, user, db]);
 
   React.useEffect(() => {
     setHelp({
