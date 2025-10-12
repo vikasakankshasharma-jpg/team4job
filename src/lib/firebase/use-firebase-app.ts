@@ -4,7 +4,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const FirebaseAppContext = createContext<FirebaseApp | null>(null);
+export const FirebaseAppContext = createContext<FirebaseApp | null>(null);
 
 let firebaseApp: FirebaseApp;
 
@@ -41,22 +41,6 @@ export function getFirebaseApp(): FirebaseApp {
   }
   return firebaseApp;
 }
-
-export const FirebaseAppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [app, setApp] = useState<FirebaseApp | null>(null);
-
-    useEffect(() => {
-        // The initialization is deferred until the component mounts on the client.
-        setApp(getFirebaseApp());
-    }, []);
-
-    return (
-        <FirebaseAppContext.Provider value={app}>
-            {children}
-        </FirebaseAppContext.Provider>
-    );
-};
-
 
 export const useFirebaseApp = () => {
   const context = useContext(FirebaseAppContext);
