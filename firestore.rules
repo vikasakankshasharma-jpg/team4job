@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -15,12 +16,8 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function getUserRoles() {
-        return getUserData().roles;
-    }
-
     function isAdmin() {
-      return isSignedIn() && 'Admin' in getUserRoles();
+      return isSignedIn() && getUserData().roles.hasAny(['Admin']);
     }
 
     // --- Collection Rules ---
@@ -37,26 +34,23 @@ service cloud.firestore {
     match /jobs/{jobId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
-      // Allow update only by the job giver or an admin.
-      allow update: if (isSignedIn() && (resource.data.jobGiver == request.auth.uid || isAdmin()));
+      // Allow update if the user is the job giver or an admin
+      allow update: if isSignedIn() && (resource.data.jobGiver == request.auth.uid || isAdmin());
       allow delete: if isAdmin();
     }
 
-    // Disputes: Read/update restricted to involved parties. List queries must be specific.
+    // Disputes: Read/update restricted to involved parties. List is highly constrained.
     match /disputes/{disputeId} {
       allow read, update: if isSignedIn() && (
           resource.data.requesterId == request.auth.uid ||
-          (resource.data.parties != null && (
-            resource.data.parties.jobGiverId == request.auth.uid ||
-            resource.data.parties.installerId == request.auth.uid
-          )) ||
+          (resource.data.parties != null && request.auth.uid in resource.data.parties.values()) ||
           isAdmin()
       );
       allow create: if isSignedIn();
       allow delete: if isAdmin();
       
-      // THIS IS THE KEY: Allow list queries only if they are properly scoped.
-      // The frontend MUST use a 'where' clause that matches one of these conditions.
+      // List rule allows queries that are filtered on one of the specified fields.
+      // This matches the frontend logic of sending multiple simple queries.
       allow list: if isSignedIn() && (
         (request.query.where.field == 'requesterId' && request.query.where.value == request.auth.uid) ||
         (request.query.where.field == 'parties.jobGiverId' && request.query.where.value == request.auth.uid) ||
@@ -72,7 +66,7 @@ service cloud.firestore {
     }
 
     // Coupons: Admin-only writes. Reads for signed-in users.
-    match /coupons/{couponCode} {
+    match /coupons/{couponId} {
       allow read, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
