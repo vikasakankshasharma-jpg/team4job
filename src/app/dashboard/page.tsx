@@ -27,7 +27,7 @@ import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
 import { Job, User, Dispute } from "@/lib/types";
-import { collection, query, where, getDocs, or, doc, getDoc,getCountFromServer } from "firebase/firestore";
+import { collection, query, where, getDocs, or, doc, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
 
 
@@ -50,20 +50,22 @@ function InstallerDashboard() {
         const wonJobsQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
         
         const [openJobsSnapshot, myJobsSnapshot, wonJobsSnapshot] = await Promise.all([
-            getCountFromServer(openJobsQuery),
-            getCountFromServer(myJobsQuery),
-            getCountFromServer(wonJobsQuery)
+            getDocs(openJobsQuery),
+            getDocs(myJobsQuery),
+            getDocs(wonJobsQuery)
         ]);
 
         setStats({
-            openJobs: openJobsSnapshot.data().count,
-            myBids: myJobsSnapshot.data().count,
-            jobsWon: wonJobsSnapshot.data().count
+            openJobs: openJobsSnapshot.size,
+            myBids: myJobsSnapshot.size,
+            jobsWon: wonJobsSnapshot.size
         });
 
         setLoading(false);
     }
-    fetchData();
+    if (user && db) {
+      fetchData();
+    }
   }, [user, db]);
 
 
@@ -353,9 +355,9 @@ function AdminDashboard() {
         const disputesQuery = query(collection(db, "disputes"), where('status', '==', 'Open'));
 
         const [usersSnapshot, jobsSnapshot, disputesSnapshot] = await Promise.all([
-          getCountFromServer(usersQuery),
+          getDocs(usersQuery),
           getDocs(jobsQuery),
-          getCountFromServer(disputesQuery)
+          getDocs(disputesQuery)
         ]);
 
         const allJobs = jobsSnapshot.docs.map(d => d.data() as Job);
@@ -371,9 +373,9 @@ function AdminDashboard() {
         });
 
         setStats({
-            totalUsers: usersSnapshot.data().count,
+            totalUsers: usersSnapshot.size,
             totalJobs: allJobs.length,
-            openDisputes: disputesSnapshot.data().count,
+            openDisputes: disputesSnapshot.size,
             completedJobValue
         });
 
@@ -503,5 +505,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
