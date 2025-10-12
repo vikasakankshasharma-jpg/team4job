@@ -54,11 +54,12 @@ type SortableKeys = 'title' | 'status' | 'jobGiver' | 'bids' | 'jobType' | 'post
 
 function getJobType(job: Job) {
     if (!job.awardedInstaller) return 'N/A';
+    
+    const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
 
-    const awardedInstallerId = (job.awardedInstaller as User)?.id || (job.awardedInstaller as DocumentReference)?.id;
     if (!job.bids || job.bids.length === 0) return 'Direct';
 
-    const bidderIds = (job.bids || []).map(b => (b.installer as User).id || (b.installer as DocumentReference).id);
+    const bidderIds = (job.bids || []).map(b => (b.installer as DocumentReference)?.id || (b.installer as User)?.id);
 
     return bidderIds.includes(awardedInstallerId as string) ? 'Bidding' : 'Direct';
 };
@@ -115,42 +116,42 @@ export default function AllJobsPage() {
 
   React.useEffect(() => {
     async function fetchJobs() {
-      if (user?.roles[0] === 'Admin') {
+      if (user?.roles[0] === 'Admin' && db) {
+        setLoading(true);
         const jobsCollection = collection(db, 'jobs');
-        const q = query(jobsCollection);
-        const jobSnapshot = await getDocs(q);
+        const jobSnapshot = await getDocs(query(jobsCollection));
         const jobList = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
 
+        const userRefs = new Set<DocumentReference>();
+        jobList.forEach(job => {
+            if (job.jobGiver) userRefs.add(job.jobGiver as DocumentReference);
+            if (job.awardedInstaller) userRefs.add(job.awardedInstaller as DocumentReference);
+            (job.bids || []).forEach(bid => userRefs.add(bid.installer as DocumentReference));
+        });
+
         const usersMap = new Map<string, User>();
-        
-        const getUser = async (ref: DocumentReference) => {
-            if (usersMap.has(ref.id)) {
-                return usersMap.get(ref.id)!;
-            }
-            const docSnap = await getDoc(ref);
-            if (docSnap.exists()) {
-                const userData = { id: docSnap.id, ...docSnap.data() } as User;
-                usersMap.set(ref.id, userData);
-                return userData;
-            }
-            return ref;
-        };
+        if (userRefs.size > 0) {
+            const userDocs = await Promise.all(Array.from(userRefs).map(ref => getDoc(ref)));
+            userDocs.forEach(docSnap => {
+                if (docSnap.exists()) {
+                    usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
+                }
+            });
+        }
 
-        const populatedJobs = await Promise.all(jobList.map(async (job) => {
-            const jobGiver = await getUser(job.jobGiver as DocumentReference);
-            const awardedInstaller = job.awardedInstaller ? await getUser(job.awardedInstaller as DocumentReference) : undefined;
-            const bids = await Promise.all((job.bids || []).map(async (bid) => ({
-                ...bid,
-                installer: await getUser(bid.installer as DocumentReference)
-            })));
-
+        const populatedJobs = jobList.map(job => {
+            const getRefId = (ref: DocumentReference | User) => (ref as DocumentReference)?.id || (ref as User)?.id;
+            
             return {
                 ...job,
-                jobGiver,
-                awardedInstaller,
-                bids,
+                jobGiver: usersMap.get(getRefId(job.jobGiver)) || job.jobGiver,
+                awardedInstaller: job.awardedInstaller ? usersMap.get(getRefId(job.awardedInstaller)) || job.awardedInstaller : undefined,
+                bids: (job.bids || []).map(bid => ({
+                    ...bid,
+                    installer: usersMap.get(getRefId(bid.installer)) || bid.installer
+                })),
             };
-        }));
+        });
         
         setJobs(populatedJobs);
         const uniqueStatuses = Array.from(new Set(populatedJobs.map(j => j.status)));
@@ -158,9 +159,7 @@ export default function AllJobsPage() {
         setLoading(false);
       }
     }
-    if (db && user) {
-        fetchJobs();
-    }
+    fetchJobs();
   }, [user, db]);
 
 

@@ -61,7 +61,7 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     const getMyBidStatus = (): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
         if (!job || !user) return { text: "Unknown", variant: "secondary" };
         
-        const awardedId = (job.awardedInstaller as User)?.id || (job.awardedInstaller as DocumentReference)?.id;
+        const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
         
         const won = awardedId === user.id;
 
@@ -85,7 +85,7 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     const calculatePoints = () => {
         if (!job || job.status !== 'Completed') return null;
 
-        const awardedId = (job.awardedInstaller as User)?.id || (job.awardedInstaller as DocumentReference)?.id;
+        const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
 
         if (awardedId !== user?.id || !job.rating) {
             return null;
@@ -169,7 +169,7 @@ function MyBidsPageContent() {
   
   React.useEffect(() => {
     async function fetchJobs() {
-      if (!user) return;
+      if (!user || !db) return;
       setLoading(true);
       const jobsRef = collection(db, "jobs");
       const installerDocRef = doc(db, 'users', user.id);
@@ -186,26 +186,31 @@ function MyBidsPageContent() {
       
       const userMap = new Map<string, User>();
       if (userRefs.size > 0) {
-        const usersSnapshot = await getDocs(query(collection(db, 'users'), where('__name__', 'in', Array.from(userRefs))));
-        usersSnapshot.forEach(doc => userMap.set(doc.id, { id: doc.id, ...doc.data() } as User));
+        // Fetch all unique users in a single query if possible, or batch requests
+        const userDocs = await Promise.all(Array.from(userRefs).map(ref => getDoc(ref)));
+        userDocs.forEach(doc => {
+            if (doc.exists()) {
+                userMap.set(doc.id, { id: doc.id, ...doc.data() } as User);
+            }
+        });
       }
 
       const jobList = jobSnapshot.docs.map(doc => {
         const jobData = doc.data() as Job;
+        const getRefId = (ref: DocumentReference | User) => (ref as DocumentReference)?.id || (ref as User)?.id;
+        
         return {
           ...jobData,
           id: doc.id,
-          jobGiver: userMap.get((jobData.jobGiver as DocumentReference).id) || jobData.jobGiver,
-          awardedInstaller: jobData.awardedInstaller ? userMap.get((jobData.awardedInstaller as DocumentReference).id) || jobData.awardedInstaller : undefined,
-          bids: (jobData.bids || []).map(bid => ({ ...bid, installer: userMap.get((bid.installer as DocumentReference).id) || bid.installer }))
+          jobGiver: userMap.get(getRefId(jobData.jobGiver)) || jobData.jobGiver,
+          awardedInstaller: jobData.awardedInstaller ? userMap.get(getRefId(jobData.awardedInstaller)) || jobData.awardedInstaller : undefined,
+          bids: (jobData.bids || []).map(bid => ({ ...bid, installer: userMap.get(getRefId(bid.installer)) || bid.installer }))
         };
       });
       setJobs(jobList);
       setLoading(false);
     }
-    if (db && user) {
-        fetchJobs();
-    }
+    fetchJobs();
   }, [user, db]);
 
   React.useEffect(() => {
@@ -268,8 +273,9 @@ function MyBidsPageContent() {
   };
   
  const myBids = !user ? [] : jobs.map(job => {
-    const myBid = (job.bids || []).find(bid => ((bid.installer as User)?.id || (bid.installer as DocumentReference)?.id) === user.id);
-    const awardedId = (job.awardedInstaller as User)?.id || (job.awardedInstaller as DocumentReference)?.id;
+    const getRefId = (ref: DocumentReference | User) => (ref as DocumentReference)?.id || (ref as User)?.id;
+    const myBid = (job.bids || []).find(bid => getRefId(bid.installer) === user.id);
+    const awardedId = job.awardedInstaller ? getRefId(job.awardedInstaller) : null;
     const isAwardedToMe = awardedId === user.id;
 
     // A job is relevant if the user has bid on it OR was awarded it directly.
@@ -277,7 +283,7 @@ function MyBidsPageContent() {
       return {
         id: myBid?.id || `direct-award-${job.id}`,
         installer: user,
-        amount: myBid?.amount || (isAwardedToMe ? (job.bids || []).find(b => (((b.installer as User).id || (b.installer as DocumentReference).id) === awardedId))?.amount || 0 : 0),
+        amount: myBid?.amount || (isAwardedToMe ? (job.bids || []).find(b => (getRefId(b.installer)) === awardedId)?.amount || 0 : 0),
         timestamp: myBid?.timestamp || toDate(job.postedAt),
         coverLetter: myBid?.coverLetter || "Job awarded directly.",
         jobTitle: job.title,
