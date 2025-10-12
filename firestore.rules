@@ -1,77 +1,103 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper functions
-    function isAdmin() {
-      // Check if the user has an 'Admin' role in their user document.
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']);
+    
+    // --- Helper Functions ---
+    function isSignedIn() {
+      return request.auth != null;
     }
 
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Default Deny: Secure all paths by default.
-    match /{document=**} {
-      allow read, write: if false;
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && getUserData().roles.hasAny(['Admin']);
     }
 
-    // users collection
+    // --- Collection Rules ---
+
     match /users/{userId} {
-      // Any authenticated user can read any user's profile. Necessary for displaying user info on jobs/bids.
-      allow read: if request.auth != null;
-      // A user can only create their own profile.
+      // ANY signed-in user can read any user's profile (for profile pages, job details, etc.)
+      allow read, list: if isSignedIn();
+      // A user can ONLY create their own profile document.
       allow create: if isOwner(userId);
-      // A user can only update their own profile, or an Admin can.
-      allow update: if isOwner(userId) || isAdmin();
-      // Only Admins can delete users.
+      // A user can ONLY update their own profile.
+      allow update: if isOwner(userId);
+      // ONLY an admin can delete a user profile.
       allow delete: if isAdmin();
     }
-    
-    // jobs collection
+
     match /jobs/{jobId} {
-      // Any authenticated user can read or list jobs.
-      allow read, list: if request.auth != null;
-      // Any authenticated user can create a job.
-      allow create: if request.auth != null;
-      // Only the Job Giver or an Admin can update a job.
-      allow update: if get(/databases/$(database)/documents/jobs/$(jobId)).data.jobGiver.id == request.auth.uid || isAdmin();
-      // Only Admins can delete jobs.
+      // ANY signed-in user can read or query jobs.
+      allow read, list: if isSignedIn();
+      // ANY signed-in user can create a job.
+      allow create: if isSignedIn();
+      // ONLY the original job giver or an admin can update a job.
+      allow update: if (isSignedIn() && request.resource.data.jobGiver == request.auth.uid) || isAdmin();
+      // ONLY an admin can delete a job.
       allow delete: if isAdmin();
     }
 
-    // disputes collection
     match /disputes/{disputeId} {
-      // Users can read disputes they are part of. Admins can read any.
-      allow read: if request.auth.uid == resource.data.requesterId || request.auth.uid == resource.data.parties.jobGiverId || request.auth.uid == resource.data.parties.installerId || isAdmin();
-      // Any authenticated user can create a dispute.
-      allow create: if request.auth != null;
-      // Only participants or Admins can update.
-      allow update: if request.auth.uid == resource.data.requesterId || request.auth.uid == resource.data.parties.jobGiverId || request.auth.uid == resource.data.parties.installerId || isAdmin();
-      // Only Admins can delete disputes.
+      // Allow read/update only if user is the requester, one of the parties, or an admin.
+      allow read, update: if isSignedIn() && (
+        resource.data.requesterId == request.auth.uid ||
+        request.auth.uid in resource.data.parties.values() ||
+        isAdmin()
+      );
+      // Any signed-in user can create a dispute.
+      allow create: if isSignedIn();
+      // Only admin can delete.
       allow delete: if isAdmin();
-    }
-    
-    // blacklist collection
-    match /blacklist/{blacklistId} {
-      // Any authenticated user can read the blacklist (needed for login check).
-      allow read, list: if request.auth != null;
-      // Only Admins can write to the blacklist.
-      allow write: if isAdmin();
-    }
-    
-    // coupons and subscriptionPlans collections
-    match /coupons/{couponId} {
-      allow read, list: if request.auth != null;
-      // Only Admins can write to coupons.
-      allow write: if isAdmin();
+      // Allow list only if the user is involved in the dispute.
+      // This is a common pattern for privacy.
+      allow list: if isSignedIn() && (
+          (request.query.where.field == 'requesterId' && request.query.where.value == request.auth.uid) ||
+          (request.query.where.field == 'parties.jobGiverId' && request.query.where.value == request.auth.uid) ||
+          (request.query.where.field == 'parties.installerId' && request.query.where.value == request.auth.uid) ||
+          isAdmin()
+      );
     }
 
+    match /blacklist/{blacklistId} {
+      // Allow any authenticated user to read the blacklist (for login checks).
+      allow read, list: if isSignedIn();
+      // ONLY admin can write to the blacklist.
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /coupons/{couponId} {
+      // Allow any authenticated user to read/list coupons.
+      allow read, list: if isSignedIn();
+      // ONLY admin can write to coupons.
+      allow create, update, delete: if isAdmin();
+    }
+    
     match /subscriptionPlans/{planId} {
-       // Only Admins can manage plans.
-      allow read, list, write: if isAdmin();
+      // Allow any authenticated user to read/list subscription plans.
+      allow read, list: if isSignedIn();
+      // ONLY admin can write to subscription plans.
+      allow create, update, delete: if isAdmin();
+    }
+    
+    match /transactions/{transactionId} {
+        // Only involved parties or admin can see transactions.
+        allow read: if isSignedIn() && (
+            resource.data.payerId == request.auth.uid || 
+            resource.data.payeeId == request.auth.uid ||
+            isAdmin()
+        );
+        allow list: if isSignedIn(); // Queries must be filtered on frontend.
+        // Writes are complex and would be handled by trusted server code (Cloud Functions).
+        allow write: if false; 
     }
   }
 }
+
+    

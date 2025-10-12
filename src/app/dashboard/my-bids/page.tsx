@@ -150,7 +150,7 @@ const bidStatuses = [
 ];
 
 function MyBidsPageContent() {
-  const { user, role } = useUser();
+  const { user, role, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const searchParams = React.use(useSearchParams());
   const router = useRouter();
@@ -199,10 +199,10 @@ function MyBidsPageContent() {
   }, [user, db, role]);
 
   React.useEffect(() => {
-    if(user && db) {
+    if(!userLoading && user && db) {
         fetchJobs();
     }
-  }, [fetchJobs, user, db]);
+  }, [fetchJobs, user, db, userLoading]);
 
   React.useEffect(() => {
     setHelp({
@@ -241,7 +241,15 @@ function MyBidsPageContent() {
       statusFilter = 'Completed & Won';
   }
   
-  if (!user || user.roles.includes("Admin") || !user.roles.includes("Installer")) {
+  if (userLoading || (!user && !userLoading)) {
+      return (
+        <div className="flex items-center justify-center h-full">
+            <p className="text-muted-foreground">Loading...</p>
+        </div>
+      );
+  }
+
+  if (role !== 'Installer') {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">This page is for Installers only.</p>
@@ -409,3 +417,5 @@ export default function MyBidsPage() {
         </React.Suspense>
     )
 }
+
+    
