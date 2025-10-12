@@ -1,68 +1,13 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper functions to make rules more readable.
-    function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']);
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // Default deny all reads and writes, unless explicitly allowed by a rule below.
+    // Allow read/write access to all documents for any authenticated user.
+    // This is a permissive rule for development. For production, you should
+    // implement more granular rules.
     match /{document=**} {
-      allow read, write: if false;
-    }
-    
-    // Authenticated users can read any document. This is a broad rule
-    // to ensure all application queries for displaying data work correctly.
-    // Write access remains highly restricted by the rules below.
-    match /{document=**} {
-      allow read: if request.auth != null;
-    }
-
-    // --- User Profiles ---
-    match /users/{userId} {
-      // Allow user to create their own profile during signup.
-      allow create: if isOwner(userId);
-      // A user can only update their own document.
-      allow update: if isOwner(userId) || isAdmin();
-      // Only admins can delete user accounts.
-      allow delete: if isAdmin();
-    }
-    
-    // --- Jobs and Subcollections ---
-    match /jobs/{jobId} {
-      // Any authenticated user can create a job.
-      allow create: if request.auth != null;
-      // Only the job giver or an admin can update the job.
-      allow update: if resource.data.jobGiver.id == request.auth.uid || isAdmin();
-      // Only admins can delete jobs.
-      allow delete: if isAdmin();
-    }
-
-    // --- Admin-Only Collections ---
-    match /disputes/{disputeId} {
-      allow write: if isAdmin();
-    }
-    
-    match /coupons/{couponId} {
-      allow write: if isAdmin();
-    }
-    
-    match /blacklist/{blacklistId} {
-      allow write: if isAdmin();
-    }
-
-    match /transactions/{transactionId} {
-        allow write: if isAdmin();
-    }
-
-    match /subscriptionPlans/{planId} {
-        allow write: if isAdmin();
+      allow read, write: if request.auth != null;
     }
   }
 }
