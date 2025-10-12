@@ -2,74 +2,85 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    function isAuth() {
-      return request.auth != null;
+  
+    // Helper function to check for Admin role
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['Admin']);
     }
 
-    // --- User Profiles ---
+    // Rules for the 'users' collection
     match /users/{userId} {
-      // Allow anyone to create their own user document during signup
+      // Allow any authenticated user to read any profile (for showing job giver/installer info)
+      // Allow any authenticated user to list users (for searching/directory)
+      allow list, read: if request.auth != null;
+      
+      // Allow a user to create their own user document
       allow create: if request.auth.uid == userId;
-      // Allow authenticated users to read any profile
-      allow read: if isAuth();
-      // Allow users to only update their own profile
-      allow update: if isAuth() && request.auth.uid == userId;
-      // Disallow deleting user profiles for now
+
+      // Allow a user to update only their own document
+      allow update: if request.auth.uid == userId;
+      
+      // Disallow deletion of user profiles for now
       allow delete: if false;
     }
 
-    // --- Jobs ---
+    // Rules for the 'jobs' collection
     match /jobs/{jobId} {
-      // Any authenticated user can read jobs
-      allow read: if isAuth();
-      // Only authenticated users can create jobs
-      allow create: if isAuth();
-      // Only the original job giver can update their job post
-      allow update: if isAuth() && request.resource.data.jobGiver == request.auth.uid;
-      // For now, disallow deleting jobs
+      // Allow any authenticated user to read or list jobs
+      allow list, read: if request.auth != null;
+      
+      // Allow any authenticated user to create a job
+      allow create: if request.auth != null;
+      
+      // Allow updates only by the original job giver
+      allow update: if request.auth != null && request.auth.uid == resource.data.jobGiver.id;
+      
+      // Disallow deletion of jobs for now
       allow delete: if false;
     }
 
-    // --- Disputes ---
+    // Rules for the 'disputes' collection
     match /disputes/{disputeId} {
-      // Allow involved parties (requester, job giver, installer) and admins to read
-      allow read: if isAuth() && (
-        resource.data.requesterId == request.auth.uid ||
-        resource.data.parties.jobGiverId == request.auth.uid ||
-        resource.data.parties.installerId == request.auth.uid
-      );
-      // Allow authenticated users to create a dispute
-      allow create: if isAuth();
-      // Allow involved parties to add messages (update)
-      allow update: if isAuth() && (
-        resource.data.requesterId == request.auth.uid ||
-        resource.data.parties.jobGiverId == request.auth.uid ||
-        resource.data.parties.installerId == request.auth.uid
-      );
-      // Disallow deleting disputes
-      allow delete: if false;
+        // Allow read/list only if the user is a party to the dispute OR is an admin
+        allow list, read: if request.auth != null && 
+          (
+            (resource.data.requesterId == request.auth.uid) ||
+            (resource.data.parties.jobGiverId == request.auth.uid) ||
+            (resource.data.parties.installerId == request.auth.uid) ||
+            isAdmin()
+          );
+
+        // Allow any authenticated user to create a dispute
+        allow create: if request.auth != null;
+
+        // Allow updates only from parties involved or an admin
+        allow update: if request.auth != null &&
+          (
+            (resource.data.requesterId == request.auth.uid) ||
+            (resource.data.parties.jobGiverId == request.auth.uid) ||
+            (resource.data.parties.installerId == request.auth.uid) ||
+            isAdmin()
+          );
+
+        // Only Admins can delete disputes
+        allow delete: if isAdmin();
     }
     
-    // --- Blacklist: Read for users, Write for Admins ---
-    match /blacklist/{entry} {
-      // All authenticated users need to check this on login
-      allow read: if isAuth();
-      // Only admins can add, update, or remove blacklist entries
-      allow write: if false; // No write access for users. Admin access should be handled via backend functions.
-    }
-    
-    // --- Other Admin-only collections ---
+    // Admin-only collections
     match /coupons/{couponId} {
-      allow read, write: if false;
+      allow read, write: if isAdmin();
     }
     
-    match /subscriptionPlans/{planId} {
-      allow read, write: if false;
+    match /blacklist/{entryId} {
+      // Any authenticated user can read the blacklist to check their status
+      allow read: if request.auth != null;
+      // Only admins can write to the blacklist
+      allow write: if isAdmin();
     }
     
-    match /transactions/{transactionId} {
-        allow read, write: if false;
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
