@@ -3,48 +3,73 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check for Admin role
-    function isAdmin() {
-      return request.auth.token.roles.hasAny(['Admin']);
+    function isAuth() {
+      return request.auth != null;
     }
 
-    // Users can create their own profile, and read/update their own data.
-    // Any authenticated user can read any other user's profile.
+    // --- User Profiles ---
     match /users/{userId} {
-      allow read: if request.auth != null;
+      // Allow anyone to create their own user document during signup
       allow create: if request.auth.uid == userId;
-      allow update: if request.auth.uid == userId;
-      // Disallow deletes for now to prevent data loss
+      // Allow authenticated users to read any profile
+      allow read: if isAuth();
+      // Allow users to only update their own profile
+      allow update: if isAuth() && request.auth.uid == userId;
+      // Disallow deleting user profiles for now
       allow delete: if false;
     }
 
-    // Jobs can be read by anyone authenticated.
-    // They can only be created by an authenticated user.
-    // They can only be updated by the original job giver.
+    // --- Jobs ---
     match /jobs/{jobId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && request.resource.data.jobGiver == request.auth.uid;
-      // Disallow deletes for now
+      // Any authenticated user can read jobs
+      allow read: if isAuth();
+      // Only authenticated users can create jobs
+      allow create: if isAuth();
+      // Only the original job giver can update their job post
+      allow update: if isAuth() && request.resource.data.jobGiver == request.auth.uid;
+      // For now, disallow deleting jobs
+      allow delete: if false;
+    }
+
+    // --- Disputes ---
+    match /disputes/{disputeId} {
+      // Allow involved parties (requester, job giver, installer) and admins to read
+      allow read: if isAuth() && (
+        resource.data.requesterId == request.auth.uid ||
+        resource.data.parties.jobGiverId == request.auth.uid ||
+        resource.data.parties.installerId == request.auth.uid
+      );
+      // Allow authenticated users to create a dispute
+      allow create: if isAuth();
+      // Allow involved parties to add messages (update)
+      allow update: if isAuth() && (
+        resource.data.requesterId == request.auth.uid ||
+        resource.data.parties.jobGiverId == request.auth.uid ||
+        resource.data.parties.installerId == request.auth.uid
+      );
+      // Disallow deleting disputes
       allow delete: if false;
     }
     
-    // Disputes can only be managed by Admins.
-    // Users interact with disputes via the Job document itself.
-    match /disputes/{disputeId} {
-        allow read, write: if isAdmin();
+    // --- Blacklist: Read for users, Write for Admins ---
+    match /blacklist/{entry} {
+      // All authenticated users need to check this on login
+      allow read: if isAuth();
+      // Only admins can add, update, or remove blacklist entries
+      allow write: if false; // No write access for users. Admin access should be handled via backend functions.
     }
     
-    // Coupons can only be managed by Admins.
-    match /coupons/{couponCode} {
-      allow read, write: if isAdmin();
+    // --- Other Admin-only collections ---
+    match /coupons/{couponId} {
+      allow read, write: if false;
     }
     
-    // Blacklist can only be managed by Admins.
-    match /blacklist/{blacklistId} {
-        allow read, write: if isAdmin();
+    match /subscriptionPlans/{planId} {
+      allow read, write: if false;
     }
-
-    // All other collections are locked down by default.
+    
+    match /transactions/{transactionId} {
+        allow read, write: if false;
+    }
   }
 }
