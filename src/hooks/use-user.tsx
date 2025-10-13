@@ -108,6 +108,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [userDocLoading, setUserDocLoading] = useState(true);
+  const notFoundRetries = useRef(new Map<string, number>());
 
   const router = useRouter();
   const pathname = usePathname();
@@ -156,6 +157,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
         const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
            if (userDoc.exists()) {
              const userData = { id: userDoc.id, ...userDoc.data() } as User;
+             notFoundRetries.current.delete(firebaseUser.uid); // Clear retries on success
              
              const blacklistQuery = query(collection(db, "blacklist"), where("value", "==", firebaseUser.uid), where("type", "==", "user"));
              const blacklistSnapshot = await getDocs(blacklistQuery);
@@ -168,7 +170,20 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
                 updateUserState(userData);
              }
            } else {
+              const currentRetries = notFoundRetries.current.get(firebaseUser.uid) || 0;
+              if (currentRetries < 1) { // Allow only one retry attempt
+                  notFoundRetries.current.set(firebaseUser.uid, currentRetries + 1);
+                  console.warn(`User document for ${firebaseUser.uid} not found. Retrying in 2 seconds...`);
+                  setTimeout(() => {
+                      // The onSnapshot listener will be triggered again automatically by any change,
+                      // but we don't need to do anything here, just wait.
+                  }, 2000);
+                  // Don't log out yet, wait for retry
+                  return;
+              }
+             
              console.error("User document not found for authenticated user:", firebaseUser.uid);
+             notFoundRetries.current.delete(firebaseUser.uid); // Clean up after final failure
              signOut(auth);
              updateUserState(null);
            }
