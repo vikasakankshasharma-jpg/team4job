@@ -237,6 +237,8 @@ async function seedAuthAndGetUIDs(users: Omit<User, 'id'>[]) {
                 email: user.email,
                 password: "password123", // All users get a default password
                 displayName: user.name,
+                emailVerified: true,
+                disabled: false,
             });
             userUIDs[user.email] = userRecord.uid;
             console.log(`- Created auth user: ${user.email} (UID: ${userRecord.uid})`);
@@ -244,7 +246,9 @@ async function seedAuthAndGetUIDs(users: Omit<User, 'id'>[]) {
             if (error.code === 'auth/email-already-exists') {
                  const userRecord = await adminAuth.getUserByEmail(user.email);
                  userUIDs[user.email] = userRecord.uid;
-                 console.log(`- Auth user already exists: ${user.email} (UID: ${userRecord.uid})`);
+                 // Ensure password is set for existing user, in case it was created without one
+                 await adminAuth.updateUser(userRecord.uid, { password: 'password123' });
+                 console.log(`- Auth user already exists, password updated: ${user.email} (UID: ${userRecord.uid})`);
             } else {
                 console.error(`- Error creating auth user ${user.email}:`, error.message);
             }

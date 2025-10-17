@@ -21,6 +21,7 @@ import {
   IndianRupee,
   AlertOctagon,
   Loader2,
+  ShieldCheck
 } from "lucide-react";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
@@ -37,6 +38,8 @@ function InstallerDashboard() {
   const [stats, setStats] = React.useState({ openJobs: 0, myBids: 0, jobsWon: 0 });
   const [loading, setLoading] = React.useState(true);
 
+  const isVerified = user?.installerProfile?.verified;
+
   React.useEffect(() => {
     async function fetchData() {
         if (!user || !db) return;
@@ -51,7 +54,7 @@ function InstallerDashboard() {
 
         const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot] = await Promise.all([
             getDocs(openJobsQuery),
-            getDocs(myBidsSnapshot),
+            getDocs(myBidsQuery),
             getDocs(myAwardedQuery)
         ]);
 
@@ -87,6 +90,11 @@ function InstallerDashboard() {
                     <li>
                         <span className="font-semibold">Jobs Won:</span> Displays the number of jobs you've won that are currently active or in progress.
                     </li>
+                     {!isVerified && (
+                         <li>
+                            <span className="font-semibold">Verification:</span> Complete your Aadhar verification to become a trusted installer and increase your chances of winning jobs.
+                        </li>
+                    )}
                     <li>
                         <span className="font-semibold">Find Your Next Project:</span> A quick link to jump directly to the job browsing page.
                     </li>
@@ -95,7 +103,7 @@ function InstallerDashboard() {
             </div>
         )
     });
-  }, [setHelp]);
+  }, [setHelp, isVerified]);
 
   if (loading) {
       return (
@@ -107,6 +115,26 @@ function InstallerDashboard() {
 
   return (
     <>
+     {!isVerified && (
+        <Card className="mb-8 bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800">
+          <CardHeader className="flex-row items-center gap-4 space-y-0">
+             <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900">
+                <ShieldCheck className="h-6 w-6 text-yellow-600 dark:text-yellow-300" />
+             </div>
+             <div>
+                <CardTitle>Become a Verified Installer</CardTitle>
+                <CardDescription>Complete Aadhar verification to build trust and get more jobs.</CardDescription>
+             </div>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+                <Link href="/dashboard/verify-installer">
+                    Verify Now <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <Card>
           <Link href="/dashboard/jobs">
@@ -152,7 +180,7 @@ function InstallerDashboard() {
         </Card>
       </div>
       <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
-        <Card>
+        <Card data-tour="find-project-card">
           <CardHeader>
             <CardTitle>Find Your Next Project</CardTitle>
             <CardDescription>
@@ -167,7 +195,7 @@ function InstallerDashboard() {
             </Button>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-tour="manage-profile-card">
           <CardHeader>
             <CardTitle>Manage Your Profile</CardTitle>
             <CardDescription>
@@ -305,7 +333,7 @@ function JobGiverDashboard() {
         </Card>
       </div>
       <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
-        <Card>
+        <Card data-tour="need-installer-card">
           <CardHeader>
             <CardTitle>Need an Installer?</CardTitle>
             <CardDescription>
@@ -320,7 +348,7 @@ function JobGiverDashboard() {
             </Button>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-tour="manage-jobs-card">
           <CardHeader>
             <CardTitle>Manage Your Jobs</CardTitle>
             <CardDescription>

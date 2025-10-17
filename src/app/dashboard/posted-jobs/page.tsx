@@ -63,6 +63,27 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
     return bidderIds.includes(awardedInstallerId as string) ? 'Bidding' : 'Direct';
   };
 
+  const getActionsForJob = (job: Job) => {
+    const actions = [
+      <DropdownMenuItem key="view" asChild><Link href={`/dashboard/jobs/${job.id}`}>View Details</Link></DropdownMenuItem>
+    ];
+
+    switch (job.status) {
+        case 'Open for Bidding':
+            actions.push(<DropdownMenuItem key="edit">Edit</DropdownMenuItem>);
+            actions.push(<DropdownMenuItem key="close">Close Bidding</DropdownMenuItem>);
+            break;
+        case 'Unbid':
+            actions.push(<DropdownMenuItem key="edit">Edit</DropdownMenuItem>);
+            actions.push(<DropdownMenuItem key="repost">Repost Job</DropdownMenuItem>);
+            break;
+        default:
+            // No special actions for other statuses, 'View Details' is always available
+            break;
+    }
+    return actions;
+  }
+
   return (
       <Card>
         <CardHeader>
@@ -118,12 +139,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                           <DropdownMenuItem asChild><Link href={`/dashboard/jobs/${job.id}`}>View Details</Link></DropdownMenuItem>
-                           {job.status === 'Unbid' && (
-                             <DropdownMenuItem>Repost Job</DropdownMenuItem>
-                           )}
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Close Bidding</DropdownMenuItem>
+                          {getActionsForJob(job)}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

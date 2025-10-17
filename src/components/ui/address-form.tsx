@@ -87,13 +87,10 @@ export function AddressForm({
             </div>
              <MapInput 
                 name={fullAddressName}
-                label="Set Precise Location on Map (Optional)"
+                label="Set Precise Location on Map"
                 control={control}
                 center={mapCenter}
              />
-             <FormDescription>
-                The map is currently optional for testing. You can proceed without interacting with it.
-             </FormDescription>
         </div>
     )
 }

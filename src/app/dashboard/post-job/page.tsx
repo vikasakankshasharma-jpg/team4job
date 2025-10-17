@@ -41,7 +41,7 @@ const addressSchema = z.object({
   street: z.string().min(3, "Please enter a valid street/area."),
   landmark: z.string().optional(),
   cityPincode: z.string().min(8, "Please select a pincode and post office."),
-  fullAddress: z.string().optional(),
+  fullAddress: z.string().min(10, { message: "Please set a precise location on the map." }),
 });
 
 const jobSchema = z.object({
@@ -57,7 +57,8 @@ const jobSchema = z.object({
   budgetMax: z.coerce.number().min(1, { message: "Maximum budget must be at least 1." }),
   deadline: z.string().refine((val) => new Date(val) > new Date(), {
     message: "Deadline must be in the future.",
-  }).or(z.literal("")),
+  }).or(z.literal(""))
+  ,
   jobStartDate: z.string().min(1, { message: "Please select a job start date." }),
   directAwardInstallerId: z.string().optional(),
 }).refine(data => data.budgetMax > data.budgetMin, {
