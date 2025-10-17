@@ -27,7 +27,7 @@ import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
 import { Job, User, Dispute } from "@/lib/types";
-import { collection, query, where, getDocs, or, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, or, and, doc, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 
@@ -238,11 +238,13 @@ function JobGiverDashboard() {
         const myJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
         
         const disputesQuery = query(
-            collection(db, "disputes"), 
-            where('status', '==', 'Open'),
-            or(
-                where('jobGiver', '==', userDocRef),
-                where('installer', '==', userDocRef)
+            collection(db, "disputes"),
+            and(
+                where('status', '==', 'Open'),
+                or(
+                    where('parties.jobGiverId', '==', user.id),
+                    where('parties.installerId', '==', user.id)
+                )
             )
         );
 
@@ -551,3 +553,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
