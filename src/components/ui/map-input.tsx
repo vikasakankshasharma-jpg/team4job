@@ -135,7 +135,7 @@ export function MapInput({ name, label, control, center: propCenter }: MapInputP
             {marker && <Marker position={marker} />}
         </GoogleMap>
         <FormDescription>
-            You can either type the address manually or click on the map to set a precise location.
+            Click on the map to pin the exact job location or type the full address. This is required.
         </FormDescription>
         <FormMessage>{addressFieldState.error?.message}</FormMessage>
     </FormItem>

@@ -363,6 +363,19 @@ function UserReputationSettings() {
 }
 
 function PlatformRulesSettings() {
+    const { toast } = useToast();
+    const [minBudget, setMinBudget] = React.useState(500);
+    const [autoVerify, setAutoVerify] = React.useState(true);
+
+    const handleSave = () => {
+        // Here you would typically save the settings to your backend
+        console.log("Saving platform rules:", { minBudget, autoVerify });
+        toast({
+            title: "Platform Rules Saved",
+            description: "Your changes have been successfully saved.",
+        });
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -376,7 +389,8 @@ function PlatformRulesSettings() {
                         <Input
                             id="min-budget"
                             type="number"
-                            defaultValue="500"
+                            value={minBudget}
+                            onChange={(e) => setMinBudget(Number(e.target.value))}
                             min="0"
                             className="max-w-[120px]"
                         />
@@ -389,13 +403,17 @@ function PlatformRulesSettings() {
                  <div className="space-y-2">
                     <Label htmlFor="auto-verify" className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Automatic Installer Verification</Label>
                     <div className="flex items-center space-x-2">
-                        <Switch id="auto-verify" defaultChecked />
+                        <Switch 
+                            id="auto-verify" 
+                            checked={autoVerify}
+                            onCheckedChange={setAutoVerify}
+                        />
                         <Label htmlFor="auto-verify" className="text-sm font-normal">Enable automatic Aadhar verification for new installers.</Label>
                     </div>
                  </div>
             </CardContent>
             <CardFooter>
-                 <Button>Save Platform Rules</Button>
+                 <Button onClick={handleSave}>Save Platform Rules</Button>
             </CardFooter>
         </Card>
     );

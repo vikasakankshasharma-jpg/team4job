@@ -41,9 +41,14 @@ export function LoginForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
+    const isDemoUser = values.email.endsWith("@demo.com");
     const success = await login(values.email, values.password);
     if (success) {
-      router.push("/dashboard");
+       if (isDemoUser) {
+        router.push("/dashboard?tour=true");
+      } else {
+        router.push("/dashboard");
+      }
     } else {
       toast({
         title: "Login Failed",
