@@ -152,7 +152,7 @@ const bidStatuses = [
 function MyBidsPageContent() {
   const { user, role, loading: userLoading } = useUser();
   const { db } = useFirebase();
-  const searchParams = React.use(useSearchParams());
+  const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   let statusFilter = searchParams.get('status');
@@ -413,8 +413,6 @@ function MyBidsPageContent() {
 
 export default function MyBidsPage() {
     return (
-        <React.Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>}>
-            <MyBidsPageContent />
-        </React.Suspense>
+        <MyBidsPageContent />
     )
 }
