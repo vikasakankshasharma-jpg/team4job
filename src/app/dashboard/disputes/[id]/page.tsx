@@ -2,7 +2,7 @@
 "use client";
 
 import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { useFirebase } from "@/hooks/use-user";
 import { notFound, useParams } from "next/navigation";
 import {
   Card,
@@ -88,7 +88,7 @@ function PageSkeleton() {
 export default function DisputeDetailPage() {
   const { user, isAdmin } = useUser();
   const { db } = useFirebase();
-  const params = React.use(useParams());
+  const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -402,3 +402,5 @@ export default function DisputeDetailPage() {
     </div>
   );
 }
+
+    
