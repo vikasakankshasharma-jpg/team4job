@@ -15,9 +15,9 @@ import { Logo } from "@/components/icons";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState } from "react";
 
-function LoginPageContent() {
+export default function LoginPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -89,12 +89,4 @@ function LoginPageContent() {
       </main>
     </div>
   );
-}
-
-export default function LoginPage() {
-    return (
-        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center">Loading...</div>}>
-            <LoginPageContent />
-        </Suspense>
-    )
 }
