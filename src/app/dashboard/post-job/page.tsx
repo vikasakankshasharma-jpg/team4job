@@ -485,5 +485,3 @@ export default function PostJobPage() {
     </div>
   );
 }
-
-    
