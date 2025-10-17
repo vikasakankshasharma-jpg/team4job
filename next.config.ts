@@ -31,6 +31,19 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Permissions-Policy',
+            value: 'clipboard-write=*',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
