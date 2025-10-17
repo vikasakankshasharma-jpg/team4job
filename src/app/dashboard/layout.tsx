@@ -1,4 +1,6 @@
 
+"use client";
+
 import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { SearchProvider } from '@/hooks/use-search';
