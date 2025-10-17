@@ -401,8 +401,30 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         privateMessages: [],
         completionOtp: "112233",
     });
+    
+    // --- JOB 5: Recommended Job for Main Installer ---
+    const job5Id = "JOB-20240725-J9K0";
+    await adminDb.collection('jobs').doc(job5Id).set({
+        id: job5Id,
+        title: "Urgent: Replace 4 Cameras at Andheri Office",
+        description: "Need an experienced installer to urgently replace four faulty outdoor cameras at a corporate office in Andheri West. Must be familiar with Hikvision systems. Job needs to be completed this weekend.",
+        jobGiver: refs.newJobGiver,
+        location: "400053", // Matches installer@example.com's residential pincode
+        fullAddress: '5th Floor, Corporate Heights, Andheri West, Mumbai, 400053',
+        address: { house: '5th Floor, Corporate Heights', street: 'Veera Desai Road', cityPincode: '400053, Andheri West S.O' },
+        budget: { min: 6000, max: 9000 },
+        status: "Open for Bidding",
+        deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 2))),
+        postedAt: Timestamp.fromDate(new Date()),
+        jobStartDate: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 4))),
+        bids: [],
+        bidderIds: [],
+        comments: [],
+        privateMessages: [],
+        completionOtp: "445566",
+    });
 
-    console.log(`- Committed 4 jobs.`);
+    console.log(`- Committed 5 jobs.`);
 }
 
 async function seedDisputes(uids: { [email: string]: string }) {
