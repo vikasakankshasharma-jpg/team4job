@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Briefcase,
   Target,
   FileText,
   PlusCircle,
@@ -21,7 +20,8 @@ import {
   IndianRupee,
   AlertOctagon,
   Loader2,
-  ShieldCheck
+  ShieldCheck,
+  Briefcase
 } from "lucide-react";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
@@ -29,6 +29,24 @@ import React from "react";
 import { Job, User, Dispute } from "@/lib/types";
 import { collection, query, where, getDocs, or, doc, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
+import { cn } from "@/lib/utils";
+
+const StatCard = ({ title, value, description, icon: Icon, href, iconBgColor, iconColor }) => (
+    <Link href={href} className="block hover:shadow-lg transition-shadow duration-300 rounded-lg">
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{title}</CardTitle>
+                <div className={cn("p-2 rounded-full", iconBgColor)}>
+                    <Icon className={cn("h-4 w-4", iconColor)} />
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{value}</div>
+                {description && <p className="text-xs text-muted-foreground">{description}</p>}
+            </CardContent>
+        </Card>
+    </Link>
+);
 
 
 function InstallerDashboard() {
@@ -115,6 +133,9 @@ function InstallerDashboard() {
 
   return (
     <>
+     <div className="flex items-center mb-8">
+        <h1 className="text-lg font-semibold md:text-2xl">Welcome, {user?.name}!</h1>
+      </div>
      {!isVerified && (
         <Card className="mb-8 bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800">
           <CardHeader className="flex-row items-center gap-4 space-y-0">
@@ -135,51 +156,36 @@ function InstallerDashboard() {
           </CardContent>
         </Card>
       )}
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
-        <Card>
-          <Link href="/dashboard/jobs">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Open Jobs</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.openJobs}</div>
-              <p className="text-xs text-muted-foreground">
-                Jobs currently accepting bids
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-        <Card>
-          <Link href="/dashboard/my-bids">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">My Bids</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.myBids}</div>
-              <p className="text-xs text-muted-foreground">
-                Your bids and awarded jobs
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-        <Card>
-           <Link href="/dashboard/my-bids?status=Awarded">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Jobs Won</CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.jobsWon}</div>
-              <p className="text-xs text-muted-foreground">
-                Total jobs awarded to you
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-      </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
+    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+        <StatCard 
+            title="Open Jobs"
+            value={stats.openJobs}
+            description="Jobs currently accepting bids"
+            icon={Briefcase}
+            href="/dashboard/jobs"
+            iconBgColor="bg-blue-100 dark:bg-blue-900"
+            iconColor="text-blue-600 dark:text-blue-300"
+        />
+        <StatCard 
+            title="My Bids"
+            value={stats.myBids}
+            description="Your bids and awarded jobs"
+            icon={Target}
+            href="/dashboard/my-bids"
+            iconBgColor="bg-purple-100 dark:bg-purple-900"
+            iconColor="text-purple-600 dark:text-purple-300"
+        />
+        <StatCard 
+            title="Jobs Won"
+            value={stats.jobsWon}
+            description="Total jobs awarded to you"
+            icon={UserCheck}
+            href="/dashboard/my-bids?status=Awarded"
+            iconBgColor="bg-green-100 dark:bg-green-900"
+            iconColor="text-green-600 dark:text-green-300"
+        />
+    </div>
+      <div className="mt-8 grid gap-4 md:gap-8 lg:grid-cols-2">
         <Card data-tour="find-project-card">
           <CardHeader>
             <CardTitle>Find Your Next Project</CardTitle>
@@ -219,15 +225,32 @@ function JobGiverDashboard() {
   const { user } = useUser();
   const { db } = useFirebase();
   const { setHelp } = useHelp();
-  const [stats, setStats] = React.useState({ activeJobs: 0, completedJobs: 0, totalBids: 0 });
+  const [stats, setStats] = React.useState({ activeJobs: 0, completedJobs: 0, totalBids: 0, openDisputes: 0 });
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     async function fetchData() {
         if (!user || !db) return;
         setLoading(true);
-        const myJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', doc(db, 'users', user.id)));
-        const myJobsSnapshot = await getDocs(myJobsQuery);
+
+        const userDocRef = doc(db, 'users', user.id);
+
+        const myJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
+        
+        const disputesQuery = query(
+            collection(db, "disputes"), 
+            where('status', '==', 'Open'),
+            or(
+                where('jobGiver', '==', userDocRef),
+                where('installer', '==', userDocRef)
+            )
+        );
+
+        const [myJobsSnapshot, disputesSnapshot] = await Promise.all([
+            getDocs(myJobsQuery),
+            getDocs(disputesQuery)
+        ]);
+
         const myJobs = myJobsSnapshot.docs.map(doc => doc.data() as Job);
 
         let active = 0;
@@ -244,7 +267,13 @@ function JobGiverDashboard() {
             bids += (job.bids || []).length;
         });
         
-        setStats({ activeJobs: active, completedJobs: completed, totalBids: bids });
+        setStats({ 
+            activeJobs: active, 
+            completedJobs: completed, 
+            totalBids: bids,
+            openDisputes: disputesSnapshot.size 
+        });
+
         setLoading(false);
     }
     
@@ -268,6 +297,9 @@ function JobGiverDashboard() {
                     <li>
                         <span className="font-semibold">Completed Jobs:</span> View a history of all your successfully completed projects. Click to see your archived jobs.
                     </li>
+                     <li>
+                        <span className="font-semibold">Open Disputes:</span> Shows any active disputes on your jobs that require your attention.
+                    </li>
                     <li>
                         <span className="font-semibold">Need an Installer?:</span> A shortcut to post a new job and start receiving bids from professionals.
                     </li>
@@ -288,52 +320,49 @@ function JobGiverDashboard() {
   
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
-        <Card>
-          <Link href="/dashboard/posted-jobs">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activeJobs}</div>
-              <p className="text-xs text-muted-foreground">
-                Jobs not yet completed
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-        <Card>
-           <Link href="/dashboard/posted-jobs">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Bids Received</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalBids}</div>
-              <p className="text-xs text-muted-foreground">
-                Across all your job postings
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-        <Card>
-           <Link href="/dashboard/posted-jobs?tab=archived">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed Jobs</CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.completedJobs}</div>
-              <p className="text-xs text-muted-foreground">
-                Successfully finished projects
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
+     <div className="flex items-center mb-8">
+        <h1 className="text-lg font-semibold md:text-2xl">Welcome, {user?.name}!</h1>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
-        <Card data-tour="need-installer-card">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+         <StatCard 
+            title="Active Jobs"
+            value={stats.activeJobs}
+            description="Jobs not yet completed"
+            icon={Briefcase}
+            href="/dashboard/posted-jobs"
+            iconBgColor="bg-blue-100 dark:bg-blue-900"
+            iconColor="text-blue-600 dark:text-blue-300"
+        />
+        <StatCard 
+            title="Total Bids Received"
+            value={stats.totalBids}
+            description="Across all your job postings"
+            icon={FileText}
+            href="/dashboard/posted-jobs"
+            iconBgColor="bg-purple-100 dark:bg-purple-900"
+            iconColor="text-purple-600 dark:text-purple-300"
+        />
+        <StatCard 
+            title="Completed Jobs"
+            value={stats.completedJobs}
+            description="Successfully finished projects"
+            icon={UserCheck}
+            href="/dashboard/posted-jobs?tab=archived"
+            iconBgColor="bg-green-100 dark:bg-green-900"
+            iconColor="text-green-600 dark:text-green-300"
+        />
+        <StatCard 
+            title="Open Disputes"
+            value={stats.openDisputes}
+            description="Disputes needing resolution"
+            icon={AlertOctagon}
+            href="/dashboard/disputes"
+            iconBgColor="bg-red-100 dark:bg-red-900"
+            iconColor="text-red-600 dark:text-red-300"
+        />
+      </div>
+      <div className="mt-8 grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-2">
+        <Card data-tour="need-installer-card" className="col-span-1">
           <CardHeader>
             <CardTitle>Need an Installer?</CardTitle>
             <CardDescription>
@@ -348,7 +377,7 @@ function JobGiverDashboard() {
             </Button>
           </CardContent>
         </Card>
-        <Card data-tour="manage-jobs-card">
+        <Card data-tour="manage-jobs-card" className="col-span-1">
           <CardHeader>
             <CardTitle>Manage Your Jobs</CardTitle>
             <CardDescription>
@@ -372,7 +401,7 @@ function AdminDashboard() {
   const { user } = useUser();
   const { db } = useFirebase();
   const { setHelp } = useHelp();
-  const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, openDisputes: 0, completedJobValue: 0 });
+  const [stats, setStats] = React.useState({ totalUsers: 0, openDisputes: 0, completedJobValue: 0 });
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
@@ -404,7 +433,6 @@ function AdminDashboard() {
 
         setStats({
             totalUsers: usersSnapshot.size,
-            totalJobs: allJobs.length,
             openDisputes: disputesSnapshot.size,
             completedJobValue
         });
@@ -425,9 +453,6 @@ function AdminDashboard() {
           <ul className="list-disc space-y-2 pl-5">
             <li>
               <span className="font-semibold">Total Users:</span> The total number of registered users (Installers and Job Givers).
-            </li>
-            <li>
-              <span className="font-semibold">Total Jobs:</span> The total number of jobs ever created on the platform.
             </li>
             <li>
               <span className="font-semibold">Open Disputes:</span> The number of active disputes requiring your attention.
@@ -452,61 +477,57 @@ function AdminDashboard() {
 
   return (
     <>
+      <div className="flex items-center mb-8">
+        <h1 className="text-lg font-semibold md:text-2xl">Welcome, Admin!</h1>
+      </div>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Card>
-          <Link href="/dashboard/users">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
-              <p className="text-xs text-muted-foreground">
-                Installers & Job Givers
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-        <Card>
-          <Link href="/dashboard/all-jobs">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalJobs}</div>
-              <p className="text-xs text-muted-foreground">
-                Jobs posted on the platform
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-        <Card>
-           <Link href="/dashboard/disputes">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Open Disputes</CardTitle>
-              <AlertOctagon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.openDisputes}</div>
-              <p className="text-xs text-muted-foreground">
-                Cases requiring review
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Job Value</CardTitle>
-            <IndianRupee className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₹{stats.completedJobValue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Value of all completed jobs
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard 
+            title="Total Users"
+            value={stats.totalUsers}
+            description="Installers & Job Givers"
+            icon={Users}
+            href="/dashboard/users"
+            iconBgColor="bg-blue-100 dark:bg-blue-900"
+            iconColor="text-blue-600 dark:text-blue-300"
+        />
+        <StatCard 
+            title="All Jobs"
+            value=""
+            description="View every job in the platform"
+            icon={Briefcase}
+            href="/dashboard/all-jobs"
+            iconBgColor="bg-purple-100 dark:bg-purple-900"
+            iconColor="text-purple-600 dark:text-purple-300"
+        />
+        <StatCard 
+            title="Open Disputes"
+            value={stats.openDisputes}
+            description="Cases requiring review"
+            icon={AlertOctagon}
+            href="/dashboard/disputes"
+            iconBgColor="bg-red-100 dark:bg-red-900"
+            iconColor="text-red-600 dark:text-red-300"
+        />
+        <StatCard 
+            title="Completed Job Value"
+            value={`₹${stats.completedJobValue.toLocaleString()}`}
+            description="Value of all completed jobs"
+            icon={IndianRupee}
+            href="#"
+            iconBgColor="bg-green-100 dark:bg-green-900"
+            iconColor="text-green-600 dark:text-green-300"
+        />
+      </div>
+      <div className="mt-8">
+         <StatCard 
+            title="Reports"
+            value=""
+            description="View all the reports"
+            icon={FileText}
+            href="/dashboard/reports"
+            iconBgColor="bg-gray-100 dark:bg-gray-900"
+            iconColor="text-gray-600 dark:text-gray-300"
+        />
       </div>
     </>
   );
@@ -524,14 +545,9 @@ export default function DashboardPage() {
     );
   }
 
-  const isAdmin = role === "Admin";
-
   return (
     <>
-      <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">{isAdmin ? 'Admin Dashboard' : 'Dashboard'}</h1>
-      </div>
-      {isAdmin ? <AdminDashboard /> : (role === "Installer" ? <InstallerDashboard /> : <JobGiverDashboard />)}
+      {role === "Admin" ? <AdminDashboard /> : (role === "Installer" ? <InstallerDashboard /> : <JobGiverDashboard />)}
     </>
   );
 }

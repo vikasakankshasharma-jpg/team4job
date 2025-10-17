@@ -294,7 +294,7 @@ export default function AllJobsPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Jobs</CardTitle>
+        <CardTitle>All Jobs</CardTitle>
         <CardDescription>A list of all jobs created on the platform. Click on a job to view details.</CardDescription>
       </CardHeader>
       <CardContent>
