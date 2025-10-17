@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/lib/firebase/client-provider";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { notFound, useParams } from "next/navigation";
 import {
   Card,
@@ -789,7 +788,7 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
 export default function JobDetailPage() {
   const { user, role } = useUser();
   const { db } = useFirebase();
-  const params = React.use(useParams());
+  const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -1287,3 +1286,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
