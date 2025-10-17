@@ -349,7 +349,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         postedAt: Timestamp.fromDate(new Date('2024-06-01')),
         jobStartDate: Timestamp.fromDate(new Date('2024-06-15')),
         awardedInstaller: refs.installer,
-        bids: [{ installer: refs.installer, amount: 52000, timestamp: Timestamp.fromDate(new Date('2024-06-03')), coverLetter: "I have extensive experience with large-scale factory installations."}],
+        bids: [{ installer: refs.installer, amount: 52000, timestamp: Timestamp.fromDate(new Date('2024-06-03')), coverLetter: "I have extensive experience with large-scale factory installations and can complete this overhaul efficiently. My team is certified in Hikvision products."}],
         bidderIds: [installerUID],
         rating: 5,
         completionOtp: "543210",
@@ -402,7 +402,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         completionOtp: "112233",
     });
     
-    // --- JOB 5: Recommended Job for Main Installer ---
+    // --- JOB 5: Recommended Job for Main Installer (Residential) ---
     const job5Id = "JOB-20240725-J9K0";
     await adminDb.collection('jobs').doc(job5Id).set({
         id: job5Id,
@@ -424,7 +424,52 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         completionOtp: "445566",
     });
 
-    console.log(`- Committed 5 jobs.`);
+    // --- JOB 6: Recommended Job for Main Installer (Office) ---
+    const job6Id = "JOB-20240728-M3N4";
+    await adminDb.collection('jobs').doc(job6Id).set({
+        id: job6Id,
+        title: "Warehouse Access Control System - Jogeshwari",
+        description: "We are looking for a certified installer to set up a biometric access control system for our warehouse in Jogeshwari East. The system needs to cover 3 entry points.",
+        jobGiver: refs.jobGiver,
+        location: "400063", // Matches installer@example.com's office pincode
+        fullAddress: 'Gala No. 12, Prime Industrial Estate, Jogeshwari East, Mumbai, 400063',
+        address: { house: 'Gala No. 12', street: 'Prime Industrial Estate', cityPincode: '400063, Jogeshwari East S.O' },
+        budget: { min: 15000, max: 22000 },
+        status: "Open for Bidding",
+        deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 6))),
+        postedAt: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 1))),
+        jobStartDate: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 12))),
+        bids: [],
+        bidderIds: [],
+        comments: [],
+        privateMessages: [],
+        completionOtp: "778899",
+    });
+
+    // --- JOB 7: Another job for Andheri West 400053
+    const job7Id = "JOB-20240729-P5Q6";
+    await adminDb.collection('jobs').doc(job7Id).set({
+        id: job7Id,
+        title: "Home Security Camera Setup in Andheri West",
+        description: "Need a reliable installer to set up a 4-camera system for a 2BHK apartment. Should include DVR setup and mobile viewing configuration. Hardware will be provided by me.",
+        jobGiver: refs.newJobGiver,
+        location: "400053", // Matches installer@example.com's residential pincode
+        fullAddress: 'A-501, Star Tower, S.V. Road, Andheri West, Mumbai, 400053',
+        address: { house: 'A-501, Star Tower', street: 'S.V. Road, Andheri West', cityPincode: '400053, Andheri West S.O' },
+        budget: { min: 5000, max: 8000 },
+        status: "Open for Bidding",
+        deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 3))),
+        postedAt: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 1))),
+        jobStartDate: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 5))),
+        bids: [],
+        bidderIds: [],
+        comments: [],
+        privateMessages: [],
+        completionOtp: "101112",
+    });
+
+
+    console.log(`- Committed 7 jobs.`);
 }
 
 async function seedDisputes(uids: { [email: string]: string }) {
