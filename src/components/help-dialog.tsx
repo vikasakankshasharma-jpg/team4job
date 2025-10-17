@@ -16,7 +16,7 @@ export function HelpDialog({ children }: { children: React.ReactNode }) {
     const { title, content } = useHelp();
 
     if (!title || !content) {
-        return <>{children}</>;
+        return null;
     }
 
     return (
