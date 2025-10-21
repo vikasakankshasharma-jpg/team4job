@@ -203,10 +203,10 @@ export default function PostedJobsPage() {
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
-    if (!userLoading && user && user.roles.includes('Admin')) {
+    if (!userLoading && user && (user.roles.includes('Admin') || role === 'Installer')) {
       router.push('/dashboard');
     }
-  }, [user, userLoading, router]);
+  }, [user, userLoading, router, role]);
 
   const fetchJobs = React.useCallback(async () => {
     if (!db || !user || role !== 'Job Giver') {
@@ -298,18 +298,10 @@ export default function PostedJobsPage() {
     });
   }, [setHelp]);
   
-  if (userLoading) {
+  if (userLoading || (!userLoading && role !== 'Job Giver')) {
     return (
       <div className="flex items-center justify-center h-full">
          <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
-
-  if (role !== 'Job Giver') {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">This page is for Job Givers only.</p>
       </div>
     );
   }
