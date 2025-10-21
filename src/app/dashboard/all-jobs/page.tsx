@@ -38,7 +38,7 @@ import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import Link from "next/link";
-import { collection, getDocs, query, DocumentReference, getDoc, where } from "firebase/firestore";
+import { collection, getDocs, query, DocumentReference, getDoc, where, doc } from "firebase/firestore";
 
 const initialFilters = {
     jobId: "",

@@ -210,13 +210,15 @@ export default function PostedJobsPage() {
         const userRefArray = Array.from(userRefs.keys());
         for (let i = 0; i < userRefArray.length; i += 30) {
             const chunk = userRefArray.slice(i, i + 30);
-            const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
-            const userDocs = await getDocs(usersQuery);
-            userDocs.forEach(docSnap => {
-                if (docSnap.exists()) {
-                    usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
-                }
-            });
+            if (chunk.length > 0) {
+              const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
+              const userDocs = await getDocs(usersQuery);
+              userDocs.forEach(docSnap => {
+                  if (docSnap.exists()) {
+                      usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
+                  }
+              });
+            }
         }
     }
 
