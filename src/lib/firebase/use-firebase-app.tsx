@@ -18,18 +18,18 @@ export function getFirebaseApp(): FirebaseApp {
   }
 
   if (getApps().length === 0) {
-    // This config is created dynamically when called, ensuring env vars are loaded on the client.
+    // Hardcoded Firebase config to ensure client-side availability.
     const firebaseConfig = {
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+      apiKey: "your-api-key",
+      authDomain: "your-auth-domain",
+      projectId: "your-project-id",
+      storageBucket: "your-storage-bucket",
+      messagingSenderId: "your-messaging-sender-id",
+      appId: "your-app-id",
     };
     
     // Check if all required keys are present.
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId || firebaseConfig.apiKey === "your-api-key") {
        console.error("Firebase config is missing or incomplete. Check your .env file and next.config.ts. Make sure to restart the development server after changing environment variables.");
        // This will cause the SDK to throw a more specific error.
     }
