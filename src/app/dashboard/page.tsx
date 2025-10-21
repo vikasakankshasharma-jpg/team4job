@@ -73,7 +73,7 @@ function InstallerDashboard() {
         const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot] = await Promise.all([
             getDocs(openJobsQuery),
             getDocs(myBidsQuery),
-            getDocs(myAwardedQuery)
+            getDocs(myAwardedSnapshot)
         ]);
 
         const myJobsSet = new Set([...myBidsSnapshot.docs.map(d => d.id), ...myAwardedSnapshot.docs.map(d => d.id)]);
@@ -403,7 +403,7 @@ function AdminDashboard() {
   const { user } = useUser();
   const { db } = useFirebase();
   const { setHelp } = useHelp();
-  const [stats, setStats] = React.useState({ totalUsers: 0, openDisputes: 0, completedJobValue: 0 });
+  const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, openDisputes: 0, completedJobValue: 0 });
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
@@ -435,6 +435,7 @@ function AdminDashboard() {
 
         setStats({
             totalUsers: usersSnapshot.size,
+            totalJobs: jobsSnapshot.size,
             openDisputes: disputesSnapshot.size,
             completedJobValue
         });
@@ -455,6 +456,9 @@ function AdminDashboard() {
           <ul className="list-disc space-y-2 pl-5">
             <li>
               <span className="font-semibold">Total Users:</span> The total number of registered users (Installers and Job Givers).
+            </li>
+             <li>
+              <span className="font-semibold">Total Jobs:</span> The total number of jobs ever created on the platform.
             </li>
             <li>
               <span className="font-semibold">Open Disputes:</span> The number of active disputes requiring your attention.
@@ -493,8 +497,8 @@ function AdminDashboard() {
             iconColor="text-blue-600 dark:text-blue-300"
         />
         <StatCard 
-            title="All Jobs"
-            value=""
+            title="Total Jobs"
+            value={stats.totalJobs}
             description="View every job in the platform"
             icon={Briefcase}
             href="/dashboard/all-jobs"
