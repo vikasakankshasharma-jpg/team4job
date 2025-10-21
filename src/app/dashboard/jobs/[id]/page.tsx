@@ -76,6 +76,18 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
 
   const handleCompleteJob = async () => {
     if (otp === job.completionOtp) {
+      // In a real app, this is where you would call a backend function to trigger the payout
+      // to the installer via the payment gateway (e.g., Cashfree Payouts).
+      //
+      // async function releasePayment(jobId) {
+      //   const response = await fetch('/api/release-payment', {
+      //     method: 'POST',
+      //     body: JSON.stringify({ jobId }),
+      //   });
+      //   // Handle response...
+      // }
+      // releasePayment(job.id);
+      
       const updatedJobData = { 
         status: 'Completed' as const,
         rating: 5, // Default rating, can be changed by job giver
@@ -101,7 +113,7 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
       <CardHeader>
         <CardTitle>Complete This Job</CardTitle>
         <CardDescription>
-          Once the work is done, enter the 6-digit Job Completion OTP from the Job Giver. This action marks the job as complete and starts the payment process through our secure gateway (e.g., Razorpay/Cashfree).
+          Once the work is done, enter the 6-digit Job Completion OTP from the Job Giver. This action marks the job as complete and starts the payment process.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -145,7 +157,7 @@ function JobGiverOTPCard({ job }: { job: Job }) {
           Job Completion OTP
         </CardTitle>
         <CardDescription>
-          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete.
+          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payment release.
         </CardDescription>
       </CardHeader>
       <CardContent className="text-center">
@@ -289,6 +301,18 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
     }, [bid.timestamp]);
 
     const handleAwardJob = async () => {
+        // In a real app, this function would not directly update the job.
+        // Instead, it would call a backend function to create a payment order with Cashfree.
+        // The backend would return a payment link.
+        //
+        // 1. Call backend to create payment order
+        //    const paymentLink = await createPaymentOrder(job.id, bid.amount);
+        //
+        // 2. Redirect the Job Giver to the payment link
+        //    window.location.href = paymentLink;
+        //
+        // For this demo, we will just simulate the awarding process.
+        
         const acceptanceDeadline = new Date();
         acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
 
@@ -347,7 +371,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
               <div className="mt-4 flex items-center gap-2">
                    <Button size="sm" onClick={handleAwardJob}>
                         <Award className="mr-2 h-4 w-4" />
-                       Award Job
+                       Award & Pay
                    </Button>
               </div>
             )}
@@ -385,7 +409,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
         <CardTitle>Received Bids ({job.bids?.length || 0})</CardTitle>
         <CardDescription>
           {role === 'Admin' ? 'Reviewing bids placed on this job.' : job.awardedInstaller ? 'An installer has been selected for this job.' : 
-          'Review the bids and award the job to the best installer.'}
+          'Review bids and select an installer to proceed to payment.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

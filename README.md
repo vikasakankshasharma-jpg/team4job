@@ -18,7 +18,7 @@ This document serves as the master prompt and detailed specification for buildin
 ## 2. Core Features
 
 ### User System
-*   **Secure Registration & Login:** Email/password-based authentication.
+*   **Secure Registration & Login:** Email/password-based authentication via Firebase Authentication.
 *   **Dual Roles:** Users can sign up as a "Job Giver" or "Installer". A user can hold both roles and switch between them from their profile menu without logging out.
 *   **Installer KYC Verification:** Installers must complete a mock Aadhar verification process (using OTP `123456`) to become "verified". This unlocks bidding capabilities. **Note:** In a production environment, this mock flow would be replaced by a real KYC service provider like Cashfree Verification Suite.
 *   **User Profiles:** Public-facing profiles showing relevant information (name, member since, tier, rating for installers).
@@ -33,18 +33,18 @@ This document serves as the master prompt and detailed specification for buildin
 3.  **Bidding (Installer):**
     *   Installers place bids on jobs, specifying their price and a cover letter.
     *   **AI Feature:** A "AI Bid Assistant" button helps installers craft an effective cover letter based on the job description and their own skills.
-4.  **Awarding (Job Giver):**
+4.  **Awarding & Payment (Job Giver):**
     *   After the deadline, the Job Giver reviews all bids.
-    *   They award the job to one installer. **Note:** At this stage, a real application would integrate a payment gateway. The Job Giver would fund the project amount, which is held securely until the job is complete.
+    *   They award the job to one installer. **Note:** At this stage, a real application would integrate a payment gateway. The Job Giver would fund the project amount, which is held securely until the job is complete. The application is set up to easily integrate with a provider like Cashfree or Razorpay.
 5.  **Acceptance (Installer):**
     *   The awarded installer has 24 hours to accept or decline the job.
     *   If accepted, the job status changes to "In Progress".
-6.  **Job Completion:**
+6.  **Job Completion & Payout:**
     *   The Job Giver has a 6-digit "Completion OTP".
-    *   Once the work is done, the installer enters this OTP to mark the job "Completed". **Note:** This action would trigger the payment gateway to release the funds to the installer.
+    *   Once the work is done, the installer enters this OTP to mark the job "Completed". **Note:** This action would trigger the payment gateway to release the funds to the installer, minus the platform's commission.
 
 ### Other Key Features
-*   **Secure Payments:** A placeholder for a secure payment system (e.g., Razorpay, Cashfree) will be integrated. Payments are processed upon job completion, ensuring trust for both parties. For this platform, Cashfree is the recommended provider due to its strong KYC verification tools and marketplace-friendly payment-splitting features.
+*   **Secure Payments:** A placeholder for a secure payment system is integrated. Payments are processed upon job completion, ensuring trust for both parties. For this platform, **Cashfree** is recommended for its strong KYC verification tools and marketplace-friendly payment-splitting features ("Easy Split"), though Razorpay is also a viable alternative.
 *   **Reputation System (Installers):** A points-based system. Installers earn points for completed jobs and good ratings, advancing through tiers (Bronze, Silver, Gold, Platinum).
 *   **Dispute Resolution:** A system for Job Givers or Installers to raise a "Job Dispute" on a project. Admins can review the dispute thread and mark it as resolved.
 *   **Admin Dashboard:** A separate interface for Admins to view all users, all jobs, and manage disputes, coupons, and a platform blacklist.

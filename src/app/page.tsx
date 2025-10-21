@@ -24,7 +24,7 @@ export default function Home() {
       icon: <CheckCircle className="h-8 w-8 text-primary" />,
       title: "Secure Payments",
       description:
-        "Payments are handled securely through a trusted gateway and released upon job completion.",
+        "Payments are handled securely through a trusted gateway (e.g., Cashfree) and released upon job completion.",
     },
   ];
 
