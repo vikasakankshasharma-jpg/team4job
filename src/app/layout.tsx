@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -5,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FirebaseAppProvider } from "@/lib/firebase/use-firebase-app";
+import { Providers } from "@/components/providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
 
@@ -40,10 +42,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <FirebaseAppProvider>
+          <Providers>
             {children}
             <Toaster />
-          </FirebaseAppProvider>
+          </Providers>
         </ThemeProvider>
       </body>
     </html>
