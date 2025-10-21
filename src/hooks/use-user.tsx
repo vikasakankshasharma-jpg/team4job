@@ -5,80 +5,81 @@ import { User, BlacklistEntry } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser, initializeAuth, browserLocalPersistence, type Auth } from "firebase/auth";
-import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
-import { doc, getDoc, collection, getDocs, onSnapshot, getFirestore, type Firestore, query, where } from "firebase/firestore";
+import { getDoc, collection, getDocs, onSnapshot, getFirestore, type Firestore, query, where, doc } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useFirebaseApp } from "@/lib/firebase/use-firebase-app";
 
-// --- Firebase Context ---
-
-interface FirebaseInstances {
-  auth: Auth;
-  db: Firestore;
-  app: FirebaseApp;
-}
-
-const FirebaseContext = createContext<FirebaseInstances | null>(null);
-
-export const useFirebase = () => {
-    const context = useContext(FirebaseContext);
-    if (!context) {
-        throw new Error("useFirebase must be used within a FirebaseProvider");
-    }
-    return context;
-};
-
-
-// --- User Context ---
-
+// --- Types ---
 type Role = "Job Giver" | "Installer" | "Admin";
 
-type UserContextType = {
+interface UserContextType {
   user: User | null;
   role: Role;
   isAdmin: boolean;
   loading: boolean;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   setRole: (role: Role) => void;
-  login: (email: string, password?: string) => Promise<boolean>;
   logout: () => void;
+}
+
+// --- Firebase Instances (Global within this module) ---
+let authInstance: Auth | null = null;
+let dbInstance: Firestore | null = null;
+
+function initializeFirebaseServices(app: ReturnType<typeof useFirebaseApp>) {
+    if (app && !authInstance) {
+        authInstance = initializeAuth(app, { persistence: browserLocalPersistence });
+        dbInstance = getFirestore(app);
+    }
+}
+
+// --- Core Auth Logic (Decoupled from React) ---
+
+export const login = async (email: string, password?: string): Promise<boolean> => {
+    if (!password || !authInstance) {
+        console.error("Auth not initialized or password missing.");
+        return false;
+    }
+    try {
+        await signInWithEmailAndPassword(authInstance, email, password);
+        return true;
+    } catch (error: any) {
+        if (error.code !== 'auth/invalid-credential') {
+            console.error("Login failed:", error);
+        }
+        return false;
+    }
 };
+
+export const logout = async (): Promise<void> => {
+    if (!authInstance) return;
+    await signOut(authInstance);
+};
+
+
+// --- React Context and Provider ---
 
 const UserContext = createContext<UserContextType | null>(null);
 
-const publicPaths = ['/login', '/'];
-const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids'];
-const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs'];
-
-
-function UserProviderComponent({ children }: { children: React.ReactNode }) {
+export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const app = useFirebaseApp();
-  const [firebaseInstances, setFirebaseInstances] = useState<FirebaseInstances | null>(null);
+  initializeFirebaseServices(app); // Ensure services are initialized
+
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Job Giver");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [userDocLoading, setUserDocLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const notFoundRetries = useRef(new Map<string, number>());
 
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
 
-   useEffect(() => {
-    if (app) {
-        const auth = initializeAuth(app, { persistence: browserLocalPersistence });
-        const db = getFirestore(app);
-        setFirebaseInstances({ auth, db, app });
-    }
-  }, [app]);
-
-
-   const updateUserState = useCallback((userData: User | null) => {
-    setUserDocLoading(true);
+  const updateUserState = useCallback((userData: User | null) => {
+    setLoading(true);
     setUser(userData);
     if (userData) {
       const storedRole = localStorage.getItem('userRole') as Role;
@@ -99,12 +100,11 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
       setIsAdmin(false);
       localStorage.removeItem('userRole');
     }
-    setUserDocLoading(false);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    if (!firebaseInstances) return;
-    const { auth, db } = firebaseInstances;
+    if (!authInstance || !dbInstance) return;
 
     errorEmitter.on('permission-error', (error: FirestorePermissionError) => {
       console.error("Intercepted Firestore Permission Error:", error);
@@ -115,62 +115,47 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
       });
     });
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      setAuthLoading(true);
+    const unsubscribeAuth = onAuthStateChanged(authInstance, (firebaseUser: FirebaseUser | null) => {
+      setLoading(true);
       if (firebaseUser) {
-        const userDocRef = doc(db, "users", firebaseUser.uid);
+        const userDocRef = doc(dbInstance!, "users", firebaseUser.uid);
         
         const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
            if (userDoc.exists()) {
              const userData = { id: userDoc.id, ...userDoc.data() } as User;
-             notFoundRetries.current.delete(firebaseUser.uid); // Clear retries on success
+             notFoundRetries.current.delete(firebaseUser.uid);
              
-             const blacklistQuery = query(collection(db, "blacklist"), where("value", "==", firebaseUser.uid), where("type", "==", "user"));
+             const blacklistQuery = query(collection(dbInstance!, "blacklist"), where("value", "==", firebaseUser.uid), where("type", "==", "user"));
              const blacklistSnapshot = await getDocs(blacklistQuery);
              
              if (!blacklistSnapshot.empty) {
                 toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
-                signOut(auth);
-                updateUserState(null);
+                logout().then(() => updateUserState(null));
              } else {
                 updateUserState(userData);
              }
            } else {
               const currentRetries = notFoundRetries.current.get(firebaseUser.uid) || 0;
-              if (currentRetries < 1) { // Allow only one retry attempt
+              if (currentRetries < 1) {
                   notFoundRetries.current.set(firebaseUser.uid, currentRetries + 1);
-                  console.warn(`User document for ${firebaseUser.uid} not found. Retrying in 2 seconds...`);
-                  setTimeout(() => {
-                      // The onSnapshot listener will be triggered again automatically by any change,
-                      // but we don't need to do anything here, just wait.
-                  }, 2000);
-                  // Don't log out yet, wait for retry
                   return;
               }
              
              console.error("User document not found for authenticated user:", firebaseUser.uid);
-             notFoundRetries.current.delete(firebaseUser.uid); // Clean up after final failure
-             signOut(auth);
-             updateUserState(null);
+             notFoundRetries.current.delete(firebaseUser.uid);
+             logout().then(() => updateUserState(null));
            }
-           setAuthLoading(false);
+           setLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
-            if (error.code === 'permission-denied') {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                  path: error.toString(), // or a more specific path if available
-                  operation: 'get'
-                }));
-            }
-            signOut(auth);
-            updateUserState(null);
-            setAuthLoading(false);
+            logout().then(() => updateUserState(null));
+            setLoading(false);
         });
 
         return () => unsubscribeDoc();
       } else {
         updateUserState(null);
-        setAuthLoading(false);
+        setLoading(false);
       }
     });
 
@@ -178,11 +163,13 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
         unsubscribeAuth();
         errorEmitter.removeAllListeners('permission-error');
     }
-  }, [firebaseInstances, toast, updateUserState]);
-
-  const loading = authLoading || userDocLoading || !firebaseInstances;
+  }, [toast, updateUserState]);
 
   useEffect(() => {
+    const publicPaths = ['/login', '/'];
+    const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids'];
+    const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs'];
+    
     const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
     if (loading || isPublicPage) return;
 
@@ -208,39 +195,19 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
     }
   }, [role, pathname, user, router, loading]);
 
-
-  const login = async (email: string, password?: string) => {
-    if (!password || !firebaseInstances) {
-        return false;
-    }
-    setAuthLoading(true);
-    try {
-      await signInWithEmailAndPassword(firebaseInstances.auth, email, password);
-      // onAuthStateChanged will handle the user state update
-      return true;
-    } catch (error: any) {
-      if (error.code !== 'auth/invalid-credential') {
-        console.error("Login failed:", error);
-      }
-      setAuthLoading(false);
-      return false;
-    }
-  };
-
-  const logout = async () => {
-    if (!firebaseInstances) return;
-    setAuthLoading(true);
-    await signOut(firebaseInstances.auth);
-    updateUserState(null);
-    router.push('/login');
-  };
-
-  const setRole = (newRole: Role) => {
+  const handleSetRole = (newRole: Role) => {
     if (user && user.roles.includes(newRole)) {
       setRoleState(newRole);
       localStorage.setItem('userRole', newRole);
     }
   };
+
+  const handleLogout = () => {
+      logout().then(() => {
+          updateUserState(null);
+          router.push('/login');
+      });
+  }
 
   const value = useMemo(() => ({
     user,
@@ -248,40 +215,30 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
     isAdmin,
     loading,
     setUser,
-    setRole,
-    login,
-    logout
-  }), [user, role, isAdmin, loading, login, logout, setRole]);
+    setRole: handleSetRole,
+    logout: handleLogout,
+  }), [user, role, isAdmin, loading]);
+  
+  const publicPaths = ['/login', '/'];
+  const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
 
-  return (
-    <UserContext.Provider value={value}>
-      {loading && !publicPaths.some(p => pathname.startsWith(p)) ? (
+  if (loading && !isPublicPage) {
+      return (
          <div className="flex h-screen items-center justify-center">
             <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span>Loading user...</span>
             </div>
         </div>
-      ) : firebaseInstances ? (
-        <FirebaseContext.Provider value={firebaseInstances}>
-          {children}
-        </FirebaseContext.Provider>
-      ) : (
-          <div className="flex h-screen items-center justify-center">
-             <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Connecting...</span>
-             </div>
-          </div>
-      )}
+      );
+  }
+
+  return (
+    <UserContext.Provider value={value}>
+      {children}
     </UserContext.Provider>
   );
 };
-
-export const UserProvider = ({ children }: { children: React.ReactNode }) => (
-    <UserProviderComponent>{children}</UserProviderComponent>
-);
-
 
 export const useUser = () => {
   const context = useContext(UserContext);
