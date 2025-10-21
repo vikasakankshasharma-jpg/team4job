@@ -55,7 +55,7 @@ export default function Home() {
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <Logo className="h-8 w-8 text-primary" />
-          <span className="text-xl font-bold">CCTV Job Connect</span>
+          <span className="text-xl font-bold hidden sm:inline-block">CCTV Job Connect</span>
         </Link>
         
         <nav className="hidden md:flex items-center gap-4">
