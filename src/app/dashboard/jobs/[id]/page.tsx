@@ -615,7 +615,7 @@ function EditDateDialog({ job, onJobUpdate, triggerElement }: { job: Job; onJobU
     );
 }
 
-function RaiseDisputeDialog({ job, user, onJobUpdate }: { job: Job; user: User; onJobUpdate: (updatedPart: Partial<Job>) => void; triggerElement: React.ReactNode; }) {
+function RaiseDisputeDialog({ job, user, onJobUpdate }: { job: Job; user: User; onJobUpdate: (updatedPart: Partial<Job>) => void; }) {
     const { toast } = useToast();
     const { db } = useFirebase();
     const [reason, setReason] = React.useState("");
@@ -660,7 +660,12 @@ function RaiseDisputeDialog({ job, user, onJobUpdate }: { job: Job; user: User; 
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>{triggerElement}</DialogTrigger>
+            <DialogTrigger asChild>
+              <Button variant="destructive" className="w-full">
+                <AlertOctagon className="mr-2 h-4 w-4" />
+                Raise a Dispute
+              </Button>
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Raise a Dispute for "{job.title}"</DialogTitle>
@@ -1294,13 +1299,7 @@ export default function JobDetailPage() {
                   <RaiseDisputeDialog 
                     job={job} 
                     user={user} 
-                    onJobUpdate={handleJobUpdate} 
-                    triggerElement={
-                      <Button variant="destructive" className="w-full">
-                        <AlertOctagon className="mr-2 h-4 w-4" />
-                        Raise a Dispute
-                      </Button>
-                    }
+                    onJobUpdate={handleJobUpdate}
                   />
                 )}
               </CardContent>
