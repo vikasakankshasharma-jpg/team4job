@@ -84,8 +84,8 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
       onJobUpdate(updatedJobData);
       
       toast({
-        title: "Job Completed & Payment Released!",
-        description: "Congratulations! The job has been marked as complete and payment has been released to your account.",
+        title: "Job Completed!",
+        description: "Congratulations! The job has been marked as complete.",
       });
     } else {
       toast({
@@ -102,7 +102,7 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
         <CardTitle>Complete This Job</CardTitle>
         <CardDescription>
           Once the job is finished to the client's satisfaction, enter the
-          Job Completion OTP provided by the Job Giver to mark it as complete and release the payment from escrow. You can post photos or videos of the completed work as proof in the private messages section below.
+          Job Completion OTP provided by the Job Giver to mark it as complete. You can post photos or videos of the completed work as proof in the private messages section below.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -146,7 +146,7 @@ function JobGiverOTPCard({ job }: { job: Job }) {
           Job Completion OTP
         </CardTitle>
         <CardDescription>
-          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payment release from escrow.
+          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete.
         </CardDescription>
       </CardHeader>
       <CardContent className="text-center">
@@ -269,72 +269,10 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   );
 }
 
-function FundEscrowDialog({ job, installer, onJobUpdate }: { job: Job, installer: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
-    const { toast } = useToast();
-    const { db } = useFirebase();
-    const [isOpen, setIsOpen] = React.useState(false);
-    const winningBid = job.bids.find(b => (b.installer as User).id === installer.id);
-
-    const handleFundEscrow = async () => {
-        if (!winningBid) return;
-        
-        const acceptanceDeadline = new Date();
-        acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
-
-        const jobUpdate = {
-            awardedInstaller: doc(db, 'users', installer.id),
-            status: 'Awarded' as const,
-            acceptanceDeadline,
-        };
-        
-        onJobUpdate(jobUpdate);
-
-        toast({
-            title: "Escrow Funded & Job Awarded!",
-            description: `${installer.name} has 24 hours to accept the job.`,
-        });
-        setIsOpen(false);
-    };
-
-    if (!winningBid) return null;
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button size="sm">Award Job & Fund Escrow</Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Fund Escrow & Award Job</DialogTitle>
-                    <DialogDescription>
-                        You are about to award this job to <span className="font-bold">{installer.name}</span>. To proceed, you must fund the escrow with the agreed amount. The installer will have 24 hours to accept.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-4">
-                    <div className="flex justify-between items-center p-4 bg-muted rounded-lg">
-                        <span className="text-muted-foreground">Winning Bid Amount</span>
-                        <span className="text-2xl font-bold">₹{winningBid.amount.toLocaleString()}</span>
-                    </div>
-                     <div className="text-xs text-muted-foreground p-2 text-center">
-                        This is a mock transaction. In a real application, you would be redirected to a secure payment gateway. By clicking "Fund Escrow", you are simulating the transfer of funds.
-                    </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button onClick={handleFundEscrow}>
-                        <Wallet className="mr-2 h-4 w-4" />
-                        Fund Escrow & Confirm
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
 function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousId: string }) {
     const { role } = useUser();
+    const { toast } = useToast();
+    const { db } = useFirebase();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
 
@@ -351,6 +289,24 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
         }
     }, [bid.timestamp]);
 
+    const handleAwardJob = async () => {
+        const acceptanceDeadline = new Date();
+        acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
+
+        const jobUpdate = {
+            awardedInstaller: doc(db, 'users', installer.id),
+            status: 'Awarded' as const,
+            acceptanceDeadline,
+        };
+        
+        onJobUpdate(jobUpdate);
+
+        toast({
+            title: "Job Awarded!",
+            description: `${installer.name} has 24 hours to accept the job.`,
+        });
+    };
+    
     const isAdmin = role === 'Admin';
     const isJobGiver = role === 'Job Giver';
     const showRealIdentity = isAdmin || isAwardedToThisBidder;
@@ -390,7 +346,10 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
             <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
             {isJobGiver && !isJobAwarded && (
               <div className="mt-4 flex items-center gap-2">
-                   <FundEscrowDialog job={job} installer={installer} onJobUpdate={onJobUpdate as any} />
+                   <Button size="sm" onClick={handleAwardJob}>
+                        <Award className="mr-2 h-4 w-4" />
+                       Award Job
+                   </Button>
               </div>
             )}
         </div>
@@ -1286,5 +1245,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    

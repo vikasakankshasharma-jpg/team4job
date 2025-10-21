@@ -103,18 +103,6 @@ export type Job = {
   selectedInstallers?: { installerId: string, rank: number }[];
 };
 
-export type Transaction = {
-    id: string;
-    jobId: string;
-    payerId: string;
-    payeeId: string;
-    amount: number;
-    status: 'Funded' | 'Released' | 'Refunded';
-    createdAt: Date | Timestamp;
-    releasedAt?: Date | Timestamp;
-    refundedAt?: Date | Timestamp;
-};
-
 export type DisputeAttachment = {
   fileName: string;
   fileUrl: string;

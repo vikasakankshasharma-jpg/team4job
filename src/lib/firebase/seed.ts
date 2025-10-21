@@ -525,7 +525,7 @@ async function seedBlacklist() {
 
 
 async function clearAllCollections() {
-    const collections = ['disputes', 'jobs', 'users', 'blacklist', 'coupons', 'transactions', 'subscriptionPlans'];
+    const collections = ['disputes', 'jobs', 'users', 'blacklist', 'coupons', 'subscriptionPlans'];
     for (const collection of collections) {
         await clearCollection(collection);
     }
