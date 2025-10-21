@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
-import { useFirebaseApp } from "@/lib/firebase/use-firebase-app";
+import { getFirebaseApp, type FirebaseApp } from "@/lib/firebase/use-firebase-app";
 
 // --- Types ---
 type Role = "Job Giver" | "Installer" | "Admin";
@@ -29,16 +29,24 @@ interface UserContextType {
 let authInstance: Auth | null = null;
 let dbInstance: Firestore | null = null;
 
-function initializeFirebaseServices(app: ReturnType<typeof useFirebaseApp>) {
-    if (app && !authInstance) {
-        authInstance = initializeAuth(app, { persistence: browserLocalPersistence });
-        dbInstance = getFirestore(app);
+function initializeFirebaseServices() {
+    if (authInstance) return; // Already initialized
+
+    try {
+        const app = getFirebaseApp();
+        if (app) {
+            authInstance = initializeAuth(app, { persistence: browserLocalPersistence });
+            dbInstance = getFirestore(app);
+        }
+    } catch (e) {
+        console.error("Failed to initialize Firebase services in use-user.tsx", e);
     }
 }
 
 // --- Core Auth Logic (Decoupled from React) ---
 
 export const login = async (email: string, password?: string): Promise<boolean> => {
+    initializeFirebaseServices(); // Ensure services are ready
     if (!password || !authInstance) {
         console.error("Auth not initialized or password missing.");
         return false;
@@ -65,8 +73,7 @@ export const logout = async (): Promise<void> => {
 const UserContext = createContext<UserContextType | null>(null);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const app = useFirebaseApp();
-  initializeFirebaseServices(app); // Ensure services are initialized
+  initializeFirebaseServices(); // Ensure services are initialized when provider mounts
 
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Job Giver");
@@ -240,10 +247,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useUser = () => {
+export function useUser() {
   const context = useContext(UserContext);
   if (!context) {
     throw new Error("useUser must be used within a UserProvider");
   }
   return context;
 };
+
+export const useFirebase = () => {
+    initializeFirebaseServices();
+    return { auth: authInstance, db: dbInstance };
+}
