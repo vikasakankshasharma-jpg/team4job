@@ -1,3 +1,4 @@
+
 "use client";
 
 import { User, BlacklistEntry } from "@/lib/types";
@@ -9,7 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
-import { useAuth, useFirestore } from "@/lib/firebase/client-provider";
+import { useAuth, useFirestore, useFirebase } from "@/lib/firebase/client-provider.tsx";
 
 // --- Types ---
 type Role = "Job Giver" | "Installer" | "Admin";
@@ -232,7 +233,4 @@ export function useUser() {
 };
 
 // This is kept for non-hook usage, but useAuth and useFirestore are preferred.
-export const useFirebase = () => {
-  const { auth, db } = useFirebase();
-  return { auth, db };
-}
+export { useFirebase, useAuth, useFirestore };
