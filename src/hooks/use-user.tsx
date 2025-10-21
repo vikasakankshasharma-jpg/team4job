@@ -23,31 +23,6 @@ interface FirebaseInstances {
 
 const FirebaseContext = createContext<FirebaseInstances | null>(null);
 
-const FirebaseProvider = ({ children }: { children: React.ReactNode }) => {
-    const app = useFirebaseApp();
-    const [instances, setInstances] = useState<FirebaseInstances | null>(null);
-
-    useEffect(() => {
-        if (app) {
-            const auth = initializeAuth(app, { persistence: browserLocalPersistence });
-            const db = getFirestore(app);
-            setInstances({ auth, db, app });
-        }
-    }, [app]);
-
-    if (!instances) {
-        return (
-            <div className="flex h-screen items-center justify-center">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Initializing...</span>
-                </div>
-            </div>
-        );
-    }
-    return <FirebaseContext.Provider value={instances}>{children}</FirebaseContext.Provider>;
-}
-
 export const useFirebase = () => {
     const context = useContext(FirebaseContext);
     if (!context) {
@@ -80,7 +55,8 @@ const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs'];
 
 
 function UserProviderComponent({ children }: { children: React.ReactNode }) {
-  const { auth, db } = useFirebase();
+  const app = useFirebaseApp();
+  const [firebaseInstances, setFirebaseInstances] = useState<FirebaseInstances | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Job Giver");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -91,6 +67,15 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
+
+   useEffect(() => {
+    if (app) {
+        const auth = initializeAuth(app, { persistence: browserLocalPersistence });
+        const db = getFirestore(app);
+        setFirebaseInstances({ auth, db, app });
+    }
+  }, [app]);
+
 
    const updateUserState = useCallback((userData: User | null) => {
     setUserDocLoading(true);
@@ -118,6 +103,9 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!firebaseInstances) return;
+    const { auth, db } = firebaseInstances;
+
     errorEmitter.on('permission-error', (error: FirestorePermissionError) => {
       console.error("Intercepted Firestore Permission Error:", error);
       toast({
@@ -190,9 +178,9 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
         unsubscribeAuth();
         errorEmitter.removeAllListeners('permission-error');
     }
-  }, [auth, db, toast, updateUserState]);
+  }, [firebaseInstances, toast, updateUserState]);
 
-  const loading = authLoading || userDocLoading;
+  const loading = authLoading || userDocLoading || !firebaseInstances;
 
   useEffect(() => {
     const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
@@ -222,12 +210,12 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
 
 
   const login = async (email: string, password?: string) => {
-    if (!password) {
+    if (!password || !firebaseInstances) {
         return false;
     }
     setAuthLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(firebaseInstances.auth, email, password);
       // onAuthStateChanged will handle the user state update
       return true;
     } catch (error: any) {
@@ -240,8 +228,9 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    if (!firebaseInstances) return;
     setAuthLoading(true);
-    await signOut(auth);
+    await signOut(firebaseInstances.auth);
     updateUserState(null);
     router.push('/login');
   };
@@ -273,7 +262,18 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
                 <span>Loading user...</span>
             </div>
         </div>
-      ) : children }
+      ) : firebaseInstances ? (
+        <FirebaseContext.Provider value={firebaseInstances}>
+          {children}
+        </FirebaseContext.Provider>
+      ) : (
+          <div className="flex h-screen items-center justify-center">
+             <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Connecting...</span>
+             </div>
+          </div>
+      )}
     </UserContext.Provider>
   );
 };

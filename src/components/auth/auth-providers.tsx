@@ -2,10 +2,10 @@
 "use client";
 
 import React from 'react';
-import { FirebaseProvider } from "@/hooks/use-user";
 import { HelpProvider } from "@/hooks/use-help";
 import { GoogleMapsProvider } from "@/hooks/use-google-maps";
 import { FirebaseErrorListener } from "../FirebaseErrorListener";
+import { FirebaseAppProvider } from '@/lib/firebase/use-firebase-app';
 
 /**
  * A lightweight provider component for pages that need access to Firebase services
@@ -14,13 +14,13 @@ import { FirebaseErrorListener } from "../FirebaseErrorListener";
  */
 export function AuthPageProviders({ children }: { children: React.ReactNode }) {
   return (
-      <FirebaseProvider>
+      <FirebaseAppProvider>
         <HelpProvider>
           <GoogleMapsProvider>
             {children}
             <FirebaseErrorListener />
           </GoogleMapsProvider>
         </HelpProvider>
-      </FirebaseProvider>
+      </FirebaseAppProvider>
   );
 }
