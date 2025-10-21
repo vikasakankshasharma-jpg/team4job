@@ -30,9 +30,8 @@ export function getFirebaseApp(): FirebaseApp {
     
     // Check if all required keys are present.
     if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-       console.error("Firebase config is missing. Check your .env file.");
-       // Return a dummy object or throw an error, depending on desired strictness.
-       // For now, we proceed, but the SDK will throw the api-key-not-valid error.
+       console.error("Firebase config is missing or incomplete. Check your .env file and next.config.ts. Make sure to restart the development server after changing environment variables.");
+       // This will cause the SDK to throw a more specific error.
     }
 
     firebaseApp = initializeApp(firebaseConfig);
@@ -44,12 +43,29 @@ export function getFirebaseApp(): FirebaseApp {
 
 export const FirebaseAppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [app, setApp] = useState<FirebaseApp | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+      try {
         // The initialization is deferred until the component mounts on the client.
         setApp(getFirebaseApp());
+      } catch (e: any) {
+        console.error("Firebase initialization failed:", e.message);
+        setError("Failed to initialize Firebase. Please check your configuration and API keys.");
+      }
     }, []);
 
+    if (error) {
+       return (
+             <div className="flex h-screen items-center justify-center p-4">
+                <div className="text-center text-destructive">
+                    <h1 className="text-lg font-bold">Initialization Error</h1>
+                    <p className="text-sm">{error}</p>
+                </div>
+            </div>
+        );
+    }
+    
     if (!app) {
         return (
              <div className="flex h-screen items-center justify-center">
