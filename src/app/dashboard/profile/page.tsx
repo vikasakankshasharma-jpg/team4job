@@ -51,6 +51,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 const tierIcons = {
@@ -448,32 +449,50 @@ function RedeemCouponCard({ user, role, onSubscriptionUpdate }: { user: User, ro
     );
 }
 
+function CompletedJobsStat() {
+  const { user, role } = useUser();
+  const { db } = useFirebase();
+  const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
+  const [loading, setLoading] = React.useState(true);
+
+  useEffect(() => {
+    if (!user || role !== 'Installer' || !db) {
+      setLoading(false);
+      return;
+    }
+    const fetchJobsData = async () => {
+      setLoading(true);
+      const q = query(
+        collection(db, 'jobs'),
+        where('status', '==', 'Completed'),
+        where('awardedInstaller', '==', doc(db, 'users', user.id))
+      );
+      const querySnapshot = await getDocs(q);
+      setJobsCompletedCount(querySnapshot.size);
+      setLoading(false);
+    };
+    fetchJobsData();
+  }, [user, role, db]);
+
+  return (
+    <Link href="/dashboard/my-bids?status=Completed" className="block p-4 rounded-lg border hover:bg-accent transition-colors">
+      <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary" />
+      {loading ? (
+        <Skeleton className="h-8 w-1/2 mx-auto" />
+      ) : (
+        <p className="text-2xl font-bold">{jobsCompletedCount}</p>
+      )}
+      <p className="text-sm text-muted-foreground">Jobs Completed</p>
+    </Link>
+  );
+}
+
 export default function ProfilePage() {
   const { user, role, setUser, setRole, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   const { toast } = useToast();
-  const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
-  const [loadingJobs, setLoadingJobs] = React.useState(true);
-  
-  const fetchJobsData = useCallback(async () => {
-    if (!user || role !== 'Installer' || !db) {
-      setLoadingJobs(false);
-      return;
-    }
-    setLoadingJobs(true);
-    const q = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', doc(db, 'users', user.id)));
-    const querySnapshot = await getDocs(q);
-    setJobsCompletedCount(querySnapshot.size);
-    setLoadingJobs(false);
-  }, [user, role, db]);
 
-  useEffect(() => {
-    if (user?.id) {
-        fetchJobsData();
-    }
-  }, [user?.id, fetchJobsData]);
-  
   if (userLoading) {
     return (
       <div className="flex h-48 items-center justify-center">
@@ -486,7 +505,6 @@ export default function ProfilePage() {
   }
 
   if (!user || !db) {
-    // This should ideally not be reached if the UserProvider redirects correctly.
     return <div>User not found.</div>
   }
   
@@ -743,11 +761,7 @@ export default function ProfilePage() {
                         <p className="text-2xl font-bold">{installerProfile.rating}/5.0</p>
                         <p className="text-sm text-muted-foreground">from {installerProfile.reviews} reviews</p>
                     </div>
-                    <Link href="/dashboard/my-bids?status=Completed" className="block p-4 rounded-lg border hover:bg-accent transition-colors">
-                        <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary"/>
-                        <p className="text-2xl font-bold">{jobsCompletedCount}</p>
-                        <p className="text-sm text-muted-foreground">Jobs Completed</p>
-                    </Link>
+                    <CompletedJobsStat />
                 </div>
 
                 <div>
@@ -796,3 +810,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
