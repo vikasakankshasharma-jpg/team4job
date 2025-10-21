@@ -256,6 +256,12 @@ export function SignUpForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
+    if (!auth || !db) {
+        toast({ title: "Error", description: "Firebase not initialized. Please try again.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+    }
+
     if (values.role === 'Installer' && verificationSubStep !== 'verified') {
         setCurrentStep("verification");
         form.setError("aadhar", { type: "manual", message: "Please complete Aadhar verification." });

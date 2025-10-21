@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -15,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { login } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -27,6 +26,7 @@ const formSchema = z.object({
 
 export function LoginForm() {
   const router = useRouter();
+  const { login } = useUser();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
