@@ -55,6 +55,7 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 
 const blacklistSchema = z.object({
   type: z.enum(["user", "pincode"]),
@@ -220,11 +221,18 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
 }
 
 export default function BlacklistPage() {
-  const { user, isAdmin } = useUser();
+  const { user, isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
+  const router = useRouter();
   const [blacklist, setBlacklist] = useState<BlacklistEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!userLoading && !isAdmin) {
+      router.push('/dashboard');
+    }
+  }, [isAdmin, userLoading, router]);
 
   const fetchBlacklist = React.useCallback(async () => {
     if (!db) return;
@@ -260,8 +268,12 @@ export default function BlacklistPage() {
     fetchBlacklist();
   };
 
-  if (!isAdmin) {
-    return <p>Access Denied.</p>;
+  if (userLoading || !isAdmin) {
+    return (
+        <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
   }
 
   return (

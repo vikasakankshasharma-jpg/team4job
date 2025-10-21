@@ -69,6 +69,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { useRouter } from "next/navigation";
 
 const couponSchema = z.object({
     code: z.string().min(3, "Code must be at least 3 characters.").toUpperCase(),
@@ -299,11 +300,18 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
 }
 
 export default function CouponsPage() {
-  const { user, isAdmin } = useUser();
+  const { user, isAdmin, loading: userLoading } = useUser();
+  const router = useRouter();
   const { db } = useFirebase();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!userLoading && !isAdmin) {
+      router.push('/dashboard');
+    }
+  }, [isAdmin, userLoading, router]);
 
   const fetchCoupons = React.useCallback(async () => {
     if (!db) return;
@@ -338,8 +346,12 @@ export default function CouponsPage() {
     fetchCoupons();
   }
   
-  if (!isAdmin) {
-    return <p>Access Denied.</p>;
+  if (userLoading || !isAdmin) {
+    return (
+        <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
   }
 
   return (
