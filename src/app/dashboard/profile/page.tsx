@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -52,7 +51,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
-import { Providers } from "@/components/providers";
 
 
 const tierIcons = {
@@ -450,7 +448,7 @@ function RedeemCouponCard({ user, role, onSubscriptionUpdate }: { user: User, ro
     );
 }
 
-function ProfilePageContent() {
+export default function ProfilePage() {
   const { user, role, setUser, setRole, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
@@ -798,14 +796,3 @@ function ProfilePageContent() {
     </div>
   );
 }
-
-
-export default function ProfilePage() {
-    return (
-        <Providers>
-            <ProfilePageContent />
-        </Providers>
-    )
-}
-
-    

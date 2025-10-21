@@ -16,8 +16,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { FirebaseProvider } from "@/hooks/use-user";
-import { GoogleMapsProvider } from "@/hooks/use-google-maps";
+import { AuthPageProviders } from "@/components/auth/auth-providers";
 
 
 function LoginPageContent() {
@@ -95,10 +94,8 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <FirebaseProvider>
-        <GoogleMapsProvider>
-          <LoginPageContent />
-        </GoogleMapsProvider>
-    </FirebaseProvider>
+    <AuthPageProviders>
+      <LoginPageContent />
+    </AuthPageProviders>
   )
 }
