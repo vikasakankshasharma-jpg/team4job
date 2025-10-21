@@ -26,7 +26,6 @@ import { toDate } from "@/lib/utils";
 import Link from "next/link";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
-import { Providers } from "@/components/providers";
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -85,7 +84,7 @@ function PageSkeleton() {
   );
 }
 
-function DisputeDetailPageContent() {
+export default function DisputeDetailPage() {
   const { user, isAdmin } = useUser();
   const { db } = useFirebase();
   const params = useParams();
@@ -402,13 +401,3 @@ function DisputeDetailPageContent() {
     </div>
   );
 }
-
-export default function DisputeDetailPage() {
-    return (
-        <Providers>
-            <DisputeDetailPageContent />
-        </Providers>
-    )
-}
-
-    

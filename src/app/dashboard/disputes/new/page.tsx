@@ -30,7 +30,6 @@ import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { doc, setDoc } from "firebase/firestore";
-import { Providers } from "@/components/providers";
 
 const disputeSchema = z.object({
   category: z.enum(["Billing Inquiry", "Technical Support", "Skill Request", "General Question"]),
@@ -38,7 +37,7 @@ const disputeSchema = z.object({
   reason: z.string().min(25, { message: "Description must be at least 25 characters." }),
 });
 
-function CreateDisputePageContent() {
+export default function CreateDisputePage() {
   const { toast } = useToast();
   const { user, role, isAdmin } = useUser();
   const { db } = useFirebase();
@@ -177,13 +176,3 @@ function CreateDisputePageContent() {
     </div>
   );
 }
-
-export default function CreateDisputePage() {
-    return (
-        <Providers>
-            <CreateDisputePageContent />
-        </Providers>
-    )
-}
-
-    
