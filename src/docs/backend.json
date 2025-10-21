@@ -21,7 +21,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "The unique identifier for the user, in the format [ROLE]-[YYYYMMDD]-[RANDOM]."
+          "description": "The unique identifier for the user, matching the Firebase Auth UID."
         },
         "name": {
           "type": "string",
@@ -126,6 +126,16 @@
         },
         "verified": {
           "type": "boolean"
+        },
+        "reputationHistory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "month": { "type": "string" },
+              "points": { "type": "number" }
+            }
+          }
         }
       },
       "required": ["tier", "points", "skills", "rating", "reviews", "verified"]
@@ -270,8 +280,7 @@
           "type": "array",
           "items": {
             "$ref": "#/entities/JobAttachment"
-          },
-          "description": "A list of files attached to the job posting."
+          }
         },
         "comments": {
           "type": "array",
@@ -378,6 +387,7 @@
       "description": "Represents a dispute or support ticket raised by a user, which can be mediated by an Admin.",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "requesterId": {
           "type": "string",
           "description": "The ID of the user who initiated the dispute or request."
@@ -434,7 +444,7 @@
           "format": "date-time"
         }
       },
-      "required": ["requesterId", "category", "title", "status", "reason", "createdAt"]
+      "required": ["id", "requesterId", "category", "title", "status", "reason", "createdAt"]
     },
     "DisputeMessage": {
       "title": "Dispute Message",

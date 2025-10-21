@@ -1,4 +1,5 @@
 
+
 /**
  * ----------------------------------------------------------------
  *  ATTENTION: This script is intended for development purposes only.
@@ -162,7 +163,7 @@ const mockUsers: Omit<User, 'id'>[] = [
       reputationHistory: [],
     },
   },
-  { // 6: Unverified Installer with a bad rating
+  { // 6: Unverified Installer
     name: 'Anil Kapoor',
     email: 'anil.k@example.com',
     mobile: '9898989898',
@@ -179,7 +180,50 @@ const mockUsers: Omit<User, 'id'>[] = [
       skills: ['ip camera', 'troubleshooting'],
       rating: 2.5,
       reviews: 4,
-      verified: false, // Not verified
+      verified: false,
+      reputationHistory: [],
+    },
+  },
+  { // 7: Suspended Installer
+    name: 'Sanjay Verma',
+    email: 'sanjay.v@example.com',
+    mobile: '9797979797',
+    roles: ['Installer'],
+    status: 'suspended',
+    suspensionEndDate: new Date(new Date().setDate(new Date().getDate() + 30)),
+    memberSince: new Date('2024-03-01'),
+    avatarUrl: PlaceHolderImages[7].imageUrl,
+    realAvatarUrl: 'https://picsum.photos/seed/sanjay/200/200',
+    address: { house: 'House 55', street: 'Sector 22', cityPincode: '160022, Sector 22 S.O', fullAddress: 'House 55, Sector 22, Chandigarh, 160022' },
+    pincodes: { residential: '160022' },
+    installerProfile: {
+      tier: 'Silver',
+      points: 600,
+      skills: ['vms', 'access control'],
+      rating: 3.1,
+      reviews: 12,
+      verified: true,
+      reputationHistory: [],
+    },
+  },
+    { // 8: Platinum Installer
+    name: 'Deepika Rao',
+    email: 'deepika.r@example.com',
+    mobile: '9696969696',
+    roles: ['Installer'],
+    status: 'active',
+    memberSince: new Date('2023-01-20'),
+    avatarUrl: PlaceHolderImages[0].imageUrl,
+    realAvatarUrl: 'https://picsum.photos/seed/deepika/200/200',
+    address: { house: 'Penthouse A', street: 'Marine Drive', cityPincode: '400002, Kalbadevi S.O', fullAddress: 'Penthouse A, Marine Drive, Mumbai, 400002' },
+    pincodes: { residential: '400002' },
+    installerProfile: {
+      tier: 'Platinum',
+      points: 2500,
+      skills: ['ip camera', 'nvr setup', 'cabling', 'troubleshooting', 'ptz', 'vms', 'fiber optics', 'thermal cameras', 'access control'],
+      rating: 4.9,
+      reviews: 55,
+      verified: true,
       reputationHistory: [],
     },
   },
@@ -238,7 +282,7 @@ async function seedAuthAndGetUIDs(users: Omit<User, 'id'>[]) {
                 password: "password123", // All users get a default password
                 displayName: user.name,
                 emailVerified: true,
-                disabled: false,
+                disabled: user.status === 'deactivated' || user.status === 'suspended',
             });
             userUIDs[user.email] = userRecord.uid;
             console.log(`- Created auth user: ${user.email} (UID: ${userRecord.uid})`);
@@ -247,7 +291,7 @@ async function seedAuthAndGetUIDs(users: Omit<User, 'id'>[]) {
                  const userRecord = await adminAuth.getUserByEmail(user.email);
                  userUIDs[user.email] = userRecord.uid;
                  // Ensure password is set for existing user, in case it was created without one
-                 await adminAuth.updateUser(userRecord.uid, { password: 'password123' });
+                 await adminAuth.updateUser(userRecord.uid, { password: 'password123', disabled: user.status === 'deactivated' || user.status === 'suspended' });
                  console.log(`- Auth user already exists, password updated: ${user.email} (UID: ${userRecord.uid})`);
             } else {
                 console.error(`- Error creating auth user ${user.email}:`, error.message);
@@ -280,6 +324,10 @@ async function seedUserProfiles(users: Omit<User, 'id'>[], uids: { [email: strin
             }
         };
         
+        if (user.suspensionEndDate) {
+            firestoreUserData.suspensionEndDate = Timestamp.fromDate(new Date(user.suspensionEndDate as Date));
+        }
+        
         batch.set(userRef, firestoreUserData);
     });
     await batch.commit();
@@ -292,8 +340,9 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     const installerUID = uids[mockUsers[2].email];
     const justInstallerUID = uids[mockUsers[3].email];
     const newJobGiverUID = uids[mockUsers[4].email];
+    const platinumInstallerUID = uids[mockUsers[8].email];
     
-    if (!jobGiverUID || !installerUID || !justInstallerUID || !newJobGiverUID) {
+    if (!jobGiverUID || !installerUID || !justInstallerUID || !newJobGiverUID || !platinumInstallerUID) {
         throw new Error("Required mock users not found for seeding jobs.");
     }
     
@@ -302,17 +351,14 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         installer: adminDb.doc('users/' + installerUID),
         justInstaller: adminDb.doc('users/' + justInstallerUID),
         newJobGiver: adminDb.doc('users/' + newJobGiverUID),
+        platinumInstaller: adminDb.doc('users/' + platinumInstallerUID),
     };
 
+    const now = new Date();
+    
     // --- JOB 1: Open for Bidding ---
     const job1Id = "JOB-20240720-A1B2";
     const job1Ref = adminDb.collection('jobs').doc(job1Id);
-    const job1Bid = {
-        installer: refs.installer,
-        amount: 22500,
-        timestamp: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 1))),
-        coverLetter: "I'm a Gold-tier installer with 5 years of experience in large commercial projects. I can start next week and ensure a clean, professional installation."
-    }
     await job1Ref.set({
         id: job1Id,
         title: "Install 16 Dahua IP Cameras for a Commercial Building",
@@ -323,10 +369,17 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O' },
         budget: { min: 20000, max: 25000 },
         status: "Open for Bidding",
-        deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 5))),
-        postedAt: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 4))),
-        jobStartDate: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 10))),
-        bids: [job1Bid], 
+        deadline: Timestamp.fromDate(new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000)), // 5 days from now
+        postedAt: Timestamp.fromDate(new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000)), // 4 days ago
+        jobStartDate: Timestamp.fromDate(new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000)), // 10 days from now
+        bids: [
+            {
+                installer: refs.installer,
+                amount: 22500,
+                timestamp: Timestamp.fromDate(new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)),
+                coverLetter: "I'm a Gold-tier installer with 5 years of experience in large commercial projects. I can start next week and ensure a clean, professional installation."
+            }
+        ], 
         bidderIds: [installerUID],
         comments: [],
         privateMessages: [],
@@ -359,9 +412,10 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
 
     // --- JOB 3: In Progress ---
     const job3Id = "JOB-20240718-E5F6";
+    const job3DisputeId = "DISPUTE-1721981880001";
     await adminDb.collection('jobs').doc(job3Id).set({
         id: job3Id,
-        title: "Residential Villa - 4 PTZ Cameras",
+        title: "Residential Villa - 4 PTZ Cameras (Disputed)",
         description: "Installation of 4 outdoor PTZ cameras for a 2-story villa. Requires weather-proof cabling and connection to a cloud-based storage service.",
         jobGiver: refs.jobGiver,
         location: "400049",
@@ -369,15 +423,16 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         address: { house: 'Villa 17', street: 'Juhu Tara Road', cityPincode: '400049, Juhu S.O' },
         budget: { min: 8000, max: 12000 },
         status: "In Progress",
-        deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 2))),
-        postedAt: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 7))),
-        jobStartDate: Timestamp.fromDate(new Date()),
+        deadline: Timestamp.fromDate(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)),
+        postedAt: Timestamp.fromDate(new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000)),
+        jobStartDate: Timestamp.fromDate(new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)),
         awardedInstaller: refs.justInstaller,
-        bids: [{ installer: refs.justInstaller, amount: 8500, timestamp: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 3))), coverLetter: "I can handle this residential installation quickly and cleanly." }],
+        bids: [{ installer: refs.justInstaller, amount: 8500, timestamp: Timestamp.fromDate(new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000)), coverLetter: "I can handle this residential installation quickly and cleanly." }],
         bidderIds: [justInstallerUID],
         comments: [],
         privateMessages: [],
         completionOtp: "987123",
+        disputeId: job3DisputeId
     });
 
     // --- JOB 4: Unbid Job ---
@@ -392,9 +447,9 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         address: { house: 'Shop 5', street: 'Khan Market', cityPincode: '110001, Connaught Place S.O' },
         budget: { min: 2000, max: 4000 },
         status: "Unbid",
-        deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 1))), // Deadline passed
-        postedAt: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 5))),
-        jobStartDate: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 2))),
+        deadline: Timestamp.fromDate(new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)),
+        postedAt: Timestamp.fromDate(new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)),
+        jobStartDate: Timestamp.fromDate(new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)),
         bids: [],
         bidderIds: [],
         comments: [],
@@ -402,7 +457,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         completionOtp: "112233",
     });
     
-    // --- JOB 5: Recommended Job for Main Installer (Residential) ---
+    // --- JOB 5: Bidding Closed, Awaiting Award ---
     const job5Id = "JOB-20240725-J9K0";
     await adminDb.collection('jobs').doc(job5Id).set({
         id: job5Id,
@@ -413,18 +468,21 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         fullAddress: '5th Floor, Corporate Heights, Andheri West, Mumbai, 400053',
         address: { house: '5th Floor, Corporate Heights', street: 'Veera Desai Road', cityPincode: '400053, Andheri West S.O' },
         budget: { min: 6000, max: 9000 },
-        status: "Open for Bidding",
-        deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 2))),
-        postedAt: Timestamp.fromDate(new Date()),
-        jobStartDate: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 4))),
-        bids: [],
-        bidderIds: [],
+        status: "Bidding Closed",
+        deadline: Timestamp.fromDate(new Date(now.getTime() - 1 * 60 * 60 * 1000)), // 1 hour ago
+        postedAt: Timestamp.fromDate(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
+        jobStartDate: Timestamp.fromDate(new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)),
+        bids: [
+            { installer: refs.installer, amount: 7000, timestamp: Timestamp.fromDate(new Date(now.getTime() - 24 * 60 * 60 * 1000)), coverLetter: "Gold installer, ready to start immediately." },
+            { installer: refs.justInstaller, amount: 6500, timestamp: Timestamp.fromDate(new Date(now.getTime() - 12 * 60 * 60 * 1000)), coverLetter: "I'm available this weekend and have experience with Hikvision." }
+        ],
+        bidderIds: [installerUID, justInstallerUID],
         comments: [],
         privateMessages: [],
         completionOtp: "445566",
     });
 
-    // --- JOB 6: Recommended Job for Main Installer (Office) ---
+    // --- JOB 6: Awarded, Awaiting Acceptance ---
     const job6Id = "JOB-20240728-M3N4";
     await adminDb.collection('jobs').doc(job6Id).set({
         id: job6Id,
@@ -432,56 +490,82 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         description: "We are looking for a certified installer to set up a biometric access control system for our warehouse in Jogeshwari East. The system needs to cover 3 entry points.",
         jobGiver: refs.jobGiver,
         location: "400063", // Matches installer@example.com's office pincode
-        fullAddress: 'Gala No. 12, Prime Industrial Estate, Jogeshwari East, Mumbai, 400063',
         address: { house: 'Gala No. 12', street: 'Prime Industrial Estate', cityPincode: '400063, Jogeshwari East S.O' },
         budget: { min: 15000, max: 22000 },
-        status: "Open for Bidding",
-        deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 6))),
-        postedAt: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 1))),
-        jobStartDate: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 12))),
-        bids: [],
-        bidderIds: [],
+        status: "Awarded",
+        deadline: Timestamp.fromDate(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
+        postedAt: Timestamp.fromDate(new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)),
+        jobStartDate: Timestamp.fromDate(new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)),
+        bids: [{ installer: refs.installer, amount: 19000, timestamp: Timestamp.fromDate(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)), coverLetter: "Experienced with access control systems. Ready to proceed." }],
+        bidderIds: [installerUID],
+        awardedInstaller: refs.installer,
+        acceptanceDeadline: Timestamp.fromDate(new Date(now.getTime() + 23 * 60 * 60 * 1000)), // 23 hours left
         comments: [],
         privateMessages: [],
         completionOtp: "778899",
     });
 
-    // --- JOB 7: Another job for Andheri West 400053
+    // --- JOB 7: Cancelled Job ---
     const job7Id = "JOB-20240729-P5Q6";
     await adminDb.collection('jobs').doc(job7Id).set({
         id: job7Id,
-        title: "Home Security Camera Setup in Andheri West",
+        title: "Cancelled: Home Security Camera Setup",
         description: "Need a reliable installer to set up a 4-camera system for a 2BHK apartment. Should include DVR setup and mobile viewing configuration. Hardware will be provided by me.",
         jobGiver: refs.newJobGiver,
         location: "400053", // Matches installer@example.com's residential pincode
         fullAddress: 'A-501, Star Tower, S.V. Road, Andheri West, Mumbai, 400053',
         address: { house: 'A-501, Star Tower', street: 'S.V. Road, Andheri West', cityPincode: '400053, Andheri West S.O' },
         budget: { min: 5000, max: 8000 },
-        status: "Open for Bidding",
-        deadline: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 3))),
-        postedAt: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() - 1))),
-        jobStartDate: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 5))),
+        status: "Cancelled",
+        deadline: Timestamp.fromDate(new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)),
+        postedAt: Timestamp.fromDate(new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)),
+        jobStartDate: Timestamp.fromDate(new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000)),
         bids: [],
         bidderIds: [],
         comments: [],
         privateMessages: [],
         completionOtp: "101112",
     });
+    
+    // --- JOB 8: High Value Job for Platinum Installer ---
+    const job8Id = "JOB-20240801-R7S8";
+    await adminDb.collection('jobs').doc(job8Id).set({
+        id: job8Id,
+        title: "Corporate Tower - Full Fiber Optic CCTV Network",
+        description: "Full design and implementation of a fiber optic CCTV network for a 20-story corporate tower at Marine Drive. Requires expertise in fiber, VMS, and thermal cameras. Only highly experienced installers should bid.",
+        jobGiver: refs.newJobGiver,
+        location: "400002",
+        fullAddress: 'Corporate Tower, Marine Drive, Mumbai, 400002',
+        address: { house: 'Corporate Tower', street: 'Marine Drive', cityPincode: '400002, Kalbadevi S.O' },
+        budget: { min: 150000, max: 250000 },
+        status: "Open for Bidding",
+        deadline: Timestamp.fromDate(new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)),
+        postedAt: Timestamp.fromDate(new Date()),
+        jobStartDate: Timestamp.fromDate(new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000)),
+        bids: [
+             { installer: refs.platinumInstaller, amount: 220000, timestamp: Timestamp.fromDate(new Date()), coverLetter: "As a Platinum installer specializing in large-scale enterprise solutions, my team is perfectly equipped for this project. We have extensive experience with fiber optic networks and VMS integration." }
+        ],
+        bidderIds: [platinumInstallerUID],
+        comments: [],
+        privateMessages: [],
+        completionOtp: "334455",
+    });
 
 
-    console.log(`- Committed 7 jobs.`);
+    console.log(`- Committed 8 jobs.`);
 }
 
 async function seedDisputes(uids: { [email: string]: string }) {
     console.log('\nCreating disputes...');
     const jobGiverUID = uids[mockUsers[1].email];
     const installerUID = uids[mockUsers[2].email];
-    const badInstallerUID = uids[mockUsers[6].email];
+    const justInstallerUID = uids[mockUsers[3].email];
 
-    if (!jobGiverUID || !installerUID || !badInstallerUID) {
+    if (!jobGiverUID || !installerUID || !justInstallerUID) {
         throw new Error("Required mock users not found for seeding disputes.");
     }
     
+    // --- DISPUTE 1: Resolved ---
     const dispute1Id = "DISPUTE-1721981880000";
     await adminDb.collection('disputes').doc(dispute1Id).set({
         id: dispute1Id,
@@ -503,24 +587,53 @@ async function seedDisputes(uids: { [email: string]: string }) {
         resolvedAt: Timestamp.fromDate(new Date('2024-07-21T12:01:00Z')),
     });
     
-    console.log(`- Committed 1 dispute.`);
+     // --- DISPUTE 2: Open ---
+    const dispute2Id = "DISPUTE-1721981880001";
+    await adminDb.collection('disputes').doc(dispute2Id).set({
+        id: dispute2Id,
+        requesterId: jobGiverUID,
+        category: "Job Dispute",
+        title: "Dispute for job: Residential Villa - 4 PTZ Cameras",
+        jobId: "JOB-20240718-E5F6",
+        jobTitle: "Residential Villa - 4 PTZ Cameras (Disputed)",
+        status: 'Open',
+        reason: "The installer damaged my property during the installation. One of the camera mount points has cracked the wall plaster. The installer is refusing to fix it.",
+        parties: { jobGiverId: jobGiverUID, installerId: justInstallerUID },
+        messages: [
+            { authorId: jobGiverUID, authorRole: 'Job Giver', content: "The wall is cracked and the installer is not taking responsibility. I have attached photos.", timestamp: Timestamp.fromDate(new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000)) },
+            { authorId: justInstallerUID, authorRole: 'Installer', content: "The crack was pre-existing. I pointed it out before I started drilling. This is an attempt to avoid full payment.", timestamp: Timestamp.fromDate(new Date(new Date().getTime() - 1 * 24 * 60 * 60 * 1000)) },
+        ],
+        createdAt: Timestamp.fromDate(new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000)),
+    });
+    
+    console.log(`- Committed 2 disputes.`);
 }
 
 async function seedBlacklist() {
     console.log('\nSeeding blacklist...');
-    const badInstallerUID = (await adminAuth.getUserByEmail('anil.k@example.com')).uid;
+    const suspendedInstallerUID = (await adminAuth.getUserByEmail('sanjay.v@example.com')).uid;
     
     const blacklistEntry: BlacklistEntry = {
       id: `BL-USER-${Date.now()}`,
       type: "user",
-      value: badInstallerUID,
+      value: suspendedInstallerUID,
       role: 'Installer',
-      reason: 'Repeated low-quality work and customer complaints.',
+      reason: 'Account suspended due to multiple policy violations and user complaints.',
       createdAt: Timestamp.now(),
     };
     await adminDb.collection('blacklist').doc(blacklistEntry.id).set(blacklistEntry);
 
-    console.log('- Committed 1 blacklist entry.');
+    const pincodeEntry: BlacklistEntry = {
+      id: `BL-PINCODE-${Date.now()}`,
+      type: "pincode",
+      value: "999999",
+      role: 'Any',
+      reason: 'High rate of fraudulent activity reported from this pincode.',
+      createdAt: Timestamp.now(),
+    };
+    await adminDb.collection('blacklist').doc(pincodeEntry.id).set(pincodeEntry);
+
+    console.log('- Committed 2 blacklist entries.');
 }
 
 
