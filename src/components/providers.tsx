@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -6,12 +5,12 @@ import { UserProvider } from "@/hooks/use-user";
 import { HelpProvider } from "@/hooks/use-help";
 import { GoogleMapsProvider } from "@/hooks/use-google-maps";
 import { FirebaseErrorListener } from "./FirebaseErrorListener";
-import { FirebaseAppProvider } from "@/lib/firebase/use-firebase-app";
+import { FirebaseClientProvider } from "@/lib/firebase/client-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
-      <FirebaseAppProvider>
+      <FirebaseClientProvider>
         <UserProvider>
             <HelpProvider>
               <GoogleMapsProvider>
@@ -20,6 +19,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
               </GoogleMapsProvider>
             </HelpProvider>
         </UserProvider>
-      </FirebaseAppProvider>
+      </FirebaseClientProvider>
   );
 }

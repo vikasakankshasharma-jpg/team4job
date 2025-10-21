@@ -1,16 +1,15 @@
-
 "use client";
 
 import { User, BlacklistEntry } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser, initializeAuth, browserLocalPersistence, type Auth } from "firebase/auth";
-import { getDoc, collection, getDocs, onSnapshot, getFirestore, type Firestore, query, where, doc } from "firebase/firestore";
+import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
+import { getDoc, collection, getDocs, onSnapshot, query, where, doc } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
-import { getFirebaseApp, type FirebaseApp } from "@/lib/firebase/use-firebase-app";
+import { useAuth, useFirestore } from "@/lib/firebase/client-provider";
 
 // --- Types ---
 type Role = "Job Giver" | "Installer" | "Admin";
@@ -23,57 +22,16 @@ interface UserContextType {
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   setRole: (role: Role) => void;
   logout: () => void;
+  login: (email: string, password?: string) => Promise<boolean>;
 }
-
-// --- Firebase Instances (Global within this module) ---
-let authInstance: Auth | null = null;
-let dbInstance: Firestore | null = null;
-
-function initializeFirebaseServices() {
-    if (authInstance) return; // Already initialized
-
-    try {
-        const app = getFirebaseApp();
-        if (app) {
-            authInstance = initializeAuth(app, { persistence: browserLocalPersistence });
-            dbInstance = getFirestore(app);
-        }
-    } catch (e) {
-        console.error("Failed to initialize Firebase services in use-user.tsx", e);
-    }
-}
-
-// --- Core Auth Logic (Decoupled from React) ---
-
-export const login = async (email: string, password?: string): Promise<boolean> => {
-    initializeFirebaseServices(); // Ensure services are ready
-    if (!password || !authInstance) {
-        console.error("Auth not initialized or password missing.");
-        return false;
-    }
-    try {
-        await signInWithEmailAndPassword(authInstance, email, password);
-        return true;
-    } catch (error: any) {
-        if (error.code !== 'auth/invalid-credential') {
-            console.error("Login failed:", error);
-        }
-        return false;
-    }
-};
-
-export const logout = async (): Promise<void> => {
-    if (!authInstance) return;
-    await signOut(authInstance);
-};
-
 
 // --- React Context and Provider ---
 
 const UserContext = createContext<UserContextType | null>(null);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  initializeFirebaseServices(); // Ensure services are initialized when provider mounts
+  const auth = useAuth();
+  const db = useFirestore();
 
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Job Giver");
@@ -111,7 +69,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    if (!authInstance || !dbInstance) return;
+    if (!auth || !db) return;
 
     errorEmitter.on('permission-error', (error: FirestorePermissionError) => {
       console.error("Intercepted Firestore Permission Error:", error);
@@ -122,22 +80,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     });
 
-    const unsubscribeAuth = onAuthStateChanged(authInstance, (firebaseUser: FirebaseUser | null) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       setLoading(true);
       if (firebaseUser) {
-        const userDocRef = doc(dbInstance!, "users", firebaseUser.uid);
+        const userDocRef = doc(db, "users", firebaseUser.uid);
         
         const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
            if (userDoc.exists()) {
              const userData = { id: userDoc.id, ...userDoc.data() } as User;
              notFoundRetries.current.delete(firebaseUser.uid);
              
-             const blacklistQuery = query(collection(dbInstance!, "blacklist"), where("value", "==", firebaseUser.uid), where("type", "==", "user"));
+             const blacklistQuery = query(collection(db, "blacklist"), where("value", "==", firebaseUser.uid), where("type", "==", "user"));
              const blacklistSnapshot = await getDocs(blacklistQuery);
              
              if (!blacklistSnapshot.empty) {
                 toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
-                logout().then(() => updateUserState(null));
+                signOut(auth).then(() => updateUserState(null));
              } else {
                 updateUserState(userData);
              }
@@ -150,12 +108,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
              
              console.error("User document not found for authenticated user:", firebaseUser.uid);
              notFoundRetries.current.delete(firebaseUser.uid);
-             logout().then(() => updateUserState(null));
+             signOut(auth).then(() => updateUserState(null));
            }
            setLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
-            logout().then(() => updateUserState(null));
+            signOut(auth).then(() => updateUserState(null));
             setLoading(false);
         });
 
@@ -170,7 +128,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         unsubscribeAuth();
         errorEmitter.removeAllListeners('permission-error');
     }
-  }, [toast, updateUserState]);
+  }, [auth, db, toast, updateUserState]);
 
   useEffect(() => {
     const publicPaths = ['/login', '/'];
@@ -210,11 +168,28 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const handleLogout = () => {
-      logout().then(() => {
+      signOut(auth).then(() => {
           updateUserState(null);
           router.push('/login');
       });
   }
+
+  const handleLogin = async (email: string, password?: string): Promise<boolean> => {
+    if (!password) {
+        console.error("Password missing.");
+        return false;
+    }
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        return true;
+    } catch (error: any) {
+        if (error.code !== 'auth/invalid-credential') {
+            console.error("Login failed:", error);
+        }
+        return false;
+    }
+  };
+
 
   const value = useMemo(() => ({
     user,
@@ -224,6 +199,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser,
     setRole: handleSetRole,
     logout: handleLogout,
+    login: handleLogin,
   }), [user, role, isAdmin, loading]);
   
   const publicPaths = ['/login', '/'];
@@ -255,7 +231,8 @@ export function useUser() {
   return context;
 };
 
+// This is kept for non-hook usage, but useAuth and useFirestore are preferred.
 export const useFirebase = () => {
-    initializeFirebaseServices();
-    return { auth: authInstance, db: dbInstance };
+  const { auth, db } = useFirebase();
+  return { auth, db };
 }
