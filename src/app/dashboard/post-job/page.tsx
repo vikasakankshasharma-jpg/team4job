@@ -34,6 +34,7 @@ import { Separator } from "@/components/ui/separator";
 import { JobAttachment } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
 import { doc, setDoc } from "firebase/firestore";
+import { Providers } from "@/components/providers";
 
 const addressSchema = z.object({
   house: z.string().min(3, "Please enter a valid house/building detail."),
@@ -77,7 +78,7 @@ const jobSchema = z.object({
     path: ["jobStartDate"],
 });
 
-export default function PostJobPage() {
+function PostJobPageContent() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { user, role } = useUser();
@@ -169,7 +170,7 @@ export default function PostJobPage() {
 
 
   async function onSubmit(values: z.infer<typeof jobSchema>) {
-    if (!user) {
+    if (!user || !db) {
         toast({ title: "Error", description: "You must be logged in to post a job.", variant: "destructive" });
         return;
     }
@@ -485,3 +486,13 @@ export default function PostJobPage() {
     </div>
   );
 }
+
+export default function PostJobPage() {
+    return (
+        <Providers>
+            <PostJobPageContent />
+        </Providers>
+    )
+}
+
+    

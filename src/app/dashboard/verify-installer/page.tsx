@@ -28,6 +28,7 @@ import { useUser } from "@/hooks/use-user";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import { initiateAadharVerification, confirmAadharVerification } from "@/ai/flows/aadhar-verification";
 import { useRouter } from "next/navigation";
+import { Providers } from "@/components/providers";
 
 const aadharSchema = z.object({
   aadharNumber: z.string().length(12, { message: "Aadhar number must be 12 digits." }),
@@ -37,7 +38,7 @@ const otpSchema = z.object({
   otp: z.string().length(6, { message: "OTP must be 6 digits." }),
 });
 
-export default function VerifyInstallerPage() {
+function VerifyInstallerPageContent() {
   const { toast } = useToast();
   const { user, setUser } = useUser();
   const router = useRouter();
@@ -80,7 +81,7 @@ export default function VerifyInstallerPage() {
       if (result.isVerified) {
         toast({ title: "Verification Successful", description: result.message });
         // Update user context
-        if (user && user.installerProfile) {
+        if (user && user.installerProfile && setUser) {
           const updatedUser = { ...user, installerProfile: { ...user.installerProfile, verified: true } };
           setUser(updatedUser);
         }
@@ -157,3 +158,13 @@ export default function VerifyInstallerPage() {
     </div>
   );
 }
+
+export default function VerifyInstallerPage() {
+    return (
+        <Providers>
+            <VerifyInstallerPageContent />
+        </Providers>
+    )
+}
+
+    
