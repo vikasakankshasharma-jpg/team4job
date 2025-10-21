@@ -16,8 +16,11 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import { FirebaseProvider, UserProvider } from "@/hooks/use-user";
+import { GoogleMapsProvider } from "@/hooks/use-google-maps";
 
-export default function LoginPage() {
+
+function LoginPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -25,7 +28,6 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState(initialTab);
 
   useEffect(() => {
-    // Sync state with URL if it changes (e.g., browser back/forward)
     const tabFromUrl = searchParams.get("tab") || "login";
     if (tabFromUrl !== activeTab) {
       setActiveTab(tabFromUrl);
@@ -34,12 +36,11 @@ export default function LoginPage() {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    // Update the URL without reloading the page
     const newSearchParams = new URLSearchParams(searchParams.toString());
     newSearchParams.set("tab", value);
     router.replace(`${pathname}?${newSearchParams.toString()}`);
   };
-  
+
   return (
     <div className="flex min-h-screen flex-col items-center p-4">
        <header className="w-full max-w-5xl flex items-center p-8">
@@ -89,4 +90,17 @@ export default function LoginPage() {
       </main>
     </div>
   );
+}
+
+
+export default function LoginPage() {
+  return (
+    <FirebaseProvider>
+      <UserProvider>
+        <GoogleMapsProvider>
+          <LoginPageContent />
+        </GoogleMapsProvider>
+      </UserProvider>
+    </FirebaseProvider>
+  )
 }
