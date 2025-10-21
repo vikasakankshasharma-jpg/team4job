@@ -76,17 +76,21 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
 
   const handleCompleteJob = async () => {
     if (otp === job.completionOtp) {
+      // =================================================================
+      // CASHFREE INTEGRATION POINT (BACKEND)
+      // =================================================================
       // In a real app, this is where you would call a backend function to trigger the payout
-      // to the installer via the payment gateway (e.g., Cashfree Payouts).
+      // to the installer via a payment gateway's Payout API (e.g., Cashfree Payouts).
       //
       // async function releasePayment(jobId) {
-      //   const response = await fetch('/api/release-payment', {
+      //   const response = await fetch('/api/release-payment', { // A secure API route on your backend
       //     method: 'POST',
       //     body: JSON.stringify({ jobId }),
       //   });
       //   // Handle response...
       // }
       // releasePayment(job.id);
+      // =================================================================
       
       const updatedJobData = { 
         status: 'Completed' as const,
@@ -301,18 +305,25 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
     }, [bid.timestamp]);
 
     const handleAwardJob = async () => {
-        // In a real app, this function would not directly update the job.
+        // =================================================================
+        // CASHFREE INTEGRATION POINT (BACKEND)
+        // =================================================================
+        // In a real app, this function would not directly update the job status.
         // Instead, it would call a backend function to create a payment order with Cashfree.
-        // The backend would return a payment link.
+        // This backend function securely handles your API keys.
         //
-        // 1. Call backend to create payment order
+        // 1. Call backend to create payment order:
         //    const paymentLink = await createPaymentOrder(job.id, bid.amount);
+        //    (This would be a Genkit flow or Next.js API route that calls Cashfree)
         //
-        // 2. Redirect the Job Giver to the payment link
+        // 2. Redirect the Job Giver to the Cashfree payment page:
         //    window.location.href = paymentLink;
         //
-        // For this demo, we will just simulate the awarding process.
+        // 3. A webhook on your backend would listen for payment confirmation from Cashfree.
+        //    Upon confirmation, the webhook would then update the job status as shown below.
+        // =================================================================
         
+        // For this demo, we will just simulate the awarding process.
         const acceptanceDeadline = new Date();
         acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
 
