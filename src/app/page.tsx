@@ -22,9 +22,9 @@ export default function Home() {
     },
     {
       icon: <CheckCircle className="h-8 w-8 text-primary" />,
-      title: "Secure Escrow",
+      title: "Secure Payments",
       description:
-        "Secure payments are held in escrow and released only upon job completion.",
+        "Payments are handled securely through a trusted gateway and released upon job completion.",
     },
   ];
 
@@ -45,7 +45,7 @@ export default function Home() {
       step: 3,
       title: "Select & Confirm",
       description:
-        "Choose the best installer. Funds are held securely until the job is done.",
+        "Choose the best installer. Funds are handled securely until the job is done.",
     },
   ];
 
