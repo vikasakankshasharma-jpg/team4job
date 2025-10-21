@@ -46,6 +46,12 @@ type MyBidRowProps = {
   user?: User | null;
 }
 
+const getRefId = (ref: any): string | null => {
+  if (!ref) return null;
+  if (typeof ref === 'string') return ref;
+  return ref.id || null;
+}
+
 function MyBidRow({ bid, job, user }: MyBidRowProps) {
     const [timeAgo, setTimeAgo] = React.useState('');
 
@@ -60,7 +66,7 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     const getMyBidStatus = (): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
         if (!job || !user) return { text: "Unknown", variant: "secondary" };
         
-        const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+        const awardedId = getRefId(job.awardedInstaller);
         
         const won = awardedId === user.id;
 
@@ -84,7 +90,7 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     const calculatePoints = () => {
         if (!job || job.status !== 'Completed') return null;
 
-        const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+        const awardedId = getRefId(job.awardedInstaller);
 
         if (awardedId !== user?.id || !job.rating) {
             return null;
@@ -273,7 +279,6 @@ function MyBidsPageContent() {
   };
   
  const myBids = !user ? [] : jobs.map(job => {
-    const getRefId = (ref: DocumentReference | User) => (ref as DocumentReference)?.id || (ref as User)?.id;
     const myBid = (job.bids || []).find(bid => getRefId(bid.installer) === user.id);
     const awardedId = job.awardedInstaller ? getRefId(job.awardedInstaller) : null;
     const isAwardedToMe = awardedId === user.id;
@@ -282,7 +287,7 @@ function MyBidsPageContent() {
       return {
         id: myBid?.id || `direct-award-${job.id}`,
         installer: user,
-        amount: myBid?.amount || (isAwardedToMe ? (job.bids || []).find(b => (getRefId(b.installer)) === awardedId)?.amount || 0 : 0),
+        amount: myBid?.amount || (isAwardedToMe ? (job.bids || []).find(b => getRefId(b.installer) === awardedId)?.amount || 0 : 0),
         timestamp: myBid?.timestamp || toDate(job.postedAt),
         coverLetter: myBid?.coverLetter || "Job awarded directly.",
         jobTitle: job.title,
@@ -298,7 +303,7 @@ function MyBidsPageContent() {
  const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: User | DocumentReference; }): string => {
     if (!job || !user) return "Unknown";
     
-    const awardedId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+    const awardedId = getRefId(job.awardedInstaller);
     const won = awardedId === user.id;
 
     if (won) {

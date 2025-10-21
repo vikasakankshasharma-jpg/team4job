@@ -777,6 +777,12 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
     );
 }
 
+const getRefId = (ref: any): string | null => {
+    if (!ref) return null;
+    if (typeof ref === 'string') return ref;
+    return ref.id || null;
+}
+
 export default function JobDetailPage() {
   const { user, role } = useUser();
   const { db } = useFirebase();
@@ -797,6 +803,7 @@ export default function JobDetailPage() {
   const [deadlineAbsolute, setDeadlineAbsolute] = React.useState('');
 
   const fetchJob = React.useCallback(async () => {
+    if (!db || !id) return;
     setLoading(true);
     const jobRef = doc(db, 'jobs', id);
     const jobSnap = await getDoc(jobRef);
@@ -808,23 +815,50 @@ export default function JobDetailPage() {
     }
 
     const jobData = jobSnap.data() as Job;
-    const userRefs = new Set<DocumentReference>();
-    if (jobData.jobGiver) userRefs.add(jobData.jobGiver as DocumentReference);
-    if (jobData.awardedInstaller) userRefs.add(jobData.awardedInstaller as DocumentReference);
-    jobData.bids.forEach(bid => userRefs.add(bid.installer as DocumentReference));
-    jobData.comments.forEach(comment => userRefs.add(comment.author as DocumentReference));
-    (jobData.privateMessages || []).forEach(msg => userRefs.add(msg.author as DocumentReference));
-    
-    const userDocs = await Promise.all(Array.from(userRefs).map(ref => getDoc(ref)));
-    const usersMap = new Map(userDocs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as User]));
 
+    // Collect all unique user IDs from the job document
+    const userIds = new Set<string>();
+    const jobGiverId = getRefId(jobData.jobGiver);
+    if (jobGiverId) userIds.add(jobGiverId);
+    
+    const awardedInstallerId = getRefId(jobData.awardedInstaller);
+    if (awardedInstallerId) userIds.add(awardedInstallerId);
+
+    (jobData.bids || []).forEach(bid => {
+        const installerId = getRefId(bid.installer);
+        if (installerId) userIds.add(installerId);
+    });
+
+    (jobData.comments || []).forEach(comment => {
+        const authorId = getRefId(comment.author);
+        if (authorId) userIds.add(authorId);
+    });
+
+    (jobData.privateMessages || []).forEach(msg => {
+        const authorId = getRefId(msg.author);
+        if (authorId) userIds.add(authorId);
+    });
+    
+    // Fetch all users in one go
+    const usersMap = new Map<string, User>();
+    if (userIds.size > 0) {
+        const usersQuery = query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds)));
+        const userDocs = await getDocs(usersQuery);
+        userDocs.forEach(docSnap => {
+            if (docSnap.exists()) {
+                usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
+            }
+        });
+    }
+
+    // Populate the job object with the fetched user data
     const populatedJob: Job = {
         ...jobData,
-        jobGiver: usersMap.get((jobData.jobGiver as DocumentReference).id) || jobData.jobGiver,
-        awardedInstaller: jobData.awardedInstaller ? usersMap.get((jobData.awardedInstaller as DocumentReference).id) || jobData.awardedInstaller : undefined,
-        bids: jobData.bids.map(bid => ({ ...bid, installer: usersMap.get((bid.installer as DocumentReference).id)! })),
-        comments: jobData.comments.map(comment => ({ ...comment, author: usersMap.get((comment.author as DocumentReference).id)! })),
-        privateMessages: (jobData.privateMessages || []).map(msg => ({...msg, author: usersMap.get((msg.author as DocumentReference).id)!})),
+        jobGiver: usersMap.get(jobGiverId!) || jobData.jobGiver,
+        awardedInstaller: awardedInstallerId ? (usersMap.get(awardedInstallerId) || jobData.awardedInstaller) : undefined,
+        bids: (jobData.bids || []).map(bid => ({ ...bid, installer: usersMap.get(getRefId(bid.installer)!)! })),
+        comments: (jobData.comments || []).map(comment => ({ ...comment, author: usersMap.get(getRefId(comment.author)!)! })),
+        privateMessages: (jobData.privateMessages || []).map(msg => ({...msg, author: usersMap.get(getRefId(msg.author)!)!})),
     };
     
     setJob(populatedJob);
@@ -845,10 +879,12 @@ export default function JobDetailPage() {
   const anonymousIdMap = React.useMemo(() => {
     if (!job) return new Map<string, string>();
     
-    const bidderIdsFromBids = (job.bids || []).map(b => (b.installer as User).id);
+    const jobGiverId = getRefId(job.jobGiver);
+
+    const bidderIdsFromBids = (job.bids || []).map(b => getRefId(b.installer)).filter(Boolean) as string[];
     const bidderIdsFromComments = (job.comments || [])
-        .map(c => (c.author as User).id)
-        .filter(id => id !== (job.jobGiver as User).id);
+        .map(c => getRefId(c.author))
+        .filter(id => id && id !== jobGiverId) as string[];
         
     const uniqueBidderIds = [...new Set([...bidderIdsFromBids, ...bidderIdsFromComments])];
 
@@ -941,9 +977,7 @@ export default function JobDetailPage() {
     notFound();
   }
 
-  const awardedInstallerId = (job.awardedInstaller instanceof DocumentReference) 
-    ? job.awardedInstaller.id 
-    : (job.awardedInstaller as User)?.id;
+  const awardedInstallerId = getRefId(job.awardedInstaller);
   const isAwardedInstaller = role === "Installer" && user.id === awardedInstallerId;
   const jobGiver = job.jobGiver as User;
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
@@ -1278,5 +1312,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
