@@ -20,12 +20,12 @@ export function getFirebaseApp(): FirebaseApp {
   if (getApps().length === 0) {
     // Hardcoded Firebase config to ensure client-side availability.
     const firebaseConfig = {
-      apiKey: "AIzaSyC2a3GqK6h8t7B1f2eR5sD4c3bV2a1z0xY",
-      authDomain: "cctv-job-connect.firebaseapp.com",
-      projectId: "cctv-job-connect",
-      storageBucket: "cctv-job-connect.appspot.com",
-      messagingSenderId: "123456789012",
-      appId: "1:123456789012:web:a1b2c3d4e5f6a7b8c9d0e1",
+      apiKey: "AIzaSyDEYoBGZnewG0uorkXvCUOSHbtVDu9VPGc",
+      authDomain: "studio-1890574003-16f26.firebaseapp.com",
+      projectId: "studio-1890574003-16f26",
+      storageBucket: "studio-1890574003-16f26.appspot.com",
+      messagingSenderId: "849721048101",
+      appId: "1:849721048101:web:1ac8f3551a09921cd7d3cc",
     };
     
     // Check if all required keys are present.
