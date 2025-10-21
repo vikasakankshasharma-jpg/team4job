@@ -63,6 +63,12 @@ function getJobType(job: Job) {
     return bidderIds.includes(awardedInstallerId as string) ? 'Bidding' : 'Direct';
 };
 
+const getRefId = (ref: any): string | null => {
+  if (!ref) return null;
+  if (typeof ref === 'string') return ref;
+  return ref.id || null;
+}
+
 function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) => void }) {
     const jobGiverName = (job.jobGiver as User)?.name || 'N/A';
 
@@ -122,18 +128,24 @@ export default function AllJobsPage() {
       const jobSnapshot = await getDocs(query(jobsCollection));
       const jobList = jobSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Job);
 
-      const userRefs = new Set<DocumentReference>();
+      const userRefs = new Map<string, DocumentReference>();
       jobList.forEach(job => {
-          if (job.jobGiver) userRefs.add(job.jobGiver as DocumentReference);
-          if (job.awardedInstaller) userRefs.add(job.awardedInstaller as DocumentReference);
-          (job.bids || []).forEach(bid => userRefs.add(bid.installer as DocumentReference));
+          const jobGiverId = getRefId(job.jobGiver);
+          if (jobGiverId) userRefs.set(jobGiverId, doc(db, 'users', jobGiverId));
+
+          const awardedInstallerId = getRefId(job.awardedInstaller);
+          if (awardedInstallerId) userRefs.set(awardedInstallerId, doc(db, 'users', awardedInstallerId));
+          
+          (job.bids || []).forEach(bid => {
+              const installerId = getRefId(bid.installer);
+              if (installerId) userRefs.set(installerId, doc(db, 'users', installerId));
+          });
       });
 
       const usersMap = new Map<string, User>();
-      const userIds = Array.from(userRefs).map(ref => ref.id);
+      const userIds = Array.from(userRefs.keys());
       
       if (userIds.length > 0) {
-          // Fetch users in chunks of 30 to stay within query limits
           for (let i = 0; i < userIds.length; i += 30) {
               const chunk = userIds.slice(i, i + 30);
               if (chunk.length > 0) {
@@ -149,16 +161,19 @@ export default function AllJobsPage() {
       }
 
       const populatedJobs = jobList.map(job => {
-          const getRefId = (ref: DocumentReference | User) => (ref as DocumentReference)?.id || (ref as User)?.id;
-          
+          const jobGiverId = getRefId(job.jobGiver);
+          const awardedInstallerId = getRefId(job.awardedInstaller);
           return {
               ...job,
-              jobGiver: usersMap.get(getRefId(job.jobGiver)) || job.jobGiver,
-              awardedInstaller: job.awardedInstaller ? usersMap.get(getRefId(job.awardedInstaller)) || job.awardedInstaller : undefined,
-              bids: (job.bids || []).map(bid => ({
-                  ...bid,
-                  installer: usersMap.get(getRefId(bid.installer)) || bid.installer
-              })),
+              jobGiver: jobGiverId ? usersMap.get(jobGiverId) || job.jobGiver : job.jobGiver,
+              awardedInstaller: awardedInstallerId ? usersMap.get(awardedInstallerId) || job.awardedInstaller : undefined,
+              bids: (job.bids || []).map(bid => {
+                  const installerId = getRefId(bid.installer);
+                  return {
+                      ...bid,
+                      installer: installerId ? usersMap.get(installerId) || bid.installer : bid.installer,
+                  }
+              }),
           };
       });
       

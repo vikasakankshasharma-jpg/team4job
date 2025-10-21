@@ -45,22 +45,27 @@ import { useHelp } from "@/hooks/use-help";
 import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
 
+const getRefId = (ref: any): string | null => {
+  if (!ref) return null;
+  if (typeof ref === 'string') return ref;
+  return ref.id || null;
+}
 
 function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
   
   const getJobType = (job: Job) => {
     if (!job.awardedInstaller) return 'N/A';
 
-    const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+    const awardedInstallerId = getRefId(job.awardedInstaller);
     
     if (!job.bids || job.bids.length === 0) {
       if (awardedInstallerId) return 'Direct';
       return 'N/A';
     }
 
-    const bidderIds = (job.bids || []).map(b => (b.installer as DocumentReference)?.id || (b.installer as User)?.id);
+    const bidderIds = (job.bids || []).map(b => getRefId(b.installer));
     
-    return bidderIds.includes(awardedInstallerId as string) ? 'Bidding' : 'Direct';
+    return bidderIds.includes(awardedInstallerId) ? 'Bidding' : 'Direct';
   };
 
   const getActionsForJob = (job: Job) => {
@@ -189,17 +194,20 @@ export default function PostedJobsPage() {
     
     const jobsData = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
     
-    // Efficiently fetch all related user data
-    const userRefs = new Set<DocumentReference>();
+    const userRefs = new Map<string, DocumentReference>();
     jobsData.forEach(job => {
-        if (job.awardedInstaller) userRefs.add(job.awardedInstaller as DocumentReference);
-        (job.bids || []).forEach(bid => userRefs.add(bid.installer as DocumentReference));
+        const awardedInstallerId = getRefId(job.awardedInstaller);
+        if (awardedInstallerId) userRefs.set(awardedInstallerId, doc(db, 'users', awardedInstallerId));
+        
+        (job.bids || []).forEach(bid => {
+            const installerId = getRefId(bid.installer);
+            if(installerId) userRefs.set(installerId, doc(db, 'users', installerId));
+        });
     });
 
     const usersMap = new Map<string, User>();
     if (userRefs.size > 0) {
-        // Firestore 'in' query is limited to 30 items. We need to chunk it.
-        const userRefArray = Array.from(userRefs);
+        const userRefArray = Array.from(userRefs.keys());
         for (let i = 0; i < userRefArray.length; i += 30) {
             const chunk = userRefArray.slice(i, i + 30);
             const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
@@ -212,16 +220,18 @@ export default function PostedJobsPage() {
         }
     }
 
-    // Populate job objects with user data
     const populatedJobs = jobsData.map(job => {
-        const getRefId = (ref: DocumentReference | User) => (ref as DocumentReference)?.id || (ref as User)?.id;
+        const awardedInstallerId = getRefId(job.awardedInstaller);
         return {
             ...job,
-            awardedInstaller: job.awardedInstaller ? usersMap.get(getRefId(job.awardedInstaller)) || job.awardedInstaller : undefined,
-            bids: (job.bids || []).map(bid => ({
-                ...bid,
-                installer: usersMap.get(getRefId(bid.installer)) || bid.installer
-            })),
+            awardedInstaller: awardedInstallerId ? usersMap.get(awardedInstallerId) || job.awardedInstaller : undefined,
+            bids: (job.bids || []).map(bid => {
+                const installerId = getRefId(bid.installer);
+                return {
+                    ...bid,
+                    installer: installerId ? usersMap.get(installerId) || bid.installer : bid.installer,
+                }
+            }),
         };
     });
 
@@ -319,5 +329,3 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
-
-    
