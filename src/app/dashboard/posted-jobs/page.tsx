@@ -35,6 +35,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { MoreHorizontal } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation";
 import { Job, User } from "@/lib/types";
@@ -50,6 +56,17 @@ const getRefId = (ref: any): string | null => {
   if (typeof ref === 'string') return ref;
   return ref.id || null;
 }
+
+const statusDescriptions: Record<Job['status'], string> = {
+  "Open for Bidding": "The job is live and installers can place bids.",
+  "Bidding Closed": "The bidding deadline has passed. You can now review bids and award the job.",
+  "Awarded": "You have awarded the job to an installer. Waiting for them to accept.",
+  "In Progress": "The installer has accepted the job and work is underway.",
+  "Completed": "The job has been successfully completed and paid for.",
+  "Cancelled": "This job has been cancelled.",
+  "Unbid": "The bidding deadline passed with no bids received."
+};
+
 
 function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
   
@@ -90,6 +107,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
   }
 
   return (
+    <TooltipProvider>
       <Card>
         <CardHeader>
           <CardTitle>{title}</CardTitle>
@@ -123,7 +141,14 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
                        <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{statusDescriptions[job.status]}</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{(job.bids || []).length}</TableCell>
                     <TableCell className="hidden md:table-cell">
@@ -163,6 +188,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
           </div>
         </CardFooter>
       </Card>
+    </TooltipProvider>
   )
 }
 
