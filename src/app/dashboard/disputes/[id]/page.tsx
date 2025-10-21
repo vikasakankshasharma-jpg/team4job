@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useUser } from "@/hooks/use-user";
-import { useFirebase } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { notFound, useParams } from "next/navigation";
 import {
   Card,
@@ -27,6 +26,7 @@ import { toDate } from "@/lib/utils";
 import Link from "next/link";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { Providers } from "@/components/providers";
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -85,7 +85,7 @@ function PageSkeleton() {
   );
 }
 
-export default function DisputeDetailPage() {
+function DisputeDetailPageContent() {
   const { user, isAdmin } = useUser();
   const { db } = useFirebase();
   const params = useParams();
@@ -100,7 +100,7 @@ export default function DisputeDetailPage() {
   const [attachments, setAttachments] = useState<File[]>([]);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !db) return;
     async function fetchDispute() {
         setLoading(true);
         const disputeRef = doc(db, "disputes", id);
@@ -402,3 +402,13 @@ export default function DisputeDetailPage() {
     </div>
   );
 }
+
+export default function DisputeDetailPage() {
+    return (
+        <Providers>
+            <DisputeDetailPageContent />
+        </Providers>
+    )
+}
+
+    

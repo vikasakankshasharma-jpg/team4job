@@ -52,6 +52,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
+import { Providers } from "@/components/providers";
 
 
 const tierIcons = {
@@ -97,6 +98,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
     });
 
     async function onSubmit(values: z.infer<typeof editProfileSchema>) {
+        if (!user || !db) return;
         const userRef = doc(db, 'users', user.id);
         const updateData = {
             name: values.name,
@@ -195,6 +197,7 @@ function InstallerOnboardingDialog({ user, onSave }: { user: User, onSave: (valu
     });
 
     async function onSubmit(values: z.infer<typeof installerOnboardingSchema>) {
+        if (!user || !db) return;
         const userRef = doc(db, 'users', user.id);
         const updateData = {
             roles: arrayUnion('Installer'),
@@ -285,6 +288,7 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
     };
     
     const handleSave = async () => {
+        if (!userId || !db) return;
         const userRef = doc(db, 'users', userId);
         await updateDoc(userRef, { 'installerProfile.skills': selectedSkills });
         onSave(selectedSkills);
@@ -374,6 +378,7 @@ function RedeemCouponCard({ user, role, onSubscriptionUpdate }: { user: User, ro
             toast({ title: "Please enter a coupon code.", variant: "destructive" });
             return;
         }
+        if (!db || !user) return;
         setIsLoading(true);
 
         const couponRef = doc(db, "coupons", couponCode.toUpperCase());
@@ -445,7 +450,7 @@ function RedeemCouponCard({ user, role, onSubscriptionUpdate }: { user: User, ro
     );
 }
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const { user, role, setUser, setRole, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
@@ -482,7 +487,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user) {
+  if (!user || !db) {
     // This should ideally not be reached if the UserProvider redirects correctly.
     return <div>User not found.</div>
   }
@@ -793,3 +798,14 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+
+export default function ProfilePage() {
+    return (
+        <Providers>
+            <ProfilePageContent />
+        </Providers>
+    )
+}
+
+    
