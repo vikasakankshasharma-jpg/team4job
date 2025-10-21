@@ -11,31 +11,7 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
-
-// --- Firebase App Initialization (Client-side) ---
-
-let firebaseApp: FirebaseApp;
-
-function getFirebaseApp(): FirebaseApp {
-  if (firebaseApp) {
-    return firebaseApp;
-  }
-
-  if (getApps().length === 0) {
-    const firebaseConfig = {
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-    };
-    firebaseApp = initializeApp(firebaseConfig);
-  } else {
-    firebaseApp = getApp();
-  }
-  return firebaseApp;
-}
+import { useFirebaseApp } from "@/lib/firebase/use-firebase-app";
 
 // --- Firebase Context ---
 
@@ -48,14 +24,16 @@ interface FirebaseInstances {
 const FirebaseContext = createContext<FirebaseInstances | null>(null);
 
 const FirebaseProvider = ({ children }: { children: React.ReactNode }) => {
+    const app = useFirebaseApp();
     const [instances, setInstances] = useState<FirebaseInstances | null>(null);
 
     useEffect(() => {
-        const app = getFirebaseApp();
-        const auth = initializeAuth(app, { persistence: browserLocalPersistence });
-        const db = getFirestore(app);
-        setInstances({ auth, db, app });
-    }, []);
+        if (app) {
+            const auth = initializeAuth(app, { persistence: browserLocalPersistence });
+            const db = getFirestore(app);
+            setInstances({ auth, db, app });
+        }
+    }, [app]);
 
     if (!instances) {
         return (
@@ -301,9 +279,7 @@ function UserProviderComponent({ children }: { children: React.ReactNode }) {
 };
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => (
-    <FirebaseProvider>
-        <UserProviderComponent>{children}</UserProviderComponent>
-    </FirebaseProvider>
+    <UserProviderComponent>{children}</UserProviderComponent>
 );
 
 
