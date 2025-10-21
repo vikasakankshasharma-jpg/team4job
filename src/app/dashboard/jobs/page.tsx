@@ -61,7 +61,7 @@ export default function BrowseJobsPage() {
   const { setHelp } = useHelp();
 
   React.useEffect(() => {
-    if (role === 'Admin') {
+    if (role === 'Admin' || role === 'Job Giver') {
       router.push('/dashboard');
     }
   }, [role, router]);
@@ -196,7 +196,7 @@ export default function BrowseJobsPage() {
     selectedSkills.length > 0
   ].filter(Boolean).length;
 
-  if (role === 'Admin') {
+  if (role === 'Admin' || role === 'Job Giver') {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">Redirecting...</p>
