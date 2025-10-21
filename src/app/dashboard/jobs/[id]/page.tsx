@@ -66,8 +66,7 @@ import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { doc, getDoc, updateDoc, arrayUnion, setDoc } from "firebase/firestore";
-import type { DocumentReference } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, setDoc, DocumentReference } from "firebase/firestore";
 
 
 function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
@@ -491,8 +490,8 @@ function ReputationImpactCard({ job }: { job: Job }) {
     return null;
   }
   
-  const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
-  const winningBid = (job.bids || []).find(b => ((b.installer as DocumentReference)?.id || (b.installer as User)?.id) === awardedInstallerId);
+  const awardedInstallerId = (job.awardedInstaller instanceof DocumentReference) ? job.awardedInstaller.id : (job.awardedInstaller as User)?.id;
+  const winningBid = (job.bids || []).find(b => (((b.installer instanceof DocumentReference) ? b.installer.id : (b.installer as User)?.id)) === awardedInstallerId);
   const installer = winningBid?.installer as User;
 
   if (!installer) return null;
@@ -1279,3 +1278,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
