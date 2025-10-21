@@ -20,7 +20,7 @@ This document serves as the master prompt and detailed specification for buildin
 ### User System
 *   **Secure Registration & Login:** Email/password-based authentication.
 *   **Dual Roles:** Users can sign up as a "Job Giver" or "Installer". A user can hold both roles and switch between them from their profile menu without logging out.
-*   **Installer KYC Verification:** Installers must complete a mock Aadhar verification process (using OTP `123456`) to become "verified". This unlocks bidding capabilities.
+*   **Installer KYC Verification:** Installers must complete a mock Aadhar verification process (using OTP `123456`) to become "verified". This unlocks bidding capabilities. **Note:** In a production environment, this mock flow would be replaced by a real KYC service provider like Cashfree Verification Suite.
 *   **User Profiles:** Public-facing profiles showing relevant information (name, member since, tier, rating for installers).
 
 ### Job & Bidding Workflow

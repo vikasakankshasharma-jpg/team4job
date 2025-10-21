@@ -1,9 +1,10 @@
+
 'use server';
 
 /**
  * @fileOverview A conceptual guide for Aadhar verification using a two-step OTP process.
- * This file demonstrates the backend flows required to interact with an Aadhar User Agency (AUA)
- * or KYC User Agency (KUA). This is a hypothetical implementation.
+ * This file demonstrates the backend flows required to interact with a KYC service provider like Cashfree.
+ * This is a HYPOTHETICAL implementation and does NOT perform real verification.
  *
  * - initiateAadharVerification - Simulates requesting an OTP for a given Aadhar number.
  * - confirmAadharVerification - Simulates verifying the OTP to complete the process and return mock KYC data.
@@ -27,28 +28,29 @@ const InitiateAadharOutputSchema = z.object({
 export type InitiateAadharOutput = z.infer<typeof InitiateAadharOutputSchema>;
 
 /**
- * Simulates making a server-to-server call to an AUA/KUA to request an OTP.
+ * Simulates making a server-to-server call to a KYC provider (like Cashfree) to request an OTP.
  * @param aadharNumber The 12-digit Aadhar number.
  * @returns A transaction ID and status.
  */
-async function callKuaToRequestOtp(aadharNumber: string): Promise<{ success: boolean, transactionId?: string, error?: string }> {
-  console.log(`[Mock AUA/KUA] Requesting OTP for Aadhar: ${aadharNumber}`);
-  // In a real application, you would use a secure HTTP client to call the AUA/KUA's API endpoint.
-  // const response = await fetch('https://api.your-kua-provider.com/request-otp', {
+async function callKycProviderToRequestOtp(aadharNumber: string): Promise<{ success: boolean, transactionId?: string, error?: string }> {
+  console.log(`[Mock KYC Provider] Requesting OTP for Aadhar: ${aadharNumber}`);
+  // In a real application, you would use a secure HTTP client to call the KYC provider's API.
+  // For example, with Cashfree:
+  // const response = await fetch('https://api.cashfree.com/verification/aadhaar', {
   //   method: 'POST',
-  //   headers: { 'Authorization': `Bearer ${process.env.KUA_API_KEY}` },
-  //   body: JSON.stringify({ aadhar: aadharNumber }),
+  //   headers: { 'x-api-key': process.env.CASHFREE_API_KEY, 'x-api-secret': process.env.CASHFREE_SECRET_KEY },
+  //   body: JSON.stringify({ aadhaar_number: aadharNumber }),
   // });
   // const data = await response.json();
 
   // Simulate a successful response
   if (aadharNumber.startsWith('5')) { // Simulate a failure for some numbers
-      console.log('[Mock AUA/KUA] Aadhar number not found.');
+      console.log('[Mock KYC Provider] Aadhar number not found.');
       return { success: false, error: 'Aadhar number not found or not linked to a mobile number.' };
   }
   
   const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-  console.log(`[Mock AUA/KUA] OTP sent. Transaction ID: ${transactionId}`);
+  console.log(`[Mock KYC Provider] OTP sent. Transaction ID: ${transactionId}`);
   return { success: true, transactionId };
 }
 
@@ -59,7 +61,7 @@ export const initiateAadharVerification = ai.defineFlow(
     outputSchema: InitiateAadharOutputSchema,
   },
   async (input) => {
-    const { success, transactionId, error } = await callKuaToRequestOtp(input.aadharNumber);
+    const { success, transactionId, error } = await callKycProviderToRequestOtp(input.aadharNumber);
 
     if (!success || !transactionId) {
       return {
@@ -98,28 +100,29 @@ const ConfirmAadharOutputSchema = z.object({
 export type ConfirmAadharOutput = z.infer<typeof ConfirmAadharOutputSchema>;
 
 /**
- * Simulates making a server-to-server call to an AUA/KUA to verify the OTP.
+ * Simulates making a server-to-server call to a KYC provider to verify the OTP.
  * @param transactionId The unique transaction ID.
  * @param otp The 6-digit OTP.
  * @returns A verification status and mock KYC data.
  */
-async function callKuaToVerifyOtp(transactionId: string, otp: string): Promise<{ success: boolean; kycData?: z.infer<typeof ConfirmAadharOutputSchema>['kycData']; error?: string }> {
-    console.log(`[Mock AUA/KUA] Verifying OTP: ${otp} for Transaction: ${transactionId}`);
+async function callKycProviderToVerifyOtp(transactionId: string, otp: string): Promise<{ success: boolean; kycData?: z.infer<typeof ConfirmAadharOutputSchema>['kycData']; error?: string }> {
+    console.log(`[Mock KYC Provider] Verifying OTP: ${otp} for Transaction: ${transactionId}`);
     // In a real application, you would call the verification endpoint.
-    // const response = await fetch('https://api.your-kua-provider.com/verify-otp', {
+    // For example, with Cashfree:
+    // const response = await fetch('https://api.cashfree.com/verification/aadhaar/verify', {
     //   method: 'POST',
-    //   headers: { 'Authorization': `Bearer ${process.env.KUA_API_KEY}` },
-    //   body: JSON.stringify({ transactionId, otp }),
+    //   headers: { 'x-api-key': process.env.CASHFREE_API_KEY, 'x-api-secret': process.env.CASHFREE_SECRET_KEY },
+    //   body: JSON.stringify({ otp, ref_id: transactionId }),
     // });
     // const data = await response.json();
 
     // Simulate a successful response
     if (otp !== '123456') { // Simulate failure for any OTP other than "123456"
-        console.log('[Mock AUA/KUA] Invalid OTP.');
+        console.log('[Mock KYC Provider] Invalid OTP.');
         return { success: false, error: 'The OTP entered is incorrect.' };
     }
 
-    console.log('[Mock AUA/KUA] Verification successful. Returning mock KYC data.');
+    console.log('[Mock KYC Provider] Verification successful. Returning mock KYC data.');
     const mockKycData = {
         name: 'Ramesh Kumar',
         mobile: '9876543210',
@@ -136,7 +139,7 @@ export const confirmAadharVerification = ai.defineFlow(
     outputSchema: ConfirmAadharOutputSchema,
   },
   async (input) => {
-    const { success, error, kycData } = await callKuaToVerifyOtp(input.transactionId, input.otp);
+    const { success, error, kycData } = await callKycProviderToVerifyOtp(input.transactionId, input.otp);
 
     if (!success) {
       return {
@@ -146,7 +149,7 @@ export const confirmAadharVerification = ai.defineFlow(
     }
     
     // In a real application, upon success, you would update your database here.
-    // e.g., db.collection('users').doc(userId).update({ isVerified: true });
+    // e.g., db.collection('users').doc(userId).update({ isVerified: true, ...kycData });
     
     return {
       isVerified: true,
