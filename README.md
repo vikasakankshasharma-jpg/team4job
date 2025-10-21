@@ -44,6 +44,7 @@ This document serves as the master prompt and detailed specification for buildin
     *   Once the work is done, the installer enters this OTP to mark the job "Completed".
 
 ### Other Key Features
+*   **Secure Payments:** A placeholder for a secure payment system (e.g., Razorpay, Cashfree) will be integrated. Payments are processed upon job completion, ensuring trust for both parties.
 *   **Reputation System (Installers):** A points-based system. Installers earn points for completed jobs and good ratings, advancing through tiers (Bronze, Silver, Gold, Platinum).
 *   **Dispute Resolution:** A system for Job Givers or Installers to raise a "Job Dispute" on a project. Admins can review the dispute thread and mark it as resolved.
 *   **Admin Dashboard:** A separate interface for Admins to view all users, all jobs, and manage disputes, coupons, and a platform blacklist.

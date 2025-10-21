@@ -85,7 +85,7 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
       
       toast({
         title: "Job Completed!",
-        description: "Congratulations! The job has been marked as complete.",
+        description: "The job has been marked as complete. Payment processing will be initiated.",
       });
     } else {
       toast({
@@ -101,8 +101,7 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
       <CardHeader>
         <CardTitle>Complete This Job</CardTitle>
         <CardDescription>
-          Once the job is finished to the client's satisfaction, enter the
-          Job Completion OTP provided by the Job Giver to mark it as complete. You can post photos or videos of the completed work as proof in the private messages section below.
+          Once the work is done, enter the 6-digit Job Completion OTP from the Job Giver. This action marks the job as complete and starts the payment process through our secure gateway (e.g., Razorpay/Cashfree).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
