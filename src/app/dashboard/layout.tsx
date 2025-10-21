@@ -12,7 +12,6 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Providers>
       <SearchProvider>
         <div className="flex min-h-screen w-full flex-row bg-muted/40">
           <DashboardSidebar />
@@ -24,6 +23,5 @@ export default function DashboardLayout({
           </div>
         </div>
       </SearchProvider>
-    </Providers>
   );
 }
