@@ -35,16 +35,16 @@ This document serves as the master prompt and detailed specification for buildin
     *   **AI Feature:** A "AI Bid Assistant" button helps installers craft an effective cover letter based on the job description and their own skills.
 4.  **Awarding (Job Giver):**
     *   After the deadline, the Job Giver reviews all bids.
-    *   They award the job to one installer.
+    *   They award the job to one installer. **Note:** At this stage, a real application would integrate a payment gateway. The Job Giver would fund the project amount, which is held securely until the job is complete.
 5.  **Acceptance (Installer):**
     *   The awarded installer has 24 hours to accept or decline the job.
     *   If accepted, the job status changes to "In Progress".
 6.  **Job Completion:**
     *   The Job Giver has a 6-digit "Completion OTP".
-    *   Once the work is done, the installer enters this OTP to mark the job "Completed".
+    *   Once the work is done, the installer enters this OTP to mark the job "Completed". **Note:** This action would trigger the payment gateway to release the funds to the installer.
 
 ### Other Key Features
-*   **Secure Payments:** A placeholder for a secure payment system (e.g., Razorpay, Cashfree) will be integrated. Payments are processed upon job completion, ensuring trust for both parties.
+*   **Secure Payments:** A placeholder for a secure payment system (e.g., Razorpay, Cashfree) will be integrated. Payments are processed upon job completion, ensuring trust for both parties. For this platform, Cashfree is the recommended provider due to its strong KYC verification tools and marketplace-friendly payment-splitting features.
 *   **Reputation System (Installers):** A points-based system. Installers earn points for completed jobs and good ratings, advancing through tiers (Bronze, Silver, Gold, Platinum).
 *   **Dispute Resolution:** A system for Job Givers or Installers to raise a "Job Dispute" on a project. Admins can review the dispute thread and mark it as resolved.
 *   **Admin Dashboard:** A separate interface for Admins to view all users, all jobs, and manage disputes, coupons, and a platform blacklist.
