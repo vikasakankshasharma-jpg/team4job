@@ -7,7 +7,7 @@ This document serves as the master prompt and detailed specification for buildin
 
 **App Name:** CCTV Job Connect
 
-**Core Purpose:** A specialized marketplace connecting "Job Givers" who need CCTV installation services with verified, skilled "Installers". The platform facilitates job posting, bidding, secure payments via escrow, and reputation management, enhanced with AI-powered tools.
+**Core Purpose:** A specialized marketplace connecting "Job Givers" who need CCTV installation services with verified, skilled "Installers". The platform facilitates job posting, bidding, secure payments, and reputation management, enhanced with AI-powered tools.
 
 **Target Audience:**
 *   **Job Givers:** Homeowners, business owners, and property managers needing CCTV installations.
@@ -35,13 +35,13 @@ This document serves as the master prompt and detailed specification for buildin
     *   **AI Feature:** A "AI Bid Assistant" button helps installers craft an effective cover letter based on the job description and their own skills.
 4.  **Awarding (Job Giver):**
     *   After the deadline, the Job Giver reviews all bids.
-    *   They award the job to one installer. This action simulates funding an escrow with the bid amount.
+    *   They award the job to one installer.
 5.  **Acceptance (Installer):**
     *   The awarded installer has 24 hours to accept or decline the job.
     *   If accepted, the job status changes to "In Progress".
 6.  **Job Completion:**
     *   The Job Giver has a 6-digit "Completion OTP".
-    *   Once the work is done, the installer enters this OTP to mark the job "Completed". This simulates the release of escrow funds.
+    *   Once the work is done, the installer enters this OTP to mark the job "Completed".
 
 ### Other Key Features
 *   **Reputation System (Installers):** A points-based system. Installers earn points for completed jobs and good ratings, advancing through tiers (Bronze, Silver, Gold, Platinum).
@@ -185,7 +185,7 @@ Define these in `src/lib/types.ts`.
 *   **Layout:** A two-column layout. Left side shows job details, comments, and action forms. Right side shows a summary card.
 *   **Content Varies by Role & Status:**
     *   **Open for Bidding:** Shows job info. Installers see a "Place Your Bid" form (with AI assistant). Anyone can see and post public comments.
-    *   **Bidding Closed (Job Giver):** The "Place Bid" form is replaced by a list of all bids received. The Job Giver can "Award Job & Fund Escrow" to one bidder.
+    *   **Bidding Closed (Job Giver):** The "Place Bid" form is replaced by a list of all bids received. The Job Giver can "Award Job" to one bidder.
     *   **Awarded (Installer):** The awarded installer sees an "Accept Job" / "Decline Job" section.
     *   **In Progress:** The public comments section is replaced by a "Private Messages" thread between the Job Giver and Installer. The Job Giver sees the "Completion OTP". The Installer sees a form to enter the OTP.
     *   **Completed:** Shows a read-only view of the job.

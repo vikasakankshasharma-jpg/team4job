@@ -466,23 +466,6 @@
         },
         "required": ["fileName", "fileUrl", "fileType"]
     },
-    "Transaction": {
-        "title": "Transaction",
-        "description": "Represents a financial transaction for a job, managed via an escrow system.",
-        "type": "object",
-        "properties": {
-            "id": { "type": "string" },
-            "jobId": { "type": "string" },
-            "payerId": { "type": "string", "description": "The user ID of the Job Giver." },
-            "payeeId": { "type": "string", "description": "The user ID of the Installer." },
-            "amount": { "type": "number" },
-            "status": { "type": "string", "enum": ["Funded", "Released", "Refunded"] },
-            "createdAt": { "type": "string", "format": "date-time" },
-            "releasedAt": { "type": "string", "format": "date-time" },
-            "refundedAt": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id", "jobId", "payerId", "payeeId", "amount", "status", "createdAt"]
-    },
     "BlacklistEntry": {
       "title": "Blacklist Entry",
       "description": "An entry for a blacklisted user ID or pincode.",
@@ -537,12 +520,6 @@
       },
       "description": "Stores all dispute records for jobs, including the full communication history."
     },
-    "/transactions/{transactionId}": {
-        "schema": {
-            "$ref": "#/entities/Transaction"
-        },
-        "description": "Stores all financial transactions related to jobs."
-    },
     "/subscriptionPlans/{planId}": {
         "schema": {
             "$ref": "#/entities/SubscriptionPlan"
@@ -563,5 +540,3 @@
     }
   }
 }
-
-    
