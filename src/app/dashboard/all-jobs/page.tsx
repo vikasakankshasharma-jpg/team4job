@@ -33,7 +33,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { Calendar as CalendarIcon, X, ArrowUpDown } from "lucide-react";
+import { Calendar as CalendarIcon, X, ArrowUpDown, Loader2 } from "lucide-react";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -104,7 +104,7 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
 
 export default function AllJobsPage() {
   const router = useRouter();
-  const { user, isAdmin } = useUser();
+  const { user, isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -114,10 +114,10 @@ export default function AllJobsPage() {
 
 
   React.useEffect(() => {
-    if (user && !isAdmin) {
+    if (!userLoading && !isAdmin) {
       router.push('/dashboard');
     }
-  }, [user, isAdmin, router]);
+  }, [user, isAdmin, router, userLoading]);
 
   React.useEffect(() => {
     async function fetchJobs() {
@@ -277,10 +277,10 @@ export default function AllJobsPage() {
     return filtered;
   }, [jobs, filters, sortConfig]);
 
-  if (!user || !isAdmin) {
+  if (userLoading || !isAdmin) {
     return (
-        <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground">Redirecting...</p>
+        <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
     );
   }

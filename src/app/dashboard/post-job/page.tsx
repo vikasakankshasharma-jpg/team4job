@@ -26,7 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Zap, Loader2, UserPlus, Paperclip, X } from "lucide-react";
 import { generateJobDetails } from "@/ai/flows/generate-job-details";
 import { useToast } from "@/hooks/use-toast";
-import React from "react";
+import React, { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
@@ -80,7 +80,7 @@ const jobSchema = z.object({
 export default function PostJobPage() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
-  const { user, role } = useUser();
+  const { user, role, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const router = useRouter();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -88,11 +88,11 @@ export default function PostJobPage() {
   const [mapCenter, setMapCenter] = React.useState<{lat: number, lng: number} | null>(null);
 
 
-  React.useEffect(() => {
-    if (role === 'Admin') {
+  useEffect(() => {
+    if (!userLoading && role !== 'Job Giver') {
       router.push('/dashboard');
     }
-  }, [role, router]);
+  }, [role, userLoading, router]);
 
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
@@ -238,10 +238,10 @@ export default function PostJobPage() {
     }
   }
 
-  if (role === 'Admin' || (role && role !== 'Job Giver')) {
+  if (userLoading || role !== 'Job Giver') {
     return (
-        <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground">Only Job Givers can post jobs. Switch roles to continue.</p>
+        <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
     );
   }

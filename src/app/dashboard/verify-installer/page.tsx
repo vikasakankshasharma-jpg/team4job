@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -39,10 +39,19 @@ const otpSchema = z.object({
 
 export default function VerifyInstallerPage() {
   const { toast } = useToast();
-  const { user, setUser } = useUser();
+  const { user, setUser, role, loading: userLoading } = useUser();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [transactionId, setTransactionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!userLoading && role !== 'Installer') {
+      router.push('/dashboard');
+    }
+    if (!userLoading && user?.installerProfile?.verified) {
+      router.push('/dashboard/profile');
+    }
+  }, [role, userLoading, user, router]);
 
   const aadharForm = useForm<z.infer<typeof aadharSchema>>({
     resolver: zodResolver(aadharSchema),
@@ -94,6 +103,14 @@ export default function VerifyInstallerPage() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  if (userLoading || role !== 'Installer' || user?.installerProfile?.verified) {
+      return (
+        <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
   }
 
   return (

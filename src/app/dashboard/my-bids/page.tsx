@@ -22,7 +22,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Award, IndianRupee, ListFilter, X, Loader2 } from "lucide-react";
 import { Job, Bid, User } from "@/lib/types";
-import React from "react";
+import React, { useEffect } from "react";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
@@ -166,11 +166,11 @@ function MyBidsPageContent() {
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
   
-  React.useEffect(() => {
-    if (!userLoading && user && user.roles.includes('Admin')) {
+  useEffect(() => {
+    if (!userLoading && role !== 'Installer') {
       router.push('/dashboard');
     }
-  }, [user, userLoading, router]);
+  }, [role, userLoading, router]);
   
   const fetchJobs = React.useCallback(async () => {
     if (!user || !db || role !== 'Installer') {
@@ -248,20 +248,12 @@ function MyBidsPageContent() {
       statusFilter = 'Completed & Won';
   }
   
-  if (userLoading) {
+  if (userLoading || role !== 'Installer') {
       return (
         <div className="flex items-center justify-center h-full">
              <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       );
-  }
-
-  if (role !== 'Installer') {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">This page is for Installers only.</p>
-      </div>
-    );
   }
   
   const handleFilterChange = (newStatus: string) => {

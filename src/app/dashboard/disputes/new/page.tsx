@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import React from "react";
+import React, { useEffect } from "react";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -39,9 +39,15 @@ const disputeSchema = z.object({
 
 export default function CreateDisputePage() {
   const { toast } = useToast();
-  const { user, role, isAdmin } = useUser();
+  const { user, role, isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!userLoading && isAdmin) {
+      router.push('/dashboard/disputes');
+    }
+  }, [isAdmin, userLoading, router]);
 
   const form = useForm<z.infer<typeof disputeSchema>>({
     resolver: zodResolver(disputeSchema),
@@ -85,9 +91,12 @@ export default function CreateDisputePage() {
     router.push(`/dashboard/disputes/${newDisputeId}`);
   }
 
-  if (isAdmin) {
-    router.push('/dashboard/disputes');
-    return null;
+  if (userLoading || isAdmin) {
+    return (
+        <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
   }
 
   return (
