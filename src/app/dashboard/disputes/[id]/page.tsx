@@ -210,7 +210,7 @@ export default function DisputeDetailPage() {
               <div>
                 <CardTitle className="text-2xl flex items-center gap-2">
                   <AlertOctagon className="h-6 w-6" />
-                  Dispute Ticket #{dispute.id.slice(-6).toUpperCase()}
+                  Dispute Ticket #{id.slice(-6).toUpperCase()}
                 </CardTitle>
                 <CardDescription className="mt-2">
                   {dispute.jobId ? (
@@ -402,5 +402,3 @@ export default function DisputeDetailPage() {
     </div>
   );
 }
-
-    
