@@ -35,8 +35,15 @@ export type InitiateAadharOutput = z.infer<typeof InitiateAadharOutputSchema>;
  */
 async function callKycProviderToRequestOtp(aadharNumber: string): Promise<{ success: boolean, transactionId?: string, error?: string }> {
   console.log(`[Mock KYC Provider] Requesting OTP for Aadhar: ${aadharNumber}`);
-  // In a real application, you would use a secure HTTP client to call the KYC provider's API.
-  // For example, with Cashfree's Secure ID product:
+  
+  // =================================================================
+  // CASHFREE INTEGRATION POINT (BACKEND)
+  // =================================================================
+  // In a real application, you would use a secure HTTP client to call Cashfree's Secure ID API.
+  // This must be done from a secure backend environment (like this Genkit flow).
+  //
+  // Example using Cashfree's Secure ID (Aadhaar Verification) endpoint:
+  //
   // const response = await fetch('https://api.cashfree.com/verification/aadhaar', {
   //   method: 'POST',
   //   headers: { 
@@ -48,7 +55,14 @@ async function callKycProviderToRequestOtp(aadharNumber: string): Promise<{ succ
   //   body: JSON.stringify({ aadhaar_number: aadharNumber }),
   // });
   // const data = await response.json();
-  // const transactionId = data.ref_id; // Or equivalent from Cashfree response
+  //
+  // if (response.ok) {
+  //    const transactionId = data.ref_id; // Or equivalent from Cashfree response
+  //    return { success: true, transactionId };
+  // } else {
+  //    return { success: false, error: data.message };
+  // }
+  // =================================================================
 
   // Simulate a successful response
   if (aadharNumber.startsWith('5')) { // Simulate a failure for some numbers
@@ -114,8 +128,14 @@ export type ConfirmAadharOutput = z.infer<typeof ConfirmAadharOutputSchema>;
  */
 async function callKycProviderToVerifyOtp(transactionId: string, otp: string): Promise<{ success: boolean; kycData?: z.infer<typeof ConfirmAadharOutputSchema>['kycData']; error?: string }> {
     console.log(`[Mock KYC Provider] Verifying OTP: ${otp} for Transaction: ${transactionId}`);
-    // In a real application, you would call the verification endpoint.
-    // For example, with Cashfree's Secure ID product:
+
+    // =================================================================
+    // CASHFREE INTEGRATION POINT (BACKEND)
+    // =================================================================
+    // In a real application, you would call Cashfree's verification endpoint here.
+    //
+    // Example using Cashfree's Secure ID (Verify OTP) endpoint:
+    //
     // const response = await fetch('https://api.cashfree.com/verification/aadhaar/verify', {
     //   method: 'POST',
     //   headers: { 
@@ -127,9 +147,13 @@ async function callKycProviderToVerifyOtp(transactionId: string, otp: string): P
     //   body: JSON.stringify({ otp, ref_id: transactionId }),
     // });
     // const data = await response.json();
-    // if (data.status === 'VALID') {
+    //
+    // if (data.status === 'VALID' && response.ok) {
     //    return { success: true, kycData: { name: data.name, mobile: data.mobile, pincode: data.pincode } }
+    // } else {
+    //    return { success: false, error: data.message }
     // }
+    // =================================================================
 
     // Simulate a successful response
     if (otp !== '123456') { // Simulate failure for any OTP other than "123456"
