@@ -1,4 +1,6 @@
 
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -6,6 +8,8 @@ import { ArrowRight, CheckCircle, PanelLeft, ShieldCheck, Zap } from "lucide-rea
 import { Logo } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import React from "react";
 
 export default function Home() {
   const features = [
@@ -55,7 +59,7 @@ export default function Home() {
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <Logo className="h-8 w-8 text-primary" />
-          <span className="text-xl font-bold hidden sm:inline-block">CCTV Job Connect</span>
+          <span className="text-xl font-bold">CCTV Job Connect</span>
         </Link>
         
         <nav className="hidden md:flex items-center gap-4">
@@ -140,24 +144,35 @@ export default function Home() {
                 A simple, transparent process for everyone.
               </p>
             </div>
-            <div className="relative">
-              <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-border -translate-y-1/2"></div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-                {howItWorks.map((item) => (
-                  <Card key={item.step} className="text-center">
-                    <CardHeader>
-                      <div className="mx-auto w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mb-4">
-                        {item.step}
-                      </div>
-                      <CardTitle>{item.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground">{item.description}</p>
-                    </CardContent>
-                  </Card>
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full max-w-4xl mx-auto"
+            >
+              <CarouselContent>
+                {howItWorks.map((item, index) => (
+                  <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                    <div className="p-1 h-full">
+                       <Card className="text-center h-full flex flex-col">
+                        <CardHeader>
+                          <div className="mx-auto w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mb-4">
+                            {item.step}
+                          </div>
+                          <CardTitle>{item.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                          <p className="text-muted-foreground">{item.description}</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </CarouselItem>
                 ))}
-              </div>
-            </div>
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
           </div>
         </section>
       </main>
