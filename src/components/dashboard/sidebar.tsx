@@ -21,6 +21,7 @@ import {
   AlertOctagon,
   Ticket,
   Ban,
+  UserCog,
 } from "lucide-react";
 import { Logo } from "@/components/icons";
 import { usePathname } from "next/navigation";
@@ -46,10 +47,18 @@ const jobGiverNavItems = [
 const adminNavItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
+    { href: "/dashboard/staff", icon: UserCog, label: "Staff Management" },
     { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
     { href: "/dashboard/coupons", icon: Ticket, label: "Coupons" },
     { href: "/dashboard/blacklist", icon: Ban, label: "Blacklist" },
 ];
+
+const supportStaffNavItems = [
+  { href: "/dashboard", icon: Home, label: "Dashboard" },
+  { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
+  { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
+];
+
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -59,6 +68,8 @@ export function DashboardSidebar() {
     switch (role) {
       case "Admin":
         return adminNavItems;
+      case "Support Staff":
+        return supportStaffNavItems;
       case "Installer":
         return installerNavItems;
       case "Job Giver":
