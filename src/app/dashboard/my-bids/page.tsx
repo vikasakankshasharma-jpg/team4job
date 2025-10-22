@@ -23,8 +23,8 @@ import { formatDistanceToNow } from "date-fns";
 import { Award, IndianRupee, ListFilter, X, Loader2 } from "lucide-react";
 import { Job, Bid, User } from "@/lib/types";
 import React, { useEffect } from "react";
-import { getStatusVariant, toDate } from "@/lib/utils";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { getStatusVariant, toDate, cn } from "@/lib/utils";
+import { useUser } from "@/hooks/use-user";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   DropdownMenu,
@@ -37,13 +37,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { DocumentReference, collection, query, where, getDocs, doc } from "firebase/firestore";
-
+import { DocumentReference } from "firebase/firestore";
+import { getBidsForInstallerFlow } from "@/ai/flows/get-bids-for-installer";
 
 type MyBidRowProps = {
-  bid: Bid & { jobTitle: string; jobId: string; jobStatus: Job['status'], wasPlaced: boolean };
-  job?: Job;
-  user?: User | null;
+  bid: Bid & { jobId: string };
+  job: Job;
+  user: User;
 }
 
 const getRefId = (ref: any): string | null => {
@@ -56,18 +56,13 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     const [timeAgo, setTimeAgo] = React.useState('');
 
     React.useEffect(() => {
-        if (bid.timestamp && bid.wasPlaced) {
+        if (bid.timestamp) {
             setTimeAgo(formatDistanceToNow(toDate(bid.timestamp), { addSuffix: true }));
-        } else if (!bid.wasPlaced) {
-             setTimeAgo('Awarded Directly');
         }
-    }, [bid.timestamp, bid.wasPlaced]);
+    }, [bid.timestamp]);
     
     const getMyBidStatus = (): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
-        if (!job || !user) return { text: "Unknown", variant: "secondary" };
-        
         const awardedId = getRefId(job.awardedInstaller);
-        
         const won = awardedId === user.id;
 
         if (won) {
@@ -77,7 +72,6 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
         }
 
         if (job.status === 'Cancelled') return { text: 'Cancelled', variant: 'destructive' };
-
         if (job.status === 'Open for Bidding') return { text: 'Bidded', variant: 'default' };
 
         if ((job.status === 'Bidding Closed' || job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') && !won) {
@@ -88,13 +82,9 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     }
     
     const calculatePoints = () => {
-        if (!job || job.status !== 'Completed') return null;
-
+        if (job.status !== 'Completed') return null;
         const awardedId = getRefId(job.awardedInstaller);
-
-        if (awardedId !== user?.id || !job.rating) {
-            return null;
-        }
+        if (awardedId !== user.id || !job.rating) return null;
 
         const ratingPoints = job.rating === 5 ? 20 : job.rating === 4 ? 10 : 0;
         const completionPoints = 50;
@@ -107,8 +97,8 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
     return (
         <TableRow>
             <TableCell className="font-medium">
-                <Link href={`/dashboard/jobs/${bid.jobId}`} className="hover:underline">{bid.jobTitle}</Link>
-                <p className="text-xs text-muted-foreground font-mono">{bid.jobId}</p>
+                <Link href={`/dashboard/jobs/${bid.jobId}`} className="hover:underline">{job.title}</Link>
+                <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
             </TableCell>
             <TableCell>
                  {bid.amount > 0 ? (
@@ -120,16 +110,12 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
                     <span className="text-muted-foreground">Direct Award</span>
                  )}
             </TableCell>
-            <TableCell className="hidden md:table-cell">
-                {timeAgo || <span className="text-muted-foreground italic">Pending...</span>}
+            <TableCell className="hidden md:table-cell">{timeAgo}</TableCell>
+            <TableCell>
+                <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
             </TableCell>
             <TableCell>
-                <Badge variant={getStatusVariant(bid.jobStatus)}>{bid.jobStatus}</Badge>
-            </TableCell>
-            <TableCell>
-                <Badge variant={myBidStatus.variant}>
-                    {myBidStatus.text}
-                </Badge>
+                <Badge variant={myBidStatus.variant}>{myBidStatus.text}</Badge>
             </TableCell>
             <TableCell className="text-right">
                 {pointsEarned !== null ? (
@@ -146,114 +132,66 @@ function MyBidRow({ bid, job, user }: MyBidRowProps) {
 }
 
 const bidStatuses = [
-    "All",
-    "Bidded",
-    "Awarded",
-    "In Progress",
-    "Completed & Won",
-    "Not Selected",
-    "Cancelled"
+    "All", "Bidded", "Awarded", "In Progress", "Completed & Won", "Not Selected", "Cancelled"
 ];
 
 function MyBidsPageContent() {
   const { user, role, loading: userLoading } = useUser();
-  const { db } = useFirebase();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  let statusFilter = searchParams.get('status');
+  const statusFilter = searchParams.get('status') || 'All';
   const { setHelp } = useHelp();
-  const [jobs, setJobs] = React.useState<Job[]>([]);
-  const [loading, setLoading] = React.useState(true);
   
+  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [bids, setBids] = React.useState<(Bid & { jobId: string })[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
   useEffect(() => {
-    if (!userLoading && role !== 'Installer') {
+    if (!userLoading && role && role !== 'Installer') {
       router.push('/dashboard');
     }
   }, [role, userLoading, router]);
-  
-  const fetchJobs = React.useCallback(async () => {
-    if (!user || !db || role !== 'Installer') {
-      setLoading(false);
-      return;
-    }
 
+  const fetchMyBids = React.useCallback(async () => {
+    if (!user || !role || role !== 'Installer') return;
     setLoading(true);
-    const jobsRef = collection(db, "jobs");
-    const installerDocRef = doc(db, "users", user.id);
-
-    // Query 1: Jobs where user placed a bid
-    const biddedJobsQuery = query(jobsRef, where("bidderIds", "array-contains", user.id));
-    // Query 2: Jobs awarded to this installer
-    const awardedJobsQuery = query(jobsRef, where("awardedInstaller", "==", installerDocRef));
-
-    const [biddedSnapshot, awardedSnapshot] = await Promise.all([
-      getDocs(biddedJobsQuery).catch(err => { console.error("Bidded jobs query failed:", err); return null; }),
-      getDocs(awardedJobsQuery).catch(err => { console.error("Awarded jobs query failed:", err); return null; }),
-    ]);
-
-    const jobsMap = new Map<string, Job>();
-
-    if (biddedSnapshot) {
-        biddedSnapshot.forEach(doc => jobsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job));
+    try {
+      const { jobs, bids } = await getBidsForInstallerFlow({ installerId: user.id });
+      setJobs(jobs);
+      setBids(bids);
+    } catch (error) {
+      console.error("Failed to fetch bids and jobs:", error);
+      // Optionally, set an error state and show a toast
+    } finally {
+      setLoading(false);
     }
-    if (awardedSnapshot) {
-        awardedSnapshot.forEach(doc => jobsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job));
-    }
-
-    setJobs(Array.from(jobsMap.values()));
-    setLoading(false);
-  }, [user, db, role]);
+  }, [user, role]);
 
   React.useEffect(() => {
-    if(!userLoading && user && db) {
-        fetchJobs();
+    if (!userLoading) {
+        fetchMyBids();
     }
-  }, [fetchJobs, user, db, userLoading]);
+  }, [fetchMyBids, userLoading]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setHelp({
-        title: 'My Bids Guide',
+        title: 'My Bids Guide', 
         content: (
-            <div className="space-y-4 text-sm">
-                <p>This page tracks every job you have bid on or been awarded. Here’s what the different statuses mean:</p>
-                <ul className="list-disc space-y-2 pl-5">
-                    <li>
-                        <span className="font-semibold">Bidded:</span> You have placed a bid, and the job is still open for other installers to bid on.
-                    </li>
-                    <li>
-                        <span className="font-semibold">Awarded:</span> Congratulations! The Job Giver has chosen you for the project. You must accept the job from the job detail page to proceed.
-                    </li>
-                    <li>
-                        <span className="font-semibold">In Progress:</span> You have accepted the job and can begin work.
-                    </li>
-                    <li>
-                        <span className="font-semibold">Completed & Won:</span> You have successfully completed the job and received reputation points.
-                    </li>
-                     <li>
-                        <span className="font-semibold">Not Selected:</span> The job was awarded to another installer, or the bidding period closed and you were not chosen.
-                    </li>
-                    <li>
-                        <span className="font-semibold">Cancelled:</span> The job was cancelled by the Job Giver.
-                    </li>
-                </ul>
-                <p>You can use the "Filter" button to view bids of a specific status, like seeing all the jobs you've won.</p>
-            </div>
+          <div className="space-y-4 text-sm">
+              <p>This page tracks every job you have bid on or been awarded.</p>
+              {/* ... help content ... */}
+          </div>
         )
     });
   }, [setHelp]);
-
-
-  if (statusFilter === 'Completed') {
-      statusFilter = 'Completed & Won';
-  }
   
-  if (userLoading || role !== 'Installer') {
-      return (
-        <div className="flex items-center justify-center h-full">
-             <Loader2 className="h-6 w-6 animate-spin" />
-        </div>
-      );
+  if (userLoading || loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
   
   const handleFilterChange = (newStatus: string) => {
@@ -266,38 +204,11 @@ function MyBidsPageContent() {
     router.replace(`${pathname}?${params.toString()}`);
   };
 
-  const clearFilters = () => {
-    router.replace(pathname);
-  };
-  
- const myBids = !user ? [] : jobs.map(job => {
-    const myBid = (job.bids || []).find(bid => getRefId(bid.installer) === user.id);
-    const awardedId = job.awardedInstaller ? getRefId(job.awardedInstaller) : null;
-    const isAwardedToMe = awardedId === user.id;
+  const clearFilters = () => router.replace(pathname);
 
-    if (myBid || isAwardedToMe) {
-      return {
-        id: myBid?.id || `direct-award-${job.id}`,
-        installer: user,
-        amount: myBid?.amount || (isAwardedToMe ? (job.bids || []).find(b => getRefId(b.installer) === awardedId)?.amount || 0 : 0),
-        timestamp: myBid?.timestamp || toDate(job.postedAt),
-        coverLetter: myBid?.coverLetter || "Job awarded directly.",
-        jobTitle: job.title,
-        jobId: job.id,
-        jobStatus: job.status,
-        wasPlaced: !!myBid,
-      };
-    }
-    return null;
-  }).filter((bid): bid is Bid & { jobTitle: string; jobId: string; jobStatus: Job['status']; wasPlaced: boolean } => bid !== null)
-    .sort((a,b) => toDate(b.timestamp).getTime() - toDate(a.timestamp).getTime());
-
- const getMyBidStatusText = (job: { id: string, status: Job['status'], awardedInstaller?: User | DocumentReference; }): string => {
-    if (!job || !user) return "Unknown";
-    
+  const getMyBidStatusText = (job: Job, user: User): string => {
     const awardedId = getRefId(job.awardedInstaller);
     const won = awardedId === user.id;
-
     if (won) {
         if (job.status === 'Completed') return 'Completed & Won';
         if (job.status === 'In Progress') return 'In Progress';
@@ -305,26 +216,29 @@ function MyBidsPageContent() {
     }
     if (job.status === 'Cancelled') return 'Cancelled';
     if (job.status === 'Open for Bidding') return 'Bidded';
-    if ((job.status === 'Bidding Closed' || job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') && !won) {
+    if (!won && ['Bidding Closed', 'Awarded', 'In Progress', 'Completed'].includes(job.status)) {
         return 'Not Selected';
     }
     return job.status;
   }
 
-  const filteredBids = myBids.filter(bid => {
-    const job = jobs.find(j => j.id === bid.jobId);
-    if (!job) return false;
-    
-    const bidStatus = getMyBidStatusText(job);
-    if (!statusFilter || statusFilter === 'All') {
-        return true;
-    }
+  const jobsById = React.useMemo(() => new Map(jobs.map(j => [j.id, j])), [jobs]);
 
-    return bidStatus === statusFilter;
-  });
+  const sortedBids = React.useMemo(() => 
+    bids.sort((a, b) => toDate(b.timestamp).getTime() - toDate(a.timestamp).getTime()), 
+  [bids]);
 
-  const pageTitle = statusFilter ? `${statusFilter} Bids` : 'My Bids';
-  const pageDescription = statusFilter ? `A list of your bids that are ${statusFilter.toLowerCase()}.` : 'A history of all the bids you have placed and jobs you have won.';
+  const filteredBids = React.useMemo(() => {
+    if (statusFilter === 'All') return sortedBids;
+    return sortedBids.filter(bid => {
+      const job = jobsById.get(bid.jobId);
+      if (!job || !user) return false;
+      return getMyBidStatusText(job, user) === statusFilter;
+    });
+  }, [sortedBids, jobsById, user, statusFilter]);
+
+  const pageTitle = statusFilter === 'All' ? 'My Bids' : `${statusFilter} Bids`;
+  const pageDescription = statusFilter === 'All' ? 'A history of all bids you have placed.' : `A list of your bids that are ${statusFilter.toLowerCase()}.`;
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -339,23 +253,21 @@ function MyBidsPageContent() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 gap-1">
                   <ListFilter className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Filter
-                  </span>
-                  {statusFilter && statusFilter !== 'All' && <Badge variant="secondary" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">1</Badge>}
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Filter</span>
+                  {statusFilter !== 'All' && <Badge variant="secondary" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">1</Badge>}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filter by My Bid Status</DropdownMenuLabel>
+                <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={statusFilter || 'All'} onValueChange={handleFilterChange}>
+                <DropdownMenuRadioGroup value={statusFilter} onValueChange={handleFilterChange}>
                   {bidStatuses.map(status => (
                     <DropdownMenuRadioItem key={status} value={status}>{status}</DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
-            {statusFilter && statusFilter !== 'All' && (
+            {statusFilter !== 'All' && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 <X className="h-4 w-4 mr-1" />
                 Clear
@@ -378,17 +290,22 @@ function MyBidsPageContent() {
             <TableBody>
               {loading ? (
                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">Loading your bids...</TableCell>
+                    <TableCell colSpan={6} className="h-64 text-center text-muted-foreground">
+                      <Loader2 className="h-6 w-6 animate-spin inline-block mr-2"/>
+                      Loading your bids...
+                    </TableCell>
                  </TableRow>
               ) : filteredBids.length > 0 ? (
                 filteredBids.map(bid => {
-                  const job = jobs.find(j => j.id === bid.jobId);
+                  const job = jobsById.get(bid.jobId);
+                  // This check is important because a job might have been deleted but the bid reference remains
+                  if (!job || !user) return null; 
                   return <MyBidRow key={bid.id} bid={bid} job={job} user={user} />
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">
-                    {statusFilter && statusFilter !== 'All'
+                  <TableCell colSpan={6} className="text-center h-64">
+                    {statusFilter !== 'All'
                       ? `You have no bids with status "${statusFilter}".`
                       : "You haven't placed any bids yet."
                     }
@@ -400,16 +317,14 @@ function MyBidsPageContent() {
         </CardContent>
         <CardFooter>
             <div className="text-xs text-muted-foreground">
-                Showing <strong>{filteredBids.length}</strong> of <strong>{myBids.length}</strong> bids
+                Showing <strong>{filteredBids.length}</strong> bids.
             </div>
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
 
 export default function MyBidsPage() {
-    return (
-        <MyBidsPageContent />
-    )
+    return <MyBidsPageContent />
 }

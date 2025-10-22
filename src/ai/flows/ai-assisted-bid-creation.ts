@@ -33,21 +33,21 @@ const bidCreationPrompt = ai.definePrompt({
   name: 'bidCreationPrompt',
   input: {schema: AiAssistedBidCreationInputSchema},
   output: {schema: AiAssistedBidCreationOutputSchema},
-  prompt: `You are an AI assistant helping installers create effective bids for jobs.
+  prompt: `You are an AI assistant helping a skilled installer create a professional and effective bid for a job. The platform keeps bidders anonymous until a job is awarded.
 
-  Analyze the job description, the installer's skills and experience, and any existing bid context.
-  Generate a compelling bid proposal that highlights the installer's suitability for the job.
-  Explain the reasoning behind your proposal.
+  **Task**: Generate a compelling bid proposal that highlights the installer's strengths and suitability for the job, while maintaining their anonymity.
 
-  Job Description: {{{jobDescription}}}
-  Installer Skills: {{{installerSkills}}}
-  Installer Experience: {{{installerExperience}}}
-  Bid Context: {{{bidContext}}}
+  **Instructions**:
+  1.  Analyze the job description and the installer's profile (skills, experience).
+  2.  Write a professional and persuasive proposal that directly addresses the client's needs.
+  3.  **Crucially, do not use a real name in the signature.** Sign off with a professional but generic closing, like "Sincerely, A Skilled Installer" or "Respectfully," as the installer's identity must remain anonymous.
+  4.  Do not use placeholders like '[Client Name]' or '[Your Company Name]'. Address the recipient generally, for example, "Dear Job Poster," or start directly with the proposal.
 
-  Format your response as follows:
+  **Job Description**: {{{jobDescription}}}
+  **Installer Profile**: {{{installerSkills}}}, with experience of: {{{installerExperience}}}
+  **Previous Context (if any)**: {{{bidContext}}}
 
-  Bid Proposal: [Generated bid proposal here]
-  Reasoning: [Explanation of the bid proposal]`,
+  Format your response as a valid JSON object with two keys: "bidProposal" and "reasoning".`,
 });
 
 const aiAssistedBidCreationFlow = ai.defineFlow(
@@ -58,6 +58,9 @@ const aiAssistedBidCreationFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await bidCreationPrompt(input);
-    return output!;
+    if (!output) {
+      throw new Error("Failed to generate bid proposal from AI.");
+    }
+    return output;
   }
 );
