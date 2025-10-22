@@ -80,6 +80,7 @@ function ThemeSelector() {
 
 function PersonalSettingsCard() {
     const { toast } = useToast()
+    const { isAdmin } = useUser()
     const [deleteConfirmation, setDeleteConfirmation] = React.useState("")
     const isDeleteDisabled = deleteConfirmation !== "Delete"
     
@@ -137,52 +138,54 @@ function PersonalSettingsCard() {
                         </div>
                         <Button variant="outline">Change Password</Button>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-3">
-                        <div>
-                            <Label className="text-destructive">Delete Account</Label>
-                            <p className="text-xs text-destructive/70">
-                                Permanently delete your account and all associated data.
-                            </p>
+                    {!isAdmin && (
+                        <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-3">
+                            <div>
+                                <Label className="text-destructive">Delete Account</Label>
+                                <p className="text-xs text-destructive/70">
+                                    Permanently delete your account and all associated data.
+                                </p>
+                            </div>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive">Delete Account</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. To confirm, please type{" "}
+                                        <span className="font-semibold text-foreground">Delete</span> in the box below.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <div className="py-2">
+                                        <Input 
+                                            id="delete-confirm"
+                                            placeholder="Type 'Delete' to confirm"
+                                            value={deleteConfirmation}
+                                            onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                        />
+                                    </div>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={() => setDeleteConfirmation("")}>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        disabled={isDeleteDisabled}
+                                        onClick={() => {
+                                            if (isDeleteDisabled) return;
+                                            toast({
+                                                title: "Account Deletion Requested",
+                                                description: "Your account is scheduled for deletion. This is a simulated action.",
+                                                variant: "destructive"
+                                            })
+                                        }}
+                                    >
+                                        Continue
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive">Delete Account</Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This action cannot be undone. To confirm, please type{" "}
-                                    <span className="font-semibold text-foreground">Delete</span> in the box below.
-                                </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <div className="py-2">
-                                    <Input 
-                                        id="delete-confirm"
-                                        placeholder="Type 'Delete' to confirm"
-                                        value={deleteConfirmation}
-                                        onChange={(e) => setDeleteConfirmation(e.target.value)}
-                                    />
-                                </div>
-                                <AlertDialogFooter>
-                                <AlertDialogCancel onClick={() => setDeleteConfirmation("")}>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    disabled={isDeleteDisabled}
-                                    onClick={() => {
-                                        if (isDeleteDisabled) return;
-                                        toast({
-                                            title: "Account Deletion Requested",
-                                            description: "Your account is scheduled for deletion. This is a simulated action.",
-                                            variant: "destructive"
-                                        })
-                                    }}
-                                >
-                                    Continue
-                                </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
+                    )}
                 </CardContent>
             </Card>
         </div>
