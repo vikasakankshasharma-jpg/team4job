@@ -289,38 +289,29 @@ export default function UsersPage() {
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-2 mb-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
                 <Input 
                     placeholder="Filter by name, email, ID..." 
                     value={filters.search} 
                     onChange={e => handleFilterChange('search', e.target.value)} 
                     className="h-8 lg:col-span-2" 
                 />
-                <Select value={filters.role} onValueChange={value => handleFilterChange('role', value)}>
+                 <Select value={filters.role} onValueChange={value => handleFilterChange('role', value)}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Role" /></SelectTrigger>
                     <SelectContent>{roles.map(r => <SelectItem key={r} value={r === 'All' ? 'all' : r}>{r}</SelectItem>)}</SelectContent>
+                </Select>
+                 <Select value={filters.tier} onValueChange={value => handleFilterChange('tier', value)}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Tier" /></SelectTrigger>
+                    <SelectContent>{tiers.map(t => <SelectItem key={t} value={t === 'All' ? 'all' : t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
                  <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
                     <SelectContent>{statusFilters.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                 </Select>
-            </div>
-            <div className="flex items-center gap-2">
-                 <Select value={filters.tier} onValueChange={value => handleFilterChange('tier', value)}>
-                    <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Tier" /></SelectTrigger>
-                    <SelectContent>{tiers.map(t => <SelectItem key={t} value={t === 'All' ? 'all' : t}>{t}</SelectItem>)}</SelectContent>
-                </Select>
-                 <Select value={filters.rating} onValueChange={value => handleFilterChange('rating', value)}>
-                    <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Rating" /></SelectTrigger>
-                    <SelectContent>{ratingFilters.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
-                </Select>
-                <Select value={filters.verified} onValueChange={value => handleFilterChange('verified', value)}>
-                    <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Verification" /></SelectTrigger>
-                    <SelectContent>{verificationStatuses.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-                </Select>
                 {activeFiltersCount > 0 && (
-                  <Button variant="ghost" size="icon" onClick={clearFilters} className="h-8 w-8 text-xs">
-                    <X className="h-4 w-4" /><span className="sr-only">Clear</span>
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs">
+                    <X className="h-3 w-3 mr-1" />
+                    Clear Filters
                   </Button>
                 )}
             </div>
@@ -375,11 +366,11 @@ export default function UsersPage() {
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem asChild><Link href={`/dashboard/users/${u.id}`}>View Profile</Link></DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          {u.status === 'active' && <DropdownMenuItem onClick={() => handleSuspend(u)}><Ban className="mr-2 h-4 w-4"/>Suspend</DropdownMenuItem>}
-                          {u.status === 'suspended' && <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>}
-                          {u.status === 'suspended' && <DropdownMenuItem onClick={() => handleDeactivate(u)}><UserX className="mr-2 h-4 w-4"/>Deactivate</DropdownMenuItem>}
-                          {u.status === 'deactivated' && <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>}
-                          {u.status === 'deactivated' && <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4"/>Delete Permanently</DropdownMenuItem>}
+                           {u.status === 'active' && <DropdownMenuItem onClick={() => handleSuspend(u)}><Ban className="mr-2 h-4 w-4"/>Suspend</DropdownMenuItem>}
+                           {u.status === 'suspended' && <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>}
+                           {u.status === 'suspended' && <DropdownMenuItem onClick={() => handleDeactivate(u)}><UserX className="mr-2 h-4 w-4"/>Deactivate</DropdownMenuItem>}
+                           {u.status === 'deactivated' && <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>}
+                           {u.status === 'deactivated' && <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4"/>Delete Permanently</DropdownMenuItem>}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
