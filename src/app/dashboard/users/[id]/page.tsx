@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit, UserX, UserCheck, Loader2, Ban } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -25,12 +25,13 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase, useUser as useAuthUser } from "@/hooks/use-user";
 import { collection, query, where, getDocs, getDoc, doc, updateDoc } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
 
 
 const tierIcons = {
@@ -124,6 +125,113 @@ function ManageSubscriptionDialog({ user, onSubscriptionUpdate }: { user: User, 
     );
 }
 
+function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (data: Partial<User>) => void }) {
+  const { toast } = useToast();
+  const { db } = useFirebase();
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [suspensionDays, setSuspensionDays] = React.useState(7);
+  const [isSuspendOpen, setIsSuspendOpen] = React.useState(false);
+
+  const handleDeactivate = async () => {
+    setIsLoading(true);
+    await updateDoc(doc(db, 'users', user.id), { status: 'deactivated' });
+    onUserUpdate({ status: 'deactivated' });
+    toast({ title: 'User Deactivated', description: `${user.name}'s account has been deactivated.`, variant: 'destructive' });
+    setIsLoading(false);
+  };
+
+  const handleReactivate = async () => {
+    setIsLoading(true);
+    await updateDoc(doc(db, 'users', user.id), { status: 'active' });
+    onUserUpdate({ status: 'active' });
+    toast({ title: 'User Reactivated', description: `${user.name}'s account is now active.`, variant: 'success' });
+    setIsLoading(false);
+  };
+  
+  const handleSuspend = async () => {
+    setIsLoading(true);
+    const suspensionEndDate = new Date();
+    suspensionEndDate.setDate(suspensionEndDate.getDate() + suspensionDays);
+    await updateDoc(doc(db, 'users', user.id), { status: 'suspended', suspensionEndDate });
+    onUserUpdate({ status: 'suspended', suspensionEndDate });
+    toast({ title: 'User Suspended', description: `${user.name} has been suspended for ${suspensionDays} days.` });
+    setIsLoading(false);
+    setIsSuspendOpen(false);
+  };
+
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Admin Actions</CardTitle>
+        <CardDescription>Manage this user's account status and permissions.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {user.status === 'active' && (
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <h3 className="font-semibold">Suspend Account</h3>
+              <p className="text-sm text-muted-foreground">Temporarily disable account access for a set period.</p>
+            </div>
+            <Dialog open={isSuspendOpen} onOpenChange={setIsSuspendOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" disabled={isLoading}><Ban className="mr-2 h-4 w-4" />Suspend</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Suspend {user.name}</DialogTitle>
+                  <DialogDescription>
+                    The user will be logged out and unable to access their account until the suspension ends.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                  <Label htmlFor="suspension-days">Suspension Duration (Days)</Label>
+                  <Input 
+                    id="suspension-days"
+                    type="number" 
+                    value={suspensionDays} 
+                    onChange={(e) => setSuspensionDays(parseInt(e.target.value))} 
+                    min="1"
+                  />
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
+                    <Button variant="destructive" onClick={handleSuspend} disabled={isLoading}>
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Confirm Suspension
+                    </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+        <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-4">
+            <div>
+              <h3 className="font-semibold text-destructive">
+                {user.status === 'deactivated' ? 'Re-activate Account' : 'Deactivate Account'}
+              </h3>
+              <p className="text-sm text-destructive/70">
+                {user.status === 'deactivated' ? 'Restore access to the user.' : 'Permanently disable account access.'}
+              </p>
+            </div>
+            {user.status === 'deactivated' ? (
+              <Button variant="success" onClick={handleReactivate} disabled={isLoading}>
+                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                 <UserCheck className="mr-2 h-4 w-4" />Re-activate
+              </Button>
+            ) : (
+              <Button variant="destructive" onClick={handleDeactivate} disabled={isLoading}>
+                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                 <UserX className="mr-2 h-4 w-4" />Deactivate
+              </Button>
+            )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+
 function JobListItem({ job }: { job: Job }) {
   const isDirectAward = wasJobAwardedDirectly(job);
   return (
@@ -180,6 +288,7 @@ function PageSkeleton() {
 
 export default function UserProfilePage() {
   const params = React.use(useParams());
+  const { user: authUser, isAdmin } = useAuthUser();
   const id = params.id as string;
   const { db } = useFirebase();
 
@@ -233,6 +342,10 @@ export default function UserProfilePage() {
         }
     } : null);
   };
+  
+  const handleUserUpdate = (data: Partial<User>) => {
+    setProfileUser(prev => prev ? { ...prev, ...data } : null);
+  }
 
   if (loading || profileUser === undefined) {
     return <PageSkeleton />;
@@ -242,7 +355,7 @@ export default function UserProfilePage() {
     notFound();
   }
 
-  const { name, email, id: userId, memberSince, realAvatarUrl, address, roles, subscription } = profileUser;
+  const { name, email, id: userId, memberSince, realAvatarUrl, address, roles, subscription, status, suspensionEndDate } = profileUser;
   const installerProfile = profileUser.installerProfile;
   const isInstaller = roles.includes('Installer');
   
@@ -251,6 +364,17 @@ export default function UserProfilePage() {
   const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
   const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
   
+  const getUserStatusBadge = () => {
+    switch (status) {
+      case 'suspended':
+        return <Badge variant="destructive">Suspended</Badge>;
+      case 'deactivated':
+        return <Badge variant="destructive">Deactivated</Badge>;
+      default:
+        return <Badge variant="success">Active</Badge>;
+    }
+  }
+
   return (
     <div className="grid gap-8">
       <Card>
@@ -265,17 +389,17 @@ export default function UserProfilePage() {
             <div className="flex-1">
               <div className="flex items-center gap-4">
                 <CardTitle className="text-3xl">{name}</CardTitle>
-                 <div className="flex items-center gap-2">
-                    {roles.map(r => <Badge key={r} variant="outline">{r}</Badge>)}
-                    {installerProfile?.verified && (
-                        <Badge variant="secondary" className="gap-1 pl-2">
-                            <ShieldCheck className="h-4 w-4 text-green-600"/> Verified
-                        </Badge>
-                    )}
-                 </div>
+                {getUserStatusBadge()}
               </div>
-               <div className="flex flex-col mt-1">
-                <p className="text-muted-foreground">{userId}</p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground mt-1">
+                 {roles.map(r => <Badge key={r} variant="outline" className="font-normal">{r}</Badge>)}
+                 {installerProfile?.verified && <Badge variant="secondary" className="gap-1 pl-2 font-normal"><ShieldCheck className="h-4 w-4 text-green-600"/> Verified</Badge>}
+              </div>
+               <div className="flex flex-col mt-2">
+                <p className="text-muted-foreground font-mono">{userId}</p>
+                {suspensionEndDate && status === 'suspended' && (
+                  <p className="text-sm text-destructive font-medium">Suspension ends: {format(toDate(suspensionEndDate), "PP")}</p>
+                )}
               </div>
 
                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mt-2">
@@ -289,7 +413,7 @@ export default function UserProfilePage() {
                 </div>
               </div>
             </div>
-            <ManageSubscriptionDialog user={profileUser} onSubscriptionUpdate={handleSubscriptionUpdate} />
+            {isAdmin && <ManageSubscriptionDialog user={profileUser} onSubscriptionUpdate={handleSubscriptionUpdate} />}
           </div>
         </CardHeader>
         {subscription && (
@@ -301,6 +425,10 @@ export default function UserProfilePage() {
             </CardContent>
         )}
       </Card>
+
+      {isAdmin && authUser?.id !== profileUser.id && (
+        <AdminActionsCard user={profileUser} onUserUpdate={handleUserUpdate} />
+      )}
       
       {isInstaller && installerProfile && (
         <Card>
@@ -476,3 +604,4 @@ export default function UserProfilePage() {
     </div>
   );
 }
+
