@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -10,6 +11,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -91,6 +93,9 @@ export function LoginForm() {
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Log In
         </Button>
+        <FormDescription className="text-center text-xs">
+          Tip: If using mock data, run `npm run db:seed` in the terminal to populate the database with demo users.
+        </FormDescription>
       </form>
     </Form>
   );
