@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from "next/link";
@@ -16,6 +17,7 @@ import {
   AlertOctagon,
   Ticket,
   Ban,
+  UserCog,
 } from "lucide-react";
 import * as React from "react";
 import {
@@ -57,10 +59,17 @@ const jobGiverNavItems = [
 const adminNavItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
+    { href: "/dashboard/staff", icon: UserCog, label: "Staff Management" },
     { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
     { href: "/dashboard/coupons", icon: Ticket, label: "Coupons" },
     { href: "/dashboard/reports", icon: FileText, label: "Reports" },
     { href: "/dashboard/blacklist", icon: Ban, label: "Blacklist" },
+];
+
+const supportStaffNavItems = [
+  { href: "/dashboard", icon: Home, label: "Dashboard" },
+  { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
+  { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
 export function Header() {
@@ -72,6 +81,8 @@ export function Header() {
     switch (role) {
       case "Admin":
         return adminNavItems;
+      case "Support Staff":
+        return supportStaffNavItems;
       case "Installer":
         return installerNavItems;
       case "Job Giver":

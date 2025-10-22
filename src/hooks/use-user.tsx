@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { User, BlacklistEntry } from "@/lib/types";
@@ -13,7 +14,7 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { useAuth, useFirestore, useFirebase } from "@/lib/firebase/client-provider";
 
 // --- Types ---
-type Role = "Job Giver" | "Installer" | "Admin";
+type Role = "Job Giver" | "Installer" | "Admin" | "Support Staff";
 
 interface UserContextType {
   user: User | null;
@@ -55,6 +56,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isAdminUser) {
         setRoleState("Admin");
         localStorage.setItem('userRole', "Admin");
+      } else if (userData.roles.includes("Support Staff")) {
+        setRoleState("Support Staff");
+        localStorage.setItem('userRole', "Support Staff");
       } else if (storedRole && userData.roles.includes(storedRole)) {
         setRoleState(storedRole);
       } else {
@@ -135,6 +139,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const publicPaths = ['/login', '/'];
     const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids'];
     const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs'];
+    const adminOnlyPaths = ['/dashboard/users', '/dashboard/coupons', '/dashboard/blacklist', '/dashboard/reports', '/dashboard/settings', '/dashboard/staff'];
+    const supportStaffPaths = ['/dashboard/disputes'];
     
     const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
     if (loading || isPublicPage) return;
@@ -148,6 +154,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (pathname === '/login') {
             router.push('/dashboard');
         }
+
+        if(role === 'Support Staff' && !supportStaffPaths.some(p => pathname.startsWith(p)) && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/profile')) {
+            router.push('/dashboard/disputes');
+        }
+
+        if(role === 'Admin' && pathname.startsWith('/dashboard/settings')) {
+          // Admins can see their own settings
+        } else if (isAdmin && !adminOnlyPaths.some(p => pathname.startsWith(p)) && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/disputes')) {
+           // allow access to other pages for now
+        }
         
         const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
         const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
@@ -159,7 +175,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             router.push('/dashboard');
         }
     }
-  }, [role, pathname, user, router, loading]);
+  }, [role, pathname, user, router, loading, isAdmin]);
 
   const handleSetRole = (newRole: Role) => {
     if (user && user.roles.includes(newRole)) {
