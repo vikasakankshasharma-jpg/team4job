@@ -20,12 +20,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
-import { Gem, Medal, ShieldCheck, X, ArrowUpDown } from "lucide-react";
+import { Gem, Medal, ShieldCheck, X, ArrowUpDown, MoreHorizontal, UserX, UserCheck, Ban, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { User } from "@/lib/types";
-import { toDate } from "@/lib/utils";
+import { toDate, cn } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { Input } from "@/components/ui/input";
 import {
@@ -35,8 +35,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { collection, getDocs, query } from "firebase/firestore";
+import { collection, getDocs, query, doc, updateDoc, deleteDoc as deleteFirestoreDoc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
@@ -51,9 +72,10 @@ const initialFilters = {
     tier: "all",
     verified: "all",
     rating: "all",
+    status: "all",
 };
 
-type SortableKeys = 'name' | 'memberSince' | 'tier' | 'rating' | 'points';
+type SortableKeys = 'name' | 'memberSince' | 'tier' | 'rating' | 'points' | 'status';
 
 
 export default function UsersPage() {
@@ -64,28 +86,70 @@ export default function UsersPage() {
   const [loading, setLoading] = React.useState(true);
   const [filters, setFilters] = React.useState(initialFilters);
   const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'memberSince', direction: 'descending' });
+  const { toast } = useToast();
+  const [actionLoading, setActionLoading] = React.useState<string | null>(null);
+  const [deleteUser, setDeleteUser] = React.useState<User | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = React.useState("");
+
+  const fetchUsers = React.useCallback(async () => {
+    if (!db || !user || !isAdmin) return;
+    setLoading(true);
+    const usersCollection = collection(db, 'users');
+    const userSnapshot = await getDocs(query(usersCollection));
+    const userList = userSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as User);
+    setUsers(userList);
+    setLoading(false);
+  }, [db, user, isAdmin]);
 
   React.useEffect(() => {
     if (user && !isAdmin) {
       router.push('/dashboard');
+    } else if (db && user && isAdmin) {
+      fetchUsers();
     }
-  }, [user, isAdmin, router]);
+  }, [user, isAdmin, router, db, fetchUsers]);
 
-  React.useEffect(() => {
-      async function fetchUsers() {
-        if (!db || !user || !isAdmin) return;
-        
-        setLoading(true);
-        const usersCollection = collection(db, 'users');
-        const userSnapshot = await getDocs(query(usersCollection));
-        const userList = userSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as User);
-        setUsers(userList);
-        setLoading(false);
-      }
-      if (db && user && isAdmin) {
-        fetchUsers();
-      }
-  }, [user, db, isAdmin]);
+  const handleUserUpdate = (userId: string, data: Partial<User>) => {
+    setUsers(currentUsers => currentUsers.map(u => u.id === userId ? { ...u, ...data } : u));
+  };
+  
+  const handleDeactivate = async (targetUser: User) => {
+    setActionLoading(targetUser.id);
+    await updateDoc(doc(db, 'users', targetUser.id), { status: 'deactivated' });
+    handleUserUpdate(targetUser.id, { status: 'deactivated' });
+    toast({ title: 'User Deactivated', description: `${targetUser.name}'s account has been deactivated.`, variant: 'destructive' });
+    setActionLoading(null);
+  };
+
+  const handleReactivate = async (targetUser: User) => {
+    setActionLoading(targetUser.id);
+    await updateDoc(doc(db, 'users', targetUser.id), { status: 'active' });
+    handleUserUpdate(targetUser.id, { status: 'active' });
+    toast({ title: 'User Reactivated', description: `${targetUser.name}'s account is now active.`, variant: 'success' });
+    setActionLoading(null);
+  };
+  
+  const handleSuspend = async (targetUser: User) => {
+    setActionLoading(targetUser.id);
+    const suspensionEndDate = new Date();
+    suspensionEndDate.setDate(suspensionEndDate.getDate() + 7); // Default 7 days
+    await updateDoc(doc(db, 'users', targetUser.id), { status: 'suspended', suspensionEndDate });
+    handleUserUpdate(targetUser.id, { status: 'suspended', suspensionEndDate });
+    toast({ title: 'User Suspended', description: `${targetUser.name} has been suspended for 7 days.` });
+    setActionLoading(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteUser) return;
+    setActionLoading(deleteUser.id);
+    await deleteFirestoreDoc(doc(db, 'users', deleteUser.id));
+    setUsers(currentUsers => currentUsers.filter(u => u.id !== deleteUser.id));
+    toast({ title: 'User Deleted', description: `${deleteUser.name} has been permanently deleted.`, variant: 'destructive' });
+    setDeleteUser(null);
+    setDeleteConfirmation("");
+    setActionLoading(null);
+  };
+
 
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
     setFilters(prev => ({ ...prev, [filterName]: value }));
@@ -114,6 +178,9 @@ export default function UsersPage() {
     if (filters.role !== 'all') {
         filtered = filtered.filter(user => user.roles.includes(filters.role as any));
     }
+     if (filters.status !== 'all') {
+        filtered = filtered.filter(user => (user.status || 'active') === filters.status);
+    }
     if (filters.tier !== 'all') {
         filtered = filtered.filter(user => user.installerProfile?.tier === filters.tier);
     }
@@ -136,44 +203,30 @@ export default function UsersPage() {
       filtered.sort((a, b) => {
         const aVal = a.installerProfile;
         const bVal = b.installerProfile;
-        let valA, valB;
+        let valA: any, valB: any;
         
         switch (sortConfig.key) {
             case 'name':
-                valA = a.name;
-                valB = b.name;
-                break;
+                valA = a.name; valB = b.name; break;
             case 'memberSince':
-                valA = toDate(a.memberSince).getTime();
-                valB = toDate(b.memberSince).getTime();
-                break;
+                valA = toDate(a.memberSince).getTime(); valB = toDate(b.memberSince).getTime(); break;
             case 'tier':
-                valA = aVal?.tier || '';
-                valB = bVal?.tier || '';
-                break;
+                valA = aVal?.tier || ''; valB = bVal?.tier || ''; break;
             case 'rating':
-                valA = aVal?.rating || 0;
-                valB = bVal?.rating || 0;
-                break;
+                valA = aVal?.rating || 0; valB = bVal?.rating || 0; break;
             case 'points':
-                valA = aVal?.points || 0;
-                valB = bVal?.points || 0;
-                break;
+                valA = aVal?.points || 0; valB = bVal?.points || 0; break;
+            case 'status':
+                valA = a.status || 'active'; valB = b.status || 'active'; break;
             default:
                 return 0;
         }
 
-        if (valA < valB) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
-        }
-        if (valA > valB) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
-        }
+        if (valA < valB) return sortConfig.direction === 'ascending' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'ascending' ? 1 : -1;
         return 0;
       });
     }
-
-
     return filtered;
   }, [users, filters, sortConfig]);
 
@@ -184,14 +237,8 @@ export default function UsersPage() {
         </div>
     );
   }
-
-  const handleRowClick = (userId: string) => {
-    router.push(`/dashboard/users/${userId}`);
-  };
   
-  const clearFilters = () => {
-    setFilters(initialFilters);
-  }
+  const clearFilters = () => setFilters(initialFilters);
 
   const activeFiltersCount = Object.values(filters).filter(value =>
     value !== "" && value !== "all"
@@ -200,9 +247,15 @@ export default function UsersPage() {
   const roles = ["All", "Admin", "Installer", "Job Giver"];
   const tiers = ["All", "Bronze", "Silver", "Gold", "Platinum"];
   const verificationStatuses = [
-    { value: 'all', label: 'All' },
+    { value: 'all', label: 'All Verification' },
     { value: 'true', label: 'Verified' },
     { value: 'false', label: 'Not Verified' },
+  ];
+    const statusFilters = [
+    { value: 'all', label: 'All Statuses' },
+    { value: 'active', label: 'Active' },
+    { value: 'suspended', label: 'Suspended' },
+    { value: 'deactivated', label: 'Deactivated' },
   ];
   const ratingFilters = [
     { value: 'all', label: 'All Ratings' },
@@ -219,178 +272,146 @@ export default function UsersPage() {
     return sortConfig.direction === 'ascending' ? '▲' : '▼';
   };
 
+  const getUserStatusBadge = (status?: User['status']) => {
+    switch (status) {
+      case 'suspended': return <Badge variant="warning">Suspended</Badge>;
+      case 'deactivated': return <Badge variant="destructive">Deactivated</Badge>;
+      default: return <Badge variant="success">Active</Badge>;
+    }
+  };
+
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>User Directory</CardTitle>
-        <CardDescription>A list of all registered users in the system. Click on a row to view details.</CardDescription>
+        <CardDescription>A list of all registered users in the system. Use actions to manage users.</CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Filters Section */}
         <div className="flex flex-col gap-2 mb-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                 <Input 
-                    placeholder="Filter by name, email, ID, mobile..." 
+                    placeholder="Filter by name, email, ID..." 
                     value={filters.search} 
                     onChange={e => handleFilterChange('search', e.target.value)} 
                     className="h-8 lg:col-span-2" 
                 />
                 <Select value={filters.role} onValueChange={value => handleFilterChange('role', value)}>
-                    <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Filter by Role..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {roles.map(role => (
-                            <SelectItem key={role} value={role === 'All' ? 'all' : role}>{role}</SelectItem>
-                        ))}
-                    </SelectContent>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Role" /></SelectTrigger>
+                    <SelectContent>{roles.map(r => <SelectItem key={r} value={r === 'All' ? 'all' : r}>{r}</SelectItem>)}</SelectContent>
+                </Select>
+                 <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+                    <SelectContent>{statusFilters.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+                </Select>
+            </div>
+            <div className="flex items-center gap-2">
+                 <Select value={filters.tier} onValueChange={value => handleFilterChange('tier', value)}>
+                    <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Tier" /></SelectTrigger>
+                    <SelectContent>{tiers.map(t => <SelectItem key={t} value={t === 'All' ? 'all' : t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
                  <Select value={filters.rating} onValueChange={value => handleFilterChange('rating', value)}>
-                    <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Filter by Rating..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {ratingFilters.map(rating => (
-                            <SelectItem key={rating.value} value={rating.value}>{rating.label}</SelectItem>
-                        ))}
-                    </SelectContent>
+                    <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Rating" /></SelectTrigger>
+                    <SelectContent>{ratingFilters.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
                 </Select>
-                <Select value={filters.tier} onValueChange={value => handleFilterChange('tier', value)}>
-                    <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Filter by Tier..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {tiers.map(tier => (
-                            <SelectItem key={tier} value={tier === 'All' ? 'all' : tier}>{tier}</SelectItem>
-                        ))}
-                    </SelectContent>
+                <Select value={filters.verified} onValueChange={value => handleFilterChange('verified', value)}>
+                    <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Verification" /></SelectTrigger>
+                    <SelectContent>{verificationStatuses.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                 </Select>
-                <div className="flex items-center gap-2">
-                    <Select value={filters.verified} onValueChange={value => handleFilterChange('verified', value)}>
-                        <SelectTrigger className="h-8 text-xs flex-1">
-                            <SelectValue placeholder="Filter by Verification..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {verificationStatuses.map(status => (
-                                <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    {activeFiltersCount > 0 && (
-                      <Button variant="ghost" size="icon" onClick={clearFilters} className="h-8 w-8 text-xs">
-                        <X className="h-4 w-4" />
-                        <span className="sr-only">Clear Filters</span>
-                      </Button>
-                    )}
-                </div>
+                {activeFiltersCount > 0 && (
+                  <Button variant="ghost" size="icon" onClick={clearFilters} className="h-8 w-8 text-xs">
+                    <X className="h-4 w-4" /><span className="sr-only">Clear</span>
+                  </Button>
+                )}
             </div>
         </div>
 
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>
-                 <Button variant="ghost" onClick={() => requestSort('name')}>
-                    User
-                    {getSortIcon('name')}
-                  </Button>
-              </TableHead>
-              <TableHead>Roles</TableHead>
-              <TableHead className="hidden sm:table-cell">
-                <Button variant="ghost" onClick={() => requestSort('memberSince')}>
-                    Member Since
-                    {getSortIcon('memberSince')}
-                </Button>
-              </TableHead>
-              <TableHead className="hidden sm:table-cell">
-                <Button variant="ghost" onClick={() => requestSort('tier')}>
-                    Installer Tier
-                    {getSortIcon('tier')}
-                </Button>
-              </TableHead>
-              <TableHead className="hidden sm:table-cell">
-                <Button variant="ghost" onClick={() => requestSort('rating')}>
-                    Rating
-                    {getSortIcon('rating')}
-                </Button>
-              </TableHead>
-              <TableHead className="text-right">
-                <Button variant="ghost" onClick={() => requestSort('points')}>
-                    Reputation
-                    {getSortIcon('points')}
-                </Button>
-              </TableHead>
+              <TableHead><Button variant="ghost" onClick={() => requestSort('name')}>User {getSortIcon('name')}</Button></TableHead>
+              <TableHead><Button variant="ghost" onClick={() => requestSort('status')}>Status {getSortIcon('status')}</Button></TableHead>
+              <TableHead className="hidden sm:table-cell"><Button variant="ghost" onClick={() => requestSort('memberSince')}>Member Since {getSortIcon('memberSince')}</Button></TableHead>
+              <TableHead className="hidden sm:table-cell"><Button variant="ghost" onClick={() => requestSort('tier')}>Tier {getSortIcon('tier')}</Button></TableHead>
+              <TableHead><span className="sr-only">Actions</span></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  Loading users...
-                </TableCell>
-              </TableRow>
+              <TableRow><TableCell colSpan={5} className="h-24 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></TableCell></TableRow>
             ) : sortedAndFilteredUsers.length > 0 ? (
-              sortedAndFilteredUsers.map((user) => (
-                <TableRow key={user.id} onClick={() => handleRowClick(user.id)} className="cursor-pointer">
+              sortedAndFilteredUsers.map((u) => (
+                <TableRow key={u.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
-                        <AnimatedAvatar svg={user.avatarUrl} />
-                        <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
+                        <AnimatedAvatar svg={u.avatarUrl} />
+                        <AvatarFallback>{u.name.substring(0, 2)}</AvatarFallback>
                       </Avatar>
-                      <div className="font-medium">
-                          <p>{user.name}</p>
-                          <p className="text-sm text-muted-foreground font-mono truncate max-w-[150px]">{user.id}</p>
+                      <div>
+                          <Link href={`/dashboard/users/${u.id}`} className="font-medium hover:underline">{u.name}</Link>
+                          <p className="text-sm text-muted-foreground font-mono truncate max-w-[150px]">{u.id}</p>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1 sm:flex-row">
-                      {user.roles.map(role => (
-                          <Badge key={role} variant="outline">{role}</Badge>
-                      ))}
-                    </div>
-                  </TableCell>
+                  <TableCell>{getUserStatusBadge(u.status)}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{format(toDate(u.memberSince), 'MMM, yyyy')}</TableCell>
                   <TableCell className="hidden sm:table-cell">
-                      {format(toDate(user.memberSince), 'MMM, yyyy')}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                      {user.installerProfile ? (
+                      {u.installerProfile ? (
                           <div className="flex items-center gap-2">
-                             {tierIcons[user.installerProfile.tier]}
-                              {user.installerProfile.tier}
-                              {user.installerProfile.verified && <ShieldCheck className="h-4 w-4 text-green-600" title="Verified"/>}
+                             {tierIcons[u.installerProfile.tier]}
+                              {u.installerProfile.tier}
+                              {u.installerProfile.verified && <ShieldCheck className="h-4 w-4 text-green-600" title="Verified"/>}
                           </div>
-                      ) : (
-                          <span className="text-muted-foreground">—</span>
-                      )}
+                      ) : <span className="text-muted-foreground">—</span>}
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                      {user.installerProfile && user.installerProfile.reviews > 0 ? (
-                          <span>{user.installerProfile.rating}/5 ({user.installerProfile.reviews})</span>
-                      ) : (
-                          <span className="text-muted-foreground">—</span>
-                      )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                      {user.installerProfile ? (
-                          <span className="font-semibold">{user.installerProfile.points.toLocaleString()} pts</span>
-                       ) : (
-                          <span className="text-muted-foreground">—</span>
-                      )}
+                  <TableCell>
+                    {actionLoading === u.id ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Actions</span></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem asChild><Link href={`/dashboard/users/${u.id}`}>View Profile</Link></DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {u.status === 'active' && <DropdownMenuItem onClick={() => handleSuspend(u)}><Ban className="mr-2 h-4 w-4"/>Suspend</DropdownMenuItem>}
+                          {u.status === 'active' ? 
+                            <DropdownMenuItem onClick={() => handleDeactivate(u)}><UserX className="mr-2 h-4 w-4"/>Deactivate</DropdownMenuItem> : 
+                            <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>
+                          }
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
-               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  No users found for your search.
-                </TableCell>
-              </TableRow>
+               <TableRow><TableCell colSpan={5} className="h-24 text-center">No users found.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
       </CardContent>
     </Card>
+    {deleteUser && (
+      <AlertDialog open={!!deleteUser} onOpenChange={(open) => !open && setDeleteUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the user <span className="font-bold">{deleteUser.name}</span>. This action is irreversible. Please type <span className="font-bold text-foreground">DELETE</span> to confirm.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input placeholder="Type DELETE to confirm" value={deleteConfirmation} onChange={(e) => setDeleteConfirmation(e.target.value)} />
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setDeleteUser(null); setDeleteConfirmation(""); }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleDeleteConfirm} disabled={deleteConfirmation !== 'DELETE'}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    )}
+    </>
   );
 }
