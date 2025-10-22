@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -339,7 +340,7 @@ export default function UsersPage() {
                       </Avatar>
                       <div className="font-medium">
                           <p>{user.name}</p>
-                          <p className="text-sm text-muted-foreground font-mono">{user.id}</p>
+                          <p className="text-sm text-muted-foreground font-mono truncate max-w-[150px]">{user.id}</p>
                       </div>
                     </div>
                   </TableCell>
