@@ -199,6 +199,11 @@ export default function UsersPage() {
         });
     }
 
+    // Exclude the current admin user from the list
+    if (user) {
+      filtered = filtered.filter(u => u.id !== user.id);
+    }
+
     if (sortConfig !== null) {
       filtered.sort((a, b) => {
         const aVal = a.installerProfile;
@@ -228,7 +233,7 @@ export default function UsersPage() {
       });
     }
     return filtered;
-  }, [users, filters, sortConfig]);
+  }, [users, filters, sortConfig, user]);
 
   if (!user || !isAdmin) {
     return (
@@ -367,16 +372,16 @@ export default function UsersPage() {
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem asChild><Link href={`/dashboard/users/${u.id}`}>View Profile</Link></DropdownMenuItem>
                             <DropdownMenuSeparator />
-                             {(u.status === 'active') && (
+                             {(u.status === 'active' || u.status === undefined) && (
                               <DropdownMenuItem onClick={() => handleSuspend(u)}><Ban className="mr-2 h-4 w-4"/>Suspend</DropdownMenuItem>
                             )}
-                             {(u.status === 'suspended') && (
+                             {u.status === 'suspended' && (
                               <>
                                 <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleDeactivate(u)}><UserX className="mr-2 h-4 w-4"/>Deactivate</DropdownMenuItem>
                               </>
                             )}
-                            {(u.status === 'deactivated') && (
+                            {u.status === 'deactivated' && (
                               <>
                                 <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>
                                 <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4"/>Delete Permanently</DropdownMenuItem>
