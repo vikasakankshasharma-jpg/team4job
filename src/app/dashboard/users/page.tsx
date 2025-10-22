@@ -358,21 +358,33 @@ export default function UsersPage() {
                   </TableCell>
                   <TableCell>
                     {actionLoading === u.id ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Actions for {u.name}</span></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem asChild><Link href={`/dashboard/users/${u.id}`}>View Profile</Link></DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                           {u.status === 'active' && <DropdownMenuItem onClick={() => handleSuspend(u)}><Ban className="mr-2 h-4 w-4"/>Suspend</DropdownMenuItem>}
-                           {u.status === 'suspended' && <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>}
-                           {u.status === 'suspended' && <DropdownMenuItem onClick={() => handleDeactivate(u)}><UserX className="mr-2 h-4 w-4"/>Deactivate</DropdownMenuItem>}
-                           {u.status === 'deactivated' && <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>}
-                           {u.status === 'deactivated' && <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4"/>Delete Permanently</DropdownMenuItem>}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      user.id !== u.id && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Actions for {u.name}</span></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem asChild><Link href={`/dashboard/users/${u.id}`}>View Profile</Link></DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                             {(u.status === 'active') && (
+                              <DropdownMenuItem onClick={() => handleSuspend(u)}><Ban className="mr-2 h-4 w-4"/>Suspend</DropdownMenuItem>
+                            )}
+                             {(u.status === 'suspended') && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDeactivate(u)}><UserX className="mr-2 h-4 w-4"/>Deactivate</DropdownMenuItem>
+                              </>
+                            )}
+                            {(u.status === 'deactivated') && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4"/>Delete Permanently</DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )
                     )}
                   </TableCell>
                 </TableRow>
