@@ -23,7 +23,7 @@ export type User = {
     office?: string;
   };
   address: Address;
-  roles: ('Job Giver' | 'Installer' | 'Admin' | 'Support Staff')[];
+  roles: ('Job Giver' | 'Installer' | 'Admin' | 'Support Team')[];
   memberSince: Date | Timestamp;
   status: UserStatus;
   suspensionEndDate?: Date | Timestamp;
@@ -136,7 +136,7 @@ export type Dispute = {
     resolvedAt?: Date | Timestamp;
 };
 
-export type Role = "Job Giver" | "Installer" | "Admin" | "Support Staff";
+export type Role = "Job Giver" | "Installer" | "Admin" | "Support Team";
 
 export type SubscriptionPlan = {
   id: string;
