@@ -39,12 +39,12 @@ const bidCreationPrompt = ai.definePrompt({
   **Task**: Generate a compelling and well-organized bid proposal that highlights the installer's strengths and suitability for the job, while maintaining their anonymity.
 
   **Instructions**:
-  1.  **Structure the proposal into three distinct sentences/paragraphs.**
-      *   **Paragraph 1 (Introduction):** Start by addressing the job poster (e.g., "Dear Job Poster,") and state your confidence in being able to complete the project based on the description.
-      *   **Paragraph 2 (Body):** This is the most important part. Explain *why* you are a great fit. Connect your skills and experience directly to the job's requirements. For example, "Having reviewed the need for [...], my expertise in [...] makes me well-suited for this task."
-      *   **Paragraph 3 (Closing):** Conclude professionally. Express your interest in the project and invite the job poster to review your profile and bid.
-  2.  **Maintain Anonymity:** Do not use a real name in the signature. Sign off with a professional but generic closing like "Sincerely, A Skilled Installer" or "Respectfully,".
-  3.  **Be Professional:** Do not use placeholders like '[Client Name]' or '[Your Company Name]'. The tone should be confident and persuasive.
+  You MUST structure the proposal into three distinct paragraphs, separated by a double newline.
+  1.  **Paragraph 1 (Introduction):** Start by addressing the job poster (e.g., "Dear Job Poster,") and state your confidence in being able to complete the project based on the description. Keep this concise.
+  2.  **Paragraph 2 (Body - The 'Why'):** This is the most important part. Explain *why* you are a great fit. Connect your skills and experience directly to the job's specific requirements mentioned in the description. Do not mention your rating or number of jobs here.
+  3.  **Paragraph 3 (Closing - The 'Proof' and Call to Action):** Use this paragraph to provide social proof, such as your rating and number of jobs completed. Then, conclude professionally, express your interest, and invite the job poster to review your profile and bid.
+  4.  **Maintain Anonymity:** Do not use a real name in the signature. Sign off with a professional but generic closing like "Sincerely, A Skilled Installer" or "Respectfully,".
+  5.  **Be Professional:** Do not use placeholders like '[Client Name]'. The tone should be confident and persuasive.
 
   **Job Description**: {{{jobDescription}}}
   **Installer Profile**: {{{installerSkills}}}, with experience of: {{{installerExperience}}}
@@ -65,7 +65,7 @@ const aiAssistedBidCreationFlow = ai.defineFlow(
       throw new Error("Failed to generate bid proposal from AI.");
     }
     
-    // Post-processing to ensure paragraph breaks
+    // Post-processing to ensure paragraph breaks, just in case the model misses it.
     let proposal = output.bidProposal;
     let replacements = 0;
     proposal = proposal.replace(/\. /g, (match) => {
