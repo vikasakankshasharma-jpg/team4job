@@ -65,16 +65,6 @@ const aiAssistedBidCreationFlow = ai.defineFlow(
       throw new Error("Failed to generate bid proposal from AI.");
     }
     
-    // Post-processing to ensure paragraph breaks, just in case the model misses it.
-    let proposal = output.bidProposal;
-    let replacements = 0;
-    proposal = proposal.replace(/\. /g, (match) => {
-        replacements++;
-        return replacements <= 2 ? '.\n\n' : match;
-    });
-
-    output.bidProposal = proposal;
-    
     return output;
   }
 );
