@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
-import { useAuth, useFirestore, useFirebase } from "@/lib/firebase/client-provider.tsx";
+import { useAuth, useFirestore, useFirebase } from "@/lib/firebase/client-provider";
 
 // --- Types ---
 type Role = "Job Giver" | "Installer" | "Admin";
