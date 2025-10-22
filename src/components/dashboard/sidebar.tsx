@@ -32,7 +32,6 @@ const installerNavItems = [
   { href: "/dashboard/jobs", icon: Search, label: "Browse Jobs" },
   { href: "/dashboard/my-bids", icon: Briefcase, label: "My Bids" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-  { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
 const jobGiverNavItems = [
@@ -40,13 +39,13 @@ const jobGiverNavItems = [
   { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job" },
   { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-  { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
 const adminNavItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
     { href: "/dashboard/team", icon: UserCog, label: "Team Management" },
+    { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
     { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
     { href: "/dashboard/coupons", icon: Ticket, label: "Coupons" },
     { href: "/dashboard/blacklist", icon: Ban, label: "Blacklist" },
@@ -55,7 +54,6 @@ const adminNavItems = [
 const supportTeamNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-  { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
 
@@ -112,6 +110,20 @@ export function DashboardSidebar() {
           ))}
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                  <Link
+                      href="/dashboard/profile"
+                      className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
+                      pathname.startsWith('/dashboard/profile') && "bg-accent text-accent-foreground"
+                      )}
+                  >
+                      <UserIcon className="h-5 w-5" />
+                      <span className="sr-only">Profile</span>
+                  </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Profile</TooltipContent>
+            </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
