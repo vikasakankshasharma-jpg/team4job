@@ -44,7 +44,6 @@ const installerNavItems = [
   { href: "/dashboard/jobs", icon: Search, label: "Browse Jobs" },
   { href: "/dashboard/my-bids", icon: Briefcase, label: "My Bids" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-  { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
 const jobGiverNavItems = [
@@ -52,23 +51,21 @@ const jobGiverNavItems = [
   { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job" },
   { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-  { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
 const adminNavItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
     { href: "/dashboard/team", icon: UserCog, label: "Team Management" },
+    { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
     { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
     { href: "/dashboard/coupons", icon: Ticket, label: "Coupons" },
-    { href: "/dashboard/reports", icon: FileText, label: "Reports" },
     { href: "/dashboard/blacklist", icon: Ban, label: "Blacklist" },
 ];
 
 const supportTeamNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-  { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
 ];
 
 export function Header() {
