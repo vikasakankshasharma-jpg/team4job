@@ -61,7 +61,7 @@ const adminAuth = getAuth(firebaseApp);
 const mockUsers: Omit<User, 'id'>[] = [
   { // 0: Admin
     name: 'Vikas Sharma',
-    email: 'admin@example.com',
+    email: 'vikasakankshasharma@gmail.com',
     mobile: '9999999999',
     roles: ['Admin'],
     status: 'active',
@@ -279,7 +279,7 @@ async function seedAuthAndGetUIDs(users: Omit<User, 'id'>[]) {
         try {
             const userRecord = await adminAuth.createUser({
                 email: user.email,
-                password: "password123", // All users get a default password
+                password: "Vikas@129229", // All users get a default password
                 displayName: user.name,
                 emailVerified: true,
                 disabled: user.status === 'deactivated' || user.status === 'suspended',
@@ -291,7 +291,7 @@ async function seedAuthAndGetUIDs(users: Omit<User, 'id'>[]) {
                  const userRecord = await adminAuth.getUserByEmail(user.email);
                  userUIDs[user.email] = userRecord.uid;
                  // Ensure password is set for existing user, in case it was created without one
-                 await adminAuth.updateUser(userRecord.uid, { password: 'password123', disabled: user.status === 'deactivated' || user.status === 'suspended' });
+                 await adminAuth.updateUser(userRecord.uid, { password: 'Vikas@129229', disabled: user.status === 'deactivated' || user.status === 'suspended' });
                  console.log(`- Auth user already exists, password updated: ${user.email} (UID: ${userRecord.uid})`);
             } else {
                 console.error(`- Error creating auth user ${user.email}:`, error.message);
@@ -676,3 +676,5 @@ async function main() {
 }
 
 main();
+
+    
