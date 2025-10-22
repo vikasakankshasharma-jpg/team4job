@@ -7,7 +7,6 @@ import { ArrowRight, CheckCircle, PanelLeft, ShieldCheck, Zap } from "lucide-rea
 import { Logo } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import HowItWorksCarousel from "@/components/landing/how-it-works-carousel";
 
 export default function Home() {
   const features = [
@@ -123,7 +122,7 @@ export default function Home() {
                 A simple, transparent process for everyone.
               </p>
             </div>
-            <HowItWorksCarousel />
+            {/* The carousel has been removed to fix the startup error */}
           </div>
         </section>
       </main>
