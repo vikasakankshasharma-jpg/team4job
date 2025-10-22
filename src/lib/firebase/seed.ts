@@ -242,6 +242,18 @@ const mockUsers: Omit<User, 'id'>[] = [
       reputationHistory: [],
     },
   },
+  { // 9: Support Team member
+    name: 'Amit Patel',
+    email: 'support@example.com',
+    mobile: '9595959595',
+    roles: ['Support Team'],
+    status: 'active',
+    memberSince: new Date('2024-04-10'),
+    avatarUrl: PlaceHolderImages[1].imageUrl,
+    realAvatarUrl: 'https://picsum.photos/seed/amit/200/200',
+    address: { house: '10B', street: 'Support Street', cityPincode: '110001, Connaught Place S.O', fullAddress: '10B, Support Street, Connaught Place, New Delhi, 110001' },
+    pincodes: { residential: '110001' }
+  },
 ];
 
 
@@ -572,15 +584,17 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
 
 async function seedDisputes(uids: { [email: string]: string }) {
     console.log('\nCreating disputes...');
+    const adminUID = uids[mockUsers[0].email];
     const jobGiverUID = uids[mockUsers[1].email];
     const installerUID = uids[mockUsers[2].email];
     const justInstallerUID = uids[mockUsers[3].email];
+    const supportUID = uids[mockUsers[9].email];
 
-    if (!jobGiverUID || !installerUID || !justInstallerUID) {
+    if (!adminUID || !jobGiverUID || !installerUID || !justInstallerUID || !supportUID) {
         throw new Error("Required mock users not found for seeding disputes.");
     }
     
-    // --- DISPUTE 1: Resolved ---
+    // --- DISPUTE 1: Resolved by Admin ---
     const dispute1Id = "DISPUTE-1721981880000";
     await adminDb.collection('disputes').doc(dispute1Id).set({
         id: dispute1Id,
@@ -595,7 +609,7 @@ async function seedDisputes(uids: { [email: string]: string }) {
         messages: [
             { authorId: installerUID, authorRole: 'Installer', content: "Initial complaint: Payment not released.", timestamp: Timestamp.fromDate(new Date('2024-07-20T10:00:00Z')) },
             { authorId: jobGiverUID, authorRole: 'Job Giver', content: "I was on vacation and missed the notification. Apologies for the delay.", timestamp: Timestamp.fromDate(new Date('2024-07-21T11:00:00Z')) },
-            { authorId: uids[mockUsers[0].email], authorRole: 'Admin', content: "It seems to be a misunderstanding. Job Giver, please confirm the payment release. Closing this dispute.", timestamp: Timestamp.fromDate(new Date('2024-07-21T12:00:00Z')) },
+            { authorId: adminUID, authorRole: 'Admin', content: "It seems to be a misunderstanding. Job Giver, please confirm the payment release. Closing this dispute.", timestamp: Timestamp.fromDate(new Date('2024-07-21T12:00:00Z')) },
         ],
         resolution: "Resolved amicably. Payment was delayed due to oversight.",
         createdAt: Timestamp.fromDate(new Date('2024-07-20T10:00:00Z')),
@@ -620,8 +634,27 @@ async function seedDisputes(uids: { [email: string]: string }) {
         ],
         createdAt: Timestamp.fromDate(new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000)),
     });
+
+    // --- DISPUTE 3: Under Review by Support Team ---
+    const dispute3Id = "DISPUTE-1721981880002";
+    await adminDb.collection('disputes').doc(dispute3Id).set({
+        id: dispute3Id,
+        requesterId: justInstallerUID,
+        category: "Billing Inquiry",
+        title: "Question about commission fee",
+        jobId: "JOB-20240718-E5F6",
+        jobTitle: "Residential Villa - 4 PTZ Cameras (Disputed)",
+        status: 'Under Review',
+        reason: "I was charged a higher commission fee than I expected on my last payout. Can you please clarify the calculation?",
+        parties: { jobGiverId: jobGiverUID, installerId: justInstallerUID },
+        messages: [
+            { authorId: justInstallerUID, authorRole: 'Installer', content: "My payout was less than expected, can someone check the commission?", timestamp: Timestamp.fromDate(new Date(new Date().getTime() - 3 * 24 * 60 * 60 * 1000))},
+            { authorId: supportUID, authorRole: 'Support Team', content: "Hi Ravi, I'm looking into this for you now. I'll check the transaction records and get back to you shortly.", timestamp: Timestamp.fromDate(new Date(new Date().getTime() - 1 * 24 * 60 * 60 * 1000))},
+        ],
+        createdAt: Timestamp.fromDate(new Date(new Date().getTime() - 3 * 24 * 60 * 60 * 1000)),
+    });
     
-    console.log(`- Committed 2 disputes.`);
+    console.log(`- Committed 3 disputes.`);
 }
 
 async function seedBlacklist() {
