@@ -22,9 +22,9 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Award, IndianRupee, ListFilter, X, Loader2 } from "lucide-react";
 import { Job, Bid, User } from "@/lib/types";
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   DropdownMenu,
@@ -37,8 +37,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
-import { DocumentReference } from "firebase/firestore";
-import { getBidsForInstallerFlow } from "@/ai/flows/get-bids-for-installer";
+import { collection, query, where, getDocs, doc } from "firebase/firestore";
+import type { DocumentReference } from "firebase/firestore";
 
 type MyBidRowProps = {
   bid: Bid & { jobId: string };
@@ -137,6 +137,7 @@ const bidStatuses = [
 
 function MyBidsPageContent() {
   const { user, role, loading: userLoading } = useUser();
+  const { db } = useFirebase();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -153,20 +154,37 @@ function MyBidsPageContent() {
     }
   }, [role, userLoading, router]);
 
-  const fetchMyBids = React.useCallback(async () => {
-    if (!user || !role || role !== 'Installer') return;
+  const fetchMyBids = useCallback(async () => {
+    if (!user || !role || role !== 'Installer' || !db) return;
     setLoading(true);
     try {
-      const { jobs, bids } = await getBidsForInstallerFlow({ installerId: user.id });
-      setJobs(jobs);
-      setBids(bids);
+      const jobsRef = collection(db, 'jobs');
+      const q = query(jobsRef, where('bidderIds', 'array-contains', user.id));
+      const jobsSnapshot = await getDocs(q);
+      
+      const fetchedJobs: Job[] = [];
+      const fetchedBids: (Bid & { jobId: string })[] = [];
+
+      jobsSnapshot.forEach(doc => {
+        const jobData = { id: doc.id, ...doc.data() } as Job;
+        fetchedJobs.push(jobData);
+        if (jobData.bids) {
+            jobData.bids.forEach(bid => {
+                const installerId = getRefId(bid.installer);
+                if (installerId === user.id) {
+                    fetchedBids.push({ ...bid, jobId: doc.id });
+                }
+            });
+        }
+      });
+      setJobs(fetchedJobs);
+      setBids(fetchedBids);
     } catch (error) {
       console.error("Failed to fetch bids and jobs:", error);
-      // Optionally, set an error state and show a toast
     } finally {
       setLoading(false);
     }
-  }, [user, role]);
+  }, [user, role, db]);
 
   React.useEffect(() => {
     if (!userLoading) {
@@ -180,7 +198,6 @@ function MyBidsPageContent() {
         content: (
           <div className="space-y-4 text-sm">
               <p>This page tracks every job you have bid on or been awarded.</p>
-              {/* ... help content ... */}
           </div>
         )
     });
@@ -298,7 +315,6 @@ function MyBidsPageContent() {
               ) : filteredBids.length > 0 ? (
                 filteredBids.map(bid => {
                   const job = jobsById.get(bid.jobId);
-                  // This check is important because a job might have been deleted but the bid reference remains
                   if (!job || !user) return null; 
                   return <MyBidRow key={bid.id} bid={bid} job={job} user={user} />
                 })
