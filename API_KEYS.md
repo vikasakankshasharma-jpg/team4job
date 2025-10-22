@@ -58,3 +58,20 @@ You can get this from [Google AI Studio](https://aistudio.google.com/app/apikey)
 
 GEMINI_API_KEY="AIzaSy..."
 ```
+
+---
+
+## 4. Cashfree API Keys
+
+These keys are essential for the KYC verification flow (Aadhar verification) and for processing payments between Job Givers and Installers. The application is set up to work with Cashfree's services.
+
+You can get these from your Cashfree merchant dashboard after signing up.
+
+**Note:** These keys are secrets and should **NOT** be prefixed with `NEXT_PUBLIC_`. They are used in server-side Genkit flows.
+
+```env
+# .env.local
+
+CASHFREE_CLIENT_ID="your_cashfree_client_id"
+CASHFREE_CLIENT_SECRET="your_cashfree_client_secret"
+```
