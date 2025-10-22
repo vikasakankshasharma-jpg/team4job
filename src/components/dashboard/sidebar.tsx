@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import Link from "next/link";
@@ -47,13 +46,13 @@ const jobGiverNavItems = [
 const adminNavItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
-    { href: "/dashboard/staff", icon: UserCog, label: "Staff Management" },
+    { href: "/dashboard/team", icon: UserCog, label: "Team Management" },
     { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
     { href: "/dashboard/coupons", icon: Ticket, label: "Coupons" },
     { href: "/dashboard/blacklist", icon: Ban, label: "Blacklist" },
 ];
 
-const supportStaffNavItems = [
+const supportTeamNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
   { href: "/dashboard/profile", icon: UserIcon, label: "Profile" },
@@ -68,8 +67,8 @@ export function DashboardSidebar() {
     switch (role) {
       case "Admin":
         return adminNavItems;
-      case "Support Staff":
-        return supportStaffNavItems;
+      case "Support Team":
+        return supportTeamNavItems;
       case "Installer":
         return installerNavItems;
       case "Job Giver":

@@ -61,7 +61,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["Job Giver", "Installer", "Admin", "Support Staff"]
+            "enum": ["Job Giver", "Installer", "Admin", "Support Team"]
           }
         },
         "status": {
@@ -452,7 +452,7 @@
       "type": "object",
       "properties": {
         "authorId": { "type": "string" },
-        "authorRole": { "type": "string", "enum": ["Job Giver", "Installer", "Admin", "Support Staff"] },
+        "authorRole": { "type": "string", "enum": ["Job Giver", "Installer", "Admin", "Support Team"] },
         "content": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" },
         "attachments": {

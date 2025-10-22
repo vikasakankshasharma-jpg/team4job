@@ -59,28 +59,28 @@ import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-const staffSchema = z.object({
+const teamMemberSchema = z.object({
   name: z.string().min(2, "Name is required."),
   email: z.string().email("Invalid email address."),
-  role: z.enum(["Admin", "Support Staff"]),
+  role: z.enum(["Admin", "Support Team"]),
 });
 
-function CreateStaffForm({ onSave }: { onSave: () => void }) {
+function CreateTeamMemberForm({ onSave }: { onSave: () => void }) {
   const { db } = useFirebase();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof staffSchema>>({
-    resolver: zodResolver(staffSchema),
+  const form = useForm<z.infer<typeof teamMemberSchema>>({
+    resolver: zodResolver(teamMemberSchema),
     defaultValues: {
       name: "",
       email: "",
-      role: "Support Staff",
+      role: "Support Team",
     },
   });
 
-  async function onSubmit(values: z.infer<typeof staffSchema>) {
+  async function onSubmit(values: z.infer<typeof teamMemberSchema>) {
     setIsSubmitting(true);
     const tempPassword = Math.random().toString(36).slice(-8);
 
@@ -106,7 +106,7 @@ function CreateStaffForm({ onSave }: { onSave: () => void }) {
         await setDoc(doc(db, "users", firebaseUser.uid), { ...newUser, id: firebaseUser.uid });
 
       toast({
-        title: "Staff Account Created",
+        title: "Team Member Account Created",
         description: `An account for ${values.name} has been created. They will need to reset their password.`,
       });
       form.reset();
@@ -115,7 +115,7 @@ function CreateStaffForm({ onSave }: { onSave: () => void }) {
     } catch (e: any) {
       console.error(e);
       toast({
-        title: "Error Creating Staff",
+        title: "Error Creating Team Member",
         description: e.message || "An unexpected error occurred.",
         variant: "destructive",
       });
@@ -129,11 +129,11 @@ function CreateStaffForm({ onSave }: { onSave: () => void }) {
       <DropdownMenuTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Add New Staff
+          Add New Team Member
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-80 p-4">
-        <DropdownMenuLabel className="p-0 mb-2 text-base">Create Staff Account</DropdownMenuLabel>
+        <DropdownMenuLabel className="p-0 mb-2 text-base">Create Team Member Account</DropdownMenuLabel>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -175,7 +175,7 @@ function CreateStaffForm({ onSave }: { onSave: () => void }) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Support Staff">Support Staff</SelectItem>
+                      <SelectItem value="Support Team">Support Team</SelectItem>
                       <SelectItem value="Admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
@@ -197,25 +197,25 @@ function CreateStaffForm({ onSave }: { onSave: () => void }) {
   );
 }
 
-export default function StaffManagementPage() {
+export default function TeamManagementPage() {
   const { user, isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const router = useRouter();
-  const [staff, setStaff] = useState<User[]>([]);
+  const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchStaff = useCallback(async () => {
+  const fetchTeamMembers = useCallback(async () => {
     if (!db) return;
     setLoading(true);
     const q = query(collection(db, "users"), or(
         where("roles", "array-contains", "Admin"),
-        where("roles", "array-contains", "Support Staff")
+        where("roles", "array-contains", "Support Team")
     ));
     const querySnapshot = await getDocs(q);
     const list = querySnapshot.docs.map((doc) => doc.data() as User);
     // Exclude the current admin from the list
-    setStaff(list.filter(s => s.id !== user?.id));
+    setTeamMembers(list.filter(s => s.id !== user?.id));
     setLoading(false);
   }, [db, user?.id]);
 
@@ -223,26 +223,26 @@ export default function StaffManagementPage() {
     if (!userLoading && !isAdmin) {
       router.push('/dashboard');
     } else if (user && isAdmin) {
-      fetchStaff();
+      fetchTeamMembers();
     }
-  }, [isAdmin, userLoading, user, router, fetchStaff]);
+  }, [isAdmin, userLoading, user, router, fetchTeamMembers]);
 
-  const handleRemove = async (staffMember: User) => {
+  const handleRemove = async (teamMember: User) => {
     if (
       !window.confirm(
-        `Are you sure you want to remove ${staffMember.name}? This will permanently delete their account.`
+        `Are you sure you want to remove ${teamMember.name}? This will permanently delete their account.`
       )
     ) return;
     
     // This is a placeholder for a secure backend function to delete a user.
-    await deleteDoc(doc(db, "users", staffMember.id));
+    await deleteDoc(doc(db, "users", teamMember.id));
     
     toast({
-      title: "Staff Member Removed",
-      description: `${staffMember.name} has been removed from the platform.`,
+      title: "Team Member Removed",
+      description: `${teamMember.name} has been removed from the platform.`,
       variant: "destructive"
     });
-    fetchStaff();
+    fetchTeamMembers();
   };
 
   if (userLoading || !isAdmin) {
@@ -257,12 +257,12 @@ export default function StaffManagementPage() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="flex items-center gap-2"><UserCog /> Staff Management</CardTitle>
+          <CardTitle className="flex items-center gap-2"><UserCog /> Team Management</CardTitle>
           <CardDescription>
             Create and manage accounts for your administrative and support team.
           </CardDescription>
         </div>
-        <CreateStaffForm onSave={fetchStaff} />
+        <CreateTeamMemberForm onSave={fetchTeamMembers} />
       </CardHeader>
       <CardContent>
         <Table>
@@ -284,20 +284,20 @@ export default function StaffManagementPage() {
                   <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                 </TableCell>
               </TableRow>
-            ) : staff.length > 0 ? (
-              staff.map((staffMember) => (
-                <TableRow key={staffMember.id}>
-                  <TableCell className="font-medium">{staffMember.name}</TableCell>
-                  <TableCell>{staffMember.email}</TableCell>
+            ) : teamMembers.length > 0 ? (
+              teamMembers.map((teamMember) => (
+                <TableRow key={teamMember.id}>
+                  <TableCell className="font-medium">{teamMember.name}</TableCell>
+                  <TableCell>{teamMember.email}</TableCell>
                   <TableCell>
-                     {staffMember.roles.map(r => {
-                        if (r === 'Admin' || r === 'Support Staff') {
+                     {teamMember.roles.map(r => {
+                        if (r === 'Admin' || r === 'Support Team') {
                            return <Badge key={r} variant="secondary">{r}</Badge>
                         }
                         return null;
                      })}
                   </TableCell>
-                  <TableCell>{format(toDate(staffMember.memberSince), "PP")}</TableCell>
+                  <TableCell>{format(toDate(teamMember.memberSince), "PP")}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -306,9 +306,9 @@ export default function StaffManagementPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleRemove(staffMember)} className="text-destructive">
+                        <DropdownMenuItem onClick={() => handleRemove(teamMember)} className="text-destructive">
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Remove Staff
+                          Remove Team Member
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -318,7 +318,7 @@ export default function StaffManagementPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
-                  No staff members found.
+                  No team members found.
                 </TableCell>
               </TableRow>
             )}
