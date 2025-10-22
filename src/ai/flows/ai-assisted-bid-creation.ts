@@ -39,7 +39,7 @@ const bidCreationPrompt = ai.definePrompt({
   **Task**: Generate a compelling and well-organized bid proposal that highlights the installer's strengths and suitability for the job, while maintaining their anonymity.
 
   **Instructions**:
-  1.  **Structure the proposal into three distinct paragraphs.** You MUST separate each paragraph with a double newline character ('\n\n').
+  1.  **Structure the proposal into three distinct sentences/paragraphs.**
       *   **Paragraph 1 (Introduction):** Start by addressing the job poster (e.g., "Dear Job Poster,") and state your confidence in being able to complete the project based on the description.
       *   **Paragraph 2 (Body):** This is the most important part. Explain *why* you are a great fit. Connect your skills and experience directly to the job's requirements. For example, "Having reviewed the need for [...], my expertise in [...] makes me well-suited for this task."
       *   **Paragraph 3 (Closing):** Conclude professionally. Express your interest in the project and invite the job poster to review your profile and bid.
@@ -64,6 +64,17 @@ const aiAssistedBidCreationFlow = ai.defineFlow(
     if (!output) {
       throw new Error("Failed to generate bid proposal from AI.");
     }
+    
+    // Post-processing to ensure paragraph breaks
+    let proposal = output.bidProposal;
+    let replacements = 0;
+    proposal = proposal.replace(/\. /g, (match) => {
+        replacements++;
+        return replacements <= 2 ? '.\n\n' : match;
+    });
+
+    output.bidProposal = proposal;
+    
     return output;
   }
 );
