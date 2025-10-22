@@ -10,16 +10,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit, UserX, UserCheck, Loader2, Ban, Trash2 } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit, UserX, UserCheck, Loader2, Ban, Trash2, Gauge, Clock, MessageSquare } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, PolarGrid, PolarAngleAxis, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { format } from "date-fns";
+import { format, differenceInMilliseconds } from "date-fns";
 import { notFound, useParams } from "next/navigation";
 import { JobCard } from "@/components/job-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Job, User } from "@/lib/types";
+import { Job, User, Dispute } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -325,6 +325,75 @@ function JobListItem({ job }: { job: Job }) {
   )
 }
 
+function DisputePerformanceCard({ disputes }: { disputes: Dispute[] }) {
+    const totalDisputes = disputes.length;
+    const resolvedDisputes = disputes.filter(d => d.status === 'Resolved').length;
+    const resolutionRate = totalDisputes > 0 ? (resolvedDisputes / totalDisputes) * 100 : 0;
+
+    const totalResolutionTime = disputes
+        .filter(d => d.status === 'Resolved' && d.createdAt && d.resolvedAt)
+        .reduce((acc, d) => {
+            const timeDiff = differenceInMilliseconds(toDate(d.resolvedAt!), toDate(d.createdAt));
+            return acc + timeDiff;
+        }, 0);
+
+    const avgResolutionTimeMs = resolvedDisputes > 0 ? totalResolutionTime / resolvedDisputes : 0;
+    const avgResolutionTimeDays = avgResolutionTimeMs / (1000 * 60 * 60 * 24);
+
+    const chartData = [{ name: 'Resolved', value: resolutionRate, fill: 'hsl(var(--primary))' }];
+    const performanceChartConfig = {
+      value: { label: 'Disputes' },
+    } satisfies ChartConfig;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Dispute Performance</CardTitle>
+                <CardDescription>Metrics based on this team member's involvement in disputes.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 md:grid-cols-2">
+                <Card className="flex flex-col items-center justify-center p-6">
+                    <ChartContainer
+                        config={performanceChartConfig}
+                        className="mx-auto aspect-square h-full w-full max-w-[250px]"
+                    >
+                        <RadialBarChart
+                            data={chartData}
+                            startAngle={90}
+                            endAngle={-270}
+                            innerRadius="70%"
+                            outerRadius="110%"
+                        >
+                            <PolarGrid gridType="circle" radialLines={false} stroke="none" />
+                            <RadialBar dataKey="value" background cornerRadius={10} />
+                            <PolarAngleAxis type="number" domain={[0, 100]} dataKey="value" tick={false} />
+                        </RadialBarChart>
+                    </ChartContainer>
+                     <p className="text-5xl font-bold mt-[-2.5rem]">{resolutionRate.toFixed(0)}<span className="text-xl text-muted-foreground">%</span></p>
+                    <p className="text-center text-sm text-muted-foreground mt-2">Resolution Rate</p>
+                </Card>
+                <div className="grid grid-rows-3 gap-4">
+                    <Card className="flex flex-col items-center justify-center p-4 text-center">
+                        <MessageSquare className="h-6 w-6 mb-2 text-primary" />
+                        <p className="text-2xl font-bold">{totalDisputes}</p>
+                        <p className="text-sm text-muted-foreground">Total Disputes Handled</p>
+                    </Card>
+                    <Card className="flex flex-col items-center justify-center p-4 text-center">
+                        <ShieldCheck className="h-6 w-6 mb-2 text-green-600" />
+                        <p className="text-2xl font-bold">{resolvedDisputes}</p>
+                        <p className="text-sm text-muted-foreground">Disputes Resolved</p>
+                    </Card>
+                     <Card className="flex flex-col items-center justify-center p-4 text-center">
+                        <Clock className="h-6 w-6 mb-2 text-amber-500" />
+                        <p className="text-2xl font-bold">{avgResolutionTimeDays.toFixed(1)} Days</p>
+                        <p className="text-sm text-muted-foreground">Avg. Resolution Time</p>
+                    </Card>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 function PageSkeleton() {
   return (
     <div className="grid gap-8">
@@ -362,6 +431,7 @@ export default function UserProfilePage() {
   const [profileUser, setProfileUser] = React.useState<User | null | undefined>(undefined);
   const [userPostedJobs, setUserPostedJobs] = React.useState<Job[]>([]);
   const [userCompletedJobs, setUserCompletedJobs] = React.useState<Job[]>([]);
+  const [involvedDisputes, setInvolvedDisputes] = React.useState<Dispute[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [jobsView, setJobsView] = React.useState<'list' | 'grid'>('list');
 
@@ -377,26 +447,41 @@ export default function UserProfilePage() {
         setProfileUser(user);
         
         const isTeamMember = user.roles.includes('Admin') || user.roles.includes('Support Team');
-        if (isTeamMember) {
-            setLoading(false);
-            return;
-        }
-
         const jobsRef = collection(db, "jobs");
+        const disputesRef = collection(db, "disputes");
         
-        if (user.roles.includes('Job Giver')) {
-            const postedJobsQuery = query(jobsRef, where('jobGiver', '==', userDoc.ref));
-            const postedJobsSnapshot = await getDocs(postedJobsQuery);
-            const postedJobs = postedJobsSnapshot.docs.map(d => d.data() as Job);
-            setUserPostedJobs(postedJobs);
-        }
+        const promises = [];
 
-        if (user.roles.includes('Installer')) {
-            const completedJobsQuery = query(jobsRef, where('status', '==', 'Completed'), where('awardedInstaller', '==', userDoc.ref));
-            const completedJobsSnapshot = await getDocs(completedJobsQuery);
-            const completedJobs = completedJobsSnapshot.docs.map(d => d.data() as Job);
-            setUserCompletedJobs(completedJobs);
+        if (isTeamMember) {
+            // Fetch disputes where this team member has participated
+            const disputesQuery = query(disputesRef, where('messages', 'array-contains-any', [{ authorId: user.id }]));
+            promises.push(getDocs(query(disputesRef, where('messages', 'array-contains-any', user.id)))
+                .then(snapshot => setInvolvedDisputes(snapshot.docs.map(d => d.data() as Dispute)))
+                .catch(e => {
+                    // Firebase doesn't support array-contains-any on objects directly, so we have to fetch all and filter
+                    if (e.code === 'invalid-argument') {
+                        return getDocs(disputesRef).then(allDisputesSnapshot => {
+                            const relatedDisputes = allDisputesSnapshot.docs
+                                .map(d => d.data() as Dispute)
+                                .filter(d => d.messages.some(m => m.authorId === user.id));
+                            setInvolvedDisputes(relatedDisputes);
+                        });
+                    }
+                    throw e;
+                })
+            );
+        } else {
+            if (user.roles.includes('Job Giver')) {
+                const postedJobsQuery = query(jobsRef, where('jobGiver', '==', userDoc.ref));
+                promises.push(getDocs(postedJobsQuery).then(s => setUserPostedJobs(s.docs.map(d => d.data() as Job))));
+            }
+            if (user.roles.includes('Installer')) {
+                const completedJobsQuery = query(jobsRef, where('status', '==', 'Completed'), where('awardedInstaller', '==', userDoc.ref));
+                promises.push(getDocs(completedJobsQuery).then(s => setUserCompletedJobs(s.docs.map(d => d.data() as Job))));
+            }
         }
+        
+        await Promise.all(promises);
         setLoading(false);
   }, [id, db]);
 
@@ -504,6 +589,8 @@ export default function UserProfilePage() {
         <AdminActionsCard user={profileUser} onUserUpdate={handleUserUpdate} />
       )}
       
+      {isTeamMember && involvedDisputes.length > 0 && <DisputePerformanceCard disputes={involvedDisputes} />}
+
       {isInstaller && installerProfile && !isTeamMember && (
         <Card>
             <CardHeader>
