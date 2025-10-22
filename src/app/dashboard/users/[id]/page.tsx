@@ -309,7 +309,7 @@ function JobListItem({ job }: { job: Job }) {
           <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
             <span>Posted: {format(toDate(job.postedAt), "MMM d, yyyy")}</span>
             <span className="flex items-center gap-1">
-              {job.bids.length} Bids
+              {(job.bids || []).length} Bids
             </span>
             {job.awardedInstaller && (
               <span className="flex items-center gap-1">
@@ -375,6 +375,12 @@ export default function UserProfilePage() {
         }
         const user = { id: userDoc.id, ...userDoc.data() } as User;
         setProfileUser(user);
+        
+        const isTeamMember = user.roles.includes('Admin') || user.roles.includes('Support Team');
+        if (isTeamMember) {
+            setLoading(false);
+            return;
+        }
 
         const jobsRef = collection(db, "jobs");
         
@@ -425,6 +431,7 @@ export default function UserProfilePage() {
   const { name, email, id: userId, memberSince, realAvatarUrl, address, roles, subscription, status, suspensionEndDate } = profileUser;
   const installerProfile = profileUser.installerProfile;
   const isInstaller = roles.includes('Installer');
+  const isTeamMember = roles.includes('Admin') || roles.includes('Support Team');
   
   const jobsCompletedCount = userCompletedJobs.length;
 
@@ -434,7 +441,7 @@ export default function UserProfilePage() {
   const getUserStatusBadge = () => {
     switch (status) {
       case 'suspended':
-        return <Badge variant="destructive">Suspended</Badge>;
+        return <Badge variant="warning">Suspended</Badge>;
       case 'deactivated':
         return <Badge variant="destructive">Deactivated</Badge>;
       default:
@@ -480,7 +487,7 @@ export default function UserProfilePage() {
                 </div>
               </div>
             </div>
-            {isAdmin && <ManageSubscriptionDialog user={profileUser} onSubscriptionUpdate={handleSubscriptionUpdate} />}
+            {isAdmin && subscription && <ManageSubscriptionDialog user={profileUser} onSubscriptionUpdate={handleSubscriptionUpdate} />}
           </div>
         </CardHeader>
         {subscription && (
@@ -497,7 +504,7 @@ export default function UserProfilePage() {
         <AdminActionsCard user={profileUser} onUserUpdate={handleUserUpdate} />
       )}
       
-      {isInstaller && installerProfile && (
+      {isInstaller && installerProfile && !isTeamMember && (
         <Card>
             <CardHeader>
                 <CardTitle>Installer Reputation</CardTitle>
@@ -592,7 +599,7 @@ export default function UserProfilePage() {
         </Card>
       )}
 
-      {(roles.includes('Job Giver') || roles.includes('Installer')) && (
+      {!isTeamMember && (roles.includes('Job Giver') || roles.includes('Installer')) && (
         <Card>
             <Tabs defaultValue="posted">
                 <CardHeader>
@@ -671,4 +678,3 @@ export default function UserProfilePage() {
     </div>
   );
 }
-
