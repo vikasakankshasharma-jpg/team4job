@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Briefcase,
   MessageSquare,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
@@ -30,7 +31,10 @@ import React from "react";
 import { Job, User, Dispute } from "@/lib/types";
 import { collection, query, where, getDocs, or, and, doc, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
-import { cn } from "@/lib/utils";
+import { cn, toDate } from "@/lib/utils";
+import { differenceInMilliseconds } from "date-fns";
+import { ChartContainer, ChartConfig } from "@/components/ui/chart";
+import { PolarAngleAxis, PolarGrid, RadialBar, RadialBarChart } from "recharts";
 
 const StatCard = ({ title, value, description, icon: Icon, href, iconBgColor, iconColor }) => (
     <Link href={href} className="block hover:shadow-lg transition-shadow duration-300 rounded-lg">
@@ -49,6 +53,74 @@ const StatCard = ({ title, value, description, icon: Icon, href, iconBgColor, ic
     </Link>
 );
 
+function DisputePerformanceCard({ disputes }: { disputes: Dispute[] }) {
+    const totalDisputes = disputes.length;
+    const resolvedDisputes = disputes.filter(d => d.status === 'Resolved').length;
+    const resolutionRate = totalDisputes > 0 ? (resolvedDisputes / totalDisputes) * 100 : 0;
+
+    const totalResolutionTime = disputes
+        .filter(d => d.status === 'Resolved' && d.createdAt && d.resolvedAt)
+        .reduce((acc, d) => {
+            const timeDiff = differenceInMilliseconds(toDate(d.resolvedAt!), toDate(d.createdAt));
+            return acc + timeDiff;
+        }, 0);
+
+    const avgResolutionTimeMs = resolvedDisputes > 0 ? totalResolutionTime / resolvedDisputes : 0;
+    const avgResolutionTimeDays = avgResolutionTimeMs / (1000 * 60 * 60 * 24);
+
+    const chartData = [{ name: 'Resolved', value: resolutionRate, fill: 'hsl(var(--primary))' }];
+    const performanceChartConfig = {
+      value: { label: 'Disputes' },
+    } satisfies ChartConfig;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>My Dispute Performance</CardTitle>
+                <CardDescription>An overview of your dispute resolution metrics.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 md:grid-cols-2">
+                <Card className="flex flex-col items-center justify-center p-6">
+                    <ChartContainer
+                        config={performanceChartConfig}
+                        className="mx-auto aspect-square h-full w-full max-w-[250px]"
+                    >
+                        <RadialBarChart
+                            data={chartData}
+                            startAngle={90}
+                            endAngle={-270}
+                            innerRadius="70%"
+                            outerRadius="110%"
+                        >
+                            <PolarGrid gridType="circle" radialLines={false} stroke="none" />
+                            <RadialBar dataKey="value" background cornerRadius={10} />
+                            <PolarAngleAxis type="number" domain={[0, 100]} dataKey="value" tick={false} />
+                        </RadialBarChart>
+                    </ChartContainer>
+                     <p className="text-5xl font-bold mt-[-2.5rem]">{resolutionRate.toFixed(0)}<span className="text-xl text-muted-foreground">%</span></p>
+                    <p className="text-center text-sm text-muted-foreground mt-2">Resolution Rate</p>
+                </Card>
+                <div className="grid grid-rows-3 gap-4">
+                    <Card className="flex flex-col items-center justify-center p-4 text-center">
+                        <MessageSquare className="h-6 w-6 mb-2 text-primary" />
+                        <p className="text-2xl font-bold">{totalDisputes}</p>
+                        <p className="text-sm text-muted-foreground">Total Disputes Handled</p>
+                    </Card>
+                    <Card className="flex flex-col items-center justify-center p-4 text-center">
+                        <ShieldCheck className="h-6 w-6 mb-2 text-green-600" />
+                        <p className="text-2xl font-bold">{resolvedDisputes}</p>
+                        <p className="text-sm text-muted-foreground">Disputes Resolved</p>
+                    </Card>
+                     <Card className="flex flex-col items-center justify-center p-4 text-center">
+                        <Clock className="h-6 w-6 mb-2 text-amber-500" />
+                        <p className="text-2xl font-bold">{avgResolutionTimeDays.toFixed(1)} Days</p>
+                        <p className="text-sm text-muted-foreground">Avg. Resolution Time</p>
+                    </Card>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
 
 function InstallerDashboard() {
   const { user } = useUser();
@@ -545,6 +617,7 @@ function SupportTeamDashboard() {
   const { db } = useFirebase();
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ openDisputes: 0, underReviewDisputes: 0 });
+  const [disputes, setDisputes] = React.useState<Dispute[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -553,6 +626,7 @@ function SupportTeamDashboard() {
         setLoading(true);
         
         const disputesRef = collection(db, "disputes");
+        
         const openQuery = query(disputesRef, where('status', '==', 'Open'));
         const reviewQuery = query(disputesRef, where('status', '==', 'Under Review'));
 
@@ -560,6 +634,15 @@ function SupportTeamDashboard() {
           getDocs(openQuery),
           getDocs(reviewQuery),
         ]);
+
+        const involvedDisputesQuery = query(disputesRef, where('messages', 'array-contains-any', [{ authorId: user.id }]));
+        
+        getDocs(disputesRef).then(allDisputesSnapshot => {
+            const relatedDisputes = allDisputesSnapshot.docs
+                .map(d => d.data() as Dispute)
+                .filter(d => d.messages.some(m => m.authorId === user.id));
+            setDisputes(relatedDisputes);
+        });
 
         setStats({
             openDisputes: openSnapshot.size,
@@ -584,8 +667,11 @@ function SupportTeamDashboard() {
              <li>
               <span className="font-semibold">Under Review:</span> These are disputes you are actively investigating.
             </li>
+            <li>
+              <span className="font-semibold">Performance:</span> This card shows your personal dispute resolution metrics, helping you track your progress.
+            </li>
           </ul>
-          <p>Click on either card to navigate to the Dispute Center and start resolving cases.</p>
+          <p>Click on the stat cards to navigate to the Dispute Center and start resolving cases.</p>
         </div>
       )
     });
@@ -620,8 +706,9 @@ function SupportTeamDashboard() {
             iconColor="text-yellow-600 dark:text-yellow-300"
         />
       </div>
-       <div className="mt-8 grid gap-4 md:gap-8">
-        <Card>
+      <div className="mt-8 grid gap-8">
+        {disputes.length > 0 && <DisputePerformanceCard disputes={disputes} />}
+         <Card>
           <CardHeader>
             <CardTitle>Dispute Center</CardTitle>
             <CardDescription>
