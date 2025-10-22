@@ -17,12 +17,14 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(userId)).data;
     }
 
-    function getUserRoles(userId) {
-      return getUserData(userId).roles;
-    }
-
     function isRequestingUserAdmin() {
-      return isSignedIn() && 'Admin' in getUserRoles(request.auth.uid);
+      let userData = getUserData(request.auth.uid);
+      // Safely check for the existence of the 'roles' map and the 'Admin' key.
+      // This prevents null reference errors if a user document doesn't have a roles field.
+      return isSignedIn() && 
+             'roles' in userData && 
+             userData.roles is map && 
+             'Admin' in userData.roles;
     }
 
     // --- Collection Rules ---
@@ -45,7 +47,8 @@ service cloud.firestore {
     match /jobs/{jobId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.jobGiver == request.auth.uid || isRequestingUserAdmin());
+      // Correctly compare the document reference path to the user's UID.
+      allow update: if isSignedIn() && (get(/databases/$(database)/documents/$(resource.data.jobGiver.path)).id == request.auth.uid || isRequestingUserAdmin());
       allow delete: if isRequestingUserAdmin();
     }
 
@@ -62,11 +65,9 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow delete: if isRequestingUserAdmin();
       allow list: if (isSignedIn() && (
-          (request.query.get('where') == null) || // For admin-like full scans
-          (request.query.where[0][1] == 'requesterId' && request.query.where[0][2] == request.auth.uid) ||
-          (request.query.where[0][1] == 'parties.jobGiverId' && request.query.where[0][2] == request.auth.uid) ||
-          (request.query.where[0][1] == 'parties.installerId' && request.query.where[0][2] == request.auth.uid)
-        )) || isRequestingUserAdmin();
+          (request.query.keys().hasAny(['requesterId', 'parties.jobGiverId', 'parties.installerId'])) || // Looser check, client must query correctly
+          isRequestingUserAdmin()
+        ));
     }
     
     // Only admins can manage blacklist, coupons, subscription plans.

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext } from 'react';
 import { getFirebaseApp, type FirebaseApp } from './use-firebase-app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
@@ -12,25 +12,21 @@ interface FirebaseContextValue {
   db: Firestore;
 }
 
+// Initialize Firebase immediately at the module level.
+// This ensures that the instances are ready before any component renders.
+const app = getFirebaseApp();
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const firebaseContextValue: FirebaseContextValue = { app, auth, db };
+
 const FirebaseContext = createContext<FirebaseContextValue | null>(null);
 
 export const FirebaseClientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [contextValue, setContextValue] = useState<FirebaseContextValue | null>(null);
-
-  useEffect(() => {
-    const app = getFirebaseApp();
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    setContextValue({ app, auth, db });
-  }, []);
-
-  if (!contextValue) {
-    // You can return a loading spinner here if needed
-    return null;
-  }
-
+  // The value is now constant and created outside the component,
+  // so we don't need useState or useEffect.
   return (
-    <FirebaseContext.Provider value={contextValue}>
+    <FirebaseContext.Provider value={firebaseContextValue}>
       {children}
     </FirebaseContext.Provider>
   );
