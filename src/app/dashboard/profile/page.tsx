@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -612,7 +613,7 @@ export default function ProfilePage() {
               </div>
                <div className="flex flex-col mt-1">
                 <p className="text-muted-foreground">{user.email}</p>
-                <p className="text-sm text-muted-foreground">{user.id}</p>
+                <p className="text-sm text-muted-foreground font-mono truncate max-w-sm">{user.id}</p>
               </div>
 
                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mt-2">
@@ -810,5 +811,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
