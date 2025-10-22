@@ -80,9 +80,10 @@ function ThemeSelector() {
 
 function PersonalSettingsCard() {
     const { toast } = useToast()
-    const { isAdmin } = useUser()
+    const { role } = useUser()
     const [deleteConfirmation, setDeleteConfirmation] = React.useState("")
     const isDeleteDisabled = deleteConfirmation !== "Delete"
+    const isTeamMember = role === 'Admin' || role === 'Support Team';
     
     return (
         <div className="space-y-6">
@@ -138,7 +139,7 @@ function PersonalSettingsCard() {
                         </div>
                         <Button variant="outline">Change Password</Button>
                     </div>
-                    {!isAdmin && (
+                    {!isTeamMember && (
                         <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-3">
                             <div>
                                 <Label className="text-destructive">Delete Account</Label>
