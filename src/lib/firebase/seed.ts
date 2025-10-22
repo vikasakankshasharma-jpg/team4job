@@ -27,29 +27,44 @@ config(); // Load environment variables
 
 let firebaseApp: App;
 
-if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-    try {
-        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-        firebaseApp = initializeApp({
-            credential: cert(serviceAccount)
-        });
-        console.log("Firebase Admin SDK initialized using environment variable.");
-    } catch (error) {
-        console.error("Error parsing FIREBASE_SERVICE_ACCOUNT_KEY from .env:", error);
-        process.exit(1);
-    }
-} else {
+function initializeFirebaseAdmin() {
+    // 1. Try to use service-account.json first
     try {
         const serviceAccount = require('./service-account.json');
         firebaseApp = initializeApp({
             credential: cert(serviceAccount)
         });
         console.log("Firebase Admin SDK initialized using service-account.json file.");
-    } catch (error) {
-        console.error("Could not initialize Firebase Admin SDK. Ensure either FIREBASE_SERVICE_ACCOUNT_KEY in .env or service-account.json is configured correctly.", error);
-        process.exit(1);
+        return;
+    } catch (error: any) {
+        if (error.code !== 'MODULE_NOT_FOUND') {
+            console.error("Error reading or parsing service-account.json:", error);
+            process.exit(1);
+        }
+        // If file is not found, proceed to check environment variable
     }
+
+    // 2. If file not found, try to use environment variable
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+        try {
+            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+            firebaseApp = initializeApp({
+                credential: cert(serviceAccount)
+            });
+            console.log("Firebase Admin SDK initialized using environment variable.");
+            return;
+        } catch (error) {
+            console.error("Error parsing FIREBASE_SERVICE_ACCOUNT_KEY from .env:", error);
+            process.exit(1);
+        }
+    }
+
+    // 3. If neither method works, exit
+    console.error("Could not initialize Firebase Admin SDK. Ensure either service-account.json exists or FIREBASE_SERVICE_ACCOUNT_KEY is set in your environment.");
+    process.exit(1);
 }
+
+initializeFirebaseAdmin();
 
 
 const adminDb = getFirestore(firebaseApp);

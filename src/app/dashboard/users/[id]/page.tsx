@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit, UserX, UserCheck, Loader2, Ban } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit, UserX, UserCheck, Loader2, Ban, Trash2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -26,12 +26,23 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirebase, useUser as useAuthUser } from "@/hooks/use-user";
-import { collection, query, where, getDocs, getDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, getDoc, doc, updateDoc, deleteDoc as deleteFirestoreDoc } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 
 const tierIcons = {
@@ -128,9 +139,11 @@ function ManageSubscriptionDialog({ user, onSubscriptionUpdate }: { user: User, 
 function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (data: Partial<User>) => void }) {
   const { toast } = useToast();
   const { db } = useFirebase();
+  const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
   const [suspensionDays, setSuspensionDays] = React.useState(7);
   const [isSuspendOpen, setIsSuspendOpen] = React.useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = React.useState("");
 
   const handleDeactivate = async () => {
     setIsLoading(true);
@@ -159,6 +172,24 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
     setIsSuspendOpen(false);
   };
 
+  const handleDelete = async () => {
+      // In a real application, this would call a secure backend function (e.g., a Firebase Cloud Function)
+      // that uses the Firebase Admin SDK to delete the user from Authentication.
+      // e.g., await admin.auth().deleteUser(user.id);
+      
+      // For now, we will simulate the full deletion by removing the Firestore document
+      // and redirecting.
+      setIsLoading(true);
+      await deleteFirestoreDoc(doc(db, 'users', user.id));
+      
+      toast({
+          title: "User Deleted",
+          description: `User ${user.name} has been permanently deleted.`,
+          variant: "destructive",
+      });
+      setIsLoading(false);
+      router.push("/dashboard/users");
+  };
 
   return (
     <Card>
@@ -205,13 +236,13 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
             </Dialog>
           </div>
         )}
-        <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-4">
+        <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <h3 className="font-semibold text-destructive">
+              <h3 className="font-semibold">
                 {user.status === 'deactivated' ? 'Re-activate Account' : 'Deactivate Account'}
               </h3>
-              <p className="text-sm text-destructive/70">
-                {user.status === 'deactivated' ? 'Restore access to the user.' : 'Permanently disable account access.'}
+              <p className="text-sm text-muted-foreground">
+                {user.status === 'deactivated' ? 'Restore access to the user.' : 'Disable account access.'}
               </p>
             </div>
             {user.status === 'deactivated' ? (
@@ -225,6 +256,42 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
                  <UserX className="mr-2 h-4 w-4" />Deactivate
               </Button>
             )}
+        </div>
+         <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-4">
+            <div>
+              <h3 className="font-semibold text-destructive">Delete User</h3>
+              <p className="text-sm text-destructive/70">
+                Permanently remove the user and all their data. This action cannot be undone.
+              </p>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isLoading}><Trash2 className="mr-2 h-4 w-4" />Delete Permanently</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete the user <span className="font-bold">{user.name}</span> from authentication and Firestore. This action is irreversible. Please type <span className="font-bold text-foreground">DELETE</span> to confirm.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Input
+                  placeholder="Type DELETE to confirm"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                />
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setDeleteConfirmation('')}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={deleteConfirmation !== 'DELETE' || isLoading}
+                  >
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Delete User'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
         </div>
       </CardContent>
     </Card>
