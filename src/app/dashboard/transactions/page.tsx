@@ -29,12 +29,14 @@ import { toDate } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import Link from "next/link";
+import { useHelp } from "@/hooks/use-help";
 
 const getStatusVariant = (status: Transaction['status']) => {
   switch (status) {
     case 'Released': return 'success';
     case 'Funded': return 'info';
     case 'Refunded': return 'secondary';
+    case 'Failed': return 'destructive';
     default: return 'outline';
   }
 };
@@ -52,6 +54,31 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(initialFilters);
   const [usersMap, setUsersMap] = useState<Map<string, User>>(new Map());
+  const { setHelp } = useHelp();
+
+  useEffect(() => {
+    setHelp({
+      title: "Transactions",
+      content: (
+        <div className="space-y-4 text-sm">
+          <p>This page provides a detailed audit trail of every financial transaction that occurs on the platform. It's an essential tool for accounting and tracking revenue.</p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li><span className="font-semibold">KPI Cards:</span> At the top, you'll find key performance indicators showing the total value of funds released to installers and the amount currently held in the system for active jobs.</li>
+            <li><span className="font-semibold">Transaction Log:</span> The main table shows a chronological list of all transactions, including payments from Job Givers, payouts to Installers, and any refunds.</li>
+            <li><span className="font-semibold">Search & Filter:</span> Use the controls to quickly find specific transactions. You can search by Transaction ID, Job ID, or user name, and filter by the transaction status.</li>
+            <li><span className="font-semibold">Status Tracking:</span>
+              <ul className="list-disc space-y-1 pl-5 mt-1">
+                <li><span className="font-semibold text-blue-500">Funded:</span> Job Giver has paid; funds are held.</li>
+                <li><span className="font-semibold text-green-500">Released:</span> Payout successfully sent to the installer.</li>
+                <li><span className="font-semibold text-gray-500">Refunded:</span> Funds returned to the Job Giver.</li>
+                <li><span className="font-semibold text-red-500">Failed:</span> The transaction did not complete.</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      )
+    })
+  }, [setHelp]);
 
   useEffect(() => {
     if (!userLoading && !isAdmin) {
