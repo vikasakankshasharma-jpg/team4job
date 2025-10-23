@@ -28,7 +28,7 @@ import { useUser } from "@/hooks/use-user";
 import { useState, useRef, useEffect } from "react";
 import { CheckCircle2, Loader2, ShieldCheck, Camera, Upload } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import type { User } from "@/lib/types";
+import type { User, PlatformSettings } from "@/lib/types";
 import {
   initiateAadharVerification,
   confirmAadharVerification,
@@ -37,7 +37,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AddressForm } from "@/components/ui/address-form";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useAuth, useFirestore } from "@/lib/firebase/client-provider";
 import { useHelp } from "@/hooks/use-help";
@@ -87,6 +87,7 @@ export function SignUpForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
+  const [platformSettings, setPlatformSettings] = useState<PlatformSettings | null>(null);
 
   useEffect(() => {
     let helpTitle = "Sign Up Help";
@@ -160,6 +161,17 @@ export function SignUpForm() {
         }
     }
   }, [currentStep]);
+
+  useEffect(() => {
+    async function fetchSettings() {
+        if (!db) return;
+        const settingsDoc = await getDoc(doc(db, "settings", "platform"));
+        if (settingsDoc.exists()) {
+            setPlatformSettings(settingsDoc.data() as PlatformSettings);
+        }
+    }
+    fetchSettings();
+  }, [db]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -346,7 +358,8 @@ export function SignUpForm() {
         
         const userRoles = [values.role];
         const trialExpiry = new Date();
-        trialExpiry.setDate(trialExpiry.getDate() + 30); // Default 30-day trial
+        const trialDays = platformSettings?.defaultTrialPeriodDays || 30;
+        trialExpiry.setDate(trialExpiry.getDate() + trialDays);
 
         const newUser: Omit<User, 'id'> = {
             name: values.name,

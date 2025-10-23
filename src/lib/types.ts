@@ -203,4 +203,16 @@ export type PlatformSettings = {
     bidBundle10: number;
     bidBundle25: number;
     bidBundle50: number;
+    defaultTrialPeriodDays: number;
+    freeBidsForNewInstallers: number;
+    freePostsForNewJobGivers: number;
+    pointsForJobCompletion: number;
+    pointsFor5StarRating: number;
+    pointsFor4StarRating: number;
+    penaltyFor1StarRating: number;
+    silverTierPoints: number;
+    goldTierPoints: number;
+    platinumTierPoints: number;
+    minJobBudget: number;
+    autoVerifyInstallers: boolean;
 };

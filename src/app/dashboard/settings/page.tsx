@@ -45,6 +45,7 @@ import {
 import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift, Loader2 } from "lucide-react"
 import { useHelp } from "@/hooks/use-help"
 import { doc, getDoc, setDoc } from "firebase/firestore"
+import type { PlatformSettings } from "@/lib/types"
 
 function ThemeSelector() {
     const { theme, setTheme } = useTheme()
@@ -195,20 +196,34 @@ function PersonalSettingsCard() {
     );
 }
 
+const initialSettings: PlatformSettings = {
+    installerCommissionRate: 10,
+    jobGiverFeeRate: 2,
+    proInstallerPlanPrice: 2999,
+    businessJobGiverPlanPrice: 4999,
+    bidBundle10: 500,
+    bidBundle25: 1100,
+    bidBundle50: 2000,
+    defaultTrialPeriodDays: 30,
+    freeBidsForNewInstallers: 10,
+    freePostsForNewJobGivers: 3,
+    pointsForJobCompletion: 50,
+    pointsFor5StarRating: 20,
+    pointsFor4StarRating: 10,
+    penaltyFor1StarRating: -25,
+    silverTierPoints: 500,
+    goldTierPoints: 1000,
+    platinumTierPoints: 2000,
+    minJobBudget: 500,
+    autoVerifyInstallers: true
+};
+
 function MonetizationSettings() {
     const { db } = useFirebase();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
-    const [settings, setSettings] = React.useState({
-        installerCommissionRate: 10,
-        jobGiverFeeRate: 2,
-        proInstallerPlanPrice: 2999,
-        businessJobGiverPlanPrice: 4999,
-        bidBundle10: 500,
-        bidBundle25: 1100,
-        bidBundle50: 2000,
-    });
+    const [settings, setSettings] = React.useState<PlatformSettings>(initialSettings);
 
     React.useEffect(() => {
         if (!db) return;
@@ -337,6 +352,52 @@ function MonetizationSettings() {
 }
 
 function UserReputationSettings() {
+    const { db } = useFirebase();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [isSaving, setIsSaving] = React.useState(false);
+    const [settings, setSettings] = React.useState<PlatformSettings>(initialSettings);
+
+    React.useEffect(() => {
+        if (!db) return;
+        const fetchSettings = async () => {
+            setIsLoading(true);
+            const settingsDoc = await getDoc(doc(db, "settings", "platform"));
+            if (settingsDoc.exists()) {
+                setSettings(prev => ({ ...prev, ...settingsDoc.data() }));
+            }
+            setIsLoading(false);
+        };
+        fetchSettings();
+    }, [db]);
+
+    const handleSave = async () => {
+        if (!db) return;
+        setIsSaving(true);
+        try {
+            await setDoc(doc(db, "settings", "platform"), settings, { merge: true });
+            toast({
+                title: "Settings Saved",
+                description: "Reputation settings have been updated.",
+                variant: "success",
+            });
+        } catch (error) {
+            console.error("Error saving settings:", error);
+            toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        setSettings(prev => ({ ...prev, [id]: Number(value) }));
+    };
+
+    if (isLoading) {
+        return <Skeleton className="h-96 w-full" />;
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -348,37 +409,22 @@ function UserReputationSettings() {
                     <h3 className="font-semibold flex items-center gap-2"><Gift className="h-4 w-4" /> New User Onboarding</h3>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                             <Label htmlFor="trial-days">Default Trial Period (days)</Label>
-                             <Input
-                                id="trial-days"
-                                type="number"
-                                defaultValue="30"
-                                min="0"
-                            />
+                             <Label htmlFor="defaultTrialPeriodDays">Default Trial Period (days)</Label>
+                             <Input id="defaultTrialPeriodDays" type="number" value={settings.defaultTrialPeriodDays} onChange={handleInputChange} min="0" />
                              <p className="text-xs text-muted-foreground">
                                Trial length for new Job Givers and Installers.
                             </p>
                         </div>
                          <div className="space-y-2">
-                             <Label htmlFor="free-bids">Free Bids for New Installers</Label>
-                             <Input
-                                id="free-bids"
-                                type="number"
-                                defaultValue="10"
-                                min="0"
-                            />
+                             <Label htmlFor="freeBidsForNewInstallers">Free Bids for New Installers</Label>
+                             <Input id="freeBidsForNewInstallers" type="number" value={settings.freeBidsForNewInstallers} onChange={handleInputChange} min="0" />
                               <p className="text-xs text-muted-foreground">
                                Number of free bids a new installer gets.
                             </p>
                         </div>
                          <div className="space-y-2">
-                             <Label htmlFor="free-jobs">Free Posts for New Job Givers</Label>
-                             <Input
-                                id="free-jobs"
-                                type="number"
-                                defaultValue="3"
-                                min="0"
-                            />
+                             <Label htmlFor="freePostsForNewJobGivers">Free Posts for New Job Givers</Label>
+                             <Input id="freePostsForNewJobGivers" type="number" value={settings.freePostsForNewJobGivers} onChange={handleInputChange} min="0" />
                               <p className="text-xs text-muted-foreground">
                                Number of free job posts a new job giver gets.
                             </p>
@@ -389,20 +435,20 @@ function UserReputationSettings() {
                     <h3 className="font-semibold">Reputation Point System</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                        <div className="space-y-2">
-                         <Label>Points for Job Completion</Label>
-                         <Input type="number" defaultValue="50" />
+                         <Label htmlFor="pointsForJobCompletion">Points for Job Completion</Label>
+                         <Input id="pointsForJobCompletion" type="number" value={settings.pointsForJobCompletion} onChange={handleInputChange} />
                        </div>
                        <div className="space-y-2">
-                         <Label>Points for 5-Star Rating</Label>
-                         <Input type="number" defaultValue="20" />
+                         <Label htmlFor="pointsFor5StarRating">Points for 5-Star Rating</Label>
+                         <Input id="pointsFor5StarRating" type="number" value={settings.pointsFor5StarRating} onChange={handleInputChange} />
                        </div>
                         <div className="space-y-2">
-                         <Label>Points for 4-Star Rating</Label>
-                         <Input type="number" defaultValue="10" />
+                         <Label htmlFor="pointsFor4StarRating">Points for 4-Star Rating</Label>
+                         <Input id="pointsFor4StarRating" type="number" value={settings.pointsFor4StarRating} onChange={handleInputChange} />
                        </div>
                          <div className="space-y-2">
-                         <Label>Penalty for 1-Star Rating</Label>
-                         <Input type="number" defaultValue="-25" />
+                         <Label htmlFor="penaltyFor1StarRating">Penalty for 1-Star Rating</Label>
+                         <Input id="penaltyFor1StarRating" type="number" value={settings.penaltyFor1StarRating} onChange={handleInputChange} />
                        </div>
                     </div>
                  </div>
@@ -410,40 +456,80 @@ function UserReputationSettings() {
                     <h3 className="font-semibold">Reputation Tier Thresholds (Points Required)</h3>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                        <div className="space-y-2">
-                         <Label className="flex items-center gap-2"><Medal className="h-4 w-4 text-gray-400" /> Silver</Label>
-                         <Input type="number" defaultValue="500" />
+                         <Label htmlFor="silverTierPoints" className="flex items-center gap-2"><Medal className="h-4 w-4 text-gray-400" /> Silver</Label>
+                         <Input id="silverTierPoints" type="number" value={settings.silverTierPoints} onChange={handleInputChange} />
                        </div>
                         <div className="space-y-2">
-                         <Label className="flex items-center gap-2"><Gem className="h-4 w-4 text-amber-500" /> Gold</Label>
-                         <Input type="number" defaultValue="1000" />
+                         <Label htmlFor="goldTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-amber-500" /> Gold</Label>
+                         <Input id="goldTierPoints" type="number" value={settings.goldTierPoints} onChange={handleInputChange} />
                        </div>
                          <div className="space-y-2">
-                         <Label className="flex items-center gap-2"><Gem className="h-4 w-4 text-cyan-400" /> Platinum</Label>
-                         <Input type="number" defaultValue="2000" />
+                         <Label htmlFor="platinumTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-cyan-400" /> Platinum</Label>
+                         <Input id="platinumTierPoints" type="number" value={settings.platinumTierPoints} onChange={handleInputChange} />
                        </div>
                     </div>
                  </div>
             </CardContent>
             <CardFooter>
-                 <Button>Save Reputation Settings</Button>
+                 <Button onClick={handleSave} disabled={isSaving}>
+                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     Save Reputation Settings
+                 </Button>
             </CardFooter>
         </Card>
     );
 }
 
 function PlatformRulesSettings() {
+    const { db } = useFirebase();
     const { toast } = useToast();
-    const [minBudget, setMinBudget] = React.useState(500);
-    const [autoVerify, setAutoVerify] = React.useState(true);
-
-    const handleSave = () => {
-        // Here you would typically save the settings to your backend
-        console.log("Saving platform rules:", { minBudget, autoVerify });
-        toast({
-            title: "Platform Rules Saved",
-            description: "Your changes have been successfully saved.",
-        });
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [isSaving, setIsSaving] = React.useState(false);
+    const [settings, setSettings] = React.useState<PlatformSettings>(initialSettings);
+    
+    React.useEffect(() => {
+        if (!db) return;
+        const fetchSettings = async () => {
+            setIsLoading(true);
+            const settingsDoc = await getDoc(doc(db, "settings", "platform"));
+            if (settingsDoc.exists()) {
+                setSettings(prev => ({ ...prev, ...settingsDoc.data() }));
+            }
+            setIsLoading(false);
+        };
+        fetchSettings();
+    }, [db]);
+    
+    const handleSave = async () => {
+        if (!db) return;
+        setIsSaving(true);
+        try {
+            await setDoc(doc(db, "settings", "platform"), settings, { merge: true });
+            toast({
+                title: "Settings Saved",
+                description: "Platform rules have been updated.",
+                variant: "success",
+            });
+        } catch (error) {
+            console.error("Error saving settings:", error);
+            toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });
+        } finally {
+            setIsSaving(false);
+        }
     };
+    
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        setSettings(prev => ({ ...prev, [id]: Number(value) }));
+    };
+
+    const handleSwitchChange = (checked: boolean) => {
+        setSettings(prev => ({...prev, autoVerifyInstallers: checked }));
+    }
+
+    if (isLoading) {
+        return <Skeleton className="h-64 w-full" />;
+    }
 
     return (
         <Card>
@@ -453,13 +539,13 @@ function PlatformRulesSettings() {
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="space-y-2">
-                    <Label htmlFor="min-budget" className="flex items-center gap-2"><IndianRupee className="h-4 w-4" /> Minimum Job Budget</Label>
+                    <Label htmlFor="minJobBudget" className="flex items-center gap-2"><IndianRupee className="h-4 w-4" /> Minimum Job Budget</Label>
                      <div className="flex items-center gap-2">
                         <Input
-                            id="min-budget"
+                            id="minJobBudget"
                             type="number"
-                            value={minBudget}
-                            onChange={(e) => setMinBudget(Number(e.target.value))}
+                            value={settings.minJobBudget}
+                            onChange={handleInputChange}
                             min="0"
                             className="max-w-[120px]"
                         />
@@ -470,19 +556,22 @@ function PlatformRulesSettings() {
                     </p>
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="auto-verify" className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Automatic Installer Verification</Label>
+                    <Label htmlFor="autoVerifyInstallers" className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Automatic Installer Verification</Label>
                     <div className="flex items-center space-x-2">
                         <Switch 
-                            id="auto-verify" 
-                            checked={autoVerify}
-                            onCheckedChange={setAutoVerify}
+                            id="autoVerifyInstallers" 
+                            checked={settings.autoVerifyInstallers}
+                            onCheckedChange={handleSwitchChange}
                         />
-                        <Label htmlFor="auto-verify" className="text-sm font-normal">Enable automatic Aadhar verification for new installers.</Label>
+                        <Label htmlFor="autoVerifyInstallers" className="text-sm font-normal">Enable automatic Aadhar verification for new installers.</Label>
                     </div>
                  </div>
             </CardContent>
             <CardFooter>
-                 <Button onClick={handleSave}>Save Platform Rules</Button>
+                 <Button onClick={handleSave} disabled={isSaving}>
+                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     Save Platform Rules
+                 </Button>
             </CardFooter>
         </Card>
     );
