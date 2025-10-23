@@ -11,7 +11,7 @@ import {
   Settings,
   Users as UsersIcon,
   User as UserIcon,
-  LifeBuoy,
+  HelpCircle,
   FileText,
   AlertOctagon,
   Ticket,
@@ -213,7 +213,7 @@ export function Header() {
       </div>
       <HelpDialog>
         <Button variant="outline" size="icon">
-          <LifeBuoy className="h-5 w-5" />
+          <HelpCircle className="h-5 w-5" />
           <span className="sr-only">Help</span>
         </Button>
       </HelpDialog>
