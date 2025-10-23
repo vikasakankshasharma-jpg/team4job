@@ -61,7 +61,7 @@ import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bid, Job, Comment, User, JobAttachment, PrivateMessage, Dispute } from "@/lib/types";
+import { Bid, Job, Comment, User, JobAttachment, PrivateMessage, Dispute, Transaction } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -71,36 +71,34 @@ import { doc, getDoc, updateDoc, arrayUnion, setDoc, DocumentReference, collecti
 
 function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
   const { toast } = useToast();
+  const { db } = useFirebase();
   const [otp, setOtp] = React.useState('');
 
   const handleCompleteJob = async () => {
     if (otp === job.completionOtp) {
-      // =================================================================
-      // CASHFREE INTEGRATION POINT (BACKEND)
-      // =================================================================
-      // In a real app, this is where you would call a backend function to trigger the payout
-      // to the installer via a payment gateway's Payout API (e.g., Cashfree Payouts).
-      //
-      // async function releasePayment(jobId) {
-      //   const response = await fetch('/api/release-payment', { // A secure API route on your backend
-      //     method: 'POST',
-      //     body: JSON.stringify({ jobId }),
-      //   });
-      //   // Handle response...
-      // }
-      // releasePayment(job.id);
-      // =================================================================
-      
       const updatedJobData = { 
         status: 'Completed' as const,
         rating: 5, // Default rating, can be changed by job giver
       };
       
       onJobUpdate(updatedJobData);
+
+      // --- Update Transaction to 'Released' ---
+      if (db) {
+        const q = query(collection(db, "transactions"), where("jobId", "==", job.id));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            const transactionDoc = querySnapshot.docs[0];
+            await updateDoc(transactionDoc.ref, {
+                status: 'Released',
+                releasedAt: new Date(),
+            });
+        }
+      }
       
       toast({
         title: "Job Completed!",
-        description: "The job has been marked as complete. Payment processing will be initiated.",
+        description: "The job has been marked as complete. Payment has been released to the installer.",
       });
     } else {
       toast({
@@ -116,7 +114,7 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
       <CardHeader>
         <CardTitle>Complete This Job</CardTitle>
         <CardDescription>
-          Once the work is done, enter the 6-digit Job Completion OTP from the Job Giver. This action marks the job as complete and starts the payment process.
+          Once the work is done, enter the 6-digit Job Completion OTP from the Job Giver. This action marks the job as complete and releases the payment.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -284,7 +282,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
 }
 
 function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousId: string }) {
-    const { role } = useUser();
+    const { user: jobGiver, role } = useUser();
     const { toast } = useToast();
     const { db } = useFirebase();
     const [timeAgo, setTimeAgo] = React.useState('');
@@ -304,25 +302,27 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
     }, [bid.timestamp]);
 
     const handleAwardJob = async () => {
-        // =================================================================
-        // CASHFREE INTEGRATION POINT (BACKEND)
-        // =================================================================
-        // In a real app, this function would not directly update the job status.
-        // Instead, it would call a backend function to create a payment order with Cashfree.
-        // This backend function securely handles your API keys.
-        //
-        // 1. Call backend to create payment order:
-        //    const paymentLink = await createPaymentOrder(job.id, bid.amount);
-        //    (This would be a Genkit flow or Next.js API route that calls Cashfree)
-        //
-        // 2. Redirect the Job Giver to the Cashfree payment page:
-        //    window.location.href = paymentLink;
-        //
-        // 3. A webhook on your backend would listen for payment confirmation from Cashfree.
-        //    Upon confirmation, the webhook would then update the job status as shown below.
-        // =================================================================
+        if (!db || !jobGiver) return;
         
-        // For this demo, we will just simulate the awarding process.
+        // --- Create Transaction Record ---
+        const transactionId = `TXN-${Date.now()}`;
+        const newTransaction: Transaction = {
+            id: transactionId,
+            jobId: job.id,
+            jobTitle: job.title,
+            payerId: jobGiver.id,
+            payerName: jobGiver.name,
+            payeeId: installer.id,
+            payeeName: installer.name,
+            amount: bid.amount,
+            status: 'Initiated',
+            createdAt: new Date(),
+        };
+
+        const transactionRef = doc(db, 'transactions', transactionId);
+        await setDoc(transactionRef, newTransaction);
+        
+        // --- Update Job Status ---
         const acceptanceDeadline = new Date();
         acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
 
@@ -333,10 +333,16 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
         };
         
         onJobUpdate(jobUpdate);
+        
+        // --- Simulate Payment Funding and Update Transaction ---
+        setTimeout(async () => {
+          await updateDoc(transactionRef, { status: 'Funded', fundedAt: new Date() });
+          console.log(`Transaction ${transactionId} for job ${job.id} is now 'Funded'.`);
+        }, 3000); // Simulate a 3-second payment process
 
         toast({
-            title: "Job Awarded!",
-            description: `${installer.name} has 24 hours to accept the job.`,
+            title: "Job Awarded & Payment Initiated!",
+            description: `${installer.name} has 24 hours to accept. The funds are now held securely in escrow.`,
         });
     };
     
@@ -381,7 +387,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
               <div className="mt-4 flex items-center gap-2">
                    <Button size="sm" onClick={handleAwardJob}>
                         <Award className="mr-2 h-4 w-4" />
-                       Award & Pay
+                       Award & Fund Escrow
                    </Button>
               </div>
             )}
@@ -419,7 +425,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
         <CardTitle>Received Bids ({job.bids?.length || 0})</CardTitle>
         <CardDescription>
           {role === 'Admin' ? 'Reviewing bids placed on this job.' : job.awardedInstaller ? 'An installer has been selected for this job.' : 
-          'Review bids and select an installer to proceed to payment.'}
+          'Review bids and select an installer to fund the project.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
