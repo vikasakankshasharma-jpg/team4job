@@ -289,6 +289,9 @@ export default function PostedJobsPage() {
                      <li>
                         <span className="font-semibold">Job Type:</span> This column shows how a job was awarded. "Bidding" means you chose from bids, while "Direct" means you awarded it directly to an installer.
                     </li>
+                     <li>
+                        <span className="font-semibold">Actions:</span> Use the actions menu (three dots) on each job row to view its details, edit it (if it's still open for bidding), or perform other relevant actions.
+                    </li>
                 </ul>
                 <p>
                   Click on any job title to go to its detail page, where you can review bids from installers. You can also use the "Post New Job" button to quickly create a new listing.

@@ -53,6 +53,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useHelp } from "@/hooks/use-help";
 
 
 const tierIcons = {
@@ -493,6 +494,29 @@ export default function ProfilePage() {
   const { db } = useFirebase();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   const { toast } = useToast();
+  const { setHelp } = useHelp();
+
+  React.useEffect(() => {
+    setHelp({
+        title: "Your Profile",
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>This is your personal profile page. Here, you can view and manage your information.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Your Details:</span> View your name, user ID, email, and location info. Click "Edit Profile" to update your name or pincodes.</li>
+                    <li><span className="font-semibold">Role Switching:</span> If you have both "Job Giver" and "Installer" roles, you can switch between them in the user menu (top right).</li>
+                    {role === 'Installer' && (
+                        <>
+                         <li><span className="font-semibold">Installer Reputation:</span> This section tracks your performance. Complete jobs and get good ratings to earn points and advance to higher tiers (Bronze, Silver, Gold, Platinum).</li>
+                         <li><span className="font-semibold">Skills:</span> Click the pencil icon to add or remove skills from your profile. This helps Job Givers find you.</li>
+                        </>
+                    )}
+                    <li><span className="font-semibold">Become an Installer/Job Giver:</span> If you only have one role, you'll see a prompt to activate the other, expanding your opportunities on the platform.</li>
+                </ul>
+            </div>
+        )
+    });
+  }, [setHelp, role]);
 
   if (userLoading) {
     return (
