@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useHelp } from "@/hooks/use-help";
-import { LifeBuoy } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 
 export function HelpDialog({ children }: { children: React.ReactNode }) {
     const { title, content } = useHelp();
@@ -27,7 +27,7 @@ export function HelpDialog({ children }: { children: React.ReactNode }) {
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <LifeBuoy className="h-5 w-5 text-primary" />
+                        <HelpCircle className="h-5 w-5 text-primary" />
                         {title}
                     </DialogTitle>
                 </DialogHeader>
