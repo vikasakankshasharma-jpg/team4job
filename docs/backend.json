@@ -557,7 +557,19 @@
             "businessJobGiverPlanPrice": { "type": "number" },
             "bidBundle10": { "type": "number" },
             "bidBundle25": { "type": "number" },
-            "bidBundle50": { "type": "number" }
+            "bidBundle50": { "type": "number" },
+            "defaultTrialPeriodDays": { "type": "number" },
+            "freeBidsForNewInstallers": { "type": "number" },
+            "freePostsForNewJobGivers": { "type": "number" },
+            "pointsForJobCompletion": { "type": "number" },
+            "pointsFor5StarRating": { "type": "number" },
+            "pointsFor4StarRating": { "type": "number" },
+            "penaltyFor1StarRating": { "type": "number" },
+            "silverTierPoints": { "type": "number" },
+            "goldTierPoints": { "type": "number" },
+            "platinumTierPoints": { "type": "number" },
+            "minJobBudget": { "type": "number" },
+            "autoVerifyInstallers": { "type": "boolean" }
         }
     }
   },
