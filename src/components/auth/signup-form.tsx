@@ -40,6 +40,7 @@ import { AddressForm } from "@/components/ui/address-form";
 import { doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useAuth, useFirestore } from "@/lib/firebase/client-provider";
+import { useHelp } from "@/hooks/use-help";
 
 const addressSchema = z.object({
   house: z.string().min(1, "House/Flat No. is required."),
@@ -72,6 +73,7 @@ export function SignUpForm() {
   const auth = useAuth();
   const db = useFirestore();
   const { toast } = useToast();
+  const { setHelp } = useHelp();
   
   const [currentStep, setCurrentStep] = useState<"role" | "details" | "photo" | "verification">("role");
   const [verificationSubStep, setVerificationSubStep] = useState<"enterAadhar" | "enterOtp" | "verified">("enterAadhar");
@@ -85,6 +87,67 @@ export function SignUpForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
+
+  useEffect(() => {
+    let helpTitle = "Sign Up Help";
+    let helpContent: React.ReactNode = null;
+
+    switch (currentStep) {
+      case "role":
+        helpTitle = "Choosing Your Role";
+        helpContent = (
+          <div className="space-y-4 text-sm">
+            <p>Welcome to CCTV Job Connect! To get started, please select your primary role on the platform.</p>
+            <ul className="list-disc space-y-2 pl-5">
+              <li><span className="font-semibold">Hire an Installer (Job Giver):</span> Choose this if you want to post jobs and find professionals to install CCTV systems for you.</li>
+              <li><span className="font-semibold">Find Work (Installer):</span> Choose this if you are a professional installer looking to find jobs, place bids, and get hired.</li>
+            </ul>
+            <p>You can add the other role to your profile later if you wish to both hire and work.</p>
+          </div>
+        );
+        break;
+      case "verification":
+        helpTitle = "Aadhar Verification Help";
+        helpContent = (
+          <div className="space-y-4 text-sm">
+            <p>To ensure a safe and trustworthy platform for everyone, all installers are required to complete a one-time identity verification.</p>
+            <ul className="list-disc space-y-2 pl-5">
+              <li><span className="font-semibold">Enter Aadhar:</span> Provide your 12-digit Aadhar number.</li>
+              <li><span className="font-semibold">Enter OTP:</span> An OTP will be sent to the mobile number linked with your Aadhar. For this demo, please use the code <strong className="text-primary">123456</strong>.</li>
+              <li><span className="font-semibold">Secure Process:</span> This is a mock verification. In a real-world scenario, this process would be handled by a secure, certified KYC provider.</li>
+            </ul>
+          </div>
+        );
+        break;
+      case "photo":
+        helpTitle = "Profile Photo";
+        helpContent = (
+          <div className="space-y-4 text-sm">
+            <p>A clear profile picture helps build trust between Job Givers and Installers.</p>
+            <ul className="list-disc space-y-2 pl-5">
+              <li><span className="font-semibold">Capture Photo:</span> Use your device's camera to take a new photo.</li>
+              <li><span className="font-semibold">Upload File:</span> Alternatively, you can upload an existing photo from your device.</li>
+            </ul>
+            <p>This photo will be visible on your public profile.</p>
+          </div>
+        );
+        break;
+      case "details":
+        helpTitle = "Your Details";
+        helpContent = (
+          <div className="space-y-4 text-sm">
+            <p>Please provide your account details. If you completed Aadhar verification, some fields will be pre-filled.</p>
+            <ul className="list-disc space-y-2 pl-5">
+              <li><span className="font-semibold">Name, Email, Mobile:</span> Your basic contact information.</li>
+              <li><span className="font-semibold">Password:</span> Choose a secure password for your account.</li>
+              <li><span className="font-semibold">Address:</span> Provide your residential address. Start by typing your 6-digit pincode to find your area. Then, pin your exact location on the map.</li>
+            </ul>
+          </div>
+        );
+        break;
+    }
+    setHelp({ title: helpTitle, content: helpContent });
+  }, [currentStep, setHelp]);
 
   useEffect(() => {
     if (currentStep === "photo") {

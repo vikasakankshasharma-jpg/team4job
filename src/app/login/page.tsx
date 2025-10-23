@@ -17,6 +17,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { AuthPageProviders } from "@/components/auth/auth-providers";
+import { HelpDialog } from "@/components/help-dialog";
+import { Button } from "@/components/ui/button";
+import { HelpCircle } from "lucide-react";
 
 
 function LoginPageContent() {
@@ -49,7 +52,13 @@ function LoginPageContent() {
             <span>CCTV Job Connect</span>
           </Link>
         </div>
-        <div className="flex-1 flex justify-end">
+        <div className="flex-1 flex justify-end items-center gap-2">
+          <HelpDialog>
+            <Button variant="outline" size="icon">
+              <HelpCircle className="h-5 w-5" />
+              <span className="sr-only">Help</span>
+            </Button>
+          </HelpDialog>
           <ThemeToggle />
         </div>
        </header>
