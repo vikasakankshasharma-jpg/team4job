@@ -27,6 +27,19 @@ async function getCashfreeBearerToken(): Promise<string> {
     throw new Error('Failed to authenticate with Cashfree Payouts.');
 }
 
+async function getPlatformSettings() {
+    const settingsRef = doc(db, 'settings', 'platform');
+    const settingsSnap = await getDoc(settingsRef);
+    if (settingsSnap.exists()) {
+        return settingsSnap.data();
+    }
+    // Return default values if settings are not configured
+    return {
+        installerCommissionRate: 10,
+        jobGiverFeeRate: 2,
+    };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { transactionId, userId, transferType = 'payout' } = await req.json();
@@ -35,7 +48,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing transactionId or userId' }, { status: 400 });
     }
 
-    // 1. Fetch user and transaction details from Firestore
+    // 1. Fetch platform settings and user/transaction details
+    const platformSettings = await getPlatformSettings();
     const userRef = doc(db, 'users', userId);
     const transactionRef = doc(db, 'transactions', transactionId);
 
@@ -78,8 +92,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Installer has not configured their bank account for payouts.' }, { status: 400 });
         }
         beneficiaryId = user.payouts.beneficiaryId;
-        // Platform takes a 12% commission (10% from installer, 2% from job giver - but calculated on payout here)
-        transferAmount = transaction.amount * 0.88; 
+        
+        // Calculate the payout amount based on dynamic commission rate
+        const commissionPercentage = platformSettings.installerCommissionRate || 10;
+        const commissionDecimal = commissionPercentage / 100;
+        transferAmount = transaction.amount * (1 - commissionDecimal);
+        
         transferIdPrefix = 'PAYOUT';
         updateField = 'payoutTransferId';
     }
