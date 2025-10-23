@@ -65,7 +65,11 @@ GEMINI_API_KEY="AIzaSy..."
 
 These keys are essential for the KYC verification flow (Aadhar verification) and for processing payments between Job Givers and Installers. The application is set up to work with Cashfree's services.
 
-You can get these from your Cashfree merchant dashboard after signing up.
+You can get these from your Cashfree merchant dashboard:
+1. Log in to your [Cashfree Account](https://merchant.cashfree.com/login).
+2. From the top menu, select "Payment Gateway".
+3. In the left sidebar, navigate to **Developers > API Keys**.
+4. Generate a new key if one doesn't exist.
 
 **Note:** These keys are secrets and should **NOT** be prefixed with `NEXT_PUBLIC_`. They are used in server-side Genkit flows.
 
