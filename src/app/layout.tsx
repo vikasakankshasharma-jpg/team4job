@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Providers } from "@/components/providers";
+import Script from 'next/script';
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
 
@@ -46,6 +47,10 @@ export default function RootLayout({
             <Toaster />
           </Providers>
         </ThemeProvider>
+         <Script 
+          src="https://sdk.cashfree.com/js/v3/cashfree.js" 
+          strategy="beforeInteractive" 
+        />
       </body>
     </html>
   );

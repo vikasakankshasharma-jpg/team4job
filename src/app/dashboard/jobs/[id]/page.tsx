@@ -67,47 +67,61 @@ import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { doc, getDoc, updateDoc, arrayUnion, setDoc, DocumentReference, collection, getDocs, query, where } from "firebase/firestore";
+import axios from 'axios';
 
+declare const cashfree: any;
 
 function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
   const { toast } = useToast();
   const { db } = useFirebase();
   const [otp, setOtp] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleCompleteJob = async () => {
-    if (otp === job.completionOtp) {
-      // --- 1. Update Job Status ---
-      const updatedJobData = { 
-        status: 'Completed' as const,
-        rating: 5, // Default rating, can be changed by job giver
-      };
-      
-      onJobUpdate(updatedJobData);
-
-      // --- 2. Find and Update Transaction Record ---
-      if(db){
-        const q = query(collection(db, "transactions"), where("jobId", "==", job.id));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-            const transactionDoc = querySnapshot.docs[0];
-            await updateDoc(transactionDoc.ref, {
-                status: 'Released',
-                releasedAt: new Date(),
-            });
-        }
-      }
-      
-      toast({
-        title: "Job Completed!",
-        description: "The job has been marked as complete and payment has been released.",
-      });
-    } else {
-      toast({
+    if (otp !== job.completionOtp) {
+       toast({
         title: "Invalid OTP",
         description: "The Job Completion OTP is incorrect. Please ask the Job Giver for the correct code.",
         variant: "destructive",
       });
+      return;
     }
+
+    setIsSubmitting(true);
+    // --- 1. Update Job Status ---
+    const updatedJobData = { 
+      status: 'Completed' as const,
+      rating: 5, // Default rating, can be changed by job giver
+    };
+    
+    // Optimistically update the UI
+    setJob(prev => prev ? { ...prev, ...updatedJobData } : null);
+    
+    // Update the job doc in Firestore
+    if (db) {
+        const jobRef = doc(db, 'jobs', job.id);
+        await updateDoc(jobRef, updatedJobData);
+    }
+    
+    // --- 2. Find and Update Transaction Record ---
+    if(db){
+      const q = query(collection(db, "transactions"), where("jobId", "==", job.id));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+          const transactionDoc = querySnapshot.docs[0];
+          await updateDoc(transactionDoc.ref, {
+              status: 'Released',
+              releasedAt: new Date(),
+          });
+      }
+    }
+    
+    toast({
+      title: "Job Completed!",
+      description: "The job has been marked as complete. Payout will be processed shortly.",
+      variant: 'success'
+    });
+    setIsSubmitting(false);
   };
 
   return (
@@ -128,7 +142,8 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
             onChange={(e) => setOtp(e.target.value)}
             maxLength={6}
           />
-          <Button onClick={handleCompleteJob} disabled={otp.length !== 6}>
+          <Button onClick={handleCompleteJob} disabled={otp.length !== 6 || isSubmitting}>
+             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <CheckCircle2 className="mr-2 h-4 w-4" />
             Complete Job
           </Button>
@@ -287,6 +302,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
     const { toast } = useToast();
     const { db } = useFirebase();
     const [timeAgo, setTimeAgo] = React.useState('');
+    const [isFunding, setIsFunding] = React.useState(false);
     const installer = bid.installer as User;
 
     const awardedInstallerId = (job.awardedInstaller instanceof DocumentReference) 
@@ -304,39 +320,83 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
 
     const handleAwardJob = async () => {
         if (!db || !jobGiver) return;
+        setIsFunding(true);
         
-        const acceptanceDeadline = new Date();
-        acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
+        try {
+            // Step 1: Create an "Initiated" transaction in our DB
+            const transactionId = `TXN-${Date.now()}`;
+            const newTransaction: Transaction = {
+                id: transactionId,
+                jobId: job.id,
+                jobTitle: job.title,
+                payerId: jobGiver.id,
+                payerName: jobGiver.name,
+                payeeId: installer.id,
+                payeeName: installer.name,
+                amount: bid.amount,
+                status: 'Initiated',
+                createdAt: new Date(),
+            };
+            await setDoc(doc(db, 'transactions', transactionId), newTransaction);
 
-        const jobUpdate = {
-            awardedInstaller: doc(db, 'users', installer.id),
-            status: 'Awarded' as const,
-            acceptanceDeadline,
-        };
-        
-        // Simulate Payment Gateway: Create a 'Funded' transaction
-        const transactionId = `TXN-${Date.now()}`;
-        const newTransaction: Transaction = {
-            id: transactionId,
-            jobId: job.id,
-            jobTitle: job.title,
-            payerId: jobGiver.id,
-            payerName: jobGiver.name,
-            payeeId: installer.id,
-            payeeName: installer.name,
-            amount: bid.amount,
-            status: 'Funded',
-            createdAt: new Date(),
-            fundedAt: new Date(),
-        };
-        await setDoc(doc(db, 'transactions', transactionId), newTransaction);
-        
-        onJobUpdate(jobUpdate);
-        
-        toast({
-            title: "Job Awarded & Funded!",
-            description: `${installer.name} has 24 hours to accept. The payment has been secured.`,
-        });
+            // Step 2: Call our backend to get a payment session ID from Cashfree
+            const { data } = await axios.post('/api/cashfree/create-payment', {
+                transactionId: transactionId,
+                userId: jobGiver.id,
+            });
+
+            if (!data.payment_session_id) {
+                throw new Error("Could not retrieve payment session ID.");
+            }
+
+            // Step 3: Launch Cashfree checkout
+            const cashfree = new (window as any).Cashfree(data.payment_session_id);
+            cashfree.checkout({
+                payment_method: "upi", // or cards, netbanking etc.
+                onComplete: async (paymentData: any) => {
+                    console.log("Cashfree onComplete:", paymentData);
+                    // Webhook will handle the final status update to "Funded"
+                    // but we can optimistically update the job status here.
+                    const acceptanceDeadline = new Date();
+                    acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
+
+                    const jobUpdate = {
+                        awardedInstaller: doc(db, 'users', installer.id),
+                        status: 'Awarded' as const,
+                        acceptanceDeadline,
+                    };
+                    onJobUpdate(jobUpdate);
+                    
+                    toast({
+                        title: "Payment Successful!",
+                        description: `${installer.name} has been awarded the job and has 24 hours to accept.`,
+                        variant: "success",
+                    });
+                },
+                onError: (errorData: any) => {
+                    console.error("Cashfree onError:", errorData);
+                    toast({
+                        title: "Payment Failed",
+                        description: errorData.error.message || "The payment could not be completed. Please try again.",
+                        variant: "destructive"
+                    });
+                     // Optionally update transaction to 'Failed'
+                    updateDoc(doc(db, 'transactions', transactionId), { status: 'Failed', failedAt: new Date() });
+                },
+                onDismiss: () => {
+                    console.log("Payment dismissed by user");
+                }
+            });
+
+        } catch (error: any) {
+             toast({
+                title: "Failed to Initiate Payment",
+                description: error.response?.data?.error || "An unexpected error occurred. Please try again.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsFunding(false);
+        }
     };
     
     const isAdmin = role === 'Admin';
@@ -378,7 +438,8 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
             <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
             {isJobGiver && !isJobAwarded && (
               <div className="mt-4 flex items-center gap-2">
-                   <Button size="sm" onClick={handleAwardJob}>
+                   <Button size="sm" onClick={handleAwardJob} disabled={isFunding}>
+                        {isFunding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         <Award className="mr-2 h-4 w-4" />
                        Award & Fund Job
                    </Button>
