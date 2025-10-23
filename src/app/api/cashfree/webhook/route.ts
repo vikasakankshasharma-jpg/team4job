@@ -17,45 +17,47 @@ export async function POST(req: NextRequest) {
     // --- Distinguish between Payments and Payouts webhooks ---
     
     // 1. Handle Payment Gateway Webhook
-    if (data.event_time && data.data?.order) {
+    if (data.type === 'PAYMENT_SUCCESS_WEBHOOK' && data.data?.order) {
       const orderId = data.data.order.order_id;
-      const paymentStatus = data.data.payment?.payment_status;
-
+      
       if (!orderId) {
         console.warn('Payment webhook received without an order_id.');
         return NextResponse.json({ status: 'error', message: 'Missing order_id' }, { status: 400 });
       }
 
       // Find the transaction in Firestore using the orderId which is our transaction.id
-      const q = query(collection(db, "transactions"), where("id", "==", orderId));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-          console.warn(`Payment webhook for unknown transaction ID: ${orderId}`);
-          return NextResponse.json({ status: 'success', message: 'Acknowledged, but no matching transaction found.' });
-      }
-          
-      const transactionDoc = querySnapshot.docs[0];
+      const transactionRef = doc(db, "transactions", orderId);
       
-      if (paymentStatus === 'SUCCESS') {
-          await updateDoc(transactionDoc.ref, {
-              status: 'Funded',
-              fundedAt: Timestamp.now(),
-          });
-          console.log(`Transaction ${orderId} successfully marked as 'Funded'.`);
-      } else if (paymentStatus === 'FAILED' || paymentStatus === 'USER_DROPPED') {
-          await updateDoc(transactionDoc.ref, {
-              status: 'Failed',
-              failedAt: Timestamp.now(),
-          });
-          console.log(`Transaction ${orderId} marked as 'Failed'.`);
-      }
+      await updateDoc(transactionRef, {
+          status: 'Funded',
+          fundedAt: Timestamp.now(),
+          paymentGatewayOrderId: data.data.order.order_id,
+      });
+      console.log(`Transaction ${orderId} successfully marked as 'Funded'.`);
+      
       return NextResponse.json({ status: 'success' });
     }
 
-    // 2. Handle Payouts/Transfers Webhook
-    if (data.event && data.transferId) {
-        const { event, transferId } = data;
+    if (data.type === 'PAYMENT_FAILED_WEBHOOK' && data.data?.order) {
+        const orderId = data.data.order.order_id;
+        const transactionRef = doc(db, "transactions", orderId);
+        await updateDoc(transactionRef, {
+            status: 'Failed',
+            failedAt: Timestamp.now(),
+        });
+        console.log(`Transaction ${orderId} marked as 'Failed'.`);
+        return NextResponse.json({ status: 'success' });
+    }
+
+    // 2. Handle Payouts/Transfers Webhook (Standard Transfer)
+    if (data.event === 'transfer_success' || data.event === 'transfer_failed' || data.event === 'transfer_reversed') {
+        const { event, data: transferData } = data;
+        const transferId = transferData?.transfer?.transferId;
+        
+        if (!transferId) {
+            console.warn('Payout webhook received without a transferId.');
+            return NextResponse.json({ status: 'success', message: 'Acknowledged, but missing transferId.' });
+        }
         
         // A transfer can be a payout or a refund, so we check both fields.
         const q = query(collection(db, 'transactions'), 
@@ -70,14 +72,14 @@ export async function POST(req: NextRequest) {
         
         const transactionDoc = querySnapshot.docs[0];
 
-        if (event === 'TRANSFER_SUCCESS') {
+        if (event === 'transfer_success') {
             const isRefund = transferId.startsWith('REFUND');
             await updateDoc(transactionDoc.ref, {
                 status: isRefund ? 'Refunded' : 'Released',
                 [isRefund ? 'refundedAt' : 'releasedAt']: Timestamp.now(),
             });
             console.log(`Transaction for transfer ${transferId} successfully marked as '${isRefund ? 'Refunded' : 'Released'}'.`);
-        } else if (event === 'TRANSFER_FAILED' || event === 'TRANSFER_REVERSED') {
+        } else if (event === 'transfer_failed' || event === 'transfer_reversed') {
             await updateDoc(transactionDoc.ref, {
                 status: 'Failed', // or a more specific status like 'Payout Failed'
                 failedAt: Timestamp.now(),

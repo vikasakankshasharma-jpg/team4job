@@ -5,13 +5,13 @@ import { db } from '@/lib/firebase/server-init';
 import { User, Transaction } from '@/lib/types';
 import axios from 'axios';
 
-// This would be 'https://api.cashfree.com/payouts' for production
-const CASHFREE_API_BASE = 'https://sandbox.cashfree.com/payouts';
+// This would be 'https://payout-api.cashfree.com' for production
+const CASHFREE_API_BASE = 'https://payout-api.cashfree.com/payouts';
 
 // Function to get the bearer token from Cashfree
 async function getCashfreeBearerToken(): Promise<string> {
     const response = await axios.post(
-        `${CASHFREE_API_BASE}/payouts/auth`,
+        `${CASHFREE_API_BASE}/auth`,
         {}, // Empty body
         {
             headers: {
@@ -63,11 +63,12 @@ export async function POST(req: NextRequest) {
     // Determine if it's a payout to an installer or a refund to a job giver
     if (transferType === 'refund') {
         // For refunds, the beneficiary is the Job Giver (payer)
-        const payerUser = await getDoc(doc(db, 'users', transaction.payerId));
-        if (!payerUser.exists() || !payerUser.data()?.payouts?.beneficiaryId) {
+        const payerUserSnap = await getDoc(doc(db, 'users', transaction.payerId));
+        const payerUser = payerUserSnap.data() as User;
+        if (!payerUser || !payerUser?.payouts?.beneficiaryId) {
              return NextResponse.json({ error: 'Job Giver has not configured a bank account for refunds.' }, { status: 400 });
         }
-        beneficiaryId = payerUser.data()?.payouts?.beneficiaryId;
+        beneficiaryId = payerUser.payouts.beneficiaryId;
         transferAmount = transaction.amount; // Full refund amount
         transferIdPrefix = 'REFUND';
         updateField = 'refundTransferId';
@@ -77,7 +78,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Installer has not configured their bank account for payouts.' }, { status: 400 });
         }
         beneficiaryId = user.payouts.beneficiaryId;
-        transferAmount = transaction.amount * 0.90; // Apply 10% commission
+        // Platform takes a 12% commission (10% from installer, 2% from job giver - but calculated on payout here)
+        transferAmount = transaction.amount * 0.88; 
         transferIdPrefix = 'PAYOUT';
         updateField = 'payoutTransferId';
     }
@@ -96,7 +98,7 @@ export async function POST(req: NextRequest) {
     
     // 4. Make the API call to Cashfree to request the transfer
     await axios.post(
-      `${CASHFREE_API_BASE}/payouts/transfers`,
+      `${CASHFREE_API_BASE}/payouts/standard`,
       transferPayload,
       {
         headers: {

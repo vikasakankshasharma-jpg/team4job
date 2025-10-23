@@ -5,13 +5,13 @@ import { db } from '@/lib/firebase/server-init';
 import { User } from '@/lib/types';
 import axios from 'axios';
 
-// This would be 'https://api.cashfree.com/payouts' for production
-const CASHFREE_API_BASE = 'https://sandbox.cashfree.com/payouts';
+// This would be 'https://payout-api.cashfree.com' for production
+const CASHFREE_API_BASE = 'https://payout-api.cashfree.com/payouts';
 
 // Function to get the bearer token from Cashfree
 async function getCashfreeBearerToken(): Promise<string> {
     const response = await axios.post(
-        `${CASHFREE_API_BASE}/payouts/auth`,
+        `${CASHFREE_API_BASE}/auth`,
         {}, // Empty body for client credentials grant
         {
             headers: {
@@ -21,7 +21,10 @@ async function getCashfreeBearerToken(): Promise<string> {
             },
         }
     );
-    return response.data.data.token;
+    if (response.data?.data?.token) {
+        return response.data.data.token;
+    }
+    throw new Error('Failed to authenticate with Cashfree Payouts.');
 }
 
 export async function POST(req: NextRequest) {
