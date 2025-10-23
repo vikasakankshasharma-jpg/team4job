@@ -30,6 +30,7 @@ import { collection, query, where, getDocs, or, and } from "firebase/firestore";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { DocumentReference } from "firebase/firestore";
+import { useHelp } from "@/hooks/use-help";
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -57,12 +58,38 @@ export default function DisputesPage() {
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [involvedUsers, setInvolvedUsers] = useState<Record<string, User>>({});
   const [loading, setLoading] = useState(true);
+  const { setHelp } = useHelp();
 
   const [filters, setFilters] = useState({
     status: 'all',
     category: 'all',
     search: '',
   });
+
+  React.useEffect(() => {
+    setHelp({
+        title: "Dispute Center",
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>The Dispute Center is where you can manage and track all support tickets and job-related disputes.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    {isAdmin && (
+                         <li><span className="font-semibold">Admin View:</span> As an admin, you see all disputes on the platform. Use the filters to search by Ticket ID, status, or category to quickly find what you're looking for.</li>
+                    )}
+                    <li><span className="font-semibold">User View:</span> As a Job Giver or Installer, you will only see disputes that you are directly involved in.</li>
+                    <li><span className="font-semibold">Ticket Status:</span>
+                        <ul className="list-disc space-y-1 pl-5 mt-1">
+                             <li><span className="font-semibold text-red-500">Open:</span> A new ticket that needs attention.</li>
+                            <li><span className="font-semibold text-yellow-500">Under Review:</span> An admin is actively investigating the issue.</li>
+                            <li><span className="font-semibold text-green-500">Resolved:</span> The case has been closed.</li>
+                        </ul>
+                    </li>
+                     <li><span className="font-semibold">View Details:</span> Click on any row to view the full conversation history and post replies.</li>
+                </ul>
+            </div>
+        )
+    })
+  }, [setHelp, isAdmin]);
 
   const fetchDisputes = useCallback(async () => {
     if (!user || !db) return;

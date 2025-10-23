@@ -56,6 +56,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import { useHelp } from "@/hooks/use-help";
 
 const blacklistSchema = z.object({
   type: z.enum(["user", "pincode"]),
@@ -227,7 +228,25 @@ export default function BlacklistPage() {
   const [blacklist, setBlacklist] = useState<BlacklistEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { setHelp } = useHelp();
 
+  React.useEffect(() => {
+    setHelp({
+        title: "Blacklist Management",
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>This page allows you to block specific users or entire pincodes from using the platform.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Adding an Entry:</span> Use the form at the top to add a new blacklist entry. You can blacklist by User ID or by a 6-digit pincode.</li>
+                    <li><span className="font-semibold">User Blacklist:</span> Blacklisting a user will prevent them from logging in.</li>
+                    <li><span className="font-semibold">Pincode Blacklist:</span> Blacklisting a pincode will prevent new users from registering with that pincode and hide jobs from that area.</li>
+                    <li><span className="font-semibold">Removing an Entry:</span> Click the trash can icon on any row to remove an entry from the blacklist, immediately restoring access.</li>
+                </ul>
+            </div>
+        )
+    })
+  }, [setHelp]);
+  
   useEffect(() => {
     if (!userLoading && !isAdmin) {
       router.push('/dashboard');

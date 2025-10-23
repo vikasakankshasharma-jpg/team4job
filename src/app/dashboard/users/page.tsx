@@ -57,6 +57,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useHelp } from "@/hooks/use-help";
 
 
 const tierIcons: Record<string, React.ReactNode> = {
@@ -90,6 +91,30 @@ export default function UsersPage() {
   const [actionLoading, setActionLoading] = React.useState<string | null>(null);
   const [deleteUser, setDeleteUser] = React.useState<User | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = React.useState("");
+  const { setHelp } = useHelp();
+
+  React.useEffect(() => {
+    setHelp({
+        title: "User Directory",
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>This page provides a complete directory of all registered users on the platform. As an admin, you have full control to manage these accounts.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Filtering & Sorting:</span> Use the various filter controls to narrow down the user list. You can search by name/email/ID, or filter by role, tier, and status. Click on table headers to sort the data.</li>
+                    <li><span className="font-semibold">User Status:</span>
+                        <ul className="list-disc space-y-1 pl-5 mt-1">
+                             <li><span className="font-semibold text-green-500">Active:</span> The user can access the platform normally.</li>
+                            <li><span className="font-semibold text-yellow-500">Suspended:</span> The user's account is temporarily disabled.</li>
+                            <li><span className="font-semibold text-red-500">Deactivated:</span> The user's account is disabled and can be re-activated or permanently deleted.</li>
+                        </ul>
+                    </li>
+                     <li><span className="font-semibold">Actions Menu:</span> The actions menu on each row allows you to suspend, deactivate, re-activate, or permanently delete a user account.</li>
+                     <li><span className="font-semibold">View Profile:</span> Click on a user's name or use the actions menu to go to their detailed profile page.</li>
+                </ul>
+            </div>
+        )
+    })
+  }, [setHelp]);
 
   const fetchUsers = React.useCallback(async () => {
     if (!db || !user || !isAdmin) return;
@@ -140,14 +165,14 @@ export default function UsersPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!deleteUser) return;
-    setActionLoading(deleteUser.id);
-    await deleteFirestoreDoc(doc(db, 'users', deleteUser.id));
-    setUsers(currentUsers => currentUsers.filter(u => u.id !== deleteUser.id));
-    toast({ title: 'User Deleted', description: `${deleteUser.name} has been permanently deleted.`, variant: 'destructive' });
-    setDeleteUser(null);
-    setDeleteConfirmation("");
-    setActionLoading(null);
+      if (!deleteUser) return;
+      setActionLoading(deleteUser.id);
+      await deleteFirestoreDoc(doc(db, 'users', deleteUser.id));
+      setUsers(currentUsers => currentUsers.filter(u => u.id !== deleteUser.id));
+      toast({ title: 'User Deleted', description: `${deleteUser.name} has been permanently deleted.`, variant: 'destructive' });
+      setDeleteUser(null);
+      setDeleteConfirmation("");
+      setActionLoading(null);
   };
 
 

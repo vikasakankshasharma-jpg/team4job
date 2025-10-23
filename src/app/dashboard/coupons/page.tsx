@@ -70,6 +70,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
+import { useHelp } from "@/hooks/use-help";
 
 const couponSchema = z.object({
     code: z.string().min(3, "Code must be at least 3 characters.").toUpperCase(),
@@ -306,7 +307,24 @@ export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { setHelp } = useHelp();
 
+  React.useEffect(() => {
+    setHelp({
+        title: "Coupon Management",
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>This page allows you, as an admin, to create and manage promotional coupons for your users.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Create Coupon:</span> Use the "Create New Coupon" button to define a new promotional code. You can set its value, duration, and which user roles can use it.</li>
+                    <li><span className="font-semibold">Status:</span> A coupon's status can be "Active" (usable now), "Scheduled" (will be active in the future), or "Expired" (no longer valid).</li>
+                    <li><span className="font-semibold">Actions Menu:</span> Use the actions menu (three dots) on each row to "Edit" a coupon's details, "Activate/Deactivate" it, or permanently "Delete" it.</li>
+                </ul>
+            </div>
+        )
+    })
+  }, [setHelp]);
+  
   useEffect(() => {
     if (!userLoading && !isAdmin) {
       router.push('/dashboard');

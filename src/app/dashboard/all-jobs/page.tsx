@@ -39,6 +39,7 @@ import { getStatusVariant, toDate, cn } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import Link from "next/link";
 import { collection, getDocs, query, DocumentReference, getDoc, where, doc } from "firebase/firestore";
+import { useHelp } from "@/hooks/use-help";
 
 const initialFilters = {
     jobId: "",
@@ -111,7 +112,23 @@ export default function AllJobsPage() {
   const [filters, setFilters] = React.useState(initialFilters);
   const [allStatuses, setAllStatuses] = React.useState<string[]>([]);
   const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'postedAt', direction: 'descending' });
+  const { setHelp } = useHelp();
 
+  React.useEffect(() => {
+    setHelp({
+        title: "All Jobs",
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>This is the master view of every job ever created on the platform. As an admin, you can monitor all activity from here.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Comprehensive Filters:</span> Use the filters at the top to narrow down the list by job title, pincode, status, job giver, type (Bidding vs. Direct Award), or date range.</li>
+                    <li><span className="font-semibold">Sortable Columns:</span> Click on any column header in the table to sort the jobs. Click again to reverse the order.</li>
+                    <li><span className="font-semibold">View Details:</span> Click on any job row to navigate to its detailed view, where you can see all bids, comments, and job-specific information.</li>
+                </ul>
+            </div>
+        )
+    })
+  }, [setHelp]);
 
   React.useEffect(() => {
     if (!userLoading && !isAdmin) {
