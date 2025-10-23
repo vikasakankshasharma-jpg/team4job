@@ -26,6 +26,7 @@ import { toDate } from "@/lib/utils";
 import Link from "next/link";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { useHelp } from "@/hooks/use-help";
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -91,12 +92,30 @@ export default function DisputeDetailPage() {
   const id = params.id as string;
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { setHelp } = useHelp();
 
   const [dispute, setDispute] = useState<Dispute | null>(null);
   const [involvedUsers, setInvolvedUsers] = useState<Record<string, User>>({});
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
+  
+  React.useEffect(() => {
+    setHelp({
+        title: "Dispute Details",
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>This page shows the complete history of a single dispute ticket. All parties involved, including admins, can communicate here.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Discussion Thread:</span> View all messages exchanged between the job giver, installer, and any mediating admins.</li>
+                    <li><span className="font-semibold">Post a Reply:</span> Use the text box at the bottom to add your message to the thread. You can also attach files as evidence.</li>
+                    <li><span className="font-semibold">Admin Actions:</span> Admins can change the status of the dispute, marking it as "Under Review" or "Resolved" using the buttons on the right.</li>
+                    <li><span className="font-semibold">Case Details:</span> The right-hand panel provides a quick summary of the dispute, including the parties involved and key dates.</li>
+                </ul>
+            </div>
+        )
+    })
+  }, [setHelp]);
 
   useEffect(() => {
     if (!id || !db) return;

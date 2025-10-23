@@ -58,6 +58,7 @@ import { useRouter } from "next/navigation";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useHelp } from "@/hooks/use-help";
 
 const teamMemberSchema = z.object({
   name: z.string().min(2, "Name is required."),
@@ -204,6 +205,28 @@ export default function TeamManagementPage() {
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { setHelp } = useHelp();
+  
+  React.useEffect(() => {
+    setHelp({
+        title: "Team Management",
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>This page is where you, as a primary admin, can manage your administrative team.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Add Team Member:</span> Click the button to create a new account for a staff member. You can assign them the "Admin" or "Support Team" role.</li>
+                    <li><span className="font-semibold">Roles:</span>
+                        <ul className="list-disc space-y-1 pl-5 mt-1">
+                             <li><span className="font-semibold">Admin:</span> Has full access to all platform features.</li>
+                            <li><span className="font-semibold">Support Team:</span> Has limited access, focused primarily on managing disputes.</li>
+                        </ul>
+                    </li>
+                     <li><span className="font-semibold">Manage Accounts:</span> You can remove a team member's account using the actions menu on each row.</li>
+                </ul>
+            </div>
+        )
+    })
+  }, [setHelp]);
 
   const fetchTeamMembers = useCallback(async () => {
     if (!db) return;

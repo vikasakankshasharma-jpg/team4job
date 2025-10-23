@@ -43,6 +43,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift } from "lucide-react"
+import { useHelp } from "@/hooks/use-help"
 
 function ThemeSelector() {
     const { theme, setTheme } = useTheme()
@@ -426,6 +427,32 @@ function PlatformRulesSettings() {
 
 export default function SettingsPage() {
     const { isAdmin } = useUser();
+    const { setHelp } = useHelp();
+
+    React.useEffect(() => {
+    setHelp({
+        title: "Settings",
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>This page allows you to configure your personal settings and, if you're an admin, global platform settings.</p>
+                {isAdmin ? (
+                    <ul className="list-disc space-y-2 pl-5">
+                        <li><span className="font-semibold">Platform Rules:</span> Set global rules like the minimum budget for a job.</li>
+                        <li><span className="font-semibold">Monetization:</span> Configure platform commissions and subscription plan pricing.</li>
+                        <li><span className="font-semibold">User & Reputation:</span> Define the points and tier system for installer reputation.</li>
+                        <li><span className="font-semibold">General:</span> Change your personal settings like theme and notifications.</li>
+                    </ul>
+                ) : (
+                     <ul className="list-disc space-y-2 pl-5">
+                        <li><span className="font-semibold">Appearance:</span> Switch between light, dark, and system themes.</li>
+                        <li><span className="font-semibold">Notifications:</span> Manage your email and push notification preferences.</li>
+                        <li><span className="font-semibold">Account Management:</span> Change your password or delete your account.</li>
+                    </ul>
+                )}
+            </div>
+        )
+    })
+  }, [setHelp, isAdmin]);
 
     if (!isAdmin) {
         return (

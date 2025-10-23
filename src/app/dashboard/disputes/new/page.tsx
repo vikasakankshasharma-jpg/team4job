@@ -30,6 +30,7 @@ import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { doc, setDoc } from "firebase/firestore";
+import { useHelp } from "@/hooks/use-help";
 
 const disputeSchema = z.object({
   category: z.enum(["Billing Inquiry", "Technical Support", "Skill Request", "General Question"]),
@@ -42,6 +43,24 @@ export default function CreateDisputePage() {
   const { user, role, isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const router = useRouter();
+  const { setHelp } = useHelp();
+
+  React.useEffect(() => {
+    setHelp({
+        title: "Create Support Ticket",
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>Use this form to create a new support ticket for issues not related to a specific job.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Category:</span> Choose the most relevant category for your issue. This helps us direct your ticket to the right team.</li>
+                    <li><span className="font-semibold">Subject:</span> Provide a short, clear summary of your issue.</li>
+                    <li><span className="font-semibold">Description:</span> Describe your problem in as much detail as possible. The more information you provide, the faster we can help.</li>
+                </ul>
+                <p>Once submitted, an admin or support team member will review your ticket. You can track its status on the main "Disputes" page.</p>
+            </div>
+        )
+    })
+  }, [setHelp]);
 
   useEffect(() => {
     if (!userLoading && isAdmin) {
