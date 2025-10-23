@@ -20,12 +20,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
-import { Gem, Medal, ShieldCheck, X, ArrowUpDown, MoreHorizontal, UserX, UserCheck, Ban, Trash2, Loader2 } from "lucide-react";
+import { Gem, Medal, ShieldCheck, X, ArrowUpDown, MoreHorizontal, UserX, UserCheck, Ban, Trash2, Loader2, Download } from "lucide-react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { User } from "@/lib/types";
-import { toDate, cn } from "@/lib/utils";
+import { toDate, cn, exportToCsv } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { Input } from "@/components/ui/input";
 import {
@@ -101,6 +101,7 @@ export default function UsersPage() {
                 <p>This page provides a complete directory of all registered users on the platform. As an admin, you have full control to manage these accounts.</p>
                 <ul className="list-disc space-y-2 pl-5">
                     <li><span className="font-semibold">Filtering & Sorting:</span> Use the various filter controls to narrow down the user list. You can search by name/email/ID, or filter by role, tier, and status. Click on table headers to sort the data.</li>
+                    <li><span className="font-semibold">Export Data:</span> Click the "Export to CSV" button to download the currently filtered list of users for offline analysis or record-keeping.</li>
                     <li><span className="font-semibold">User Status:</span>
                         <ul className="list-disc space-y-1 pl-5 mt-1">
                              <li><span className="font-semibold text-green-500">Active:</span> The user can access the platform normally.</li>
@@ -309,13 +310,35 @@ export default function UsersPage() {
       default: return <Badge variant="success">Active</Badge>;
     }
   };
+  
+    const handleExport = () => {
+    const dataToExport = sortedAndFilteredUsers.map(u => ({
+      ID: u.id,
+      Name: u.name,
+      Email: u.email,
+      Roles: u.roles.join(', '),
+      Status: u.status || 'active',
+      'Member Since': format(toDate(u.memberSince), 'yyyy-MM-dd'),
+      'Installer Tier': u.installerProfile?.tier || 'N/A',
+      'Installer Points': u.installerProfile?.points || 0,
+      'Installer Rating': u.installerProfile?.rating || 0,
+    }));
+    exportToCsv(`cctv-users-${new Date().toISOString().split('T')[0]}.csv`, dataToExport);
+  };
+
 
   return (
     <>
     <Card>
-      <CardHeader>
-        <CardTitle>User Directory</CardTitle>
-        <CardDescription>A list of all registered users in the system. Use actions to manage users.</CardDescription>
+      <CardHeader className="sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <CardTitle>User Directory</CardTitle>
+            <CardDescription>A list of all registered users in the system. Use actions to manage users.</CardDescription>
+        </div>
+        <Button onClick={handleExport} variant="outline" size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Export to CSV
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-2 mb-4">
