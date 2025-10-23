@@ -16,17 +16,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { AlertOctagon, Send, CheckCircle2, Bot, User as UserIcon, Shield, Paperclip, X, File as FileIcon } from "lucide-react";
+import { AlertOctagon, Send, CheckCircle2, Bot, User as UserIcon, Shield, Paperclip, X, File as FileIcon, RefreshCw, Undo2 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React, { useEffect, useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dispute, DisputeMessage, User, DisputeAttachment } from "@/lib/types";
+import { Dispute, DisputeMessage, User, DisputeAttachment, Transaction } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import Link from "next/link";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
-import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs } from "firebase/firestore";
 import { useHelp } from "@/hooks/use-help";
+import axios from 'axios';
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -95,8 +96,10 @@ export default function DisputeDetailPage() {
   const { setHelp } = useHelp();
 
   const [dispute, setDispute] = useState<Dispute | null>(null);
+  const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [involvedUsers, setInvolvedUsers] = useState<Record<string, User>>({});
   const [loading, setLoading] = useState(true);
+  const [isRefunding, setIsRefunding] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
   
@@ -110,7 +113,7 @@ export default function DisputeDetailPage() {
                     <li><span className="font-semibold">Discussion Thread:</span> View all messages exchanged between the job giver, installer, and any mediating admins.</li>
                     <li><span className="font-semibold">Post a Reply:</span> Use the text box at the bottom to add your message to the thread. You can also attach files as evidence.</li>
                     <li><span className="font-semibold">Admin Actions:</span> Admins can change the status of the dispute, marking it as "Under Review" or "Resolved" using the buttons on the right.</li>
-                    <li><span className="font-semibold">Case Details:</span> The right-hand panel provides a quick summary of the dispute, including the parties involved and key dates.</li>
+                    <li><span className="font-semibold">Refunds:</span> If a job has been funded but not completed, admins will see an option to process a refund back to the Job Giver.</li>
                 </ul>
             </div>
         )
@@ -119,7 +122,7 @@ export default function DisputeDetailPage() {
 
   useEffect(() => {
     if (!id || !db) return;
-    async function fetchDispute() {
+    async function fetchDisputeAndTransaction() {
         setLoading(true);
         const disputeRef = doc(db, "disputes", id);
         const disputeSnap = await getDoc(disputeRef);
@@ -131,6 +134,16 @@ export default function DisputeDetailPage() {
         }
 
         const disputeData = disputeSnap.data() as Dispute;
+        
+        // Fetch related transaction if it's a job dispute
+        if (disputeData.jobId) {
+            const transQuery = query(collection(db, "transactions"), where("jobId", "==", disputeData.jobId));
+            const transSnap = await getDocs(transQuery);
+            if (!transSnap.empty) {
+                setTransaction(transSnap.docs[0].data() as Transaction);
+            }
+        }
+
         const userIds = new Set<string>([disputeData.requesterId]);
         if (disputeData.parties) {
             userIds.add(disputeData.parties.jobGiverId);
@@ -150,7 +163,7 @@ export default function DisputeDetailPage() {
         setDispute(disputeData);
         setLoading(false);
     }
-    fetchDispute();
+    fetchDisputeAndTransaction();
   }, [id, db]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,6 +231,37 @@ export default function DisputeDetailPage() {
     await handleUpdateDispute({ status: 'Under Review' });
     toast({ title: "Dispute Under Review", description: "You are now actively reviewing this case." });
   }
+  
+  const handleRefund = async () => {
+    if (!transaction) {
+        toast({ title: "No transaction found", description: "Cannot process refund.", variant: "destructive" });
+        return;
+    }
+    setIsRefunding(true);
+    try {
+        await axios.post('/api/cashfree/payouts/request-transfer', {
+            transactionId: transaction.id,
+            userId: transaction.payerId, // The user to BE REFUNDED
+            transferType: 'refund',
+        });
+        toast({
+            title: "Refund Initiated",
+            description: "The refund request has been sent. The status will update upon completion.",
+        });
+        // Optimistically update local state while webhook processes
+        setTransaction(prev => prev ? { ...prev, status: 'Refunded' } : null);
+    } catch(error: any) {
+        console.error("Refund error:", error);
+        toast({
+            title: "Refund Failed",
+            description: error.response?.data?.error || "An unexpected error occurred.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsRefunding(false);
+    }
+  };
+
 
   return (
     <div className="grid gap-8 md:grid-cols-3">
@@ -409,6 +453,12 @@ export default function DisputeDetailPage() {
                         <Button onClick={handleResolveDispute} variant="success" className="w-full">
                             <CheckCircle2 className="mr-2 h-4 w-4" />
                             Resolve Dispute
+                        </Button>
+                    )}
+                    {transaction?.status === 'Funded' && (
+                        <Button variant="destructive" className="w-full" onClick={handleRefund} disabled={isRefunding}>
+                            {isRefunding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
+                            Process Refund to Job Giver
                         </Button>
                     )}
                 </div>
