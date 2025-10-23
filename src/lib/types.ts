@@ -1,5 +1,3 @@
-
-
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {
@@ -35,6 +33,12 @@ export type User = {
   };
   aadharNumber?: string;
   kycAddress?: string;
+  payouts?: {
+    beneficiaryId?: string;
+    accountHolderName?: string;
+    accountNumberMasked?: string;
+    ifsc?: string;
+  };
   installerProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;
@@ -187,5 +191,3 @@ export type Transaction = {
   releasedAt?: Date | Timestamp;
   refundedAt?: Date | Timestamp;
 };
-
-    
