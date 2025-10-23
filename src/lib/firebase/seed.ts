@@ -699,62 +699,14 @@ async function seedTransactions(uids: { [email: string]: string }) {
         payeeId: uids[mockUsers[2].email],
         payeeName: mockUsers[2].name,
         amount: 52000,
-        status: 'Released',
+        status: 'Paid',
         createdAt: Timestamp.fromDate(new Date('2024-06-03')),
-        fundedAt: Timestamp.fromDate(new Date('2024-06-04')),
-        releasedAt: Timestamp.fromDate(new Date('2024-07-22')),
+        paidAt: Timestamp.fromDate(new Date('2024-07-22')),
     };
     batch.set(adminDb.collection('transactions').doc(t1.id), t1);
     
-    // Transaction for In-Progress Job (job3Id)
-    const t2: Transaction = {
-        id: `TXN-${Date.now()}-2`,
-        jobId: "JOB-20240718-E5F6",
-        jobTitle: "Residential Villa - 4 PTZ Cameras (Disputed)",
-        payerId: uids[mockUsers[1].email],
-        payerName: mockUsers[1].name,
-        payeeId: uids[mockUsers[3].email],
-        payeeName: mockUsers[3].name,
-        amount: 8500,
-        status: 'Funded',
-        createdAt: Timestamp.fromDate(new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000)),
-        fundedAt: Timestamp.fromDate(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)),
-    };
-    batch.set(adminDb.collection('transactions').doc(t2.id), t2);
-    
-    // Transaction for Awarded Job (job6Id)
-    const t3: Transaction = {
-        id: `TXN-${Date.now()}-3`,
-        jobId: "JOB-20240728-M3N4",
-        jobTitle: "Warehouse Access Control System - Jogeshwari",
-        payerId: uids[mockUsers[1].email],
-        payerName: mockUsers[1].name,
-        payeeId: uids[mockUsers[2].email],
-        payeeName: mockUsers[2].name,
-        amount: 19000,
-        status: 'Initiated',
-        createdAt: Timestamp.fromDate(new Date(now.getTime() - 1 * 60 * 60 * 1000)),
-    };
-    batch.set(adminDb.collection('transactions').doc(t3.id), t3);
-    
-     // Failed Transaction
-    const t4: Transaction = {
-        id: `TXN-${Date.now()}-4`,
-        jobId: "JOB-20240725-J9K0",
-        jobTitle: "Urgent: Replace 4 Cameras at Andheri Office",
-        payerId: uids[mockUsers[4].email],
-        payerName: mockUsers[4].name,
-        payeeId: uids[mockUsers[2].email],
-        payeeName: mockUsers[2].name,
-        amount: 7000,
-        status: 'Failed',
-        createdAt: Timestamp.fromDate(new Date(now.getTime() - 2 * 60 * 60 * 1000)),
-        failedAt: Timestamp.fromDate(new Date(now.getTime() - 2 * 60 * 60 * 1000 + 30000)),
-    };
-    batch.set(adminDb.collection('transactions').doc(t4.id), t4);
-
     await batch.commit();
-    console.log(`- Committed 4 transactions.`);
+    console.log(`- Committed 1 transaction.`);
 }
 
 
@@ -800,3 +752,5 @@ async function main() {
 }
 
 main();
+
+    

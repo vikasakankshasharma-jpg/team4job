@@ -177,10 +177,11 @@ export type Transaction = {
   payeeId: string;
   payeeName: string;
   amount: number;
-  status: 'Initiated' | 'Funded' | 'Failed' | 'Released' | 'Refunded';
+  status: 'Paid' | 'Failed' | 'Refunded';
   createdAt: Date | Timestamp;
-  fundedAt?: Date | Timestamp;
+  paidAt?: Date | Timestamp;
   failedAt?: Date | Timestamp;
-  releasedAt?: Date | Timestamp;
   refundedAt?: Date | Timestamp;
 };
+
+    
