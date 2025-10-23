@@ -94,6 +94,16 @@
           "type": "string",
           "description": "The permanent address fetched from the Aadhar KYC verification."
         },
+        "payouts": {
+            "type": "object",
+            "description": "Stores Cashfree Payouts related information.",
+            "properties": {
+                "beneficiaryId": { "type": "string" },
+                "accountHolderName": { "type": "string" },
+                "accountNumberMasked": { "type": "string" },
+                "ifsc": { "type": "string" }
+            }
+        },
         "installerProfile": {
           "$ref": "#/entities/InstallerProfile"
         }
@@ -585,5 +595,3 @@
     }
   }
 }
-
-    

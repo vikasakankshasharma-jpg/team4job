@@ -187,8 +187,8 @@ export type Transaction = {
   createdAt: Date | Timestamp;
   paymentGatewayOrderId?: string;
   paymentGatewaySessionId?: string;
-  payoutTransferId?: string; // Added this line
-  refundTransferId?: string; // Added this line
+  payoutTransferId?: string;
+  refundTransferId?: string;
   fundedAt?: Date | Timestamp;
   failedAt?: Date | Timestamp;
   releasedAt?: Date | Timestamp;
