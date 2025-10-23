@@ -197,7 +197,14 @@ function MyBidsPageContent() {
         title: 'My Bids Guide', 
         content: (
           <div className="space-y-4 text-sm">
-              <p>This page tracks every job you have bid on or been awarded.</p>
+              <p>This page tracks every job you have bid on. Use the filter to see jobs with a specific status.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Bidded:</span> You have placed a bid, but the job is still open for other installers to bid on.</li>
+                    <li><span className="font-semibold">Awarded:</span> Congratulations! The Job Giver has selected you. You must accept the job to proceed.</li>
+                    <li><span className="font-semibold">In Progress:</span> You have accepted the job and can now communicate with the Job Giver.</li>
+                    <li><span className="font-semibold">Completed & Won:</span> The job is finished and you have been paid. You'll see any reputation points you earned here.</li>
+                    <li><span className="font-semibold">Not Selected:</span> The Job Giver chose another installer for this project.</li>
+                </ul>
           </div>
         )
     });
