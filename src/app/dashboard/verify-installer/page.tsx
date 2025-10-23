@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -24,10 +25,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import { initiateAadharVerification, confirmAadharVerification } from "@/ai/flows/aadhar-verification";
 import { useRouter } from "next/navigation";
+import { doc, updateDoc } from "firebase/firestore";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const aadharSchema = z.object({
   aadharNumber: z.string().length(12, { message: "Aadhar number must be 12 digits." }),
@@ -40,19 +43,12 @@ const otpSchema = z.object({
 export default function VerifyInstallerPage() {
   const { toast } = useToast();
   const { user, setUser, role, loading: userLoading } = useUser();
+  const { db } = useFirebase();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [transactionId, setTransactionId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!userLoading && role !== 'Installer') {
-      router.push('/dashboard');
-    }
-    if (!userLoading && user?.installerProfile?.verified) {
-      router.push('/dashboard/profile');
-    }
-  }, [role, userLoading, user, router]);
-
+  const [error, setError] = useState<string | null>(null);
+  
   const aadharForm = useForm<z.infer<typeof aadharSchema>>({
     resolver: zodResolver(aadharSchema),
     defaultValues: { aadharNumber: "" },
@@ -63,18 +59,30 @@ export default function VerifyInstallerPage() {
     defaultValues: { otp: "" },
   });
 
+  useEffect(() => {
+    if (!userLoading && role !== 'Installer') {
+      router.push('/dashboard');
+    }
+    if (!userLoading && user?.installerProfile?.verified) {
+      router.push('/dashboard/profile');
+    }
+  }, [role, userLoading, user, router]);
+
   async function onAadharSubmit(values: z.infer<typeof aadharSchema>) {
     setIsLoading(true);
+    setError(null);
     try {
       const result = await initiateAadharVerification(values);
       if (result.success) {
         setTransactionId(result.transactionId);
         toast({ title: "OTP Sent", description: result.message });
       } else {
+        setError(result.message);
         toast({ title: "Error", description: result.message, variant: "destructive" });
       }
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      setError("An unexpected error occurred. Please try again.");
+      console.error(e);
       toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
     } finally {
       setIsLoading(false);
@@ -82,23 +90,31 @@ export default function VerifyInstallerPage() {
   }
 
   async function onOtpSubmit(values: z.infer<typeof otpSchema>) {
-    if (!transactionId) return;
+    if (!transactionId || !user || !db) return;
     setIsLoading(true);
+    setError(null);
     try {
       const result = await confirmAadharVerification({ ...values, transactionId });
       if (result.isVerified) {
-        toast({ title: "Verification Successful", description: result.message });
+        // Update Firestore
+        const userRef = doc(db, 'users', user.id);
+        await updateDoc(userRef, { 'installerProfile.verified': true });
+
         // Update user context
-        if (user && user.installerProfile && setUser) {
+        if (user.installerProfile && setUser) {
           const updatedUser = { ...user, installerProfile: { ...user.installerProfile, verified: true } };
           setUser(updatedUser);
         }
-        router.push("/dashboard");
+
+        toast({ title: "Verification Successful", description: result.message, variant: "success" });
+        router.push("/dashboard/profile");
       } else {
+        setError(result.message);
         toast({ title: "Verification Failed", description: result.message, variant: "destructive" });
       }
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      setError("An unexpected error occurred. Please try again.");
+      console.error(e);
       toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
     } finally {
       setIsLoading(false);
@@ -120,11 +136,17 @@ export default function VerifyInstallerPage() {
           <CardTitle className="flex items-center gap-2"><ShieldCheck /> Installer Verification</CardTitle>
           <CardDescription>
             {transactionId
-              ? "Enter the OTP sent to your Aadhar-linked mobile number."
-              : "Verify your identity using Aadhar to become a trusted installer."}
+              ? "An OTP has been sent to your Aadhar-linked mobile number. Please enter it below to complete verification."
+              : "Verify your identity using Aadhar to become a trusted installer and gain access to more jobs."}
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           {!transactionId ? (
             <Form {...aadharForm}>
               <form onSubmit={aadharForm.handleSubmit(onAadharSubmit)} className="space-y-8">
@@ -137,6 +159,7 @@ export default function VerifyInstallerPage() {
                       <FormControl>
                         <Input placeholder="Enter your 12-digit Aadhar number" {...field} />
                       </FormControl>
+                      <FormDescription>For testing, use Aadhar: <strong>752828181676</strong></FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -158,7 +181,7 @@ export default function VerifyInstallerPage() {
                       <FormControl>
                         <Input placeholder="Enter the 6-digit OTP" {...field} />
                       </FormControl>
-                      <FormDescription>For testing, use OTP: 123456</FormDescription>
+                      <FormDescription>For testing, use OTP: <strong>123456</strong></FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

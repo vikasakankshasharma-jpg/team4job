@@ -114,7 +114,7 @@ export function SignUpForm() {
             <ul className="list-disc space-y-2 pl-5">
               <li><span className="font-semibold">Enter Aadhar:</span> Provide your 12-digit Aadhar number.</li>
               <li><span className="font-semibold">Enter OTP:</span> An OTP will be sent to the mobile number linked with your Aadhar. For this demo, please use the code <strong className="text-primary">123456</strong>.</li>
-              <li><span className="font-semibold">Secure Process:</span> This is a mock verification. In a real-world scenario, this process would be handled by a secure, certified KYC provider.</li>
+              <li><span className="font-semibold">Secure Process:</span> This verification is powered by Cashfree's Secure ID product.</li>
             </ul>
           </div>
         );
@@ -475,6 +475,7 @@ export function SignUpForm() {
                                     </Button>
                                 )}
                             </div>
+                             <FormDescription>For testing, use Aadhar: <strong>752828181676</strong></FormDescription>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -504,7 +505,7 @@ export function SignUpForm() {
                                         Verify OTP
                                     </Button>
                                 </div>
-                                <FormDescription>For this demo, the OTP is always <strong>123456</strong>.</FormDescription>
+                                <FormDescription>For testing, use OTP: <strong>123456</strong>.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
