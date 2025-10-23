@@ -194,3 +194,13 @@ export type Transaction = {
   releasedAt?: Date | Timestamp;
   refundedAt?: Date | Timestamp;
 };
+
+export type PlatformSettings = {
+    installerCommissionRate: number;
+    jobGiverFeeRate: number;
+    proInstallerPlanPrice: number;
+    businessJobGiverPlanPrice: number;
+    bidBundle10: number;
+    bidBundle25: number;
+    bidBundle50: number;
+};

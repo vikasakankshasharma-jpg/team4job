@@ -34,7 +34,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { useUser } from "@/hooks/use-user"
+import { useUser, useFirebase } from "@/hooks/use-user"
 import { Input } from "@/components/ui/input"
 import {
   Tabs,
@@ -42,8 +42,9 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift } from "lucide-react"
+import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift, Loader2 } from "lucide-react"
 import { useHelp } from "@/hooks/use-help"
+import { doc, getDoc, setDoc } from "firebase/firestore"
 
 function ThemeSelector() {
     const { theme, setTheme } = useTheme()
@@ -195,6 +196,64 @@ function PersonalSettingsCard() {
 }
 
 function MonetizationSettings() {
+    const { db } = useFirebase();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [isSaving, setIsSaving] = React.useState(false);
+    const [settings, setSettings] = React.useState({
+        installerCommissionRate: 10,
+        jobGiverFeeRate: 2,
+        proInstallerPlanPrice: 2999,
+        businessJobGiverPlanPrice: 4999,
+        bidBundle10: 500,
+        bidBundle25: 1100,
+        bidBundle50: 2000,
+    });
+
+    React.useEffect(() => {
+        if (!db) return;
+        const fetchSettings = async () => {
+            setIsLoading(true);
+            const settingsDoc = await getDoc(doc(db, "settings", "platform"));
+            if (settingsDoc.exists()) {
+                setSettings(prev => ({ ...prev, ...settingsDoc.data() }));
+            }
+            setIsLoading(false);
+        };
+        fetchSettings();
+    }, [db]);
+
+    const handleSave = async () => {
+        if (!db) return;
+        setIsSaving(true);
+        try {
+            await setDoc(doc(db, "settings", "platform"), settings, { merge: true });
+            toast({
+                title: "Settings Saved",
+                description: "Monetization settings have been updated.",
+                variant: "success",
+            });
+        } catch (error) {
+            console.error("Error saving settings:", error);
+            toast({
+                title: "Error",
+                description: "Failed to save settings.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        setSettings(prev => ({ ...prev, [id]: Number(value) }));
+    };
+
+    if (isLoading) {
+        return <Skeleton className="h-96 w-full" />;
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -206,11 +265,12 @@ function MonetizationSettings() {
                      <h3 className="font-semibold flex items-center gap-2"><Percent className="h-4 w-4" /> Platform Commission Rates</h3>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                             <Label htmlFor="installer-commission-rate">Installer Commission Rate (%)</Label>
+                             <Label htmlFor="installerCommissionRate">Installer Commission Rate (%)</Label>
                              <Input
-                                id="installer-commission-rate"
+                                id="installerCommissionRate"
                                 type="number"
-                                defaultValue="10"
+                                value={settings.installerCommissionRate}
+                                onChange={handleInputChange}
                                 min="0"
                                 max="100"
                             />
@@ -219,11 +279,12 @@ function MonetizationSettings() {
                             </p>
                         </div>
                          <div className="space-y-2">
-                             <Label htmlFor="jobgiver-commission-rate">Job Giver Fee Rate (%)</Label>
+                             <Label htmlFor="jobGiverFeeRate">Job Giver Fee Rate (%)</Label>
                              <Input
-                                id="jobgiver-commission-rate"
+                                id="jobGiverFeeRate"
                                 type="number"
-                                defaultValue="2"
+                                value={settings.jobGiverFeeRate}
+                                onChange={handleInputChange}
                                 min="0"
                                 max="100"
                             />
@@ -239,11 +300,11 @@ function MonetizationSettings() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                        <div className="space-y-2">
                          <Label>Installer Pro Plan (₹/year)</Label>
-                         <Input type="number" defaultValue="2999" />
+                         <Input id="proInstallerPlanPrice" type="number" value={settings.proInstallerPlanPrice} onChange={handleInputChange} />
                        </div>
                         <div className="space-y-2">
                          <Label>Job Giver Business Plan (₹/year)</Label>
-                         <Input type="number" defaultValue="4999" />
+                         <Input id="businessJobGiverPlanPrice" type="number" value={settings.businessJobGiverPlanPrice} onChange={handleInputChange} />
                        </div>
                     </div>
                  </div>
@@ -252,21 +313,24 @@ function MonetizationSettings() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                        <div className="space-y-2">
                          <Label>10 Bids (₹)</Label>
-                         <Input type="number" defaultValue="500" />
+                         <Input id="bidBundle10" type="number" value={settings.bidBundle10} onChange={handleInputChange} />
                        </div>
                         <div className="space-y-2">
                          <Label>25 Bids (₹)</Label>
-                         <Input type="number" defaultValue="1100" />
+                         <Input id="bidBundle25" type="number" value={settings.bidBundle25} onChange={handleInputChange} />
                        </div>
                          <div className="space-y-2">
                          <Label>50 Bids (₹)</Label>
-                         <Input type="number" defaultValue="2000" />
+                         <Input id="bidBundle50" type="number" value={settings.bidBundle50} onChange={handleInputChange} />
                        </div>
                     </div>
                  </div>
             </CardContent>
             <CardFooter>
-                 <Button>Save Monetization Settings</Button>
+                 <Button onClick={handleSave} disabled={isSaving}>
+                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     Save Monetization Settings
+                 </Button>
             </CardFooter>
         </Card>
     );
@@ -466,21 +530,21 @@ export default function SettingsPage() {
     return (
         <div className="grid gap-6">
             <h1 className="text-3xl font-bold">Settings</h1>
-            <Tabs defaultValue="platform" className="w-full">
+            <Tabs defaultValue="monetization" className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="platform">Platform Rules</TabsTrigger>
                     <TabsTrigger value="monetization">Monetization</TabsTrigger>
                     <TabsTrigger value="reputation">User &amp; Reputation</TabsTrigger>
+                    <TabsTrigger value="platform">Platform Rules</TabsTrigger>
                     <TabsTrigger value="general">General</TabsTrigger>
                 </TabsList>
-                <TabsContent value="platform">
-                    <PlatformRulesSettings />
-                </TabsContent>
                 <TabsContent value="monetization">
                     <MonetizationSettings />
                 </TabsContent>
                 <TabsContent value="reputation">
                     <UserReputationSettings />
+                </TabsContent>
+                <TabsContent value="platform">
+                    <PlatformRulesSettings />
                 </TabsContent>
                 <TabsContent value="general">
                     <PersonalSettingsCard />
