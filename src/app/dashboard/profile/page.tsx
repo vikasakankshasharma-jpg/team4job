@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { allSkills } from "@/lib/data";
-import { User, Coupon } from "@/lib/types";
+import { User, Coupon, SubscriptionPlan } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -518,6 +518,14 @@ export default function ProfilePage() {
     });
   }, [setHelp, role]);
 
+  const onSubscriptionUpdate = useCallback(async () => {
+    if (!db || !user) return;
+    const userDoc = await getDoc(doc(db, 'users', user.id));
+    if (userDoc.exists() && setUser) {
+      setUser({ id: userDoc.id, ...userDoc.data() } as User);
+    }
+  }, [db, user, setUser]);
+
   if (userLoading) {
     return (
       <div className="flex h-48 items-center justify-center">
@@ -583,7 +591,6 @@ export default function ProfilePage() {
             rating: 0,
             reviews: 0,
             verified: user.installerProfile?.verified || false,
-            reputationHistory: [],
           }
         };
         setUser(updatedUser);
@@ -606,14 +613,6 @@ export default function ProfilePage() {
     }
   };
   
-  const onSubscriptionUpdate = async () => {
-    if (!db || !user) return;
-    const userDoc = await getDoc(doc(db, 'users', user.id));
-    if (userDoc.exists() && setUser) {
-      setUser({ id: userDoc.id, ...userDoc.data() } as User);
-    }
-  };
-
 
   return (
     <div className="grid gap-8">
