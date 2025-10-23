@@ -84,31 +84,22 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
       
       onJobUpdate(updatedJobData);
 
-      // --- 2. Create Transaction Record ---
-      const jobGiver = job.jobGiver as User;
-      const winningBid = job.bids.find(b => ((b.installer as User).id) === user.id);
-
-      if (db && winningBid) {
-        const transactionId = `TXN-${Date.now()}`;
-        const newTransaction: Transaction = {
-            id: transactionId,
-            jobId: job.id,
-            jobTitle: job.title,
-            payerId: jobGiver.id,
-            payerName: jobGiver.name,
-            payeeId: user.id,
-            payeeName: user.name,
-            amount: winningBid.amount,
-            status: 'Paid',
-            createdAt: new Date(),
-            paidAt: new Date(),
-        };
-        await setDoc(doc(db, 'transactions', transactionId), newTransaction);
+      // --- 2. Find and Update Transaction Record ---
+      if(db){
+        const q = query(collection(db, "transactions"), where("jobId", "==", job.id));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            const transactionDoc = querySnapshot.docs[0];
+            await updateDoc(transactionDoc.ref, {
+                status: 'Released',
+                releasedAt: new Date(),
+            });
+        }
       }
       
       toast({
         title: "Job Completed!",
-        description: "The job has been marked as complete and payment has been recorded.",
+        description: "The job has been marked as complete and payment has been released.",
       });
     } else {
       toast({
@@ -124,7 +115,7 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
       <CardHeader>
         <CardTitle>Complete This Job</CardTitle>
         <CardDescription>
-          Once the work is done, enter the 6-digit Job Completion OTP from the Job Giver. This action marks the job as complete and records the payment.
+          Once the work is done, enter the 6-digit Job Completion OTP from the Job Giver. This action marks the job as complete and triggers the payout.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -168,7 +159,7 @@ function JobGiverOTPCard({ job }: { job: Job }) {
           Job Completion OTP
         </CardTitle>
         <CardDescription>
-          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payment record.
+          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payout.
         </CardDescription>
       </CardHeader>
       <CardContent className="text-center">
@@ -323,11 +314,28 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
             acceptanceDeadline,
         };
         
+        // Simulate Payment Gateway: Create a 'Funded' transaction
+        const transactionId = `TXN-${Date.now()}`;
+        const newTransaction: Transaction = {
+            id: transactionId,
+            jobId: job.id,
+            jobTitle: job.title,
+            payerId: jobGiver.id,
+            payerName: jobGiver.name,
+            payeeId: installer.id,
+            payeeName: installer.name,
+            amount: bid.amount,
+            status: 'Funded',
+            createdAt: new Date(),
+            fundedAt: new Date(),
+        };
+        await setDoc(doc(db, 'transactions', transactionId), newTransaction);
+        
         onJobUpdate(jobUpdate);
         
         toast({
-            title: "Job Awarded!",
-            description: `${installer.name} has 24 hours to accept.`,
+            title: "Job Awarded & Funded!",
+            description: `${installer.name} has 24 hours to accept. The payment has been secured.`,
         });
     };
     
@@ -372,7 +380,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
               <div className="mt-4 flex items-center gap-2">
                    <Button size="sm" onClick={handleAwardJob}>
                         <Award className="mr-2 h-4 w-4" />
-                       Award Job
+                       Award & Fund Job
                    </Button>
               </div>
             )}
@@ -1302,5 +1310,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
