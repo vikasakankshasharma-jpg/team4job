@@ -75,7 +75,7 @@ export type JobAttachment = {
 };
 
 export type Job = {
-  id: string;
+  id:string;
   title: string;
   description: string;
   jobGiver: User | DocumentReference;
@@ -166,4 +166,21 @@ export type BlacklistEntry = {
     role: 'Any' | 'Installer' | 'Job Giver';
     reason: string;
     createdAt: Date | Timestamp;
+};
+
+export type Transaction = {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  payerId: string;
+  payerName: string;
+  payeeId: string;
+  payeeName: string;
+  amount: number;
+  status: 'Initiated' | 'Funded' | 'Failed' | 'Released' | 'Refunded';
+  createdAt: Date | Timestamp;
+  fundedAt?: Date | Timestamp;
+  failedAt?: Date | Timestamp;
+  releasedAt?: Date | Timestamp;
+  refundedAt?: Date | Timestamp;
 };

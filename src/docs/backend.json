@@ -506,6 +506,28 @@
         }
       },
       "required": ["id", "type", "value", "role", "reason", "createdAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Represents a financial transaction, including its full lifecycle.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "jobId": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "payerId": { "type": "string", "description": "The user ID of the Job Giver." },
+        "payerName": { "type": "string" },
+        "payeeId": { "type": "string", "description": "The user ID of the Installer." },
+        "payeeName": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["Initiated", "Funded", "Failed", "Released", "Refunded"] },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the transaction was initiated." },
+        "fundedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the payment was successfully funded." },
+        "failedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the payment failed." },
+        "releasedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the funds were released to the payee." },
+        "refundedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the funds were refunded to the payer." }
+      },
+      "required": ["id", "jobId", "jobTitle", "payerId", "payerName", "payeeId", "payeeName", "amount", "status", "createdAt"]
     }
   },
   "auth": {
@@ -547,6 +569,12 @@
         "$ref": "#/entities/BlacklistEntry"
       },
       "description": "Stores all blacklisted user IDs and pincodes."
+    },
+    "/transactions/{transactionId}": {
+      "schema": {
+        "$ref": "#/entities/Transaction"
+      },
+      "description": "Stores all financial transactions related to jobs."
     }
   }
 }
