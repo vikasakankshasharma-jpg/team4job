@@ -69,13 +69,14 @@ import Link from "next/link";
 import { doc, getDoc, updateDoc, arrayUnion, setDoc, DocumentReference, collection, getDocs, query, where } from "firebase/firestore";
 
 
-function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
+function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
   const { toast } = useToast();
   const { db } = useFirebase();
   const [otp, setOtp] = React.useState('');
 
   const handleCompleteJob = async () => {
     if (otp === job.completionOtp) {
+      // --- 1. Update Job Status ---
       const updatedJobData = { 
         status: 'Completed' as const,
         rating: 5, // Default rating, can be changed by job giver
@@ -83,22 +84,31 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
       
       onJobUpdate(updatedJobData);
 
-      // --- Update Transaction to 'Released' ---
-      if (db) {
-        const q = query(collection(db, "transactions"), where("jobId", "==", job.id));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-            const transactionDoc = querySnapshot.docs[0];
-            await updateDoc(transactionDoc.ref, {
-                status: 'Released',
-                releasedAt: new Date(),
-            });
-        }
+      // --- 2. Create Transaction Record ---
+      const jobGiver = job.jobGiver as User;
+      const winningBid = job.bids.find(b => ((b.installer as User).id) === user.id);
+
+      if (db && winningBid) {
+        const transactionId = `TXN-${Date.now()}`;
+        const newTransaction: Transaction = {
+            id: transactionId,
+            jobId: job.id,
+            jobTitle: job.title,
+            payerId: jobGiver.id,
+            payerName: jobGiver.name,
+            payeeId: user.id,
+            payeeName: user.name,
+            amount: winningBid.amount,
+            status: 'Paid',
+            createdAt: new Date(),
+            paidAt: new Date(),
+        };
+        await setDoc(doc(db, 'transactions', transactionId), newTransaction);
       }
       
       toast({
         title: "Job Completed!",
-        description: "The job has been marked as complete. Payment has been released to the installer.",
+        description: "The job has been marked as complete and payment has been recorded.",
       });
     } else {
       toast({
@@ -114,7 +124,7 @@ function InstallerCompletionSection({ job, onJobUpdate }: { job: Job, onJobUpdat
       <CardHeader>
         <CardTitle>Complete This Job</CardTitle>
         <CardDescription>
-          Once the work is done, enter the 6-digit Job Completion OTP from the Job Giver. This action marks the job as complete and releases the payment.
+          Once the work is done, enter the 6-digit Job Completion OTP from the Job Giver. This action marks the job as complete and records the payment.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -158,7 +168,7 @@ function JobGiverOTPCard({ job }: { job: Job }) {
           Job Completion OTP
         </CardTitle>
         <CardDescription>
-          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payment release.
+          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payment record.
         </CardDescription>
       </CardHeader>
       <CardContent className="text-center">
@@ -304,25 +314,6 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
     const handleAwardJob = async () => {
         if (!db || !jobGiver) return;
         
-        // --- Create Transaction Record ---
-        const transactionId = `TXN-${Date.now()}`;
-        const newTransaction: Transaction = {
-            id: transactionId,
-            jobId: job.id,
-            jobTitle: job.title,
-            payerId: jobGiver.id,
-            payerName: jobGiver.name,
-            payeeId: installer.id,
-            payeeName: installer.name,
-            amount: bid.amount,
-            status: 'Initiated',
-            createdAt: new Date(),
-        };
-
-        const transactionRef = doc(db, 'transactions', transactionId);
-        await setDoc(transactionRef, newTransaction);
-        
-        // --- Update Job Status ---
         const acceptanceDeadline = new Date();
         acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
 
@@ -334,15 +325,9 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
         
         onJobUpdate(jobUpdate);
         
-        // --- Simulate Payment Funding and Update Transaction ---
-        setTimeout(async () => {
-          await updateDoc(transactionRef, { status: 'Funded', fundedAt: new Date() });
-          console.log(`Transaction ${transactionId} for job ${job.id} is now 'Funded'.`);
-        }, 3000); // Simulate a 3-second payment process
-
         toast({
-            title: "Job Awarded & Payment Initiated!",
-            description: `${installer.name} has 24 hours to accept. The funds are now held securely in escrow.`,
+            title: "Job Awarded!",
+            description: `${installer.name} has 24 hours to accept.`,
         });
     };
     
@@ -387,7 +372,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
               <div className="mt-4 flex items-center gap-2">
                    <Button size="sm" onClick={handleAwardJob}>
                         <Award className="mr-2 h-4 w-4" />
-                       Award & Fund Escrow
+                       Award Job
                    </Button>
               </div>
             )}
@@ -425,7 +410,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
         <CardTitle>Received Bids ({job.bids?.length || 0})</CardTitle>
         <CardDescription>
           {role === 'Admin' ? 'Reviewing bids placed on this job.' : job.awardedInstaller ? 'An installer has been selected for this job.' : 
-          'Review bids and select an installer to fund the project.'}
+          'Review bids and select an installer for the project.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -1197,7 +1182,7 @@ export default function JobDetailPage() {
             {(job.status === 'In Progress') && isAwardedInstaller && (
               <>
                 <Separator className="my-6" />
-                <InstallerCompletionSection job={job} onJobUpdate={handleJobUpdate} />
+                <InstallerCompletionSection job={job} user={user} onJobUpdate={handleJobUpdate} />
               </>
             )}
             
@@ -1317,3 +1302,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    

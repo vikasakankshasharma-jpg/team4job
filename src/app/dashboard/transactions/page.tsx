@@ -32,11 +32,9 @@ import Link from "next/link";
 
 const getStatusVariant = (status: Transaction['status']) => {
   switch (status) {
-    case 'Funded': return 'success';
-    case 'Released': return 'default';
+    case 'Paid': return 'success';
     case 'Refunded': return 'secondary';
     case 'Failed': return 'destructive';
-    case 'Initiated': return 'info';
     default: return 'outline';
   }
 };
@@ -124,13 +122,11 @@ export default function TransactionsPage() {
   
   const stats = useMemo(() => {
     return transactions.reduce((acc, t) => {
-        if(t.status === 'Released' || t.status === 'Funded'){
-            acc.totalVolume += t.amount;
+        if(t.status === 'Paid'){
+            acc.totalPayouts += t.amount;
         }
-        if (t.status === 'Funded') acc.inEscrow += t.amount;
-        if (t.status === 'Released') acc.totalPayouts += t.amount;
         return acc;
-    }, { totalVolume: 0, inEscrow: 0, totalPayouts: 0 });
+    }, { totalPayouts: 0 });
   }, [transactions]);
 
   const handleFilterChange = (filterName: keyof typeof filters, value: string) => {
@@ -147,27 +143,7 @@ export default function TransactionsPage() {
 
   return (
     <div className="grid gap-6">
-        <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Transaction Volume</CardTitle>
-                    <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">₹{stats.totalVolume.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">Value of all funded & released jobs</p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Currently in Escrow</CardTitle>
-                    <Wallet className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">₹{stats.inEscrow.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">Funds held for active jobs</p>
-                </CardContent>
-            </Card>
+        <div className="grid gap-4 md:grid-cols-2">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Payouts</CardTitle>
@@ -175,7 +151,17 @@ export default function TransactionsPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">₹{stats.totalPayouts.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">Total funds released to installers</p>
+                    <p className="text-xs text-muted-foreground">Total funds paid to installers</p>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Platform Revenue (Simulated)</CardTitle>
+                    <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">₹{(stats.totalPayouts * 0.12).toLocaleString()}</div>
+                    <p className="text-xs text-muted-foreground">Based on a 12% commission from payouts</p>
                 </CardContent>
             </Card>
         </div>
@@ -227,7 +213,7 @@ export default function TransactionsPage() {
                 </TableRow>
                 ) : filteredTransactions.length > 0 ? (
                 filteredTransactions.map((t) => {
-                    const latestTimestamp = toDate(t.refundedAt || t.releasedAt || t.failedAt || t.fundedAt || t.createdAt);
+                    const latestTimestamp = toDate(t.paidAt || t.createdAt);
                     return (
                         <TableRow key={t.id}>
                             <TableCell className="font-mono text-xs">{t.id}</TableCell>
@@ -266,3 +252,5 @@ export default function TransactionsPage() {
     </div>
   );
 }
+
+    

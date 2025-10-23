@@ -509,7 +509,7 @@
     },
     "Transaction": {
       "title": "Transaction",
-      "description": "Represents a financial transaction, including its full lifecycle.",
+      "description": "Represents a financial transaction for a completed job.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
@@ -520,12 +520,11 @@
         "payeeId": { "type": "string", "description": "The user ID of the Installer." },
         "payeeName": { "type": "string" },
         "amount": { "type": "number" },
-        "status": { "type": "string", "enum": ["Initiated", "Funded", "Failed", "Released", "Refunded"] },
-        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the transaction was initiated." },
-        "fundedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the payment was successfully funded." },
+        "status": { "type": "string", "enum": ["Paid", "Failed", "Refunded"] },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the transaction was created." },
+        "paidAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the payment was successfully processed." },
         "failedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the payment failed." },
-        "releasedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the funds were released to the payee." },
-        "refundedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the funds were refunded to the payer." }
+        "refundedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the funds were refunded." }
       },
       "required": ["id", "jobId", "jobTitle", "payerId", "payerName", "payeeId", "payeeName", "amount", "status", "createdAt"]
     }
@@ -578,3 +577,5 @@
     }
   }
 }
+
+    
