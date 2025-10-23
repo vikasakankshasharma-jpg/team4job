@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/server-init';
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     const user = userSnap.data() as User;
 
     // 2. Generate a unique beneficiary ID
-    const beneficiaryId = `INSTALLER_${userId}_${Date.now()}`;
+    const beneficiaryId = `INSTALLER_${userId.slice(0, 8)}_${Date.now()}`;
 
     // 3. Authenticate with Cashfree to get a bearer token
     const token = await getCashfreeBearerToken();
@@ -54,12 +55,12 @@ export async function POST(req: NextRequest) {
       phone: user.mobile,
       bankAccount: accountNumber,
       ifsc: ifsc,
-      address1: user.address.street,
+      address1: user.address.street || "Not Provided",
     };
     
     // 5. Make the API call to Cashfree to add the beneficiary
     await axios.post(
-      `${CASHFREE_API_BASE}/payouts/beneficiaries`,
+      `${CASHFREE_API_BASE}/beneficiaries`,
       beneficiaryPayload,
       {
         headers: {
