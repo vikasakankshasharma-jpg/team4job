@@ -169,7 +169,7 @@ export type BlacklistEntry = {
 };
 
 export type Transaction = {
-  id: string;
+  id: string; // Our internal ID
   jobId: string;
   jobTitle: string;
   payerId: string;
@@ -177,9 +177,12 @@ export type Transaction = {
   payeeId: string;
   payeeName: string;
   amount: number;
-  status: 'Funded' | 'Released' | 'Refunded';
+  status: 'Initiated' | 'Funded' | 'Failed' | 'Released' | 'Refunded';
   createdAt: Date | Timestamp;
+  paymentGatewayOrderId?: string;
+  paymentGatewaySessionId?: string;
   fundedAt?: Date | Timestamp;
+  failedAt?: Date | Timestamp;
   releasedAt?: Date | Timestamp;
   refundedAt?: Date | Timestamp;
 };
