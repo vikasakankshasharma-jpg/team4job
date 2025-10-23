@@ -1,3 +1,4 @@
+
 # Required API Keys for CCTV Job Connect
 
 This document outlines the essential API keys required for the CCTV Job Connect application to function correctly. These keys must be stored in an environment file (e.g., `.env.local`) at the root of the project.
@@ -63,19 +64,47 @@ GEMINI_API_KEY="AIzaSy..."
 
 ## 4. Cashfree API Keys
 
-These keys are essential for the KYC verification flow (Aadhar verification) and for processing payments between Job Givers and Installers. The application is set up to work with Cashfree's services.
+The application is set up to use three separate products from Cashfree: **Payments**, **Payouts**, and **Verification Suite (Secure ID)**. Each product has its own set of API keys.
 
-You can get these from your Cashfree merchant dashboard:
-1. Log in to your [Cashfree Account](https://merchant.cashfree.com/login).
-2. From the top menu, select "Payment Gateway".
-3. In the left sidebar, navigate to **Developers > API Keys**.
-4. Generate a new key if one doesn't exist.
+You can get these from your [Cashfree Merchant Dashboard](https://merchant.cashfree.com/login) under **Developers > API Keys**.
 
-**Note:** These keys are secrets and should **NOT** be prefixed with `NEXT_PUBLIC_`. They are used in server-side Genkit flows.
+**Important:** These keys are secrets and should **NOT** be prefixed with `NEXT_PUBLIC_`. They are used in server-side flows.
+
+### 4.1 Cashfree KYC / Secure ID Keys
+
+Used for Aadhar verification of Installers.
+Go to: **Developers > API Keys > Verification Suite**
 
 ```env
 # .env.local
 
-CASHFREE_CLIENT_ID="your_cashfree_client_id"
-CASHFREE_CLIENT_SECRET="your_cashfree_client_secret"
+# For Installer KYC Verification (Aadhar OTP)
+CASHFREE_CLIENT_ID="your_verification_suite_client_id"
+CASHFREE_CLIENT_SECRET="your_verification_suite_client_secret"
+```
+
+### 4.2 Cashfree Payments Keys
+
+Used to collect payments from Job Givers.
+Go to: **Developers > API Keys > Payment Gateway**
+
+```env
+# .env.local
+
+# For collecting payments from Job Givers
+CASHFREE_PAYMENTS_CLIENT_ID="your_payment_gateway_client_id"
+CASHFREE_PAYMENTS_CLIENT_SECRET="your_payment_gateway_client_secret"
+```
+
+### 4.3 Cashfree Payouts Keys
+
+Used to send money to Installers.
+Go to: **Developers > API Keys > Payouts**
+
+```env
+# .env.local
+
+# For sending payouts to Installers
+CASHFREE_PAYOUTS_CLIENT_ID="your_payouts_client_id"
+CASHFREE_PAYOUTS_CLIENT_SECRET="your_payouts_client_secret"
 ```
