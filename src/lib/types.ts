@@ -1,4 +1,5 @@
 
+
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {
@@ -186,3 +187,5 @@ export type Transaction = {
   releasedAt?: Date | Timestamp;
   refundedAt?: Date | Timestamp;
 };
+
+    
