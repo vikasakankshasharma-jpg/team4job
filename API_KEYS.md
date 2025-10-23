@@ -1,7 +1,8 @@
-
 # Required API Keys for CCTV Job Connect
 
 This document outlines the essential API keys required for the CCTV Job Connect application to function correctly. These keys must be stored in an environment file (e.g., `.env.local`) at the root of the project.
+
+**IMPORTANT NOTE ON CASHFREE PRODUCTS:** For regulatory compliance in India, this marketplace application must use Cashfree's **Marketplace Settlement** feature (also known as "Accounts" or "Easy Split"). This ensures that funds from Job Givers are held in a regulated escrow account, not directly in the platform's bank account. You must enable this feature in your Cashfree dashboard. The integration will use the `Payment Gateway` credentials for collecting funds and the `Payouts` credentials for splitting the funds after job completion.
 
 ---
 
@@ -64,16 +65,16 @@ GEMINI_API_KEY="AIzaSy..."
 
 ## 4. Cashfree API Keys
 
-The application is set up to use three separate products from Cashfree: **Payments**, **Payouts**, and **Verification Suite (Secure ID)**. Each product has its own set of API keys.
+The application is set up to use three separate products from Cashfree. Each product has its own set of API keys.
 
 You can get these from your [Cashfree Merchant Dashboard](https://merchant.cashfree.com/login) under **Developers > API Keys**.
 
 **Important:** These keys are secrets and should **NOT** be prefixed with `NEXT_PUBLIC_`. They are used in server-side flows.
 
-### 4.1 Cashfree KYC / Secure ID Keys
+### 4.1 Cashfree Verification Suite (Secure ID)
 
-Used for Aadhar verification of Installers.
-Go to: **Developers > API Keys > Verification Suite**
+Used for Aadhar verification of Installers during onboarding.
+*   **Path:** **Developers > API Keys > Verification Suite**
 
 ```env
 # .env.local
@@ -83,10 +84,10 @@ CASHFREE_CLIENT_ID="your_verification_suite_client_id"
 CASHFREE_CLIENT_SECRET="your_verification_suite_client_secret"
 ```
 
-### 4.2 Cashfree Payments Keys
+### 4.2 Cashfree Payment Gateway
 
-Used to collect payments from Job Givers.
-Go to: **Developers > API Keys > Payment Gateway**
+Used to collect payments from Job Givers into the escrow account.
+*   **Path:** **Developers > API Keys > Payment Gateway**
 
 ```env
 # .env.local
@@ -96,10 +97,10 @@ CASHFREE_PAYMENTS_CLIENT_ID="your_payment_gateway_client_id"
 CASHFREE_PAYMENTS_CLIENT_SECRET="your_payment_gateway_client_secret"
 ```
 
-### 4.3 Cashfree Payouts Keys
+### 4.3 Cashfree Payouts
 
-Used to send money to Installers.
-Go to: **Developers > API Keys > Payouts**
+Used to disburse funds from the escrow account to the Installer and the platform (as commission).
+*   **Path:** **Developers > API Keys > Payouts**
 
 ```env
 # .env.local
