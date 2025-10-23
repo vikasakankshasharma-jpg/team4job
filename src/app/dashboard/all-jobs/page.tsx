@@ -33,9 +33,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { Calendar as CalendarIcon, X, ArrowUpDown, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, X, ArrowUpDown, Loader2, Download } from "lucide-react";
 import { Job, User } from "@/lib/types";
-import { getStatusVariant, toDate, cn } from "@/lib/utils";
+import { getStatusVariant, toDate, cn, exportToCsv } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import Link from "next/link";
 import { collection, getDocs, query, DocumentReference, getDoc, where, doc } from "firebase/firestore";
@@ -123,6 +123,7 @@ export default function AllJobsPage() {
                 <ul className="list-disc space-y-2 pl-5">
                     <li><span className="font-semibold">Comprehensive Filters:</span> Use the filters at the top to narrow down the list by job title, pincode, status, job giver, type (Bidding vs. Direct Award), or date range.</li>
                     <li><span className="font-semibold">Sortable Columns:</span> Click on any column header in the table to sort the jobs. Click again to reverse the order.</li>
+                    <li><span className="font-semibold">Export Data:</span> Use the "Export to CSV" button to download the currently filtered list for offline analysis.</li>
                     <li><span className="font-semibold">View Details:</span> Click on any job row to navigate to its detailed view, where you can see all bids, comments, and job-specific information.</li>
                 </ul>
             </div>
@@ -293,6 +294,23 @@ export default function AllJobsPage() {
 
     return filtered;
   }, [jobs, filters, sortConfig]);
+  
+    const handleExport = () => {
+    const dataToExport = filteredAndSortedJobs.map(job => ({
+        ID: job.id,
+        Title: job.title,
+        Status: job.status,
+        'Job Giver': (job.jobGiver as User)?.name || 'N/A',
+        Bids: (job.bids || []).length,
+        'Job Type': getJobType(job),
+        'Posted Date': format(toDate(job.postedAt), 'yyyy-MM-dd'),
+        'Budget Min': job.budget.min,
+        'Budget Max': job.budget.max,
+        Location: job.location,
+    }));
+    exportToCsv(`cctv-jobs-${new Date().toISOString().split('T')[0]}.csv`, dataToExport);
+  };
+
 
   if (userLoading || !isAdmin) {
     return (
@@ -325,9 +343,15 @@ export default function AllJobsPage() {
   
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>All Jobs</CardTitle>
-        <CardDescription>A list of all jobs created on the platform. Click on a job to view details.</CardDescription>
+      <CardHeader className="sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <CardTitle>All Jobs</CardTitle>
+            <CardDescription>A list of all jobs created on the platform. Click on a job to view details.</CardDescription>
+        </div>
+        <Button onClick={handleExport} variant="outline" size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Export to CSV
+        </Button>
       </CardHeader>
       <CardContent>
         {/* Filters Section - visible on all screen sizes */}

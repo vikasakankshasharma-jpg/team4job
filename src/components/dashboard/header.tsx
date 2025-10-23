@@ -56,6 +56,7 @@ const jobGiverNavItems = [
 
 const adminNavItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
+    { href: "/dashboard/reports", icon: FileText, label: "Reports" },
     { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
     { href: "/dashboard/team", icon: UserCog, label: "Team Management" },
     { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
