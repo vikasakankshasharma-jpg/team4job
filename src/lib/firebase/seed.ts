@@ -686,7 +686,6 @@ async function seedBlacklist() {
 
 async function seedTransactions(uids: { [email: string]: string }) {
     console.log('\nSeeding transactions...');
-    const now = new Date();
     const batch = adminDb.batch();
 
     // Transaction for Completed Job (job2Id)
@@ -699,14 +698,31 @@ async function seedTransactions(uids: { [email: string]: string }) {
         payeeId: uids[mockUsers[2].email],
         payeeName: mockUsers[2].name,
         amount: 52000,
-        status: 'Paid',
-        createdAt: Timestamp.fromDate(new Date('2024-06-03')),
-        paidAt: Timestamp.fromDate(new Date('2024-07-22')),
+        status: 'Released',
+        createdAt: Timestamp.fromDate(new Date('2024-06-03T10:00:00Z')),
+        fundedAt: Timestamp.fromDate(new Date('2024-06-03T10:05:00Z')),
+        releasedAt: Timestamp.fromDate(new Date('2024-07-22T14:00:00Z')),
     };
     batch.set(adminDb.collection('transactions').doc(t1.id), t1);
+
+    // Transaction for In-Progress Job (job3Id) - Funded but not released
+    const t2: Transaction = {
+        id: `TXN-${Date.now()}-2`,
+        jobId: "JOB-20240718-E5F6",
+        jobTitle: "Residential Villa - 4 PTZ Cameras (Disputed)",
+        payerId: uids[mockUsers[1].email],
+        payerName: mockUsers[1].name,
+        payeeId: uids[mockUsers[3].email],
+        payeeName: mockUsers[3].name,
+        amount: 8500,
+        status: 'Funded',
+        createdAt: Timestamp.fromDate(new Date(new Date().getTime() - 8 * 24 * 60 * 60 * 1000)),
+        fundedAt: Timestamp.fromDate(new Date(new Date().getTime() - 8 * 24 * 60 * 60 * 1000 + 5*60*1000)),
+    };
+    batch.set(adminDb.collection('transactions').doc(t2.id), t2);
     
     await batch.commit();
-    console.log(`- Committed 1 transaction.`);
+    console.log(`- Committed 2 transactions.`);
 }
 
 
@@ -752,5 +768,3 @@ async function main() {
 }
 
 main();
-
-    

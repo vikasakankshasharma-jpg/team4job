@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, IndianRupee, ArrowRight, X, Wallet, CheckCircle2, ShieldEllipsis } from "lucide-react";
+import { Loader2, IndianRupee, ArrowRight, X, Wallet, CheckCircle2, ShieldEllipsis, Hourglass } from "lucide-react";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { Transaction, User } from "@/lib/types";
@@ -32,9 +32,9 @@ import Link from "next/link";
 
 const getStatusVariant = (status: Transaction['status']) => {
   switch (status) {
-    case 'Paid': return 'success';
+    case 'Released': return 'success';
+    case 'Funded': return 'info';
     case 'Refunded': return 'secondary';
-    case 'Failed': return 'destructive';
     default: return 'outline';
   }
 };
@@ -63,19 +63,16 @@ export default function TransactionsPage() {
     if (!db || !isAdmin) return;
     setLoading(true);
     
-    // Fetch all transactions
     const transactionsQuery = query(collection(db, "transactions"));
     const transactionsSnapshot = await getDocs(transactionsQuery);
     const transactionsList = transactionsSnapshot.docs.map(doc => doc.data() as Transaction);
 
-    // Collect all unique user IDs from transactions
     const userIds = new Set<string>();
     transactionsList.forEach(t => {
       userIds.add(t.payerId);
       userIds.add(t.payeeId);
     });
 
-    // Fetch user data
     if (userIds.size > 0) {
       const usersQuery = query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds)));
       const usersSnapshot = await getDocs(usersQuery);
@@ -122,11 +119,14 @@ export default function TransactionsPage() {
   
   const stats = useMemo(() => {
     return transactions.reduce((acc, t) => {
-        if(t.status === 'Paid'){
-            acc.totalPayouts += t.amount;
+        if(t.status === 'Released'){
+            acc.totalReleased += t.amount;
+        }
+        if(t.status === 'Funded'){
+            acc.totalFunded += t.amount;
         }
         return acc;
-    }, { totalPayouts: 0 });
+    }, { totalReleased: 0, totalFunded: 0 });
   }, [transactions]);
 
   const handleFilterChange = (filterName: keyof typeof filters, value: string) => {
@@ -146,22 +146,22 @@ export default function TransactionsPage() {
         <div className="grid gap-4 md:grid-cols-2">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Payouts</CardTitle>
+                    <CardTitle className="text-sm font-medium">Total Value Released</CardTitle>
                     <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">₹{stats.totalPayouts.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">Total funds paid to installers</p>
+                    <div className="text-2xl font-bold">₹{stats.totalReleased.toLocaleString()}</div>
+                    <p className="text-xs text-muted-foreground">Total funds paid out to installers</p>
                 </CardContent>
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Platform Revenue (Simulated)</CardTitle>
-                    <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium">Funds Currently Held</CardTitle>
+                    <Hourglass className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">₹{(stats.totalPayouts * 0.12).toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">Based on a 12% commission from payouts</p>
+                    <div className="text-2xl font-bold">₹{stats.totalFunded.toLocaleString()}</div>
+                    <p className="text-xs text-muted-foreground">Funds from job givers awaiting job completion</p>
                 </CardContent>
             </Card>
         </div>
@@ -213,7 +213,7 @@ export default function TransactionsPage() {
                 </TableRow>
                 ) : filteredTransactions.length > 0 ? (
                 filteredTransactions.map((t) => {
-                    const latestTimestamp = toDate(t.paidAt || t.createdAt);
+                    const latestTimestamp = toDate(t.releasedAt || t.fundedAt || t.createdAt);
                     return (
                         <TableRow key={t.id}>
                             <TableCell className="font-mono text-xs">{t.id}</TableCell>
@@ -252,5 +252,3 @@ export default function TransactionsPage() {
     </div>
   );
 }
-
-    
