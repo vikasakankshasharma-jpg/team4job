@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -15,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2, Ticket } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2, Ticket, Banknote } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -54,6 +52,7 @@ import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc }
 import { DocumentReference } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHelp } from "@/hooks/use-help";
+import axios from "axios";
 
 
 const tierIcons = {
@@ -489,12 +488,134 @@ function CompletedJobsStat() {
   );
 }
 
+const beneficiarySchema = z.object({
+    accountHolderName: z.string().min(3, "Account holder name is required."),
+    accountNumber: z.string().min(9, "Enter a valid account number.").max(18),
+    ifsc: z.string().length(11, "IFSC code must be 11 characters."),
+});
+
+
+function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = React.useState(false);
+
+    const form = useForm<z.infer<typeof beneficiarySchema>>({
+        resolver: zodResolver(beneficiarySchema),
+        defaultValues: {
+            accountHolderName: user.payouts?.accountHolderName || "",
+            accountNumber: "",
+            ifsc: "",
+        },
+    });
+
+    async function onSubmit(values: z.infer<typeof beneficiarySchema>) {
+        setIsLoading(true);
+        try {
+            await axios.post('/api/cashfree/payouts/add-beneficiary', {
+                userId: user.id,
+                ...values,
+            });
+            toast({
+                title: "Bank Account Added",
+                description: "Your bank account has been successfully registered for payouts.",
+                variant: "success",
+            });
+            onUpdate(); // This will re-fetch user data
+        } catch (error: any) {
+            console.error("Failed to add beneficiary:", error);
+            toast({
+                title: "Failed to Add Bank Account",
+                description: error.response?.data?.error || "An unexpected error occurred.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Banknote className="h-5 w-5"/> Payout Settings</CardTitle>
+                <CardDescription>Manage the bank account where you receive payments for completed jobs.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {user.payouts?.beneficiaryId ? (
+                    <div className="space-y-4">
+                         <div className="flex items-start justify-between rounded-lg border p-4 bg-secondary">
+                             <div>
+                                <p className="font-semibold">{user.payouts.accountHolderName}</p>
+                                <p className="text-sm text-muted-foreground">{user.payouts.accountNumberMasked}</p>
+                                <p className="text-sm text-muted-foreground font-mono">{user.payouts.ifsc}</p>
+                            </div>
+                            <Badge variant="success" className="gap-2"><Check className="h-4 w-4" /> Registered</Badge>
+                         </div>
+                         <p className="text-xs text-muted-foreground">To change your bank account, please contact support.</p>
+                    </div>
+                ) : (
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                           <FormField
+                              control={form.control}
+                              name="accountHolderName"
+                              render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Account Holder Name</FormLabel>
+                                    <FormControl><Input placeholder="Name as per bank records" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                  control={form.control}
+                                  name="accountNumber"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Bank Account Number</FormLabel>
+                                        <FormControl><Input placeholder="Enter account number" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                 <FormField
+                                  control={form.control}
+                                  name="ifsc"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>IFSC Code</FormLabel>
+                                        <FormControl><Input placeholder="Enter 11-digit IFSC" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                            </div>
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Bank Account
+                            </Button>
+                        </form>
+                    </Form>
+                )}
+            </CardContent>
+        </Card>
+    )
+}
+
 export default function ProfilePage() {
   const { user, role, setUser, setRole, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   const { toast } = useToast();
   const { setHelp } = useHelp();
+
+  const fetchUser = useCallback(async () => {
+    if (!db || !user) return;
+    const userDoc = await getDoc(doc(db, 'users', user.id));
+    if (userDoc.exists() && setUser) {
+      setUser({ id: userDoc.id, ...userDoc.data() } as User);
+    }
+  }, [db, user, setUser]);
 
   React.useEffect(() => {
     setHelp({
@@ -509,6 +630,7 @@ export default function ProfilePage() {
                         <>
                          <li><span className="font-semibold">Installer Reputation:</span> This section tracks your performance. Complete jobs and get good ratings to earn points and advance to higher tiers (Bronze, Silver, Gold, Platinum).</li>
                          <li><span className="font-semibold">Skills:</span> Click the pencil icon to add or remove skills from your profile. This helps Job Givers find you.</li>
+                         <li><span className="font-semibold">Payout Settings:</span> Add your bank account details here to receive payments for completed jobs.</li>
                         </>
                     )}
                     <li><span className="font-semibold">Become an Installer/Job Giver:</span> If you only have one role, you'll see a prompt to activate the other, expanding your opportunities on the platform.</li>
@@ -676,124 +798,127 @@ export default function ProfilePage() {
       </Card>
       
       {role === "Installer" && installerProfile && (
-        <Card>
-            <CardHeader>
-                <CardTitle>Installer Reputation</CardTitle>
-                <CardDescription>Your performance and trust score on the platform.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-6">
-                 <Collapsible
-                    open={isReputationOpen}
-                    onOpenChange={setIsReputationOpen}
-                 >
-                    <CollapsibleTrigger asChild>
-                        <div className="flex items-center justify-between p-4 rounded-lg bg-accent/20 cursor-pointer hover:bg-accent/30 transition-colors">
-                            <div className="flex items-center gap-4">
-                                {tierIcons[installerProfile.tier]}
-                                <div>
-                                    <p className="text-sm">Tier</p>
-                                    <p className="text-xl font-bold">{installerProfile.tier}</p>
+        <div className="grid gap-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Installer Reputation</CardTitle>
+                    <CardDescription>Your performance and trust score on the platform.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-6">
+                     <Collapsible
+                        open={isReputationOpen}
+                        onOpenChange={setIsReputationOpen}
+                     >
+                        <CollapsibleTrigger asChild>
+                            <div className="flex items-center justify-between p-4 rounded-lg bg-accent/20 cursor-pointer hover:bg-accent/30 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    {tierIcons[installerProfile.tier]}
+                                    <div>
+                                        <p className="text-sm">Tier</p>
+                                        <p className="text-xl font-bold">{installerProfile.tier}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="text-right">
+                                        <p className="text-sm">Reputation Points</p>
+                                        <p className="text-xl font-bold text-right">{installerProfile.points}</p>
+                                    </div>
+                                    <ChevronsUpDown className="h-5 w-5 text-muted-foreground" />
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <div className="text-right">
-                                    <p className="text-sm">Reputation Points</p>
-                                    <p className="text-xl font-bold text-right">{installerProfile.points}</p>
-                                </div>
-                                <ChevronsUpDown className="h-5 w-5 text-muted-foreground" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-6 pt-6">
+                            <div className="text-sm text-muted-foreground p-4 border rounded-lg space-y-4">
+                               <div>
+                                    <h4 className="font-semibold text-foreground mb-2">How Reputation Works</h4>
+                                    <p>Earn points for completing jobs and receiving positive ratings. Higher points unlock new tiers, giving you more visibility and access to premium jobs.</p>
+                               </div>
+                               <div>
+                                    <h4 className="font-semibold text-foreground mb-2">Point System</h4>
+                                    <ul className="list-disc list-inside space-y-1">
+                                       <li><span className="font-semibold">Complete a Job:</span> +50 points</li>
+                                       <li><span className="font-semibold">Receive a 5-Star Rating:</span> +20 points</li>
+                                       <li><span className="font-semibold">Receive a 4-Star Rating:</span> +10 points</li>
+                                       <li><span className="font-semibold">On-time Completion Bonus:</span> +15 points</li>
+                                       <li><span className="font-semibold">Job Canceled or 1-Star Rating:</span> -25 points</li>
+                                    </ul>
+                               </div>
+                               <div>
+                                    <h4 className="font-semibold text-foreground mb-2">Reputation Tiers</h4>
+                                   <ul className="list-disc list-inside space-y-1">
+                                       <li><span className="font-semibold">Bronze:</span> 0 - 499 points</li>
+                                       <li><span className="font-semibold">Silver:</span> 500 - 999 points</li>
+                                       <li><span className="font-semibold">Gold:</span> 1000 - 1999 points</li>
+                                       <li><span className="font-semibold">Platinum:</span> 2000+ points</li>
+                                   </ul>
+                               </div>
                             </div>
-                        </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-6 pt-6">
-                        <div className="text-sm text-muted-foreground p-4 border rounded-lg space-y-4">
-                           <div>
-                                <h4 className="font-semibold text-foreground mb-2">How Reputation Works</h4>
-                                <p>Earn points for completing jobs and receiving positive ratings. Higher points unlock new tiers, giving you more visibility and access to premium jobs.</p>
-                           </div>
-                           <div>
-                                <h4 className="font-semibold text-foreground mb-2">Point System</h4>
-                                <ul className="list-disc list-inside space-y-1">
-                                   <li><span className="font-semibold">Complete a Job:</span> +50 points</li>
-                                   <li><span className="font-semibold">Receive a 5-Star Rating:</span> +20 points</li>
-                                   <li><span className="font-semibold">Receive a 4-Star Rating:</span> +10 points</li>
-                                   <li><span className="font-semibold">On-time Completion Bonus:</span> +15 points</li>
-                                   <li><span className="font-semibold">Job Canceled or 1-Star Rating:</span> -25 points</li>
-                                </ul>
-                           </div>
-                           <div>
-                                <h4 className="font-semibold text-foreground mb-2">Reputation Tiers</h4>
-                               <ul className="list-disc list-inside space-y-1">
-                                   <li><span className="font-semibold">Bronze:</span> 0 - 499 points</li>
-                                   <li><span className="font-semibold">Silver:</span> 500 - 999 points</li>
-                                   <li><span className="font-semibold">Gold:</span> 1000 - 1999 points</li>
-                                   <li><span className="font-semibold">Platinum:</span> 2000+ points</li>
-                               </ul>
-                           </div>
-                        </div>
-                        {currentTierInfo && currentTierInfo.next !== 'Max' && (
-                             <div>
-                                <div className="flex justify-between items-center mb-1">
-                                    <p className="text-sm font-medium">Progress to {currentTierInfo.next}</p>
-                                    <p className="text-sm font-medium">{installerProfile.points} / {currentTierInfo.goal} pts</p>
-                                </div>
-                                <Progress value={progressPercentage} className="h-2"/>
-                             </div>
-                        )}
-                        {installerProfile.reputationHistory && installerProfile.reputationHistory.length > 0 && (
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base flex items-center gap-2">
-                                        <TrendingUp className="h-5 w-5" />
-                                        Reputation History (Last 6 Months)
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <ChartContainer config={chartConfig} className="h-64 w-full">
-                                        <AreaChart data={installerProfile.reputationHistory} margin={{ left: -20, right: 20, top: 10, bottom: 0 }}>
-                                            <CartesianGrid vertical={false} />
-                                            <XAxis 
-                                                dataKey="month" 
-                                                tickLine={false} 
-                                                axisLine={false} 
-                                                tickMargin={8} 
-                                            />
-                                            <YAxis
-                                                 tickLine={false}
-                                                 axisLine={false}
-                                                 tickMargin={8}
-                                            />
-                                            <ChartTooltip content={<ChartTooltipContent />} />
-                                            <Area 
-                                                dataKey="points" 
-                                                type="natural" 
-                                                fill="var(--color-points)" 
-                                                fillOpacity={0.4} 
-                                                stroke="var(--color-points)" 
-                                            />
-                                        </AreaChart>
-                                    </ChartContainer>
-                                </CardContent>
-                             </Card>
-                        )}
-                    </CollapsibleContent>
-                </Collapsible>
+                            {currentTierInfo && currentTierInfo.next !== 'Max' && (
+                                 <div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <p className="text-sm font-medium">Progress to {currentTierInfo.next}</p>
+                                        <p className="text-sm font-medium">{installerProfile.points} / {currentTierInfo.goal} pts</p>
+                                    </div>
+                                    <Progress value={progressPercentage} className="h-2"/>
+                                 </div>
+                            )}
+                            {installerProfile.reputationHistory && installerProfile.reputationHistory.length > 0 && (
+                                 <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base flex items-center gap-2">
+                                            <TrendingUp className="h-5 w-5" />
+                                            Reputation History (Last 6 Months)
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ChartContainer config={chartConfig} className="h-64 w-full">
+                                            <AreaChart data={installerProfile.reputationHistory} margin={{ left: -20, right: 20, top: 10, bottom: 0 }}>
+                                                <CartesianGrid vertical={false} />
+                                                <XAxis 
+                                                    dataKey="month" 
+                                                    tickLine={false} 
+                                                    axisLine={false} 
+                                                    tickMargin={8} 
+                                                />
+                                                <YAxis
+                                                     tickLine={false}
+                                                     axisLine={false}
+                                                     tickMargin={8}
+                                                />
+                                                <ChartTooltip content={<ChartTooltipContent />} />
+                                                <Area 
+                                                    dataKey="points" 
+                                                    type="natural" 
+                                                    fill="var(--color-points)" 
+                                                    fillOpacity={0.4} 
+                                                    stroke="var(--color-points)" 
+                                                />
+                                            </AreaChart>
+                                        </ChartContainer>
+                                    </CardContent>
+                                 </Card>
+                            )}
+                        </CollapsibleContent>
+                    </Collapsible>
 
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-                    <div className="p-4 rounded-lg border">
-                        <Star className="mx-auto h-6 w-6 mb-2 text-primary"/>
-                        <p className="text-2xl font-bold">{installerProfile.rating}/5.0</p>
-                        <p className="text-sm text-muted-foreground">from {installerProfile.reviews} reviews</p>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+                        <div className="p-4 rounded-lg border">
+                            <Star className="mx-auto h-6 w-6 mb-2 text-primary"/>
+                            <p className="text-2xl font-bold">{installerProfile.rating}/5.0</p>
+                            <p className="text-sm text-muted-foreground">from {installerProfile.reviews} reviews</p>
+                        </div>
+                        <CompletedJobsStat />
                     </div>
-                    <CompletedJobsStat />
-                </div>
 
-                <div>
-                    <h4 className="font-semibold mb-3">Skills</h4>
-                    <SkillsEditor initialSkills={installerProfile.skills} onSave={handleSkillsSave} userId={user.id}/>
-                </div>
-            </CardContent>
-        </Card>
+                    <div>
+                        <h4 className="font-semibold mb-3">Skills</h4>
+                        <SkillsEditor initialSkills={installerProfile.skills} onSave={handleSkillsSave} userId={user.id}/>
+                    </div>
+                </CardContent>
+            </Card>
+            <PayoutsCard user={user} onUpdate={fetchUser} />
+        </div>
       )}
 
       {isJobGiverOnly && (

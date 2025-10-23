@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -73,7 +72,6 @@ declare const cashfree: any;
 
 function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
   const { toast } = useToast();
-  const { db } = useFirebase();
   const [otp, setOtp] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -87,41 +85,52 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
       return;
     }
 
+    if (!user.payouts?.beneficiaryId) {
+        toast({
+            title: "Payout Account Not Setup",
+            description: "Please set up your bank account in your profile before completing a job.",
+            variant: "destructive",
+        });
+        return;
+    }
+
     setIsSubmitting(true);
-    // --- 1. Update Job Status ---
-    const updatedJobData = { 
-      status: 'Completed' as const,
-      rating: 5, // Default rating, can be changed by job giver
-    };
     
-    // Optimistically update the UI
-    setJob(prev => prev ? { ...prev, ...updatedJobData } : null);
-    
-    // Update the job doc in Firestore
-    if (db) {
-        const jobRef = doc(db, 'jobs', job.id);
-        await updateDoc(jobRef, updatedJobData);
+    try {
+        // --- 1. Find the corresponding "Funded" transaction ---
+        const q = query(collection(useFirebase().db, "transactions"), where("jobId", "==", job.id), where("status", "==", "Funded"));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+            throw new Error("Could not find a funded transaction for this job. Please contact support.");
+        }
+        const transactionDoc = querySnapshot.docs[0];
+
+        // --- 2. Call backend to request the payout ---
+        await axios.post('/api/cashfree/payouts/request-transfer', {
+            transactionId: transactionDoc.id,
+            userId: user.id, // The installer's ID
+        });
+        
+        // --- 3. Update Job Status locally and in Firestore ---
+        const updatedJobData = { status: 'Completed' as const, rating: 5 };
+        onJobUpdate(updatedJobData);
+        
+        toast({
+          title: "Job Completed!",
+          description: "Payout has been initiated. You will receive a notification once it's processed.",
+          variant: 'success'
+        });
+
+    } catch (error: any) {
+        console.error("Error completing job:", error);
+        toast({
+            title: "Error Completing Job",
+            description: error.response?.data?.error || "An unexpected error occurred while initiating the payout.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSubmitting(false);
     }
-    
-    // --- 2. Find and Update Transaction Record ---
-    if(db){
-      const q = query(collection(db, "transactions"), where("jobId", "==", job.id));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-          const transactionDoc = querySnapshot.docs[0];
-          await updateDoc(transactionDoc.ref, {
-              status: 'Released',
-              releasedAt: new Date(),
-          });
-      }
-    }
-    
-    toast({
-      title: "Job Completed!",
-      description: "The job has been marked as complete. Payout will be processed shortly.",
-      variant: 'success'
-    });
-    setIsSubmitting(false);
   };
 
   return (
@@ -148,6 +157,9 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
             Complete Job
           </Button>
         </div>
+         {!user.payouts?.beneficiaryId && (
+            <p className="text-sm text-destructive">You must set up your payout bank account in your profile before you can complete a job.</p>
+        )}
       </CardContent>
     </Card>
   );
