@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -24,10 +24,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, IndianRupee, ArrowRight, X, Wallet, CheckCircle2, ShieldEllipsis } from "lucide-react";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
-import { Transaction } from "@/lib/types";
+import { Transaction, User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
-import { collection, getDocs, query } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import Link from "next/link";
 
 const getStatusVariant = (status: Transaction['status']) => {
@@ -53,6 +53,7 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(initialFilters);
+  const [usersMap, setUsersMap] = useState<Map<string, User>>(new Map());
 
   useEffect(() => {
     if (!userLoading && !isAdmin) {
@@ -60,23 +61,53 @@ export default function TransactionsPage() {
     }
   }, [isAdmin, userLoading, router]);
 
+  const fetchTransactionsAndUsers = useCallback(async () => {
+    if (!db || !isAdmin) return;
+    setLoading(true);
+    
+    // Fetch all transactions
+    const transactionsQuery = query(collection(db, "transactions"));
+    const transactionsSnapshot = await getDocs(transactionsQuery);
+    const transactionsList = transactionsSnapshot.docs.map(doc => doc.data() as Transaction);
+
+    // Collect all unique user IDs from transactions
+    const userIds = new Set<string>();
+    transactionsList.forEach(t => {
+      userIds.add(t.payerId);
+      userIds.add(t.payeeId);
+    });
+
+    // Fetch user data
+    if (userIds.size > 0) {
+      const usersQuery = query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds)));
+      const usersSnapshot = await getDocs(usersQuery);
+      const fetchedUsersMap = new Map<string, User>();
+      usersSnapshot.forEach(doc => {
+        fetchedUsersMap.set(doc.id, { id: doc.id, ...doc.data() } as User);
+      });
+      setUsersMap(fetchedUsersMap);
+    }
+    
+    setTransactions(transactionsList.sort((a,b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime()));
+    setLoading(false);
+  }, [db, isAdmin]);
+
   useEffect(() => {
-    async function fetchTransactions() {
-      if (!db || !isAdmin) return;
-      setLoading(true);
-      const q = query(collection(db, "transactions"));
-      const querySnapshot = await getDocs(q);
-      const list = querySnapshot.docs.map(doc => doc.data() as Transaction);
-      setTransactions(list.sort((a,b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime()));
-      setLoading(false);
-    }
     if (isAdmin) {
-      fetchTransactions();
+      fetchTransactionsAndUsers();
     }
-  }, [isAdmin, db]);
+  }, [isAdmin, fetchTransactionsAndUsers]);
+
+  const enrichedTransactions = useMemo(() => {
+    return transactions.map(t => ({
+      ...t,
+      payerName: usersMap.get(t.payerId)?.name || t.payerName || t.payerId,
+      payeeName: usersMap.get(t.payeeId)?.name || t.payeeName || t.payeeId,
+    }));
+  }, [transactions, usersMap]);
 
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(t => {
+    return enrichedTransactions.filter(t => {
       const search = filters.search.toLowerCase();
       const matchesSearch = search === "" ||
         t.id.toLowerCase().includes(search) ||
@@ -89,11 +120,13 @@ export default function TransactionsPage() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [transactions, filters]);
+  }, [enrichedTransactions, filters]);
   
   const stats = useMemo(() => {
     return transactions.reduce((acc, t) => {
-        acc.totalVolume += t.amount;
+        if(t.status === 'Released' || t.status === 'Funded'){
+            acc.totalVolume += t.amount;
+        }
         if (t.status === 'Funded') acc.inEscrow += t.amount;
         if (t.status === 'Released') acc.totalPayouts += t.amount;
         return acc;
@@ -122,7 +155,7 @@ export default function TransactionsPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">₹{stats.totalVolume.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">Total value of all transactions</p>
+                    <p className="text-xs text-muted-foreground">Value of all funded & released jobs</p>
                 </CardContent>
             </Card>
             <Card>
