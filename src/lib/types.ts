@@ -144,9 +144,9 @@ export type SubscriptionPlan = {
   name: string;
   description: string;
   price: number;
-  role: 'Job Giver' | 'Installer';
+  role: 'Job Giver' | 'Installer' | 'Any';
   features: string[];
-  trialPeriodDays?: number;
+  isArchived: boolean;
 };
 
 export type Coupon = {
