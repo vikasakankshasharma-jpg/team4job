@@ -757,7 +757,7 @@ async function seedSubscriptionPlans() {
 
 
 async function clearAllCollections() {
-    const collections = ['disputes', 'jobs', 'users', 'blacklist', 'coupons', 'subscriptionPlans', 'transactions'];
+    const collections = ['disputes', 'jobs', 'users', 'blacklist', 'coupons', 'subscriptionPlans', 'transactions', 'settings'];
     for (const collection of collections) {
         await clearCollection(collection);
     }

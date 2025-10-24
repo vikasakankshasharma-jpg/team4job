@@ -34,7 +34,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { useUser, useFirebase } from "@/hooks/use-user"
+import { useUser } from "@/hooks/use-user"
 import { Input } from "@/components/ui/input"
 import {
   Tabs,
@@ -46,7 +46,7 @@ import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift, Loader2, Ticket, P
 import { useHelp } from "@/hooks/use-help"
 import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore"
 import type { PlatformSettings, SubscriptionPlan, Coupon, BlacklistEntry } from "@/lib/types"
-
+import { useFirebase } from "@/hooks/use-user"
 import SubscriptionPlansSettings from "../subscription-plans/page"
 import CouponsSettings from "../coupons/page"
 import BlacklistSettings from "../blacklist/page"
@@ -203,11 +203,6 @@ function PersonalSettingsCard() {
 const initialSettings: Partial<PlatformSettings> = {
     installerCommissionRate: 10,
     jobGiverFeeRate: 2,
-    proInstallerPlanPrice: 2999,
-    businessJobGiverPlanPrice: 4999,
-    bidBundle10: 500,
-    bidBundle25: 1100,
-    bidBundle50: 2000,
     defaultTrialPeriodDays: 30,
     freeBidsForNewInstallers: 10,
     freePostsForNewJobGivers: 3,
@@ -298,35 +293,6 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
                 </CardFooter>
             </Card>
 
-             <Card>
-                <CardHeader>
-                    <CardTitle>Bid Bundles (1-Year Validity)</CardTitle>
-                     <CardDescription>Set the pricing for installers to purchase bundles of bids.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="bidBundle10">10 Bids (₹)</Label>
-                            <Input id="bidBundle10" type="number" value={settings.bidBundle10} onChange={handleInputChange} min="0" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="bidBundle25">25 Bids (₹)</Label>
-                            <Input id="bidBundle25" type="number" value={settings.bidBundle25} onChange={handleInputChange} min="0" />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="bidBundle50">50 Bids (₹)</Label>
-                            <Input id="bidBundle50" type="number" value={settings.bidBundle50} onChange={handleInputChange} min="0" />
-                        </div>
-                    </div>
-                </CardContent>
-                 <CardFooter>
-                    <Button onClick={handleSave} disabled={isSaving}>
-                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Bid Prices
-                    </Button>
-                </CardFooter>
-            </Card>
-
             <SubscriptionPlansSettings plans={plans} onDataChange={onDataChange} />
             <CouponsSettings coupons={coupons} onDataChange={onDataChange} />
         </div>
@@ -384,10 +350,9 @@ function UserReputationSettings() {
         <div className="grid gap-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>New User Onboarding</CardTitle>
+                    <CardTitle>Growth & Onboarding Strategy</CardTitle>
                     <CardDescription>
-                        Configure the "welcome kit" for new users to encourage engagement.
-                        This is a key part of the platform's growth strategy.
+                        Configure the "welcome kit" for new users. This is a key part of the platform's growth strategy.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -396,7 +361,7 @@ function UserReputationSettings() {
                              <Label htmlFor="defaultTrialPeriodDays">Default Trial Period (days)</Label>
                              <Input id="defaultTrialPeriodDays" type="number" value={settings.defaultTrialPeriodDays} onChange={handleInputChange} min="0" />
                              <p className="text-xs text-muted-foreground">
-                               Free trial for the <span className="font-semibold text-primary">Pro Installer</span> and <span className="font-semibold text-primary">Business Job Giver</span> plans.
+                               Free trial for the <span className="font-semibold text-primary">Pro</span> and <span className="font-semibold text-primary">Business</span> plans.
                             </p>
                         </div>
                          <div className="space-y-2">
