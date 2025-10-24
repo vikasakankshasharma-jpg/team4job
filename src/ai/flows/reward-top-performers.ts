@@ -87,7 +87,7 @@ export const rewardTopPerformers = ai.defineFlow(
         .sort((a, b) => {
           if (b.monthlyPoints !== a.monthlyPoints) return b.monthlyPoints - a.monthlyPoints;
           if ((b.installerProfile?.rating || 0) !== (a.installerProfile?.rating || 0)) return (b.installerProfile?.rating || 0) - (a.installerProfile?.rating || 0);
-          return toDate(b.memberSince).getTime() - toDate(a.memberSince).getTime();
+          return toDate(a.memberSince).getTime() - toDate(b.memberSince).getTime();
         });
 
       // 3. Select top 3 performers
@@ -129,3 +129,5 @@ export const rewardTopPerformers = ai.defineFlow(
     }
   }
 );
+
+    
