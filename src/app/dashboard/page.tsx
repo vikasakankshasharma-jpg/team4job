@@ -146,7 +146,7 @@ function InstallerDashboard() {
         const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot] = await Promise.all([
             getDocs(openJobsQuery),
             getDocs(myBidsSnapshot),
-            getDocs(myAwardedQuery)
+            getDocs(myAwardedSnapshot)
         ]);
 
         const myJobsSet = new Set([...myBidsSnapshot.docs.map(d => d.id), ...myAwardedSnapshot.docs.map(d => d.id)]);

@@ -34,6 +34,7 @@ import { Separator } from "@/components/ui/separator";
 import { JobAttachment } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
 import { doc, setDoc } from "firebase/firestore";
+import { useHelp } from "@/hooks/use-help";
 
 const addressSchema = z.object({
   house: z.string().min(3, "Please enter a valid house/building detail."),
@@ -86,7 +87,25 @@ export default function PostJobPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = React.useState<File[]>([]);
   const [mapCenter, setMapCenter] = React.useState<{lat: number, lng: number} | null>(null);
+  const { setHelp } = useHelp();
 
+  React.useEffect(() => {
+    setHelp({
+        title: "Post a New Job",
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>Follow these steps to create a job listing and attract the best installers.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Job Title:</span> Write a clear and concise title. This is the first thing installers see.</li>
+                    <li><span className="font-semibold">AI Generate:</span> After writing a title, click the "AI Generate" button. Our AI will write a professional job description, suggest required skills, and estimate a fair budget for you.</li>
+                    <li><span className="font-semibold">Location & Address:</span> Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.</li>
+                    <li><span className="font-semibold">Dates & Budget:</span> Set your bidding deadline, the date you want work to start, and your budget range.</li>
+                    <li><span className="font-semibold">Direct Award (Optional):</span> If you already know an installer on our platform, you can enter their public ID here to award the job to them directly, skipping the public bidding process.</li>
+                </ul>
+            </div>
+        )
+    })
+  }, [setHelp]);
 
   useEffect(() => {
     if (!userLoading && role !== 'Job Giver') {
