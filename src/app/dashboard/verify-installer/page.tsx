@@ -32,7 +32,7 @@ import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useHelp } from "@/hooks/use-help";
 import { allSkills } from "@/lib/data";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "../ui/checkbox";
 
 const aadharSchema = z.object({
   aadharNumber: z.string().length(12, { message: "Aadhar number must be 12 digits." }),
@@ -77,7 +77,7 @@ export default function VerifyInstallerPage() {
   
   const aadharForm = useForm<z.infer<typeof aadharSchema>>({
     resolver: zodResolver(aadharSchema),
-    defaultValues: { aadharNumber: "" },
+    defaultValues: { aadharNumber: user?.aadharNumber || "" },
   });
 
   const otpForm = useForm<z.infer<typeof otpSchema>>({
@@ -87,7 +87,7 @@ export default function VerifyInstallerPage() {
   
   const skillsForm = useForm<z.infer<typeof skillsSchema>>({
     resolver: zodResolver(skillsSchema),
-    defaultValues: { skills: [] },
+    defaultValues: { skills: user?.installerProfile?.skills || [] },
   });
 
   useEffect(() => {
