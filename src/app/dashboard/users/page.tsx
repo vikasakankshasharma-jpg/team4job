@@ -138,31 +138,37 @@ export default function UsersPage() {
   const handleUserUpdate = (userId: string, data: Partial<User>) => {
     setUsers(currentUsers => currentUsers.map(u => u.id === userId ? { ...u, ...data } : u));
   };
-  
-  const handleDeactivate = async (targetUser: User) => {
-    setActionLoading(targetUser.id);
-    await updateDoc(doc(db, 'users', targetUser.id), { status: 'deactivated' });
-    handleUserUpdate(targetUser.id, { status: 'deactivated' });
-    toast({ title: 'User Deactivated', description: `${targetUser.name}'s account has been deactivated.`, variant: 'destructive' });
-    setActionLoading(null);
-  };
 
-  const handleReactivate = async (targetUser: User) => {
+  const handleUserAction = async (targetUser: User, newStatus: User['status'], days?: number) => {
     setActionLoading(targetUser.id);
-    await updateDoc(doc(db, 'users', targetUser.id), { status: 'active' });
-    handleUserUpdate(targetUser.id, { status: 'active' });
-    toast({ title: 'User Reactivated', description: `${targetUser.name}'s account is now active.`, variant: 'success' });
-    setActionLoading(null);
-  };
-  
-  const handleSuspend = async (targetUser: User) => {
-    setActionLoading(targetUser.id);
-    const suspensionEndDate = new Date();
-    suspensionEndDate.setDate(suspensionEndDate.getDate() + 7); // Default 7 days
-    await updateDoc(doc(db, 'users', targetUser.id), { status: 'suspended', suspensionEndDate });
-    handleUserUpdate(targetUser.id, { status: 'suspended', suspensionEndDate });
-    toast({ title: 'User Suspended', description: `${targetUser.name} has been suspended for 7 days.` });
-    setActionLoading(null);
+    let updateData: Partial<User> = { status: newStatus };
+    let toastTitle = '';
+    let toastDescription = '';
+
+    if (newStatus === 'suspended' && days) {
+      const suspensionEndDate = new Date();
+      suspensionEndDate.setDate(suspensionEndDate.getDate() + days);
+      updateData.suspensionEndDate = suspensionEndDate;
+      toastTitle = 'User Suspended';
+      toastDescription = `${targetUser.name} has been suspended for ${days} days.`;
+    } else if (newStatus === 'active') {
+      toastTitle = 'User Reactivated';
+      toastDescription = `${targetUser.name}'s account is now active.`;
+    } else if (newStatus === 'deactivated') {
+      toastTitle = 'User Deactivated';
+      toastDescription = `${targetUser.name}'s account has been deactivated.`;
+    }
+
+    try {
+      await updateDoc(doc(db, 'users', targetUser.id), updateData);
+      handleUserUpdate(targetUser.id, updateData);
+      toast({ title: toastTitle, description: toastDescription });
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error", description: "Failed to update user status.", variant: "destructive" });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -275,7 +281,7 @@ export default function UsersPage() {
     value !== "" && value !== "all"
   ).length;
 
-  const roles = ["All", "Admin", "Installer", "Job Giver"];
+  const roles = ["All", "Admin", "Installer", "Job Giver", "Support Team"];
   const tiers = ["All", "Bronze", "Silver", "Gold", "Platinum"];
   const verificationStatuses = [
     { value: 'all', label: 'All Verification' },
@@ -421,20 +427,25 @@ export default function UsersPage() {
                             <DropdownMenuItem asChild><Link href={`/dashboard/users/${u.id}`}>View Profile</Link></DropdownMenuItem>
                             <DropdownMenuSeparator />
                              {(u.status === 'active' || u.status === undefined) && (
-                              <DropdownMenuItem onClick={() => handleSuspend(u)}><Ban className="mr-2 h-4 w-4"/>Suspend</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUserAction(u, 'deactivated')}>
+                                <UserX className="mr-2 h-4 w-4" />
+                                Deactivate
+                              </DropdownMenuItem>
                             )}
-                             {u.status === 'suspended' && (
-                              <>
-                                <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDeactivate(u)}><UserX className="mr-2 h-4 w-4"/>Deactivate</DropdownMenuItem>
-                              </>
+                             {u.status !== 'suspended' && (
+                               <DropdownMenuItem onClick={() => handleUserAction(u, 'suspended', 7)}>
+                                <Ban className="mr-2 h-4 w-4" />
+                                Suspend (7 Days)
+                              </DropdownMenuItem>
                             )}
-                            {u.status === 'deactivated' && (
-                              <>
-                                <DropdownMenuItem onClick={() => handleReactivate(u)}><UserCheck className="mr-2 h-4 w-4"/>Re-activate</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4"/>Delete Permanently</DropdownMenuItem>
-                              </>
+                             {(u.status === 'deactivated' || u.status === 'suspended') && (
+                                <DropdownMenuItem onClick={() => handleUserAction(u, 'active')}>
+                                <UserCheck className="mr-2 h-4 w-4" />
+                                Re-activate
+                              </DropdownMenuItem>
                             )}
+                             <DropdownMenuSeparator />
+                             <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4"/>Delete Permanently</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )
@@ -469,3 +480,4 @@ export default function UsersPage() {
     </>
   );
 }
+
