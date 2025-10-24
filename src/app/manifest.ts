@@ -9,6 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     background_color: '#F0F2F5',
     theme_color: '#B0B6C4',
+    crossOrigin: 'use-credentials', // Add this line to fix the CORS issue
     icons: [
       {
         src: '/favicon.ico',

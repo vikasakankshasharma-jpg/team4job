@@ -309,20 +309,6 @@ function MonetizationSettings() {
                         </div>
                      </div>
                 </div>
-
-                 <div className="space-y-4 rounded-lg border p-4">
-                    <h3 className="font-semibold">Subscription Plans</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="space-y-2">
-                         <Label>Installer Pro Plan (₹/year)</Label>
-                         <Input id="proInstallerPlanPrice" type="number" value={settings.proInstallerPlanPrice} onChange={handleInputChange} />
-                       </div>
-                        <div className="space-y-2">
-                         <Label>Job Giver Business Plan (₹/year)</Label>
-                         <Input id="businessJobGiverPlanPrice" type="number" value={settings.businessJobGiverPlanPrice} onChange={handleInputChange} />
-                       </div>
-                    </div>
-                 </div>
                  <div className="space-y-4 rounded-lg border p-4">
                     <h3 className="font-semibold">Bid Bundles (1-Year Validity)</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
