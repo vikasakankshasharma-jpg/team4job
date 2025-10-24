@@ -11,9 +11,9 @@ import {
 } from "@/components/ui/card";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
-import { Loader2, Users, Briefcase, IndianRupee, PieChart, Download, Award, Star, Calendar, Medal, Bot } from "lucide-react";
+import { Loader2, Users, Briefcase, IndianRupee, PieChart, Download, Award, Star, Calendar, Medal, Bot, HardDriveDownload } from "lucide-react";
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from "recharts";
-import { User, Job, SubscriptionPlan } from "@/lib/types";
+import { User, Job, SubscriptionPlan, Transaction, Dispute } from "@/lib/types";
 import { collection, getDocs, query, doc, updateDoc } from "firebase/firestore";
 import { toDate, exportToCsv } from "@/lib/utils";
 import { format, startOfMonth, subMonths, getMonth, getYear } from "date-fns";
@@ -135,7 +135,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                     </div>
                     <Button onClick={handleRunAutomation} disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-                        Reward Top 3 Platform-Wide
+                        Run Monthly Reward Automation
                     </Button>
                 </div>
             </CardHeader>
@@ -345,12 +345,87 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
     );
 }
 
+function DataExportCard({ users, jobs, transactions, disputes }: { users: User[], jobs: Job[], transactions: Transaction[], disputes: Dispute[] }) {
+    const { toast } = useToast();
+    const [exporting, setExporting] = useState<string | null>(null);
+
+    const handleExport = (dataType: 'users' | 'jobs' | 'transactions' | 'disputes') => {
+        setExporting(dataType);
+        try {
+            let data: any[] = [];
+            let filename = `cctv-export-${dataType}-${new Date().toISOString().split('T')[0]}.csv`;
+
+            switch(dataType) {
+                case 'users':
+                    data = users.map(u => ({
+                        id: u.id,
+                        name: u.name,
+                        email: u.email,
+                        mobile: u.mobile,
+                        roles: u.roles.join(', '),
+                        status: u.status || 'active',
+                        memberSince: format(toDate(u.memberSince), 'yyyy-MM-dd'),
+                        pincode: u.pincodes.residential,
+                        installerTier: u.installerProfile?.tier || 'N/A',
+                        installerPoints: u.installerProfile?.points || 0,
+                    }));
+                    break;
+                case 'jobs':
+                    data = jobs;
+                    break;
+                case 'transactions':
+                    data = transactions;
+                    break;
+                case 'disputes':
+                    data = disputes;
+                    break;
+            }
+            
+            if (data.length === 0) {
+                toast({ title: "No Data", description: `There is no data to export for ${dataType}.`, variant: "destructive" });
+                return;
+            }
+            exportToCsv(filename, data);
+            toast({ title: "Export Successful", description: `${data.length} records exported for ${dataType}.` });
+        } catch(error) {
+            console.error(`Failed to export ${dataType}:`, error);
+            toast({ title: "Export Failed", description: "An error occurred during the export.", variant: "destructive" });
+        } finally {
+            setExporting(null);
+        }
+    };
+
+    const ExportButton = ({ type }: { type: 'users' | 'jobs' | 'transactions' | 'disputes' }) => (
+        <Button onClick={() => handleExport(type)} disabled={!!exporting}>
+            {exporting === type ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            Export All {type.charAt(0).toUpperCase() + type.slice(1)}
+        </Button>
+    );
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><HardDriveDownload /> Data Export</CardTitle>
+                <CardDescription>Download a full CSV backup of your platform's core data collections.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <ExportButton type="users" />
+                <ExportButton type="jobs" />
+                <ExportButton type="transactions" />
+                <ExportButton type="disputes" />
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function ReportsPage() {
   const { isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const router = useRouter();
   const [users, setUsers] = React.useState<User[]>([]);
   const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+  const [disputes, setDisputes] = React.useState<Dispute[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
@@ -362,15 +437,16 @@ export default function ReportsPage() {
   const fetchData = React.useCallback(async () => {
     if (!db || !isAdmin) return;
     setLoading(true);
-    const usersQuery = query(collection(db, "users"));
-    const jobsQuery = query(collection(db, "jobs"));
-
-    const [usersSnapshot, jobsSnapshot] = await Promise.all([
-        getDocs(usersQuery),
-        getDocs(jobsQuery),
+    const [usersSnapshot, jobsSnapshot, transactionsSnapshot, disputesSnapshot] = await Promise.all([
+        getDocs(query(collection(db, "users"))),
+        getDocs(query(collection(db, "jobs"))),
+        getDocs(query(collection(db, "transactions"))),
+        getDocs(query(collection(db, "disputes"))),
     ]);
     setUsers(usersSnapshot.docs.map(doc => doc.data() as User));
     setJobs(jobsSnapshot.docs.map(doc => doc.data() as Job));
+    setTransactions(transactionsSnapshot.docs.map(doc => doc.data() as Transaction));
+    setDisputes(disputesSnapshot.docs.map(doc => doc.data() as Dispute));
     setLoading(false);
   }, [db, isAdmin]);
 
@@ -380,7 +456,7 @@ export default function ReportsPage() {
 
 
   const reportData = useMemo(() => {
-    if (users.length === 0 || jobs.length === 0) return null;
+    if (users.length === 0 && jobs.length === 0) return null;
 
     const totalUsers = users.length;
     const installerCount = users.filter(u => u.roles.includes("Installer")).length;
@@ -391,13 +467,11 @@ export default function ReportsPage() {
     const fillRate = totalJobs > 0 ? (completedJobs.length / totalJobs) * 100 : 0;
     
     let platformRevenue = 0;
-    completedJobs.forEach(job => {
-        if (job.awardedInstaller) {
-            const winningBid = (job.bids || []).find(bid => (bid.installer as any)?.id === (job.awardedInstaller as any)?.id);
-            if (winningBid) {
-                // Assuming 10% from installer and 2% from job giver. This should be dynamic in a real app.
-                platformRevenue += winningBid.amount * 0.12; 
-            }
+    transactions.forEach(t => {
+        if (t.status === 'Released') {
+            // Assuming 10% commission from installer and 2% fee from job giver
+             const originalBidAmount = t.amount / (1 - 0.10); // Infer original bid from installer payout
+             platformRevenue += originalBidAmount * 0.12;
         }
     });
 
@@ -443,7 +517,7 @@ export default function ReportsPage() {
         jobStatusData,
         allInstallers,
     };
-  }, [users, jobs]);
+  }, [users, jobs, transactions]);
 
   if (userLoading || !isAdmin || loading) {
     return (
@@ -472,6 +546,8 @@ export default function ReportsPage() {
         <KpiCard title="Platform Revenue (Simulated)" value={`₹${platformRevenue.toLocaleString()}`} description="Based on a 12% commission" icon={IndianRupee} iconBgColor="bg-green-500" />
         <KpiCard title="Job Fill Rate" value={`${fillRate.toFixed(1)}%`} description="Of jobs posted are completed" icon={PieChart} iconBgColor="bg-amber-500" />
       </div>
+
+      <DataExportCard users={users} jobs={jobs} transactions={transactions} disputes={disputes} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <TopPerformersCard installers={allInstallers} />
