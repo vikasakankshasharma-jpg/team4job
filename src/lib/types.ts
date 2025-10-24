@@ -178,17 +178,19 @@ export type Transaction = {
   id: string; // Our internal ID
   jobId: string;
   jobTitle: string;
-  payerId: string;
-  payerName: string;
-  payeeId: string;
-  payeeName: string;
+  payerId: string; // Job Giver ID
+  payeeId: string; // Installer ID
   amount: number;
-  status: 'Initiated' | 'Funded' | 'Failed' | 'Released' | 'Refunded';
-  createdAt: Date | Timestamp;
+  commission: number; // Platform commission
+  status: 'Initiated' | 'Funded' | 'Failed' | 'Released' | 'Refunded' | 'Disputed';
   paymentGatewayOrderId?: string;
   paymentGatewaySessionId?: string;
+  escrowAccountId?: string;
+  holdId?: string;
+  releaseId?: string;
   payoutTransferId?: string;
   refundTransferId?: string;
+  createdAt: Date | Timestamp;
   fundedAt?: Date | Timestamp;
   failedAt?: Date | Timestamp;
   releasedAt?: Date | Timestamp;

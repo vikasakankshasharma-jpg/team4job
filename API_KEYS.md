@@ -1,3 +1,4 @@
+
 # Required API Keys for CCTV Job Connect
 
 This document outlines the essential API keys required for the CCTV Job Connect application to function correctly. These keys must be stored in an environment file (e.g., `.env.local`) at the root of the project.
@@ -108,4 +109,17 @@ Used to disburse funds from the escrow account to the Installer and the platform
 # For sending payouts to Installers
 CASHFREE_PAYOUTS_CLIENT_ID="your_payouts_client_id"
 CASHFREE_PAYOUTS_CLIENT_SECRET="your_payouts_client_secret"
+```
+
+### 4.4 Cashfree Escrow
+
+Used for managing the marketplace escrow payment holds and releases.
+*   **Path:** **Developers > API Keys > Escrow**
+
+```env
+# .env.local
+
+# For Escrow account management
+CASHFREE_ESCROW_CLIENT_ID="your_escrow_client_id"
+CASHFREE_ESCROW_CLIENT_SECRET="your_escrow_client_secret"
 ```
