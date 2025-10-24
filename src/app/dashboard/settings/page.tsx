@@ -42,10 +42,14 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift, Loader2 } from "lucide-react"
+import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift, Loader2, Ticket, Package, Ban } from "lucide-react"
 import { useHelp } from "@/hooks/use-help"
 import { doc, getDoc, setDoc } from "firebase/firestore"
 import type { PlatformSettings } from "@/lib/types"
+
+import CouponsPage from "../coupons/page"
+import SubscriptionPlansPage from "../subscription-plans/page"
+import BlacklistPage from "../blacklist/page"
 
 function ThemeSelector() {
     const { theme, setTheme } = useTheme()
@@ -219,122 +223,12 @@ const initialSettings: PlatformSettings = {
 };
 
 function MonetizationSettings() {
-    const { db } = useFirebase();
-    const { toast } = useToast();
-    const [isLoading, setIsLoading] = React.useState(true);
-    const [isSaving, setIsSaving] = React.useState(false);
-    const [settings, setSettings] = React.useState<PlatformSettings>(initialSettings);
-
-    React.useEffect(() => {
-        if (!db) return;
-        const fetchSettings = async () => {
-            setIsLoading(true);
-            const settingsDoc = await getDoc(doc(db, "settings", "platform"));
-            if (settingsDoc.exists()) {
-                setSettings(prev => ({ ...prev, ...settingsDoc.data() }));
-            }
-            setIsLoading(false);
-        };
-        fetchSettings();
-    }, [db]);
-
-    const handleSave = async () => {
-        if (!db) return;
-        setIsSaving(true);
-        try {
-            await setDoc(doc(db, "settings", "platform"), settings, { merge: true });
-            toast({
-                title: "Settings Saved",
-                description: "Monetization settings have been updated.",
-                variant: "success",
-            });
-        } catch (error) {
-            console.error("Error saving settings:", error);
-            toast({
-                title: "Error",
-                description: "Failed to save settings.",
-                variant: "destructive",
-            });
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { id, value } = e.target;
-        setSettings(prev => ({ ...prev, [id]: Number(value) }));
-    };
-
-    if (isLoading) {
-        return <Skeleton className="h-96 w-full" />;
-    }
-
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Monetization</CardTitle>
-                <CardDescription>Configure how the platform generates revenue through commissions, subscriptions, and bid bundles.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="space-y-4 rounded-lg border p-4">
-                     <h3 className="font-semibold flex items-center gap-2"><Percent className="h-4 w-4" /> Platform Commission Rates</h3>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                             <Label htmlFor="installerCommissionRate">Installer Commission Rate (%)</Label>
-                             <Input
-                                id="installerCommissionRate"
-                                type="number"
-                                value={settings.installerCommissionRate}
-                                onChange={handleInputChange}
-                                min="0"
-                                max="100"
-                            />
-                             <p className="text-xs text-muted-foreground">
-                                The percentage taken from the installer's earnings.
-                            </p>
-                        </div>
-                         <div className="space-y-2">
-                             <Label htmlFor="jobGiverFeeRate">Job Giver Fee Rate (%)</Label>
-                             <Input
-                                id="jobGiverFeeRate"
-                                type="number"
-                                value={settings.jobGiverFeeRate}
-                                onChange={handleInputChange}
-                                min="0"
-                                max="100"
-                            />
-                              <p className="text-xs text-muted-foreground">
-                                The percentage charged to the job giver on the bid amount.
-                            </p>
-                        </div>
-                     </div>
-                </div>
-                 <div className="space-y-4 rounded-lg border p-4">
-                    <h3 className="font-semibold">Bid Bundles (1-Year Validity)</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                       <div className="space-y-2">
-                         <Label>10 Bids (₹)</Label>
-                         <Input id="bidBundle10" type="number" value={settings.bidBundle10} onChange={handleInputChange} />
-                       </div>
-                        <div className="space-y-2">
-                         <Label>25 Bids (₹)</Label>
-                         <Input id="bidBundle25" type="number" value={settings.bidBundle25} onChange={handleInputChange} />
-                       </div>
-                         <div className="space-y-2">
-                         <Label>50 Bids (₹)</Label>
-                         <Input id="bidBundle50" type="number" value={settings.bidBundle50} onChange={handleInputChange} />
-                       </div>
-                    </div>
-                 </div>
-            </CardContent>
-            <CardFooter>
-                 <Button onClick={handleSave} disabled={isSaving}>
-                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                     Save Monetization Settings
-                 </Button>
-            </CardFooter>
-        </Card>
-    );
+        <div className="grid gap-6">
+            <SubscriptionPlansPage />
+            <CouponsPage />
+        </div>
+    )
 }
 
 function UserReputationSettings() {
@@ -518,10 +412,37 @@ function PlatformRulesSettings() {
     }
 
     return (
+      <div className="grid gap-6">
         <Card>
             <CardHeader>
-                <CardTitle>Platform Rules</CardTitle>
-                <CardDescription>Set global rules for job postings, bidding, and content on the platform.</CardDescription>
+                <CardTitle>Commissions & Fees</CardTitle>
+                <CardDescription>Configure platform revenue from commissions and job fees.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="installerCommissionRate">Installer Commission Rate (%)</Label>
+                        <Input id="installerCommissionRate" type="number" value={settings.installerCommissionRate} onChange={handleInputChange} min="0" max="100"/>
+                        <p className="text-xs text-muted-foreground">The percentage taken from the installer's earnings.</p>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="jobGiverFeeRate">Job Giver Fee Rate (%)</Label>
+                        <Input id="jobGiverFeeRate" type="number" value={settings.jobGiverFeeRate} onChange={handleInputChange} min="0" max="100"/>
+                        <p className="text-xs text-muted-foreground">The percentage charged to the job giver on the bid amount.</p>
+                    </div>
+                </div>
+            </CardContent>
+             <CardFooter>
+                 <Button onClick={handleSave} disabled={isSaving}>
+                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     Save Commissions
+                 </Button>
+            </CardFooter>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Job & Content Rules</CardTitle>
+                <CardDescription>Set global rules for job postings and content on the platform.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="space-y-2">
@@ -556,10 +477,12 @@ function PlatformRulesSettings() {
             <CardFooter>
                  <Button onClick={handleSave} disabled={isSaving}>
                      {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                     Save Platform Rules
+                     Save Job Rules
                  </Button>
             </CardFooter>
         </Card>
+        <BlacklistPage />
+      </div>
     );
 }
 
@@ -576,9 +499,9 @@ export default function SettingsPage() {
                 <p>This page allows you to configure your personal settings and, if you're an admin, global platform settings.</p>
                 {isAdmin ? (
                     <ul className="list-disc space-y-2 pl-5">
-                        <li><span className="font-semibold">Platform Rules:</span> Set global rules like the minimum budget for a job.</li>
-                        <li><span className="font-semibold">Monetization:</span> Configure platform commissions and subscription plan pricing.</li>
+                        <li><span className="font-semibold">Monetization:</span> Manage subscription plans, coupons, and view bid bundle pricing.</li>
                         <li><span className="font-semibold">User & Reputation:</span> Define the points and tier system for installer reputation.</li>
+                        <li><span className="font-semibold">Platform Rules:</span> Set global rules like minimum job budget, commission rates, and manage the platform blacklist.</li>
                         <li><span className="font-semibold">General:</span> Change your personal settings like theme and notifications.</li>
                     </ul>
                 ) : (
@@ -607,10 +530,22 @@ export default function SettingsPage() {
             <h1 className="text-3xl font-bold">Settings</h1>
             <Tabs defaultValue="monetization" className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="monetization">Monetization</TabsTrigger>
-                    <TabsTrigger value="reputation">User &amp; Reputation</TabsTrigger>
-                    <TabsTrigger value="platform">Platform Rules</TabsTrigger>
-                    <TabsTrigger value="general">General</TabsTrigger>
+                    <TabsTrigger value="monetization">
+                        <Package className="mr-2 h-4 w-4 sm:hidden" />
+                        <span className="hidden sm:inline">Monetization</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="reputation">
+                         <Gem className="mr-2 h-4 w-4 sm:hidden" />
+                        <span className="hidden sm:inline">User & Reputation</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="platform">
+                         <Ban className="mr-2 h-4 w-4 sm:hidden" />
+                        <span className="hidden sm:inline">Platform Rules</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="general">
+                        <Settings className="mr-2 h-4 w-4 sm:hidden" />
+                        <span className="hidden sm:inline">General</span>
+                    </TabsTrigger>
                 </TabsList>
                 <TabsContent value="monetization">
                     <MonetizationSettings />
