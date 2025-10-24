@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -200,11 +201,9 @@ function PersonalSettingsCard() {
     );
 }
 
-const initialSettings: PlatformSettings = {
+const initialSettings: Partial<PlatformSettings> = {
     installerCommissionRate: 10,
     jobGiverFeeRate: 2,
-    proInstallerPlanPrice: 2999,
-    businessJobGiverPlanPrice: 4999,
     bidBundle10: 500,
     bidBundle25: 1100,
     bidBundle50: 2000,
@@ -227,7 +226,7 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
     const { toast } = useToast();
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
-    const [settings, setSettings] = React.useState<PlatformSettings>(initialSettings);
+    const [settings, setSettings] = React.useState<Partial<PlatformSettings>>(initialSettings);
     
     React.useEffect(() => {
         if (!db) return;
@@ -338,7 +337,7 @@ function UserReputationSettings() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
-    const [settings, setSettings] = React.useState<PlatformSettings>(initialSettings);
+    const [settings, setSettings] = React.useState<Partial<PlatformSettings>>(initialSettings);
 
     React.useEffect(() => {
         if (!db) return;
@@ -467,7 +466,7 @@ function PlatformRulesSettings({ blacklist, onDataChange } : { blacklist: Blackl
     const { toast } = useToast();
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
-    const [settings, setSettings] = React.useState<PlatformSettings>(initialSettings);
+    const [settings, setSettings] = React.useState<Partial<PlatformSettings>>(initialSettings);
     
     React.useEffect(() => {
         if (!db) return;
