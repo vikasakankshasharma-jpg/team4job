@@ -96,8 +96,8 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                 if ((b.installerProfile?.rating || 0) !== (a.installerProfile?.rating || 0)) {
                     return (b.installerProfile?.rating || 0) - (a.installerProfile?.rating || 0);
                 }
-                // 3. Sort by memberSince (newest first, so descending)
-                return toDate(b.memberSince).getTime() - toDate(a.memberSince).getTime();
+                // 3. Sort by memberSince (oldest first, so ascending)
+                return toDate(a.memberSince).getTime() - toDate(b.memberSince).getTime();
             });
     }, [installers]);
     
@@ -146,6 +146,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                             <TableHead>Installer</TableHead>
                             <TableHead>Monthly Points</TableHead>
                             <TableHead>Rating</TableHead>
+                            <TableHead>Pincode</TableHead>
                             <TableHead>Member Since</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -175,6 +176,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                                         <span>{installer.installerProfile?.rating.toFixed(1)}</span>
                                     </div>
                                </TableCell>
+                                <TableCell>{installer.pincodes.residential}</TableCell>
                                <TableCell>{format(toDate(installer.memberSince), 'MMM dd, yyyy')}</TableCell>
                            </TableRow>
                         ))}
@@ -384,3 +386,5 @@ export default function ReportsPage() {
     </div>
   );
 }
+
+    
