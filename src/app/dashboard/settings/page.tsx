@@ -203,6 +203,8 @@ function PersonalSettingsCard() {
 const initialSettings: Partial<PlatformSettings> = {
     installerCommissionRate: 10,
     jobGiverFeeRate: 2,
+    proInstallerPlanPrice: 2999,
+    businessJobGiverPlanPrice: 4999,
     bidBundle10: 500,
     bidBundle25: 1100,
     bidBundle50: 2000,
@@ -240,14 +242,14 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
         fetchSettings();
     }, [db]);
 
-    const handleSave = async (section: 'commissions' | 'bids') => {
+    const handleSave = async () => {
         if (!db) return;
         setIsSaving(true);
         try {
             await setDoc(doc(db, "settings", "platform"), settings, { merge: true });
             toast({
                 title: "Settings Saved",
-                description: `Monetization settings for ${section} have been updated.`,
+                description: `Monetization settings have been updated.`,
                 variant: "success",
             });
         } catch (error) {
@@ -289,7 +291,7 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
                     </div>
                 </CardContent>
                  <CardFooter>
-                    <Button onClick={() => handleSave('commissions')} disabled={isSaving}>
+                    <Button onClick={handleSave} disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save Commissions
                     </Button>
@@ -318,7 +320,7 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
                     </div>
                 </CardContent>
                  <CardFooter>
-                    <Button onClick={() => handleSave('bids')} disabled={isSaving}>
+                    <Button onClick={handleSave} disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save Bid Prices
                     </Button>
@@ -394,7 +396,7 @@ function UserReputationSettings() {
                              <Label htmlFor="defaultTrialPeriodDays">Default Trial Period (days)</Label>
                              <Input id="defaultTrialPeriodDays" type="number" value={settings.defaultTrialPeriodDays} onChange={handleInputChange} min="0" />
                              <p className="text-xs text-muted-foreground">
-                               Trial length for new Job Givers and Installers.
+                               Free trial for the <span className="font-semibold text-primary">Pro Installer</span> and <span className="font-semibold text-primary">Business Job Giver</span> plans.
                             </p>
                         </div>
                          <div className="space-y-2">
@@ -608,15 +610,16 @@ export default function SettingsPage() {
 
     React.useEffect(() => {
     setHelp({
-        title: "Settings",
+        title: "Platform Settings",
         content: (
             <div className="space-y-4 text-sm">
-                <p>This page allows you to configure your personal settings and, if you're an admin, global platform settings.</p>
+                <p>This is the central control panel for your entire platform. As an admin, you can configure every aspect of the user experience and business logic here.</p>
                 {isAdmin ? (
                     <ul className="list-disc space-y-2 pl-5">
-                        <li><span className="font-semibold">Monetization:</span> Manage subscription plans, coupons, and set commission rates.</li>
-                        <li><span className="font-semibold">User & Reputation:</span> Define the points and tier system for installer reputation.</li>
-                        <li><span className="font-semibold">Platform Rules:</span> Set global rules like minimum job budget and manage the platform blacklist.</li>
+                        <li><span className="font-semibold">Monetization:</span> Manage subscription plans, create promotional coupons, and set your platform's commission rates. This is where you control how your platform makes money.</li>
+                        <li><span className="font-semibold">User & Reputation:</span> Define the "welcome kit" for new users (like free trials) and configure the entire reputation system for installers, including points and tier levels.</li>
+                        <li><span className="font-semibold">Platform Rules:</span> Set global rules like the minimum job budget and manage the blacklist for users and pincodes.</li>
+                        <li><span className="font-semibold">Growth Strategy:</span> Use the coupon system to execute your growth strategy. For example, create a coupon for a "120-day Pro Installer Plan" and manually send it to the first few high-quality installers who sign up in a new city to bootstrap that local market.</li>
                         <li><span className="font-semibold">General:</span> Change your personal settings like theme and notifications.</li>
                     </ul>
                 ) : (
