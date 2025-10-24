@@ -31,6 +31,7 @@ import { initiateAadharVerification, confirmAadharVerification } from "@/ai/flow
 import { useRouter } from "next/navigation";
 import { doc, updateDoc } from "firebase/firestore";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useHelp } from "@/hooks/use-help";
 
 const aadharSchema = z.object({
   aadharNumber: z.string().length(12, { message: "Aadhar number must be 12 digits." }),
@@ -48,6 +49,24 @@ export default function VerifyInstallerPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { setHelp } = useHelp();
+
+  useEffect(() => {
+    setHelp({
+        title: "Installer Verification",
+        content: (
+            <div className="space-y-4 text-sm">
+                <p>To become a trusted installer on our platform, you need to complete a one-time identity verification using your Aadhar number.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Step 1:</span> Enter your 12-digit Aadhar number and click "Send OTP". An OTP will be sent to the mobile number registered with your Aadhar.</li>
+                    <li><span className="font-semibold">Step 2:</span> Enter the 6-digit OTP you receive to complete the verification.</li>
+                    <li><span className="font-semibold">Demo Values:</span> For testing purposes, you can use the Aadhar number <strong className="text-primary">752828181676</strong> and the OTP <strong className="text-primary">123456</strong>.</li>
+                </ul>
+                <p>This process is secure and helps us maintain a safe marketplace for both Job Givers and Installers.</p>
+            </div>
+        )
+    });
+  }, [setHelp]);
   
   const aadharForm = useForm<z.infer<typeof aadharSchema>>({
     resolver: zodResolver(aadharSchema),
