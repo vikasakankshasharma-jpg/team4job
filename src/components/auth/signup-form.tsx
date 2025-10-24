@@ -41,6 +41,8 @@ import { doc, setDoc, getDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useAuth, useFirestore } from "@/lib/firebase/client-provider";
 import { useHelp } from "@/hooks/use-help";
+import { Checkbox } from "../ui/checkbox";
+import { allSkills } from "@/lib/data";
 
 const addressSchema = z.object({
   house: z.string().min(1, "House/Flat No. is required."),
@@ -64,6 +66,7 @@ const formSchema = z.object({
   otp: z.string().optional(),
   realAvatarUrl: z.string().optional(),
   kycAddress: z.string().optional(),
+  skills: z.array(z.string()).optional(),
 });
 
 
@@ -75,7 +78,7 @@ export function SignUpForm() {
   const { toast } = useToast();
   const { setHelp } = useHelp();
   
-  const [currentStep, setCurrentStep] = useState<"role" | "details" | "photo" | "verification">("role");
+  const [currentStep, setCurrentStep] = useState<"role" | "details" | "photo" | "verification" | "skills">("role");
   const [verificationSubStep, setVerificationSubStep] = useState<"enterAadhar" | "enterOtp" | "verified">("enterAadhar");
   const [transactionId, setTransactionId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -133,6 +136,15 @@ export function SignUpForm() {
           </div>
         );
         break;
+      case "skills":
+          helpTitle = "Select Your Skills";
+          helpContent = (
+              <div className="space-y-4 text-sm">
+                <p>Select the skills you specialize in. This helps Job Givers find you for the right projects.</p>
+                <p>Choose as many as apply. This information will be displayed on your installer profile.</p>
+              </div>
+          );
+          break;
       case "details":
         helpTitle = "Your Details";
         helpContent = (
@@ -193,6 +205,7 @@ export function SignUpForm() {
       otp: "",
       realAvatarUrl: "",
       kycAddress: "",
+      skills: [],
     },
   });
   
@@ -385,7 +398,7 @@ export function SignUpForm() {
             newUser.installerProfile = {
                 tier: 'Bronze',
                 points: 0,
-                skills: [],
+                skills: values.skills || [],
                 rating: 0,
                 reviews: 0,
                 verified: true,
@@ -578,15 +591,72 @@ export function SignUpForm() {
 
         <div className="flex gap-2">
             <Button variant="outline" onClick={() => setCurrentStep(role === 'Job Giver' ? 'role' : 'verification')} className="w-full">Back</Button>
-            <Button onClick={() => setCurrentStep("details")} className="w-full" disabled={!photo}>Next</Button>
+            <Button onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'details')} className="w-full" disabled={!photo}>Next</Button>
         </div>
          <canvas ref={canvasRef} className="hidden"></canvas>
     </div>
   );
+  
+  const renderSkillsStep = () => (
+     <div className="space-y-4">
+        <h3 className="font-semibold">Step 3: Select Your Skills</h3>
+        <p className="text-sm text-muted-foreground">Choose the services you offer. This will help Job Givers find you for relevant projects.</p>
+        
+        <FormField
+            control={form.control}
+            name="skills"
+            render={() => (
+                <FormItem>
+                    <div className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
+                        {allSkills.map((skill) => (
+                            <FormField
+                                key={skill}
+                                control={form.control}
+                                name="skills"
+                                render={({ field }) => {
+                                    return (
+                                    <FormItem
+                                        key={skill}
+                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                    >
+                                        <FormControl>
+                                        <Checkbox
+                                            checked={field.value?.includes(skill)}
+                                            onCheckedChange={(checked) => {
+                                            return checked
+                                                ? field.onChange([...(field.value || []), skill])
+                                                : field.onChange(
+                                                    field.value?.filter(
+                                                    (value) => value !== skill
+                                                    )
+                                                )
+                                            }}
+                                        />
+                                        </FormControl>
+                                        <FormLabel className="font-normal capitalize cursor-pointer">
+                                            {skill}
+                                        </FormLabel>
+                                    </FormItem>
+                                    )
+                                }}
+                            />
+                        ))}
+                    </div>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+
+        <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setCurrentStep('photo')} className="w-full">Back</Button>
+            <Button onClick={() => setCurrentStep('details')} className="w-full" disabled={(form.watch('skills') || []).length === 0}>Next</Button>
+        </div>
+     </div>
+  );
 
   const renderDetailsStep = () => (
       <div className="space-y-4">
-        <h3 className="font-semibold">{role === 'Job Giver' ? 'Step 3: Your Details' : 'Step 3: Your Details'}</h3>
+        <h3 className="font-semibold">{role === 'Job Giver' ? 'Step 3: Your Details' : 'Step 4: Your Details'}</h3>
         {verificationSubStep === 'verified' && (
              <Alert variant="success">
                 <ShieldCheck className="h-4 w-4" />
@@ -656,7 +726,7 @@ export function SignUpForm() {
             mapCenter={mapCenter}
         />
         <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setCurrentStep('photo')} className="w-full">Back</Button>
+            <Button variant="outline" onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'photo')} className="w-full">Back</Button>
             <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Account
@@ -672,6 +742,7 @@ export function SignUpForm() {
         {currentStep === "role" && renderRoleStep()}
         {currentStep === "verification" && renderVerificationStep()}
         {currentStep === "photo" && renderPhotoStep()}
+        {currentStep === 'skills' && renderSkillsStep()}
         {currentStep === "details" && renderDetailsStep()}
       </form>
     </Form>
