@@ -198,21 +198,22 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
         const pincodesByCity: Record<string, Set<string>> = {};
 
         installers.forEach(installer => {
-            if (installer.address.cityPincode) {
-                const parts = installer.address.cityPincode.split(', ');
-                if (parts.length >= 2) {
-                    const pincode = parts[0];
-                    const po = parts[1]; // We'll derive city from installer data.
-                    const city = installer.address.fullAddress?.split(', ')[1] || 'Unknown';
-                    const state = installer.address.fullAddress?.split(', ')[2] || 'Unknown';
+            if (installer.address.fullAddress) {
+                const parts = installer.address.fullAddress.split(', ');
+                const pincode = installer.address.cityPincode.split(',')[0].trim();
+                
+                if (parts.length >= 3) {
+                    const city = parts[parts.length - 2];
+                    const state = parts[parts.length - 1];
 
-                    if(state !== 'Unknown') {
+                    if(state && city) {
                         states.add(state);
                         if (!citiesByState[state]) citiesByState[state] = new Set();
                         citiesByState[state].add(city);
+                        
                         const cityKey = `${state}-${city}`;
                         if (!pincodesByCity[cityKey]) pincodesByCity[cityKey] = new Set();
-                        pincodesByCity[cityKey].add(pincode);
+                        if (pincode) pincodesByCity[cityKey].add(pincode);
                     }
                 }
             }
@@ -234,23 +235,53 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
         setSelectedPincode('all');
     }, [selectedCity]);
 
-    const topInstallers = useMemo(() => {
-        let filteredInstallers = installers;
+    const filteredInstallers = useMemo(() => {
+        let result = installers;
 
-        if(selectedState !== 'all') {
-            filteredInstallers = filteredInstallers.filter(u => u.address.fullAddress?.includes(selectedState));
+        if (selectedState !== 'all') {
+            result = result.filter(u => u.address.fullAddress?.includes(selectedState));
         }
-        if(selectedCity !== 'all') {
-             filteredInstallers = filteredInstallers.filter(u => u.address.fullAddress?.includes(selectedCity));
+        if (selectedCity !== 'all') {
+             result = result.filter(u => u.address.fullAddress?.includes(selectedCity));
         }
-        if(selectedPincode !== 'all') {
-             filteredInstallers = filteredInstallers.filter(u => u.address.cityPincode.startsWith(selectedPincode));
+        if (selectedPincode !== 'all') {
+             result = result.filter(u => u.address.cityPincode.startsWith(selectedPincode));
         }
 
-        return filteredInstallers
-            .sort((a, b) => (b.installerProfile?.points || 0) - (a.installerProfile?.points || 0))
-            .slice(0, 10);
+        return result.sort((a, b) => (b.installerProfile?.points || 0) - (a.installerProfile?.points || 0));
+
     }, [installers, selectedState, selectedCity, selectedPincode]);
+
+    const topInstallersForChart = filteredInstallers.slice(0, 10);
+    
+    const handleDownload = () => {
+        if (filteredInstallers.length === 0) {
+            alert('No data to export for the current filter.');
+            return;
+        }
+
+        const dataToExport = filteredInstallers.map(u => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            mobile: u.mobile,
+            tier: u.installerProfile?.tier || 'N/A',
+            points: u.installerProfile?.points || 0,
+            rating: u.installerProfile?.rating || 0,
+            reviews: u.installerProfile?.reviews || 0,
+            verified: u.installerProfile?.verified ? 'Yes' : 'No',
+            fullAddress: u.address.fullAddress || '',
+            residentialPincode: u.pincodes.residential || '',
+            officePincode: u.pincodes.office || '',
+        }));
+
+        const stateName = selectedState === 'all' ? 'all-states' : selectedState.replace(' ','-');
+        const cityName = selectedCity === 'all' ? 'all-cities' : selectedCity.replace(' ','-');
+        const pincodeName = selectedPincode === 'all' ? 'all-pincodes' : selectedPincode;
+        
+        const filename = `installers-report-${stateName}-${cityName}-${pincodeName}.csv`;
+        exportToCsv(filename, dataToExport);
+    }
 
     const citiesForState = selectedState !== 'all' ? locationData.citiesByState[selectedState] || [] : [];
     const pincodesForCity = selectedState !== 'all' && selectedCity !== 'all' ? locationData.pincodesByCity[`${selectedState}-${selectedCity}`] || [] : [];
@@ -258,8 +289,16 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>All-Time Reputation Leaderboard</CardTitle>
-                <CardDescription>Top 10 installers by total reputation points.</CardDescription>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <CardTitle>All-Time Reputation Leaderboard</CardTitle>
+                        <CardDescription>Top installers by total reputation points, with geographic filters.</CardDescription>
+                    </div>
+                     <Button onClick={handleDownload} variant="outline" size="sm">
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Report
+                    </Button>
+                </div>
                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
                     <Select value={selectedState} onValueChange={setSelectedState}>
                         <SelectTrigger><SelectValue placeholder="Filter by State" /></SelectTrigger>
@@ -285,16 +324,22 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
                  </div>
             </CardHeader>
             <CardContent>
-                <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={topInstallers} layout="vertical" margin={{ left: 10, right: 10 }}>
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                        <XAxis type="number" />
-                        <YAxis type="category" dataKey="name" width={80} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                        <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} />
-                        <Legend />
-                        <Bar dataKey="installerProfile.points" name="Total Points" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                </ResponsiveContainer>
+                {topInstallersForChart.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={350}>
+                        <BarChart data={topInstallersForChart} layout="vertical" margin={{ left: 10, right: 10 }}>
+                            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                            <XAxis type="number" />
+                            <YAxis type="category" dataKey="name" width={80} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} />
+                            <Legend />
+                            <Bar dataKey="installerProfile.points" name="Total Points" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="flex items-center justify-center h-[350px]">
+                        <p className="text-muted-foreground">No installers found for the selected filters.</p>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
