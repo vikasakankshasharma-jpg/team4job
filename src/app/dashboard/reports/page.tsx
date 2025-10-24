@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -11,13 +11,18 @@ import {
 } from "@/components/ui/card";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
-import { Loader2, Users, Briefcase, IndianRupee, PieChart, Download } from "lucide-react";
+import { Loader2, Users, Briefcase, IndianRupee, PieChart, Download, Award, Star, Calendar, Medal } from "lucide-react";
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from "recharts";
-import { User, Job } from "@/lib/types";
-import { collection, getDocs, query } from "firebase/firestore";
+import { User, Job, SubscriptionPlan } from "@/lib/types";
+import { collection, getDocs, query, doc, updateDoc } from "firebase/firestore";
 import { toDate, exportToCsv } from "@/lib/utils";
-import { format, startOfMonth, subMonths } from "date-fns";
+import { format, startOfMonth, subMonths, getMonth, getYear } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AnimatedAvatar } from "@/components/ui/animated-avatar";
+import { useToast } from "@/hooks/use-toast";
+import { grantProPlan } from "@/ai/flows/grant-pro-plan";
 
 function KpiCard({ title, value, description, icon: Icon, iconBgColor }) {
     return (
@@ -36,12 +41,167 @@ function KpiCard({ title, value, description, icon: Icon, iconBgColor }) {
     );
 }
 
+const tierIcons: Record<string, React.ReactNode> = {
+  Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
+  Silver: <Medal className="h-4 w-4 text-gray-400" />,
+  Gold: <Award className="h-4 w-4 text-amber-500" />,
+  Platinum: <Award className="h-4 w-4 text-cyan-400" />,
+};
+
+interface MonthlyPerformance extends User {
+    monthlyPoints: number;
+}
+
+function TopPerformersCard({ installers, plans, onRewardGranted }: { installers: User[], plans: SubscriptionPlan[], onRewardGranted: () => void }) {
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState<string | null>(null);
+
+    const proInstallerPlan = plans.find(p => p.id === 'pro-installer-annual');
+
+    const rankedInstallers = useMemo(() => {
+        const now = new Date();
+        const lastMonthDate = subMonths(now, 1);
+        const lastMonth = getMonth(lastMonthDate);
+        const lastMonthYear = getYear(lastMonthDate);
+
+        const twoMonthsAgoDate = subMonths(now, 2);
+        const twoMonthsAgo = getMonth(twoMonthsAgoDate);
+        const twoMonthsAgoYear = getYear(twoMonthsAgoDate);
+        
+        return installers
+            .map(installer => {
+                const history = installer.installerProfile?.reputationHistory || [];
+                const lastMonthEntry = history.find(h => {
+                    const [month, year] = h.month.split(' ');
+                    const monthIndex = new Date(Date.parse(month +" 1, 2012")).getMonth();
+                    return monthIndex === lastMonth && parseInt(year) === lastMonthYear;
+                });
+                const twoMonthsAgoEntry = history.find(h => {
+                     const [month, year] = h.month.split(' ');
+                    const monthIndex = new Date(Date.parse(month +" 1, 2012")).getMonth();
+                    return monthIndex === twoMonthsAgo && parseInt(year) === twoMonthsAgoYear;
+                });
+
+                const lastMonthPoints = lastMonthEntry?.points || 0;
+                const twoMonthsAgoPoints = twoMonthsAgoEntry?.points || 0;
+
+                const monthlyPoints = Math.max(0, lastMonthPoints - twoMonthsAgoPoints);
+                
+                return { ...installer, monthlyPoints };
+            })
+            .sort((a, b) => {
+                // 1. Sort by monthly points (descending)
+                if (b.monthlyPoints !== a.monthlyPoints) {
+                    return b.monthlyPoints - a.monthlyPoints;
+                }
+                // 2. Sort by rating (descending)
+                if ((b.installerProfile?.rating || 0) !== (a.installerProfile?.rating || 0)) {
+                    return (b.installerProfile?.rating || 0) - (a.installerProfile?.rating || 0);
+                }
+                // 3. Sort by memberSince (newest first, so descending)
+                return toDate(b.memberSince).getTime() - toDate(a.memberSince).getTime();
+            });
+    }, [installers]);
+    
+    const handleGrantReward = async (userId: string) => {
+        setIsLoading(userId);
+        try {
+            await grantProPlan({ userId });
+            toast({
+                title: "Reward Granted!",
+                description: "The installer has been upgraded to the Pro Plan for 30 days.",
+                variant: 'success',
+            });
+            onRewardGranted();
+        } catch (error) {
+            console.error("Failed to grant reward:", error);
+            toast({
+                title: "Error",
+                description: "Could not grant the reward. Please try again.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsLoading(null);
+        }
+    }
+    
+    const lastMonthName = format(subMonths(new Date(), 1), 'MMMM yyyy');
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Top Performers Report</CardTitle>
+                <CardDescription>Installers ranked by performance for {lastMonthName}. Reward the best to motivate your community.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Rank</TableHead>
+                            <TableHead>Installer</TableHead>
+                            <TableHead>Monthly Points</TableHead>
+                            <TableHead>Rating</TableHead>
+                            <TableHead>Action</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {rankedInstallers.slice(0, 10).map((installer, index) => (
+                           <TableRow key={installer.id} className={index < 3 ? "bg-primary/5" : ""}>
+                               <TableCell className="font-bold text-lg">{index + 1}</TableCell>
+                               <TableCell>
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-9 w-9 hidden sm:flex">
+                                            <AnimatedAvatar svg={installer.avatarUrl} />
+                                            <AvatarFallback>{installer.name.substring(0, 2)}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="font-medium">{installer.name}</p>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                {tierIcons[installer.installerProfile?.tier || 'Bronze']}
+                                                <span>{installer.installerProfile?.tier} Tier</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                               </TableCell>
+                               <TableCell className="font-semibold text-green-600">+{installer.monthlyPoints} pts</TableCell>
+                               <TableCell>
+                                    <div className="flex items-center gap-1">
+                                        <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                                        <span>{installer.installerProfile?.rating.toFixed(1)}</span>
+                                    </div>
+                               </TableCell>
+                               <TableCell>
+                                    {index < 3 && proInstallerPlan && (
+                                        <Button
+                                            size="sm"
+                                            onClick={() => handleGrantReward(installer.id)}
+                                            disabled={!!isLoading}
+                                        >
+                                            {isLoading === installer.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Award className="mr-2 h-4 w-4" />}
+                                            Grant Pro Plan
+                                        </Button>
+                                    )}
+                               </TableCell>
+                           </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                 {rankedInstallers.length === 0 && (
+                    <p className="text-center py-8 text-muted-foreground">Not enough data to generate performance report.</p>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+
 export default function ReportsPage() {
-  const { user, isAdmin, loading: userLoading } = useUser();
+  const { isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const router = useRouter();
   const [users, setUsers] = React.useState<User[]>([]);
   const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [plans, setPlans] = React.useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
@@ -50,22 +210,28 @@ export default function ReportsPage() {
     }
   }, [isAdmin, userLoading, router]);
 
-  useEffect(() => {
+  const fetchData = React.useCallback(async () => {
     if (!db || !isAdmin) return;
-    async function fetchData() {
-        setLoading(true);
-        const usersQuery = query(collection(db, "users"));
-        const jobsQuery = query(collection(db, "jobs"));
-        const [usersSnapshot, jobsSnapshot] = await Promise.all([
-            getDocs(usersQuery),
-            getDocs(jobsQuery),
-        ]);
-        setUsers(usersSnapshot.docs.map(doc => doc.data() as User));
-        setJobs(jobsSnapshot.docs.map(doc => doc.data() as Job));
-        setLoading(false);
-    }
-    fetchData();
+    setLoading(true);
+    const usersQuery = query(collection(db, "users"));
+    const jobsQuery = query(collection(db, "jobs"));
+    const plansQuery = query(collection(db, "subscriptionPlans"));
+
+    const [usersSnapshot, jobsSnapshot, plansSnapshot] = await Promise.all([
+        getDocs(usersQuery),
+        getDocs(jobsQuery),
+        getDocs(plansQuery),
+    ]);
+    setUsers(usersSnapshot.docs.map(doc => doc.data() as User));
+    setJobs(jobsSnapshot.docs.map(doc => doc.data() as Job));
+    setPlans(plansSnapshot.docs.map(doc => doc.data() as SubscriptionPlan));
+    setLoading(false);
   }, [db, isAdmin]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
 
   const reportData = useMemo(() => {
     if (users.length === 0 || jobs.length === 0) return null;
@@ -83,7 +249,8 @@ export default function ReportsPage() {
         if (job.awardedInstaller) {
             const winningBid = (job.bids || []).find(bid => (bid.installer as any)?.id === (job.awardedInstaller as any)?.id);
             if (winningBid) {
-                platformRevenue += winningBid.amount * 0.12; // 10% from installer, 2% from job giver
+                // Assuming 10% from installer and 2% from job giver. This should be dynamic in a real app.
+                platformRevenue += winningBid.amount * 0.12; 
             }
         }
     });
@@ -101,10 +268,13 @@ export default function ReportsPage() {
 
     users.forEach(user => {
         const joinDate = toDate(user.memberSince);
-        const monthIndex = 5 - (now.getMonth() - joinDate.getMonth() + 12 * (now.getFullYear() - joinDate.getFullYear()));
-        if (monthIndex >= 0 && monthIndex < 6) {
-            if (user.roles.includes('Installer')) userGrowthData[monthIndex].Installers++;
-            if (user.roles.includes('Job Giver')) userGrowthData[monthIndex]["Job Givers"]++;
+        if (joinDate > subMonths(now, 6)) {
+            const monthName = format(joinDate, 'MMM');
+            const monthData = userGrowthData.find(m => m.name === monthName);
+            if (monthData) {
+                if (user.roles.includes('Installer')) monthData.Installers++;
+                if (user.roles.includes('Job Giver')) monthData["Job Givers"]++;
+            }
         }
     });
 
@@ -130,6 +300,7 @@ export default function ReportsPage() {
         userGrowthData,
         jobStatusData,
         topInstallers,
+        allInstallers: users.filter(u => u.installerProfile),
     };
   }, [users, jobs]);
 
@@ -145,7 +316,7 @@ export default function ReportsPage() {
       return <p>No data available to generate reports.</p>
   }
   
-  const { totalUsers, installerCount, jobGiverCount, totalJobs, fillRate, platformRevenue, userGrowthData, jobStatusData, topInstallers } = reportData;
+  const { totalUsers, installerCount, jobGiverCount, totalJobs, fillRate, platformRevenue, userGrowthData, jobStatusData, topInstallers, allInstallers } = reportData;
 
   return (
     <div className="grid gap-6">
@@ -160,6 +331,8 @@ export default function ReportsPage() {
         <KpiCard title="Platform Revenue (Simulated)" value={`₹${platformRevenue.toLocaleString()}`} description="Based on a 12% commission" icon={IndianRupee} iconBgColor="bg-green-500" />
         <KpiCard title="Job Fill Rate" value={`${fillRate.toFixed(1)}%`} description="Of jobs posted are completed" icon={PieChart} iconBgColor="bg-amber-500" />
       </div>
+
+       <TopPerformersCard installers={allInstallers} plans={plans} onRewardGranted={fetchData} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -202,7 +375,7 @@ export default function ReportsPage() {
       </div>
       <Card>
         <CardHeader>
-            <CardTitle>Top Performing Installers</CardTitle>
+            <CardTitle>Top Installer Leaderboard</CardTitle>
             <CardDescription>Ranked by total reputation points.</CardDescription>
         </CardHeader>
         <CardContent>
