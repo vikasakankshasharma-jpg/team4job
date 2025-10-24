@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import {
@@ -20,8 +19,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Edit, Trash2, Loader2, MoreHorizontal } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import React, { useState } from "react";
+import { useFirebase } from "@/hooks/use-user";
 import { Coupon } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { format } from "date-fns";
@@ -45,7 +44,6 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -58,7 +56,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,8 +67,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { useRouter } from "next/navigation";
-import { useHelp } from "@/hooks/use-help";
 
 const couponSchema = z.object({
     code: z.string().min(3, "Code must be at least 3 characters.").toUpperCase(),
@@ -105,11 +101,14 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
       durationDays: 30,
       applicableToRole: 'Any',
       isActive: true,
+      validFrom: new Date(),
+      validUntil: new Date(new Date().setMonth(new Date().getMonth() + 1)),
     },
   });
 
   async function onSubmit(values: z.infer<typeof couponSchema>) {
     setIsSubmitting(true);
+    if (!db) return;
     const couponRef = doc(db, "coupons", values.code);
     try {
         await setDoc(couponRef, values, { merge: true });
@@ -300,76 +299,28 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
   );
 }
 
-export default function CouponsPage() {
-  const { user, isAdmin, loading: userLoading } = useUser();
-  const router = useRouter();
+export default function CouponsSettings({ coupons, onDataChange }: { coupons: Coupon[], onDataChange: () => void }) {
   const { db } = useFirebase();
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { setHelp } = useHelp();
-
-  React.useEffect(() => {
-    setHelp({
-        title: "Coupon Management",
-        content: (
-            <div className="space-y-4 text-sm">
-                <p>This page allows you, as an admin, to create and manage promotional coupons for your users.</p>
-                <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Create Coupon:</span> Use the "Create New Coupon" button to define a new promotional code. You can set its value, duration, and which user roles can use it.</li>
-                    <li><span className="font-semibold">Status:</span> A coupon's status can be "Active" (usable now), "Scheduled" (will be active in the future), or "Expired" (no longer valid).</li>
-                    <li><span className="font-semibold">Actions Menu:</span> Use the actions menu (three dots) on each row to "Edit" a coupon's details, "Activate/Deactivate" it, or permanently "Delete" it.</li>
-                </ul>
-            </div>
-        )
-    })
-  }, [setHelp]);
-  
-  useEffect(() => {
-    if (!userLoading && !isAdmin) {
-      router.push('/dashboard');
-    }
-  }, [isAdmin, userLoading, router]);
-
-  const fetchCoupons = React.useCallback(async () => {
-    if (!db) return;
-    setLoading(true);
-    const querySnapshot = await getDocs(collection(db, "coupons"));
-    const couponsList = querySnapshot.docs.map(doc => doc.data() as Coupon);
-    setCoupons(couponsList.sort((a,b) => toDate(b.validFrom).getTime() - toDate(a.validFrom).getTime()));
-    setLoading(false);
-  }, [db]);
-
-  useEffect(() => {
-    if (isAdmin) {
-      fetchCoupons();
-    }
-  }, [isAdmin, fetchCoupons]);
 
   const handleDelete = async (code: string) => {
     if (!window.confirm(`Are you sure you want to delete coupon "${code}"? This cannot be undone.`)) return;
+    if (!db) return;
     
     await deleteDoc(doc(db, "coupons", code));
     toast({ title: "Coupon Deleted", description: `Coupon "${code}" has been permanently deleted.`});
-    fetchCoupons();
+    onDataChange();
   }
 
   const handleToggleActive = async (coupon: Coupon) => {
+    if (!db) return;
     const newStatus = !coupon.isActive;
     await updateDoc(doc(db, "coupons", coupon.code), { isActive: newStatus });
     toast({
         title: "Coupon Status Updated",
         description: `Coupon "${coupon.code}" is now ${newStatus ? 'active' : 'inactive'}.`,
     });
-    fetchCoupons();
-  }
-  
-  if (userLoading || !isAdmin) {
-    return (
-        <div className="flex h-48 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-    );
+    onDataChange();
   }
 
   return (
@@ -381,7 +332,7 @@ export default function CouponsPage() {
             Create and manage promotional coupon codes for your users.
           </CardDescription>
         </div>
-        <CouponForm onSave={fetchCoupons} />
+        <CouponForm onSave={onDataChange} />
       </CardHeader>
       <CardContent>
         <Table>
@@ -397,13 +348,7 @@ export default function CouponsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : coupons.length > 0 ? (
+            {coupons.length > 0 ? (
               coupons.map((coupon) => {
                 const now = new Date();
                 const validFrom = toDate(coupon.validFrom);
@@ -440,7 +385,7 @@ export default function CouponsPage() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <CouponForm coupon={coupon} onSave={fetchCoupons} />
+                                <CouponForm coupon={coupon} onSave={onDataChange} />
                                 <DropdownMenuItem onClick={() => handleToggleActive(coupon)}>
                                     {coupon.isActive ? "Deactivate" : "Activate"}
                                 </DropdownMenuItem>
@@ -467,3 +412,5 @@ export default function CouponsPage() {
     </Card>
   );
 }
+
+    

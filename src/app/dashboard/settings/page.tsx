@@ -42,14 +42,14 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift, Loader2, Ticket, Package, Ban } from "lucide-react"
+import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift, Loader2, Ticket, Package, Ban, Settings as SettingsIcon } from "lucide-react"
 import { useHelp } from "@/hooks/use-help"
-import { doc, getDoc, setDoc } from "firebase/firestore"
-import type { PlatformSettings } from "@/lib/types"
+import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore"
+import type { PlatformSettings, SubscriptionPlan, Coupon, BlacklistEntry } from "@/lib/types"
 
-import CouponsPage from "../coupons/page"
-import SubscriptionPlansPage from "../subscription-plans/page"
-import BlacklistPage from "../blacklist/page"
+import SubscriptionPlansSettings from "../subscription-plans/page"
+import CouponsSettings from "../coupons/page"
+import BlacklistSettings from "../blacklist/page"
 
 function ThemeSelector() {
     const { theme, setTheme } = useTheme()
@@ -222,11 +222,113 @@ const initialSettings: PlatformSettings = {
     autoVerifyInstallers: true
 };
 
-function MonetizationSettings() {
+function MonetizationSettings({ plans, coupons, onDataChange }: { plans: SubscriptionPlan[], coupons: Coupon[], onDataChange: () => void }) {
+    const { db } = useFirebase();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [isSaving, setIsSaving] = React.useState(false);
+    const [settings, setSettings] = React.useState<PlatformSettings>(initialSettings);
+    
+    React.useEffect(() => {
+        if (!db) return;
+        const fetchSettings = async () => {
+            setIsLoading(true);
+            const settingsDoc = await getDoc(doc(db, "settings", "platform"));
+            if (settingsDoc.exists()) {
+                setSettings(prev => ({ ...prev, ...settingsDoc.data() }));
+            }
+            setIsLoading(false);
+        };
+        fetchSettings();
+    }, [db]);
+
+    const handleSave = async () => {
+        if (!db) return;
+        setIsSaving(true);
+        try {
+            await setDoc(doc(db, "settings", "platform"), settings, { merge: true });
+            toast({
+                title: "Settings Saved",
+                description: "Monetization settings have been updated.",
+                variant: "success",
+            });
+        } catch (error) {
+            console.error("Error saving settings:", error);
+            toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        setSettings(prev => ({ ...prev, [id]: Number(value) }));
+    };
+
+    if (isLoading) {
+        return <Skeleton className="h-96 w-full" />;
+    }
+
     return (
         <div className="grid gap-6">
-            <SubscriptionPlansPage />
-            <CouponsPage />
+            <Card>
+                <CardHeader>
+                    <CardTitle>Platform Commission Rates</CardTitle>
+                    <CardDescription>Configure platform revenue from commissions and job fees.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="installerCommissionRate">Installer Commission Rate (%)</Label>
+                            <Input id="installerCommissionRate" type="number" value={settings.installerCommissionRate} onChange={handleInputChange} min="0" max="100"/>
+                            <p className="text-xs text-muted-foreground">The percentage taken from the installer's earnings.</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="jobGiverFeeRate">Job Giver Fee Rate (%)</Label>
+                            <Input id="jobGiverFeeRate" type="number" value={settings.jobGiverFeeRate} onChange={handleInputChange} min="0" max="100"/>
+                            <p className="text-xs text-muted-foreground">The percentage charged to the job giver on the bid amount.</p>
+                        </div>
+                    </div>
+                </CardContent>
+                 <CardFooter>
+                    <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Commissions
+                    </Button>
+                </CardFooter>
+            </Card>
+
+             <Card>
+                <CardHeader>
+                    <CardTitle>Bid Bundles (1-Year Validity)</CardTitle>
+                     <CardDescription>Set the pricing for installers to purchase bundles of bids.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="bidBundle10">10 Bids (₹)</Label>
+                            <Input id="bidBundle10" type="number" value={settings.bidBundle10} onChange={handleInputChange} min="0" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="bidBundle25">25 Bids (₹)</Label>
+                            <Input id="bidBundle25" type="number" value={settings.bidBundle25} onChange={handleInputChange} min="0" />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="bidBundle50">50 Bids (₹)</Label>
+                            <Input id="bidBundle50" type="number" value={settings.bidBundle50} onChange={handleInputChange} min="0" />
+                        </div>
+                    </div>
+                </CardContent>
+                 <CardFooter>
+                    <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Bid Prices
+                    </Button>
+                </CardFooter>
+            </Card>
+
+            <SubscriptionPlansSettings plans={plans} onDataChange={onDataChange} />
+            <CouponsSettings coupons={coupons} onDataChange={onDataChange} />
         </div>
     )
 }
@@ -360,7 +462,7 @@ function UserReputationSettings() {
     );
 }
 
-function PlatformRulesSettings() {
+function PlatformRulesSettings({ blacklist, onDataChange } : { blacklist: BlacklistEntry[], onDataChange: () => void }) {
     const { db } = useFirebase();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = React.useState(true);
@@ -415,32 +517,6 @@ function PlatformRulesSettings() {
       <div className="grid gap-6">
         <Card>
             <CardHeader>
-                <CardTitle>Commissions & Fees</CardTitle>
-                <CardDescription>Configure platform revenue from commissions and job fees.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="installerCommissionRate">Installer Commission Rate (%)</Label>
-                        <Input id="installerCommissionRate" type="number" value={settings.installerCommissionRate} onChange={handleInputChange} min="0" max="100"/>
-                        <p className="text-xs text-muted-foreground">The percentage taken from the installer's earnings.</p>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="jobGiverFeeRate">Job Giver Fee Rate (%)</Label>
-                        <Input id="jobGiverFeeRate" type="number" value={settings.jobGiverFeeRate} onChange={handleInputChange} min="0" max="100"/>
-                        <p className="text-xs text-muted-foreground">The percentage charged to the job giver on the bid amount.</p>
-                    </div>
-                </div>
-            </CardContent>
-             <CardFooter>
-                 <Button onClick={handleSave} disabled={isSaving}>
-                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                     Save Commissions
-                 </Button>
-            </CardFooter>
-        </Card>
-        <Card>
-            <CardHeader>
                 <CardTitle>Job & Content Rules</CardTitle>
                 <CardDescription>Set global rules for job postings and content on the platform.</CardDescription>
             </CardHeader>
@@ -481,15 +557,40 @@ function PlatformRulesSettings() {
                  </Button>
             </CardFooter>
         </Card>
-        <BlacklistPage />
+        <BlacklistSettings blacklist={blacklist} onDataChange={onDataChange} />
       </div>
     );
 }
 
 
 export default function SettingsPage() {
-    const { isAdmin } = useUser();
+    const { isAdmin, loading: userLoading } = useUser();
     const { setHelp } = useHelp();
+    const { db } = useFirebase();
+    
+    const [plans, setPlans] = React.useState<SubscriptionPlan[]>([]);
+    const [coupons, setCoupons] = React.useState<Coupon[]>([]);
+    const [blacklist, setBlacklist] = React.useState<BlacklistEntry[]>([]);
+    const [loadingData, setLoadingData] = React.useState(true);
+
+    const fetchData = React.useCallback(async () => {
+        if (!db || !isAdmin) return;
+        setLoadingData(true);
+        const [plansSnap, couponsSnap, blacklistSnap] = await Promise.all([
+            getDocs(collection(db, "subscriptionPlans")),
+            getDocs(collection(db, "coupons")),
+            getDocs(collection(db, "blacklist")),
+        ]);
+        setPlans(plansSnap.docs.map(d => d.data() as SubscriptionPlan));
+        setCoupons(couponsSnap.docs.map(d => d.data() as Coupon));
+        setBlacklist(blacklistSnap.docs.map(d => d.data() as BlacklistEntry));
+        setLoadingData(false);
+    }, [db, isAdmin]);
+
+    React.useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
 
     React.useEffect(() => {
     setHelp({
@@ -499,9 +600,9 @@ export default function SettingsPage() {
                 <p>This page allows you to configure your personal settings and, if you're an admin, global platform settings.</p>
                 {isAdmin ? (
                     <ul className="list-disc space-y-2 pl-5">
-                        <li><span className="font-semibold">Monetization:</span> Manage subscription plans, coupons, and view bid bundle pricing.</li>
+                        <li><span className="font-semibold">Monetization:</span> Manage subscription plans, coupons, and set commission rates.</li>
                         <li><span className="font-semibold">User & Reputation:</span> Define the points and tier system for installer reputation.</li>
-                        <li><span className="font-semibold">Platform Rules:</span> Set global rules like minimum job budget, commission rates, and manage the platform blacklist.</li>
+                        <li><span className="font-semibold">Platform Rules:</span> Set global rules like minimum job budget and manage the platform blacklist.</li>
                         <li><span className="font-semibold">General:</span> Change your personal settings like theme and notifications.</li>
                     </ul>
                 ) : (
@@ -515,6 +616,17 @@ export default function SettingsPage() {
         )
     })
   }, [setHelp, isAdmin]);
+
+    if (userLoading || loadingData && isAdmin) {
+        return (
+            <div className="grid gap-6">
+                <h1 className="text-3xl font-bold">Settings</h1>
+                <div className="flex h-64 items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            </div>
+        )
+    }
 
     if (!isAdmin) {
         return (
@@ -543,18 +655,18 @@ export default function SettingsPage() {
                         <span className="hidden sm:inline">Platform Rules</span>
                     </TabsTrigger>
                     <TabsTrigger value="general">
-                        <Settings className="mr-2 h-4 w-4 sm:hidden" />
+                        <SettingsIcon className="mr-2 h-4 w-4 sm:hidden" />
                         <span className="hidden sm:inline">General</span>
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="monetization">
-                    <MonetizationSettings />
+                    <MonetizationSettings plans={plans} coupons={coupons} onDataChange={fetchData} />
                 </TabsContent>
                 <TabsContent value="reputation">
                     <UserReputationSettings />
                 </TabsContent>
                 <TabsContent value="platform">
-                    <PlatformRulesSettings />
+                    <PlatformRulesSettings blacklist={blacklist} onDataChange={fetchData} />
                 </TabsContent>
                 <TabsContent value="general">
                     <PersonalSettingsCard />
@@ -563,3 +675,5 @@ export default function SettingsPage() {
         </div>
     )
 }
+
+    

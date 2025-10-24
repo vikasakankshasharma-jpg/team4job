@@ -44,7 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { BlacklistEntry } from "@/lib/types";
 import { toDate } from "@/lib/utils";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
 import {
   collection,
@@ -55,8 +55,6 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
-import { useRouter } from "next/navigation";
-import { useHelp } from "@/hooks/use-help";
 
 const blacklistSchema = z.object({
   type: z.enum(["user", "pincode"]),
@@ -90,6 +88,7 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
     };
 
     try {
+      if (!db) throw new Error("Firestore not available");
       await setDoc(doc(db, "blacklist", id), newEntry);
       toast({
         title: "Entry Added",
@@ -221,55 +220,9 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
   );
 }
 
-export default function BlacklistPage() {
-  const { user, isAdmin, loading: userLoading } = useUser();
+export default function BlacklistSettings({ blacklist, onDataChange }: { blacklist: BlacklistEntry[], onDataChange: () => void }) {
   const { db } = useFirebase();
-  const router = useRouter();
-  const [blacklist, setBlacklist] = useState<BlacklistEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { setHelp } = useHelp();
-
-  React.useEffect(() => {
-    setHelp({
-        title: "Blacklist Management",
-        content: (
-            <div className="space-y-4 text-sm">
-                <p>This page allows you to block specific users or entire pincodes from using the platform.</p>
-                <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Adding an Entry:</span> Use the form at the top to add a new blacklist entry. You can blacklist by User ID or by a 6-digit pincode.</li>
-                    <li><span className="font-semibold">User Blacklist:</span> Blacklisting a user will prevent them from logging in.</li>
-                    <li><span className="font-semibold">Pincode Blacklist:</span> Blacklisting a pincode will prevent new users from registering with that pincode and hide jobs from that area.</li>
-                    <li><span className="font-semibold">Removing an Entry:</span> Click the trash can icon on any row to remove an entry from the blacklist, immediately restoring access.</li>
-                </ul>
-            </div>
-        )
-    })
-  }, [setHelp]);
-  
-  useEffect(() => {
-    if (!userLoading && !isAdmin) {
-      router.push('/dashboard');
-    }
-  }, [isAdmin, userLoading, router]);
-
-  const fetchBlacklist = React.useCallback(async () => {
-    if (!db) return;
-    setLoading(true);
-    const q = query(collection(db, "blacklist"), orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
-    const list = querySnapshot.docs.map(
-      (doc) => doc.data() as BlacklistEntry
-    );
-    setBlacklist(list);
-    setLoading(false);
-  }, [db]);
-
-  useEffect(() => {
-    if (isAdmin) {
-      fetchBlacklist();
-    }
-  }, [isAdmin, fetchBlacklist]);
 
   const handleRemove = async (id: string, value: string) => {
     if (
@@ -278,26 +231,20 @@ export default function BlacklistPage() {
       )
     )
       return;
-
+    
+    if (!db) return;
     await deleteDoc(doc(db, "blacklist", id));
     toast({
       title: "Entry Removed",
       description: `"${value}" has been removed from the blacklist.`,
     });
-    fetchBlacklist();
+    onDataChange();
   };
 
-  if (userLoading || !isAdmin) {
-    return (
-        <div className="flex h-48 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-    );
-  }
 
   return (
     <div className="grid gap-6">
-      <AddBlacklistForm onSave={fetchBlacklist} />
+      <AddBlacklistForm onSave={onDataChange} />
       <Card>
         <CardHeader>
           <CardTitle>Current Blacklist</CardTitle>
@@ -320,13 +267,7 @@ export default function BlacklistPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                  </TableCell>
-                </TableRow>
-              ) : blacklist.length > 0 ? (
+              {blacklist.length > 0 ? (
                 blacklist.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell>
@@ -370,3 +311,5 @@ export default function BlacklistPage() {
     </div>
   );
 }
+
+    

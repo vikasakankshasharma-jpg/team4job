@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Loader2, MoreHorizontal } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { PlusCircle, Loader2, MoreHorizontal } from "lucide-react";
+import React, { useState } from "react";
+import { useFirebase } from "@/hooks/use-user";
 import { SubscriptionPlan } from "@/lib/types";
 import {
   Dialog,
@@ -54,7 +54,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,8 +63,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useRouter } from "next/navigation";
-import { useHelp } from "@/hooks/use-help";
 import { Textarea } from "@/components/ui/textarea";
 
 const planSchema = z.object({
@@ -101,6 +99,7 @@ function PlanForm({ plan, onSave }: { plan?: SubscriptionPlan, onSave: () => voi
 
   async function onSubmit(values: z.infer<typeof planSchema>) {
     setIsSubmitting(true);
+    if (!db) return;
     const planRef = doc(db, "subscriptionPlans", values.id);
     try {
       const planData = {
@@ -242,66 +241,16 @@ function PlanForm({ plan, onSave }: { plan?: SubscriptionPlan, onSave: () => voi
   );
 }
 
-export default function SubscriptionPlansPage() {
-  const { user, isAdmin, loading: userLoading } = useUser();
-  const router = useRouter();
+export default function SubscriptionPlansSettings({ plans, onDataChange }: { plans: SubscriptionPlan[], onDataChange: () => void }) {
   const { db } = useFirebase();
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { setHelp } = useHelp();
-
-  React.useEffect(() => {
-    setHelp({
-        title: "Subscription Plan Management",
-        content: (
-            <div className="space-y-4 text-sm">
-                <p>This page allows you, as an admin, to define the subscription tiers for your platform. These plans can later be integrated with a payment gateway like Cashfree Subscriptions.</p>
-                <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Create Plan:</span> Use the "Create New Plan" button to define a new plan. Give it a unique ID, name, price, and list its features.</li>
-                    <li><span className="font-semibold">Applicable Role:</span> You can specify if a plan is for Installers, Job Givers, or any user.</li>
-                    <li><span className="font-semibold">Archive a Plan:</span> Instead of deleting, you can "Archive" a plan. This keeps it for existing users but prevents new users from subscribing to it.</li>
-                </ul>
-            </div>
-        )
-    })
-  }, [setHelp]);
-
-  useEffect(() => {
-    if (!userLoading && !isAdmin) {
-      router.push('/dashboard');
-    }
-  }, [isAdmin, userLoading, router]);
-
-  const fetchPlans = React.useCallback(async () => {
-    if (!db) return;
-    setLoading(true);
-    const querySnapshot = await getDocs(collection(db, "subscriptionPlans"));
-    const plansList = querySnapshot.docs.map(doc => doc.data() as SubscriptionPlan);
-    setPlans(plansList);
-    setLoading(false);
-  }, [db]);
-
-  useEffect(() => {
-    if (isAdmin) {
-      fetchPlans();
-    }
-  }, [isAdmin, fetchPlans]);
 
   const handleDelete = async (plan: SubscriptionPlan) => {
     if (!window.confirm(`Are you sure you want to delete the plan "${plan.name}"? This is a destructive action.`)) return;
-
+    if (!db) return;
     await deleteDoc(doc(db, "subscriptionPlans", plan.id));
     toast({ title: "Plan Deleted", description: `Plan "${plan.name}" has been permanently deleted.`, variant: "destructive" });
-    fetchPlans();
-  }
-
-  if (userLoading || !isAdmin) {
-    return (
-      <div className="flex h-48 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    onDataChange();
   }
 
   return (
@@ -313,7 +262,7 @@ export default function SubscriptionPlansPage() {
             Manage the subscription plans available to your users.
           </CardDescription>
         </div>
-        <PlanForm onSave={fetchPlans} />
+        <PlanForm onSave={onDataChange} />
       </CardHeader>
       <CardContent>
         <Table>
@@ -327,13 +276,7 @@ export default function SubscriptionPlansPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : plans.length > 0 ? (
+            {plans.length > 0 ? (
               plans.map((plan) => (
                 <TableRow key={plan.id}>
                   <TableCell className="font-medium">
@@ -359,7 +302,7 @@ export default function SubscriptionPlansPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <PlanForm plan={plan} onSave={fetchPlans} />
+                        <PlanForm plan={plan} onSave={onDataChange} />
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => handleDelete(plan)} className="text-destructive">
                           Delete
@@ -382,3 +325,5 @@ export default function SubscriptionPlansPage() {
     </Card>
   );
 }
+
+    
