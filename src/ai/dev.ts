@@ -9,3 +9,4 @@ import '@/ai/flows/suggest-skills.ts';
 import '@/ai/flows/generate-job-details.ts';
 import '@/ai/flows/aadhar-verification.ts';
 import '@/ai/flows/grant-pro-plan.ts';
+import '@/ai/flows/reward-top-performers.ts';
