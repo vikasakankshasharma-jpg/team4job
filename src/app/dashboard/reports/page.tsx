@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
-import { Loader2, Users, Briefcase, IndianRupee, PieChart, Download, Award, Star, Calendar, Medal } from "lucide-react";
+import { Loader2, Users, Briefcase, IndianRupee, PieChart, Download, Award, Star, Calendar, Medal, Bot } from "lucide-react";
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { User, Job, SubscriptionPlan } from "@/lib/types";
 import { collection, getDocs, query, doc, updateDoc } from "firebase/firestore";
@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { useToast } from "@/hooks/use-toast";
-import { grantProPlan } from "@/ai/flows/grant-pro-plan";
+import { rewardTopPerformers } from "@/ai/flows/reward-top-performers";
 
 function KpiCard({ title, value, description, icon: Icon, iconBgColor }) {
     return (
@@ -52,11 +52,9 @@ interface MonthlyPerformance extends User {
     monthlyPoints: number;
 }
 
-function TopPerformersCard({ installers, plans, onRewardGranted }: { installers: User[], plans: SubscriptionPlan[], onRewardGranted: () => void }) {
+function TopPerformersCard({ installers }: { installers: User[] }) {
     const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState<string | null>(null);
-
-    const proInstallerPlan = plans.find(p => p.id === 'pro-installer-annual');
+    const [isLoading, setIsLoading] = useState(false);
 
     const rankedInstallers = useMemo(() => {
         const now = new Date();
@@ -103,25 +101,24 @@ function TopPerformersCard({ installers, plans, onRewardGranted }: { installers:
             });
     }, [installers]);
     
-    const handleGrantReward = async (userId: string) => {
-        setIsLoading(userId);
+    const handleRunAutomation = async () => {
+        setIsLoading(true);
         try {
-            await grantProPlan({ userId });
+            const result = await rewardTopPerformers({});
             toast({
-                title: "Reward Granted!",
-                description: "The installer has been upgraded to the Pro Plan for 30 days.",
+                title: "Automation Complete!",
+                description: result.summary,
                 variant: 'success',
             });
-            onRewardGranted();
-        } catch (error) {
-            console.error("Failed to grant reward:", error);
+        } catch (error: any) {
+            console.error("Failed to run automation:", error);
             toast({
-                title: "Error",
-                description: "Could not grant the reward. Please try again.",
+                title: "Automation Error",
+                description: error.message || "Could not grant rewards. Please try again.",
                 variant: "destructive"
             });
         } finally {
-            setIsLoading(null);
+            setIsLoading(false);
         }
     }
     
@@ -130,8 +127,16 @@ function TopPerformersCard({ installers, plans, onRewardGranted }: { installers:
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Top Performers Report</CardTitle>
-                <CardDescription>Installers ranked by performance for {lastMonthName}. Reward the best to motivate your community.</CardDescription>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <CardTitle>Top Performers Report</CardTitle>
+                        <CardDescription>Installers ranked by performance for {lastMonthName}. Click the button to automatically reward the top 3.</CardDescription>
+                    </div>
+                    <Button onClick={handleRunAutomation} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+                        Run Monthly Reward Automation
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -141,7 +146,7 @@ function TopPerformersCard({ installers, plans, onRewardGranted }: { installers:
                             <TableHead>Installer</TableHead>
                             <TableHead>Monthly Points</TableHead>
                             <TableHead>Rating</TableHead>
-                            <TableHead>Action</TableHead>
+                            <TableHead>Member Since</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -170,18 +175,7 @@ function TopPerformersCard({ installers, plans, onRewardGranted }: { installers:
                                         <span>{installer.installerProfile?.rating.toFixed(1)}</span>
                                     </div>
                                </TableCell>
-                               <TableCell>
-                                    {index < 3 && proInstallerPlan && (
-                                        <Button
-                                            size="sm"
-                                            onClick={() => handleGrantReward(installer.id)}
-                                            disabled={!!isLoading}
-                                        >
-                                            {isLoading === installer.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Award className="mr-2 h-4 w-4" />}
-                                            Grant Pro Plan
-                                        </Button>
-                                    )}
-                               </TableCell>
+                               <TableCell>{format(toDate(installer.memberSince), 'MMM dd, yyyy')}</TableCell>
                            </TableRow>
                         ))}
                     </TableBody>
@@ -201,7 +195,6 @@ export default function ReportsPage() {
   const router = useRouter();
   const [users, setUsers] = React.useState<User[]>([]);
   const [jobs, setJobs] = React.useState<Job[]>([]);
-  const [plans, setPlans] = React.useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
@@ -215,16 +208,13 @@ export default function ReportsPage() {
     setLoading(true);
     const usersQuery = query(collection(db, "users"));
     const jobsQuery = query(collection(db, "jobs"));
-    const plansQuery = query(collection(db, "subscriptionPlans"));
 
-    const [usersSnapshot, jobsSnapshot, plansSnapshot] = await Promise.all([
+    const [usersSnapshot, jobsSnapshot] = await Promise.all([
         getDocs(usersQuery),
         getDocs(jobsQuery),
-        getDocs(plansQuery),
     ]);
     setUsers(usersSnapshot.docs.map(doc => doc.data() as User));
     setJobs(jobsSnapshot.docs.map(doc => doc.data() as Job));
-    setPlans(plansSnapshot.docs.map(doc => doc.data() as SubscriptionPlan));
     setLoading(false);
   }, [db, isAdmin]);
 
@@ -332,7 +322,7 @@ export default function ReportsPage() {
         <KpiCard title="Job Fill Rate" value={`${fillRate.toFixed(1)}%`} description="Of jobs posted are completed" icon={PieChart} iconBgColor="bg-amber-500" />
       </div>
 
-       <TopPerformersCard installers={allInstallers} plans={plans} onRewardGranted={fetchData} />
+       <TopPerformersCard installers={allInstallers} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

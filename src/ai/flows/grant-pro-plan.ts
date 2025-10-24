@@ -12,6 +12,15 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/server-init';
 import type { User, SubscriptionPlan } from '@/lib/types';
 
+// Helper to convert Firestore Timestamp or Date object to a Date
+const toDate = (timestamp: any): Date => {
+  if (timestamp && typeof timestamp.toDate === 'function') {
+    return timestamp.toDate();
+  }
+  return new Date(timestamp);
+};
+
+
 const GrantProPlanInputSchema = z.object({
   userId: z.string().describe('The ID of the user to grant the subscription to.'),
 });
