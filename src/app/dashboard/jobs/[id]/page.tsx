@@ -106,10 +106,9 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
         }
         const transactionDoc = querySnapshot.docs[0];
 
-        // --- 2. Call backend to request the payout ---
-        await axios.post('/api/cashfree/payouts/request-transfer', {
+        // --- 2. Call backend to release the escrow ---
+        await axios.post('/api/escrow/release-funds', {
             transactionId: transactionDoc.id,
-            userId: user.id, // The installer's ID
         });
         
         // --- 3. Update Job Status locally and in Firestore ---
@@ -336,33 +335,20 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
         setIsFunding(true);
         
         try {
-            // Step 1: Create an "Initiated" transaction in our DB
-            const transactionId = `TXN-${Date.now()}`;
-            const newTransaction: Transaction = {
-                id: transactionId,
+            // Step 1: Call backend to create an escrow account and get a payment session ID
+            const { data } = await axios.post('/api/escrow/initiate-payment', {
                 jobId: job.id,
                 jobTitle: job.title,
-                payerId: jobGiver.id,
-                payerName: jobGiver.name,
-                payeeId: installer.id,
-                payeeName: installer.name,
+                jobGiverId: jobGiver.id,
+                installerId: installer.id,
                 amount: bid.amount,
-                status: 'Initiated',
-                createdAt: new Date(),
-            };
-            await setDoc(doc(db, 'transactions', transactionId), newTransaction);
-
-            // Step 2: Call our backend to get a payment session ID from Cashfree
-            const { data } = await axios.post('/api/cashfree/create-payment', {
-                transactionId: transactionId,
-                userId: jobGiver.id,
             });
 
             if (!data.payment_session_id) {
                 throw new Error("Could not retrieve payment session ID.");
             }
 
-            // Step 3: Launch Cashfree checkout
+            // Step 2: Launch Cashfree checkout
             const cashfree = new (window as any).Cashfree(data.payment_session_id);
             cashfree.checkout({
                 payment_method: "upi", // or cards, netbanking etc.
@@ -393,8 +379,6 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
                         description: errorData.error.message || "The payment could not be completed. Please try again.",
                         variant: "destructive"
                     });
-                     // Optionally update transaction to 'Failed'
-                    updateDoc(doc(db, 'transactions', transactionId), { status: 'Failed', failedAt: new Date() });
                 },
                 onDismiss: () => {
                     console.log("Payment dismissed by user");
