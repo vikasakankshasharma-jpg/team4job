@@ -50,7 +50,6 @@ import { toDate } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
-import { DocumentReference } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHelp } from "@/hooks/use-help";
 import axios from "axios";
@@ -505,7 +504,7 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
         defaultValues: {
             accountHolderName: user.payouts?.accountHolderName || "",
             accountNumber: "",
-            ifsc: "",
+            ifsc: user.payouts?.ifsc || "",
         },
     });
 
