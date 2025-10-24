@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import * as React from "react"
@@ -241,14 +240,14 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
         fetchSettings();
     }, [db]);
 
-    const handleSave = async () => {
+    const handleSave = async (section: 'commissions' | 'bids') => {
         if (!db) return;
         setIsSaving(true);
         try {
             await setDoc(doc(db, "settings", "platform"), settings, { merge: true });
             toast({
                 title: "Settings Saved",
-                description: "Monetization settings have been updated.",
+                description: `Monetization settings for ${section} have been updated.`,
                 variant: "success",
             });
         } catch (error) {
@@ -290,7 +289,7 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
                     </div>
                 </CardContent>
                  <CardFooter>
-                    <Button onClick={handleSave} disabled={isSaving}>
+                    <Button onClick={() => handleSave('commissions')} disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save Commissions
                     </Button>
@@ -319,7 +318,7 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
                     </div>
                 </CardContent>
                  <CardFooter>
-                    <Button onClick={handleSave} disabled={isSaving}>
+                    <Button onClick={() => handleSave('bids')} disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save Bid Prices
                     </Button>
@@ -380,14 +379,16 @@ function UserReputationSettings() {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>User & Reputation</CardTitle>
-                <CardDescription>Define the rules for the installer reputation system, including points and tier thresholds.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                 <div className="space-y-4 rounded-lg border p-4">
-                    <h3 className="font-semibold flex items-center gap-2"><Gift className="h-4 w-4" /> New User Onboarding</h3>
+        <div className="grid gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>New User Onboarding</CardTitle>
+                    <CardDescription>
+                        Configure the "welcome kit" for new users to encourage engagement.
+                        This is a key part of the platform's growth strategy.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                              <Label htmlFor="defaultTrialPeriodDays">Default Trial Period (days)</Label>
@@ -411,53 +412,67 @@ function UserReputationSettings() {
                             </p>
                         </div>
                      </div>
-                </div>
-                <div className="space-y-4 rounded-lg border p-4">
-                    <h3 className="font-semibold">Reputation Point System</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="space-y-2">
-                         <Label htmlFor="pointsForJobCompletion">Points for Job Completion</Label>
-                         <Input id="pointsForJobCompletion" type="number" value={settings.pointsForJobCompletion} onChange={handleInputChange} />
-                       </div>
-                       <div className="space-y-2">
-                         <Label htmlFor="pointsFor5StarRating">Points for 5-Star Rating</Label>
-                         <Input id="pointsFor5StarRating" type="number" value={settings.pointsFor5StarRating} onChange={handleInputChange} />
-                       </div>
-                        <div className="space-y-2">
-                         <Label htmlFor="pointsFor4StarRating">Points for 4-Star Rating</Label>
-                         <Input id="pointsFor4StarRating" type="number" value={settings.pointsFor4StarRating} onChange={handleInputChange} />
-                       </div>
-                         <div className="space-y-2">
-                         <Label htmlFor="penaltyFor1StarRating">Penalty for 1-Star Rating</Label>
-                         <Input id="penaltyFor1StarRating" type="number" value={settings.penaltyFor1StarRating} onChange={handleInputChange} />
-                       </div>
-                    </div>
-                 </div>
-                 <div className="space-y-4 rounded-lg border p-4">
-                    <h3 className="font-semibold">Reputation Tier Thresholds (Points Required)</h3>
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                       <div className="space-y-2">
-                         <Label htmlFor="silverTierPoints" className="flex items-center gap-2"><Medal className="h-4 w-4 text-gray-400" /> Silver</Label>
-                         <Input id="silverTierPoints" type="number" value={settings.silverTierPoints} onChange={handleInputChange} />
-                       </div>
-                        <div className="space-y-2">
-                         <Label htmlFor="goldTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-amber-500" /> Gold</Label>
-                         <Input id="goldTierPoints" type="number" value={settings.goldTierPoints} onChange={handleInputChange} />
-                       </div>
-                         <div className="space-y-2">
-                         <Label htmlFor="platinumTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-cyan-400" /> Platinum</Label>
-                         <Input id="platinumTierPoints" type="number" value={settings.platinumTierPoints} onChange={handleInputChange} />
-                       </div>
-                    </div>
-                 </div>
-            </CardContent>
-            <CardFooter>
-                 <Button onClick={handleSave} disabled={isSaving}>
-                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                     Save Reputation Settings
-                 </Button>
-            </CardFooter>
-        </Card>
+                </CardContent>
+                 <CardFooter>
+                    <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Onboarding Settings
+                    </Button>
+                </CardFooter>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>User Reputation System</CardTitle>
+                    <CardDescription>Define the rules for the installer reputation system, including points and tier thresholds.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-4 rounded-lg border p-4">
+                        <h3 className="font-semibold">Reputation Point System</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <div className="space-y-2">
+                             <Label htmlFor="pointsForJobCompletion">Points for Job Completion</Label>
+                             <Input id="pointsForJobCompletion" type="number" value={settings.pointsForJobCompletion} onChange={handleInputChange} />
+                           </div>
+                           <div className="space-y-2">
+                             <Label htmlFor="pointsFor5StarRating">Points for 5-Star Rating</Label>
+                             <Input id="pointsFor5StarRating" type="number" value={settings.pointsFor5StarRating} onChange={handleInputChange} />
+                           </div>
+                            <div className="space-y-2">
+                             <Label htmlFor="pointsFor4StarRating">Points for 4-Star Rating</Label>
+                             <Input id="pointsFor4StarRating" type="number" value={settings.pointsFor4StarRating} onChange={handleInputChange} />
+                           </div>
+                             <div className="space-y-2">
+                             <Label htmlFor="penaltyFor1StarRating">Penalty for 1-Star Rating</Label>
+                             <Input id="penaltyFor1StarRating" type="number" value={settings.penaltyFor1StarRating} onChange={handleInputChange} />
+                           </div>
+                        </div>
+                     </div>
+                     <div className="space-y-4 rounded-lg border p-4">
+                        <h3 className="font-semibold">Reputation Tier Thresholds (Points Required)</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                           <div className="space-y-2">
+                             <Label htmlFor="silverTierPoints" className="flex items-center gap-2"><Medal className="h-4 w-4 text-gray-400" /> Silver</Label>
+                             <Input id="silverTierPoints" type="number" value={settings.silverTierPoints} onChange={handleInputChange} />
+                           </div>
+                            <div className="space-y-2">
+                             <Label htmlFor="goldTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-amber-500" /> Gold</Label>
+                             <Input id="goldTierPoints" type="number" value={settings.goldTierPoints} onChange={handleInputChange} />
+                           </div>
+                             <div className="space-y-2">
+                             <Label htmlFor="platinumTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-cyan-400" /> Platinum</Label>
+                             <Input id="platinumTierPoints" type="number" value={settings.platinumTierPoints} onChange={handleInputChange} />
+                           </div>
+                        </div>
+                     </div>
+                </CardContent>
+                <CardFooter>
+                     <Button onClick={handleSave} disabled={isSaving}>
+                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                         Save Reputation Settings
+                     </Button>
+                </CardFooter>
+            </Card>
+        </div>
     );
 }
 
@@ -674,5 +689,3 @@ export default function SettingsPage() {
         </div>
     )
 }
-
-    
