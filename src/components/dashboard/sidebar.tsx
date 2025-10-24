@@ -18,11 +18,8 @@ import {
   Users as UsersIcon,
   FileText,
   AlertOctagon,
-  Ticket,
-  Ban,
-  UserCog,
   IndianRupee,
-  Package,
+  UserCog,
 } from "lucide-react";
 import { Logo } from "@/components/icons";
 import { usePathname } from "next/navigation";
@@ -51,9 +48,6 @@ const adminNavItems = [
     { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
     { href: "/dashboard/transactions", icon: IndianRupee, label: "Transactions" },
     { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-    { href: "/dashboard/subscription-plans", icon: Package, label: "Subscription Plans" },
-    { href: "/dashboard/coupons", icon: Ticket, label: "Coupons" },
-    { href: "/dashboard/blacklist", icon: Ban, label: "Blacklist" },
 ];
 
 const supportTeamNavItems = [
@@ -134,7 +128,7 @@ export function DashboardSidebar() {
               <Link
                 href="/dashboard/settings"
                 className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                pathname === '/dashboard/settings' && 'bg-accent text-accent-foreground'
+                pathname.startsWith('/dashboard/settings') && 'bg-accent text-accent-foreground'
                 )}
               >
                 <Settings className="h-5 w-5" />

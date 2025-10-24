@@ -14,11 +14,8 @@ import {
   HelpCircle,
   FileText,
   AlertOctagon,
-  Ticket,
-  Ban,
   UserCog,
   IndianRupee,
-  Package,
 } from "lucide-react";
 import * as React from "react";
 import {
@@ -63,9 +60,6 @@ const adminNavItems = [
     { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
     { href: "/dashboard/transactions", icon: IndianRupee, label: "Transactions" },
     { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-    { href: "/dashboard/subscription-plans", icon: Package, label: "Subscription Plans" },
-    { href: "/dashboard/coupons", icon: Ticket, label: "Coupons" },
-    { href: "/dashboard/blacklist", icon: Ban, label: "Blacklist" },
 ];
 
 const supportTeamNavItems = [
@@ -187,7 +181,7 @@ export function Header() {
              <Link
                 href="/dashboard/settings"
                 className={cn("flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
-                  pathname === '/dashboard/settings' && "text-foreground"
+                  pathname.startsWith('/dashboard/settings') && "text-foreground"
                 )}
               >
                 <Settings className="h-5 w-5" />
