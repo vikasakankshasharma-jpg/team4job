@@ -12,6 +12,10 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import axios from 'axios';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/server-init';
+import { PlatformSettings } from '@/lib/types';
+
 
 // === Cashfree API Configuration ===
 const CASHFREE_API_BASE = 'https://api.cashfree.com/verification'; 
@@ -177,6 +181,18 @@ async function callCashfreeToVerifyOtp(transactionId: string, otp: string): Prom
     }
 }
 
+async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
+    const settingsRef = doc(db, 'settings', 'platform');
+    const settingsSnap = await getDoc(settingsRef);
+    if (settingsSnap.exists()) {
+        return settingsSnap.data() as PlatformSettings;
+    }
+    // Return default values if settings are not configured
+    return {
+        autoVerifyInstallers: true, // Default to auto-verifying
+    };
+}
+
 
 export const confirmAadharVerification = ai.defineFlow(
   {
@@ -208,10 +224,15 @@ export const confirmAadharVerification = ai.defineFlow(
         message: error || 'Aadhar verification failed.',
       };
     }
+
+    const settings = await getPlatformSettings();
+    const autoVerify = settings.autoVerifyInstallers ?? true;
     
     return {
-      isVerified: true,
-      message: 'Aadhar verification successful. Your profile is now marked as verified.',
+      isVerified: autoVerify,
+      message: autoVerify 
+        ? 'Aadhar verification successful. Your profile is now marked as verified.'
+        : 'Aadhar verification successful. Your profile is pending admin approval.',
       kycData: kycData,
     };
   }
