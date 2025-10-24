@@ -1,3 +1,4 @@
+
 import { config } from 'dotenv';
 config();
 
@@ -7,3 +8,4 @@ import '@/ai/flows/ai-assisted-bid-creation.ts';
 import '@/ai/flows/suggest-skills.ts';
 import '@/ai/flows/generate-job-details.ts';
 import '@/ai/flows/aadhar-verification.ts';
+import '@/ai/flows/grant-pro-plan.ts';
