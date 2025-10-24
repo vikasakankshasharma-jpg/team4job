@@ -181,7 +181,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
 
 const installerOnboardingSchema = z.object({
     pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit Indian pincode." }),
-    skills: z.string().min(10, { message: "Please list at least one skill (min 10 characters)." }),
+    skills: z.array(z.string()).min(1, { message: "Please select at least one skill." }),
 });
 
 
@@ -192,7 +192,7 @@ function InstallerOnboardingDialog({ user, onSave }: { user: User, onSave: (valu
         resolver: zodResolver(installerOnboardingSchema),
         defaultValues: {
             pincode: user.pincodes.residential || "",
-            skills: "",
+            skills: [],
         },
     });
 
@@ -205,7 +205,7 @@ function InstallerOnboardingDialog({ user, onSave }: { user: User, onSave: (valu
             installerProfile: {
                 tier: 'Bronze',
                 points: 0,
-                skills: values.skills.split(',').map(s => s.trim().toLowerCase()),
+                skills: values.skills,
                 rating: 0,
                 reviews: 0,
                 verified: user.installerProfile?.verified || false,
@@ -246,20 +246,52 @@ function InstallerOnboardingDialog({ user, onSave }: { user: User, onSave: (valu
                             </FormItem>
                         )}
                     />
-                     <FormField
+                    <FormField
                         control={form.control}
                         name="skills"
-                        render={({ field }) => (
+                        render={() => (
                             <FormItem>
                                 <FormLabel>Your Skills</FormLabel>
-                                <FormControl>
-                                    <Textarea placeholder="e.g., IP Cameras, NVR Setup, Cabling, Access Control..." {...field} />
-                                </FormControl>
-                                <FormDescription>Enter a comma-separated list of your technical skills.</FormDescription>
+                                <div className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
+                                    {allSkills.map((skill) => (
+                                        <FormField
+                                            key={skill}
+                                            control={form.control}
+                                            name="skills"
+                                            render={({ field }) => {
+                                                return (
+                                                <FormItem
+                                                    key={skill}
+                                                    className="flex flex-row items-start space-x-3 space-y-0"
+                                                >
+                                                    <FormControl>
+                                                    <Checkbox
+                                                        checked={field.value?.includes(skill)}
+                                                        onCheckedChange={(checked) => {
+                                                        return checked
+                                                            ? field.onChange([...(field.value || []), skill])
+                                                            : field.onChange(
+                                                                field.value?.filter(
+                                                                (value) => value !== skill
+                                                                )
+                                                            )
+                                                        }}
+                                                    />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal capitalize cursor-pointer">
+                                                        {skill}
+                                                    </FormLabel>
+                                                </FormItem>
+                                                )
+                                            }}
+                                        />
+                                    ))}
+                                </div>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
+
                     <DialogFooter>
                         <DialogClose asChild>
                             <Button type="button" variant="secondary">Cancel</Button>
@@ -709,7 +741,7 @@ export default function ProfilePage() {
           installerProfile: {
             tier: 'Bronze' as const,
             points: 0,
-            skills: values.skills.split(',').map(s => s.trim().toLowerCase()),
+            skills: values.skills,
             rating: 0,
             reviews: 0,
             verified: user.installerProfile?.verified || false,
