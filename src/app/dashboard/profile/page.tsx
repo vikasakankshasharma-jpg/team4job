@@ -53,6 +53,7 @@ import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc }
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHelp } from "@/hooks/use-help";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 
 const tierIcons = {
@@ -183,126 +184,6 @@ const installerOnboardingSchema = z.object({
     pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit Indian pincode." }),
     skills: z.array(z.string()).min(1, { message: "Please select at least one skill." }),
 });
-
-
-function InstallerOnboardingDialog({ user, onSave }: { user: User, onSave: (values: any) => void }) {
-    const { toast } = useToast();
-    const { db } = useFirebase();
-    const form = useForm<z.infer<typeof installerOnboardingSchema>>({
-        resolver: zodResolver(installerOnboardingSchema),
-        defaultValues: {
-            pincode: user.pincodes.residential || "",
-            skills: [],
-        },
-    });
-
-    async function onSubmit(values: z.infer<typeof installerOnboardingSchema>) {
-        if (!user || !db) return;
-        const userRef = doc(db, 'users', user.id);
-        const updateData = {
-            roles: arrayUnion('Installer'),
-            'pincodes.residential': values.pincode,
-            installerProfile: {
-                tier: 'Bronze',
-                points: 0,
-                skills: values.skills,
-                rating: 0,
-                reviews: 0,
-                verified: user.installerProfile?.verified || false,
-                reputationHistory: [],
-            }
-        };
-        await updateDoc(userRef, updateData);
-        
-        onSave(values);
-        toast({
-            title: "Installer Profile Created!",
-            description: "You can now switch to your Installer role and start finding jobs.",
-            variant: "success",
-        });
-    }
-
-    return (
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Become an Installer</DialogTitle>
-                <DialogDescription>
-                    Fill out your details below to start finding jobs on the platform.
-                </DialogDescription>
-            </DialogHeader>
-             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                        control={form.control}
-                        name="pincode"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Your Residential Pincode</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="e.g., 110001" {...field} />
-                                </FormControl>
-                                <FormDescription>This helps us recommend jobs near you.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="skills"
-                        render={() => (
-                            <FormItem>
-                                <FormLabel>Your Skills</FormLabel>
-                                <div className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
-                                    {allSkills.map((skill) => (
-                                        <FormField
-                                            key={skill}
-                                            control={form.control}
-                                            name="skills"
-                                            render={({ field }) => {
-                                                return (
-                                                <FormItem
-                                                    key={skill}
-                                                    className="flex flex-row items-start space-x-3 space-y-0"
-                                                >
-                                                    <FormControl>
-                                                    <Checkbox
-                                                        checked={field.value?.includes(skill)}
-                                                        onCheckedChange={(checked) => {
-                                                        return checked
-                                                            ? field.onChange([...(field.value || []), skill])
-                                                            : field.onChange(
-                                                                field.value?.filter(
-                                                                (value) => value !== skill
-                                                                )
-                                                            )
-                                                        }}
-                                                    />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal capitalize cursor-pointer">
-                                                        {skill}
-                                                    </FormLabel>
-                                                </FormItem>
-                                                )
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button type="button" variant="secondary">Cancel</Button>
-                        </DialogClose>
-                        <Button type="submit">Create Installer Profile</Button>
-                    </DialogFooter>
-                </form>
-            </Form>
-        </DialogContent>
-    );
-}
 
 function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string[], onSave: (skills: string[]) => void, userId: string }) {
     const { toast } = useToast();
@@ -640,6 +521,7 @@ export default function ProfilePage() {
   const [isReputationOpen, setIsReputationOpen] = React.useState(false);
   const { toast } = useToast();
   const { setHelp } = useHelp();
+  const router = useRouter();
 
   const fetchUser = useCallback(async () => {
     if (!db || !user) return;
@@ -731,26 +613,6 @@ export default function ProfilePage() {
         });
     }
   }
-
-  const handleInstallerOnboarding = (values: z.infer<typeof installerOnboardingSchema>) => {
-    if (setUser && setRole && user) {
-        const updatedUser: User = {
-          ...user,
-          roles: [...user.roles, 'Installer'] as User['roles'],
-          pincodes: { ...user.pincodes, residential: values.pincode },
-          installerProfile: {
-            tier: 'Bronze' as const,
-            points: 0,
-            skills: values.skills,
-            rating: 0,
-            reviews: 0,
-            verified: user.installerProfile?.verified || false,
-          }
-        };
-        setUser(updatedUser);
-        setRole('Installer');
-    }
-  };
 
   const handleBecomeJobGiver = async () => {
     if (setUser && setRole && user && db) {
@@ -957,17 +819,12 @@ export default function ProfilePage() {
          <Card className="bg-accent/20 border-dashed">
             <CardHeader>
                 <CardTitle>Expand Your Opportunities</CardTitle>
-                <CardDescription>Want to find work on the platform? Create an installer profile to start bidding on jobs.</CardDescription>
+                <CardDescription>Want to find work on the platform? Become a verified installer to start bidding on jobs.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button>
-                            Become an Installer <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                    </DialogTrigger>
-                    <InstallerOnboardingDialog user={user} onSave={handleInstallerOnboarding} />
-                </Dialog>
+                <Button onClick={() => router.push('/dashboard/verify-installer')}>
+                    Become an Installer <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
             </CardContent>
          </Card>
       )}
