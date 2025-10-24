@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
@@ -213,7 +212,7 @@ export default function PostJobPage() {
         id: newJobId, 
         title: values.jobTitle,
         description: values.jobDescription,
-        skills: values.skills,
+        skills: values.skills.split(',').map(s => s.trim()),
         address: values.address,
         budget: {
             min: values.budgetMin,
