@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -365,26 +365,6 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
       </div>
-      <Card>
-        <CardHeader>
-            <CardTitle>Top Installer Leaderboard</CardTitle>
-            <CardDescription>Ranked by total reputation points.</CardDescription>
-        </CardHeader>
-        <CardContent>
-             <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={topInstallers} margin={{ right: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="points" fill="#82ca9d" />
-                </BarChart>
-            </ResponsiveContainer>
-        </CardContent>
-      </Card>
     </div>
   );
 }
-
-    
