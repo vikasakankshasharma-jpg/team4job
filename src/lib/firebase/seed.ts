@@ -17,7 +17,7 @@
 import { initializeApp, cert, App } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
-import type { User, Job, Dispute, BlacklistEntry, Transaction } from '../types';
+import type { User, Job, Dispute, BlacklistEntry, Transaction, SubscriptionPlan } from '../types';
 import { PlaceHolderImages } from '../placeholder-images';
 import { config } from 'dotenv';
 
@@ -725,6 +725,36 @@ async function seedTransactions(uids: { [email: string]: string }) {
     console.log(`- Committed 2 transactions.`);
 }
 
+async function seedSubscriptionPlans() {
+    console.log('\nSeeding default subscription plans...');
+    const batch = adminDb.batch();
+
+    const proInstallerPlan: SubscriptionPlan = {
+        id: "pro-installer-annual",
+        name: "Pro Installer (Annual)",
+        description: "Unlock premium features for professional installers.",
+        price: 2999,
+        role: "Installer",
+        features: ["Lower commission rates", "Priority support", "Appear higher in search"],
+        isArchived: false,
+    };
+    batch.set(adminDb.collection('subscriptionPlans').doc(proInstallerPlan.id), proInstallerPlan);
+
+    const businessJobGiverPlan: SubscriptionPlan = {
+        id: "business-job-giver-annual",
+        name: "Business Job Giver (Annual)",
+        description: "Post unlimited jobs and get access to top-tier installers.",
+        price: 4999,
+        role: "Job Giver",
+        features: ["Unlimited job posts", "Advanced analytics", "Directly invite installers"],
+        isArchived: false,
+    };
+    batch.set(adminDb.collection('subscriptionPlans').doc(businessJobGiverPlan.id), businessJobGiverPlan);
+    
+    await batch.commit();
+    console.log('- Committed 2 subscription plans.');
+}
+
 
 async function clearAllCollections() {
     const collections = ['disputes', 'jobs', 'users', 'blacklist', 'coupons', 'subscriptionPlans', 'transactions'];
@@ -747,6 +777,9 @@ async function main() {
     
     // Seed Firestore Users with the correct UIDs
     await seedUserProfiles(mockUsers, userUIDs);
+
+    // Seed Subscription Plans
+    await seedSubscriptionPlans();
 
     // Seed Jobs with subcollections
     await seedJobsAndSubcollections(userUIDs);
