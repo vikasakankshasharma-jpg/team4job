@@ -125,16 +125,16 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
     const lastMonthName = format(subMonths(new Date(), 1), 'MMMM yyyy');
 
     return (
-        <Card>
+        <Card className="col-span-1 lg:col-span-2">
             <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <CardTitle>Top Performers Report</CardTitle>
-                        <CardDescription>Installers ranked by performance for {lastMonthName}. Click the button to automatically reward the top 3.</CardDescription>
+                        <CardDescription>Installers ranked by performance for {lastMonthName}.</CardDescription>
                     </div>
                     <Button onClick={handleRunAutomation} disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-                        Run Monthly Reward Automation
+                        Reward Top 3
                     </Button>
                 </div>
             </CardHeader>
@@ -146,8 +146,6 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                             <TableHead>Installer</TableHead>
                             <TableHead>Monthly Points</TableHead>
                             <TableHead>Rating</TableHead>
-                            <TableHead>Pincode</TableHead>
-                            <TableHead>Member Since</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -176,8 +174,6 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                                         <span>{installer.installerProfile?.rating.toFixed(1)}</span>
                                     </div>
                                </TableCell>
-                                <TableCell>{installer.pincodes.residential}</TableCell>
-                               <TableCell>{format(toDate(installer.memberSince), 'MMM dd, yyyy')}</TableCell>
                            </TableRow>
                         ))}
                     </TableBody>
@@ -279,7 +275,7 @@ export default function ReportsPage() {
     const topInstallers = users
         .filter(u => u.installerProfile)
         .sort((a, b) => (b.installerProfile?.points || 0) - (a.installerProfile?.points || 0))
-        .slice(0, 5)
+        .slice(0, 10)
         .map(u => ({ name: u.name, points: u.installerProfile?.points || 0 }));
 
     return {
@@ -324,7 +320,27 @@ export default function ReportsPage() {
         <KpiCard title="Job Fill Rate" value={`${fillRate.toFixed(1)}%`} description="Of jobs posted are completed" icon={PieChart} iconBgColor="bg-amber-500" />
       </div>
 
-       <TopPerformersCard installers={allInstallers} />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <TopPerformersCard installers={allInstallers} />
+        <Card>
+          <CardHeader>
+            <CardTitle>All-Time Reputation Leaderboard</CardTitle>
+            <CardDescription>Top 10 installers by total reputation points.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={topInstallers} layout="vertical" margin={{ left: 10, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" />
+                    <YAxis type="category" dataKey="name" width={80} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} />
+                    <Legend />
+                    <Bar dataKey="points" name="Total Points" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
