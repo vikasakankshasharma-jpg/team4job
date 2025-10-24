@@ -76,3 +76,30 @@ export function exportToCsv(filename: string, rows: object[]) {
     document.body.removeChild(link);
   }
 }
+
+/**
+ * Checks a message for restricted patterns like phone numbers, emails, and specific keywords.
+ * @param message The message string to check.
+ * @returns An object indicating if the message is valid and a reason if it's not.
+ */
+export function validateMessageContent(message: string): { isValid: boolean; reason?: string } {
+    const restrictedPatterns = [
+        { pattern: /\b\d{10}\b/g, reason: 'phone numbers' }, // 10-digit phone numbers
+        { pattern: /\b\d{3,}[-\s]?\d{3,}[-\s]?\d{4,}\b/g, reason: 'phone numbers' }, // Formatted phone numbers
+        { pattern: /[\w.-]+@[\w.-]+\.\w{2,}/g, reason: 'email addresses' }, // Emails
+        { pattern: /\b(whatsapp|telegram|phone|contact|number|email|mail)\b/i, reason: 'contact information' },
+        { pattern: /\b(direct|outside|personally|offline)\b/i, reason: 'off-platform communication' },
+        { pattern: /\b(cash|gpay|paytm|bank transfer|advance)\b/i, reason: 'off-platform payments' },
+    ];
+
+    for (const { pattern, reason } of restrictedPatterns) {
+        if (pattern.test(message)) {
+            return {
+                isValid: false,
+                reason: `Sharing ${reason} is not allowed.`,
+            };
+        }
+    }
+
+    return { isValid: true };
+}
