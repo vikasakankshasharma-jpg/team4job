@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { useToast } from "@/hooks/use-toast";
 import { rewardTopPerformers } from "@/ai/flows/reward-top-performers";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function KpiCard({ title, value, description, icon: Icon, iconBgColor }) {
     return (
@@ -125,7 +126,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
     const lastMonthName = format(subMonths(new Date(), 1), 'MMMM yyyy');
 
     return (
-        <Card className="col-span-1 lg:col-span-2">
+        <Card>
             <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
@@ -134,7 +135,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                     </div>
                     <Button onClick={handleRunAutomation} disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-                        Reward Top 3
+                        Reward Top 3 Platform-Wide
                     </Button>
                 </div>
             </CardHeader>
@@ -149,7 +150,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {rankedInstallers.slice(0, 10).map((installer, index) => (
+                        {rankedInstallers.slice(0, 5).map((installer, index) => (
                            <TableRow key={installer.id} className={index < 3 ? "bg-primary/5" : ""}>
                                <TableCell className="font-bold text-lg">{index + 1}</TableCell>
                                <TableCell>
@@ -186,6 +187,118 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
     );
 }
 
+function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
+    const [selectedState, setSelectedState] = useState<string>('all');
+    const [selectedCity, setSelectedCity] = useState<string>('all');
+    const [selectedPincode, setSelectedPincode] = useState<string>('all');
+
+    const locationData = useMemo(() => {
+        const states = new Set<string>();
+        const citiesByState: Record<string, Set<string>> = {};
+        const pincodesByCity: Record<string, Set<string>> = {};
+
+        installers.forEach(installer => {
+            if (installer.address.cityPincode) {
+                const parts = installer.address.cityPincode.split(', ');
+                if (parts.length >= 2) {
+                    const pincode = parts[0];
+                    const po = parts[1]; // We'll derive city from installer data.
+                    const city = installer.address.fullAddress?.split(', ')[1] || 'Unknown';
+                    const state = installer.address.fullAddress?.split(', ')[2] || 'Unknown';
+
+                    if(state !== 'Unknown') {
+                        states.add(state);
+                        if (!citiesByState[state]) citiesByState[state] = new Set();
+                        citiesByState[state].add(city);
+                        const cityKey = `${state}-${city}`;
+                        if (!pincodesByCity[cityKey]) pincodesByCity[cityKey] = new Set();
+                        pincodesByCity[cityKey].add(pincode);
+                    }
+                }
+            }
+        });
+        
+        return {
+            states: Array.from(states).sort(),
+            citiesByState: Object.fromEntries(Object.entries(citiesByState).map(([k, v]) => [k, Array.from(v).sort()])),
+            pincodesByCity: Object.fromEntries(Object.entries(pincodesByCity).map(([k, v]) => [k, Array.from(v).sort()]))
+        };
+    }, [installers]);
+    
+    useEffect(() => {
+        setSelectedCity('all');
+        setSelectedPincode('all');
+    }, [selectedState]);
+
+    useEffect(() => {
+        setSelectedPincode('all');
+    }, [selectedCity]);
+
+    const topInstallers = useMemo(() => {
+        let filteredInstallers = installers;
+
+        if(selectedState !== 'all') {
+            filteredInstallers = filteredInstallers.filter(u => u.address.fullAddress?.includes(selectedState));
+        }
+        if(selectedCity !== 'all') {
+             filteredInstallers = filteredInstallers.filter(u => u.address.fullAddress?.includes(selectedCity));
+        }
+        if(selectedPincode !== 'all') {
+             filteredInstallers = filteredInstallers.filter(u => u.address.cityPincode.startsWith(selectedPincode));
+        }
+
+        return filteredInstallers
+            .sort((a, b) => (b.installerProfile?.points || 0) - (a.installerProfile?.points || 0))
+            .slice(0, 10);
+    }, [installers, selectedState, selectedCity, selectedPincode]);
+
+    const citiesForState = selectedState !== 'all' ? locationData.citiesByState[selectedState] || [] : [];
+    const pincodesForCity = selectedState !== 'all' && selectedCity !== 'all' ? locationData.pincodesByCity[`${selectedState}-${selectedCity}`] || [] : [];
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>All-Time Reputation Leaderboard</CardTitle>
+                <CardDescription>Top 10 installers by total reputation points.</CardDescription>
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                    <Select value={selectedState} onValueChange={setSelectedState}>
+                        <SelectTrigger><SelectValue placeholder="Filter by State" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All States</SelectItem>
+                            {locationData.states.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                     <Select value={selectedCity} onValueChange={setSelectedCity} disabled={selectedState === 'all'}>
+                        <SelectTrigger><SelectValue placeholder="Filter by City" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Cities</SelectItem>
+                            {citiesForState.map(city => <SelectItem key={city} value={city}>{city}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    <Select value={selectedPincode} onValueChange={setSelectedPincode} disabled={selectedCity === 'all'}>
+                        <SelectTrigger><SelectValue placeholder="Filter by Pincode" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Pincodes</SelectItem>
+                            {pincodesForCity.map(pincode => <SelectItem key={pincode} value={pincode}>{pincode}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                 </div>
+            </CardHeader>
+            <CardContent>
+                <ResponsiveContainer width="100%" height={350}>
+                    <BarChart data={topInstallers} layout="vertical" margin={{ left: 10, right: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                        <XAxis type="number" />
+                        <YAxis type="category" dataKey="name" width={80} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                        <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} />
+                        <Legend />
+                        <Bar dataKey="installerProfile.points" name="Total Points" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                </ResponsiveContainer>
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function ReportsPage() {
   const { isAdmin, loading: userLoading } = useUser();
@@ -272,11 +385,7 @@ export default function ReportsPage() {
     }, {} as Record<string, number>);
     const jobStatusData = Object.entries(jobStatusDistribution).map(([name, value]) => ({ name, value }));
 
-    const topInstallers = users
-        .filter(u => u.installerProfile)
-        .sort((a, b) => (b.installerProfile?.points || 0) - (a.installerProfile?.points || 0))
-        .slice(0, 10)
-        .map(u => ({ name: u.name, points: u.installerProfile?.points || 0 }));
+    const allInstallers = users.filter(u => u.installerProfile);
 
     return {
         totalUsers,
@@ -287,8 +396,7 @@ export default function ReportsPage() {
         platformRevenue,
         userGrowthData,
         jobStatusData,
-        topInstallers,
-        allInstallers: users.filter(u => u.installerProfile),
+        allInstallers,
     };
   }, [users, jobs]);
 
@@ -304,7 +412,7 @@ export default function ReportsPage() {
       return <p>No data available to generate reports.</p>
   }
   
-  const { totalUsers, installerCount, jobGiverCount, totalJobs, fillRate, platformRevenue, userGrowthData, jobStatusData, topInstallers, allInstallers } = reportData;
+  const { totalUsers, installerCount, jobGiverCount, totalJobs, fillRate, platformRevenue, userGrowthData, jobStatusData, allInstallers } = reportData;
 
   return (
     <div className="grid gap-6">
@@ -320,26 +428,9 @@ export default function ReportsPage() {
         <KpiCard title="Job Fill Rate" value={`${fillRate.toFixed(1)}%`} description="Of jobs posted are completed" icon={PieChart} iconBgColor="bg-amber-500" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2">
         <TopPerformersCard installers={allInstallers} />
-        <Card>
-          <CardHeader>
-            <CardTitle>All-Time Reputation Leaderboard</CardTitle>
-            <CardDescription>Top 10 installers by total reputation points.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={topInstallers} layout="vertical" margin={{ left: 10, right: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" />
-                    <YAxis type="category" dataKey="name" width={80} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} />
-                    <Legend />
-                    <Bar dataKey="points" name="Total Points" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <AllTimeLeaderboardCard installers={allInstallers} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
