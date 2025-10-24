@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/server-init';
-import { User, Transaction } from '@/lib/types';
+import { User, Transaction, PlatformSettings } from '@/lib/types';
 import axios from 'axios';
 
 // This would be 'https://payout-api.cashfree.com' for production
@@ -27,16 +27,33 @@ async function getCashfreeBearerToken(): Promise<string> {
     throw new Error('Failed to authenticate with Cashfree Payouts.');
 }
 
-async function getPlatformSettings() {
+async function getPlatformSettings(): Promise<PlatformSettings> {
     const settingsRef = doc(db, 'settings', 'platform');
     const settingsSnap = await getDoc(settingsRef);
     if (settingsSnap.exists()) {
-        return settingsSnap.data();
+        return settingsSnap.data() as PlatformSettings;
     }
     // Return default values if settings are not configured
     return {
         installerCommissionRate: 10,
         jobGiverFeeRate: 2,
+        proInstallerPlanPrice: 2999,
+        businessJobGiverPlanPrice: 4999,
+        bidBundle10: 500,
+        bidBundle25: 1100,
+        bidBundle50: 2000,
+        defaultTrialPeriodDays: 30,
+        freeBidsForNewInstallers: 10,
+        freePostsForNewJobGivers: 3,
+        pointsForJobCompletion: 50,
+        pointsFor5StarRating: 20,
+        pointsFor4StarRating: 10,
+        penaltyFor1StarRating: -25,
+        silverTierPoints: 500,
+        goldTierPoints: 1000,
+        platinumTierPoints: 2000,
+        minJobBudget: 500,
+        autoVerifyInstallers: true
     };
 }
 

@@ -299,7 +299,7 @@ export function SignUpForm() {
         setVerificationSubStep("verified");
         toast({
           title: "Verification Successful!",
-          description: "Your KYC data has been pre-filled.",
+          description: result.message,
           variant: "success",
         });
         form.clearErrors("aadhar");
