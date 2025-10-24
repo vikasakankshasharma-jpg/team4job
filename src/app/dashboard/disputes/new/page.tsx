@@ -30,18 +30,21 @@ import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { doc, setDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useHelp } from "@/hooks/use-help";
+import { FileUpload } from "@/components/ui/file-upload";
 
 const disputeSchema = z.object({
   category: z.enum(["Billing Inquiry", "Technical Support", "Skill Request", "General Question"]),
   title: z.string().min(10, { message: "Title must be at least 10 characters." }),
   reason: z.string().min(25, { message: "Description must be at least 25 characters." }),
+  attachments: z.array(z.instanceof(File)).optional(),
 });
 
 export default function CreateDisputePage() {
   const { toast } = useToast();
   const { user, role, isAdmin, loading: userLoading } = useUser();
-  const { db } = useFirebase();
+  const { db, storage } = useFirebase();
   const router = useRouter();
   const { setHelp } = useHelp();
 
@@ -52,11 +55,11 @@ export default function CreateDisputePage() {
             <div className="space-y-4 text-sm">
                 <p>Use this form to create a new support ticket for issues not related to a specific job.</p>
                 <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Category:</span> Choose the most relevant category for your issue. This helps us direct your ticket to the right team.</li>
+                    <li><span className="font-semibold">Category:</span> Choose the most relevant category for your issue.</li>
                     <li><span className="font-semibold">Subject:</span> Provide a short, clear summary of your issue.</li>
-                    <li><span className="font-semibold">Description:</span> Describe your problem in as much detail as possible. The more information you provide, the faster we can help.</li>
+                    <li><span className="font-semibold">Description:</span> Describe your problem in detail.</li>
+                    <li><span className="font-semibold">Attachments:</span> Upload any relevant photos or videos as proof.</li>
                 </ul>
-                <p>Once submitted, an admin or support team member will review your ticket. You can track its status on the main "Disputes" page.</p>
             </div>
         )
     })
@@ -74,16 +77,28 @@ export default function CreateDisputePage() {
     defaultValues: {
       title: "",
       reason: "",
+      attachments: [],
     },
   });
 
   async function onSubmit(values: z.infer<typeof disputeSchema>) {
-    if (!user || !db) {
-        toast({ title: "Error", description: "You must be logged in to create a ticket.", variant: "destructive" });
+    if (!user || !db || !storage) {
+        toast({ title: "Error", description: "Authentication details are missing. Please log in again.", variant: "destructive" });
         return;
     }
     
     const newDisputeId = `DISPUTE-${Date.now()}`;
+    let attachmentUrls: string[] = [];
+
+    if (values.attachments && values.attachments.length > 0) {
+        const uploadPromises = values.attachments.map(async (file) => {
+            const storageRef = ref(storage, `disputes/${newDisputeId}/${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            return getDownloadURL(snapshot.ref);
+        });
+        attachmentUrls = await Promise.all(uploadPromises);
+    }
+
     const disputeData = {
         id: newDisputeId,
         requesterId: user.id,
@@ -95,6 +110,7 @@ export default function CreateDisputePage() {
             authorId: user.id,
             authorRole: role,
             content: values.reason,
+            attachments: attachmentUrls,
             timestamp: new Date()
         }],
         createdAt: new Date(),
@@ -184,6 +200,23 @@ export default function CreateDisputePage() {
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="attachments"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Photo/Video Proof</FormLabel>
+                    <FormControl>
+                       <FileUpload 
+                          onFilesChange={(files) => field.onChange(files)} 
+                          maxFiles={5}
+                        />
+                    </FormControl>
+                    <FormDescription>Upload any relevant photos or videos as evidence (max 5 files).</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

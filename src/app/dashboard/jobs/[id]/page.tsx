@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -62,7 +63,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bid, Job, Comment, User, JobAttachment, PrivateMessage, Dispute, Transaction } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
-import { getStatusVariant, toDate, cn } from "@/lib/utils";
+import { getStatusVariant, toDate, cn, validateMessageContent } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { doc, getDoc, updateDoc, arrayUnion, setDoc, DocumentReference, collection, getDocs, query, where } from "firebase/firestore";
@@ -994,6 +995,16 @@ export default function JobDetailPage() {
   const handlePostComment = async () => {
     if (!newComment.trim() || !user || !job) return;
 
+    const validation = validateMessageContent(newComment);
+    if (!validation.isValid) {
+      toast({
+        title: "Comment Blocked",
+        description: validation.reason,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newCommentObject: Omit<Comment, 'id'> = {
       author: doc(db, 'users', user.id),
       timestamp: new Date(),
@@ -1020,6 +1031,16 @@ export default function JobDetailPage() {
   
   const handlePostPrivateMessage = async () => {
     if ((!newPrivateMessage.trim() && privateMessageAttachments.length === 0) || !user || !job) return;
+
+    const validation = validateMessageContent(newPrivateMessage);
+    if (!validation.isValid) {
+      toast({
+        title: "Message Blocked",
+        description: validation.reason,
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Mock upload process for attachments
     const uploadedAttachments: JobAttachment[] = privateMessageAttachments.map(file => ({

@@ -16,18 +16,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { AlertOctagon, Send, CheckCircle2, Bot, User as UserIcon, Shield, Paperclip, X, File as FileIcon, RefreshCw, Undo2 } from "lucide-react";
+import { AlertOctagon, Send, CheckCircle2, Bot, User as UserIcon, Shield, RefreshCw, Undo2, File as FileIcon } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dispute, DisputeMessage, User, DisputeAttachment, Transaction } from "@/lib/types";
+import { Dispute, DisputeMessage, User, Transaction } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import Link from "next/link";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { doc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useHelp } from "@/hooks/use-help";
 import axios from 'axios';
+import { FileUpload } from "@/components/ui/file-upload";
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -87,12 +89,11 @@ function PageSkeleton() {
 }
 
 export default function DisputeDetailPage() {
-  const { user, isAdmin } = useUser();
-  const { db } = useFirebase();
+  const { user, role, isAdmin } = useUser();
+  const { db, storage } = useFirebase();
   const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { setHelp } = useHelp();
 
   const [dispute, setDispute] = useState<Dispute | null>(null);
@@ -102,18 +103,18 @@ export default function DisputeDetailPage() {
   const [isRefunding, setIsRefunding] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   React.useEffect(() => {
     setHelp({
         title: "Dispute Details",
         content: (
             <div className="space-y-4 text-sm">
-                <p>This page shows the complete history of a single dispute ticket. All parties involved, including admins, can communicate here.</p>
+                <p>This page shows the complete history of a single dispute ticket. All parties involved can communicate here.</p>
                 <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Discussion Thread:</span> View all messages exchanged between the job giver, installer, and any mediating admins.</li>
-                    <li><span className="font-semibold">Post a Reply:</span> Use the text box at the bottom to add your message to the thread. You can also attach files as evidence.</li>
-                    <li><span className="font-semibold">Admin Actions:</span> Admins can change the status of the dispute, marking it as "Under Review" or "Resolved" using the buttons on the right.</li>
-                    <li><span className="font-semibold">Refunds:</span> If a job has been funded but not completed, admins will see an option to process a refund back to the Job Giver.</li>
+                    <li><span className="font-semibold">Discussion Thread:</span> View all messages and evidence.</li>
+                    <li><span className="font-semibold">Post a Reply:</span> Use the text box and file uploader to add your response.</li>
+                    <li><span className="font-semibold">Admin Actions:</span> Admins can change the status or process refunds.</li>
                 </ul>
             </div>
         )
@@ -135,7 +136,6 @@ export default function DisputeDetailPage() {
 
         const disputeData = disputeSnap.data() as Dispute;
         
-        // Fetch related transaction if it's a job dispute
         if (disputeData.jobId) {
             const transQuery = query(collection(db, "transactions"), where("jobId", "==", disputeData.jobId));
             const transSnap = await getDocs(transQuery);
@@ -165,22 +165,12 @@ export default function DisputeDetailPage() {
     }
     fetchDisputeAndTransaction();
   }, [id, db]);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      setAttachments(prev => [...prev, ...Array.from(event.target.files!)]);
-    }
-  };
-
-  const removeAttachment = (fileName: string) => {
-    setAttachments(prev => prev.filter(file => file.name !== fileName));
-  };
   
   if (loading) {
     return <PageSkeleton />;
   }
 
-  if (!dispute || !user) {
+  if (!dispute || !user || !storage) {
     notFound();
   }
 
@@ -196,21 +186,27 @@ export default function DisputeDetailPage() {
   }
 
   const handlePostMessage = async () => {
-    if (!newMessage.trim() && attachments.length === 0) return;
+    if ((!newMessage.trim() && attachments.length === 0) || isSubmitting) return;
+    setIsSubmitting(true);
 
-    // Mock upload process
-    const uploadedAttachments: DisputeAttachment[] = attachments.map(file => ({
-        fileName: file.name,
-        fileUrl: `#`, // In real app, this would be the URL from Firebase Storage
-        fileType: file.type,
-    }));
+    let attachmentUrls: { fileName: string; fileUrl: string; fileType: string; }[] = [];
+
+    if (attachments.length > 0) {
+        const uploadPromises = attachments.map(async (file) => {
+            const storageRef = ref(storage, `disputes/${id}/${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            return { fileName: file.name, fileUrl: downloadURL, fileType: file.type };
+        });
+        attachmentUrls = await Promise.all(uploadPromises);
+    }
 
     const message: DisputeMessage = {
         authorId: user.id,
-        authorRole: isAdmin ? 'Admin' : (user.roles.includes('Job Giver') ? 'Job Giver' : 'Installer'),
+        authorRole: isAdmin ? 'Admin' : (role || (user.roles.includes('Job Giver') ? 'Job Giver' : 'Installer')),
         content: newMessage,
         timestamp: new Date(),
-        attachments: uploadedAttachments,
+        attachments: attachmentUrls,
     };
     
     await updateDoc(doc(db, "disputes", id), {
@@ -220,6 +216,7 @@ export default function DisputeDetailPage() {
 
     setNewMessage("");
     setAttachments([]);
+    setIsSubmitting(false);
   };
   
   const handleResolveDispute = async () => {
@@ -229,39 +226,26 @@ export default function DisputeDetailPage() {
 
   const handleReviewDispute = async () => {
     await handleUpdateDispute({ status: 'Under Review' });
-    toast({ title: "Dispute Under Review", description: "You are now actively reviewing this case." });
+    toast({ title: "Dispute Under Review", description: "The case is now marked for active review." });
   }
   
   const handleRefund = async () => {
-    if (!transaction) {
-        toast({ title: "No transaction found", description: "Cannot process refund.", variant: "destructive" });
-        return;
-    }
+    if (!transaction) return toast({ title: "Transaction not found", variant: "destructive" });
     setIsRefunding(true);
     try {
         await axios.post('/api/cashfree/payouts/request-transfer', {
             transactionId: transaction.id,
-            userId: transaction.payerId, // The user to BE REFUNDED
+            userId: transaction.payerId,
             transferType: 'refund',
         });
-        toast({
-            title: "Refund Initiated",
-            description: "The refund request has been sent. The status will update upon completion.",
-        });
-        // Optimistically update local state while webhook processes
+        toast({ title: "Refund Initiated" });
         setTransaction(prev => prev ? { ...prev, status: 'Refunded' } : null);
     } catch(error: any) {
-        console.error("Refund error:", error);
-        toast({
-            title: "Refund Failed",
-            description: error.response?.data?.error || "An unexpected error occurred.",
-            variant: "destructive"
-        });
+        toast({ title: "Refund Failed", description: error.response?.data?.error, variant: "destructive" });
     } finally {
         setIsRefunding(false);
     }
   };
-
 
   return (
     <div className="grid gap-8 md:grid-cols-3">
@@ -355,39 +339,20 @@ export default function DisputeDetailPage() {
                         <AnimatedAvatar svg={user.avatarUrl} />
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
+                    <div className="flex-1 space-y-4">
                         <Textarea
                             placeholder="Type your message here..."
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             rows={4}
                         />
-                         <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                            multiple
-                            className="hidden"
+                        <FileUpload 
+                            onFilesChange={setAttachments} 
+                            maxFiles={5}
                         />
-                         {attachments.length > 0 && (
-                            <div className="mt-2 space-y-2">
-                                <p className="text-xs font-semibold">Selected Files:</p>
-                                {attachments.map(file => (
-                                    <div key={file.name} className="flex items-center justify-between text-xs bg-muted p-2 rounded-md">
-                                        <span>{file.name}</span>
-                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeAttachment(file.name)}>
-                                            <X className="h-3 w-3" />
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        <div className="mt-2 flex justify-between">
-                            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                                <Paperclip className="mr-2 h-4 w-4" />
-                                Attach Files
-                            </Button>
-                            <Button onClick={handlePostMessage} disabled={!newMessage.trim() && attachments.length === 0}>
+                        <div className="flex justify-end">
+                            <Button onClick={handlePostMessage} disabled={(!newMessage.trim() && attachments.length === 0) || isSubmitting}>
+                                {isSubmitting && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
                                 <Send className="mr-2 h-4 w-4" />
                                 Send Message
                             </Button>
@@ -423,7 +388,7 @@ export default function DisputeDetailPage() {
              <div className="space-y-3">
                  <h4 className="font-semibold">Requester</h4>
                 <Link href={`/dashboard/users/${dispute.requesterId}`} className="block hover:bg-accent p-2 rounded-md">
-                    <p className="font-medium">{involvedUsers[dispute.requesterId]?.name || 'Loading...'}</p>
+                    <p className="font-medium">{involvedUsers[dispute.requesterId]?.name || '...'}</p>
                     <p className="text-xs text-muted-foreground font-mono">{dispute.requesterId}</p>
                 </Link>
              </div>
@@ -434,7 +399,7 @@ export default function DisputeDetailPage() {
                         <p className="font-medium">Job Giver: {involvedUsers[dispute.parties.jobGiverId]?.name || '...'}</p>
                         <p className="text-xs text-muted-foreground font-mono">{dispute.parties.jobGiverId}</p>
                     </Link>
-                    <Link href={`/dashboard/users/${dispute.parties.installerId}`} className="block hover:bg-accent p-2 rounded-md">
+                    <Link href={`/dashboard/users/${dispiute.parties.installerId}`} className="block hover:bg-accent p-2 rounded-md">
                         <p className="font-medium">Installer: {involvedUsers[dispute.parties.installerId]?.name || '...'}</p>
                         <p className="text-xs text-muted-foreground font-mono">{dispute.parties.installerId}</p>
                     </Link>
