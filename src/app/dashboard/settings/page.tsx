@@ -123,10 +123,10 @@ function PersonalSettingsCard() {
                         <div className="space-y-0.5">
                             <Label>Push Notifications</Label>
                             <p className="text-xs text-muted-foreground">
-                                Get real-time alerts on your device.
+                                This feature is not yet implemented. Get real-time alerts on your device.
                             </p>
                         </div>
-                        <Switch />
+                        <Switch disabled />
                     </div>
                 </CardContent>
             </Card>
