@@ -5,8 +5,11 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Providers } from "@/components/providers";
+import { FirebaseClientProvider } from "@/lib/firebase/client-provider";
+import { UserProvider } from "@/hooks/use-user";
+import { HelpProvider } from "@/hooks/use-help";
 import Script from 'next/script';
+import { GoogleMapsProvider } from "@/components/google-maps-provider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
 
@@ -42,10 +45,16 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Providers>
-            {children}
-            <Toaster />
-          </Providers>
+          <GoogleMapsProvider>
+            <FirebaseClientProvider>
+              <UserProvider>
+                  <HelpProvider>
+                      {children}
+                  </HelpProvider>
+              </UserProvider>
+            </FirebaseClientProvider>
+          </GoogleMapsProvider>
+          <Toaster />
         </ThemeProvider>
          <Script 
           src="https://sdk.cashfree.com/js/v3/cashfree.js" 
