@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FormDescription, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useGoogleMaps } from '@/hooks/use-google-maps';
+import { useGoogleMaps } from '@/components/google-maps-provider';
 
 interface PostOffice {
     Name: string;

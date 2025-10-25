@@ -1,30 +1,26 @@
 
 "use client";
 
+import React, { createContext, useContext } from 'react';
 import { useJsApiLoader } from "@react-google-maps/api";
-import React, { createContext, useContext, useMemo } from "react";
 
 const GOOGLE_MAPS_LIBRARIES = ["places", "geocoding"] as ("places" | "geocoding")[];
 
-type GoogleMapsContextType = {
+interface GoogleMapsContextValue {
   isLoaded: boolean;
-};
+}
 
-const GoogleMapsContext = createContext<GoogleMapsContextType | null>(null);
+const GoogleMapsContext = createContext<GoogleMapsContextValue | null>(null);
 
-export const GoogleMapsProvider = ({ children }: { children: React.ReactNode }) => {
+export const GoogleMapsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
-  const value = useMemo(() => ({
-    isLoaded,
-  }), [isLoaded]);
-
   return (
-    <GoogleMapsContext.Provider value={value}>
+    <GoogleMapsContext.Provider value={{ isLoaded }}>
       {children}
     </GoogleMapsContext.Provider>
   );
