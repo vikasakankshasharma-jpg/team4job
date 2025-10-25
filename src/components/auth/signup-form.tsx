@@ -70,7 +70,7 @@ const formSchema = z.object({
 });
 
 
-export function SignUpForm() {
+export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
   const router = useRouter();
   const { login } = useUser();
   const auth = useAuth();
@@ -695,6 +695,7 @@ export function SignUpForm() {
             fullAddressName="address.fullAddress"
             onLocationGeocoded={setMapCenter}
             mapCenter={mapCenter}
+            isMapLoaded={isMapLoaded}
         />
         <div className="flex gap-2">
             <Button variant="outline" onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'photo')} className="w-full">Back</Button>

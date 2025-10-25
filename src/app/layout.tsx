@@ -9,7 +9,6 @@ import { FirebaseClientProvider } from "@/lib/firebase/client-provider";
 import { UserProvider } from "@/hooks/use-user";
 import { HelpProvider } from "@/hooks/use-help";
 import Script from 'next/script';
-import { GoogleMapsProvider } from "@/components/google-maps-provider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
 
@@ -45,15 +44,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <GoogleMapsProvider>
-            <FirebaseClientProvider>
-              <UserProvider>
-                  <HelpProvider>
-                      {children}
-                  </HelpProvider>
-              </UserProvider>
-            </FirebaseClientProvider>
-          </GoogleMapsProvider>
+          <FirebaseClientProvider>
+            <UserProvider>
+                <HelpProvider>
+                    {children}
+                </HelpProvider>
+            </UserProvider>
+          </FirebaseClientProvider>
           <Toaster />
         </ThemeProvider>
          <Script 

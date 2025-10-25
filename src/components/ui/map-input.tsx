@@ -2,12 +2,11 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useFormContext, useController, Control, useWatch } from 'react-hook-form';
+import { useFormContext, useController, Control } from 'react-hook-form';
 import { GoogleMap, Marker } from '@react-google-maps/api';
 import { FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
-import { useGoogleMaps } from '@/components/google-maps-provider';
 const debounce = require('lodash.debounce');
 
 const containerStyle = {
@@ -26,9 +25,10 @@ interface MapInputProps {
     label: string;
     control: Control<any>;
     center?: { lat: number; lng: number } | null;
+    isMapLoaded: boolean;
 }
 
-export function MapInput({ name, label, control, center: propCenter }: MapInputProps) {
+export function MapInput({ name, label, control, center: propCenter, isMapLoaded }: MapInputProps) {
   const { field: addressField, fieldState: addressFieldState } = useController({ name, control });
   const { setValue } = useFormContext();
 
@@ -36,11 +36,9 @@ export function MapInput({ name, label, control, center: propCenter }: MapInputP
   const [marker, setMarker] = useState<google.maps.LatLngLiteral | null>(propCenter);
   const [center, setCenter] = useState(propCenter || defaultCenter);
 
-  const { isLoaded } = useGoogleMaps();
-
   const geocodeAddress = useCallback(
     (address: string) => {
-      if (isLoaded && address) {
+      if (isMapLoaded && address && window.google) {
         const geocoder = new window.google.maps.Geocoder();
         geocoder.geocode({ address: address }, (results, status) => {
           if (status === 'OK' && results && results[0].geometry) {
@@ -55,7 +53,7 @@ export function MapInput({ name, label, control, center: propCenter }: MapInputP
         });
       }
     },
-    [isLoaded, map]
+    [isMapLoaded, map]
   );
   
   const debouncedGeocode = useCallback(debounce(geocodeAddress, 1000), [geocodeAddress]);
@@ -72,7 +70,7 @@ export function MapInput({ name, label, control, center: propCenter }: MapInputP
 
 
   const onMapClick = useCallback((e: google.maps.MapMouseEvent) => {
-    if (e.latLng && isLoaded) {
+    if (e.latLng && isMapLoaded && window.google) {
       const newMarkerPos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
       setMarker(newMarkerPos);
 
@@ -85,7 +83,7 @@ export function MapInput({ name, label, control, center: propCenter }: MapInputP
         }
       });
     }
-  }, [setValue, name, isLoaded]);
+  }, [setValue, name, isMapLoaded]);
 
   const onMapLoad = useCallback((mapInstance: google.maps.Map) => {
     setMap(mapInstance);
@@ -103,7 +101,7 @@ export function MapInput({ name, label, control, center: propCenter }: MapInputP
     debouncedGeocode(event.target.value);
   }
 
-  if (!isLoaded) {
+  if (!isMapLoaded) {
     return (
         <FormItem>
             <FormLabel>{label}</FormLabel>
