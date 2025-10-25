@@ -80,7 +80,7 @@ export function SignUpForm() {
   
   const [currentStep, setCurrentStep] = useState<"role" | "details" | "photo" | "verification" | "skills">("role");
   const [verificationSubStep, setVerificationSubStep] = useState<"enterAadhar" | "enterOtp" | "verified">("enterAadhar");
-  const [transactionId, setTransactionId] = useState("");
+  const [verificationId, setVerificationId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [kycData, setKycData] = useState<ConfirmAadharOutput['kycData'] | null>(null);
@@ -116,8 +116,8 @@ export function SignUpForm() {
           <div className="space-y-4 text-sm">
             <p>To ensure a safe and trustworthy platform for everyone, all installers are required to complete a one-time identity verification.</p>
             <ul className="list-disc space-y-2 pl-5">
-              <li><span className="font-semibold">Enter Aadhar:</span> Provide your 12-digit Aadhar number.</li>
-              <li><span className="font-semibold">Enter OTP:</span> An OTP will be sent to the mobile number linked with your Aadhar. For this demo, please use the code <strong className="text-primary">123456</strong>.</li>
+              <li><span className="font-semibold">Enter Aadhar:</span> Provide your 12-digit Aadhar number. For testing in sandbox, use <strong className="text-primary">999999990019</strong>.</li>
+              <li><span className="font-semibold">Enter OTP:</span> An OTP will be sent to the mobile number linked with your Aadhar. For testing, any 6-digit OTP (e.g., <strong className="text-primary">123456</strong>) will work.</li>
               <li><span className="font-semibold">Secure Process:</span> This verification is powered by Cashfree's Secure ID product.</li>
             </ul>
           </div>
@@ -279,7 +279,7 @@ export function SignUpForm() {
     try {
       const result = await initiateAadharVerification({ aadharNumber });
       if (result.success) {
-        setTransactionId(result.transactionId);
+        setVerificationId(result.verificationId);
         setVerificationSubStep("enterOtp");
         toast({
           title: "OTP Sent!",
@@ -307,7 +307,7 @@ export function SignUpForm() {
     }
 
     try {
-      const result = await confirmAadharVerification({ transactionId, otp: otp || "" });
+      const result = await confirmAadharVerification({ verificationId, otp: otp || "" });
       if (result.isVerified && result.kycData) {
         setVerificationSubStep("verified");
         toast({
@@ -501,7 +501,7 @@ export function SignUpForm() {
                                     </Button>
                                 )}
                             </div>
-                             <FormDescription>For testing, use Aadhar: <strong>752828181676</strong></FormDescription>
+                             <FormDescription>For testing, use Aadhaar: <strong>999999990019</strong></FormDescription>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -531,7 +531,7 @@ export function SignUpForm() {
                                         Verify OTP
                                     </Button>
                                 </div>
-                                <FormDescription>For testing, use OTP: <strong>123456</strong>.</FormDescription>
+                                <FormDescription>For testing, use any 6-digit OTP, e.g., <strong>123456</strong>.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
