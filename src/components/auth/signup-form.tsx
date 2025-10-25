@@ -529,14 +529,14 @@ export function SignUpForm() {
         <h3 className="font-semibold">{role === 'Job Giver' ? 'Step 2: Add a Profile Photo' : 'Step 2: Add a Profile Photo'}</h3>
         <p className="text-sm text-muted-foreground">A real photo increases trust and helps you get hired.</p>
         
-        <div className="flex items-center justify-center w-full aspect-video bg-muted rounded-lg overflow-hidden relative">
+        <div className="mx-auto w-64 h-64 bg-muted rounded-full overflow-hidden relative flex items-center justify-center">
             {photo ? (
-                <img src={photo} alt="Profile preview" className="w-full h-full object-contain" />
+                <img src={photo} alt="Profile preview" className="w-full h-full object-cover" />
             ) : (
                 <>
-                  <video ref={videoRef} className="w-full h-full object-contain" autoPlay muted playsInline />
+                  <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
                   {!hasCameraPermission && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white p-4">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white p-4 text-center">
                           <Alert variant="destructive">
                             <AlertTitle>Camera Access Required</AlertTitle>
                             <AlertDescription>
