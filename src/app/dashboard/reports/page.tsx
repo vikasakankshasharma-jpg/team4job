@@ -726,7 +726,7 @@ export default function ReportsPage() {
                     <YAxis type="category" dataKey="name" width={120} />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="value" name="Number of Jobs" fill="#8884d8" />
+                    <Bar dataKey="value" name="Number of Jobs" fill="#8884d8" radius={[0, 4, 4, 0]} />
                 </BarChart>
             </ResponsiveContainer>
           </CardContent>
