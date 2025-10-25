@@ -13,10 +13,25 @@ function initializeAdminApp() {
     return getApps()[0];
   }
 
+  // 1. Try to use service-account.json first for local development
+  try {
+    const serviceAccount = require('./service-account.json');
+    return initializeApp({
+        credential: cert(serviceAccount)
+    });
+  } catch (error: any) {
+    if (error.code !== 'MODULE_NOT_FOUND') {
+        console.error("Error reading or parsing service-account.json:", error);
+        throw new Error("Could not initialize Firebase Admin SDK. The service-account.json file may be corrupted.");
+    }
+    // If the file is not found, proceed to check environment variable.
+  }
+
+  // 2. Fallback to environment variable for production/deployment
   const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
   if (!serviceAccountEnv) {
-    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set. This is required for server-side Firebase operations.');
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set, and service-account.json was not found. This is required for server-side Firebase operations.');
   }
 
   try {
