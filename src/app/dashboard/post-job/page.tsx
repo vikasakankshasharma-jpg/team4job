@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
@@ -393,7 +394,7 @@ export default function PostJobPage() {
                   mapCenter={mapCenter}
                 />
                  <Separator />
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                     control={form.control}
                     name="deadline"
@@ -422,7 +423,7 @@ export default function PostJobPage() {
                     )}
                 />
               </div>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="budgetMin"
