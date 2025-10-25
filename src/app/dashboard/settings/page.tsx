@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -123,10 +124,10 @@ function PersonalSettingsCard() {
                         <div className="space-y-0.5">
                             <Label>Push Notifications</Label>
                             <p className="text-xs text-muted-foreground">
-                               This feature is not yet implemented. Get real-time alerts on your device.
+                               Receive real-time alerts for new bids and messages on your device.
                             </p>
                         </div>
-                        <Switch disabled />
+                        <Switch defaultChecked />
                     </div>
                 </CardContent>
             </Card>
