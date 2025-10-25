@@ -18,7 +18,7 @@ import { PlatformSettings } from '@/lib/types';
 
 
 // === Cashfree API Configuration ===
-const CASHFREE_API_BASE = 'https://api.cashfree.com/verification'; 
+const CASHFREE_API_BASE = 'https://sandbox.cashfree.com/verification'; 
 const CASHFREE_API_VERSION = '2023-03-01';
 
 // === Step 1: Initiate Verification and Request OTP ===
@@ -84,7 +84,7 @@ export const initiateAadharVerification = ai.defineFlow(
   },
   async (input) => {
     // For demo purposes, if the Aadhar number is the test number, simulate success without a real API call.
-    if (input.aadharNumber === '752828181676') {
+    if (input.aadharNumber === '999999990019') {
         const mockTransactionId = `txn_mock_${Date.now()}`;
         console.log(`[Cashfree KYC] Using mock OTP flow for test Aadhar. Txn ID: ${mockTransactionId}`);
         return {
@@ -201,8 +201,8 @@ export const confirmAadharVerification = ai.defineFlow(
     outputSchema: ConfirmAadharOutputSchema,
   },
   async (input) => {
-    // For demo purposes, if the OTP is the test OTP, simulate success.
-    if (input.otp === '123456') {
+    // For demo purposes, if the transaction is a mock one and OTP is correct, simulate success.
+    if (input.transactionId.startsWith('txn_mock_') && input.otp === '123456') {
         console.log('[Cashfree KYC] Using mock verification for test OTP.');
          const mockKycData = {
             name: 'Ramesh Kumar',
