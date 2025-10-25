@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -253,6 +254,56 @@ export default function SubscriptionPlansSettings({ plans, onDataChange }: { pla
     onDataChange();
   }
 
+  const PlanCard = ({ plan }: { plan: SubscriptionPlan }) => (
+    <Card>
+        <CardHeader>
+            <div className="flex justify-between items-start">
+                <div>
+                    <CardTitle>{plan.name}</CardTitle>
+                    <CardDescription>ID: {plan.id}</CardDescription>
+                </div>
+                <Badge variant={plan.isArchived ? 'destructive' : 'success'}>
+                    {plan.isArchived ? 'Archived' : 'Active'}
+                </Badge>
+            </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Price (Yearly)</span>
+                <span className="font-semibold">₹{plan.price.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Applicable Role</span>
+                <Badge variant={plan.role === 'Any' ? 'secondary' : 'outline'}>{plan.role}</Badge>
+            </div>
+            <div>
+                <h4 className="text-sm font-semibold mb-2">Features</h4>
+                <ul className="list-disc list-inside text-sm text-muted-foreground">
+                    {plan.features.map(f => <li key={f}>{f}</li>)}
+                </ul>
+            </div>
+        </CardContent>
+        <CardFooter>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                        <MoreHorizontal className="mr-2 h-4 w-4" />
+                        Actions
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Manage Plan</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <PlanForm plan={plan} onSave={onDataChange} />
+                    <DropdownMenuItem onClick={() => handleDelete(plan)} className="text-destructive">
+                      Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </CardFooter>
+    </Card>
+  );
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -265,65 +316,76 @@ export default function SubscriptionPlansSettings({ plans, onDataChange }: { pla
         <PlanForm onSave={onDataChange} />
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Plan Name</TableHead>
-              <TableHead>Price (Yearly)</TableHead>
-              <TableHead>Applicable Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead><span className="sr-only">Actions</span></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {plans.length > 0 ? (
-              plans.map((plan) => (
-                <TableRow key={plan.id}>
-                  <TableCell className="font-medium">
-                    {plan.name}
-                    <p className="text-xs text-muted-foreground font-mono">{plan.id}</p>
-                  </TableCell>
-                  <TableCell>₹{plan.price.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <Badge variant={plan.role === 'Any' ? 'secondary' : 'outline'}>{plan.role}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={plan.isArchived ? 'destructive' : 'success'}>
-                      {plan.isArchived ? 'Archived' : 'Active'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu for {plan.name}</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <PlanForm plan={plan} onSave={onDataChange} />
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleDelete(plan)} className="text-destructive">
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+        {/* Desktop Table View */}
+        <div className="hidden lg:block">
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>Plan Name</TableHead>
+                <TableHead>Price (Yearly)</TableHead>
+                <TableHead>Applicable Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
-              ))
+            </TableHeader>
+            <TableBody>
+                {plans.length > 0 ? (
+                plans.map((plan) => (
+                    <TableRow key={plan.id}>
+                    <TableCell className="font-medium">
+                        {plan.name}
+                        <p className="text-xs text-muted-foreground font-mono">{plan.id}</p>
+                    </TableCell>
+                    <TableCell>₹{plan.price.toLocaleString()}</TableCell>
+                    <TableCell>
+                        <Badge variant={plan.role === 'Any' ? 'secondary' : 'outline'}>{plan.role}</Badge>
+                    </TableCell>
+                    <TableCell>
+                        <Badge variant={plan.isArchived ? 'destructive' : 'success'}>
+                        {plan.isArchived ? 'Archived' : 'Active'}
+                        </Badge>
+                    </TableCell>
+                    <TableCell>
+                        <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu for {plan.name}</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <PlanForm plan={plan} onSave={onDataChange} />
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDelete(plan)} className="text-destructive">
+                            Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                        </DropdownMenu>
+                    </TableCell>
+                    </TableRow>
+                ))
+                ) : (
+                <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                    No subscription plans found. Create one to get started.
+                    </TableCell>
+                </TableRow>
+                )}
+            </TableBody>
+            </Table>
+        </div>
+        {/* Mobile Card View */}
+        <div className="grid gap-4 md:grid-cols-2 lg:hidden">
+             {plans.length > 0 ? (
+              plans.map((plan) => <PlanCard key={plan.id} plan={plan} />)
             ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  No subscription plans found. Create one to get started.
-                </TableCell>
-              </TableRow>
+                <div className="col-span-full text-center py-10 text-muted-foreground">
+                    No subscription plans found.
+                </div>
             )}
-          </TableBody>
-        </Table>
+        </div>
       </CardContent>
     </Card>
   );
 }
-
-    
