@@ -16,7 +16,6 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { AuthPageProviders } from "@/components/auth/auth-providers";
 import { HelpDialog } from "@/components/help-dialog";
 import { Button } from "@/components/ui/button";
 import { HelpCircle } from "lucide-react";
@@ -103,8 +102,6 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <AuthPageProviders>
       <LoginPageContent />
-    </AuthPageProviders>
   )
 }
