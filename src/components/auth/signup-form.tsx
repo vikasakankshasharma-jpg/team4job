@@ -289,7 +289,7 @@ export function SignUpForm() {
         setError(result.message);
       }
     } catch (e: any) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(e.message || "An unexpected error occurred. Please try again.");
       console.error(e);
     } finally {
       setIsLoading(false);
@@ -335,7 +335,7 @@ export function SignUpForm() {
         setError(result.message);
       }
     } catch (e: any) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(e.message || "An unexpected error occurred. Please try again.");
       console.error(e);
     } finally {
       setIsLoading(false);
