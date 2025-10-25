@@ -129,5 +129,3 @@ export const rewardTopPerformers = ai.defineFlow(
     }
   }
 );
-
-    
