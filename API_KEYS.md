@@ -68,8 +68,6 @@ GEMINI_API_KEY="AIzaSy..."
 
 The application is set up to use three separate products from Cashfree. Each product has its own set of API keys.
 
-You can get these from your [Cashfree Merchant Dashboard](https://merchant.cashfree.com/login) under **Developers > API Keys**.
-
 **Important:** These keys are secrets and should **NOT** be prefixed with `NEXT_PUBLIC_`. They are used in server-side flows.
 
 ### 4.1 Cashfree Verification Suite (Secure ID)
@@ -109,17 +107,4 @@ Used to disburse funds from the escrow account to the Installer and the platform
 # For sending payouts to Installers
 CASHFREE_PAYOUTS_CLIENT_ID="your_payouts_client_id"
 CASHFREE_PAYOUTS_CLIENT_SECRET="your_payouts_client_secret"
-```
-
-### 4.4 Cashfree Escrow
-
-Used for managing the marketplace escrow payment holds and releases.
-*   **Path:** **Developers > API Keys > Escrow**
-
-```env
-# .env.local
-
-# For Escrow account management
-CASHFREE_ESCROW_CLIENT_ID="your_escrow_client_id"
-CASHFREE_ESCROW_CLIENT_SECRET="your_escrow_client_secret"
 ```
