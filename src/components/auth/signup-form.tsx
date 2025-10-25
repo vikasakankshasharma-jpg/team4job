@@ -87,8 +87,7 @@ export function SignUpForm() {
   const [photo, setPhoto] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState(true);
   const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings | null>(null);
 
@@ -127,12 +126,12 @@ export function SignUpForm() {
         helpTitle = "Profile Photo";
         helpContent = (
           <div className="space-y-4 text-sm">
-            <p>A clear profile picture helps build trust between Job Givers and Installers.</p>
+            <p>A clear, live profile picture helps build trust between Job Givers and Installers.</p>
             <ul className="list-disc space-y-2 pl-5">
-              <li><span className="font-semibold">Capture Photo:</span> Use your device's camera to take a new photo.</li>
-              <li><span className="font-semibold">Upload File:</span> Alternatively, you can upload an existing photo from your device.</li>
+              <li><span className="font-semibold">Enable Camera:</span> Please allow camera access when prompted by your browser.</li>
+              <li><span className="font-semibold">Capture Photo:</span> Use your device's camera to take a clear, well-lit photo of yourself.</li>
             </ul>
-            <p>This photo will be visible on your public profile.</p>
+            <p>This photo will be visible on your public profile and is a required step for creating a secure account.</p>
           </div>
         );
         break;
@@ -225,7 +224,7 @@ export function SignUpForm() {
         toast({
             variant: "destructive",
             title: "Camera Access Denied",
-            description: "Please enable camera permissions to take a photo.",
+            description: "Please enable camera permissions in your browser settings to take a photo.",
         });
     }
   };
@@ -245,25 +244,6 @@ export function SignUpForm() {
             const stream = videoRef.current.srcObject as MediaStream;
             stream.getTracks().forEach(track => track.stop());
         }
-        setHasCameraPermission(false);
-    }
-  };
-  
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        setPhoto(dataUrl);
-        form.setValue('realAvatarUrl', dataUrl);
-        if (videoRef.current?.srcObject) {
-          const stream = videoRef.current.srcObject as MediaStream;
-          stream.getTracks().forEach(track => track.stop());
-        }
-        setHasCameraPermission(false);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -554,13 +534,17 @@ export function SignUpForm() {
                 <img src={photo} alt="Profile preview" className="w-full h-full object-cover" />
             ) : (
                 <>
-                <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                {!hasCameraPermission && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white p-4">
-                        <Camera className="h-10 w-10 mb-4" />
-                        <p className="text-center">Camera access is required. Alternatively, you can upload a file.</p>
-                    </div>
-                )}
+                  <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                  {!hasCameraPermission && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white p-4">
+                          <Alert variant="destructive">
+                            <AlertTitle>Camera Access Required</AlertTitle>
+                            <AlertDescription>
+                              Please allow camera access to use this feature.
+                            </AlertDescription>
+                          </Alert>
+                      </div>
+                  )}
                 </>
             )}
         </div>
@@ -569,23 +553,10 @@ export function SignUpForm() {
             {photo ? (
                 <Button variant="outline" onClick={() => { setPhoto(null); startCamera(); }} className="w-full">Retake Photo</Button>
             ) : (
-                <>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        accept="image/*"
-                        className="hidden"
-                    />
-                    <Button onClick={handleCapture} disabled={!hasCameraPermission} className="w-full">
-                        <Camera className="mr-2 h-4 w-4" />
-                        Capture
-                    </Button>
-                     <Button variant="secondary" onClick={() => fileInputRef.current?.click()} className="w-full">
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload
-                    </Button>
-                </>
+                <Button onClick={handleCapture} disabled={!hasCameraPermission} className="w-full">
+                    <Camera className="mr-2 h-4 w-4" />
+                    Capture
+                </Button>
             )}
         </div>
 
