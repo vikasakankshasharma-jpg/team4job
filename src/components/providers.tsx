@@ -13,12 +13,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
       <FirebaseClientProvider>
         <UserProvider>
+          <GoogleMapsProvider>
             <HelpProvider>
-              <GoogleMapsProvider>
-                {children}
-                <FirebaseErrorListener />
-              </GoogleMapsProvider>
+              {children}
+              <FirebaseErrorListener />
             </HelpProvider>
+          </GoogleMapsProvider>
         </UserProvider>
       </FirebaseClientProvider>
   );
