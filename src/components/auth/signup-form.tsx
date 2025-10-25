@@ -531,10 +531,10 @@ export function SignUpForm() {
         
         <div className="flex items-center justify-center w-full aspect-video bg-muted rounded-lg overflow-hidden relative">
             {photo ? (
-                <img src={photo} alt="Profile preview" className="w-full h-full object-cover" />
+                <img src={photo} alt="Profile preview" className="w-full h-full object-contain" />
             ) : (
                 <>
-                  <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                  <video ref={videoRef} className="w-full h-full object-contain" autoPlay muted playsInline />
                   {!hasCameraPermission && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white p-4">
                           <Alert variant="destructive">
