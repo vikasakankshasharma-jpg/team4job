@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -350,12 +349,12 @@ function UserReputationSettings() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>User & Reputation System</CardTitle>
+                <CardTitle>User &amp; Reputation System</CardTitle>
                 <CardDescription>Define the rules for onboarding, reputation points, and tier thresholds for installers.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div>
-                    <h3 className="mb-4 text-lg font-medium">Growth & Onboarding Strategy</h3>
+                    <h3 className="mb-4 text-lg font-medium">Growth &amp; Onboarding Strategy</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-lg border p-4">
                         <div className="space-y-2">
                              <Label htmlFor="defaultTrialPeriodDays">Default Trial Period (days)</Label>
@@ -490,7 +489,7 @@ function PlatformRulesSettings({ blacklist, onDataChange } : { blacklist: Blackl
       <div className="grid gap-6">
         <Card>
             <CardHeader>
-                <CardTitle>Job & Content Rules</CardTitle>
+                <CardTitle>Job &amp; Content Rules</CardTitle>
                 <CardDescription>Set global rules for job postings and content on the platform.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -574,7 +573,7 @@ export default function SettingsPage() {
                 {isAdmin ? (
                     <ul className="list-disc space-y-2 pl-5">
                         <li><span className="font-semibold">Monetization:</span> Manage subscription plans, create promotional coupons, and set your platform's commission rates. This is where you control how your platform makes money.</li>
-                        <li><span className="font-semibold">User & Reputation:</span> Define the "welcome kit" for new users (like free trials) and configure the entire reputation system for installers, including points and tier levels.</li>
+                        <li><span className="font-semibold">User &amp; Reputation:</span> Define the "welcome kit" for new users (like free trials) and configure the entire reputation system for installers, including points and tier levels.</li>
                         <li><span className="font-semibold">Platform Rules:</span> Set global rules like the minimum job budget and manage the blacklist for users and pincodes.</li>
                         <li><span className="font-semibold">Growth Strategy:</span> Use the coupon system to execute your growth strategy. For example, create a coupon for a "120-day Pro Installer Plan" and manually send it to the first few high-quality installers who sign up in a new city to bootstrap that local market.</li>
                         <li><span className="font-semibold">General:</span> Change your personal settings like theme and notifications.</li>
@@ -622,7 +621,7 @@ export default function SettingsPage() {
                     </TabsTrigger>
                     <TabsTrigger value="reputation">
                          <Gem className="mr-2 h-4 w-4 sm:hidden" />
-                        <span className="hidden sm:inline">User & Reputation</span>
+                        <span className="hidden sm:inline">User &amp; Reputation</span>
                     </TabsTrigger>
                     <TabsTrigger value="platform">
                          <Ban className="mr-2 h-4 w-4 sm:hidden" />
