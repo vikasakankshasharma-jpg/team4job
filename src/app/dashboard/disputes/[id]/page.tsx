@@ -248,8 +248,8 @@ export default function DisputeDetailPage() {
   };
 
   return (
-    <div className="grid gap-8 md:grid-cols-3">
-      <div className="md:col-span-2 grid gap-8">
+    <div className="grid gap-8 lg:grid-cols-3">
+      <div className="lg:col-span-2 grid gap-8">
         <Card>
           <CardHeader>
             <div className="flex justify-between items-start">
@@ -399,7 +399,7 @@ export default function DisputeDetailPage() {
                         <p className="font-medium">Job Giver: {involvedUsers[dispute.parties.jobGiverId]?.name || '...'}</p>
                         <p className="text-xs text-muted-foreground font-mono">{dispute.parties.jobGiverId}</p>
                     </Link>
-                    <Link href={`/dashboard/users/${dispiute.parties.installerId}`} className="block hover:bg-accent p-2 rounded-md">
+                    <Link href={`/dashboard/users/${dispute.parties.installerId}`} className="block hover:bg-accent p-2 rounded-md">
                         <p className="font-medium">Installer: {involvedUsers[dispute.parties.installerId]?.name || '...'}</p>
                         <p className="text-xs text-muted-foreground font-mono">{dispute.parties.installerId}</p>
                     </Link>

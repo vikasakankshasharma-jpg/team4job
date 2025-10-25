@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import {
@@ -58,7 +57,7 @@ import {
 import { useRouter } from "next/navigation";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useHelp } from "@/hooks/use-help";
 
 const teamMemberSchema = z.object({
@@ -127,17 +126,22 @@ function CreateTeamMemberForm({ onSave }: { onSave: () => void }) {
   }
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add New Team Member
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 p-4">
-        <DropdownMenuLabel className="p-0 mb-2 text-base">Create Team Member Account</DropdownMenuLabel>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create Team Member Account</DialogTitle>
+          <DialogDescription>
+            This will create a new user with the selected administrative role.
+          </DialogDescription>
+        </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
             <FormField
               control={form.control}
               name="name"
@@ -185,17 +189,17 @@ function CreateTeamMemberForm({ onSave }: { onSave: () => void }) {
                 </FormItem>
               )}
             />
-            <div className="flex justify-end gap-2">
-                <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+             <DialogFooter>
+                <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Account
                 </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -279,7 +283,7 @@ export default function TeamManagementPage() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle className="flex items-center gap-2"><UserCog /> Team Management</CardTitle>
           <CardDescription>
@@ -323,19 +327,25 @@ export default function TeamManagementPage() {
                   </TableCell>
                   <TableCell>{format(toDate(teamMember.memberSince), "PP")}</TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                    <Dialog>
+                      <DialogTrigger asChild>
                         <Button variant="ghost" size="icon">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleRemove(teamMember)} className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Remove Team Member
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      </DialogTrigger>
+                      <DialogContent>
+                          <DialogHeader>
+                              <DialogTitle>Manage {teamMember.name}</DialogTitle>
+                          </DialogHeader>
+                          <DialogFooter className="flex-col gap-2 sm:flex-col sm:justify-start">
+                             <Button onClick={() => handleRemove(teamMember)} variant="destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Remove Team Member
+                             </Button>
+                             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                          </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </TableCell>
                 </TableRow>
               ))
