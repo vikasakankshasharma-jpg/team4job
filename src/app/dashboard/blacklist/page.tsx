@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import {
   Table,
@@ -253,63 +254,102 @@ export default function BlacklistSettings({ blacklist, onDataChange }: { blackli
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Applied to Role</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead>Date Added</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {blacklist.length > 0 ? (
-                blacklist.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell>
-                      <Badge variant="secondary" className="capitalize">
-                        {entry.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-mono">{entry.value}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{entry.role}</Badge>
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {entry.reason}
-                    </TableCell>
-                    <TableCell>
-                      {format(toDate(entry.createdAt), "PP")}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemove(entry.id, entry.value)}
-                        title="Remove from blacklist"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+          {/* Desktop Table View */}
+          <div className="hidden lg:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Value</TableHead>
+                  <TableHead>Applied to Role</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Date Added</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {blacklist.length > 0 ? (
+                  blacklist.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell>
+                        <Badge variant="secondary" className="capitalize">
+                          {entry.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono">{entry.value}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{entry.role}</Badge>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {entry.reason}
+                      </TableCell>
+                      <TableCell>
+                        {format(toDate(entry.createdAt), "PP")}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemove(entry.id, entry.value)}
+                          title="Remove from blacklist"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      The blacklist is currently empty.
                     </TableCell>
                   </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="block lg:hidden">
+            <div className="space-y-4">
+              {blacklist.length > 0 ? (
+                blacklist.map((entry) => (
+                  <Card key={entry.id}>
+                    <CardHeader>
+                      <CardTitle className="font-mono text-base">{entry.value}</CardTitle>
+                      <CardDescription>
+                         <Badge variant="secondary" className="capitalize mr-2">{entry.type}</Badge>
+                         <Badge variant="outline">{entry.role}</Badge>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <p className="text-muted-foreground">{entry.reason}</p>
+                        <p className="text-xs text-muted-foreground">Added on: {format(toDate(entry.createdAt), "PP")}</p>
+                    </CardContent>
+                    <CardFooter>
+                       <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:bg-destructive/10"
+                          onClick={() => handleRemove(entry.id, entry.value)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Remove
+                        </Button>
+                    </CardFooter>
+                  </Card>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
+                <div className="text-center py-10 text-muted-foreground">
                     The blacklist is currently empty.
-                  </TableCell>
-                </TableRow>
+                </div>
               )}
-            </TableBody>
-          </Table>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
   );
 }
-
-    
