@@ -145,8 +145,8 @@ function InstallerDashboard() {
 
         const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot] = await Promise.all([
             getDocs(openJobsQuery),
-            getDocs(myBidsSnapshot),
-            getDocs(myAwardedSnapshot)
+            getDocs(myBidsQuery),
+            getDocs(myAwardedQuery)
         ]);
 
         const myJobsSet = new Set([...myBidsSnapshot.docs.map(d => d.id), ...myAwardedSnapshot.docs.map(d => d.id)]);
@@ -229,7 +229,7 @@ function InstallerDashboard() {
           </CardContent>
         </Card>
       )}
-    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard 
             title="Open Jobs"
             value={stats.openJobs}
@@ -258,7 +258,7 @@ function InstallerDashboard() {
             iconColor="text-green-600 dark:text-green-300"
         />
     </div>
-      <div className="mt-8 grid gap-4 md:gap-8 lg:grid-cols-2">
+      <div className="mt-8 grid gap-4 md:grid-cols-2">
         <Card data-tour="find-project-card">
           <CardHeader>
             <CardTitle>Find Your Next Project</CardTitle>
@@ -398,7 +398,7 @@ function JobGiverDashboard() {
      <div className="flex items-center mb-8">
         <h1 className="text-lg font-semibold md:text-2xl">Welcome, {user?.name}!</h1>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
          <StatCard 
             title="Active Jobs"
             value={stats.activeJobs}
@@ -436,7 +436,7 @@ function JobGiverDashboard() {
             iconColor="text-red-600 dark:text-red-300"
         />
       </div>
-      <div className="mt-8 grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-2">
+      <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card data-tour="need-installer-card" className="col-span-1">
           <CardHeader>
             <CardTitle>Need an Installer?</CardTitle>
@@ -559,7 +559,7 @@ function AdminDashboard() {
       <div className="flex items-center mb-8">
         <h1 className="text-lg font-semibold md:text-2xl">Welcome, Admin!</h1>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard 
             title="Total Users"
             value={stats.totalUsers}
@@ -686,7 +686,7 @@ function SupportTeamDashboard() {
       <div className="flex items-center mb-8">
         <h1 className="text-lg font-semibold md:text-2xl">Support Dashboard</h1>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8">
+      <div className="grid gap-4 md:grid-cols-2">
         <StatCard 
             title="Open Disputes"
             value={stats.openDisputes}
