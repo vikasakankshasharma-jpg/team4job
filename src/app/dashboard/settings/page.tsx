@@ -50,6 +50,7 @@ import { useFirebase } from "@/hooks/use-user"
 import SubscriptionPlansSettings from "../subscription-plans/page"
 import CouponsSettings from "../coupons/page"
 import BlacklistSettings from "../blacklist/page"
+import { Separator } from "@/components/ui/separator"
 
 function ThemeSelector() {
     const { theme, setTheme } = useTheme()
@@ -347,21 +348,20 @@ function UserReputationSettings() {
     }
 
     return (
-        <div className="grid gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Growth & Onboarding Strategy</CardTitle>
-                    <CardDescription>
-                        Configure the "welcome kit" for new users. This is a key part of the platform's growth strategy.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+            <CardHeader>
+                <CardTitle>User & Reputation System</CardTitle>
+                <CardDescription>Define the rules for onboarding, reputation points, and tier thresholds for installers.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div>
+                    <h3 className="mb-4 text-lg font-medium">Growth & Onboarding Strategy</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-lg border p-4">
                         <div className="space-y-2">
                              <Label htmlFor="defaultTrialPeriodDays">Default Trial Period (days)</Label>
                              <Input id="defaultTrialPeriodDays" type="number" value={settings.defaultTrialPeriodDays} onChange={handleInputChange} min="0" />
                              <p className="text-xs text-muted-foreground">
-                               Free trial for the <span className="font-semibold text-primary">Pro</span> and <span className="font-semibold text-primary">Business</span> plans.
+                               Free trial for premium plans.
                             </p>
                         </div>
                          <div className="space-y-2">
@@ -378,68 +378,60 @@ function UserReputationSettings() {
                                Number of free job posts a new job giver gets.
                             </p>
                         </div>
-                     </div>
-                </CardContent>
-                 <CardFooter>
-                    <Button onClick={handleSave} disabled={isSaving}>
-                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Onboarding Settings
-                    </Button>
-                </CardFooter>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>User Reputation System</CardTitle>
-                    <CardDescription>Define the rules for the installer reputation system, including points and tier thresholds.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-4 rounded-lg border p-4">
-                        <h3 className="font-semibold">Reputation Point System</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <div className="space-y-2">
-                             <Label htmlFor="pointsForJobCompletion">Points for Job Completion</Label>
-                             <Input id="pointsForJobCompletion" type="number" value={settings.pointsForJobCompletion} onChange={handleInputChange} />
-                           </div>
-                           <div className="space-y-2">
-                             <Label htmlFor="pointsFor5StarRating">Points for 5-Star Rating</Label>
-                             <Input id="pointsFor5StarRating" type="number" value={settings.pointsFor5StarRating} onChange={handleInputChange} />
-                           </div>
-                            <div className="space-y-2">
-                             <Label htmlFor="pointsFor4StarRating">Points for 4-Star Rating</Label>
-                             <Input id="pointsFor4StarRating" type="number" value={settings.pointsFor4StarRating} onChange={handleInputChange} />
-                           </div>
-                             <div className="space-y-2">
-                             <Label htmlFor="penaltyFor1StarRating">Penalty for 1-Star Rating</Label>
-                             <Input id="penaltyFor1StarRating" type="number" value={settings.penaltyFor1StarRating} onChange={handleInputChange} />
-                           </div>
-                        </div>
-                     </div>
-                     <div className="space-y-4 rounded-lg border p-4">
-                        <h3 className="font-semibold">Reputation Tier Thresholds (Points Required)</h3>
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                           <div className="space-y-2">
-                             <Label htmlFor="silverTierPoints" className="flex items-center gap-2"><Medal className="h-4 w-4 text-gray-400" /> Silver</Label>
-                             <Input id="silverTierPoints" type="number" value={settings.silverTierPoints} onChange={handleInputChange} />
-                           </div>
-                            <div className="space-y-2">
-                             <Label htmlFor="goldTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-amber-500" /> Gold</Label>
-                             <Input id="goldTierPoints" type="number" value={settings.goldTierPoints} onChange={handleInputChange} />
-                           </div>
-                             <div className="space-y-2">
-                             <Label htmlFor="platinumTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-cyan-400" /> Platinum</Label>
-                             <Input id="platinumTierPoints" type="number" value={settings.platinumTierPoints} onChange={handleInputChange} />
-                           </div>
-                        </div>
-                     </div>
-                </CardContent>
-                <CardFooter>
-                     <Button onClick={handleSave} disabled={isSaving}>
-                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                         Save Reputation Settings
-                     </Button>
-                </CardFooter>
-            </Card>
-        </div>
+                    </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                    <h3 className="mb-4 text-lg font-medium">Reputation Point System</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border p-4">
+                       <div className="space-y-2">
+                         <Label htmlFor="pointsForJobCompletion">Points for Job Completion</Label>
+                         <Input id="pointsForJobCompletion" type="number" value={settings.pointsForJobCompletion} onChange={handleInputChange} />
+                       </div>
+                       <div className="space-y-2">
+                         <Label htmlFor="pointsFor5StarRating">Points for 5-Star Rating</Label>
+                         <Input id="pointsFor5StarRating" type="number" value={settings.pointsFor5StarRating} onChange={handleInputChange} />
+                       </div>
+                        <div className="space-y-2">
+                         <Label htmlFor="pointsFor4StarRating">Points for 4-Star Rating</Label>
+                         <Input id="pointsFor4StarRating" type="number" value={settings.pointsFor4StarRating} onChange={handleInputChange} />
+                       </div>
+                         <div className="space-y-2">
+                         <Label htmlFor="penaltyFor1StarRating">Penalty for 1-Star Rating</Label>
+                         <Input id="penaltyFor1StarRating" type="number" value={settings.penaltyFor1StarRating} onChange={handleInputChange} />
+                       </div>
+                    </div>
+                </div>
+
+                <Separator />
+                
+                <div>
+                     <h3 className="mb-4 text-lg font-medium">Reputation Tier Thresholds (Points Required)</h3>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-lg border p-4">
+                       <div className="space-y-2">
+                         <Label htmlFor="silverTierPoints" className="flex items-center gap-2"><Medal className="h-4 w-4 text-gray-400" /> Silver</Label>
+                         <Input id="silverTierPoints" type="number" value={settings.silverTierPoints} onChange={handleInputChange} />
+                       </div>
+                        <div className="space-y-2">
+                         <Label htmlFor="goldTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-amber-500" /> Gold</Label>
+                         <Input id="goldTierPoints" type="number" value={settings.goldTierPoints} onChange={handleInputChange} />
+                       </div>
+                         <div className="space-y-2">
+                         <Label htmlFor="platinumTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-cyan-400" /> Platinum</Label>
+                         <Input id="platinumTierPoints" type="number" value={settings.platinumTierPoints} onChange={handleInputChange} />
+                       </div>
+                    </div>
+                </div>
+            </CardContent>
+            <CardFooter>
+                 <Button onClick={handleSave} disabled={isSaving}>
+                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     Save Reputation Settings
+                 </Button>
+            </CardFooter>
+        </Card>
     );
 }
 
