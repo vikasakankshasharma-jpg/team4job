@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -56,7 +57,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { doc, setDoc, deleteDoc } from "firebase/firestore";
+import { doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -322,6 +323,72 @@ export default function CouponsSettings({ coupons, onDataChange }: { coupons: Co
     });
     onDataChange();
   }
+  
+  const getCouponStatus = (coupon: Coupon): "Active" | "Scheduled" | "Expired" => {
+    const now = new Date();
+    const validFrom = toDate(coupon.validFrom);
+    const validUntil = toDate(coupon.validUntil);
+    if (coupon.isActive) {
+        if (now >= validFrom && now <= validUntil) return "Active";
+        else if (now < validFrom) return "Scheduled";
+    }
+    return "Expired";
+  };
+
+  const CouponCard = ({ coupon }: { coupon: Coupon }) => {
+    const status = getCouponStatus(coupon);
+    
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-start">
+                    <CardTitle className="font-mono">{coupon.code}</CardTitle>
+                    <Badge variant={status === 'Active' ? 'success' : status === 'Scheduled' ? 'info' : 'destructive'}>
+                        {status}
+                    </Badge>
+                </div>
+                <CardDescription>{coupon.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Duration</span>
+                    <span>{coupon.durationDays} days</span>
+                </div>
+                 <div className="flex justify-between">
+                    <span className="text-muted-foreground">Role</span>
+                    <Badge variant={coupon.applicableToRole === 'Any' ? 'secondary' : 'outline'}>
+                        {coupon.applicableToRole}
+                    </Badge>
+                </div>
+                 <div className="flex justify-between">
+                    <span className="text-muted-foreground">Validity</span>
+                    <span>{format(toDate(coupon.validFrom), "PP")} - {format(toDate(coupon.validUntil), "PP")}</span>
+                </div>
+            </CardContent>
+            <CardFooter>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button aria-haspopup="true" variant="outline" className="w-full">
+                        <MoreHorizontal className="mr-2 h-4 w-4" />
+                        Actions
+                    </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <CouponForm coupon={coupon} onSave={onDataChange} />
+                    <DropdownMenuItem onClick={() => handleToggleActive(coupon)}>
+                        {coupon.isActive ? "Deactivate" : "Activate"}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleDelete(coupon.code)} className="text-destructive">
+                        Delete
+                    </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </CardFooter>
+        </Card>
+    )
+  }
 
   return (
     <Card>
@@ -335,82 +402,86 @@ export default function CouponsSettings({ coupons, onDataChange }: { coupons: Co
         <CouponForm onSave={onDataChange} />
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Code</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Validity</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead><span className="sr-only">Actions</span></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {coupons.length > 0 ? (
-              coupons.map((coupon) => {
-                const now = new Date();
-                const validFrom = toDate(coupon.validFrom);
-                const validUntil = toDate(coupon.validUntil);
-                let status: "Active" | "Scheduled" | "Expired" = "Expired";
-                if (coupon.isActive) {
-                    if (now >= validFrom && now <= validUntil) status = "Active";
-                    else if (now < validFrom) status = "Scheduled";
-                }
-                
-                return (
-                    <TableRow key={coupon.code}>
-                        <TableCell className="font-mono font-semibold">{coupon.code}</TableCell>
-                        <TableCell>{coupon.description}</TableCell>
-                        <TableCell>
-                            <Badge variant={coupon.applicableToRole === 'Any' ? 'secondary' : 'outline'}>
-                                {coupon.applicableToRole}
+        {/* Desktop Table View */}
+        <div className="hidden lg:block">
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>Code</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Validity</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead><span className="sr-only">Actions</span></TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {coupons.length > 0 ? (
+                coupons.map((coupon) => {
+                    const status = getCouponStatus(coupon);
+                    return (
+                        <TableRow key={coupon.code}>
+                            <TableCell className="font-mono font-semibold">{coupon.code}</TableCell>
+                            <TableCell>{coupon.description}</TableCell>
+                            <TableCell>
+                                <Badge variant={coupon.applicableToRole === 'Any' ? 'secondary' : 'outline'}>
+                                    {coupon.applicableToRole}
+                                </Badge>
+                            </TableCell>
+                            <TableCell>{coupon.durationDays} days</TableCell>
+                            <TableCell>{format(toDate(coupon.validFrom), "PP")} - {format(toDate(coupon.validUntil), "PP")}</TableCell>
+                            <TableCell>
+                            <Badge variant={status === 'Active' ? 'success' : status === 'Scheduled' ? 'info' : 'destructive'}>
+                                    {status}
                             </Badge>
-                        </TableCell>
-                        <TableCell>{coupon.durationDays} days</TableCell>
-                        <TableCell>{format(validFrom, "PP")} - {format(validUntil, "PP")}</TableCell>
-                        <TableCell>
-                           <Badge variant={status === 'Active' ? 'success' : status === 'Scheduled' ? 'info' : 'destructive'}>
-                                {status}
-                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                <Button aria-haspopup="true" size="icon" variant="ghost">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                    <span className="sr-only">Toggle menu</span>
-                                </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <CouponForm coupon={coupon} onSave={onDataChange} />
-                                <DropdownMenuItem onClick={() => handleToggleActive(coupon)}>
-                                    {coupon.isActive ? "Deactivate" : "Activate"}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleDelete(coupon.code)} className="text-destructive">
-                                    Delete
-                                </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </TableCell>
-                    </TableRow>
-                )
-             })
+                            </TableCell>
+                            <TableCell>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                    <Button aria-haspopup="true" size="icon" variant="ghost">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                        <span className="sr-only">Toggle menu</span>
+                                    </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <CouponForm coupon={coupon} onSave={onDataChange} />
+                                    <DropdownMenuItem onClick={() => handleToggleActive(coupon)}>
+                                        {coupon.isActive ? "Deactivate" : "Activate"}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleDelete(coupon.code)} className="text-destructive">
+                                        Delete
+                                    </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </TableCell>
+                        </TableRow>
+                    )
+                })
+                ) : (
+                <TableRow>
+                    <TableCell colSpan={7} className="h-24 text-center">
+                    No coupons found. Create your first one to get started.
+                    </TableCell>
+                </TableRow>
+                )}
+            </TableBody>
+            </Table>
+        </div>
+
+         {/* Mobile Card View */}
+         <div className="grid gap-4 md:grid-cols-2 lg:hidden">
+            {coupons.length > 0 ? (
+                coupons.map((coupon) => <CouponCard key={coupon.code} coupon={coupon} />)
             ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  No coupons found. Create your first one to get started.
-                </TableCell>
-              </TableRow>
+                <div className="col-span-full text-center py-10 text-muted-foreground">
+                    No coupons found.
+                </div>
             )}
-          </TableBody>
-        </Table>
+        </div>
       </CardContent>
     </Card>
   );
 }
-
-    
