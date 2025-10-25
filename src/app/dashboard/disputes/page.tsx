@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -7,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -49,6 +51,41 @@ const getRefId = (ref: any): string | null => {
   if (!ref) return null;
   if (typeof ref === 'string') return ref;
   return ref.id || null;
+}
+
+function DisputeCard({ dispute, involvedUsers }: { dispute: Dispute, involvedUsers: Record<string, User> }) {
+    const router = useRouter();
+    const lastMessage = dispute.messages[dispute.messages.length - 1];
+    const lastUpdate = lastMessage ? toDate(lastMessage.timestamp) : toDate(dispute.createdAt);
+    
+    return (
+        <Card onClick={() => router.push(`/dashboard/disputes/${dispute.id}`)} className="cursor-pointer">
+            <CardHeader>
+                <div className="flex justify-between items-start">
+                    <CardTitle className="text-base leading-tight pr-4">{dispute.title}</CardTitle>
+                    <Badge variant={getStatusVariant(dispute.status)}>{dispute.status}</Badge>
+                </div>
+                <CardDescription className="font-mono text-xs pt-1">#{dispute.id.slice(-6).toUpperCase()}</CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm space-y-3">
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Requester</span>
+                    <span className="font-medium">{involvedUsers[dispute.requesterId]?.name || 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Job ID</span>
+                    <span className="font-mono text-xs">{dispute.jobId || 'N/A'}</span>
+                </div>
+                 <div className="flex justify-between">
+                    <span className="text-muted-foreground">Category</span>
+                    <span className="font-medium">{dispute.category}</span>
+                </div>
+            </CardContent>
+            <CardFooter className="text-xs text-muted-foreground">
+                Last updated {formatDistanceToNow(lastUpdate, { addSuffix: true })}
+            </CardFooter>
+        </Card>
+    );
 }
 
 export default function DisputesPage() {
@@ -263,52 +300,70 @@ export default function DisputesPage() {
                     )}
                 </div>
             )}
-            <Table>
-            <TableHeader>
-                <TableRow>
-                <TableHead>Ticket #</TableHead>
-                <TableHead>Subject</TableHead>
-                {isAdmin && <TableHead>Requester</TableHead>}
-                <TableHead>Status</TableHead>
-                <TableHead>Last Updated</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
+            {/* Desktop Table View */}
+            <div className="hidden lg:block">
+              <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Ticket #</TableHead>
+                    <TableHead>Subject</TableHead>
+                    {isAdmin && <TableHead>Requester</TableHead>}
+                    <TableHead>Status</TableHead>
+                    <TableHead>Last Updated</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {loading ? (
+                    <TableRow>
+                        <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
+                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                        </TableCell>
+                    </TableRow>
+                    ) : filteredDisputes.length > 0 ? (
+                    filteredDisputes.map((dispute) => {
+                        const lastMessage = dispute.messages[dispute.messages.length - 1];
+                        const lastUpdate = lastMessage ? toDate(lastMessage.timestamp) : toDate(dispute.createdAt);
+                        return (
+                            <TableRow key={dispute.id} onClick={() => router.push(`/dashboard/disputes/${dispute.id}`)} className="cursor-pointer">
+                                <TableCell className="font-mono">#{dispute.id.slice(-6).toUpperCase()}</TableCell>
+                                <TableCell className="font-medium max-w-xs truncate">{dispute.title}</TableCell>
+                                {isAdmin && (
+                                    <TableCell>{involvedUsers[dispute.requesterId]?.name || 'Unknown User'}</TableCell>
+                                )}
+                                <TableCell>
+                                    <Badge variant={getStatusVariant(dispute.status)}>
+                                    {dispute.status}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell title={format(lastUpdate, "PPP p")}>{formatDistanceToNow(lastUpdate, { addSuffix: true })}</TableCell>
+                            </TableRow>
+                        )
+                    })
+                    ) : (
+                    <TableRow>
+                        <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
+                        No disputes found.
+                        </TableCell>
+                    </TableRow>
+                    )}
+                </TableBody>
+              </Table>
+            </div>
+            
+            {/* Mobile Card View */}
+            <div className="block lg:hidden">
                 {loading ? (
-                <TableRow>
-                    <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                    </TableCell>
-                </TableRow>
+                    <div className="text-center py-10 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin" /></div>
                 ) : filteredDisputes.length > 0 ? (
-                filteredDisputes.map((dispute) => {
-                    const lastMessage = dispute.messages[dispute.messages.length - 1];
-                    const lastUpdate = lastMessage ? toDate(lastMessage.timestamp) : toDate(dispute.createdAt);
-                    return (
-                        <TableRow key={dispute.id} onClick={() => router.push(`/dashboard/disputes/${dispute.id}`)} className="cursor-pointer">
-                            <TableCell className="font-mono">#{dispute.id.slice(-6).toUpperCase()}</TableCell>
-                            <TableCell className="font-medium max-w-xs truncate">{dispute.title}</TableCell>
-                            {isAdmin && (
-                                <TableCell>{involvedUsers[dispute.requesterId]?.name || 'Unknown User'}</TableCell>
-                            )}
-                            <TableCell>
-                                <Badge variant={getStatusVariant(dispute.status)}>
-                                {dispute.status}
-                                </Badge>
-                            </TableCell>
-                            <TableCell title={format(lastUpdate, "PPP p")}>{formatDistanceToNow(lastUpdate, { addSuffix: true })}</TableCell>
-                        </TableRow>
-                    )
-                })
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {filteredDisputes.map((dispute) => (
+                           <DisputeCard key={dispute.id} dispute={dispute} involvedUsers={involvedUsers} />
+                        ))}
+                    </div>
                 ) : (
-                <TableRow>
-                    <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
-                    No disputes found.
-                    </TableCell>
-                </TableRow>
+                    <div className="text-center py-10 text-muted-foreground">No disputes found.</div>
                 )}
-            </TableBody>
-            </Table>
+            </div>
         </CardContent>
         </Card>
     </div>
