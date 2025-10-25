@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FirebaseClientProvider } from "@/lib/firebase/client-provider";
 import { UserProvider } from "@/hooks/use-user";
-import { HelpProvider } from "@/hooks/use-help";
+import { Providers } from "@/components/providers";
 import Script from 'next/script';
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
@@ -46,9 +46,9 @@ export default function RootLayout({
         >
           <FirebaseClientProvider>
             <UserProvider>
-                <HelpProvider>
+                <Providers>
                     {children}
-                </HelpProvider>
+                </Providers>
             </UserProvider>
           </FirebaseClientProvider>
           <Toaster />
