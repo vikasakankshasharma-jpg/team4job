@@ -52,7 +52,22 @@ This document serves as the master prompt and detailed specification for buildin
 
 ---
 
-## 3. Technical Stack & Architecture
+## 3. Demo Accounts for Testing
+
+To test the platform's features, use the following credentials. All accounts are pre-seeded when you run `npm run db:seed`.
+
+*   **Default Password for all users:** `Vikas@129229`
+
+| Role                | Email                             | Description                                                               |
+| ------------------- | --------------------------------- | ------------------------------------------------------------------------- |
+| **Admin**           | `vikasakankshasharma@gmail.com`   | Full access to all platform features, settings, and user management.      |
+| **Job Giver**       | `jobgiver@example.com`            | Can post jobs, award projects, and manage hired installers.               |
+| **Installer (Dual)**| `installer@example.com`           | A verified, Gold-tier installer who can also post jobs (switchable role). |
+| **Support Team**    | `support@example.com`             | Limited access, primarily for resolving user disputes.                    |
+
+---
+
+## 4. Technical Stack & Architecture
 
 *   **Framework:** Next.js 14+ with App Router.
 *   **Language:** TypeScript.
@@ -116,7 +131,7 @@ This document serves as the master prompt and detailed specification for buildin
 
 ---
 
-## 4. UI/UX & Style Guidelines
+## 5. UI/UX & Style Guidelines
 
 *   **Primary Color:** `#B0B6C4` (Desaturated grayish-blue)
 *   **Background Color:** `#F0F2F5` (Very light grayish-blue)
@@ -127,7 +142,7 @@ This document serves as the master prompt and detailed specification for buildin
 
 ---
 
-## 5. Data Models (Firestore)
+## 6. Data Models (Firestore)
 
 Define these in `src/lib/types.ts`.
 
@@ -143,7 +158,7 @@ Define these in `src/lib/types.ts`.
 
 ---
 
-## 6. Page-by-Page Breakdown
+## 7. Page-by-Page Breakdown
 
 ### `app/page.tsx` (Landing Page)
 *   **Header:** App logo/name, Login button, Sign Up button.
