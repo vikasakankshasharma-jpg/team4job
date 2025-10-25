@@ -32,7 +32,8 @@ import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useHelp } from "@/hooks/use-help";
 import { allSkills } from "@/lib/data";
-import { Checkbox } from "../ui/checkbox";
+import { Checkbox } from "@/components/ui/checkbox";
+import type { User } from "@/lib/types";
 
 const aadharSchema = z.object({
   aadharNumber: z.string().length(12, { message: "Aadhar number must be 12 digits." }),
@@ -55,7 +56,7 @@ export default function VerifyInstallerPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<VerificationStep>("enterAadhar");
-  const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [verificationId, setVerificationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { setHelp } = useHelp();
 
@@ -66,7 +67,7 @@ export default function VerifyInstallerPage() {
             <div className="space-y-4 text-sm">
                 <p>This secure process verifies your identity and adds the "Installer" role to your profile.</p>
                 <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Aadhar OTP:</span> First, enter your 12-digit Aadhar number. You'll receive an OTP on your linked mobile. Use <strong className="text-primary">752828181676</strong> and OTP <strong className="text-primary">123456</strong> for testing.</li>
+                    <li><span className="font-semibold">Aadhar OTP:</span> First, enter your 12-digit Aadhar number. You'll receive an OTP on your linked mobile. For testing purposes, use Aadhar number <strong className="text-primary">999999990019</strong> and OTP <strong className="text-primary">123456</strong>.</li>
                     <li><span className="font-semibold">Select Skills:</span> After successful verification, choose the skills you specialize in. This is crucial for getting matched with the right jobs.</li>
                 </ul>
                 <p>Once completed, you'll be able to switch to your Installer role and start bidding on jobs.</p>
@@ -102,27 +103,27 @@ export default function VerifyInstallerPage() {
     try {
       const result = await initiateAadharVerification(values);
       if (result.success) {
-        setTransactionId(result.transactionId);
+        setVerificationId(result.verificationId);
         setStep("enterOtp");
         toast({ title: "OTP Sent", description: result.message });
       } else {
         setError(result.message);
         toast({ title: "Error", description: result.message, variant: "destructive" });
       }
-    } catch (e) {
-      setError("An unexpected error occurred. Please try again.");
-      toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
+    } catch (e: any) {
+      setError(e.message || "An unexpected error occurred. Please try again.");
+      toast({ title: "Error", description: e.message || "An unexpected error occurred.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   }
 
   async function onOtpSubmit(values: z.infer<typeof otpSchema>) {
-    if (!transactionId) return;
+    if (!verificationId) return;
     setIsLoading(true);
     setError(null);
     try {
-      const result = await confirmAadharVerification({ ...values, transactionId });
+      const result = await confirmAadharVerification({ ...values, verificationId });
       if (result.isVerified) {
         setStep("selectSkills");
         toast({ title: "Verification Successful", description: "Please select your skills to complete the process.", variant: "success" });
@@ -130,9 +131,9 @@ export default function VerifyInstallerPage() {
         setError(result.message);
         toast({ title: "Verification Failed", description: result.message, variant: "destructive" });
       }
-    } catch (e) {
-      setError("An unexpected error occurred. Please try again.");
-      toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
+    } catch (e: any) {
+      setError(e.message || "An unexpected error occurred. Please try again.");
+      toast({ title: "Error", description: e.message || "An unexpected error occurred.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -219,7 +220,7 @@ export default function VerifyInstallerPage() {
                       <FormControl>
                         <Input placeholder="Enter your 12-digit Aadhar number" {...field} />
                       </FormControl>
-                      <FormDescription>For testing, use Aadhar: <strong>752828181676</strong></FormDescription>
+                      <FormDescription>For testing, use Aadhar: <strong>999999990019</strong></FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
