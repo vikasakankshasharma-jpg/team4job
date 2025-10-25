@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useFormContext, useController } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "./form";
+import { useFormContext } from "react-hook-form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "./form";
 import { Input } from "./input";
 import { LocationInput } from "./location-input";
 import { Separator } from "./separator";
@@ -16,6 +16,7 @@ interface AddressFormProps {
     fullAddressName: string;
     onLocationGeocoded?: (coords: { lat: number; lng: number }) => void;
     mapCenter?: { lat: number; lng: number } | null;
+    isMapLoaded: boolean;
 }
 
 export function AddressForm({ 
@@ -25,9 +26,10 @@ export function AddressForm({
     landmarkName, 
     fullAddressName,
     onLocationGeocoded,
-    mapCenter
+    mapCenter,
+    isMapLoaded
 }: AddressFormProps) {
-    const { control, watch } = useFormContext();
+    const { control } = useFormContext();
     
     return (
         <div className="space-y-6">
@@ -37,6 +39,7 @@ export function AddressForm({
                 placeholder="e.g. 110001"
                 control={control}
                 onLocationGeocoded={onLocationGeocoded}
+                isMapLoaded={isMapLoaded}
             />
 
             <Separator />
@@ -90,9 +93,8 @@ export function AddressForm({
                 label="Set Precise Location on Map"
                 control={control}
                 center={mapCenter}
+                isMapLoaded={isMapLoaded}
              />
         </div>
     )
 }
-
-    

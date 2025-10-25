@@ -19,7 +19,9 @@ import React, { useEffect, useState } from "react";
 import { HelpDialog } from "@/components/help-dialog";
 import { Button } from "@/components/ui/button";
 import { HelpCircle } from "lucide-react";
+import { useJsApiLoader } from "@react-google-maps/api";
 
+const GOOGLE_MAPS_LIBRARIES = ["places", "geocoding"] as ("places" | "geocoding")[];
 
 function LoginPageContent() {
   const router = useRouter();
@@ -27,6 +29,12 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") || "login";
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  const { isLoaded: isMapLoaded } = useJsApiLoader({
+    id: 'google-map-script-login',
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    libraries: GOOGLE_MAPS_LIBRARIES,
+  });
 
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab") || "login";
@@ -89,7 +97,7 @@ function LoginPageContent() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <SignUpForm />
+                <SignUpForm isMapLoaded={isMapLoaded} />
                 </CardContent>
             </Card>
             </TabsContent>

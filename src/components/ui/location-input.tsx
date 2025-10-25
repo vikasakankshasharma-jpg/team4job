@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FormDescription, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useGoogleMaps } from '@/components/google-maps-provider';
 
 interface PostOffice {
     Name: string;
@@ -30,9 +29,10 @@ interface LocationInputProps {
     description?: string;
     control: Control<any>;
     onLocationGeocoded?: (coords: { lat: number; lng: number }) => void;
+    isMapLoaded: boolean;
 }
 
-export function LocationInput({ name, label, placeholder, description, control, onLocationGeocoded }: LocationInputProps) {
+export function LocationInput({ name, label, placeholder, description, control, onLocationGeocoded, isMapLoaded }: LocationInputProps) {
     const { field, fieldState } = useController({ name, control });
     const { setValue } = useFormContext();
 
@@ -45,8 +45,6 @@ export function LocationInput({ name, label, placeholder, description, control, 
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
     const [country, setCountry] = useState('');
-
-    const { isLoaded } = useGoogleMaps();
 
     const handlePostOfficeChange = useCallback((postOfficeName: string, pc: string, poData?: PostOffice) => {
         const currentPincode = pc || pincode;
@@ -61,7 +59,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
         const fullLocation = `${currentPincode}, ${postOfficeName}`;
         setValue(name, fullLocation, { shouldValidate: true, shouldDirty: true });
 
-        if (isLoaded && onLocationGeocoded && window.google) {
+        if (isMapLoaded && onLocationGeocoded && window.google) {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ address: fullLocation }, (results, status) => {
                 if (status === 'OK' && results && results[0].geometry) {
@@ -70,7 +68,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
                 }
             });
         }
-    }, [pincode, postOffices, setValue, name, isLoaded, onLocationGeocoded]);
+    }, [pincode, postOffices, setValue, name, isMapLoaded, onLocationGeocoded]);
     
     const fetchPostOffices = useCallback(async (currentPincode: string, defaultPO?: string) => {
         if (currentPincode.length !== 6) {
