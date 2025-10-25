@@ -40,6 +40,7 @@ export type User = {
     accountNumberMasked?: string;
     ifsc?: string;
   };
+  fcmTokens?: string[];
   installerProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;

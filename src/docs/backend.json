@@ -104,6 +104,13 @@
                 "ifsc": { "type": "string" }
             }
         },
+        "fcmTokens": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "An array of Firebase Cloud Messaging tokens for sending push notifications to the user's devices."
+        },
         "installerProfile": {
           "$ref": "#/entities/InstallerProfile"
         }
@@ -526,16 +533,18 @@
         "jobId": { "type": "string" },
         "jobTitle": { "type": "string" },
         "payerId": { "type": "string", "description": "The user ID of the Job Giver." },
-        "payerName": { "type": "string" },
         "payeeId": { "type": "string", "description": "The user ID of the Installer." },
-        "payeeName": { "type": "string" },
         "amount": { "type": "number" },
+        "commission": { "type": "number", "description": "The platform commission amount." },
         "status": {
           "type": "string",
-          "enum": ["Initiated", "Funded", "Failed", "Released", "Refunded"]
+          "enum": ["Initiated", "Funded", "Failed", "Released", "Refunded", "Disputed"]
         },
         "paymentGatewayOrderId": { "type": "string", "description": "The order ID from Cashfree Payments." },
         "paymentGatewaySessionId": { "type": "string", "description": "The session ID used to launch the Cashfree checkout." },
+        "escrowAccountId": { "type": "string", "description": "The ID of the Cashfree Escrow account for this transaction." },
+        "holdId": { "type": "string", "description": "The ID of the hold placed on the escrow funds." },
+        "releaseId": { "type": "string", "description": "The ID of the release operation." },
         "payoutTransferId": { "type": "string", "description": "The transfer ID for the payout to the installer." },
         "refundTransferId": { "type": "string", "description": "The transfer ID for a refund to the job giver." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the transaction was initiated." },
@@ -544,7 +553,33 @@
         "releasedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when funds were released to the installer via the payout system." },
         "refundedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when funds were refunded to the job giver." }
       },
-      "required": ["id", "jobId", "jobTitle", "payerId", "payeeId", "amount", "status", "createdAt"]
+      "required": ["id", "jobId", "payerId", "payeeId", "amount", "commission", "status", "createdAt"]
+    },
+    "PlatformSettings": {
+        "title": "Platform Settings",
+        "description": "Global configuration settings for the platform, managed by the Admin.",
+        "type": "object",
+        "properties": {
+            "installerCommissionRate": { "type": "number" },
+            "jobGiverFeeRate": { "type": "number" },
+            "proInstallerPlanPrice": { "type": "number" },
+            "businessJobGiverPlanPrice": { "type": "number" },
+            "bidBundle10": { "type": "number" },
+            "bidBundle25": { "type": "number" },
+            "bidBundle50": { "type": "number" },
+            "defaultTrialPeriodDays": { "type": "number" },
+            "freeBidsForNewInstallers": { "type": "number" },
+            "freePostsForNewJobGivers": { "type": "number" },
+            "pointsForJobCompletion": { "type": "number" },
+            "pointsFor5StarRating": { "type": "number" },
+            "pointsFor4StarRating": { "type": "number" },
+            "penaltyFor1StarRating": { "type": "number" },
+            "silverTierPoints": { "type": "number" },
+            "goldTierPoints": { "type": "number" },
+            "platinumTierPoints": { "type": "number" },
+            "minJobBudget": { "type": "number" },
+            "autoVerifyInstallers": { "type": "boolean" }
+        }
     }
   },
   "auth": {
@@ -592,6 +627,12 @@
         "$ref": "#/entities/Transaction"
       },
       "description": "Stores all financial transactions related to jobs."
+    },
+    "/settings/platform": {
+        "schema": {
+            "$ref": "#/entities/PlatformSettings"
+        },
+        "description": "Stores global platform settings like commission rates."
     }
   }
 }

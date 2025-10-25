@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { User, BlacklistEntry } from "@/lib/types";
@@ -12,6 +11,7 @@ import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useAuth, useFirestore, useFirebase } from "@/lib/firebase/client-provider";
+import { useFcm } from "./use-fcm";
 
 // --- Types ---
 type Role = "Job Giver" | "Installer" | "Admin" | "Support Team";
@@ -44,6 +44,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
+
+  // Initialize FCM
+  useFcm();
 
   const updateUserState = useCallback((userData: User | null) => {
     setLoading(true);
