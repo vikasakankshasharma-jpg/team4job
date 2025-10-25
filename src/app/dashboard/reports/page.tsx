@@ -11,12 +11,12 @@ import {
 } from "@/components/ui/card";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
-import { Loader2, Users, Briefcase, IndianRupee, PieChart, Download, Award, Star, Calendar, Medal, Bot, HardDriveDownload } from "lucide-react";
-import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { Loader2, Users, Briefcase, IndianRupee, PieChart, Download, Award, Star, Calendar, Medal, Bot, HardDriveDownload, MessageSquare, ShieldCheck, Clock } from "lucide-react";
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadialBar, RadialBarChart, PolarGrid, PolarAngleAxis } from "recharts";
 import { User, Job, SubscriptionPlan, Transaction, Dispute } from "@/lib/types";
 import { collection, getDocs, query, doc, updateDoc } from "firebase/firestore";
 import { toDate, exportToCsv } from "@/lib/utils";
-import { format, startOfMonth, subMonths, getMonth, getYear } from "date-fns";
+import { format, startOfMonth, subMonths, getMonth, getYear, differenceInMilliseconds } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -24,6 +24,8 @@ import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { useToast } from "@/hooks/use-toast";
 import { rewardTopPerformers } from "@/ai/flows/reward-top-performers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { type ChartConfig } from "@/components/ui/chart";
+
 
 function KpiCard({ title, value, description, icon: Icon, iconBgColor }) {
     return (
@@ -418,6 +420,150 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
     );
 }
 
+function DisputeResolutionReport({ disputes }: { disputes: Dispute[] }) {
+    const report = useMemo(() => {
+        const totalDisputes = disputes.length;
+        if (totalDisputes === 0) return null;
+
+        const resolvedDisputes = disputes.filter(d => d.status === 'Resolved');
+        const resolutionRate = (resolvedDisputes.length / totalDisputes) * 100;
+
+        const totalResolutionTime = resolvedDisputes
+            .filter(d => d.createdAt && d.resolvedAt)
+            .reduce((acc, d) => acc + differenceInMilliseconds(toDate(d.resolvedAt!), toDate(d.createdAt)), 0);
+        
+        const avgResolutionTimeDays = resolvedDisputes.length > 0
+            ? (totalResolutionTime / resolvedDisputes.length) / (1000 * 60 * 60 * 24)
+            : 0;
+
+        const categoryCounts = disputes.reduce((acc, d) => {
+            acc[d.category] = (acc[d.category] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        const categoryData = Object.entries(categoryCounts).map(([name, value]) => ({ name, value }));
+
+        return {
+            resolutionRate,
+            avgResolutionTimeDays,
+            categoryData,
+        };
+    }, [disputes]);
+
+    if (!report) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Dispute Resolution Report</CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center justify-center h-[300px]">
+                    <p className="text-muted-foreground">No dispute data available.</p>
+                </CardContent>
+            </Card>
+        );
+    }
+    
+    const performanceChartConfig = {
+      value: { label: 'Resolved' },
+      fill: {
+        label: "Fill",
+        color: "hsl(var(--primary) / 0.2)",
+      },
+    } satisfies ChartConfig;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Dispute Resolution Report</CardTitle>
+                <CardDescription>An overview of support ticket performance.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 md:grid-cols-2">
+                <div className="grid grid-cols-2 gap-4">
+                    <Card className="flex flex-col items-center justify-center p-4 text-center">
+                        <ShieldCheck className="h-6 w-6 mb-2 text-green-600" />
+                        <p className="text-2xl font-bold">{report.resolutionRate.toFixed(0)}%</p>
+                        <p className="text-sm text-muted-foreground">Resolution Rate</p>
+                    </Card>
+                    <Card className="flex flex-col items-center justify-center p-4 text-center">
+                        <Clock className="h-6 w-6 mb-2 text-amber-500" />
+                        <p className="text-2xl font-bold">{report.avgResolutionTimeDays.toFixed(1)}</p>
+                        <p className="text-sm text-muted-foreground">Avg. Days to Resolve</p>
+                    </Card>
+                </div>
+                <div>
+                     <h4 className="text-sm font-medium mb-2">Disputes by Category</h4>
+                     <ResponsiveContainer width="100%" height={150}>
+                        <BarChart data={report.categoryData} layout="vertical" margin={{ left: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                            <XAxis type="number" />
+                            <YAxis type="category" dataKey="name" width={100} fontSize={12} tickLine={false} axisLine={false} />
+                            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} />
+                            <Bar dataKey="value" name="Count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
+function FinancialSummaryCard({ transactions }: { transactions: Transaction[] }) {
+    const summary = useMemo(() => {
+        return transactions.reduce((acc, t) => {
+            if (t.status === 'Released') {
+                acc.totalReleased += t.amount;
+                acc.platformRevenue += t.commission;
+                acc.payoutsCount++;
+            }
+            if (t.status === 'Funded' || t.status === 'Released') {
+                acc.totalVolume += t.amount;
+            }
+            if (t.status === 'Refunded') {
+                acc.refundsCount++;
+            }
+            return acc;
+        }, {
+            totalVolume: 0,
+            totalReleased: 0,
+            platformRevenue: 0,
+            payoutsCount: 0,
+            refundsCount: 0,
+        });
+    }, [transactions]);
+    
+    return (
+        <Card className="col-span-full">
+            <CardHeader>
+                <CardTitle>Financial Summary</CardTitle>
+                <CardDescription>A summary of all financial activities on the platform.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                 <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">Total Volume</p>
+                    <p className="text-2xl font-bold">₹{summary.totalVolume.toLocaleString()}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">Platform Revenue</p>
+                    <p className="text-2xl font-bold">₹{summary.platformRevenue.toLocaleString()}</p>
+                </Card>
+                 <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">Funds Released</p>
+                    <p className="text-2xl font-bold">₹{summary.totalReleased.toLocaleString()}</p>
+                </Card>
+                 <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">Payouts Processed</p>
+                    <p className="text-2xl font-bold">{summary.payoutsCount}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">Refunds Processed</p>
+                    <p className="text-2xl font-bold">{summary.refundsCount}</p>
+                </Card>
+            </CardContent>
+        </Card>
+    )
+}
+
+
 export default function ReportsPage() {
   const { isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
@@ -465,15 +611,6 @@ export default function ReportsPage() {
     const totalJobs = jobs.length;
     const completedJobs = jobs.filter(j => j.status === 'Completed');
     const fillRate = totalJobs > 0 ? (completedJobs.length / totalJobs) * 100 : 0;
-    
-    let platformRevenue = 0;
-    transactions.forEach(t => {
-        if (t.status === 'Released') {
-            // Assuming 10% commission from installer and 2% fee from job giver
-             const originalBidAmount = t.amount / (1 - 0.10); // Infer original bid from installer payout
-             platformRevenue += originalBidAmount * 0.12;
-        }
-    });
 
     const now = new Date();
     const userGrowthData = Array.from({ length: 6 }).map((_, i) => {
@@ -512,12 +649,11 @@ export default function ReportsPage() {
         jobGiverCount,
         totalJobs,
         fillRate,
-        platformRevenue,
         userGrowthData,
         jobStatusData,
         allInstallers,
     };
-  }, [users, jobs, transactions]);
+  }, [users, jobs]);
 
   if (userLoading || !isAdmin || loading) {
     return (
@@ -531,7 +667,7 @@ export default function ReportsPage() {
       return <p>No data available to generate reports.</p>
   }
   
-  const { totalUsers, installerCount, jobGiverCount, totalJobs, fillRate, platformRevenue, userGrowthData, jobStatusData, allInstallers } = reportData;
+  const { totalUsers, installerCount, jobGiverCount, totalJobs, fillRate, userGrowthData, jobStatusData, allInstallers } = reportData;
 
   return (
     <div className="grid gap-6">
@@ -540,10 +676,11 @@ export default function ReportsPage() {
         <CardDescription>An overview of key metrics and trends across the platform.</CardDescription>
       </CardHeader>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <FinancialSummaryCard transactions={transactions} />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <KpiCard title="Total Users" value={totalUsers} description={`${installerCount} Installers, ${jobGiverCount} Job Givers`} icon={Users} iconBgColor="bg-blue-500" />
         <KpiCard title="Total Jobs" value={totalJobs} description="All jobs created on the platform" icon={Briefcase} iconBgColor="bg-purple-500" />
-        <KpiCard title="Platform Revenue (Simulated)" value={`₹${platformRevenue.toLocaleString()}`} description="Based on a 12% commission" icon={IndianRupee} iconBgColor="bg-green-500" />
         <KpiCard title="Job Fill Rate" value={`${fillRate.toFixed(1)}%`} description="Of jobs posted are completed" icon={PieChart} iconBgColor="bg-amber-500" />
       </div>
 
@@ -553,6 +690,8 @@ export default function ReportsPage() {
         <TopPerformersCard installers={allInstallers} />
         <AllTimeLeaderboardCard installers={allInstallers} />
       </div>
+      
+      <DisputeResolutionReport disputes={disputes} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
