@@ -822,8 +822,10 @@ export default function ProfilePage() {
                 <CardDescription>Want to find work on the platform? Become a verified installer to start bidding on jobs.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button onClick={() => router.push('/dashboard/verify-installer')}>
-                    Become an Installer <ArrowRight className="ml-2 h-4 w-4" />
+                <Button asChild>
+                    <Link href="/dashboard/verify-installer">
+                        Become an Installer <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
                 </Button>
             </CardContent>
          </Card>
@@ -848,3 +850,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
