@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -264,6 +264,24 @@ export default function VerifyInstallerPage() {
                     name="skills"
                     render={() => (
                         <FormItem>
+                             <div className="mb-4">
+                                <h3 className="font-medium">Your Information</h3>
+                                <p className="text-sm text-muted-foreground">This information is from your profile and will be part of your public installer identity.</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 rounded-md border p-4">
+                                <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">Name</p>
+                                    <p className="font-semibold">{user?.name}</p>
+                                </div>
+                                 <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">Mobile</p>
+                                    <p className="font-semibold">{user?.mobile}</p>
+                                </div>
+                            </div>
+                            <div className="my-4">
+                                <h3 className="font-medium">Select Your Skills</h3>
+                                <p className="text-sm text-muted-foreground">Choose all that apply. This helps in matching you with the right jobs.</p>
+                            </div>
                             <div className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
                                 {allSkills.map((skill) => (
                                     <FormField
