@@ -400,7 +400,8 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
     
     const isAdmin = role === 'Admin';
     const isJobGiver = role === 'Job Giver';
-    const showRealIdentity = isAdmin || isAwardedToThisBidder;
+    // Identities are revealed once the job is funded (status becomes 'Awarded' or beyond)
+    const showRealIdentity = isAdmin || job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed';
 
     const installerName = showRealIdentity ? installer.name : anonymousId;
     const avatar = showRealIdentity ? <AvatarImage src={installer.realAvatarUrl} alt={installer.name} /> : <AnimatedAvatar svg={installer.avatarUrl} />;
@@ -416,7 +417,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
-                           {isAdmin || showRealIdentity ? (
+                           {showRealIdentity ? (
                                 <Link href={`/dashboard/users/${installer.id}`} className="font-semibold hover:underline">{installerName}</Link>
                            ) : (
                                 <p className="font-semibold">{installerName}</p>
@@ -1059,10 +1060,12 @@ export default function JobDetailPage() {
   
   const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
   const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || role === 'Job Giver' || role === 'Admin');
-  const canUsePrivateMessages = (isJobGiver || isAwardedInstaller || role === 'Admin') && (job.status === 'In Progress' || job.status === 'Completed' || job.status === 'Awarded');
   
-  const showJobGiverRealIdentity = isAwardedInstaller || role === 'Admin';
-  
+  // Identity is revealed only after the job is in progress (i.e., installer has accepted)
+  const identitiesRevealed = job.status === 'In Progress' || job.status === 'Completed' || role === 'Admin';
+  const showJobGiverRealIdentity = identitiesRevealed;
+  const canUsePrivateMessages = identitiesRevealed && (isJobGiver || isAwardedInstaller || role === 'Admin');
+
   const showInstallerAcceptance = isAwardedInstaller && job.status === 'Awarded';
 
 
@@ -1084,7 +1087,7 @@ export default function JobDetailPage() {
                     </Avatar>
                     <div>
                         <p className="text-sm font-semibold">{showJobGiverRealIdentity ? jobGiver.name : 'Job Giver'}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{jobGiver.id}</p>
+                        {showJobGiverRealIdentity && <p className="text-xs text-muted-foreground font-mono">{jobGiver.id}</p>}
                     </div>
                 </div>
             </div>
@@ -1358,5 +1361,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    

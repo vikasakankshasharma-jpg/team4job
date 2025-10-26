@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Job, User } from "@/lib/types";
-import { MapPin, IndianRupee, Clock, Users } from "lucide-react";
+import { MapPin, IndianRupee, Clock, Users, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { format, formatDistanceToNow } from 'date-fns';
 import { getStatusVariant, toDate } from "@/lib/utils";
@@ -59,7 +59,6 @@ export function JobCard({ job }: JobCardProps) {
 
   const buttonText = getButtonText(job.status);
   const buttonVariant = statusVariant === 'success' ? 'success' : statusVariant === 'warning' ? 'warning' : statusVariant === 'info' ? 'info' : 'default';
-  const jobGiver = job.jobGiver as User;
 
   return (
     <Card className="flex flex-col relative">
@@ -74,14 +73,13 @@ export function JobCard({ job }: JobCardProps) {
           </div>
         </div>
          <div className="flex items-center gap-3 pt-4">
-            <Avatar className="h-9 w-9">
-              <AnimatedAvatar svg={jobGiver.avatarUrl} />
-              <AvatarFallback>{jobGiver.id.substring(0, 2)}</AvatarFallback>
+            <Avatar className="h-9 w-9 bg-muted border flex items-center justify-center">
+              <UserIcon className="h-5 w-5 text-muted-foreground" />
             </Avatar>
             <div>
               <p className="font-semibold text-sm text-foreground">Job Giver</p>
-              <p className="text-xs text-muted-foreground font-mono">
-                {jobGiver.id}
+              <p className="text-xs text-muted-foreground">
+                Posted {postedAt}
               </p>
             </div>
         </div>
