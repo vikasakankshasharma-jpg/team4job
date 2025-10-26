@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/server-init';
 import { Job, User, Transaction, PlatformSettings } from '@/lib/types';
 import axios from 'axios';
@@ -78,9 +78,10 @@ export async function POST(req: NextRequest) {
         createdAt: Timestamp.now(),
     };
     
+    // IMPORTANT: Create the transaction record BEFORE creating the payment order
     await setDoc(transactionRef, newTransaction);
     
-    // 3. Create an order with Cashfree
+    // 3. Create an order with Cashfree, using our transactionId as the order_id
     const orderPayload = {
         order_id: transactionId,
         order_amount: amount,
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
             customer_name: jobGiver.name,
         },
         order_meta: {
+            // This URL is where Cashfree will redirect the user after payment
             return_url: `https://cctv-job-connect.web.app/dashboard/jobs/${jobId}?payment_status=success&order_id={order_id}`,
         },
         order_note: `Payment for job: ${jobTitle}`
@@ -113,6 +115,7 @@ export async function POST(req: NextRequest) {
     const paymentSessionId = response.data.payment_session_id;
 
     // 4. Update our transaction document with the Cashfree order ID and session ID
+    // Note: The order_id from cashfree will be the same as our transactionId
     await updateDoc(transactionRef, {
         paymentGatewayOrderId: response.data.order_id,
         paymentGatewaySessionId: paymentSessionId,
