@@ -597,17 +597,6 @@ function AdminDashboard() {
             iconColor="text-green-600 dark:text-green-300"
         />
       </div>
-      <div className="mt-8">
-         <StatCard 
-            title="Reports"
-            value=""
-            description="View all the reports"
-            icon={FileText}
-            href="/dashboard/reports"
-            iconBgColor="bg-gray-100 dark:bg-gray-900"
-            iconColor="text-gray-600 dark:text-gray-300"
-        />
-      </div>
     </>
   );
 }
