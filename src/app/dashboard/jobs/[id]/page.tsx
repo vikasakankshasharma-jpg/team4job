@@ -68,11 +68,13 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { doc, getDoc, updateDoc, arrayUnion, setDoc, DocumentReference, collection, getDocs, query, where } from "firebase/firestore";
 import axios from 'axios';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 declare const cashfree: any;
 
 function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
   const { toast } = useToast();
+  const { db } = useFirebase();
   const [otp, setOtp] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -99,7 +101,7 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
     
     try {
         // --- 1. Find the corresponding "Funded" transaction ---
-        const q = query(collection(useFirebase().db, "transactions"), where("jobId", "==", job.id), where("status", "==", "Funded"));
+        const q = query(collection(db, "transactions"), where("jobId", "==", job.id), where("status", "==", "Funded"));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) {
             throw new Error("Could not find a funded transaction for this job. Please contact support.");
@@ -107,12 +109,14 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
         const transactionDoc = querySnapshot.docs[0];
 
         // --- 2. Call backend to release the escrow ---
-        await axios.post('/api/escrow/release-funds', {
+        await axios.post('/api/cashfree/payouts/request-transfer', {
             transactionId: transactionDoc.id,
+            userId: user.id, // The installer's ID to find their beneficiary details
+            transferType: 'payout'
         });
         
         // --- 3. Update Job Status locally and in Firestore ---
-        const updatedJobData = { status: 'Completed' as const, rating: 5 };
+        const updatedJobData = { status: 'Completed' as const, rating: 5 }; // Default to 5-star rating, user can change later
         onJobUpdate(updatedJobData);
         
         toast({
@@ -336,7 +340,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
         
         try {
             // Step 1: Call backend to create an escrow account and get a payment session ID
-            const { data } = await axios.post('/api/escrow/initiate-payment', {
+            const { data } = await axios.post('/api/cashfree/create-payment', {
                 jobId: job.id,
                 jobTitle: job.title,
                 jobGiverId: jobGiver.id,
@@ -847,11 +851,10 @@ const getRefId = (ref: any): string | null => {
 
 export default function JobDetailPage() {
   const { user, role } = useUser();
-  const { db } = useFirebase();
+  const { db, storage } = useFirebase();
   const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   const [job, setJob] = React.useState<Job | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -1003,18 +1006,8 @@ export default function JobDetailPage() {
     });
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      setPrivateMessageAttachments(prev => [...prev, ...Array.from(event.target.files!)]);
-    }
-  };
-
-  const removeAttachment = (fileName: string) => {
-    setPrivateMessageAttachments(prev => prev.filter(file => file.name !== fileName));
-  };
-  
   const handlePostPrivateMessage = async () => {
-    if ((!newPrivateMessage.trim() && privateMessageAttachments.length === 0) || !user || !job) return;
+    if ((!newPrivateMessage.trim() && privateMessageAttachments.length === 0) || !user || !job || !storage) return;
 
     const validation = validateMessageContent(newPrivateMessage);
     if (!validation.isValid) {
@@ -1025,13 +1018,15 @@ export default function JobDetailPage() {
       });
       return;
     }
+    
+    const uploadPromises = privateMessageAttachments.map(async file => {
+        const fileRef = ref(storage, `jobs/${job.id}/${file.name}`);
+        await uploadBytes(fileRef, file);
+        const fileUrl = await getDownloadURL(fileRef);
+        return { fileName: file.name, fileUrl, fileType: file.type };
+    });
 
-    // Mock upload process for attachments
-    const uploadedAttachments: JobAttachment[] = privateMessageAttachments.map(file => ({
-        fileName: file.name,
-        fileUrl: '#', // Placeholder URL
-        fileType: file.type,
-    }));
+    const uploadedAttachments = await Promise.all(uploadPromises);
 
     const newMessageObject: Omit<PrivateMessage, 'id'> = {
       author: doc(db, 'users', user.id),
@@ -1055,7 +1050,7 @@ export default function JobDetailPage() {
     return <PageSkeleton />;
   }
 
-  if (!job || !user) {
+  if (!job || !user || !storage) {
     notFound();
   }
 
@@ -1183,35 +1178,12 @@ export default function JobDetailPage() {
                             <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 space-y-2">
-                            <Textarea 
+                           <Textarea 
                               placeholder="Send a private message..." 
                               value={newPrivateMessage}
                               onChange={(e) => setNewPrivateMessage(e.target.value)}
                             />
-                             <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                                multiple
-                                className="hidden"
-                              />
-                             {privateMessageAttachments.length > 0 && (
-                                <div className="space-y-2">
-                                    {privateMessageAttachments.map(file => (
-                                        <div key={file.name} className="flex items-center justify-between text-xs bg-muted p-2 rounded-md">
-                                            <span>{file.name}</span>
-                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeAttachment(file.name)}>
-                                                <X className="h-3 w-3" />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
                             <div className="flex justify-between items-center">
-                                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                                    <Paperclip className="mr-2 h-4 w-4" />
-                                    Attach
-                                </Button>
                                 <Button size="sm" onClick={handlePostPrivateMessage} disabled={!newPrivateMessage.trim() && privateMessageAttachments.length === 0}>
                                   <Send className="mr-2 h-4 w-4" />
                                   Send
