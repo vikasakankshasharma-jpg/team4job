@@ -209,7 +209,7 @@ function InstallerDashboard() {
      <div className="flex items-center mb-8">
         <h1 className="text-lg font-semibold md:text-2xl">Welcome, {user?.name}!</h1>
       </div>
-     {!isVerified && (
+     {user?.roles.includes('Installer') && !isVerified && (
         <Card className="mb-8 bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800">
           <CardHeader className="flex-row items-center gap-4 space-y-0">
              <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900">
@@ -476,7 +476,7 @@ function AdminDashboard() {
   const { user } = useUser();
   const { db } = useFirebase();
   const { setHelp } = useHelp();
-  const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, openDisputes: 0, completedJobValue: 0 });
+  const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, openDisputes: 0, totalValueReleased: 0 });
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
@@ -487,30 +487,24 @@ function AdminDashboard() {
         const usersQuery = query(collection(db, "users"));
         const jobsQuery = query(collection(db, "jobs"));
         const disputesQuery = query(collection(db, "disputes"), where('status', '==', 'Open'));
+        const transactionsQuery = query(collection(db, "transactions"), where('status', '==', 'Released'));
 
-        const [usersSnapshot, jobsSnapshot, disputesSnapshot] = await Promise.all([
+        const [usersSnapshot, jobsSnapshot, disputesSnapshot, transactionsSnapshot] = await Promise.all([
           getDocs(usersQuery),
           getDocs(jobsQuery),
-          getDocs(disputesQuery)
+          getDocs(disputesQuery),
+          getDocs(transactionsQuery),
         ]);
-
-        const allJobs = jobsSnapshot.docs.map(d => d.data() as Job);
         
-        let completedJobValue = 0;
-        allJobs.forEach(job => {
-            if (job.status === 'Completed' && job.awardedInstaller) {
-                const winningBid = (job.bids || []).find(bid => ((bid.installer as DocumentReference)?.id) === (job.awardedInstaller as DocumentReference)?.id);
-                if (winningBid) {
-                    completedJobValue += winningBid.amount;
-                }
-            }
-        });
+        const totalValueReleased = transactionsSnapshot.docs
+            .map(d => d.data() as Transaction)
+            .reduce((sum, t) => sum + t.amount, 0);
 
         setStats({
             totalUsers: usersSnapshot.size,
             totalJobs: jobsSnapshot.size,
             openDisputes: disputesSnapshot.size,
-            completedJobValue
+            totalValueReleased
         });
 
         setLoading(false);
@@ -537,7 +531,7 @@ function AdminDashboard() {
               <span className="font-semibold">Open Disputes:</span> The number of active disputes requiring your attention.
             </li>
             <li>
-              <span className="font-semibold">Completed Job Value:</span> The total monetary value of all successfully completed jobs.
+              <span className="font-semibold">Value Released:</span> The total monetary value released to installers for completed jobs.
             </li>
           </ul>
           <p>Use the navigation menu to access detailed views like the User Directory and All Jobs list.</p>
@@ -588,11 +582,11 @@ function AdminDashboard() {
             iconColor="text-red-600 dark:text-red-300"
         />
         <StatCard 
-            title="Completed Job Value"
-            value={`₹${stats.completedJobValue.toLocaleString()}`}
-            description="Value of all completed jobs"
+            title="Value Released"
+            value={`₹${stats.totalValueReleased.toLocaleString()}`}
+            description="Paid out to installers"
             icon={IndianRupee}
-            href="#"
+            href="/dashboard/transactions"
             iconBgColor="bg-green-100 dark:bg-green-900"
             iconColor="text-green-600 dark:text-green-300"
         />
@@ -750,3 +744,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
