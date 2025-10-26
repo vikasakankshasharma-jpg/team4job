@@ -93,9 +93,6 @@ export function LoginForm() {
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Log In
         </Button>
-        <FormDescription className="text-center text-xs">
-          Tip: If using mock data, run `npm run db:seed` in the terminal to populate the database with demo users.
-        </FormDescription>
       </form>
     </Form>
   );
