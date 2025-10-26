@@ -1,0 +1,90 @@
+
+import { NextRequest, NextResponse } from 'next/server';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/server-init';
+import { User, Transaction, PlatformSettings } from '@/lib/types';
+import axios from 'axios';
+
+// Use 'https://payout-api.cashfree.com' for production
+const CASHFREE_API_BASE = 'https://payout-api.cashfree.com/payouts';
+
+async function getCashfreeBearerToken(): Promise<string> {
+    const response = await axios.post(
+        `${CASHFREE_API_BASE}/auth`,
+        {},
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Client-Id': process.env.CASHFREE_PAYOUTS_CLIENT_ID,
+                'X-Client-Secret': process.env.CASHFREE_PAYOUTS_CLIENT_SECRET,
+            },
+        }
+    );
+    if (response.data?.data?.token) {
+        return response.data.data.token;
+    }
+    throw new Error('Failed to authenticate with Cashfree Payouts.');
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { transactionId } = await req.json();
+
+    if (!transactionId) {
+      return NextResponse.json({ error: 'Missing transactionId' }, { status: 400 });
+    }
+    
+    const transactionRef = doc(db, 'transactions', transactionId);
+    const transactionSnap = await getDoc(transactionRef);
+
+    if (!transactionSnap.exists()) {
+      return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
+    }
+    const transaction = transactionSnap.data() as Transaction;
+    
+    if (transaction.status !== 'Funded') {
+        return NextResponse.json({ error: `Transaction is not in a payable state. Current status: ${transaction.status}` }, { status: 400 });
+    }
+    
+    const installerSnap = await getDoc(doc(db, 'users', transaction.payeeId));
+    if (!installerSnap.exists() || !installerSnap.data()?.payouts?.beneficiaryId) {
+        return NextResponse.json({ error: 'Installer payout details not configured.' }, { status: 400 });
+    }
+    const installer = installerSnap.data() as User;
+    const beneficiaryId = installer.payouts!.beneficiaryId!;
+
+    const token = await getCashfreeBearerToken();
+
+    const payoutAmount = transaction.amount - transaction.commission;
+    const transferId = `PAYOUT_${transaction.id}`;
+
+    const transferPayload = {
+      beneId: beneficiaryId,
+      amount: payoutAmount.toFixed(2),
+      transferId: transferId,
+    };
+    
+    await axios.post(
+      `${CASHFREE_API_BASE}/payouts/standard`,
+      transferPayload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+    );
+
+    await updateDoc(transactionRef, {
+        payoutTransferId: transferId,
+        // The status will be updated to 'Released' via webhook
+    });
+    
+    return NextResponse.json({ success: true, transferId });
+
+  } catch (error: any) {
+    console.error('Error releasing funds:', error.response?.data || error.message);
+    const errorMessage = error.response?.data?.message || 'Failed to request payout.';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
+}
