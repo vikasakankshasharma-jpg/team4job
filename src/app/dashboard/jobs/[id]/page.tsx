@@ -109,10 +109,8 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
         const transactionDoc = querySnapshot.docs[0];
 
         // --- 2. Call backend to release the escrow ---
-        await axios.post('/api/cashfree/payouts/request-transfer', {
+        await axios.post('/api/escrow/release-funds', {
             transactionId: transactionDoc.id,
-            userId: user.id, // The installer's ID to find their beneficiary details
-            transferType: 'payout'
         });
         
         // --- 3. Update Job Status locally and in Firestore ---
@@ -340,7 +338,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
         
         try {
             // Step 1: Call backend to create an escrow account and get a payment session ID
-            const { data } = await axios.post('/api/cashfree/create-payment', {
+            const { data } = await axios.post('/api/escrow/initiate-payment', {
                 jobId: job.id,
                 jobTitle: job.title,
                 jobGiverId: jobGiver.id,
@@ -736,7 +734,7 @@ function RaiseDisputeDialog({ job, user, onJobUpdate }: { job: Job; user: User; 
                 </DialogHeader>
                 <div className="py-4">
                     <Textarea
-                        placeholder="Clearly describe the problem, e.g., 'The work was not completed as agreed upon...' or 'Payment has not been released after completion...'"
+                        placeholder="Clearly describe the problem, e.g., 'The work was not completed as agreed upon...' or 'Payment has not been released after completion...'",
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                         rows={5}
@@ -1360,3 +1358,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
