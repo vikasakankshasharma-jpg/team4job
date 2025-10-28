@@ -337,7 +337,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
         setIsFunding(true);
         
         try {
-            // Step 1: Call backend to create an escrow account and get a payment session ID
+            // Step 1: Call backend to create a payment session ID
             const { data } = await axios.post('/api/escrow/initiate-payment', {
                 jobId: job.id,
                 jobTitle: job.title,
@@ -357,7 +357,6 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
                 onComplete: async (paymentData: any) => {
                     console.log("Cashfree onComplete:", paymentData);
                     // Webhook will handle the final status update to "Funded"
-                    // but we can optimistically update the job status here.
                     const acceptanceDeadline = new Date();
                     acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
 
@@ -400,12 +399,12 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
     
     const isAdmin = role === 'Admin';
     const isJobGiver = role === 'Job Giver';
-    // Identities are revealed once the job is funded (status becomes 'Awarded' or beyond)
-    const showRealIdentity = isAdmin || job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed';
+    // Identities are revealed once the installer accepts the job.
+    const identitiesRevealed = job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' && job.status !== 'Awarded' || role === 'Admin';
 
-    const installerName = showRealIdentity ? installer.name : anonymousId;
-    const avatar = showRealIdentity ? <AvatarImage src={installer.realAvatarUrl} alt={installer.name} /> : <AnimatedAvatar svg={installer.avatarUrl} />;
-    const avatarFallback = showRealIdentity ? installer.name.substring(0, 2) : anonymousId.split('-')[1];
+    const installerName = identitiesRevealed ? installer.name : anonymousId;
+    const avatar = identitiesRevealed ? <AvatarImage src={installer.realAvatarUrl} alt={installer.name} /> : <AnimatedAvatar svg={installer.avatarUrl} />;
+    const avatarFallback = identitiesRevealed ? installer.name.substring(0, 2) : anonymousId.split('-')[1];
 
     return (
         <div className={cn("p-4 rounded-lg border", isAwardedToThisBidder && 'border-primary bg-primary/5')}>
@@ -417,7 +416,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
                     </Avatar>
                     <div>
                         <div className="flex items-center gap-2">
-                           {showRealIdentity ? (
+                           {identitiesRevealed ? (
                                 <Link href={`/dashboard/users/${installer.id}`} className="font-semibold hover:underline">{installerName}</Link>
                            ) : (
                                 <p className="font-semibold">{installerName}</p>
@@ -690,6 +689,15 @@ function RaiseDisputeDialog({ job, user, onJobUpdate }: { job: Job; user: User; 
         setIsSubmitting(true);
         
         const newDisputeId = `DISPUTE-${Date.now()}`;
+        
+        // Ensure awardedInstaller is not null and get its reference
+        const awardedInstaller = job.awardedInstaller;
+        if (!awardedInstaller) {
+            toast({ title: "Error", description: "No installer has been awarded this job.", variant: "destructive"});
+            setIsSubmitting(false);
+            return;
+        }
+
         const newDispute: Partial<Dispute> = {
             id: newDisputeId,
             requesterId: user.id,
@@ -701,21 +709,32 @@ function RaiseDisputeDialog({ job, user, onJobUpdate }: { job: Job; user: User; 
             reason: reason,
             parties: {
                 jobGiverId: (job.jobGiver as User | DocumentReference).id,
-                installerId: (job.awardedInstaller as User | DocumentReference)!.id,
+                installerId: (awardedInstaller as User | DocumentReference).id,
             },
-            messages: [],
+            messages: [{
+                authorId: user.id,
+                authorRole: user.roles.includes('Admin') ? 'Admin' : (user.roles.includes('Job Giver') ? 'Job Giver' : 'Installer'),
+                content: `Initial complaint: ${reason}`,
+                timestamp: new Date()
+            }],
             createdAt: new Date(),
         };
 
-        await setDoc(doc(db, "disputes", newDisputeId), newDispute);
-        onJobUpdate({ disputeId: newDisputeId });
+        try {
+            await setDoc(doc(db, "disputes", newDisputeId), newDispute);
+            onJobUpdate({ disputeId: newDisputeId });
 
-        toast({
-            title: "Dispute Raised Successfully",
-            description: "An admin will review your case shortly. You can view the dispute from this page.",
-        });
-        setIsOpen(false);
-        setIsSubmitting(false);
+            toast({
+                title: "Dispute Raised Successfully",
+                description: "An admin will review your case shortly. You can view the dispute from this page.",
+            });
+            setIsOpen(false);
+        } catch (error) {
+            console.error("Error raising dispute:", error);
+            toast({ title: "Error", description: "Failed to raise dispute.", variant: "destructive"});
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -1061,8 +1080,7 @@ export default function JobDetailPage() {
   const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
   const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || role === 'Job Giver' || role === 'Admin');
   
-  // Identity is revealed only after the job is in progress (i.e., installer has accepted)
-  const identitiesRevealed = job.status === 'In Progress' || job.status === 'Completed' || role === 'Admin';
+  const identitiesRevealed = (job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' && job.status !== 'Awarded') || role === 'Admin';
   const showJobGiverRealIdentity = identitiesRevealed;
   const canUsePrivateMessages = identitiesRevealed && (isJobGiver || isAwardedInstaller || role === 'Admin');
 

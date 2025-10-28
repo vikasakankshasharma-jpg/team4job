@@ -235,13 +235,13 @@ export default function DisputeDetailPage() {
     try {
         await axios.post('/api/cashfree/payouts/request-transfer', {
             transactionId: transaction.id,
-            userId: transaction.payerId,
+            userId: transaction.payerId, // The user to refund is the payer (Job Giver)
             transferType: 'refund',
         });
-        toast({ title: "Refund Initiated" });
+        toast({ title: "Refund Initiated", description: "The refund to the Job Giver has been processed." });
         setTransaction(prev => prev ? { ...prev, status: 'Refunded' } : null);
     } catch(error: any) {
-        toast({ title: "Refund Failed", description: error.response?.data?.error, variant: "destructive" });
+        toast({ title: "Refund Failed", description: error.response?.data?.error || "Could not process refund.", variant: "destructive" });
     } finally {
         setIsRefunding(false);
     }
