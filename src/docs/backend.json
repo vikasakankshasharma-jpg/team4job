@@ -166,10 +166,11 @@
             "name": { "type": "string" },
             "description": { "type": "string" },
             "price": { "type": "number" },
-            "role": { "type": "string", "enum": ["Job Giver", "Installer"] },
-            "features": { "type": "array", "items": { "type": "string" } }
+            "role": { "type": "string", "enum": ["Job Giver", "Installer", "Any"] },
+            "features": { "type": "array", "items": { "type": "string" } },
+            "isArchived": { "type": "boolean", "description": "Whether the plan is archived and can no longer be assigned." }
         },
-        "required": ["id", "name", "price", "role", "features"]
+        "required": ["id", "name", "price", "role", "features", "isArchived"]
     },
     "Coupon": {
       "title": "Coupon Code",
