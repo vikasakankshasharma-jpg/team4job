@@ -8,6 +8,7 @@ import { Logo } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import HowItWorksCarousel from "@/components/landing/how-it-works-carousel";
+import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
   const features = [
@@ -74,6 +75,9 @@ export default function Home() {
       <main className="flex-grow">
         <section className="py-20 md:py-32">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="mb-6">
+              <Badge variant="outline" className="text-sm py-1 px-4 border-primary/50 text-primary">Private Beta</Badge>
+            </div>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter mb-6">
               The Right CCTV Pro for Any Job
             </h1>

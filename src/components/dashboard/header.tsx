@@ -37,6 +37,7 @@ import { ThemeToggle } from "../theme-toggle";
 import { HelpDialog } from "../help-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useSearch } from "@/hooks/use-search";
+import { Badge } from "../ui/badge";
 
 const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
@@ -190,16 +191,19 @@ export function Header() {
           </nav>
         </SheetContent>
       </Sheet>
-      <Breadcrumb className="hidden md:flex">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/dashboard">Dashboard</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          {renderBreadcrumbs()}
-        </BreadcrumbList>
-      </Breadcrumb>
+      <div className="flex items-center gap-2">
+        <Breadcrumb className="hidden md:flex">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/dashboard">Dashboard</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            {renderBreadcrumbs()}
+          </BreadcrumbList>
+        </Breadcrumb>
+        <Badge variant="outline">Beta</Badge>
+      </div>
       <div className="relative ml-auto flex items-center gap-2 md:grow-0">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
