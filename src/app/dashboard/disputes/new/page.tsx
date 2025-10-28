@@ -88,13 +88,14 @@ export default function CreateDisputePage() {
     }
     
     const newDisputeId = `DISPUTE-${Date.now()}`;
-    let attachmentUrls: string[] = [];
+    let attachmentUrls: { fileName: string, fileUrl: string, fileType: string }[] = [];
 
     if (values.attachments && values.attachments.length > 0) {
         const uploadPromises = values.attachments.map(async (file) => {
             const storageRef = ref(storage, `disputes/${newDisputeId}/${file.name}`);
             const snapshot = await uploadBytes(storageRef, file);
-            return getDownloadURL(snapshot.ref);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            return { fileName: file.name, fileUrl: downloadURL, fileType: file.type };
         });
         attachmentUrls = await Promise.all(uploadPromises);
     }

@@ -25,6 +25,7 @@ export type User = {
   address: Address;
   roles: ('Job Giver' | 'Installer' | 'Admin' | 'Support Team')[];
   memberSince: Date | Timestamp;
+  lastLoginAt?: Date | Timestamp;
   status: UserStatus;
   suspensionEndDate?: Date | Timestamp;
   subscription?: {

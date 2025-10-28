@@ -20,6 +20,7 @@ import { HelpDialog } from "@/components/help-dialog";
 import { Button } from "@/components/ui/button";
 import { HelpCircle } from "lucide-react";
 import { useJsApiLoader } from "@react-google-maps/api";
+import { useHelp } from "@/hooks/use-help";
 
 const GOOGLE_MAPS_LIBRARIES = ["places", "geocoding"] as ("places" | "geocoding")[];
 
@@ -29,6 +30,23 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") || "login";
   const [activeTab, setActiveTab] = useState(initialTab);
+  const { setHelp } = useHelp();
+
+  useEffect(() => {
+     setHelp({
+      title: "Login & Sign Up",
+      content: (
+        <div className="space-y-4 text-sm">
+          <p>Welcome to CCTV Job Connect! Here you can access your account or create a new one.</p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li><span className="font-semibold">Log In:</span> If you already have an account, enter your email and password to access your dashboard.</li>
+            <li><span className="font-semibold">Sign Up:</span> New here? Click the "Sign Up" tab to begin. You'll choose whether you want to hire professionals or find work as an installer.</li>
+          </ul>
+        </div>
+      ),
+    });
+  }, [setHelp]);
+
 
   const { isLoaded: isMapLoaded } = useJsApiLoader({
     id: 'google-map-script-login',

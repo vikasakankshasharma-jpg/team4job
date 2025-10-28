@@ -27,16 +27,16 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 
 const installerNavItems = [
-  { href: "/dashboard", icon: Home, label: "Dashboard" },
-  { href: "/dashboard/jobs", icon: Search, label: "Browse Jobs" },
-  { href: "/dashboard/my-bids", icon: Briefcase, label: "My Bids" },
+  { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
+  { href: "/dashboard/jobs", icon: Search, label: "Browse Jobs", tourId: "all-jobs" },
+  { href: "/dashboard/my-bids", icon: Briefcase, label: "My Bids", tourId: "my-bids" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
 ];
 
 const jobGiverNavItems = [
-  { href: "/dashboard", icon: Home, label: "Dashboard" },
-  { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job" },
-  { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs" },
+  { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
+  { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job", tourId: "post-job" },
+  { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs", tourId: "posted-jobs" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
 ];
 
@@ -78,7 +78,7 @@ export function DashboardSidebar() {
   const navItems = getNavItems();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
+    <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex" data-tour="sidebar-header">
       <TooltipProvider>
         <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
           <Link
@@ -99,6 +99,7 @@ export function DashboardSidebar() {
                     pathname.startsWith(item.href) && item.href !== '/dashboard' && "bg-accent text-accent-foreground",
                     pathname === '/dashboard' && item.href === '/dashboard' && "bg-accent text-accent-foreground"
                   )}
+                  data-tour={item.tourId}
                 >
                   <item.icon className="h-5 w-5" />
                   <span className="sr-only">{item.label}</span>

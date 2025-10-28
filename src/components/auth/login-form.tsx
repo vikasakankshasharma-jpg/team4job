@@ -28,7 +28,7 @@ const formSchema = z.object({
 
 export function LoginForm() {
   const router = useRouter();
-  const { login } = useUser();
+  const { login, user } = useUser();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
@@ -42,22 +42,27 @@ export function LoginForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    const isDemoUser = values.email.endsWith("@demo.com");
+    const isDemoUser = values.email.endsWith("@example.com");
     const success = await login(values.email, values.password);
+    
     if (success) {
-       if (isDemoUser) {
-        router.push("/dashboard?tour=true");
-      } else {
-        router.push("/dashboard");
-      }
+       // A small delay to allow user context to update before redirect
+       setTimeout(() => {
+         const isFirstLogin = !user?.lastLoginAt; // This is a simplified check
+         if (isDemoUser || isFirstLogin) {
+            router.push("/dashboard?tour=true");
+         } else {
+            router.push("/dashboard");
+         }
+       }, 500);
     } else {
       toast({
         title: "Login Failed",
         description: "Invalid credentials. Please check your email and password.",
         variant: "destructive",
       });
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   return (

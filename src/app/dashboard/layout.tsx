@@ -5,6 +5,7 @@ import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { SearchProvider } from '@/hooks/use-search';
 import { Providers } from "@/components/providers";
+import Tour from '@/components/tour/tour';
 
 export default function DashboardLayout({
   children,
@@ -22,6 +23,7 @@ export default function DashboardLayout({
             </main>
           </div>
         </div>
+        <Tour />
       </SearchProvider>
   );
 }
