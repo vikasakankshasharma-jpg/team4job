@@ -62,6 +62,7 @@ const Tour = () => {
   const pathname = usePathname();
 
   useEffect(() => {
+    // Start tour if tour=true is in the URL and not on mobile
     if (searchParams.get('tour') === 'true' && !isMobile) {
       setRunTour(true);
     }
@@ -73,6 +74,7 @@ const Tour = () => {
 
     if (finishedStatuses.includes(status)) {
       setRunTour(false);
+      // Clean up URL by removing the tour parameter
       const newParams = new URLSearchParams(searchParams.toString());
       newParams.delete('tour');
       router.replace(`${pathname}?${newParams.toString()}`);
@@ -95,14 +97,17 @@ const Tour = () => {
       callback={handleCallback}
       styles={{
         options: {
-          primaryColor: '#007bff',
+          primaryColor: 'hsl(var(--primary))',
+          textColor: 'hsl(var(--foreground))',
+          backgroundColor: 'hsl(var(--background))',
+          arrowColor: 'hsl(var(--background))',
         },
         buttonNext: {
-          backgroundColor: '#007bff',
-          color: 'white',
+          backgroundColor: 'hsl(var(--primary))',
+          color: 'hsl(var(--primary-foreground))',
         },
         buttonBack: {
-            color: '#007bff',
+            color: 'hsl(var(--foreground))',
         }
       }}
     />
