@@ -167,8 +167,7 @@
             "description": { "type": "string" },
             "price": { "type": "number" },
             "role": { "type": "string", "enum": ["Job Giver", "Installer"] },
-            "features": { "type": "array", "items": { "type": "string" } },
-            "trialPeriodDays": { "type": "number", "description": "Default trial period in days for new users of this role." }
+            "features": { "type": "array", "items": { "type": "string" } }
         },
         "required": ["id", "name", "price", "role", "features"]
     },
