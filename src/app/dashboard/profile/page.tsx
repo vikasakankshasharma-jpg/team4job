@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2, Ticket, Banknote } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2, Banknote } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -43,9 +43,8 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
 import { allSkills } from "@/lib/data";
-import { User, Coupon, SubscriptionPlan } from "@/lib/types";
+import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -280,89 +279,6 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
     )
 }
 
-function RedeemCouponCard({ user, role, onSubscriptionUpdate }: { user: User, role: 'Installer' | 'Job Giver', onSubscriptionUpdate: () => void }) {
-    const { db } = useFirebase();
-    const { toast } = useToast();
-    const [couponCode, setCouponCode] = React.useState('');
-    const [isLoading, setIsLoading] = React.useState(false);
-    
-    const handleRedeem = async () => {
-        if (!couponCode.trim()) {
-            toast({ title: "Please enter a coupon code.", variant: "destructive" });
-            return;
-        }
-        if (!db || !user) return;
-        setIsLoading(true);
-
-        const couponRef = doc(db, "coupons", couponCode.toUpperCase());
-        const couponSnap = await getDoc(couponRef);
-
-        if (!couponSnap.exists()) {
-            toast({ title: "Invalid Coupon Code", description: "The code you entered does not exist.", variant: "destructive" });
-            setIsLoading(false);
-            return;
-        }
-
-        const coupon = couponSnap.data() as Coupon;
-        const now = new Date();
-
-        if (!coupon.isActive || toDate(coupon.validUntil) < now || toDate(coupon.validFrom) > now) {
-            toast({ title: "Coupon Not Valid", description: "This coupon is either inactive or expired.", variant: "destructive" });
-            setIsLoading(false);
-            return;
-        }
-        
-        if (coupon.applicableToRole !== 'Any' && coupon.applicableToRole !== role) {
-            toast({ title: "Coupon Not Applicable", description: `This coupon is only valid for ${coupon.applicableToRole}s.`, variant: "destructive" });
-            setIsLoading(false);
-            return;
-        }
-        
-        // All checks passed, update user subscription
-        const userRef = doc(db, 'users', user.id);
-        const currentExpiry = user.subscription && toDate(user.subscription.expiresAt) > now ? toDate(user.subscription.expiresAt) : now;
-        const newExpiryDate = new Date(currentExpiry.setDate(currentExpiry.getDate() + coupon.durationDays));
-
-        await updateDoc(userRef, {
-            'subscription.planId': coupon.planId,
-            'subscription.planName': coupon.description,
-            'subscription.expiresAt': newExpiryDate
-        });
-        
-        onSubscriptionUpdate();
-        toast({
-            title: "Coupon Redeemed!",
-            description: `Your subscription has been extended by ${coupon.durationDays} days.`,
-            variant: "success"
-        });
-        setCouponCode('');
-        setIsLoading(false);
-    };
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Ticket className="h-5 w-5" /> Redeem a Coupon</CardTitle>
-                <CardDescription>Have a coupon code? Enter it here to extend your subscription or get premium features.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex space-x-2">
-                    <Input
-                        placeholder="Enter Coupon Code"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        disabled={isLoading}
-                    />
-                    <Button onClick={handleRedeem} disabled={isLoading}>
-                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Redeem
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
 function CompletedJobsStat() {
   const { user, role } = useUser();
   const { db } = useFirebase();
@@ -553,15 +469,7 @@ export default function ProfilePage() {
         )
     });
   }, [setHelp, role]);
-
-  const onSubscriptionUpdate = useCallback(async () => {
-    if (!db || !user) return;
-    const userDoc = await getDoc(doc(db, 'users', user.id));
-    if (userDoc.exists() && setUser) {
-      setUser({ id: userDoc.id, ...userDoc.data() } as User);
-    }
-  }, [db, user, setUser]);
-
+  
   if (userLoading) {
     return (
       <div className="flex h-48 items-center justify-center">
@@ -629,6 +537,7 @@ export default function ProfilePage() {
     }
   };
   
+  const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
 
   return (
     <div className="grid gap-8">
@@ -681,7 +590,7 @@ export default function ProfilePage() {
                 </Dialog>
               </div>
             </div>
-            {user.subscription && (
+            {isSubscribed && (
                  <div className="text-right">
                     <p className="font-semibold">{user.subscription.planName}</p>
                     <p className="text-sm text-muted-foreground">Expires: {format(toDate(user.subscription.expiresAt), "MMM d, yyyy")}</p>
@@ -844,9 +753,6 @@ export default function ProfilePage() {
             </CardContent>
          </Card>
       )}
-
-      <RedeemCouponCard user={user} role={role as 'Installer' | 'Job Giver'} onSubscriptionUpdate={onSubscriptionUpdate} />
-
     </div>
   );
 }

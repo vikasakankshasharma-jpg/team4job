@@ -20,6 +20,7 @@ import {
   AlertOctagon,
   IndianRupee,
   UserCog,
+  CreditCard,
 } from "lucide-react";
 import { Logo } from "@/components/icons";
 import { usePathname } from "next/navigation";
@@ -30,6 +31,7 @@ const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
   { href: "/dashboard/jobs", icon: Search, label: "Browse Jobs", tourId: "all-jobs" },
   { href: "/dashboard/my-bids", icon: Briefcase, label: "My Bids", tourId: "my-bids" },
+  { href: "/dashboard/billing", icon: CreditCard, label: "Subscription" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
 ];
 
@@ -37,6 +39,7 @@ const jobGiverNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
   { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job", tourId: "post-job" },
   { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs", tourId: "posted-jobs" },
+  { href: "/dashboard/billing", icon: CreditCard, label: "Subscription" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
 ];
 
