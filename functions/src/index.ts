@@ -1,3 +1,4 @@
+
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as express from "express";
@@ -123,3 +124,107 @@ export const onPrivateMessageCreated = functions.firestore
             );
         }
     });
+
+
+/**
+ * Triggered when a job is updated, specifically to handle reputation points
+ * when a job status changes to "Completed".
+ */
+export const onJobCompleted = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+        const beforeData = change.before.data();
+        const afterData = change.after.data();
+
+        // Check if the job status just changed to "Completed"
+        if (beforeData.status !== "Completed" && afterData.status === "Completed") {
+            const installerRef = afterData.awardedInstaller;
+            if (!installerRef) {
+                console.log(`Job ${context.params.jobId} completed without an awarded installer.`);
+                return;
+            }
+
+            const settingsRef = admin.firestore().collection('settings').doc('platform');
+            const settingsSnap = await settingsRef.get();
+            const settings = settingsSnap.data() || {};
+            
+            // Default reputation values if not set
+            const pointsForCompletion = settings.pointsForJobCompletion || 50;
+            const pointsFor5Star = settings.pointsFor5StarRating || 20;
+            const pointsFor4Star = settings.pointsFor4StarRating || 10;
+            const penaltyFor1Star = settings.penaltyFor1StarRating || -25;
+            
+            const silverTierPoints = settings.silverTierPoints || 500;
+            const goldTierPoints = settings.goldTierPoints || 1000;
+            const platinumTierPoints = settings.platinumTierPoints || 2000;
+
+            let pointsEarned = pointsForCompletion;
+            
+            if (afterData.rating === 5) {
+                pointsEarned += pointsFor5Star;
+            } else if (afterData.rating === 4) {
+                pointsEarned += pointsFor4Star;
+            } else if (afterData.rating === 1) {
+                pointsEarned += penaltyFor1Star;
+            }
+            
+            try {
+                await admin.firestore().runTransaction(async (transaction) => {
+                    const installerDoc = await transaction.get(installerRef);
+                    if (!installerDoc.exists) {
+                        throw new Error("Installer profile not found!");
+                    }
+                    const installerData = installerDoc.data();
+                    if (!installerData || !installerData.installerProfile) {
+                        throw new Error("Installer profile data is missing.");
+                    }
+
+                    const currentPoints = installerData.installerProfile.points || 0;
+                    const newPoints = currentPoints + pointsEarned;
+                    
+                    let newTier = installerData.installerProfile.tier || 'Bronze';
+                    if (newPoints >= platinumTierPoints) {
+                        newTier = 'Platinum';
+                    } else if (newPoints >= goldTierPoints) {
+                        newTier = 'Gold';
+                    } else if (newPoints >= silverTierPoints) {
+                        newTier = 'Silver';
+                    }
+
+                    const monthYear = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+                    
+                    // Update reputation history
+                    const history = installerData.installerProfile.reputationHistory || [];
+                    const monthIndex = history.findIndex((h: {month:string}) => h.month === monthYear);
+                    if (monthIndex > -1) {
+                        history[monthIndex].points = newPoints;
+                    } else {
+                        history.push({ month: monthYear, points: newPoints });
+                    }
+                    
+                    // Limit history to last 12 months for performance
+                    if (history.length > 12) {
+                        history.shift();
+                    }
+
+                    transaction.update(installerRef, {
+                        'installerProfile.points': newPoints,
+                        'installerProfile.tier': newTier,
+                        'installerProfile.reputationHistory': history,
+                        'installerProfile.reviews': admin.firestore.FieldValue.increment(1)
+                    });
+                });
+                console.log(`Successfully updated reputation for installer ${installerRef.id}. Awarded ${pointsEarned} points.`);
+                
+                await sendNotification(
+                    installerRef.id,
+                    "Reputation Updated!",
+                    `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`,
+                    `/dashboard/profile`
+                );
+            } catch (error) {
+                console.error("Error updating reputation:", error);
+            }
+        }
+    });
+

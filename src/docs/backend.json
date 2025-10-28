@@ -562,11 +562,6 @@
         "properties": {
             "installerCommissionRate": { "type": "number" },
             "jobGiverFeeRate": { "type": "number" },
-            "proInstallerPlanPrice": { "type": "number" },
-            "businessJobGiverPlanPrice": { "type": "number" },
-            "bidBundle10": { "type": "number" },
-            "bidBundle25": { "type": "number" },
-            "bidBundle50": { "type": "number" },
             "defaultTrialPeriodDays": { "type": "number" },
             "freeBidsForNewInstallers": { "type": "number" },
             "freePostsForNewJobGivers": { "type": "number" },
