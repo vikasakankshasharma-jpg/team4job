@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useCallback } from 'react';
@@ -27,6 +26,9 @@ export function FileUpload({ onFilesChange, maxFiles = 5 }: FileUploadProps) {
     accept: {
       'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
       'video/*': ['.mp4', '.mov', '.avi'],
+      'application/pdf': ['.pdf'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
     },
   });
 
@@ -53,11 +55,11 @@ export function FileUpload({ onFilesChange, maxFiles = 5 }: FileUploadProps) {
             ? 'Drop the files here ...'
             : "Drag 'n' drop some files here, or click to select files"}
         </p>
-        <p className="text-xs text-muted-foreground">(Photos or Videos)</p>
+        <p className="text-xs text-muted-foreground">(Images, Videos, or Documents)</p>
       </div>
       {files.length > 0 && (
         <div className="space-y-2">
-          <p className="font-medium">Selected Files:</p>
+          <p className="font-medium text-sm">Selected Files ({files.length}/{maxFiles}):</p>
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {files.map((file, index) => (
               <li key={index} className="flex items-center justify-between p-2 border rounded-md bg-secondary/50">
@@ -65,7 +67,7 @@ export function FileUpload({ onFilesChange, maxFiles = 5 }: FileUploadProps) {
                   <FileIcon className="h-5 w-5 flex-shrink-0" />
                   <span className="text-sm truncate">{file.name}</span>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => removeFile(file)} className="flex-shrink-0">
+                <Button variant="ghost" size="icon" onClick={() => removeFile(file)} className="h-6 w-6 flex-shrink-0">
                   <X className="h-4 w-4" />
                 </Button>
               </li>
