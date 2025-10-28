@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { AlertOctagon, Send, CheckCircle2, Bot, User as UserIcon, Shield, RefreshCw, Undo2, File as FileIcon } from "lucide-react";
+import { AlertOctagon, Send, CheckCircle2, Bot, User as UserIcon, Shield, RefreshCw, Undo2, File as FileIcon, Award } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -101,6 +101,7 @@ export default function DisputeDetailPage() {
   const [involvedUsers, setInvolvedUsers] = useState<Record<string, User>>({});
   const [loading, setLoading] = useState(true);
   const [isRefunding, setIsRefunding] = useState(false);
+  const [isReleasing, setIsReleasing] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,7 +115,7 @@ export default function DisputeDetailPage() {
                 <ul className="list-disc space-y-2 pl-5">
                     <li><span className="font-semibold">Discussion Thread:</span> View all messages and evidence.</li>
                     <li><span className="font-semibold">Post a Reply:</span> Use the text box and file uploader to add your response.</li>
-                    <li><span className="font-semibold">Admin Actions:</span> Admins can change the status or process refunds.</li>
+                    <li><span className="font-semibold">Admin Actions:</span> Admins can change the status or process refunds and payouts.</li>
                 </ul>
             </div>
         )
@@ -246,6 +247,23 @@ export default function DisputeDetailPage() {
         setIsRefunding(false);
     }
   };
+
+  const handleReleaseFunds = async () => {
+    if (!transaction) return toast({ title: "Transaction not found", variant: "destructive" });
+    setIsReleasing(true);
+    try {
+        await axios.post('/api/escrow/release-funds', {
+            transactionId: transaction.id,
+        });
+        toast({ title: "Funds Released", description: "The payment has been released to the installer.", variant: "success" });
+        setTransaction(prev => prev ? { ...prev, status: 'Released' } : null);
+    } catch(error: any) {
+        toast({ title: "Release Failed", description: error.response?.data?.error || "Could not release funds.", variant: "destructive" });
+    } finally {
+        setIsReleasing(false);
+    }
+  };
+
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -421,10 +439,16 @@ export default function DisputeDetailPage() {
                         </Button>
                     )}
                     {transaction?.status === 'Funded' && (
-                        <Button variant="destructive" className="w-full" onClick={handleRefund} disabled={isRefunding}>
-                            {isRefunding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
-                            Process Refund to Job Giver
-                        </Button>
+                        <>
+                            <Button variant="destructive" className="w-full" onClick={handleRefund} disabled={isRefunding || isReleasing}>
+                                {isRefunding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
+                                Refund to Job Giver
+                            </Button>
+                            <Button variant="success" className="w-full" onClick={handleReleaseFunds} disabled={isReleasing || isRefunding}>
+                                {isReleasing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Award className="mr-2 h-4 w-4" />}
+                                Release Funds to Installer
+                            </Button>
+                        </>
                     )}
                 </div>
               </CardContent>
