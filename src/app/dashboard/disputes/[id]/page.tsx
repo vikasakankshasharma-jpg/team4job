@@ -150,6 +150,9 @@ export default function DisputeDetailPage() {
             userIds.add(disputeData.parties.jobGiverId);
             userIds.add(disputeData.parties.installerId);
         }
+        if (disputeData.handledBy) {
+            userIds.add(disputeData.handledBy);
+        }
         disputeData.messages.forEach(msg => userIds.add(msg.authorId));
 
         const userDocs = await Promise.all(Array.from(userIds).map(uid => getDoc(doc(db, "users", uid))));
@@ -175,7 +178,7 @@ export default function DisputeDetailPage() {
     notFound();
   }
 
-  const isParty = user.id === dispute.requesterId || (dispute.parties && (user.id === dispute.parties.jobGiverId || user.id === dispute.parties.installerId)) || isAdmin;
+  const isParty = user.id === dispute.requesterId || (dispute.parties && (user.id === dispute.parties.jobGiverId || user.id === dispute.parties.installerId)) || isAdmin || role === 'Support Team';
   if (!isParty) {
     notFound();
   }
@@ -204,7 +207,7 @@ export default function DisputeDetailPage() {
 
     const message: DisputeMessage = {
         authorId: user.id,
-        authorRole: isAdmin ? 'Admin' : (role || (user.roles.includes('Job Giver') ? 'Job Giver' : 'Installer')),
+        authorRole: role,
         content: newMessage,
         timestamp: new Date(),
         attachments: attachmentUrls,
@@ -226,7 +229,7 @@ export default function DisputeDetailPage() {
   }
 
   const handleReviewDispute = async () => {
-    await handleUpdateDispute({ status: 'Under Review' });
+    await handleUpdateDispute({ status: 'Under Review', handledBy: user.id });
     toast({ title: "Dispute Under Review", description: "The case is now marked for active review." });
   }
   
@@ -264,6 +267,7 @@ export default function DisputeDetailPage() {
     }
   };
 
+  const isTeamMember = isAdmin || role === 'Support Team';
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -403,6 +407,21 @@ export default function DisputeDetailPage() {
                 </div>
             )}
              <Separator />
+             {dispute.handledBy && involvedUsers[dispute.handledBy] && (
+                 <div className="space-y-3">
+                    <h4 className="font-semibold">Handler</h4>
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                            <AnimatedAvatar svg={involvedUsers[dispute.handledBy]?.avatarUrl} />
+                            <AvatarFallback>{involvedUsers[dispute.handledBy]?.name.charAt(0) || '?'}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-medium">{involvedUsers[dispute.handledBy]?.name}</p>
+                            <p className="text-xs text-muted-foreground">Support Team</p>
+                        </div>
+                    </div>
+                 </div>
+             )}
              <div className="space-y-3">
                  <h4 className="font-semibold">Requester</h4>
                 <Link href={`/dashboard/users/${dispute.requesterId}`} className="block hover:bg-accent p-2 rounded-md">
@@ -424,7 +443,7 @@ export default function DisputeDetailPage() {
                 </div>
             )}
           </CardContent>
-          {isAdmin && dispute.status !== 'Resolved' && (
+          {isTeamMember && dispute.status !== 'Resolved' && (
              <>
               <Separator />
               <CardContent className="pt-6">
@@ -438,7 +457,7 @@ export default function DisputeDetailPage() {
                             Resolve Dispute
                         </Button>
                     )}
-                    {transaction?.status === 'Funded' && (
+                    {isAdmin && transaction?.status === 'Funded' && (
                         <>
                             <Button variant="destructive" className="w-full" onClick={handleRefund} disabled={isRefunding || isReleasing}>
                                 {isRefunding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}

@@ -28,7 +28,7 @@ import {
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
-import { Job, User, Dispute } from "@/lib/types";
+import { Job, User, Dispute, Transaction } from "@/lib/types";
 import { collection, query, where, getDocs, or, and, doc, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
 import { cn, toDate } from "@/lib/utils";
@@ -618,14 +618,11 @@ function SupportTeamDashboard() {
           getDocs(reviewQuery),
         ]);
 
-        const involvedDisputesQuery = query(disputesRef, where('messages', 'array-contains-any', [{ authorId: user.id }]));
+        const involvedDisputesQuery = query(disputesRef, where('handledBy', '==', user.id));
+        const involvedSnapshot = await getDocs(involvedDisputesQuery);
+        const handledDisputes = involvedSnapshot.docs.map(d => d.data() as Dispute);
         
-        getDocs(disputesRef).then(allDisputesSnapshot => {
-            const relatedDisputes = allDisputesSnapshot.docs
-                .map(d => d.data() as Dispute)
-                .filter(d => d.messages.some(m => m.authorId === user.id));
-            setDisputes(relatedDisputes);
-        });
+        setDisputes(handledDisputes);
 
         setStats({
             openDisputes: openSnapshot.size,
