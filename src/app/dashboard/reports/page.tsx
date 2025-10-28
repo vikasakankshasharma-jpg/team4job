@@ -370,6 +370,7 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
                         pincode: u.pincodes.residential,
                         installerTier: u.installerProfile?.tier || 'N/A',
                         installerPoints: u.installerProfile?.points || 0,
+                        installerRating: u.installerProfile?.rating || 0,
                     }));
                     break;
                 case 'jobs':
@@ -726,7 +727,7 @@ export default function ReportsPage() {
                     <YAxis type="category" dataKey="name" width={120} />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="value" name="Number of Jobs" fill="#8884d8" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="value" name="Number of Jobs" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                 </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -735,3 +736,5 @@ export default function ReportsPage() {
     </div>
   );
 }
+
+    
