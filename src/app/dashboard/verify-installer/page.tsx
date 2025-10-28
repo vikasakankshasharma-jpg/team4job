@@ -78,7 +78,7 @@ export default function VerifyInstallerPage() {
   
   const aadharForm = useForm<z.infer<typeof aadharSchema>>({
     resolver: zodResolver(aadharSchema),
-    defaultValues: { aadharNumber: user?.aadharNumber || "" },
+    defaultValues: { aadharNumber: "" },
   });
 
   const otpForm = useForm<z.infer<typeof otpSchema>>({
@@ -88,7 +88,7 @@ export default function VerifyInstallerPage() {
   
   const skillsForm = useForm<z.infer<typeof skillsSchema>>({
     resolver: zodResolver(skillsSchema),
-    defaultValues: { skills: user?.installerProfile?.skills || [] },
+    defaultValues: { skills: [] },
   });
 
   useEffect(() => {
@@ -265,20 +265,6 @@ export default function VerifyInstallerPage() {
                     render={() => (
                         <FormItem>
                              <div className="mb-4">
-                                <h3 className="font-medium">Your Information</h3>
-                                <p className="text-sm text-muted-foreground">This information is from your profile and will be part of your public installer identity.</p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 rounded-md border p-4">
-                                <div className="space-y-1">
-                                    <p className="text-xs text-muted-foreground">Name</p>
-                                    <p className="font-semibold">{user?.name}</p>
-                                </div>
-                                 <div className="space-y-1">
-                                    <p className="text-xs text-muted-foreground">Mobile</p>
-                                    <p className="font-semibold">{user?.mobile}</p>
-                                </div>
-                            </div>
-                            <div className="my-4">
                                 <h3 className="font-medium">Select Your Skills</h3>
                                 <p className="text-sm text-muted-foreground">Choose all that apply. This helps in matching you with the right jobs.</p>
                             </div>
