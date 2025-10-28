@@ -143,8 +143,9 @@ export default function BrowseJobsPage() {
         }
         // Skills filter
         if (selectedSkills.length > 0) {
-            const jobSkills = job.description.toLowerCase();
-            if (!selectedSkills.every(skill => jobSkills.includes(skill))) {
+            if (!job.skills) return false;
+            const jobSkills = job.skills.map(s => s.toLowerCase());
+            if (!selectedSkills.every(skill => jobSkills.includes(skill.toLowerCase()))) {
                 return false;
             }
         }
@@ -155,23 +156,36 @@ export default function BrowseJobsPage() {
   const filteredJobs = filterJobs(jobs);
 
   const recommendedJobs = React.useMemo(() => {
-    if (!user) return [];
+    if (!user?.installerProfile) return [];
     
-    return jobs.filter(job => {
-        const residentialMatch = user.pincodes.residential && job.location.includes(user.pincodes.residential);
-        const officeMatch = user.pincodes.office && job.location.includes(user.pincodes.office);
+    const installerSkills = new Set(user.installerProfile.skills.map(s => s.toLowerCase()));
 
-        if (recommendedPincodeFilter === "all") {
-            return residentialMatch || officeMatch;
-        }
-        if (recommendedPincodeFilter === "residential") {
-            return residentialMatch;
-        }
-        if (recommendedPincodeFilter === "office") {
-            return officeMatch;
-        }
-        return false;
-    });
+    const scoredJobs = jobs
+        .map(job => {
+            let score = 0;
+            const residentialMatch = user.pincodes.residential && job.location.includes(user.pincodes.residential);
+            const officeMatch = user.pincodes.office && job.location.includes(user.pincodes.office);
+            
+            let locationMatch = false;
+            if (recommendedPincodeFilter === "all" && (residentialMatch || officeMatch)) locationMatch = true;
+            if (recommendedPincodeFilter === "residential" && residentialMatch) locationMatch = true;
+            if (recommendedPincodeFilter === "office" && officeMatch) locationMatch = true;
+
+            if (!locationMatch) return null; // Exclude jobs not in selected pincodes
+
+            score += 10; // Base score for location match
+
+            if (job.skills && job.skills.length > 0) {
+                const jobSkills = new Set(job.skills.map(s => s.toLowerCase()));
+                const matchingSkills = [...jobSkills].filter(skill => installerSkills.has(skill));
+                score += matchingSkills.length * 5; // Add points for each matching skill
+            }
+            
+            return { ...job, score };
+        })
+        .filter((j): j is Job & { score: number } => j !== null);
+
+    return scoredJobs.sort((a, b) => b.score - a.score);
   }, [user, jobs, recommendedPincodeFilter]);
 
   const filteredRecommendedJobs = filterJobs(recommendedJobs);
@@ -320,7 +334,7 @@ export default function BrowseJobsPage() {
                     <div>
                         <CardTitle>Recommended For You</CardTitle>
                         <CardDescription>
-                            Jobs that match your profile pincode(s).
+                            Jobs that match your profile pincode(s) and skills.
                         </CardDescription>
                     </div>
                      {user && user.pincodes.office && (

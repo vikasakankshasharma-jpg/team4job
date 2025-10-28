@@ -213,7 +213,7 @@ export default function PostJobPage() {
         id: newJobId, 
         title: values.jobTitle,
         description: values.jobDescription,
-        skills: values.skills.split(',').map(s => s.trim()),
+        skills: values.skills.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
         address: values.address,
         budget: {
             min: values.budgetMin,
