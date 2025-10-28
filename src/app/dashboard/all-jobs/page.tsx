@@ -57,7 +57,10 @@ function getJobType(job: Job) {
     
     const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
 
-    if (!job.bids || job.bids.length === 0) return 'Direct';
+    if (!job.bids || job.bids.length === 0) {
+      // If there are no bids but an installer is awarded, it's a Direct award.
+      return awardedInstallerId ? 'Direct' : 'N/A';
+    }
 
     const bidderIds = (job.bids || []).map(b => (b.installer as DocumentReference)?.id || (b.installer as User)?.id);
 
@@ -332,7 +335,7 @@ export default function AllJobsPage() {
     value !== "" && value !== "all" && value !== undefined
   ).length;
   
-  const jobTypes = ["All", "Bidding", "Direct"];
+  const jobTypes = ["all", "Bidding", "Direct"];
 
   const getSortIcon = (key: SortableKeys) => {
     if (!sortConfig || sortConfig.key !== key) {
@@ -365,18 +368,18 @@ export default function AllJobsPage() {
                     </SelectTrigger>
                     <SelectContent>
                         {allStatuses.map(status => (
-                            <SelectItem key={status} value={status}>{status}</SelectItem>
+                            <SelectItem key={status} value={status}>{status === 'all' ? 'All Statuses' : status}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
-                <Input placeholder="Filter by Job Giver Name..." value={filters.jobGiver} onChange={e => handleFilterChange('jobGiver', e.target.value)} className="h-8" />
+                <Input placeholder="Filter by Job Giver..." value={filters.jobGiver} onChange={e => handleFilterChange('jobGiver', e.target.value)} className="h-8" />
                  <Select value={filters.jobType} onValueChange={value => handleFilterChange('jobType', value)}>
                     <SelectTrigger className="h-8 text-xs">
                         <SelectValue placeholder="Filter by Type..." />
                     </SelectTrigger>
                     <SelectContent>
                         {jobTypes.map(type => (
-                            <SelectItem key={type} value={type === 'All' ? 'all' : type}>{type}</SelectItem>
+                            <SelectItem key={type} value={type}>{type === 'all' ? 'All Types' : type}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
