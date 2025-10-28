@@ -96,7 +96,7 @@ export function validateMessageContent(message: string): { isValid: boolean; rea
         if (pattern.test(message)) {
             return {
                 isValid: false,
-                reason: `Sharing ${reason} is not allowed.`,
+                reason: `Sharing ${reason} is not allowed. All communication and payments must be kept on the platform for your safety.`,
             };
         }
     }
