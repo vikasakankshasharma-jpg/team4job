@@ -66,23 +66,34 @@ import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate, cn, validateMessageContent } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { doc, getDoc, updateDoc, arrayUnion, setDoc, DocumentReference, collection, getDocs, query, where } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, setDoc, DocumentReference, collection, getDocs, query, where, arrayRemove } from "firebase/firestore";
 import axios from 'axios';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { FileUpload } from "@/components/ui/file-upload";
+
 
 declare const cashfree: any;
 
 function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
   const { toast } = useToast();
-  const { db } = useFirebase();
+  const { db, storage } = useFirebase();
   const [otp, setOtp] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [completionFiles, setCompletionFiles] = React.useState<File[]>([]);
 
   const handleCompleteJob = async () => {
     if (otp !== job.completionOtp) {
-       toast({
+      toast({
         title: "Invalid OTP",
         description: "The Job Completion OTP is incorrect. Please ask the Job Giver for the correct code.",
+        variant: "destructive",
+      });
+      return;
+    }
+     if (completionFiles.length === 0) {
+      toast({
+        title: "Proof of Work Required",
+        description: "Please upload at least one photo or video showing the completed work.",
         variant: "destructive",
       });
       return;
@@ -100,7 +111,16 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
     setIsSubmitting(true);
     
     try {
-        // --- 1. Find the corresponding "Funded" transaction ---
+        // --- 1. Upload proof of completion files ---
+        const uploadPromises = completionFiles.map(async (file) => {
+            const storageRef = ref(storage, `jobs/${job.id}/completion_proof/${file.name}`);
+            await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(storageRef);
+            return { fileName: file.name, fileUrl: downloadURL, fileType: file.type };
+        });
+        const uploadedAttachments = await Promise.all(uploadPromises);
+
+        // --- 2. Find the corresponding "Funded" transaction ---
         const q = query(collection(db, "transactions"), where("jobId", "==", job.id), where("status", "==", "Funded"));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) {
@@ -108,13 +128,17 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
         }
         const transactionDoc = querySnapshot.docs[0];
 
-        // --- 2. Call backend to release the escrow ---
+        // --- 3. Call backend to release the escrow ---
         await axios.post('/api/escrow/release-funds', {
             transactionId: transactionDoc.id,
         });
         
-        // --- 3. Update Job Status locally and in Firestore ---
-        const updatedJobData = { status: 'Completed' as const, rating: 5 }; // Default to 5-star rating, user can change later
+        // --- 4. Update Job Status locally and in Firestore ---
+        const updatedJobData: Partial<Job> = { 
+            status: 'Completed', 
+            rating: 5, // Default to 5-star rating, user can change later
+            attachments: arrayUnion(...uploadedAttachments) as any // Add completion proof to job attachments
+        };
         onJobUpdate(updatedJobData);
         
         toast({
@@ -140,10 +164,14 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
       <CardHeader>
         <CardTitle>Complete This Job</CardTitle>
         <CardDescription>
-          Once the work is done, enter the 6-digit Job Completion OTP from the Job Giver. This action marks the job as complete and triggers the payout.
+          Upload proof of completion (photos/videos) and enter the 6-digit OTP from the Job Giver to mark the job as complete and trigger the payout.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="space-y-2">
+            <Label>Proof of Completion</Label>
+            <FileUpload onFilesChange={setCompletionFiles} maxFiles={5} />
+        </div>
         <div className="flex items-center gap-4">
           <Input
             type="text"
@@ -1203,6 +1231,7 @@ export default function JobDetailPage() {
                               onChange={(e) => setNewPrivateMessage(e.target.value)}
                             />
                             <div className="flex justify-between items-center">
+                                 <FileUpload onFilesChange={setPrivateMessageAttachments} maxFiles={3} />
                                 <Button size="sm" onClick={handlePostPrivateMessage} disabled={!newPrivateMessage.trim() && privateMessageAttachments.length === 0}>
                                   <Send className="mr-2 h-4 w-4" />
                                   Send
