@@ -98,7 +98,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O', fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001' },
     pincodes: { residential: '560001' }
   },
-  { // 2: Dual Role (Installer/Job Giver)
+    { // 2: Dual Role (Installer/Job Giver)
     name: 'Vikram Kumar',
     email: 'installer@example.com',
     mobile: '8765432109',
