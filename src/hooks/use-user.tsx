@@ -5,12 +5,13 @@ import { User, BlacklistEntry } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
-import { getDoc, collection, getDocs, onSnapshot, query, where, doc } from "firebase/firestore";
+import { getDoc, collection, getDocs, onSnapshot, query, where, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useAuth, useFirestore, useFirebase } from "@/lib/firebase/client-provider";
+import { toDate } from "@/lib/utils";
 
 // --- Types ---
 type Role = "Job Giver" | "Installer" | "Admin" | "Support Team";
@@ -97,11 +98,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
              const blacklistQuery = query(collection(db, "blacklist"), where("value", "==", firebaseUser.uid), where("type", "==", "user"));
              const blacklistSnapshot = await getDocs(blacklistQuery);
              
-             if (!blacklistSnapshot.empty) {
+             if (!blacklistSnapshot.empty || userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && toDate(userData.suspensionEndDate) > new Date())) {
                 toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
                 signOut(auth).then(() => updateUserState(null));
              } else {
                 updateUserState(userData);
+                // Update last login timestamp without triggering a full re-render cycle
+                if (userDoc.data().lastLoginAt === undefined || (Date.now() - toDate(userDoc.data().lastLoginAt).getTime()) > 5 * 60 * 1000) {
+                  updateDoc(userDocRef, { lastLoginAt: serverTimestamp() });
+                }
              }
            } else {
               const currentRetries = notFoundRetries.current.get(firebaseUser.uid) || 0;
@@ -216,7 +221,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole: handleSetRole,
     logout: handleLogout,
     login: handleLogin,
-  }), [user, role, isAdmin, loading]);
+  }), [user, role, isAdmin, loading, setUser]);
   
   const publicPaths = ['/login', '/'];
   const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
@@ -249,3 +254,5 @@ export function useUser() {
 
 // This is kept for non-hook usage, but useAuth and useFirestore are preferred.
 export { useFirebase, useAuth, useFirestore };
+
+    
