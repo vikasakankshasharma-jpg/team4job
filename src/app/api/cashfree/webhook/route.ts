@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     // --- Distinguish between Payments and Payouts webhooks ---
     
     // 1. Handle Payment Gateway Webhook
-    if (data.type === 'PAYMENT_SUCCESS_WEBHOOK' && data.data?.order) {
+    if (data.data?.order && (data.event_time && data.type?.includes("WEBHOOK"))) {
       const orderId = data.data.order.order_id;
       
       if (!orderId) {
@@ -28,29 +28,26 @@ export async function POST(req: NextRequest) {
       // Find the transaction in Firestore using the orderId which is our transaction.id
       const transactionRef = doc(db, "transactions", orderId);
       
-      await updateDoc(transactionRef, {
-          status: 'Funded',
-          fundedAt: Timestamp.now(),
-          paymentGatewayOrderId: data.data.order.order_id,
-      });
-      console.log(`Transaction ${orderId} successfully marked as 'Funded'.`);
-      
-      return NextResponse.json({ status: 'success' });
-    }
-
-    if (data.type === 'PAYMENT_FAILED_WEBHOOK' && data.data?.order) {
-        const orderId = data.data.order.order_id;
-        const transactionRef = doc(db, "transactions", orderId);
-        await updateDoc(transactionRef, {
+      if (data.type === "PAYMENT_SUCCESS_WEBHOOK") {
+         await updateDoc(transactionRef, {
+            status: 'Funded',
+            fundedAt: Timestamp.now(),
+            paymentGatewayOrderId: data.data.order.order_id,
+        });
+        console.log(`Transaction ${orderId} successfully marked as 'Funded'.`);
+      } else if (data.type === "PAYMENT_FAILED_WEBHOOK") {
+         await updateDoc(transactionRef, {
             status: 'Failed',
             failedAt: Timestamp.now(),
         });
         console.log(`Transaction ${orderId} marked as 'Failed'.`);
-        return NextResponse.json({ status: 'success' });
+      }
+      
+      return NextResponse.json({ status: 'success' });
     }
 
     // 2. Handle Payouts/Transfers Webhook (Standard Transfer)
-    if (data.event === 'transfer_success' || data.event === 'transfer_failed' || data.event === 'transfer_reversed') {
+    if (data.event && data.event.startsWith('transfer_')) {
         const { event, data: transferData } = data;
         const transferId = transferData?.transfer?.transferId;
         
