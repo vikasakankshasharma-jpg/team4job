@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
@@ -23,7 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Loader2, UserPlus, Paperclip, X } from "lucide-react";
+import { Zap, Loader2, UserPlus } from "lucide-react";
 import { generateJobDetails } from "@/ai/flows/generate-job-details";
 import { useToast } from "@/hooks/use-toast";
 import React, { useEffect } from "react";
@@ -35,6 +34,8 @@ import { JobAttachment } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
 import { doc, setDoc } from "firebase/firestore";
 import { useHelp } from "@/hooks/use-help";
+import { FileUpload } from "@/components/ui/file-upload";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const addressSchema = z.object({
   house: z.string().min(3, "Please enter a valid house/building detail."),
@@ -60,6 +61,7 @@ const jobSchema = z.object({
   }).or(z.literal(""))
   ,
   jobStartDate: z.string().min(1, { message: "Please select a job start date." }),
+  attachments: z.array(z.instanceof(File)).optional(),
   directAwardInstallerId: z.string().optional(),
 }).refine(data => data.budgetMax > data.budgetMin, {
     message: "Maximum budget must be greater than minimum budget.",
@@ -82,10 +84,8 @@ export default function PostJobPage() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { user, role, loading: userLoading } = useUser();
-  const { db } = useFirebase();
+  const { db, storage } = useFirebase();
   const router = useRouter();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [attachments, setAttachments] = React.useState<File[]>([]);
   const [mapCenter, setMapCenter] = React.useState<{lat: number, lng: number} | null>(null);
   const { setHelp } = useHelp();
 
@@ -99,6 +99,7 @@ export default function PostJobPage() {
                     <li><span className="font-semibold">Job Title:</span> Write a clear and concise title. This is the first thing installers see.</li>
                     <li><span className="font-semibold">AI Generate:</span> After writing a title, click the "AI Generate" button. Our AI will write a professional job description, suggest required skills, and estimate a fair budget for you.</li>
                     <li><span className="font-semibold">Location & Address:</span> Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.</li>
+                    <li><span className="font-semibold">Attachments:</span> Upload site photos, floor plans, or any other relevant documents to give installers a better understanding of the job.</li>
                     <li><span className="font-semibold">Dates & Budget:</span> Set your bidding deadline, the date you want work to start, and your budget range.</li>
                     <li><span className="font-semibold">Direct Award (Optional):</span> If you already know an installer on our platform, you can enter their public ID here to award the job to them directly, skipping the public bidding process.</li>
                 </ul>
@@ -131,6 +132,7 @@ export default function PostJobPage() {
       budgetMax: 0,
       deadline: "",
       jobStartDate: "",
+      attachments: [],
       directAwardInstallerId: "",
     },
   });
@@ -175,38 +177,34 @@ export default function PostJobPage() {
       setIsGenerating(false);
     }
   };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      setAttachments(prev => [...prev, ...Array.from(event.target.files!)]);
-    }
-  };
-
-  const removeAttachment = (fileName: string) => {
-    setAttachments(prev => prev.filter(file => file.name !== fileName));
-  };
-
-
+  
   async function onSubmit(values: z.infer<typeof jobSchema>) {
-    if (!user || !db) {
+    if (!user || !db || !storage) {
         toast({ title: "Error", description: "You must be logged in to post a job.", variant: "destructive" });
         return;
     }
-    
-    // Mock upload process
-    const uploadedAttachments: JobAttachment[] = attachments.map(file => ({
-        fileName: file.name,
-        fileUrl: `#`, // In real app, this would be the URL from Firebase Storage
-        fileType: file.type,
-    }));
     
     const today = new Date();
     const datePart = today.toISOString().slice(0, 10).replace(/-/g, '');
     const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
     const newJobId = `JOB-${datePart}-${randomPart}`;
-
-    const status = values.directAwardInstallerId ? "Awarded" : "Open for Bidding";
     
+    // 1. Upload attachments to Firebase Storage
+    const attachmentUrls: JobAttachment[] = [];
+    if (values.attachments && values.attachments.length > 0) {
+      for (const file of values.attachments) {
+        const fileRef = ref(storage, `jobs/${newJobId}/${file.name}`);
+        await uploadBytes(fileRef, file);
+        const downloadURL = await getDownloadURL(fileRef);
+        attachmentUrls.push({
+          fileName: file.name,
+          fileUrl: downloadURL,
+          fileType: file.type,
+        });
+      }
+    }
+    
+    const status = values.directAwardInstallerId ? "Awarded" : "Open for Bidding";
     const [pincode] = values.address.cityPincode.split(',');
 
     const jobData: any = { 
@@ -226,7 +224,7 @@ export default function PostJobPage() {
         bids: [],
         comments: [],
         postedAt: new Date(),
-        attachments: uploadedAttachments,
+        attachments: attachmentUrls,
         completionOtp: Math.floor(100000 + Math.random() * 900000).toString(),
         jobStartDate: new Date(values.jobStartDate),
     };
@@ -245,7 +243,6 @@ export default function PostJobPage() {
             description: `Your job is now ${status === 'Awarded' ? 'awarded' : 'live and open for bidding'}.`,
         });
         form.reset();
-        setAttachments([]);
         router.push(`/dashboard/posted-jobs`);
     } catch (error) {
         console.error("Error posting job:", error);
@@ -354,35 +351,23 @@ export default function PostJobPage() {
                   </FormItem>
                 )}
               />
-              <div className="space-y-4">
-                  <FormLabel>Attachments</FormLabel>
-                  <FormDescription>
-                      Upload photos, videos, or documents to provide more details about the job site.
-                  </FormDescription>
-                  <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      multiple
-                      className="hidden"
-                  />
-                   {attachments.length > 0 && (
-                      <div className="space-y-2">
-                          {attachments.map(file => (
-                              <div key={file.name} className="flex items-center justify-between text-sm bg-muted p-2 rounded-md">
-                                  <span>{file.name}</span>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeAttachment(file.name)}>
-                                      <X className="h-3 w-3" />
-                                  </Button>
-                              </div>
-                          ))}
-                      </div>
-                  )}
-                  <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                      <Paperclip className="mr-2 h-4 w-4" />
-                      Add Attachments
-                  </Button>
-              </div>
+              <FormField
+                control={form.control}
+                name="attachments"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Attachments</FormLabel>
+                     <FormControl>
+                       <FileUpload 
+                          onFilesChange={(files) => field.onChange(files)} 
+                          maxFiles={5}
+                        />
+                    </FormControl>
+                    <FormDescription>Upload site photos, floor plans, or other relevant documents (max 5 files).</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <Separator />
                <AddressForm
                   pincodeName="address.cityPincode"
@@ -392,6 +377,7 @@ export default function PostJobPage() {
                   fullAddressName="address.fullAddress"
                   onLocationGeocoded={setMapCenter}
                   mapCenter={mapCenter}
+                  isMapLoaded={true}
                 />
                  <Separator />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
