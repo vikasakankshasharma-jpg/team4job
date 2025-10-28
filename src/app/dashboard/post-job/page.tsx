@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
@@ -207,6 +208,9 @@ export default function PostJobPage() {
     const status = values.directAwardInstallerId ? "Awarded" : "Open for Bidding";
     const [pincode] = values.address.cityPincode.split(',');
 
+    const acceptanceDeadline = new Date();
+    acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
+
     const jobData: any = { 
         id: newJobId, 
         title: values.jobTitle,
@@ -232,6 +236,7 @@ export default function PostJobPage() {
     if (values.directAwardInstallerId) {
         jobData.awardedInstaller = doc(db, 'users', values.directAwardInstallerId);
         jobData.deadline = new Date(); // Set deadline to now for direct award
+        jobData.acceptanceDeadline = acceptanceDeadline; // Add acceptance deadline for direct award
     } else {
         jobData.deadline = new Date(values.deadline);
     }
