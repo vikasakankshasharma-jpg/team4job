@@ -459,6 +459,10 @@
         "resolvedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "handledBy": {
+            "type": "string",
+            "description": "The ID of the support team member handling the dispute."
         }
       },
       "required": ["id", "requesterId", "category", "title", "status", "reason", "createdAt"]

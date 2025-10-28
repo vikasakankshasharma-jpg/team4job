@@ -143,6 +143,7 @@ export type Dispute = {
     resolution?: string;
     createdAt: Date | Timestamp;
     resolvedAt?: Date | Timestamp;
+    handledBy?: string; // Support Team member ID
 };
 
 export type Role = "Job Giver" | "Installer" | "Admin" | "Support Team";
@@ -216,5 +217,3 @@ export type PlatformSettings = {
     minJobBudget: number;
     autoVerifyInstallers: boolean;
 };
-
-    
