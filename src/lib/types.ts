@@ -201,11 +201,6 @@ export type Transaction = {
 export type PlatformSettings = {
     installerCommissionRate: number;
     jobGiverFeeRate: number;
-    proInstallerPlanPrice: number;
-    businessJobGiverPlanPrice: number;
-    bidBundle10: number;
-    bidBundle25: number;
-    bidBundle50: number;
     defaultTrialPeriodDays: number;
     freeBidsForNewInstallers: number;
     freePostsForNewJobGivers: number;
