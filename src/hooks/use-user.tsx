@@ -46,7 +46,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   const updateUserState = useCallback((userData: User | null) => {
-    setLoading(true);
     setUser(userData);
     if (userData) {
       const storedRole = localStorage.getItem('userRole') as Role;
@@ -86,7 +85,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      setLoading(true);
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
@@ -110,26 +108,24 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
              }
            } else {
               const currentRetries = notFoundRetries.current.get(firebaseUser.uid) || 0;
-              if (currentRetries < 1) {
+              if (currentRetries < 2) { // Increased retries
                   notFoundRetries.current.set(firebaseUser.uid, currentRetries + 1);
-                  return;
+                  return; // Wait for next snapshot
               }
              
-             console.error("User document not found for authenticated user:", firebaseUser.uid);
+             console.error("User document not found for authenticated user after retries:", firebaseUser.uid);
              notFoundRetries.current.delete(firebaseUser.uid);
+             toast({ title: 'Login Error', description: 'Could not find your user profile. Please contact support.', variant: 'destructive' });
              signOut(auth).then(() => updateUserState(null));
            }
-           setLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
             signOut(auth).then(() => updateUserState(null));
-            setLoading(false);
         });
 
         return () => unsubscribeDoc();
       } else {
         updateUserState(null);
-        setLoading(false);
       }
     });
 
@@ -140,45 +136,39 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [auth, db, toast, updateUserState]);
 
   useEffect(() => {
-    const publicPaths = ['/login', '/'];
-    const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids'];
-    const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs'];
-    const adminOnlyPaths = ['/dashboard/users', '/dashboard/coupons', '/dashboard/blacklist', '/dashboard/reports', '/dashboard/settings', '/dashboard/team'];
-    const supportTeamPaths = ['/dashboard/disputes'];
+    if (loading) return;
     
+    const publicPaths = ['/login', '/'];
     const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
-    if (loading || isPublicPage) return;
+    
+    if (isPublicPage) {
+        if(user) {
+            router.push('/dashboard');
+        }
+        return;
+    }
 
     if (!user) {
         router.push('/login');
         return;
     }
 
-    if (user) {
-        if (pathname === '/login') {
-            router.push('/dashboard');
-        }
+    // Role-based route protection
+    const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids', '/dashboard/verify-installer'];
+    const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs'];
+    const adminOnlyPaths = ['/dashboard/users', '/dashboard/coupons', '/dashboard/blacklist', '/dashboard/reports', '/dashboard/settings', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions'];
+    const supportTeamPaths = ['/dashboard/disputes'];
 
-        if(role === 'Support Team' && !supportTeamPaths.some(p => pathname.startsWith(p)) && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/profile')) {
-            router.push('/dashboard/disputes');
-        }
-
-        if(role === 'Admin' && pathname.startsWith('/dashboard/settings')) {
-          // Admins can see their own settings
-        } else if (isAdmin && !adminOnlyPaths.some(p => pathname.startsWith(p)) && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/disputes')) {
-           // allow access to other pages for now
-        }
-        
-        const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
-        const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
-
-        if (role === 'Job Giver' && isInstallerPage) {
-            router.push('/dashboard');
-        }
-        if (role === 'Installer' && isJobGiverPage) {
-            router.push('/dashboard');
-        }
+    if (role === 'Support Team' && !supportTeamPaths.some(p => pathname.startsWith(p)) && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/profile') && !pathname.startsWith('/dashboard/settings')) {
+        router.push('/dashboard/disputes');
+    } else if (role === 'Job Giver' && installerPaths.some(p => pathname.startsWith(p))) {
+        router.push('/dashboard');
+    } else if (role === 'Installer' && jobGiverPaths.some(p => pathname.startsWith(p))) {
+        router.push('/dashboard');
+    } else if (!isAdmin && adminOnlyPaths.some(p => pathname.startsWith(p))) {
+        router.push('/dashboard');
     }
+
   }, [role, pathname, user, router, loading, isAdmin]);
 
   const handleSetRole = (newRole: Role) => {
@@ -254,5 +244,3 @@ export function useUser() {
 
 // This is kept for non-hook usage, but useAuth and useFirestore are preferred.
 export { useFirebase, useAuth, useFirestore };
-
-    
