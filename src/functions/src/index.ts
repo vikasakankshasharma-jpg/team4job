@@ -1,0 +1,276 @@
+
+import * as functions from "firebase-functions";
+import * as admin from "firebase-admin";
+import * as express from "express";
+
+admin.initializeApp();
+
+const app = express();
+
+app.post("/cashfree-webhook", (req, res) => {
+  console.log("Received Cashfree webhook data:", req.body);
+  res.json({ status: "received" });
+});
+
+export const api = functions.https.onRequest(app);
+
+// --- Push Notification Functions ---
+
+/**
+ * Sends a push notification to a user.
+ * @param {string} userId The UID of the user to notify.
+ * @param {string} title The title of the notification.
+ * @param {string} body The body of the notification.
+ * @param {string} [link] Optional deep link for the notification.
+ */
+async function sendNotification(userId: string, title: string, body: string, link?: string) {
+    if (!userId) {
+        console.log("No user ID provided, skipping notification.");
+        return;
+    }
+
+    const userDoc = await admin.firestore().collection("users").doc(userId).get();
+    const userData = userDoc.data();
+
+    if (!userData || !userData.fcmTokens || userData.fcmTokens.length === 0) {
+        console.log(`User ${userId} has no FCM tokens. Cannot send notification.`);
+        return;
+    }
+
+    const payload = {
+        notification: {
+            title,
+            body,
+        },
+        webpush: {
+            fcm_options: {
+                link: link || "https://cctv-job-connect.web.app/dashboard",
+            },
+        },
+        tokens: userData.fcmTokens,
+    };
+
+    try {
+        console.log(`Sending notification to user ${userId} with tokens:`, userData.fcmTokens);
+        const response = await admin.messaging().sendMulticast(payload);
+        console.log("Successfully sent message:", response);
+        // You can also handle failures and remove invalid tokens here
+    } catch (error) {
+        console.error("Error sending message:", error);
+    }
+}
+
+
+/**
+ * Triggered when a new bid is created or a job status changes.
+ */
+export const onJobUpdate = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+        const beforeData = change.before.data();
+        const afterData = change.after.data();
+        const jobId = context.params.jobId;
+
+        // 1. New Bid Notification
+        const oldBidsCount = beforeData.bids?.length || 0;
+        const newBidsCount = afterData.bids?.length || 0;
+
+        if (newBidsCount > oldBidsCount) {
+            const newBid = afterData.bids[newBidsCount - 1];
+            const jobGiverId = afterData.jobGiver.id;
+            
+            const installerDoc = await newBid.installer.get();
+            const installerName = installerDoc.data()?.name || "An installer";
+
+            await sendNotification(
+                jobGiverId,
+                "New Bid on Your Job!",
+                `${installerName} placed a bid of ₹${newBid.amount} on your job: "${afterData.title}"`,
+                `/dashboard/jobs/${jobId}`
+            );
+        }
+
+        // 2. Job Status Change Notifications
+        if (beforeData.status !== afterData.status) {
+            const jobGiverId = afterData.jobGiver.id;
+            const awardedInstallerId = afterData.awardedInstaller?.id;
+            const jobTitle = afterData.title;
+
+            // --- To Installer ---
+            if (afterData.status === 'Awarded' && awardedInstallerId) {
+                await sendNotification(
+                    awardedInstallerId,
+                    "You've Been Awarded a Job!",
+                    `Congratulations! You have been awarded the job: "${jobTitle}". You have 24 hours to accept.`,
+                    `/dashboard/jobs/${jobId}`
+                );
+            }
+            
+            // --- To Job Giver ---
+            if (afterData.status === 'In Progress' && beforeData.status === 'Awarded') {
+                 const installerDoc = await afterData.awardedInstaller.get();
+                 const installerName = installerDoc.data()?.name || "The installer";
+                 await sendNotification(
+                    jobGiverId,
+                    "Job Accepted!",
+                    `${installerName} has accepted the job: "${jobTitle}". Work can now begin.`,
+                    `/dashboard/jobs/${jobId}`
+                );
+            }
+             if (afterData.status === 'Open for Bidding' && beforeData.status === 'Awarded') {
+                 const installerDoc = await beforeData.awardedInstaller.get();
+                 const installerName = installerDoc.data()?.name || "The installer";
+                 await sendNotification(
+                    jobGiverId,
+                    "Job Declined",
+                    `${installerName} has declined the job: "${jobTitle}". You can now award it to another installer.`,
+                    `/dashboard/jobs/${jobId}`
+                );
+            }
+             if (afterData.status === 'Completed' && beforeData.status !== 'Completed') {
+                await sendNotification(
+                    jobGiverId,
+                    "Job Marked as Complete",
+                    `The job "${jobTitle}" has been marked as complete by the installer. Please provide a rating.`,
+                    `/dashboard/jobs/${jobId}`
+                );
+            }
+        }
+    });
+
+/**
+ * Triggered when a new private message is added to a job.
+ */
+export const onPrivateMessageCreated = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+        const beforeData = change.before.data();
+        const afterData = change.after.data();
+
+        const oldMessagesCount = beforeData.privateMessages?.length || 0;
+        const newMessagesCount = afterData.privateMessages?.length || 0;
+        
+        if (newMessagesCount > oldMessagesCount) {
+            const newMessage = afterData.privateMessages[newMessagesCount - 1];
+            const authorId = newMessage.author.id;
+            const jobGiverId = afterData.jobGiver.id;
+            const awardedInstallerId = afterData.awardedInstaller.id;
+
+            // Determine the recipient
+            const recipientId = authorId === jobGiverId ? awardedInstallerId : jobGiverId;
+            
+            const authorDoc = await newMessage.author.get();
+            const authorName = authorDoc.data()?.name || "Someone";
+
+            await sendNotification(
+                recipientId,
+                `New Message from ${authorName}`,
+                `You have a new message on job: "${afterData.title}"`,
+                `/dashboard/jobs/${context.params.jobId}`
+            );
+        }
+    });
+
+
+/**
+ * Triggered when a job is updated, specifically to handle reputation points
+ * when a job status changes to "Completed".
+ */
+export const onJobCompleted = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+        const beforeData = change.before.data();
+        const afterData = change.after.data();
+
+        // Check if the job status just changed to "Completed"
+        if (beforeData.status !== "Completed" && afterData.status === "Completed") {
+            const installerRef = afterData.awardedInstaller;
+            if (!installerRef) {
+                console.log(`Job ${context.params.jobId} completed without an awarded installer.`);
+                return;
+            }
+
+            const settingsRef = admin.firestore().collection('settings').doc('platform');
+            const settingsSnap = await settingsRef.get();
+            const settings = settingsSnap.data() || {};
+            
+            // Default reputation values if not set
+            const pointsForCompletion = settings.pointsForJobCompletion || 50;
+            const pointsFor5Star = settings.pointsFor5StarRating || 20;
+            const pointsFor4Star = settings.pointsFor4StarRating || 10;
+            const penaltyFor1Star = settings.penaltyFor1StarRating || -25;
+            
+            const silverTierPoints = settings.silverTierPoints || 500;
+            const goldTierPoints = settings.goldTierPoints || 1000;
+            const platinumTierPoints = settings.platinumTierPoints || 2000;
+
+            let pointsEarned = pointsForCompletion;
+            
+            if (afterData.rating === 5) {
+                pointsEarned += pointsFor5Star;
+            } else if (afterData.rating === 4) {
+                pointsEarned += pointsFor4Star;
+            } else if (afterData.rating === 1) {
+                pointsEarned += penaltyFor1Star;
+            }
+            
+            try {
+                await admin.firestore().runTransaction(async (transaction) => {
+                    const installerDoc = await transaction.get(installerRef);
+                    if (!installerDoc.exists) {
+                        throw new Error("Installer profile not found!");
+                    }
+                    const installerData = installerDoc.data();
+                    if (!installerData || !installerData.installerProfile) {
+                        throw new Error("Installer profile data is missing.");
+                    }
+
+                    const currentPoints = installerData.installerProfile.points || 0;
+                    const newPoints = currentPoints + pointsEarned;
+                    
+                    let newTier = installerData.installerProfile.tier || 'Bronze';
+                    if (newPoints >= platinumTierPoints) {
+                        newTier = 'Platinum';
+                    } else if (newPoints >= goldTierPoints) {
+                        newTier = 'Gold';
+                    } else if (newPoints >= silverTierPoints) {
+                        newTier = 'Silver';
+                    }
+
+                    const monthYear = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+                    
+                    // Update reputation history
+                    const history = installerData.installerProfile.reputationHistory || [];
+                    const monthIndex = history.findIndex((h: {month:string}) => h.month === monthYear);
+                    if (monthIndex > -1) {
+                        history[monthIndex].points = newPoints;
+                    } else {
+                        history.push({ month: monthYear, points: newPoints });
+                    }
+                    
+                    // Limit history to last 12 months for performance
+                    if (history.length > 12) {
+                        history.shift();
+                    }
+
+                    transaction.update(installerRef, {
+                        'installerProfile.points': newPoints,
+                        'installerProfile.tier': newTier,
+                        'installerProfile.reputationHistory': history,
+                        'installerProfile.reviews': admin.firestore.FieldValue.increment(1)
+                    });
+                });
+                console.log(`Successfully updated reputation for installer ${installerRef.id}. Awarded ${pointsEarned} points.`);
+                
+                await sendNotification(
+                    installerRef.id,
+                    "Reputation Updated!",
+                    `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`,
+                    `/dashboard/profile`
+                );
+            } catch (error) {
+                console.error("Error updating reputation:", error);
+            }
+        }
+    });
+

@@ -43,7 +43,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift, Loader2, Ticket, Package, Ban, Settings as SettingsIcon } from "lucide-react"
+import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift, Loader2, Ticket, Package, Ban, Settings as SettingsIcon, Bell } from "lucide-react"
 import { useHelp } from "@/hooks/use-help"
 import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore"
 import type { PlatformSettings, SubscriptionPlan, Coupon, BlacklistEntry } from "@/lib/types"
@@ -107,29 +107,52 @@ function PersonalSettingsCard() {
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle>Notifications</CardTitle>
-                    <CardDescription>Manage how you receive notifications.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5"/> Notifications</CardTitle>
+                    <CardDescription>Manage how you receive notifications from the platform.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div className="space-y-0.5">
-                            <Label>Email Notifications</Label>
+                            <Label>Push Notifications</Label>
                             <p className="text-xs text-muted-foreground">
-                                Receive emails about job updates and bids.
+                               Receive real-time alerts on your device.
                             </p>
                         </div>
                         <Switch defaultChecked />
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div className="space-y-0.5">
-                            <Label>Push Notifications</Label>
+                            <Label>New Bids</Label>
                             <p className="text-xs text-muted-foreground">
-                               Receive real-time alerts for new bids and messages on your device.
+                               Get notified when an installer bids on your job.
+                            </p>
+                        </div>
+                        <Switch defaultChecked disabled={role !== 'Job Giver'}/>
+                    </div>
+                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                            <Label>Job Awarded</Label>
+                            <p className="text-xs text-muted-foreground">
+                               Get notified when you are awarded a job.
+                            </p>
+                        </div>
+                        <Switch defaultChecked disabled={role !== 'Installer'}/>
+                    </div>
+                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                            <Label>Dispute Updates</Label>
+                            <p className="text-xs text-muted-foreground">
+                               Stay informed about your support tickets.
                             </p>
                         </div>
                         <Switch defaultChecked />
                     </div>
                 </CardContent>
+                 <CardFooter>
+                    <p className="text-xs text-muted-foreground">
+                        More granular notification controls will be available soon.
+                    </p>
+                </CardFooter>
             </Card>
              <Card>
                 <CardHeader>
