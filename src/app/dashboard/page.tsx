@@ -24,6 +24,8 @@ import {
   Briefcase,
   MessageSquare,
   Clock,
+  Award,
+  Medal,
 } from "lucide-react";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
@@ -32,9 +34,12 @@ import { Job, User, Dispute, Transaction } from "@/lib/types";
 import { collection, query, where, getDocs, or, and, doc, getDoc } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
 import { cn, toDate } from "@/lib/utils";
-import { differenceInMilliseconds } from "date-fns";
+import { differenceInMilliseconds, format, getMonth, getYear, startOfMonth, subMonths } from "date-fns";
 import { ChartContainer, ChartConfig } from "@/components/ui/chart";
-import { PolarAngleAxis, PolarGrid, RadialBar, RadialBarChart } from "recharts";
+import { PolarAngleAxis, PolarGrid, RadialBar, RadialBarChart, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar } from "@/components/ui/avatar";
+import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 
 const StatCard = ({ title, value, description, icon: Icon, href, iconBgColor, iconColor }) => (
     <Link href={href} className="block hover:shadow-lg transition-shadow duration-300 rounded-lg">
@@ -472,11 +477,156 @@ function JobGiverDashboard() {
   );
 }
 
+const tierIcons: Record<string, React.ReactNode> = {
+  Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
+  Silver: <Medal className="h-4 w-4 text-gray-400" />,
+  Gold: <Award className="h-4 w-4 text-amber-500" />,
+  Platinum: <Award className="h-4 w-4 text-cyan-400" />,
+};
+
+function TopPerformersCard({ installers }: { installers: User[] }) {
+    const rankedInstallers = React.useMemo(() => {
+        const now = new Date();
+        const lastMonthDate = subMonths(now, 1);
+        const lastMonth = getMonth(lastMonthDate);
+        const lastMonthYear = getYear(lastMonthDate);
+
+        const twoMonthsAgoDate = subMonths(now, 2);
+        const twoMonthsAgo = getMonth(twoMonthsAgoDate);
+        const twoMonthsAgoYear = getYear(twoMonthsAgoDate);
+        
+        return installers
+            .filter(i => i.installerProfile)
+            .map(installer => {
+                const history = installer.installerProfile?.reputationHistory || [];
+                const lastMonthEntry = history.find(h => {
+                    const [month, year] = h.month.split(' ');
+                    const monthIndex = new Date(Date.parse(month +" 1, 2012")).getMonth();
+                    return monthIndex === lastMonth && parseInt(year) === lastMonthYear;
+                });
+                const twoMonthsAgoEntry = history.find(h => {
+                     const [month, year] = h.month.split(' ');
+                    const monthIndex = new Date(Date.parse(month +" 1, 2012")).getMonth();
+                    return monthIndex === twoMonthsAgo && parseInt(year) === twoMonthsAgoYear;
+                });
+
+                const lastMonthPoints = lastMonthEntry?.points || 0;
+                const twoMonthsAgoPoints = twoMonthsAgoEntry?.points || 0;
+                const monthlyPoints = Math.max(0, lastMonthPoints - twoMonthsAgoPoints);
+                
+                return { ...installer, monthlyPoints };
+            })
+            .sort((a, b) => {
+                if (b.monthlyPoints !== a.monthlyPoints) return b.monthlyPoints - a.monthlyPoints;
+                if ((b.installerProfile?.rating || 0) !== (a.installerProfile?.rating || 0)) return (b.installerProfile?.rating || 0) - (a.installerProfile?.rating || 0);
+                return toDate(a.memberSince).getTime() - toDate(b.memberSince).getTime();
+            });
+    }, [installers]);
+    
+    const lastMonthName = format(subMonths(new Date(), 1), 'MMMM yyyy');
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Top Performers ({lastMonthName})</CardTitle>
+                <CardDescription>Installers with the highest reputation gain last month.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Installer</TableHead>
+                            <TableHead className="text-right">Points Gained</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {rankedInstallers.slice(0, 3).map((installer, index) => (
+                           <TableRow key={installer.id}>
+                               <TableCell>
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-bold text-lg w-4">{index + 1}</span>
+                                        <Avatar className="h-9 w-9 hidden sm:flex">
+                                            <AnimatedAvatar svg={installer.avatarUrl} />
+                                        </Avatar>
+                                        <div>
+                                            <Link href={`/dashboard/users/${installer.id}`} className="font-medium hover:underline">{installer.name}</Link>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                {tierIcons[installer.installerProfile?.tier || 'Bronze']}
+                                                <span>{installer.installerProfile?.tier} Tier</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                               </TableCell>
+                               <TableCell className="text-right font-semibold text-green-600">+{installer.monthlyPoints} pts</TableCell>
+                           </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                {rankedInstallers.length === 0 && (
+                    <p className="text-center py-4 text-muted-foreground">Not enough data to rank performers.</p>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function FinancialSummaryCard({ transactions }: { transactions: Transaction[] }) {
+    const summary = React.useMemo(() => {
+        return transactions.reduce((acc, t) => {
+            if (t.status === 'Released') {
+                acc.totalReleased += t.amount;
+                acc.platformRevenue += t.commission;
+            }
+            if (t.status === 'Funded') {
+                acc.fundsHeld += t.amount;
+            }
+            if (t.status === 'Funded' || t.status === 'Released') {
+                 acc.totalVolume += t.amount;
+            }
+            return acc;
+        }, {
+            totalVolume: 0,
+            totalReleased: 0,
+            platformRevenue: 0,
+            fundsHeld: 0,
+        });
+    }, [transactions]);
+    
+    return (
+        <Card className="col-span-full">
+            <CardHeader>
+                <CardTitle>Financial Summary</CardTitle>
+                <CardDescription>A real-time overview of financial activities on the platform.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                 <Card className="p-4">
+                    <p className="text-sm font-medium">Total Volume</p>
+                    <p className="text-2xl font-bold">₹{summary.totalVolume.toLocaleString()}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="text-sm font-medium">Platform Revenue</p>
+                    <p className="text-2xl font-bold text-green-600">₹{summary.platformRevenue.toLocaleString()}</p>
+                </Card>
+                 <Card className="p-4">
+                    <p className="text-sm font-medium">Funds Released</p>
+                    <p className="text-2xl font-bold">₹{summary.totalReleased.toLocaleString()}</p>
+                </Card>
+                 <Card className="p-4">
+                    <p className="text-sm font-medium">Funds Held</p>
+                    <p className="text-2xl font-bold">₹{summary.fundsHeld.toLocaleString()}</p>
+                </Card>
+            </CardContent>
+        </Card>
+    )
+}
+
 function AdminDashboard() {
   const { user } = useUser();
   const { db } = useFirebase();
   const { setHelp } = useHelp();
   const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, openDisputes: 0, totalValueReleased: 0 });
+  const [allUsers, setAllUsers] = React.useState<User[]>([]);
+  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
   const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
@@ -487,7 +637,7 @@ function AdminDashboard() {
         const usersQuery = query(collection(db, "users"));
         const jobsQuery = query(collection(db, "jobs"));
         const disputesQuery = query(collection(db, "disputes"), where('status', '==', 'Open'));
-        const transactionsQuery = query(collection(db, "transactions"), where('status', '==', 'Released'));
+        const transactionsQuery = query(collection(db, "transactions"));
 
         const [usersSnapshot, jobsSnapshot, disputesSnapshot, transactionsSnapshot] = await Promise.all([
           getDocs(usersQuery),
@@ -496,8 +646,12 @@ function AdminDashboard() {
           getDocs(transactionsQuery),
         ]);
         
+        setAllUsers(usersSnapshot.docs.map(d => d.data() as User));
+        setTransactions(transactionsSnapshot.docs.map(d => d.data() as Transaction));
+        
         const totalValueReleased = transactionsSnapshot.docs
             .map(d => d.data() as Transaction)
+            .filter(t => t.status === 'Released')
             .reduce((sum, t) => sum + t.amount, 0);
 
         setStats({
@@ -533,12 +687,43 @@ function AdminDashboard() {
             <li>
               <span className="font-semibold">Value Released:</span> The total monetary value released to installers for completed jobs.
             </li>
+             <li>
+              <span className="font-semibold">Financial Summary:</span> A real-time breakdown of platform revenue and funds held in escrow.
+            </li>
+             <li>
+              <span className="font-semibold">Top Performers:</span> A leaderboard of the best-performing installers from the previous month.
+            </li>
+             <li>
+              <span className="font-semibold">User Growth:</span> A chart showing new user sign-ups over the last 6 months.
+            </li>
           </ul>
           <p>Use the navigation menu to access detailed views like the User Directory and All Jobs list.</p>
         </div>
       )
     });
   }, [setHelp]);
+
+  const userGrowthData = React.useMemo(() => {
+    const now = new Date();
+    const data = Array.from({ length: 6 }).map((_, i) => {
+        const monthDate = subMonths(startOfMonth(now), i);
+        const monthName = format(monthDate, 'MMM');
+        return { name: monthName, Installers: 0, "Job Givers": 0 };
+    }).reverse();
+
+    allUsers.forEach(user => {
+        const joinDate = toDate(user.memberSince);
+        if (joinDate > subMonths(now, 6)) {
+            const monthName = format(joinDate, 'MMM');
+            const monthData = data.find(m => m.name === monthName);
+            if (monthData) {
+                if (user.roles.includes('Installer')) monthData.Installers++;
+                if (user.roles.includes('Job Giver')) monthData["Job Givers"]++;
+            }
+        }
+    });
+    return data;
+  }, [allUsers]);
 
   if (loading) {
       return (
@@ -557,7 +742,7 @@ function AdminDashboard() {
         <StatCard 
             title="Total Users"
             value={stats.totalUsers}
-            description="Installers & Job Givers"
+            description={`${allUsers.filter(u=>u.roles.includes('Installer')).length} Installers, ${allUsers.filter(u=>u.roles.includes('Job Giver')).length} Job Givers`}
             icon={Users}
             href="/dashboard/users"
             iconBgColor="bg-blue-100 dark:bg-blue-900"
@@ -591,6 +776,36 @@ function AdminDashboard() {
             iconColor="text-green-600 dark:text-green-300"
         />
       </div>
+
+      <div className="mt-8 grid grid-cols-1 gap-8">
+        <FinancialSummaryCard transactions={transactions} />
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+            <TopPerformersCard installers={allUsers} />
+        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle>User Growth</CardTitle>
+                <CardDescription>New users in the last 6 months.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={userGrowthData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="Installers" stackId="a" fill="hsl(var(--primary))" />
+                        <Bar dataKey="Job Givers" stackId="a" fill="hsl(var(--secondary))" />
+                    </BarChart>
+                </ResponsiveContainer>
+            </CardContent>
+        </Card>
+      </div>
+
     </>
   );
 }
