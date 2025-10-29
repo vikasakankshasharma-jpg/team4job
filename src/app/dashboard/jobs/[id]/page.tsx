@@ -487,7 +487,6 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings }: {
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-3 w-3 fill-primary text-primary" />
                             <span>{installer.installerProfile?.rating} ({installer.installerProfile?.reviews} reviews)</span>
-                            {installer.installerProfile?.verified && <ShieldCheck className="h-3 w-3 text-green-600" />}
                         </div>
                     </div>
                 </div>

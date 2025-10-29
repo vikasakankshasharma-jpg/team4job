@@ -580,11 +580,6 @@ export default function ProfilePage() {
             <div className="flex-1">
               <div className="flex items-center gap-4">
                 <CardTitle className="text-3xl">{user.name}</CardTitle>
-                {installerProfile?.verified && (
-                    <Badge variant="secondary" className="gap-1 pl-2">
-                        <ShieldCheck className="h-4 w-4 text-green-600"/> Verified
-                    </Badge>
-                )}
               </div>
                <div className="flex flex-col mt-1">
                 <p className="text-muted-foreground">{user.email}</p>
