@@ -36,7 +36,7 @@ import { DocumentReference } from "firebase/firestore";
 import { cn, toDate } from "@/lib/utils";
 import { differenceInMilliseconds, format, getMonth, getYear, startOfMonth, subMonths } from "date-fns";
 import { ChartContainer, ChartConfig } from "@/components/ui/chart";
-import { PolarAngleAxis, PolarGrid, RadialBar, RadialBarChart, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, RadialBar, RadialBarChart, PolarGrid, PolarAngleAxis, CartesianGrid } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
@@ -151,7 +151,7 @@ function InstallerDashboard() {
         const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot] = await Promise.all([
             getDocs(openJobsQuery),
             getDocs(myBidsQuery),
-            getDocs(myAwardedQuery)
+            getDocs(myAwardedSnapshot)
         ]);
 
         const myJobsSet = new Set([...myBidsSnapshot.docs.map(d => d.id), ...myAwardedSnapshot.docs.map(d => d.id)]);
