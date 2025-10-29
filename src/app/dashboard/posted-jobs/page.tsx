@@ -16,7 +16,7 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, RefreshCw } from "lucide-react";
+import { PlusCircle, Loader2, RefreshCw, Star } from "lucide-react";
 import Link from "next/link";
 import {
   Table,
@@ -28,6 +28,16 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,8 +58,12 @@ import { getStatusVariant, toDate } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, getDoc, updateDoc } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+
 
 const getRefId = (ref: any): string | null => {
   if (!ref) return null;
@@ -67,8 +81,94 @@ const statusDescriptions: Record<Job['status'], string> = {
   "Unbid": "The bidding deadline passed with no bids received."
 };
 
+function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () => void }) {
+    const { db } = useFirebase();
+    const { toast } = useToast();
+    const [isOpen, setIsOpen] = React.useState(false);
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [tip, setTip] = React.useState(0);
+    const [newDeadline, setNewDeadline] = React.useState('');
 
-function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
+    const handlePromote = async () => {
+        if (!tip || tip <= 0 || !newDeadline) {
+            toast({ title: "Invalid Input", description: "Please enter a valid tip amount and a new deadline.", variant: "destructive" });
+            return;
+        }
+        setIsLoading(true);
+        try {
+            const jobRef = doc(db, 'jobs', job.id);
+            const newDescription = `**PROMOTED JOB: Includes a travel tip of ₹${tip}.**\n\n${job.description}`;
+            await updateDoc(jobRef, {
+                budget: { ...job.budget, max: job.budget.max + tip },
+                isPromoted: true,
+                description: newDescription,
+                deadline: new Date(newDeadline),
+                status: 'Open for Bidding',
+            });
+            toast({ title: "Job Promoted!", description: "Your job is now open for bidding to a wider audience.", variant: "success" });
+            onJobPromoted();
+            setIsOpen(false);
+        } catch (error) {
+            console.error("Error promoting job:", error);
+            toast({ title: "Error", description: "Could not promote the job. Please try again.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-primary focus:bg-primary/10 focus:text-primary">
+                    <Star className="mr-2 h-4 w-4" />
+                    Promote & Re-list
+                </DropdownMenuItem>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Promote Unbid Job</DialogTitle>
+                    <DialogDescription>
+                        Attract more installers by offering a travel tip and re-listing the job to the entire city.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="tip-amount">Travel Tip (₹)</Label>
+                        <Input
+                            id="tip-amount"
+                            type="number"
+                            placeholder="e.g., 500"
+                            value={tip}
+                            onChange={(e) => setTip(Number(e.target.value))}
+                        />
+                        <p className="text-xs text-muted-foreground">This amount will be added to the job budget to incentivize installers from other areas.</p>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="new-deadline">New Bidding Deadline</Label>
+                        <Input
+                            id="new-deadline"
+                            type="date"
+                            value={newDeadline}
+                            onChange={(e) => setNewDeadline(e.target.value)}
+                            min={new Date().toISOString().split("T")[0]}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline" disabled={isLoading}>Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handlePromote} disabled={isLoading}>
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Promote & Re-list Job
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function PostedJobsTable({ jobs, title, description, footerText, loading, onUpdate }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean, onUpdate: () => void }) {
   
   const getJobType = (job: Job) => {
     if (!job.awardedInstaller) return 'N/A';
@@ -92,6 +192,10 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
 
     if (job.status === 'Unbid' || job.status === 'Cancelled') {
         actions.push(<DropdownMenuItem key="repost" asChild><Link href={`/dashboard/post-job?repostJobId=${job.id}`}><RefreshCw className="mr-2 h-4 w-4" />Repost Job</Link></DropdownMenuItem>);
+    }
+    
+    if(job.status === 'Unbid') {
+        actions.push(<PromoteJobDialog key="promote" job={job} onJobPromoted={onUpdate} />);
     }
     
     return actions;
@@ -329,6 +433,7 @@ export default function PostedJobsPage() {
             description="Manage your job postings and review bids from installers."
             footerText={`Showing 1-${activeJobs.length} of ${activeJobs.length} active jobs`}
             loading={loading}
+            onUpdate={fetchJobs}
           />
         </TabsContent>
          <TabsContent value="archived">
@@ -338,6 +443,7 @@ export default function PostedJobsPage() {
             description="A history of your completed, cancelled, or un-bid projects."
             footerText={`Showing 1-${archivedJobs.length} of ${archivedJobs.length} archived jobs`}
             loading={loading}
+            onUpdate={fetchJobs}
           />
         </TabsContent>
       </Tabs>

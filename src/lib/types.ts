@@ -112,6 +112,7 @@ export type Job = {
     max: number;
   };
   isGstInvoiceRequired: boolean;
+  isPromoted?: boolean;
   status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid';
   deadline: Date | Timestamp;
   jobStartDate?: Date | Timestamp;

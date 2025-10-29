@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Job, User } from "@/lib/types";
-import { MapPin, IndianRupee, Clock, Users, User as UserIcon } from "lucide-react";
+import { MapPin, IndianRupee, Clock, Users, User as UserIcon, Star } from "lucide-react";
 import Link from "next/link";
 import { format, formatDistanceToNow } from 'date-fns';
 import { getStatusVariant, toDate } from "@/lib/utils";
@@ -65,9 +65,12 @@ export function JobCard({ job }: JobCardProps) {
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <Badge variant={statusVariant} className="capitalize mb-2">
-              {job.status}
-            </Badge>
+             <div className="flex items-center gap-2 mb-2">
+                <Badge variant={statusVariant} className="capitalize">
+                    {job.status}
+                </Badge>
+                {job.isPromoted && <Badge variant="warning" className="gap-1"><Star className="h-3 w-3" /> Promoted</Badge>}
+             </div>
             <CardTitle className="text-lg leading-tight">{job.title}</CardTitle>
             <CardDescription className="font-mono text-xs pt-1">{job.id}</CardDescription>
           </div>
