@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import {
@@ -21,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
-import { Gem, Medal, ShieldCheck, X, ArrowUpDown, MoreHorizontal, UserX, UserCheck, Ban, Trash2, Loader2, Download } from "lucide-react";
+import { Gem, Medal, ShieldCheck, X, ArrowUpDown, MoreHorizontal, UserX, UserCheck, Ban, Trash2, Loader2, Download, List, Grid } from "lucide-react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -180,6 +179,7 @@ export default function UsersPage() {
   const [deleteUser, setDeleteUser] = React.useState<User | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = React.useState("");
   const { setHelp } = useHelp();
+  const [view, setView] = React.useState<'list' | 'grid'>('list');
 
   React.useEffect(() => {
     setHelp({
@@ -429,10 +429,20 @@ export default function UsersPage() {
             <CardTitle>User Directory</CardTitle>
             <CardDescription>A list of all registered users in the system. Use actions to manage users.</CardDescription>
         </div>
-        <Button onClick={handleExport} variant="outline" size="sm">
-            <Download className="mr-2 h-4 w-4" />
-            Export to CSV
-        </Button>
+        <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
+                <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
+                    <List className="h-4 w-4" />
+                </Button>
+                <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
+                    <Grid className="h-4 w-4" />
+                </Button>
+            </div>
+             <Button onClick={handleExport} variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                Export to CSV
+            </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-2 mb-4">
@@ -464,8 +474,7 @@ export default function UsersPage() {
             </div>
         </div>
 
-        {/* Desktop Table View */}
-        <div className="hidden lg:block">
+        {view === 'list' && (
             <Table>
             <TableHeader>
                 <TableRow>
@@ -548,27 +557,28 @@ export default function UsersPage() {
                 )}
             </TableBody>
             </Table>
-        </div>
+        )}
 
-        {/* Mobile Card View */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden">
-            {loading ? (
-                <div className="col-span-full text-center py-10 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin" /></div>
-            ) : sortedAndFilteredUsers.length > 0 ? (
-                sortedAndFilteredUsers.map(u => (
-                    <UserCard 
-                        key={u.id}
-                        u={u} 
-                        user={user}
-                        actionLoading={actionLoading}
-                        handleUserAction={handleUserAction}
-                        setDeleteUser={setDeleteUser}
-                    />
-                ))
-            ) : (
-                <div className="col-span-full text-center py-10 text-muted-foreground">No users found.</div>
-            )}
-        </div>
+        {view === 'grid' && (
+             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {loading ? (
+                    <div className="col-span-full text-center py-10 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin" /></div>
+                ) : sortedAndFilteredUsers.length > 0 ? (
+                    sortedAndFilteredUsers.map(u => (
+                        <UserCard 
+                            key={u.id}
+                            u={u} 
+                            user={user}
+                            actionLoading={actionLoading}
+                            handleUserAction={handleUserAction}
+                            setDeleteUser={setDeleteUser}
+                        />
+                    ))
+                ) : (
+                    <div className="col-span-full text-center py-10 text-muted-foreground">No users found.</div>
+                )}
+            </div>
+        )}
       </CardContent>
     </Card>
     {deleteUser && (
@@ -592,4 +602,4 @@ export default function UsersPage() {
   );
 }
 
-
+    
