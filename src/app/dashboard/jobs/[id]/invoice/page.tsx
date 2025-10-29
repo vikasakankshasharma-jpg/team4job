@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useFirebase, useUser } from "@/hooks/use-user";
@@ -74,7 +75,7 @@ export default function InvoicePage() {
         notFound();
     }
 
-    const subtotal = job.invoice.amount;
+    const { subtotal, travelTip, totalAmount } = job.invoice;
     const sacCode = "9954"; // SAC for Repair, maintenance and installation services
 
     return (
@@ -142,6 +143,15 @@ export default function InvoicePage() {
                             <td className="p-2 text-center font-mono">{sacCode}</td>
                             <td className="p-2 text-right font-mono">₹{subtotal.toLocaleString('en-IN')}</td>
                         </tr>
+                         {travelTip > 0 && (
+                            <tr className="border-b">
+                                <td className="p-2">
+                                    <p className="font-medium">Travel & Convenience Allowance</p>
+                                </td>
+                                <td className="p-2 text-center font-mono">{sacCode}</td>
+                                <td className="p-2 text-right font-mono">₹{travelTip.toLocaleString('en-IN')}</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -150,12 +160,12 @@ export default function InvoicePage() {
                 <div className="w-full max-w-xs space-y-2 text-sm">
                     <div className="flex justify-between">
                         <span>Subtotal</span>
-                        <span>₹{subtotal.toLocaleString('en-IN')}</span>
+                        <span>₹{totalAmount.toLocaleString('en-IN')}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between text-lg font-bold">
                         <span>Total</span>
-                        <span>₹{subtotal.toLocaleString('en-IN')}</span>
+                        <span>₹{totalAmount.toLocaleString('en-IN')}</span>
                     </div>
                 </div>
             </div>
