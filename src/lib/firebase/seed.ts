@@ -697,8 +697,12 @@ async function seedTransactions(uids: { [email: string]: string }) {
         payerId: uids[mockUsers[1].email],
         payeeId: uids[mockUsers[2].email],
         amount: 52000,
+        travelTip: 0,
+        commission: 2600, // 5% of 52000
+        jobGiverFee: 1040, // 2% of 52000
+        totalPaidByGiver: 53040,
+        payoutToInstaller: 49400,
         status: 'Released',
-        commission: 5200,
         createdAt: Timestamp.fromDate(new Date('2024-06-03T10:00:00Z')),
         fundedAt: Timestamp.fromDate(new Date('2024-06-03T10:05:00Z')),
         releasedAt: Timestamp.fromDate(new Date('2024-07-22T14:00:00Z')),
@@ -715,8 +719,12 @@ async function seedTransactions(uids: { [email: string]: string }) {
         payerId: uids[mockUsers[1].email],
         payeeId: uids[mockUsers[3].email],
         amount: 8500,
+        travelTip: 0,
+        commission: 425, // 5%
+        jobGiverFee: 170, // 2%
+        totalPaidByGiver: 8670,
+        payoutToInstaller: 8075,
         status: 'Funded',
-        commission: 850,
         createdAt: Timestamp.fromDate(new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000)),
         fundedAt: Timestamp.fromDate(new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000 + 5*60*1000)),
         paymentGatewayOrderId: `cf_order_${Date.now()}-2`,
@@ -731,8 +739,12 @@ async function seedTransactions(uids: { [email: string]: string }) {
         payerId: uids[mockUsers[1].email],
         payeeId: uids[mockUsers[2].email],
         amount: 19000,
+        travelTip: 0,
+        commission: 950, // 5%
+        jobGiverFee: 380, // 2%
+        totalPaidByGiver: 19380,
+        payoutToInstaller: 18050,
         status: 'Funded',
-        commission: 1900,
         createdAt: Timestamp.fromDate(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
         fundedAt: Timestamp.fromDate(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000 + 5*60*1000)),
         paymentGatewayOrderId: `cf_order_${Date.now()}-3`,
@@ -747,8 +759,12 @@ async function seedTransactions(uids: { [email: string]: string }) {
         payerId: uids[mockUsers[4].email],
         payeeId: uids[mockUsers[3].email],
         amount: 6500,
+        travelTip: 0,
+        commission: 325, // 5%
+        jobGiverFee: 130, // 2%
+        totalPaidByGiver: 6630,
+        payoutToInstaller: 6175,
         status: 'Failed',
-        commission: 650,
         createdAt: Timestamp.fromDate(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)),
         fundedAt: undefined,
         failedAt: Timestamp.fromDate(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000 + 2*60*1000)),
@@ -764,8 +780,12 @@ async function seedTransactions(uids: { [email: string]: string }) {
         payerId: uids[mockUsers[1].email],
         payeeId: uids[mockUsers[8].email],
         amount: 5000,
+        travelTip: 0,
+        commission: 250, // 5%
+        jobGiverFee: 100, // 2%
+        totalPaidByGiver: 5100,
+        payoutToInstaller: 4750,
         status: 'Refunded',
-        commission: 500,
         createdAt: Timestamp.fromDate(new Date('2024-05-10T10:00:00Z')),
         fundedAt: Timestamp.fromDate(new Date('2024-05-10T10:05:00Z')),
         refundedAt: Timestamp.fromDate(new Date('2024-05-12T16:00:00Z')),

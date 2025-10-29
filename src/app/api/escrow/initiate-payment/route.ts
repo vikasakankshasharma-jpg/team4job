@@ -9,29 +9,14 @@ import axios from 'axios';
 // Use 'https://api.cashfree.com/pg' for production
 const CASHFREE_API_BASE = 'https://sandbox.cashfree.com/pg';
 
-async function getPlatformSettings(): Promise<PlatformSettings> {
+async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
     const settingsRef = doc(db, 'settings', 'platform');
     const settingsSnap = await getDoc(settingsRef);
     if (settingsSnap.exists()) {
         return settingsSnap.data() as PlatformSettings;
     }
-    // Return default values if settings are not configured
-    return {
-        installerCommissionRate: 5,
-        jobGiverFeeRate: 2,
-        defaultTrialPeriodDays: 30,
-        freeBidsForNewInstallers: 10,
-        freePostsForNewJobGivers: 3,
-        pointsForJobCompletion: 50,
-        pointsFor5StarRating: 20,
-        pointsFor4StarRating: 10,
-        penaltyFor1StarRating: -25,
-        silverTierPoints: 500,
-        goldTierPoints: 1000,
-        platinumTierPoints: 2000,
-        minJobBudget: 500,
-        autoVerifyInstallers: true
-    };
+    // Return an empty object if no settings are configured
+    return {};
 }
 
 
@@ -57,8 +42,8 @@ export async function POST(req: NextRequest) {
 
     // 2. Calculate fees and final amounts based on platform settings
     const platformSettings = await getPlatformSettings();
-    const installerCommission = amount * (platformSettings.installerCommissionRate / 100);
-    const jobGiverFee = amount * (platformSettings.jobGiverFeeRate / 100);
+    const installerCommission = amount * ((platformSettings.installerCommissionRate || 0) / 100);
+    const jobGiverFee = amount * ((platformSettings.jobGiverFeeRate || 0) / 100);
     const tipAmount = travelTip || 0;
     const totalPaidByGiver = amount + jobGiverFee + tipAmount;
     const payoutToInstaller = amount - installerCommission + tipAmount;
