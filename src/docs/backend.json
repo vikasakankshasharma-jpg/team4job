@@ -307,6 +307,9 @@
             "$ref": "#/entities/JobAttachment"
           }
         },
+        "invoice": {
+          "$ref": "#/entities/Invoice"
+        },
         "comments": {
           "type": "array",
           "items": {
@@ -342,6 +345,17 @@
         "fileType": { "type": "string" }
       },
       "required": ["fileName", "fileUrl", "fileType"]
+    },
+     "Invoice": {
+      "title": "Invoice",
+      "description": "Represents a GST invoice uploaded by an installer for a completed job.",
+      "type": "object",
+      "properties": {
+        "fileName": { "type": "string" },
+        "fileUrl": { "type": "string", "format": "uri" },
+        "uploadedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fileName", "fileUrl", "uploadedAt"]
     },
     "Bid": {
       "title": "Bid",
@@ -555,7 +569,7 @@
         "paymentGatewayOrderId": { "type": "string", "description": "The order ID from Cashfree Payments." },
         "paymentGatewaySessionId": { "type": "string", "description": "The session ID used to launch the Cashfree checkout." },
         "escrowAccountId": { "type": "string", "description": "The ID of the Cashfree Escrow account for this transaction." },
-        "holdId": { "type": "string", "description": "The ID of the hold placed on the escrow funds." },
+        "holdId": { "type": "string", "description": "The ID of the hold placed on the funds." },
         "releaseId": { "type": "string", "description": "The ID of the release operation." },
         "payoutTransferId": { "type": "string", "description": "The transfer ID for the payout to the installer." },
         "refundTransferId": { "type": "string", "description": "The transfer ID for a refund to the job giver." },
