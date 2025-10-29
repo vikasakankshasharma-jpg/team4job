@@ -56,6 +56,7 @@ import {
   Wallet,
   Hourglass,
   ThumbsDown,
+  Archive,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -1108,7 +1109,13 @@ export default function JobDetailPage() {
   const showJobGiverRealIdentity = identitiesRevealed;
   
   const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || isJobGiver || role === 'Admin');
-  const canUsePrivateMessages = (job.status === 'In Progress' || job.status === 'Completed') && (isJobGiver || isAwardedInstaller || role === 'Admin');
+  const communicationMode: 'public' | 'private' | 'none' =
+    (job.status === 'In Progress' || job.status === 'Completed') && (isJobGiver || isAwardedInstaller || role === 'Admin')
+      ? 'private'
+      : job.status === 'Open for Bidding'
+      ? 'public'
+      : 'none';
+
 
   const showInstallerAcceptance = isAwardedInstaller && job.status === 'Awarded';
 
@@ -1169,8 +1176,34 @@ export default function JobDetailPage() {
                  </>
             )}
 
-            {canUsePrivateMessages && (
+            {communicationMode === 'private' && (
               <>
+                {(job.comments || []).length > 0 && (
+                    <>
+                        <Separator className="my-6" />
+                        <h3 className="font-semibold mb-4 flex items-center gap-2 text-muted-foreground">
+                            <Archive className="h-5 w-5" /> Archived Public Q&A
+                        </h3>
+                        <div className="space-y-6 rounded-lg border p-4 bg-muted/50">
+                            {(job.comments || []).map((comment) => {
+                                const author = comment.author as User;
+                                const authorId = author.id;
+                                let authorName = anonymousIdMap.get(authorId) || `Bidder-?`;
+                                let authorAvatar = author.avatarUrl;
+                                if (authorId === jobGiver.id) {
+                                    authorName = jobGiver.name;
+                                    authorAvatar = jobGiver.realAvatarUrl;
+                                } else if (authorId === awardedInstallerId) {
+                                    authorName = (job.awardedInstaller as User)?.name;
+                                    authorAvatar = (job.awardedInstaller as User)?.realAvatarUrl;
+                                }
+
+                                return <CommentDisplay key={comment.id || authorId + comment.timestamp} comment={comment} authorName={authorName} authorAvatar={authorAvatar} />;
+                            })}
+                        </div>
+                    </>
+                )}
+
                 <Separator className="my-6" />
                 <h3 className="font-semibold mb-4 flex items-center gap-2">
                     <Lock className="h-5 w-5" /> Private Messages
@@ -1241,10 +1274,10 @@ export default function JobDetailPage() {
               </>
             )}
 
-            {job.status === "Open for Bidding" && (
+            {communicationMode === 'public' && (
               <>
                 <Separator className="my-6" />
-                <h3 className="font-semibold mb-4">Public Comments ({job.comments?.length || 0})</h3>
+                <h3 className="font-semibold mb-4">Public Q&A ({job.comments?.length || 0})</h3>
                 <div className="space-y-6">
                     {(job.comments || []).map((comment) => {
                         const author = comment.author as User;
