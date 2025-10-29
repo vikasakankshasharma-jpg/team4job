@@ -140,10 +140,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (loading) return;
     
     const publicPaths = ['/login', '/'];
-    const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
-    
+    const isPublicPage = publicPaths.some(p => pathname === p) || pathname.startsWith('/login');
+
     if (isPublicPage) {
-        if(user) {
+        if (user) {
             router.push('/dashboard');
         }
         return;
@@ -157,20 +157,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Role-based route protection
     const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids', '/dashboard/verify-installer'];
     const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs'];
-    const adminOnlyPaths = ['/dashboard/users', '/dashboard/coupons', '/dashboard/blacklist', '/dashboard/reports', '/dashboard/settings', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/subscription-plans'];
-    const supportTeamPaths = ['/dashboard/disputes'];
-
-    if (role === 'Support Team' && !supportTeamPaths.some(p => pathname.startsWith(p)) && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/profile') && !pathname.startsWith('/dashboard/settings')) {
-        router.push('/dashboard/disputes');
-    } else if (role === 'Job Giver' && installerPaths.some(p => pathname.startsWith(p))) {
+    const adminOnlyPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/settings'];
+    
+    const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
+    const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
+    const isAdminPage = adminOnlyPaths.some(p => pathname.startsWith(p));
+    
+    if (role === 'Job Giver' && isInstallerPage) {
         router.push('/dashboard');
-    } else if (role === 'Installer' && jobGiverPaths.some(p => pathname.startsWith(p))) {
+    } else if (role === 'Installer' && isJobGiverPage) {
         router.push('/dashboard');
-    } else if (!isAdmin && adminOnlyPaths.some(p => pathname.startsWith(p))) {
+    } else if (role !== 'Admin' && isAdminPage) {
         router.push('/dashboard');
     }
 
   }, [role, pathname, user, router, loading, isAdmin]);
+
 
   const handleSetRole = (newRole: Role) => {
     if (user && user.roles.includes(newRole)) {
@@ -245,5 +247,3 @@ export function useUser() {
 
 // This is kept for non-hook usage, but useAuth and useFirestore are preferred.
 export { useFirebase, useAuth, useFirestore };
-
-    
