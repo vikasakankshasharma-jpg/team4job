@@ -16,7 +16,7 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2 } from "lucide-react";
+import { PlusCircle, Loader2, List, Grid } from "lucide-react";
 import Link from "next/link";
 import {
   Table,
@@ -50,6 +50,7 @@ import React from "react";
 import { useHelp } from "@/hooks/use-help";
 import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
+import { JobCard } from "@/components/job-card";
 
 const getRefId = (ref: any): string | null => {
   if (!ref) return null;
@@ -68,7 +69,7 @@ const statusDescriptions: Record<Job['status'], string> = {
 };
 
 
-function PostedJobsTable({ jobs, title, description, footerText, loading }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean }) {
+function PostedJobsTable({ jobs, title, description, footerText, loading, view }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean, view: 'list' | 'grid' }) {
   
   const getJobType = (job: Job) => {
     if (!job.awardedInstaller) return 'N/A';
@@ -116,71 +117,83 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Job Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Bids</TableHead>
-                <TableHead className="hidden md:table-cell">Job Type</TableHead>
-                <TableHead className="hidden md:table-cell">Posted On</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
+          {view === 'list' ? (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24"><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></TableCell>
+                  <TableHead>Job Title</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden md:table-cell">Bids</TableHead>
+                  <TableHead className="hidden md:table-cell">Job Type</TableHead>
+                  <TableHead className="hidden md:table-cell">Posted On</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
                 </TableRow>
-              ) : jobs.length > 0 ? jobs.map(job => (
-                 <TableRow key={job.id}>
-                    <TableCell className="font-medium">
-                      <Link href={`/dashboard/jobs/${job.id}`} className="hover:underline">{job.title}</Link>
-                       <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
-                    </TableCell>
-                    <TableCell>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{statusDescriptions[job.status]}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{(job.bids || []).length}</TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {getJobType(job)}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{format(toDate(job.postedAt), "MMM d, yyyy")}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            aria-haspopup="true"
-                            size="icon"
-                            variant="ghost"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          {getActionsForJob(job)}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24"><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></TableCell>
                   </TableRow>
-              )) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">You haven't posted any jobs in this category.</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                ) : jobs.length > 0 ? jobs.map(job => (
+                   <TableRow key={job.id}>
+                      <TableCell className="font-medium">
+                        <Link href={`/dashboard/jobs/${job.id}`} className="hover:underline">{job.title}</Link>
+                         <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{statusDescriptions[job.status]}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{(job.bids || []).length}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {getJobType(job)}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{format(toDate(job.postedAt), "MMM d, yyyy")}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            {getActionsForJob(job)}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24">You haven't posted any jobs in this category.</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          ) : (
+             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {loading ? (
+                      <div className="col-span-full text-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                  ) : jobs.length > 0 ? jobs.map(job => (
+                      <JobCard key={job.id} job={job} />
+                  )) : (
+                      <p className="text-muted-foreground col-span-full text-center py-10">You haven't posted any jobs in this category.</p>
+                  )}
+              </div>
+          )}
         </CardContent>
          <CardFooter>
            <div className="text-xs text-muted-foreground">
@@ -201,6 +214,7 @@ export default function PostedJobsPage() {
   const { setHelp } = useHelp();
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [view, setView] = React.useState<'list' | 'grid'>('list');
   
   React.useEffect(() => {
     if (!userLoading && user && (user.roles.includes('Admin') || role === 'Installer')) {
@@ -288,7 +302,7 @@ export default function PostedJobsPage() {
                     </li>
                      <li>
                         <span className="font-semibold">Job Type:</span> This column shows how a job was awarded. "Bidding" means you chose from bids, while "Direct" means you awarded it directly to an installer.
-                    </li>
+                     </li>
                      <li>
                         <span className="font-semibold">Actions:</span> Use the actions menu (three dots) on each job row to view its details, edit it (if it's still open for bidding), or perform other relevant actions.
                     </li>
@@ -321,6 +335,14 @@ export default function PostedJobsPage() {
             <TabsTrigger value="archived">Archived</TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
+             <div className="hidden items-center gap-1 rounded-md bg-secondary p-1 sm:flex">
+                <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
+                    <List className="h-4 w-4" />
+                </Button>
+                <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
+                    <Grid className="h-4 w-4" />
+                </Button>
+            </div>
             <Button size="sm" className="h-8 gap-1" asChild>
                 <Link href="/dashboard/post-job">
                     <PlusCircle className="h-3.5 w-3.5" />
@@ -338,6 +360,7 @@ export default function PostedJobsPage() {
             description="Manage your job postings and review bids from installers."
             footerText={`Showing 1-${activeJobs.length} of ${activeJobs.length} active jobs`}
             loading={loading}
+            view={view}
           />
         </TabsContent>
          <TabsContent value="archived">
@@ -347,6 +370,7 @@ export default function PostedJobsPage() {
             description="A history of your completed or cancelled projects."
             footerText={`Showing 1-${archivedJobs.length} of ${archivedJobs.length} archived jobs`}
             loading={loading}
+            view={view}
           />
         </TabsContent>
       </Tabs>

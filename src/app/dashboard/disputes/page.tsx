@@ -25,7 +25,7 @@ import { Dispute, User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, AlertOctagon, CheckCircle2, MessageSquare, X } from "lucide-react";
+import { PlusCircle, Loader2, AlertOctagon, CheckCircle2, MessageSquare, X, List, Grid } from "lucide-react";
 import Link from "next/link";
 import { collection, query, where, getDocs, or, and } from "firebase/firestore";
 import { Input } from "@/components/ui/input";
@@ -95,6 +95,7 @@ export default function DisputesPage() {
   const [involvedUsers, setInvolvedUsers] = useState<Record<string, User>>({});
   const [loading, setLoading] = useState(true);
   const { setHelp } = useHelp();
+  const [view, setView] = useState<'list' | 'grid'>('list');
 
   const [filters, setFilters] = useState({
     status: 'all',
@@ -247,21 +248,33 @@ export default function DisputesPage() {
            </div>
        )}
         <Card>
-        <CardHeader className="flex flex-row items-start sm:items-center justify-between gap-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <CardTitle>Dispute Center</CardTitle>
                 <CardDescription>
                 {isAdmin ? "Review and manage all disputes on the platform." : "A list of all disputes you are involved in."}
                 </CardDescription>
             </div>
-            {!isAdmin && (
-                <Button asChild>
-                    <Link href="/dashboard/disputes/new">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Create New Ticket
-                    </Link>
-                </Button>
-            )}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {!isAdmin && (
+                  <Button asChild className="w-full sm:w-auto">
+                      <Link href="/dashboard/disputes/new">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Create New Ticket
+                      </Link>
+                  </Button>
+              )}
+              {isAdmin && (
+                <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
+                    <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
+                        <List className="h-4 w-4" />
+                    </Button>
+                    <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
+                        <Grid className="h-4 w-4" />
+                    </Button>
+                </div>
+              )}
+            </div>
         </CardHeader>
         <CardContent>
             {isAdmin && (
@@ -299,8 +312,8 @@ export default function DisputesPage() {
                     )}
                 </div>
             )}
-            {/* Desktop Table View */}
-            <div className="hidden lg:block">
+            
+            {view === 'list' ? (
               <Table>
                 <TableHeader>
                     <TableRow>
@@ -347,22 +360,21 @@ export default function DisputesPage() {
                     )}
                 </TableBody>
               </Table>
-            </div>
-            
-            {/* Mobile Card View */}
-            <div className="block lg:hidden">
-                {loading ? (
-                    <div className="text-center py-10 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin" /></div>
-                ) : filteredDisputes.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {filteredDisputes.map((dispute) => (
-                           <DisputeCard key={dispute.id} dispute={dispute} involvedUsers={involvedUsers} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-10 text-muted-foreground">No disputes found.</div>
-                )}
-            </div>
+            ) : (
+                <div>
+                    {loading ? (
+                        <div className="text-center py-10 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin" /></div>
+                    ) : filteredDisputes.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {filteredDisputes.map((dispute) => (
+                               <DisputeCard key={dispute.id} dispute={dispute} involvedUsers={involvedUsers} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-10 text-muted-foreground">No disputes found.</div>
+                    )}
+                </div>
+            )}
         </CardContent>
         </Card>
     </div>

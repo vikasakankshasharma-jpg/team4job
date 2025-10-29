@@ -40,7 +40,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, List, Grid } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { BlacklistEntry } from "@/lib/types";
@@ -224,6 +224,7 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
 export default function BlacklistSettings({ blacklist, onDataChange }: { blacklist: BlacklistEntry[], onDataChange: () => void }) {
   const { db } = useFirebase();
   const { toast } = useToast();
+  const [view, setView] = React.useState<'list' | 'grid'>('list');
 
   const handleRemove = async (id: string, value: string) => {
     if (
@@ -247,15 +248,24 @@ export default function BlacklistSettings({ blacklist, onDataChange }: { blackli
     <div className="grid gap-6">
       <AddBlacklistForm onSave={onDataChange} />
       <Card>
-        <CardHeader>
-          <CardTitle>Current Blacklist</CardTitle>
-          <CardDescription>
-            A list of all currently blacklisted users and pincodes.
-          </CardDescription>
+        <CardHeader className="sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle>Current Blacklist</CardTitle>
+            <CardDescription>
+              A list of all currently blacklisted users and pincodes.
+            </CardDescription>
+          </div>
+           <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
+                <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
+                    <List className="h-4 w-4" />
+                </Button>
+                <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
+                    <Grid className="h-4 w-4" />
+                </Button>
+            </div>
         </CardHeader>
         <CardContent>
-          {/* Desktop Table View */}
-          <div className="hidden lg:block">
+          {view === 'list' ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -309,11 +319,8 @@ export default function BlacklistSettings({ blacklist, onDataChange }: { blackli
                 )}
               </TableBody>
             </Table>
-          </div>
-
-          {/* Mobile Card View */}
-          <div className="block lg:hidden">
-            <div className="space-y-4">
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {blacklist.length > 0 ? (
                 blacklist.map((entry) => (
                   <Card key={entry.id}>
@@ -342,12 +349,12 @@ export default function BlacklistSettings({ blacklist, onDataChange }: { blackli
                   </Card>
                 ))
               ) : (
-                <div className="text-center py-10 text-muted-foreground">
+                <div className="col-span-full text-center py-10 text-muted-foreground">
                     The blacklist is currently empty.
                 </div>
               )}
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
