@@ -171,7 +171,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         router.push('/dashboard');
     }
 
-  }, [role, pathname, user, router, isAdmin]);
+  }, [role, pathname, user, router, isAdmin, loading]);
 
 
   const handleSetRole = (newRole: Role) => {
