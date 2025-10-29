@@ -83,6 +83,12 @@ export type JobAttachment = {
   fileType: string;
 };
 
+export type Invoice = {
+  fileName: string;
+  fileUrl: string;
+  uploadedAt: Date | Timestamp;
+}
+
 export type Job = {
   id:string;
   title: string;
@@ -107,6 +113,7 @@ export type Job = {
   comments: Comment[];
   privateMessages?: PrivateMessage[];
   attachments?: JobAttachment[];
+  invoice?: Invoice;
   awardedInstaller?: User | DocumentReference;
   rating?: number;
   completionOtp?: string;
