@@ -23,15 +23,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Loader2, UserPlus, CheckCircle, ShieldCheck } from "lucide-react";
+import { Zap, Loader2, UserPlus, CheckCircle, ShieldCheck, RefreshCw } from "lucide-react";
 import { generateJobDetails } from "@/ai/flows/generate-job-details";
 import { useToast } from "@/hooks/use-toast";
 import React, { useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
-import { JobAttachment, User } from "@/lib/types";
+import { Job, JobAttachment, User } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useHelp } from "@/hooks/use-help";
@@ -175,8 +175,66 @@ export default function PostJobPage() {
   const { user, role, loading: userLoading } = useUser();
   const { db, storage } = useFirebase();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mapCenter, setMapCenter] = React.useState<{lat: number, lng: number} | null>(null);
   const { setHelp } = useHelp();
+  const [isReposting, setIsReposting] = React.useState(false);
+
+  const form = useForm<z.infer<typeof jobSchema>>({
+    resolver: zodResolver(jobSchema),
+    mode: "onChange",
+    defaultValues: {
+      jobTitle: "",
+      jobDescription: "",
+      skills: "",
+      isGstInvoiceRequired: false,
+      address: {
+        house: "",
+        street: "",
+        landmark: "",
+        cityPincode: "",
+        fullAddress: "",
+      },
+      budgetMin: 0,
+      budgetMax: 0,
+      deadline: "",
+      jobStartDate: "",
+      attachments: [],
+      directAwardInstallerId: "",
+    },
+  });
+  
+  const repostJobId = searchParams.get('repostJobId');
+
+  React.useEffect(() => {
+    async function prefillFormForRepost() {
+        if (repostJobId && db) {
+            setIsReposting(true);
+            const jobRef = doc(db, 'jobs', repostJobId);
+            const jobSnap = await getDoc(jobRef);
+            if (jobSnap.exists()) {
+                const jobData = jobSnap.data() as Job;
+                form.reset({
+                    jobTitle: jobData.title,
+                    jobDescription: jobData.description,
+                    skills: (jobData.skills || []).join(', '),
+                    isGstInvoiceRequired: jobData.isGstInvoiceRequired,
+                    address: jobData.address,
+                    budgetMin: jobData.budget.min,
+                    budgetMax: jobData.budget.max,
+                    deadline: "",
+                    jobStartDate: "",
+                    directAwardInstallerId: "",
+                });
+                toast({ title: "Re-posting Job", description: "Job details have been pre-filled. Please set a new deadline." });
+            } else {
+                 toast({ title: "Error", description: "Could not find the original job to repost.", variant: "destructive" });
+            }
+            setIsReposting(false);
+        }
+    }
+    prefillFormForRepost();
+  }, [repostJobId, db, form, toast]);
 
   React.useEffect(() => {
     setHelp({
@@ -202,30 +260,6 @@ export default function PostJobPage() {
       router.push('/dashboard');
     }
   }, [role, userLoading, router]);
-
-  const form = useForm<z.infer<typeof jobSchema>>({
-    resolver: zodResolver(jobSchema),
-    mode: "onChange",
-    defaultValues: {
-      jobTitle: "",
-      jobDescription: "",
-      skills: "",
-      isGstInvoiceRequired: false,
-      address: {
-        house: "",
-        street: "",
-        landmark: "",
-        cityPincode: "",
-        fullAddress: "",
-      },
-      budgetMin: 0,
-      budgetMax: 0,
-      deadline: "",
-      jobStartDate: "",
-      attachments: [],
-      directAwardInstallerId: "",
-    },
-  });
 
   const jobTitle = useWatch({ control: form.control, name: "jobTitle" });
   const directAwardInstallerId = useWatch({ control: form.control, name: "directAwardInstallerId" });
@@ -334,7 +368,7 @@ export default function PostJobPage() {
     try {
         await setDoc(doc(db, "jobs", newJobId), jobData);
         toast({
-            title: "Job Posted Successfully!",
+            title: repostJobId ? "Job Re-posted Successfully!" : "Job Posted Successfully!",
             description: `Your job is now ${status === 'Awarded' ? 'awarded' : 'live and open for bidding'}.`,
         });
         form.reset();
@@ -361,8 +395,9 @@ export default function PostJobPage() {
     <div className="mx-auto grid max-w-4xl flex-1 auto-rows-max gap-4">
       <div className="flex items-center gap-4">
         <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-          Post a New Job
+          {repostJobId ? 'Re-post Job' : 'Post a New Job'}
         </h1>
+        {isReposting && <Loader2 className="h-5 w-5 animate-spin" />}
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
@@ -370,7 +405,10 @@ export default function PostJobPage() {
             <CardHeader>
               <CardTitle>Job Details</CardTitle>
               <CardDescription>
-                Fill in the details for your job posting. Use the AI generator for a quick start.
+                {repostJobId 
+                    ? "Review and update the job details, then set a new deadline to re-list it."
+                    : "Fill in the details for your job posting. Use the AI generator for a quick start."
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -581,7 +619,7 @@ export default function PostJobPage() {
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting || isGenerating}>
                 {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Post Job
+                {repostJobId ? 'Re-post Job' : 'Post Job'}
             </Button>
           </div>
         </form>
