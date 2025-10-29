@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, CreditCard, Gift, Loader2, Ticket } from "lucide-react";
 import { useUser, useFirebase } from "@/hooks/use-user";
-import { SubscriptionPlan } from "@/lib/types";
-import { collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore";
+import { SubscriptionPlan, User } from "@/lib/types";
+import { collection, getDocs, query, where, doc, updateDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { toDate } from "@/lib/utils";
 import { useHelp } from "@/hooks/use-help";
@@ -27,7 +27,7 @@ import axios from "axios";
 declare const cashfree: any;
 
 function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () => void }) {
-    const { db, user } = useFirebase();
+    const { user, db } = useFirebase();
     const { toast } = useToast();
     const [couponCode, setCouponCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
