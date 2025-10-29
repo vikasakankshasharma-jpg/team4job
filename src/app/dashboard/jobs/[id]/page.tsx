@@ -2,6 +2,7 @@
 
 
 
+
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -659,53 +660,60 @@ function PageSkeleton() {
   );
 }
 
-function ReputationImpactCard({ job }: { job: Job }) {
-  if (job.status !== 'Completed' || !job.awardedInstaller || !job.rating) {
+function FinancialsCard({ job, transaction, platformSettings, user }: { job: Job, transaction: Transaction | null, platformSettings: PlatformSettings | null, user: User }) {
+  if (job.status !== 'Completed' || !transaction) {
     return null;
   }
   
-  const awardedInstallerId = (job.awardedInstaller instanceof DocumentReference) ? job.awardedInstaller.id : (job.awardedInstaller as User)?.id;
-  const winningBid = (job.bids || []).find(b => (((b.installer instanceof DocumentReference) ? b.installer.id : (b.installer as User)?.id)) === awardedInstallerId);
-  const installer = winningBid?.installer as User;
+  const installer = job.awardedInstaller as User;
+  const isInstaller = user.id === installer.id;
 
-  if (!installer) return null;
-
-  const ratingPoints = job.rating === 5 ? 20 : job.rating === 4 ? 10 : 0;
-  const completionPoints = 50;
-  const totalPoints = completionPoints + ratingPoints;
+  const commissionRate = platformSettings?.installerCommissionRate || 10;
+  const commission = transaction.amount * (commissionRate / 100);
 
   return (
     <Card className="bg-gradient-to-br from-blue-50/20 to-purple-50/20 dark:from-blue-950/20 dark:to-purple-950/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
             <Award className="h-5 w-5 text-primary" />
-            Reputation Impact
+            Financial Summary
         </CardTitle>
-        <CardDescription>Reputation points awarded to Installer #{awardedInstallerId.slice(-4)} for this job.</CardDescription>
+        <CardDescription>A summary of the financial transactions for this completed job.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         <div className="flex justify-between items-center text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Job Completion</span>
-            </div>
-            <span className="font-medium text-green-600">+ {completionPoints} pts</span>
+            <span className="text-muted-foreground">Final Payout to Installer</span>
+            <span className="font-semibold text-green-600">₹{transaction.payoutToInstaller.toLocaleString('en-IN')}</span>
         </div>
          <div className="flex justify-between items-center text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-                <Star className="h-4 w-4" />
-                <span>{job.rating}-Star Rating from Job Giver</span>
-            </div>
-            <span className="font-medium text-green-600">+ {ratingPoints} pts</span>
+            <span className="text-muted-foreground">Platform Commission</span>
+            <span className="font-semibold text-red-600">- ₹{transaction.commission.toLocaleString('en-IN')}</span>
         </div>
         <Separator />
-         <div className="flex justify-between items-center font-semibold">
-            <div className="flex items-center gap-2">
-                 <TrendingUp className="h-4 w-4" />
-                <span>Total Points Earned</span>
-            </div>
-            <span className="text-green-600">+ {totalPoints} pts</span>
-        </div>
+        {isInstaller && (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="link" className="p-0 h-auto text-sm">View Platform Commission Invoice</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Platform Commission Invoice</DialogTitle>
+                <DialogDescription>
+                  This invoice is for the service fee paid to the platform for this job.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <p><strong>Billed To:</strong> {installer.name}</p>
+                <p><strong>From:</strong> CCTV Job Connect</p>
+                <Separator />
+                <div className="flex justify-between"><span className="text-muted-foreground">Service Fee for Job #{job.id}</span><span>₹{commission.toLocaleString('en-IN')}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">GST @ 18%</span><span>₹{(commission * 0.18).toLocaleString('en-IN')}</span></div>
+                <Separator />
+                <div className="flex justify-between font-bold"><span>Total</span><span>₹{(commission * 1.18).toLocaleString('en-IN')}</span></div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </CardContent>
     </Card>
   )
@@ -1045,6 +1053,7 @@ export default function JobDetailPage() {
   const { toast } = useToast();
   
   const [job, setJob] = React.useState<Job | null>(null);
+  const [transaction, setTransaction] = React.useState<Transaction | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
   const [isFunded, setIsFunded] = React.useState(false);
@@ -1070,6 +1079,9 @@ export default function JobDetailPage() {
     const transQuery = query(collection(db, "transactions"), where("jobId", "==", id), where("status", "==", "Funded"));
     const transSnap = await getDocs(transQuery);
     setIsFunded(!transSnap.empty);
+    if (!transSnap.empty) {
+        setTransaction(transSnap.docs[0].data() as Transaction);
+    }
     
     const jobRef = doc(db, 'jobs', id);
     const jobSnap = await getDoc(jobRef);
@@ -1295,7 +1307,7 @@ export default function JobDetailPage() {
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
   
   const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
-  const canCancelJob = isJobGiver && (job.status === 'Open for Bidding' || job.status === 'Bidding Closed' || job.status === 'In Progress');
+  const canCancelJob = isJobGiver && (job.status === 'In Progress' || job.status === 'Open for Bidding' || job.status === 'Bidding Closed');
   
   const identitiesRevealed = (job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' && job.status !== 'Awarded') || role === 'Admin';
   const showJobGiverRealIdentity = identitiesRevealed;
@@ -1527,7 +1539,7 @@ export default function JobDetailPage() {
             {job.status === 'Completed' && (
               <>
                   <Separator className="my-6" />
-                  <ReputationImpactCard job={job} />
+                  <FinancialsCard job={job} transaction={transaction} platformSettings={platformSettings} user={user} />
               </>
             )}
           </CardContent>
