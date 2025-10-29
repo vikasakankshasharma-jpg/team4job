@@ -53,8 +53,6 @@ const adminNavItems = [
     { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
     { href: "/dashboard/transactions", icon: IndianRupee, label: "Transactions" },
     { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-    { href: "/dashboard/subscription-plans", icon: Ticket, label: "Subscriptions" },
-    { href: "/dashboard/blacklist", icon: Ban, label: "Blacklist" },
 ];
 
 const supportTeamNavItems = [
@@ -65,7 +63,7 @@ const supportTeamNavItems = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const { role } = useUser();
+  const { role, isAdmin } = useUser();
 
   const getNavItems = () => {
     switch (role) {
@@ -115,6 +113,22 @@ export function DashboardSidebar() {
               <TooltipContent side="right">{item.label}</TooltipContent>
             </Tooltip>
           ))}
+          {isAdmin && (
+            <Tooltip>
+               <TooltipTrigger asChild>
+                <Link
+                  href="/dashboard/settings"
+                  className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
+                  pathname.startsWith('/dashboard/settings') && 'bg-accent text-accent-foreground'
+                  )}
+                >
+                  <Ticket className="h-5 w-5" />
+                  <span className="sr-only">Monetization</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Monetization & Rules</TooltipContent>
+            </Tooltip>
+          )}
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
             <Tooltip>
@@ -131,24 +145,24 @@ export function DashboardSidebar() {
               </TooltipTrigger>
               <TooltipContent side="right">Profile</TooltipContent>
             </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/dashboard/settings"
-                className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                pathname.startsWith('/dashboard/settings') && 'bg-accent text-accent-foreground'
-                )}
-              >
-                <Settings className="h-5 w-5" />
-                <span className="sr-only">Settings</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">Settings</TooltipContent>
-          </Tooltip>
+          {!isAdmin && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/dashboard/settings"
+                  className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
+                  pathname.startsWith('/dashboard/settings') && 'bg-accent text-accent-foreground'
+                  )}
+                >
+                  <Settings className="h-5 w-5" />
+                  <span className="sr-only">Settings</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Settings</TooltipContent>
+            </Tooltip>
+          )}
         </nav>
       </TooltipProvider>
     </aside>
   );
 }
-
-    
