@@ -1,5 +1,3 @@
-
-
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {

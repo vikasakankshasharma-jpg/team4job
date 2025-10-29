@@ -64,7 +64,7 @@ import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bid, Job, Comment, User, JobAttachment, PrivateMessage, Dispute, Transaction, Invoice } from "@/lib/types";
+import { Bid, Job, Comment, User, JobAttachment, PrivateMessage, Dispute, Transaction, Invoice, PlatformSettings } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate, cn, validateMessageContent } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -266,6 +266,18 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [bidProposal, setBidProposal] = React.useState("");
   const [bidAmount, setBidAmount] = React.useState("");
+  const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
+
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+        if (!db) return;
+        const settingsDoc = await getDoc(doc(db, "settings", "platform"));
+        if (settingsDoc.exists()) {
+            setPlatformSettings(settingsDoc.data() as PlatformSettings);
+        }
+    };
+    fetchSettings();
+  }, [db]);
 
   const installer = user.installerProfile;
   if (!installer) return null;
@@ -317,6 +329,9 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
     }
   };
 
+  const commissionRate = platformSettings?.installerCommissionRate || 10;
+  const earnings = Number(bidAmount) * (1 - commissionRate / 100);
+
   return (
     <Card>
       <CardHeader>
@@ -326,16 +341,34 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
-          <Input 
-            type="number" 
-            placeholder="Your bid amount (₹)" 
-            className="flex-1" 
-            value={bidAmount}
-            onChange={(e) => setBidAmount(e.target.value)}
-          />
-          <Button onClick={handlePlaceBid}>Place Bid</Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+          <div className="space-y-2">
+            <Label htmlFor="bid-amount">Your Bid Amount (₹)</Label>
+            <Input 
+              id="bid-amount"
+              type="number" 
+              placeholder="e.g. 15000" 
+              value={bidAmount}
+              onChange={(e) => setBidAmount(e.target.value)}
+            />
+          </div>
+           {bidAmount && platformSettings && (
+             <Card className="bg-muted/50 p-3">
+                <CardDescription className="text-xs mb-1">Estimated Earnings</CardDescription>
+                <p className="text-sm">
+                    <span className="font-semibold">{Number(bidAmount).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span> (Your Bid)
+                </p>
+                 <p className="text-sm">
+                    - <span className="font-semibold">{(Number(bidAmount) - earnings).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span> (Platform Fee at {commissionRate}%)
+                </p>
+                <Separator className="my-1"/>
+                 <p className="font-bold text-base text-green-600">
+                    ~ {earnings.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                 </p>
+             </Card>
+           )}
         </div>
+         <Button onClick={handlePlaceBid} className="w-full md:w-auto">Place Bid</Button>
         <div className="space-y-2">
             <div className="flex justify-between items-center">
                 <label className="text-sm font-medium">Cover Letter / Proposal</label>
@@ -366,7 +399,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   );
 }
 
-function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousId: string }) {
+function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousId: string, platformSettings: PlatformSettings | null }) {
     const { user: jobGiver, role } = useUser();
     const { toast } = useToast();
     const { db } = useFirebase();
@@ -431,6 +464,10 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
     const avatar = identitiesRevealed ? <AvatarImage src={installer.realAvatarUrl} alt={installer.name} /> : <AnimatedAvatar svg={installer.avatarUrl} />;
     const avatarFallback = identitiesRevealed ? installer.name.substring(0, 2) : anonymousId.split('-')[1];
 
+    const feeRate = platformSettings?.jobGiverFeeRate || 2;
+    const feeAmount = bid.amount * (feeRate / 100);
+    const totalPayable = bid.amount + feeAmount;
+
     return (
         <div className={cn("p-4 rounded-lg border", isAwardedToThisBidder && 'border-primary bg-primary/5')}>
             <div className="flex justify-between items-start">
@@ -461,8 +498,14 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
             </div>
             <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
             {isJobGiver && !isJobAwarded && (
-              <div className="mt-4 flex items-center gap-2">
-                   <Button size="sm" onClick={handleAwardJob} disabled={isFunding}>
+              <div className="mt-4 flex flex-col md:flex-row items-start md:items-center gap-4 p-3 bg-secondary rounded-lg">
+                   <div className="flex-1 space-y-1">
+                        <div className="flex justify-between text-sm"><span>Bid Amount:</span> <span className="font-medium">₹{bid.amount.toLocaleString()}</span></div>
+                        <div className="flex justify-between text-sm text-muted-foreground"><span>Platform Fee ({feeRate}%):</span> <span className="font-medium">+ ₹{feeAmount.toLocaleString()}</span></div>
+                        <Separator />
+                        <div className="flex justify-between font-bold"><span>Total Payable:</span> <span>₹{totalPayable.toLocaleString()}</span></div>
+                   </div>
+                   <Button size="sm" onClick={handleAwardJob} disabled={isFunding} className="w-full md:w-auto">
                         {isFunding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         <Award className="mr-2 h-4 w-4" />
                        Award & Fund Job
@@ -473,7 +516,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
     );
 }
 
-function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousIdMap: Map<string, string> }) {
+function BidsSection({ job, onJobUpdate, anonymousIdMap, platformSettings }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousIdMap: Map<string, string>, platformSettings: PlatformSettings | null }) {
     const { role } = useUser();
     
     const calculateBidScore = (bid: Bid, job: Job) => {
@@ -514,6 +557,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
             job={job} 
             onJobUpdate={onJobUpdate}
             anonymousId={anonymousIdMap.get((bid.installer as User).id) || `Bidder-?`}
+            platformSettings={platformSettings}
           />
         ))}
       </CardContent>
@@ -902,6 +946,7 @@ export default function JobDetailPage() {
   
   const [job, setJob] = React.useState<Job | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
 
   const [newComment, setNewComment] = React.useState("");
 
@@ -914,6 +959,12 @@ export default function JobDetailPage() {
   const fetchJob = React.useCallback(async () => {
     if (!db || !id) return;
     setLoading(true);
+    
+    const settingsDoc = await getDoc(doc(db, "settings", "platform"));
+    if (settingsDoc.exists()) {
+        setPlatformSettings(settingsDoc.data() as PlatformSettings);
+    }
+    
     const jobRef = doc(db, 'jobs', id);
     const jobSnap = await getDoc(jobRef);
 
@@ -1359,7 +1410,7 @@ export default function JobDetailPage() {
         </Card>
 
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
-        {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
+        {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} platformSettings={platformSettings} />}
 
       </div>
 
