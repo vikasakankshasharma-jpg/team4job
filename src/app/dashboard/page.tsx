@@ -493,7 +493,7 @@ function AdminDashboard() {
           getDocs(usersQuery),
           getDocs(jobsQuery),
           getDocs(disputesQuery),
-          getDocs(transactionsSnapshot),
+          getDocs(transactionsQuery),
         ]);
         
         const totalValueReleased = transactionsSnapshot.docs
