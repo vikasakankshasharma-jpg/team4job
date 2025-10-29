@@ -120,23 +120,24 @@ export type Job = {
   status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid';
   deadline: Date | Timestamp;
   jobStartDate?: Date | Timestamp;
-  postedAt: Date | Timestamp;
-  acceptanceDeadline?: Date | Timestamp;
   dateChangeProposal?: {
     newDate: Date | Timestamp;
     proposedBy: 'Job Giver' | 'Installer';
     status: 'pending' | 'accepted' | 'rejected';
   };
+  postedAt: Date | Timestamp;
+  acceptanceDeadline?: Date | Timestamp;
   bids: Bid[];
   bidderIds?: string[];
-  comments: Comment[];
-  privateMessages?: PrivateMessage[];
-  attachments?: JobAttachment[];
-  invoice?: Invoice;
+  disqualifiedInstallerIds?: string[];
   awardedInstaller?: User | DocumentReference;
   rating?: number;
   completionOtp?: string;
   disputeId?: string;
+  attachments?: JobAttachment[];
+  invoice?: Invoice;
+  comments: Comment[];
+  privateMessages?: PrivateMessage[];
   selectedInstallers?: { installerId: string, rank: number }[];
 };
 

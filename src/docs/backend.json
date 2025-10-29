@@ -298,6 +298,13 @@
             },
             "description": "A list of user IDs who have bid on the job, for efficient querying."
         },
+        "disqualifiedInstallerIds": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "A list of user IDs who have declined or timed out on this job offer."
+        },
         "rating": {
           "type": "number"
         },
