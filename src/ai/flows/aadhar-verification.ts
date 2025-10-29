@@ -214,9 +214,11 @@ export const confirmAadharVerification = ai.defineFlow(
             mobile: '9876543210',
             pincode: '110001'
         };
+        const settings = await getPlatformSettings();
+        const autoVerify = settings.autoVerifyInstallers ?? true;
         return {
-            isVerified: true,
-            message: 'Aadhar verification successful. Your profile is now marked as verified.',
+            isVerified: autoVerify,
+            message: autoVerify ? 'Aadhar verification successful. Your profile is now marked as verified.' : 'Aadhar verification successful. Your profile is pending admin approval.',
             kycData: mockKycData,
         };
     }
@@ -242,3 +244,5 @@ export const confirmAadharVerification = ai.defineFlow(
     };
   }
 );
+
+    
