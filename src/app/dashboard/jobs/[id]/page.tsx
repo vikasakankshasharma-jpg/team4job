@@ -63,7 +63,7 @@ import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bid, Job, Comment, User, JobAttachment, PrivateMessage, Dispute, Transaction } from "@/lib/types";
+import { Bid, Job, Comment, User, JobAttachment, PrivateMessage, Dispute, Transaction, Invoice } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate, cn, validateMessageContent } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -129,23 +129,47 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
             throw new Error("Could not find a funded transaction for this job. Please contact support.");
         }
         const transactionDoc = querySnapshot.docs[0];
+        const transactionData = transactionDoc.data() as Transaction;
 
         // --- 3. Call backend to release the escrow ---
         await axios.post('/api/escrow/release-funds', {
             transactionId: transactionDoc.id,
         });
         
-        // --- 4. Update Job Status locally and in Firestore ---
+        // --- 4. Auto-generate invoice data ---
+        let invoiceData: Invoice | null = null;
+        if (job.isGstInvoiceRequired) {
+            const jobGiver = job.jobGiver as User;
+            const awardedInstaller = job.awardedInstaller as User;
+            invoiceData = {
+                id: `INV-${job.id}`,
+                jobId: job.id,
+                jobTitle: job.title,
+                date: new Date(),
+                amount: transactionData.amount,
+                from: {
+                    name: awardedInstaller.name,
+                    gstin: awardedInstaller.gstin || "Not Provided",
+                },
+                to: {
+                    name: jobGiver.name,
+                    gstin: jobGiver.gstin || "Not Provided",
+                },
+            };
+        }
+
+        // --- 5. Update Job Status and invoice data locally and in Firestore ---
         const updatedJobData: Partial<Job> = { 
             status: 'Completed', 
             rating: 5, // Default to 5-star rating, user can change later
-            attachments: arrayUnion(...uploadedAttachments) as any // Add completion proof to job attachments
+            attachments: arrayUnion(...uploadedAttachments) as any, // Add completion proof to job attachments
+            ...(invoiceData && { invoice: invoiceData }),
         };
         onJobUpdate(updatedJobData);
         
         toast({
           title: "Job Completed!",
-          description: "Payout has been initiated. You will receive a notification once it's processed.",
+          description: "Payout has been initiated and invoice has been generated. You will receive a notification once it's processed.",
           variant: 'success'
         });
 
