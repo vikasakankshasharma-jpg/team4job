@@ -488,27 +488,18 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
     const rankedInstallers = React.useMemo(() => {
         const now = new Date();
         const lastMonthDate = subMonths(now, 1);
-        const lastMonth = getMonth(lastMonthDate);
-        const lastMonthYear = getYear(lastMonthDate);
+        const lastMonthName = format(lastMonthDate, 'MMMM yyyy');
 
         const twoMonthsAgoDate = subMonths(now, 2);
-        const twoMonthsAgo = getMonth(twoMonthsAgoDate);
-        const twoMonthsAgoYear = getYear(twoMonthsAgoDate);
+        const twoMonthsAgoName = format(twoMonthsAgoDate, 'MMMM yyyy');
         
         return installers
             .filter(i => i.installerProfile)
             .map(installer => {
                 const history = installer.installerProfile?.reputationHistory || [];
-                const lastMonthEntry = history.find(h => {
-                    const [month, year] = h.month.split(' ');
-                    const monthIndex = new Date(Date.parse(month +" 1, 2012")).getMonth();
-                    return monthIndex === lastMonth && parseInt(year) === lastMonthYear;
-                });
-                const twoMonthsAgoEntry = history.find(h => {
-                     const [month, year] = h.month.split(' ');
-                    const monthIndex = new Date(Date.parse(month +" 1, 2012")).getMonth();
-                    return monthIndex === twoMonthsAgo && parseInt(year) === twoMonthsAgoYear;
-                });
+                
+                const lastMonthEntry = history.find(h => h.month === lastMonthName);
+                const twoMonthsAgoEntry = history.find(h => h.month === twoMonthsAgoName);
 
                 const lastMonthPoints = lastMonthEntry?.points || 0;
                 const twoMonthsAgoPoints = twoMonthsAgoEntry?.points || 0;
@@ -783,7 +774,7 @@ function AdminDashboard() {
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-            <TopPerformersCard installers={allUsers} />
+            <TopPerformersCard installers={allUsers.filter(u => u.installerProfile)} />
         </div>
         <Card>
             <CardHeader>
