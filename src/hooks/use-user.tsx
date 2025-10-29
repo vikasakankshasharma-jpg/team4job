@@ -46,6 +46,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   const updateUserState = useCallback((userData: User | null) => {
+    setLoading(true);
     setUser(userData);
     if (userData) {
       const storedRole = localStorage.getItem('userRole') as Role;
