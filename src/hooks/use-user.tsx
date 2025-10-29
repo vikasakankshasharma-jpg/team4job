@@ -109,7 +109,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
              }
            } else {
               const currentRetries = notFoundRetries.current.get(firebaseUser.uid) || 0;
-              if (currentRetries < 2) { // Increased retries
+              if (currentRetries < 3) { // Increased retries to 3
                   notFoundRetries.current.set(firebaseUser.uid, currentRetries + 1);
                   return; // Wait for next snapshot
               }
@@ -157,7 +157,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Role-based route protection
     const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids', '/dashboard/verify-installer'];
     const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs'];
-    const adminOnlyPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/settings'];
+    const adminOnlyPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/settings', '/dashboard/subscription-plans', '/dashboard/coupons', '/dashboard/blacklist'];
     
     const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
     const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
@@ -247,3 +247,5 @@ export function useUser() {
 
 // This is kept for non-hook usage, but useAuth and useFirestore are preferred.
 export { useFirebase, useAuth, useFirestore };
+
+    
