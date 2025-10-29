@@ -118,7 +118,7 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
     if (!user.payouts?.beneficiaryId) {
         toast({
             title: "Payout Account Not Setup",
-            description: "Please set up your bank account in your profile before completing a job.",
+            description: "Please set up your bank account in your profile before you can complete a job.",
             variant: "destructive",
         });
         return;
@@ -1253,7 +1253,7 @@ export default function JobDetailPage() {
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
   
   const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
-  const canCancelJob = isJobGiver && (job.status === 'Open for Bidding' || job.status === 'Bidding Closed');
+  const canCancelJob = isJobGiver && (job.status === 'Open for Bidding' || job.status === 'Bidding Closed' || job.status === 'In Progress');
   
   const identitiesRevealed = (job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' && job.status !== 'Awarded') || role === 'Admin';
   const showJobGiverRealIdentity = identitiesRevealed;
@@ -1629,12 +1629,14 @@ export default function JobDetailPage() {
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Are you sure you want to cancel this job?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This action cannot be undone. The job will be marked as "Cancelled" and will no longer be open for bidding. Installers who have already bid will be notified.
+                                    This action cannot be undone. 
+                                    {job.status === 'In Progress' && " This will terminate the contract with the current installer and the job will be archived. A refund may need to be processed manually if funds have been escrowed."}
+                                    {job.status !== 'In Progress' && " The job will be marked as 'Cancelled' and will no longer be open for bidding."}
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Back</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleCancelJob}>Confirm Cancellation</AlertDialogAction>
+                                <AlertDialogAction onClick={handleCancelJob} className={cn(buttonVariants({variant: "destructive"}))}>Confirm Cancellation</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -1648,3 +1650,6 @@ export default function JobDetailPage() {
   );
 }
 
+
+
+    
