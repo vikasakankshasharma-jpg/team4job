@@ -1481,10 +1481,21 @@ export default function JobDetailPage() {
             </div>
              <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5" />
-              <div>
+              <div className="flex-1">
                   <p className="text-muted-foreground">Work Starts</p>
                   <p className="font-semibold">{jobStartDate}</p>
               </div>
+              {isJobGiver && job.status === 'In Progress' && (
+                <EditDateDialog 
+                    job={job} 
+                    onJobUpdate={handleJobUpdate} 
+                    triggerElement={
+                        <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    }
+                />
+              )}
             </div>
             {role === 'Admin' ? (
               <Link href="#bids-section" className="flex items-center gap-3 cursor-pointer">
