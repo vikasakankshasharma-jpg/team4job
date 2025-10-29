@@ -18,18 +18,15 @@ export const useFcm = () => {
     
     // Ensure the service worker is ready
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/firebase-messaging-sw.js')
-            .then(registration => {
-                console.log('Service Worker registration successful with scope: ', registration.scope);
-                
-                // Request permission and get token only after service worker is ready
-                requestPermissionAndToken();
-            }).catch(err => {
-                console.log('Service Worker registration failed: ', err);
-            });
+        navigator.serviceWorker.ready.then(registration => {
+          console.log('Service Worker is active.');
+          requestPermissionAndToken(registration);
+        }).catch(err => {
+            console.log('Service Worker registration failed to become ready: ', err);
+        });
     }
 
-    const requestPermissionAndToken = async () => {
+    const requestPermissionAndToken = async (registration: ServiceWorkerRegistration) => {
         try {
             const messaging = getMessaging(app);
             const permission = await Notification.requestPermission();
@@ -40,13 +37,14 @@ export const useFcm = () => {
                 // Get the token
                 const currentToken = await getToken(messaging, {
                     vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+                    serviceWorkerRegistration: registration,
                 });
                 
                 if (currentToken) {
                     console.log('FCM Token:', currentToken);
                     
                     // Save the token to the user's document in Firestore
-                    if (user) {
+                    if (user && (!user.fcmTokens || !user.fcmTokens.includes(currentToken))) {
                         const userRef = doc(db, 'users', user.id);
                         await updateDoc(userRef, {
                             fcmTokens: arrayUnion(currentToken)
