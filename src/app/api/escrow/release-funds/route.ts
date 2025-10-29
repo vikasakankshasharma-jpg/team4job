@@ -1,4 +1,5 @@
 
+
 import { NextRequest, NextResponse } from 'next/server';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/server-init';
@@ -55,7 +56,8 @@ export async function POST(req: NextRequest) {
 
     const token = await getCashfreeBearerToken();
 
-    const payoutAmount = transaction.amount - transaction.commission;
+    // Use the pre-calculated payoutToInstaller amount from the transaction document
+    const payoutAmount = transaction.payoutToInstaller;
     const transferId = `PAYOUT_${transaction.id}`;
 
     // This is the "Easy Split" part. We are making a standard transfer,

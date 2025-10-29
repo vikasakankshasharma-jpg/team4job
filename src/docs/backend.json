@@ -351,11 +351,15 @@
       "description": "Represents a GST invoice uploaded by an installer for a completed job.",
       "type": "object",
       "properties": {
-        "fileName": { "type": "string" },
-        "fileUrl": { "type": "string", "format": "uri" },
-        "uploadedAt": { "type": "string", "format": "date-time" }
+        "id": { "type": "string" },
+        "jobId": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "amount": { "type": "number" },
+        "from": { "type": "object", "properties": { "name": { "type": "string"}, "gstin": { "type": "string"} } },
+        "to": { "type": "object", "properties": { "name": { "type": "string"}, "gstin": { "type": "string"} } }
       },
-      "required": ["fileName", "fileUrl", "uploadedAt"]
+      "required": ["id", "jobId", "jobTitle", "date", "amount", "from", "to"]
     },
     "Bid": {
       "title": "Bid",
@@ -552,7 +556,7 @@
     },
     "Transaction": {
       "title": "Transaction",
-      "description": "Represents a financial transaction for a job, using a Payment Gateway and Payout system.",
+      "description": "Represents a financial transaction for a job.",
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "Our internal unique ID for the transaction." },
@@ -560,26 +564,26 @@
         "jobTitle": { "type": "string" },
         "payerId": { "type": "string", "description": "The user ID of the Job Giver." },
         "payeeId": { "type": "string", "description": "The user ID of the Installer." },
-        "amount": { "type": "number" },
-        "commission": { "type": "number", "description": "The platform commission amount." },
+        "amount": { "type": "number", "description": "The original bid amount." },
+        "commission": { "type": "number", "description": "The platform commission amount taken from the installer." },
+        "jobGiverFee": { "type": "number", "description": "The fee charged to the job giver." },
+        "totalPaidByGiver": { "type": "number", "description": "The total amount charged to the job giver (amount + jobGiverFee)." },
+        "payoutToInstaller": { "type": "number", "description": "The net amount paid out to the installer (amount - commission)." },
         "status": {
           "type": "string",
           "enum": ["Initiated", "Funded", "Failed", "Released", "Refunded", "Disputed"]
         },
         "paymentGatewayOrderId": { "type": "string", "description": "The order ID from Cashfree Payments." },
         "paymentGatewaySessionId": { "type": "string", "description": "The session ID used to launch the Cashfree checkout." },
-        "escrowAccountId": { "type": "string", "description": "The ID of the Cashfree Escrow account for this transaction." },
-        "holdId": { "type": "string", "description": "The ID of the hold placed on the funds." },
-        "releaseId": { "type": "string", "description": "The ID of the release operation." },
         "payoutTransferId": { "type": "string", "description": "The transfer ID for the payout to the installer." },
         "refundTransferId": { "type": "string", "description": "The transfer ID for a refund to the job giver." },
-        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the transaction was initiated." },
-        "fundedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when payment was successfully captured by the gateway." },
-        "failedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the payment failed." },
-        "releasedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when funds were released to the installer via the payout system." },
-        "refundedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when funds were refunded to the job giver." }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "fundedAt": { "type": "string", "format": "date-time" },
+        "failedAt": { "type": "string", "format": "date-time" },
+        "releasedAt": { "type": "string", "format": "date-time" },
+        "refundedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "jobId", "payerId", "payeeId", "amount", "commission", "status", "createdAt"]
+      "required": ["id", "jobId", "payerId", "payeeId", "amount", "commission", "jobGiverFee", "totalPaidByGiver", "payoutToInstaller", "status", "createdAt"]
     },
     "PlatformSettings": {
         "title": "Platform Settings",

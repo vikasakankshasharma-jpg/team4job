@@ -1,4 +1,5 @@
 
+
 import { NextRequest, NextResponse } from 'next/server';
 import { doc, getDoc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/server-init';
@@ -18,11 +19,6 @@ async function getPlatformSettings(): Promise<PlatformSettings> {
     return {
         installerCommissionRate: 10,
         jobGiverFeeRate: 2,
-        proInstallerPlanPrice: 2999,
-        businessJobGiverPlanPrice: 4999,
-        bidBundle10: 500,
-        bidBundle25: 1100,
-        bidBundle50: 2000,
         defaultTrialPeriodDays: 30,
         freeBidsForNewInstallers: 10,
         freePostsForNewJobGivers: 3,
@@ -59,12 +55,16 @@ export async function POST(req: NextRequest) {
     const jobGiver = jobGiverSnap.data() as User;
     const installer = installerSnap.data() as User;
 
-    // 2. Create a new Transaction document in Firestore
+    // 2. Calculate fees and final amounts based on platform settings
+    const platformSettings = await getPlatformSettings();
+    const installerCommission = amount * (platformSettings.installerCommissionRate / 100);
+    const jobGiverFee = amount * (platformSettings.jobGiverFeeRate / 100);
+    const totalPaidByGiver = amount + jobGiverFee;
+    const payoutToInstaller = amount - installerCommission;
+
+    // 3. Create a new Transaction document in Firestore
     const transactionId = `TXN-${jobId}-${Date.now()}`;
     const transactionRef = doc(db, 'transactions', transactionId);
-
-    const platformSettings = await getPlatformSettings();
-    const commission = amount * (platformSettings.installerCommissionRate / 100);
 
     const newTransaction: Transaction = {
         id: transactionId,
@@ -72,19 +72,21 @@ export async function POST(req: NextRequest) {
         jobTitle,
         payerId: jobGiverId,
         payeeId: installerId,
-        amount,
-        commission,
+        amount, // Original bid amount
+        commission: installerCommission,
+        jobGiverFee: jobGiverFee,
+        totalPaidByGiver: totalPaidByGiver,
+        payoutToInstaller: payoutToInstaller,
         status: 'Initiated',
         createdAt: Timestamp.now(),
     };
     
-    // IMPORTANT: Create the transaction record BEFORE creating the payment order
     await setDoc(transactionRef, newTransaction);
     
-    // 3. Create an order with Cashfree, using our transactionId as the order_id
+    // 4. Create an order with Cashfree for the total amount to be paid by the Job Giver
     const orderPayload = {
         order_id: transactionId,
-        order_amount: amount,
+        order_amount: totalPaidByGiver,
         order_currency: 'INR',
         customer_details: {
             customer_id: jobGiverId,
@@ -93,10 +95,9 @@ export async function POST(req: NextRequest) {
             customer_name: jobGiver.name,
         },
         order_meta: {
-            // This URL is where Cashfree will redirect the user after payment
             return_url: `https://cctv-job-connect.web.app/dashboard/jobs/${jobId}?payment_status=success&order_id={order_id}`,
         },
-        order_note: `Payment for job: ${jobTitle}`
+        order_note: `Payment for job: ${jobTitle} (Includes platform fee)`
     };
 
     const response = await axios.post(
@@ -114,14 +115,13 @@ export async function POST(req: NextRequest) {
     
     const paymentSessionId = response.data.payment_session_id;
 
-    // 4. Update our transaction document with the Cashfree order ID and session ID
-    // Note: The order_id from cashfree will be the same as our transactionId
+    // 5. Update our transaction document with the Cashfree order ID and session ID
     await updateDoc(transactionRef, {
         paymentGatewayOrderId: response.data.order_id,
         paymentGatewaySessionId: paymentSessionId,
     });
     
-    // 5. Return the session ID to the frontend to launch checkout
+    // 6. Return the session ID to the frontend to launch checkout
     return NextResponse.json({ payment_session_id: paymentSessionId });
 
   } catch (error: any) {

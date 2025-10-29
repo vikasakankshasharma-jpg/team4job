@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -292,7 +293,7 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
         <div className="grid gap-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Platform Commission Rates</CardTitle>
+                    <CardTitle>Platform Commission & Fee Rates</CardTitle>
                     <CardDescription>Configure platform revenue from commissions and job fees.</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -300,19 +301,19 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
                         <div className="space-y-2">
                             <Label htmlFor="installerCommissionRate">Installer Commission Rate (%)</Label>
                             <Input id="installerCommissionRate" type="number" value={settings.installerCommissionRate} onChange={handleInputChange} min="0" max="100"/>
-                            <p className="text-xs text-muted-foreground">The percentage taken from the installer's earnings.</p>
+                            <p className="text-xs text-muted-foreground">The percentage taken from the installer's earnings for a job.</p>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="jobGiverFeeRate">Job Giver Fee Rate (%)</Label>
                             <Input id="jobGiverFeeRate" type="number" value={settings.jobGiverFeeRate} onChange={handleInputChange} min="0" max="100"/>
-                            <p className="text-xs text-muted-foreground">The percentage charged to the job giver on the bid amount.</p>
+                            <p className="text-xs text-muted-foreground">A percentage of the job amount charged to the job giver as a convenience fee.</p>
                         </div>
                     </div>
                 </CardContent>
                  <CardFooter>
                     <Button onClick={handleSave} disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Commissions
+                        Save Fees & Commissions
                     </Button>
                 </CardFooter>
             </Card>
