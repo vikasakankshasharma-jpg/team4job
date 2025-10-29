@@ -2,17 +2,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { doc, updateDoc, getDocs, collection, query, where, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/server-init';
+import { verifyWebhookSignature } from '@/lib/cashfree-utils';
 
 /**
  * This webhook endpoint handles real-time notifications from Cashfree for both Payments and Payouts.
  */
 export async function POST(req: NextRequest) {
   try {
-    const data = await req.json();
+    const rawBody = await req.text();
+    const data = JSON.parse(rawBody);
     console.log('Received Cashfree webhook:', JSON.stringify(data, null, 2));
 
-    // In production, you MUST verify the webhook signature to ensure it's from Cashfree.
-    // For this demo, we are skipping signature verification.
+    const signature = req.headers.get('x-webhook-signature');
+    const timestamp = req.headers.get('x-webhook-timestamp');
+
+    if (!signature || !timestamp) {
+        console.error('Webhook signature or timestamp missing.');
+        return NextResponse.json({ status: 'error', message: 'Signature missing' }, { status: 400 });
+    }
+
+    // --- Verify Webhook Signature ---
+    const isValid = verifyWebhookSignature(rawBody, signature, timestamp);
+    if (!isValid) {
+        console.error('Invalid webhook signature.');
+        return NextResponse.json({ status: 'error', message: 'Invalid signature' }, { status: 403 });
+    }
     
     // --- Distinguish between Payments and Payouts webhooks ---
     
@@ -58,7 +72,7 @@ export async function POST(req: NextRequest) {
         
         // A transfer can be a payout or a refund, so we check both fields.
         const q = query(collection(db, 'transactions'), 
-          where(transferId.startsWith('REFUND') ? 'refundTransferId' : 'payoutTransferId', '==', transferId)
+          where(transferId.startsWith('REFUND_') ? 'refundTransferId' : 'payoutTransferId', '==', transferId)
         );
         const querySnapshot = await getDocs(q);
 
@@ -70,7 +84,7 @@ export async function POST(req: NextRequest) {
         const transactionDoc = querySnapshot.docs[0];
 
         if (event === 'transfer_success') {
-            const isRefund = transferId.startsWith('REFUND');
+            const isRefund = transferId.startsWith('REFUND_');
             await updateDoc(transactionDoc.ref, {
                 status: isRefund ? 'Refunded' : 'Released',
                 [isRefund ? 'refundedAt' : 'releasedAt']: Timestamp.now(),
