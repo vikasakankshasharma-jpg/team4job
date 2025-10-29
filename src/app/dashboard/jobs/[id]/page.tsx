@@ -1103,11 +1103,12 @@ export default function JobDetailPage() {
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
   
   const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
-  const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || role === 'Job Giver' || role === 'Admin');
   
   const identitiesRevealed = (job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' && job.status !== 'Awarded') || role === 'Admin';
   const showJobGiverRealIdentity = identitiesRevealed;
-  const canUsePrivateMessages = identitiesRevealed && (isJobGiver || isAwardedInstaller || role === 'Admin');
+  
+  const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || isJobGiver || role === 'Admin');
+  const canUsePrivateMessages = (job.status === 'In Progress' || job.status === 'Completed') && (isJobGiver || isAwardedInstaller || role === 'Admin');
 
   const showInstallerAcceptance = isAwardedInstaller && job.status === 'Awarded';
 
@@ -1248,17 +1249,18 @@ export default function JobDetailPage() {
                     {(job.comments || []).map((comment) => {
                         const author = comment.author as User;
                         const authorId = author.id;
-                        let authorName = "Installer";
-                        let authorAvatar = author.avatarUrl;
+                        let authorName: string;
+                        let authorAvatar: string | undefined;
 
                         if (authorId === jobGiver.id) {
                             authorName = "Job Giver";
                             authorAvatar = jobGiver.avatarUrl;
                         } else {
                             authorName = anonymousIdMap.get(authorId) || `Bidder-?`;
+                            authorAvatar = author.avatarUrl;
                         }
                         
-                        return <CommentDisplay key={comment.id} comment={comment} authorName={authorName} authorAvatar={authorAvatar}/>;
+                        return <CommentDisplay key={comment.id || authorId + comment.timestamp} comment={comment} authorName={authorName} authorAvatar={authorAvatar}/>;
                     })}
                     {canPostPublicComment && (
                          <div className="flex gap-3">
@@ -1405,5 +1407,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-      

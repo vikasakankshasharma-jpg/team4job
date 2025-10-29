@@ -63,88 +63,104 @@ async function sendNotification(userId: string, title: string, body: string, lin
 
 
 /**
- * Triggered when a new bid is created or a job status changes.
+ * Triggered when a new bid is created on a job.
+ * Notifies the Job Giver about the new bid.
  */
-export const onJobUpdate = functions.firestore
+export const onBidCreated = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+        const beforeData = change.before.data();
+        const afterData = change.after.data();
+
+        const oldBidsCount = beforeData.bids?.length || 0;
+        const newBidsCount = afterData.bids?.length || 0;
+
+        // If a new bid was added
+        if (newBidsCount > oldBidsCount) {
+            const newBid = afterData.bids[newBidsCount - 1];
+            const jobGiverId = afterData.jobGiver.id;
+            
+            if (newBid.installer && typeof newBid.installer.get === 'function') {
+              const installerDoc = await newBid.installer.get();
+              const installerName = installerDoc.data()?.name || "An installer";
+
+              await sendNotification(
+                  jobGiverId,
+                  "New Bid on Your Job!",
+                  `${installerName} placed a bid of ₹${newBid.amount} on your job: "${afterData.title}"`,
+                  `/dashboard/jobs/${context.params.jobId}`
+              );
+            }
+        }
+    });
+
+/**
+ * Triggered when a job's status changes.
+ */
+export const onJobStatusChange = functions.firestore
     .document("jobs/{jobId}")
     .onUpdate(async (change, context) => {
         const beforeData = change.before.data();
         const afterData = change.after.data();
         const jobId = context.params.jobId;
 
-        // 1. New Bid Notification
-        const oldBidsCount = beforeData.bids?.length || 0;
-        const newBidsCount = afterData.bids?.length || 0;
+        if (beforeData.status === afterData.status) {
+            return; // No status change
+        }
 
-        if (newBidsCount > oldBidsCount) {
-            const newBid = afterData.bids[newBidsCount - 1];
-            const jobGiverId = afterData.jobGiver.id;
-            
-            // This assumes the installer object is a DocumentReference
-            if (newBid.installer && typeof newBid.installer.get === 'function') {
-                const installerDoc = await newBid.installer.get();
-                const installerName = installerDoc.data()?.name || "An installer";
+        const jobGiverId = afterData.jobGiver.id;
+        const awardedInstallerId = afterData.awardedInstaller?.id;
+        const jobTitle = afterData.title;
 
+        // To Installer: Job Awarded
+        if (afterData.status === 'Awarded' && beforeData.status !== 'Awarded' && awardedInstallerId) {
+            await sendNotification(
+                awardedInstallerId,
+                "You've Been Awarded a Job!",
+                `Congratulations! You have been awarded the job: "${jobTitle}". You have 24 hours to accept.`,
+                `/dashboard/jobs/${jobId}`
+            );
+        }
+
+        // To Job Giver: Job Accepted
+        if (afterData.status === 'In Progress' && beforeData.status === 'Awarded') {
+            if (afterData.awardedInstaller && typeof afterData.awardedInstaller.get === 'function') {
+                const installerDoc = await afterData.awardedInstaller.get();
+                const installerName = installerDoc.data()?.name || "The installer";
                 await sendNotification(
                     jobGiverId,
-                    "New Bid on Your Job!",
-                    `${installerName} placed a bid of ₹${newBid.amount} on your job: "${afterData.title}"`,
+                    "Job Accepted!",
+                    `${installerName} has accepted the job: "${jobTitle}". Work can now begin.`,
                     `/dashboard/jobs/${jobId}`
                 );
             }
         }
 
-        // 2. Job Status Change Notifications
-        if (beforeData.status !== afterData.status) {
-            const jobGiverId = afterData.jobGiver.id;
-            const awardedInstallerId = afterData.awardedInstaller?.id;
-            const jobTitle = afterData.title;
-
-            // --- To Installer ---
-            if (afterData.status === 'Awarded' && awardedInstallerId) {
-                await sendNotification(
-                    awardedInstallerId,
-                    "You've Been Awarded a Job!",
-                    `Congratulations! You have been awarded the job: "${jobTitle}". You have 24 hours to accept.`,
-                    `/dashboard/jobs/${jobId}`
-                );
-            }
-            
-            // --- To Job Giver ---
-            if (afterData.status === 'In Progress' && beforeData.status === 'Awarded') {
-                 if (afterData.awardedInstaller && typeof afterData.awardedInstaller.get === 'function') {
-                    const installerDoc = await afterData.awardedInstaller.get();
-                    const installerName = installerDoc.data()?.name || "The installer";
-                    await sendNotification(
-                        jobGiverId,
-                        "Job Accepted!",
-                        `${installerName} has accepted the job: "${jobTitle}". Work can now begin.`,
-                        `/dashboard/jobs/${jobId}`
-                    );
-                }
-            }
-             if (afterData.status === 'Open for Bidding' && beforeData.status === 'Awarded') {
-                 if (beforeData.awardedInstaller && typeof beforeData.awardedInstaller.get === 'function') {
-                    const installerDoc = await beforeData.awardedInstaller.get();
-                    const installerName = installerDoc.data()?.name || "The installer";
-                    await sendNotification(
-                        jobGiverId,
-                        "Job Declined",
-                        `${installerName} has declined the job: "${jobTitle}". You can now award it to another installer.`,
-                        `/dashboard/jobs/${jobId}`
-                    );
-                }
-            }
-             if (afterData.status === 'Completed' && beforeData.status !== 'Completed') {
+        // To Job Giver: Job Declined
+        if (afterData.status === 'Open for Bidding' && beforeData.status === 'Awarded') {
+            if (beforeData.awardedInstaller && typeof beforeData.awardedInstaller.get === 'function') {
+                const installerDoc = await beforeData.awardedInstaller.get();
+                const installerName = installerDoc.data()?.name || "The installer";
                 await sendNotification(
                     jobGiverId,
-                    "Job Marked as Complete",
-                    `The job "${jobTitle}" has been marked as complete by the installer. Please provide a rating.`,
+                    "Job Declined",
+                    `${installerName} has declined the job: "${jobTitle}". You can now award it to another installer.`,
                     `/dashboard/jobs/${jobId}`
                 );
             }
+        }
+
+        // To Job Giver: Job Completed
+        if (afterData.status === 'Completed' && beforeData.status !== 'Completed') {
+            await sendNotification(
+                jobGiverId,
+                "Job Marked as Complete",
+                `The job "${jobTitle}" has been marked as complete by the installer. Please provide a rating.`,
+                `/dashboard/jobs/${jobId}`
+            );
         }
     });
+
 
 /**
  * Triggered when a new private message is added to a job.

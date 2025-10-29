@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -18,190 +19,24 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Loader2, PlusCircle, UserCog, MoreHorizontal, Trash2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Loader2, UserCog, MoreHorizontal } from "lucide-react";
 import { useUser, useFirebase } from "@/hooks/use-user";
-import { User, Role } from "@/lib/types";
+import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import React, { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
 import {
   collection,
   getDocs,
-  doc,
-  setDoc,
-  deleteDoc,
   query,
   where,
   or
 } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useHelp } from "@/hooks/use-help";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { ShieldCheck } from "lucide-react";
 
-const teamMemberSchema = z.object({
-  name: z.string().min(2, "Name is required."),
-  email: z.string().email("Invalid email address."),
-  role: z.enum(["Admin", "Support Team"]),
-});
-
-function CreateTeamMemberForm({ onSave }: { onSave: () => void }) {
-  const { db } = useFirebase();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-
-  const form = useForm<z.infer<typeof teamMemberSchema>>({
-    resolver: zodResolver(teamMemberSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      role: "Support Team",
-    },
-  });
-
-  async function onSubmit(values: z.infer<typeof teamMemberSchema>) {
-    setIsSubmitting(true);
-    const tempPassword = Math.random().toString(36).slice(-8);
-
-    try {
-        // This is a temporary auth instance for creating users.
-        // In a real app, this should be done via a secure backend function.
-        const auth = getAuth();
-        const userCredential = await createUserWithEmailAndPassword(auth, values.email, tempPassword);
-        const firebaseUser = userCredential.user;
-
-        const newUser: Omit<User, 'id'> = {
-            name: values.name,
-            email: values.email.toLowerCase(),
-            mobile: '0000000000', // Placeholder
-            roles: [values.role],
-            status: 'active',
-            memberSince: new Date(),
-            avatarUrl: PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)].imageUrl,
-            pincodes: { residential: '000000' },
-            address: { house: '', street: '', cityPincode: '000000,' },
-        };
-        
-        await setDoc(doc(db, "users", firebaseUser.uid), { ...newUser, id: firebaseUser.uid });
-
-      toast({
-        title: "Team Member Account Created",
-        description: `An account for ${values.name} has been created. They will need to reset their password.`,
-      });
-      form.reset();
-      onSave();
-      setIsOpen(false);
-    } catch (e: any) {
-      console.error(e);
-      toast({
-        title: "Error Creating Team Member",
-        description: e.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add New Team Member
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Create Team Member Account</DialogTitle>
-          <DialogDescription>
-            This will create a new user with the selected administrative role.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Jane Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., jane.doe@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Support Team">Support Team</SelectItem>
-                      <SelectItem value="Admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <DialogFooter>
-                <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Account
-                </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 export default function TeamManagementPage() {
   const { user, isAdmin, loading: userLoading } = useUser();
@@ -209,7 +44,6 @@ export default function TeamManagementPage() {
   const router = useRouter();
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
   const { setHelp } = useHelp();
   
   React.useEffect(() => {
@@ -219,14 +53,14 @@ export default function TeamManagementPage() {
             <div className="space-y-4 text-sm">
                 <p>This page is where you, as a primary admin, can manage your administrative team.</p>
                 <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Add Team Member:</span> Click the button to create a new account for a staff member. You can assign them the "Admin" or "Support Team" role.</li>
+                    <li><span className="font-semibold">Add Team Member:</span> To add a new team member, you must create an account for them directly in the Firebase Authentication console. Assign them an "Admin" or "Support Team" role in their Firestore user document.</li>
                     <li><span className="font-semibold">Roles:</span>
                         <ul className="list-disc space-y-1 pl-5 mt-1">
                              <li><span className="font-semibold">Admin:</span> Has full access to all platform features.</li>
                             <li><span className="font-semibold">Support Team:</span> Has limited access, focused primarily on managing disputes.</li>
                         </ul>
                     </li>
-                     <li><span className="font-semibold">Manage Accounts:</span> You can remove a team member's account using the actions menu on each row.</li>
+                     <li><span className="font-semibold">Manage Accounts:</span> You can view team member details by clicking on their name. Account deletion must be handled in the Firebase Console for security reasons.</li>
                 </ul>
             </div>
         )
@@ -255,23 +89,6 @@ export default function TeamManagementPage() {
     }
   }, [isAdmin, userLoading, user, router, fetchTeamMembers]);
 
-  const handleRemove = async (teamMember: User) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to remove ${teamMember.name}? This will permanently delete their account.`
-      )
-    ) return;
-    
-    // This is a placeholder for a secure backend function to delete a user.
-    await deleteDoc(doc(db, "users", teamMember.id));
-    
-    toast({
-      title: "Team Member Removed",
-      description: `${teamMember.name} has been removed from the platform.`,
-      variant: "destructive"
-    });
-    fetchTeamMembers();
-  };
 
   if (userLoading || !isAdmin) {
     return (
@@ -287,12 +104,18 @@ export default function TeamManagementPage() {
         <div>
           <CardTitle className="flex items-center gap-2"><UserCog /> Team Management</CardTitle>
           <CardDescription>
-            Create and manage accounts for your administrative and support team.
+            A list of all administrative and support team members.
           </CardDescription>
         </div>
-        <CreateTeamMemberForm onSave={fetchTeamMembers} />
       </CardHeader>
       <CardContent>
+        <Alert className="mb-6">
+            <ShieldCheck className="h-4 w-4" />
+            <AlertTitle>Security Update</AlertTitle>
+            <AlertDescription>
+                To enhance platform security, new team members must now be created directly in the Firebase Console. This ensures that only authorized administrators can add new administrative accounts.
+            </AlertDescription>
+        </Alert>
         <Table>
           <TableHeader>
             <TableRow>
@@ -315,7 +138,9 @@ export default function TeamManagementPage() {
             ) : teamMembers.length > 0 ? (
               teamMembers.map((teamMember) => (
                 <TableRow key={teamMember.id}>
-                  <TableCell className="font-medium">{teamMember.name}</TableCell>
+                  <TableCell className="font-medium">
+                     <Link href={`/dashboard/users/${teamMember.id}`} className="hover:underline">{teamMember.name}</Link>
+                  </TableCell>
                   <TableCell>{teamMember.email}</TableCell>
                   <TableCell>
                      {teamMember.roles.map(r => {
@@ -327,32 +152,18 @@ export default function TeamManagementPage() {
                   </TableCell>
                   <TableCell>{format(toDate(teamMember.memberSince), "PP")}</TableCell>
                   <TableCell>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                    <Button asChild variant="ghost" size="icon">
+                        <Link href={`/dashboard/users/${teamMember.id}`}>
                           <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                          <DialogHeader>
-                              <DialogTitle>Manage {teamMember.name}</DialogTitle>
-                          </DialogHeader>
-                          <DialogFooter className="flex-col gap-2 sm:flex-col sm:justify-start">
-                             <Button onClick={() => handleRemove(teamMember)} variant="destructive">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Remove Team Member
-                             </Button>
-                             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                          </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                        </Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
-                  No team members found.
+                  No other team members found.
                 </TableCell>
               </TableRow>
             )}
