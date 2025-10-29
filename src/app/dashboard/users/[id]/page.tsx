@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit, UserX, UserCheck, Loader2, Ban, Trash2, Gauge, Clock, MessageSquare } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit, UserX, UserCheck, Loader2, Ban, Trash2, Gauge, Clock, MessageSquare, Copy } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, PolarGrid, PolarAngleAxis, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
@@ -427,6 +427,7 @@ export default function UserProfilePage() {
   const { user: authUser, isAdmin } = useAuthUser();
   const id = params.id as string;
   const { db } = useFirebase();
+  const { toast } = useToast();
 
   const [profileUser, setProfileUser] = React.useState<User | null | undefined>(undefined);
   const [userPostedJobs, setUserPostedJobs] = React.useState<Job[]>([]);
@@ -534,6 +535,14 @@ export default function UserProfilePage() {
     }
   }
 
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(userId);
+    toast({
+        title: "User ID Copied!",
+        description: "The user's public ID has been copied to your clipboard.",
+    });
+  }
+
   return (
     <div className="grid gap-8">
       <Card>
@@ -555,7 +564,10 @@ export default function UserProfilePage() {
                  {installerProfile?.verified && <Badge variant="secondary" className="gap-1 pl-2 font-normal"><ShieldCheck className="h-4 w-4 text-green-600"/> Verified</Badge>}
               </div>
                <div className="flex flex-col mt-2">
-                <p className="text-muted-foreground font-mono">{userId}</p>
+                 <div className="flex items-center gap-2">
+                    <p className="text-muted-foreground font-mono truncate max-w-sm">{userId}</p>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyId}><Copy className="h-4 w-4" /></Button>
+                 </div>
                 {suspensionEndDate && status === 'suspended' && (
                   <p className="text-sm text-destructive font-medium">Suspension ends: {format(toDate(suspensionEndDate), "PP")}</p>
                 )}
