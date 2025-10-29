@@ -1,4 +1,5 @@
 
+
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {
@@ -84,9 +85,19 @@ export type JobAttachment = {
 };
 
 export type Invoice = {
-  fileName: string;
-  fileUrl: string;
-  uploadedAt: Date | Timestamp;
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  date: Date | Timestamp;
+  amount: number;
+  from: {
+    name: string;
+    gstin: string;
+  };
+  to: {
+    name: string;
+    gstin: string;
+  };
 }
 
 export type Job = {
