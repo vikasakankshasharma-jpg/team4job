@@ -28,6 +28,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
+import {
   Calendar,
   Clock,
   IndianRupee,
@@ -58,6 +70,7 @@ import {
   ThumbsDown,
   Archive,
   FileText,
+  Ban,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -501,7 +514,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings }: {
                    <div className="flex-1 space-y-1">
                         <div className="flex justify-between text-sm"><span>Bid Amount:</span> <span className="font-medium">₹{bid.amount.toLocaleString()}</span></div>
                         <div className="flex justify-between text-sm text-muted-foreground"><span>Platform Fee ({feeRate}%):</span> <span className="font-medium">+ ₹{feeAmount.toLocaleString()}</span></div>
-                        <Separator />
+                        <Separator className="my-1"/>
                         <div className="flex justify-between font-bold"><span>Total Payable:</span> <span>₹{totalPayable.toLocaleString()}</span></div>
                    </div>
                    <Button size="sm" onClick={handleAwardJob} disabled={isFunding} className="w-full md:w-auto">
@@ -1165,6 +1178,15 @@ export default function JobDetailPage() {
     });
   };
 
+  const handleCancelJob = async () => {
+      await handleJobUpdate({ status: 'Cancelled' });
+      toast({
+          title: "Job Cancelled",
+          description: "This job has been cancelled and is no longer active.",
+          variant: "destructive"
+      });
+  }
+
   if (loading) {
     return <PageSkeleton />;
   }
@@ -1179,6 +1201,7 @@ export default function JobDetailPage() {
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
   
   const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
+  const canCancelJob = isJobGiver && (job.status === 'Open for Bidding' || job.status === 'Bidding Closed');
   
   const identitiesRevealed = (job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' && job.status !== 'Awarded') || role === 'Admin';
   const showJobGiverRealIdentity = identitiesRevealed;
@@ -1497,7 +1520,8 @@ export default function JobDetailPage() {
                 </div>
              )}
           </CardContent>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 border-t">
+              <div className="space-y-2">
                 {job.status === 'Completed' && job.invoice && (
                     <Button asChild className="w-full">
                         <Link href={`/dashboard/jobs/${job.id}/invoice`}>
@@ -1521,6 +1545,29 @@ export default function JobDetailPage() {
                        </Link>
                    </Button>
                 )}
+                {canCancelJob && (
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                             <Button variant="destructive" className="w-full">
+                                <Ban className="mr-2 h-4 w-4" />
+                                Cancel Job
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure you want to cancel this job?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. The job will be marked as "Cancelled" and will no longer be open for bidding. Installers who have already bid will be notified.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Back</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleCancelJob}>Confirm Cancellation</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
+              </div>
           </CardContent>
         </Card>
         
