@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, MoreHorizontal } from "lucide-react";
+import { PlusCircle, Loader2, MoreHorizontal, Grid, List } from "lucide-react";
 import React, { useState } from "react";
 import { useFirebase } from "@/hooks/use-user";
 import { SubscriptionPlan } from "@/lib/types";
@@ -245,6 +245,7 @@ function PlanForm({ plan, onSave }: { plan?: SubscriptionPlan, onSave: () => voi
 export default function SubscriptionPlansSettings({ plans, onDataChange }: { plans: SubscriptionPlan[], onDataChange: () => void }) {
   const { db } = useFirebase();
   const { toast } = useToast();
+  const [view, setView] = React.useState<'list' | 'grid'>('list');
 
   const handleDelete = async (plan: SubscriptionPlan) => {
     if (!window.confirm(`Are you sure you want to delete the plan "${plan.name}"? This is a destructive action.`)) return;
@@ -313,11 +314,20 @@ export default function SubscriptionPlansSettings({ plans, onDataChange }: { pla
             Manage the subscription plans available to your users.
           </CardDescription>
         </div>
-        <PlanForm onSave={onDataChange} />
+        <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
+                <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
+                    <List className="h-4 w-4" />
+                </Button>
+                <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
+                    <Grid className="h-4 w-4" />
+                </Button>
+            </div>
+            <PlanForm onSave={onDataChange} />
+        </div>
       </CardHeader>
       <CardContent>
-        {/* Desktop Table View */}
-        <div className="hidden lg:block">
+        {view === 'list' ? (
             <Table>
             <TableHeader>
                 <TableRow>
@@ -374,17 +384,17 @@ export default function SubscriptionPlansSettings({ plans, onDataChange }: { pla
                 )}
             </TableBody>
             </Table>
-        </div>
-        {/* Mobile Card View */}
-        <div className="grid gap-4 md:grid-cols-2 lg:hidden">
-             {plans.length > 0 ? (
-              plans.map((plan) => <PlanCard key={plan.id} plan={plan} />)
-            ) : (
-                <div className="col-span-full text-center py-10 text-muted-foreground">
-                    No subscription plans found.
-                </div>
-            )}
-        </div>
+        ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                 {plans.length > 0 ? (
+                  plans.map((plan) => <PlanCard key={plan.id} plan={plan} />)
+                ) : (
+                    <div className="col-span-full text-center py-10 text-muted-foreground">
+                        No subscription plans found.
+                    </div>
+                )}
+            </div>
+        )}
       </CardContent>
     </Card>
   );

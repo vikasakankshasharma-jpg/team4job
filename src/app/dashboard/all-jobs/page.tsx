@@ -33,7 +33,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { Calendar as CalendarIcon, X, ArrowUpDown, Loader2, Download } from "lucide-react";
+import { Calendar as CalendarIcon, X, ArrowUpDown, Loader2, Download, List, Grid } from "lucide-react";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn, exportToCsv } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -116,6 +116,7 @@ export default function AllJobsPage() {
   const [allStatuses, setAllStatuses] = React.useState<string[]>([]);
   const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'postedAt', direction: 'descending' });
   const { setHelp } = useHelp();
+  const [view, setView] = React.useState<'list' | 'grid'>('list');
 
   React.useEffect(() => {
     setHelp({
@@ -351,10 +352,20 @@ export default function AllJobsPage() {
             <CardTitle>All Jobs</CardTitle>
             <CardDescription>A list of all jobs created on the platform. Click on a job to view details.</CardDescription>
         </div>
-        <Button onClick={handleExport} variant="outline" size="sm">
-            <Download className="mr-2 h-4 w-4" />
-            Export to CSV
-        </Button>
+         <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
+                <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
+                    <List className="h-4 w-4" />
+                </Button>
+                <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
+                    <Grid className="h-4 w-4" />
+                </Button>
+            </div>
+            <Button onClick={handleExport} variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                Export to CSV
+            </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {/* Filters Section - visible on all screen sizes */}
@@ -430,8 +441,7 @@ export default function AllJobsPage() {
             </div>
         </div>
 
-        {/* Desktop Table View */}
-        <div className="hidden lg:block">
+        {view === 'list' && (
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -515,22 +525,23 @@ export default function AllJobsPage() {
                 )}
               </TableBody>
             </Table>
-        </div>
+        )}
 
-         {/* Mobile Card View */}
-         <div className="block lg:hidden">
-            {loading ? (
-                <div className="text-center py-10 text-muted-foreground">Loading jobs...</div>
-            ) : filteredAndSortedJobs.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {filteredAndSortedJobs.map((job) => (
-                        <JobCard key={job.id} job={job} onRowClick={handleRowClick} />
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-10 text-muted-foreground">No jobs found for your search.</div>
-            )}
-         </div>
+         {view === 'grid' && (
+             <div>
+                {loading ? (
+                    <div className="text-center py-10 text-muted-foreground">Loading jobs...</div>
+                ) : filteredAndSortedJobs.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredAndSortedJobs.map((job) => (
+                            <JobCard key={job.id} job={job} onRowClick={handleRowClick} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-10 text-muted-foreground">No jobs found for your search.</div>
+                )}
+             </div>
+         )}
       </CardContent>
     </Card>
   );

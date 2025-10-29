@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Loader2, MoreHorizontal } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, MoreHorizontal, List, Grid } from "lucide-react";
 import React, { useState } from "react";
 import { useFirebase } from "@/hooks/use-user";
 import { Coupon } from "@/lib/types";
@@ -303,6 +303,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
 export default function CouponsSettings({ coupons, onDataChange }: { coupons: Coupon[], onDataChange: () => void }) {
   const { db } = useFirebase();
   const { toast } = useToast();
+  const [view, setView] = React.useState<'list' | 'grid'>('list');
 
   const handleDelete = async (code: string) => {
     if (!window.confirm(`Are you sure you want to delete coupon "${code}"? This cannot be undone.`)) return;
@@ -399,11 +400,20 @@ export default function CouponsSettings({ coupons, onDataChange }: { coupons: Co
             Create and manage promotional coupon codes for your users.
           </CardDescription>
         </div>
-        <CouponForm onSave={onDataChange} />
+        <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
+                <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
+                    <List className="h-4 w-4" />
+                </Button>
+                <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
+                    <Grid className="h-4 w-4" />
+                </Button>
+            </div>
+            <CouponForm onSave={onDataChange} />
+        </div>
       </CardHeader>
       <CardContent>
-        {/* Desktop Table View */}
-        <div className="hidden lg:block">
+        {view === 'list' ? (
             <Table>
             <TableHeader>
                 <TableRow>
@@ -469,18 +479,17 @@ export default function CouponsSettings({ coupons, onDataChange }: { coupons: Co
                 )}
             </TableBody>
             </Table>
-        </div>
-
-         {/* Mobile Card View */}
-         <div className="grid gap-4 md:grid-cols-2 lg:hidden">
-            {coupons.length > 0 ? (
-                coupons.map((coupon) => <CouponCard key={coupon.code} coupon={coupon} />)
-            ) : (
-                <div className="col-span-full text-center py-10 text-muted-foreground">
-                    No coupons found.
-                </div>
-            )}
-        </div>
+        ) : (
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {coupons.length > 0 ? (
+                    coupons.map((coupon) => <CouponCard key={coupon.code} coupon={coupon} />)
+                ) : (
+                    <div className="col-span-full text-center py-10 text-muted-foreground">
+                        No coupons found.
+                    </div>
+                )}
+            </div>
+        )}
       </CardContent>
     </Card>
   );
