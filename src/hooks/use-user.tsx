@@ -46,7 +46,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   const updateUserState = useCallback((userData: User | null) => {
-    setLoading(true);
     setUser(userData);
     if (userData) {
       const storedRole = localStorage.getItem('userRole') as Role;
@@ -86,6 +85,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      setLoading(true);
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
@@ -157,7 +157,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Role-based route protection
     const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids', '/dashboard/verify-installer'];
     const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs'];
-    const adminOnlyPaths = ['/dashboard/users', '/dashboard/coupons', '/dashboard/blacklist', '/dashboard/reports', '/dashboard/settings', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions'];
+    const adminOnlyPaths = ['/dashboard/users', '/dashboard/coupons', '/dashboard/blacklist', '/dashboard/reports', '/dashboard/settings', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/subscription-plans'];
     const supportTeamPaths = ['/dashboard/disputes'];
 
     if (role === 'Support Team' && !supportTeamPaths.some(p => pathname.startsWith(p)) && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/profile') && !pathname.startsWith('/dashboard/settings')) {
@@ -245,3 +245,5 @@ export function useUser() {
 
 // This is kept for non-hook usage, but useAuth and useFirestore are preferred.
 export { useFirebase, useAuth, useFirestore };
+
+    
