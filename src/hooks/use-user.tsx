@@ -171,7 +171,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         router.push('/dashboard');
     }
 
-  }, [role, pathname, user, router, loading, isAdmin]);
+  }, [role, pathname, user, router, isAdmin]);
 
 
   const handleSetRole = (newRole: Role) => {
@@ -247,5 +247,3 @@ export function useUser() {
 
 // This is kept for non-hook usage, but useAuth and useFirestore are preferred.
 export { useFirebase, useAuth, useFirestore };
-
-    
