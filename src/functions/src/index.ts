@@ -196,6 +196,49 @@ export const onPrivateMessageCreated = functions.firestore
             }
         }
     });
+    
+/**
+ * Triggered when there is a date change proposal on a job.
+ */
+export const onJobDateChange = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+        const beforeData = change.before.data();
+        const afterData = change.after.data();
+        const jobId = context.params.jobId;
+
+        // Date Change Proposed
+        if (!beforeData.dateChangeProposal && afterData.dateChangeProposal && afterData.dateChangeProposal.status === 'pending') {
+            const proposal = afterData.dateChangeProposal;
+            const jobGiverId = afterData.jobGiver.id;
+            const awardedInstallerId = afterData.awardedInstaller.id;
+            const proposerId = proposal.proposedBy === 'Job Giver' ? jobGiverId : awardedInstallerId;
+            const recipientId = proposal.proposedBy === 'Job Giver' ? awardedInstallerId : jobGiverId;
+
+            const proposerDoc = await admin.firestore().collection("users").doc(proposerId).get();
+            const proposerName = proposerDoc.data()?.name || 'The other party';
+
+            await sendNotification(
+                recipientId,
+                "Date Change Proposed",
+                `${proposerName} has proposed a new start date for job: "${afterData.title}".`,
+                `/dashboard/jobs/${jobId}`
+            );
+        }
+
+        // Date Change Accepted/Rejected
+        if (beforeData.dateChangeProposal && beforeData.dateChangeProposal.status === 'pending' && !afterData.dateChangeProposal) {
+            const proposerId = beforeData.dateChangeProposal.proposedBy === 'Job Giver' ? afterData.jobGiver.id : afterData.awardedInstaller.id;
+            const wasAccepted = afterData.jobStartDate !== beforeData.jobStartDate;
+            
+            await sendNotification(
+                proposerId,
+                `Date Change ${wasAccepted ? 'Accepted' : 'Rejected'}`,
+                `Your proposed date change for job "${afterData.title}" was ${wasAccepted ? 'accepted' : 'rejected'}.`,
+                `/dashboard/jobs/${jobId}`
+            );
+        }
+    });
 
 
 /**

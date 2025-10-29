@@ -117,6 +117,11 @@ export type Job = {
   jobStartDate?: Date | Timestamp;
   postedAt: Date | Timestamp;
   acceptanceDeadline?: Date | Timestamp;
+  dateChangeProposal?: {
+    newDate: Date | Timestamp;
+    proposedBy: 'Job Giver' | 'Installer';
+    status: 'pending' | 'accepted' | 'rejected';
+  };
   bids: Bid[];
   bidderIds?: string[];
   comments: Comment[];
