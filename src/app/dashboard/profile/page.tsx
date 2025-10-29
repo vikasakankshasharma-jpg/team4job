@@ -81,6 +81,7 @@ const editProfileSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters."),
     residentialPincode: z.string().regex(/^\d{6}$/, "Must be a 6-digit pincode."),
     officePincode: z.string().optional().refine(val => val === '' || /^\d{6}$/.test(val!), "Must be a 6-digit pincode or empty."),
+    gstin: z.string().optional().refine(val => val === '' || /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(val!), "Invalid GSTIN format."),
 });
 
 function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) => void }) {
@@ -94,16 +95,20 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
             name: user.name || "",
             residentialPincode: user.pincodes.residential || "",
             officePincode: user.pincodes.office || "",
+            gstin: user.gstin || "",
         },
     });
 
     async function onSubmit(values: z.infer<typeof editProfileSchema>) {
         if (!user || !db) return;
         const userRef = doc(db, 'users', user.id);
-        const updateData = {
+        const updateData: Partial<User> = {
             name: values.name,
-            'pincodes.residential': values.residentialPincode,
-            'pincodes.office': values.officePincode || '',
+            pincodes: {
+                residential: values.residentialPincode,
+                office: values.officePincode || '',
+            },
+            gstin: values.gstin || '',
         };
         await updateDoc(userRef, updateData);
         onSave(values);
@@ -165,6 +170,27 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                             )}
                         />
                     )}
+                     <Card>
+                        <CardHeader className="p-4">
+                            <CardTitle className="text-base">Business & GST Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                            <FormField
+                                control={form.control}
+                                name="gstin"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>GSTIN (Optional)</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="e.g., 29ABCDE1234F1Z5" {...field} />
+                                        </FormControl>
+                                        <FormDescription>Your 15-digit Goods and Services Tax Identification Number.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </CardContent>
+                     </Card>
                     <DialogFooter>
                         <DialogClose asChild>
                             <Button type="button" variant="secondary">Cancel</Button>
@@ -502,7 +528,8 @@ export default function ProfilePage() {
             pincodes: {
                 residential: values.residentialPincode,
                 office: values.officePincode || prevUser.pincodes.office,
-            }
+            },
+            gstin: values.gstin || prevUser.gstin,
         };
       });
     }
