@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -412,7 +412,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   );
 }
 
-function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousId: string, platformSettings: PlatformSettings | null }) {
+function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings, isFunded }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousId: string, platformSettings: PlatformSettings | null, isFunded: boolean }) {
     const { user: jobGiver, role } = useUser();
     const { toast } = useToast();
     const { db } = useFirebase();
@@ -433,12 +433,11 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings }: {
         }
     }, [bid.timestamp]);
 
-    const handleAwardJob = async () => {
+    const handleAwardAndFundJob = async () => {
         if (!db || !jobGiver) return;
         setIsFunding(true);
         
         try {
-            // Step 1: Call backend to create a payment session ID
             const { data } = await axios.post('/api/escrow/initiate-payment', {
                 jobId: job.id,
                 jobTitle: job.title,
@@ -447,16 +446,10 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings }: {
                 amount: bid.amount,
             });
 
-            if (!data.payment_session_id) {
-                throw new Error("Could not retrieve payment session ID.");
-            }
+            if (!data.payment_session_id) throw new Error("Could not retrieve payment session ID.");
 
-            // Step 2: Launch Cashfree checkout
             const cashfreeInstance = new cashfree(data.payment_session_id);
-            cashfreeInstance.checkout({
-                payment_method: "upi",
-            });
-            // The onComplete/onError logic is handled by the redirect URL now
+            cashfreeInstance.checkout({ payment_method: "upi" });
 
         } catch (error: any) {
              toast({
@@ -467,10 +460,23 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings }: {
              setIsFunding(false);
         }
     };
+
+    const handleAwardWithoutFunding = async () => {
+        const acceptanceDeadline = new Date();
+        acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
+        onJobUpdate({ 
+            awardedInstaller: doc(db, 'users', installer.id),
+            status: 'Awarded',
+            acceptanceDeadline,
+        });
+        toast({
+            title: "Job Awarded!",
+            description: `${installer.name} has been notified. You will be notified when they accept.`,
+        });
+    };
     
     const isAdmin = role === 'Admin';
     const isJobGiver = role === 'Job Giver';
-    // Identities are revealed once the installer accepts the job.
     const identitiesRevealed = job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' && job.status !== 'Awarded' || role === 'Admin';
 
     const installerName = identitiesRevealed ? installer.name : anonymousId;
@@ -510,25 +516,35 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings }: {
             </div>
             <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
             {isJobGiver && !isJobAwarded && (
-              <div className="mt-4 flex flex-col md:flex-row items-start md:items-center gap-4 p-3 bg-secondary rounded-lg">
-                   <div className="flex-1 space-y-1">
-                        <div className="flex justify-between text-sm"><span>Bid Amount:</span> <span className="font-medium">₹{bid.amount.toLocaleString()}</span></div>
-                        <div className="flex justify-between text-sm text-muted-foreground"><span>Platform Fee ({feeRate}%):</span> <span className="font-medium">+ ₹{feeAmount.toLocaleString()}</span></div>
-                        <Separator className="my-1"/>
-                        <div className="flex justify-between font-bold"><span>Total Payable:</span> <span>₹{totalPayable.toLocaleString()}</span></div>
-                   </div>
-                   <Button size="sm" onClick={handleAwardJob} disabled={isFunding} className="w-full md:w-auto">
-                        {isFunding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        <Award className="mr-2 h-4 w-4" />
-                       Award & Fund Job
-                   </Button>
-              </div>
+                isFunded ? (
+                    <div className="mt-4 flex items-center justify-end gap-4 p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200">
+                        <p className="text-sm font-medium text-green-700 dark:text-green-300">Funds are already held for this job.</p>
+                        <Button size="sm" onClick={handleAwardWithoutFunding} disabled={isFunding}>
+                            <Award className="mr-2 h-4 w-4" />
+                            Award Job
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="mt-4 flex flex-col md:flex-row items-start md:items-center gap-4 p-3 bg-secondary rounded-lg">
+                        <div className="flex-1 space-y-1">
+                            <div className="flex justify-between text-sm"><span>Bid Amount:</span> <span className="font-medium">₹{bid.amount.toLocaleString()}</span></div>
+                            <div className="flex justify-between text-sm text-muted-foreground"><span>Platform Fee ({feeRate}%):</span> <span className="font-medium">+ ₹{feeAmount.toLocaleString()}</span></div>
+                            <Separator className="my-1"/>
+                            <div className="flex justify-between font-bold"><span>Total Payable:</span> <span>₹{totalPayable.toLocaleString()}</span></div>
+                        </div>
+                        <Button size="sm" onClick={handleAwardAndFundJob} disabled={isFunding} className="w-full md:w-auto">
+                            {isFunding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Award className="mr-2 h-4 w-4" />
+                            Award & Fund Job
+                        </Button>
+                    </div>
+                )
             )}
         </div>
     );
 }
 
-function BidsSection({ job, onJobUpdate, anonymousIdMap, platformSettings }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousIdMap: Map<string, string>, platformSettings: PlatformSettings | null }) {
+function BidsSection({ job, onJobUpdate, anonymousIdMap, platformSettings, isFunded }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousIdMap: Map<string, string>, platformSettings: PlatformSettings | null, isFunded: boolean }) {
     const { role } = useUser();
     
     const calculateBidScore = (bid: Bid, job: Job) => {
@@ -570,6 +586,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap, platformSettings }: { j
             onJobUpdate={onJobUpdate}
             anonymousId={anonymousIdMap.get((bid.installer as User).id) || `Bidder-?`}
             platformSettings={platformSettings}
+            isFunded={isFunded}
           />
         ))}
       </CardContent>
@@ -979,8 +996,10 @@ function DateChangeProposalSection({ job, user, onJobUpdate }: { job: Job, user:
             <CardHeader>
                 <CardTitle>Date Change Proposed</CardTitle>
                 <CardDescription>
-                    {job.dateChangeProposal.proposedBy} has requested to change the job start date to{' '}
-                    <span className="font-semibold">{format(toDate(job.dateChangeProposal.newDate), "MMM d, yyyy")}</span>.
+                    {isProposer
+                        ? `You have proposed a new start date of ${format(toDate(job.dateChangeProposal.newDate), "MMM d, yyyy")}. Awaiting response.`
+                        : `${job.dateChangeProposal.proposedBy} has requested to change the job start date to ${format(toDate(job.dateChangeProposal.newDate), "MMM d, yyyy")}.`
+                    }
                 </CardDescription>
             </CardHeader>
             {!isProposer && (
@@ -1011,6 +1030,7 @@ export default function JobDetailPage() {
   const [job, setJob] = React.useState<Job | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
+  const [isFunded, setIsFunded] = React.useState(false);
 
   const [newComment, setNewComment] = React.useState("");
 
@@ -1028,6 +1048,11 @@ export default function JobDetailPage() {
     if (settingsDoc.exists()) {
         setPlatformSettings(settingsDoc.data() as PlatformSettings);
     }
+    
+    // Check for existing transaction
+    const transQuery = query(collection(db, "transactions"), where("jobId", "==", id), where("status", "==", "Funded"));
+    const transSnap = await getDocs(transQuery);
+    setIsFunded(!transSnap.empty);
     
     const jobRef = doc(db, 'jobs', id);
     const jobSnap = await getDoc(jobRef);
@@ -1492,7 +1517,7 @@ export default function JobDetailPage() {
         </Card>
 
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
-        {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} platformSettings={platformSettings} />}
+        {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} platformSettings={platformSettings} isFunded={isFunded} />}
 
       </div>
 
@@ -1650,6 +1675,3 @@ export default function JobDetailPage() {
   );
 }
 
-
-
-    
