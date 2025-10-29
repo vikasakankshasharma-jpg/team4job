@@ -47,6 +47,7 @@ export function JobCard({ job }: JobCardProps) {
         return 'View Bids';
       case 'Awarded':
       case 'In Progress':
+      case 'Pending Funding':
         return 'View Job Details';
       case 'Completed':
         return 'View Archived Job';
@@ -99,7 +100,7 @@ export function JobCard({ job }: JobCardProps) {
             <IndianRupee className="h-4 w-4" />
             <span>{job.budget.min} - {job.budget.max}</span>
             {job.travelTip && job.travelTip > 0 && (
-              <span className="text-primary font-semibold">(+ ₹{job.travelTip} tip)</span>
+              <span className="text-primary font-semibold">(+ ₹{job.travelTip.toLocaleString()} tip)</span>
             )}
           </div>
           <div className="flex items-center gap-2 text-foreground">

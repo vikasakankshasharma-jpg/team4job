@@ -1,5 +1,4 @@
 
-
 import { NextRequest, NextResponse } from 'next/server';
 import { doc, getDoc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/server-init';
@@ -42,8 +41,11 @@ export async function POST(req: NextRequest) {
 
     // 2. Calculate fees and final amounts based on platform settings
     const platformSettings = await getPlatformSettings();
-    const installerCommission = amount * ((platformSettings.installerCommissionRate || 0) / 100);
-    const jobGiverFee = amount * ((platformSettings.jobGiverFeeRate || 0) / 100);
+    const installerCommissionRate = platformSettings.installerCommissionRate ?? 0;
+    const jobGiverFeeRate = platformSettings.jobGiverFeeRate ?? 0;
+    
+    const installerCommission = amount * (installerCommissionRate / 100);
+    const jobGiverFee = amount * (jobGiverFeeRate / 100);
     const tipAmount = travelTip || 0;
     const totalPaidByGiver = amount + jobGiverFee + tipAmount;
     const payoutToInstaller = amount - installerCommission + tipAmount;

@@ -1,5 +1,4 @@
 
-
 {
   "entities": {
     "Address": {
@@ -260,9 +259,13 @@
           },
           "required": ["min", "max"]
         },
+        "travelTip": {
+          "type": "number",
+          "description": "An optional tip to make the job more attractive, paid commission-free to the installer."
+        },
         "status": {
           "type": "string",
-          "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid"]
+          "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid", "Pending Funding"]
         },
         "deadline": {
           "type": "string",
