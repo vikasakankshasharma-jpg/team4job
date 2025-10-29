@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
@@ -34,14 +33,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { Job, JobAttachment, User } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, collection, query, where, getDocs, limit, startAt, orderBy } from "firebase/firestore";
 import { useHelp } from "@/hooks/use-help";
 import { FileUpload } from "@/components/ui/file-upload";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Checkbox } from "@/components/ui/checkbox";
 import debounce from "lodash.debounce";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 
 const addressSchema = z.object({
@@ -84,75 +84,111 @@ const jobSchema = z.object({
 
 function DirectAwardInput({ control, isMapLoaded }) {
     const { db } = useFirebase();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [installers, setInstallers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [installer, setInstaller] = useState<User | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [selectedInstaller, setSelectedInstaller] = useState<User | null>(null);
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+    const { setValue, trigger } = useFormContext();
 
-    const debouncedValidate = useCallback(
-        debounce(async (id: string) => {
-            if (!id.trim()) {
-                setInstaller(null);
-                setError(null);
+    const debouncedSearch = useCallback(
+        debounce(async (search: string) => {
+            if (search.trim().length < 2) {
+                setInstallers([]);
                 setIsLoading(false);
                 return;
             }
-            const userRef = doc(db, 'users', id);
-            const userSnap = await getDoc(userRef);
 
-            if (userSnap.exists()) {
-                const userData = userSnap.data() as User;
-                if (userData.roles.includes('Installer') && userData.installerProfile?.verified) {
-                    setInstaller(userData);
-                    setError(null);
-                } else {
-                    setInstaller(null);
-                    setError("This user is not a verified installer.");
-                }
-            } else {
-                setInstaller(null);
-                setError("No installer found with this ID.");
-            }
+            const q = query(
+                collection(db, 'users'),
+                where('roles', 'array-contains', 'Installer'),
+                where('installerProfile.verified', '==', true),
+                orderBy('name'),
+                startAt(search.trim())
+                // Firebase does not support case-insensitive or partial text search natively.
+                // This will only match names starting with the search term.
+                // For a full solution, a third-party search service like Algolia would be needed.
+            );
+
+            const querySnapshot = await getDocs(q);
+            const results = querySnapshot.docs.map(doc => doc.data() as User)
+                               .filter(u => u.name.toLowerCase().includes(search.toLowerCase()));
+
+            setInstallers(results);
             setIsLoading(false);
         }, 500),
         [db]
     );
 
-    const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const id = e.target.value;
-        setIsLoading(true);
-        debouncedValidate(id);
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setSearchTerm(value);
+        if (value) {
+            setIsLoading(true);
+            setIsPopoverOpen(true);
+            debouncedSearch(value);
+        } else {
+            setIsPopoverOpen(false);
+            setInstallers([]);
+            setSelectedInstaller(null);
+            setValue('directAwardInstallerId', '');
+        }
     };
 
+    const handleSelectInstaller = (installer: User) => {
+        setSelectedInstaller(installer);
+        setSearchTerm(installer.name);
+        setValue('directAwardInstallerId', installer.id, { shouldValidate: true });
+        setIsPopoverOpen(false);
+        setInstallers([]);
+    };
+    
     return (
         <FormField
             control={control}
             name="directAwardInstallerId"
             render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Installer's Public ID</FormLabel>
-                    <FormControl>
-                        <Input
-                            placeholder="e.g., aBcDeFgHiJkLmNoPqRsTuVwXyZ123"
-                            {...field}
-                             onChange={(e) => {
-                                field.onChange(e);
-                                handleIdChange(e);
-                            }}
-                        />
-                    </FormControl>
+                    <FormLabel>Installer's Name or ID</FormLabel>
+                    <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                                <Input
+                                    placeholder="e.g., Vikram Kumar"
+                                    value={searchTerm}
+                                    onChange={handleSearchChange}
+                                />
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                                <CommandList>
+                                    {isLoading && <div className="p-4 text-sm text-center">Searching...</div>}
+                                    {!isLoading && installers.length === 0 && searchTerm && <div className="p-4 text-sm text-center">No verified installers found.</div>}
+                                    {installers.map((installer) => (
+                                        <CommandItem key={installer.id} onSelect={() => handleSelectInstaller(installer)}>
+                                             <Avatar className="h-9 w-9 mr-3">
+                                                <AvatarImage src={installer.realAvatarUrl} alt={installer.name} />
+                                                <AvatarFallback>{installer.name.substring(0,2)}</AvatarFallback>
+                                            </Avatar>
+                                            {installer.name}
+                                        </CommandItem>
+                                    ))}
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                     <FormDescription>
                         If you fill this in, the job will be private and only visible to this installer. Public bidding will be disabled.
                     </FormDescription>
-                     {isLoading && <p className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin"/> Validating...</p>}
-                     {error && !isLoading && <p className="text-sm font-medium text-destructive">{error}</p>}
-                     {installer && !isLoading && (
+                     {selectedInstaller && (
                         <div className="flex items-center gap-2 p-2 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
                              <Avatar className="h-9 w-9">
-                                <AnimatedAvatar svg={installer.avatarUrl} />
-                                <AvatarFallback>{installer.name.substring(0,2)}</AvatarFallback>
+                                <AvatarImage src={selectedInstaller.realAvatarUrl} alt={selectedInstaller.name} />
+                                <AvatarFallback>{selectedInstaller.name.substring(0,2)}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <p className="font-semibold text-sm">{installer.name}</p>
+                                <p className="font-semibold text-sm">{selectedInstaller.name}</p>
                                 <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-green-600"/> Verified Installer</p>
                             </div>
                         </div>
@@ -527,7 +563,7 @@ export default function PostJobPage() {
                   fullAddressName="address.fullAddress"
                   onLocationGeocoded={setMapCenter}
                   mapCenter={mapCenter}
-                  isMapLoaded={true}
+                  isMapLoaded={isMapLoaded}
                 />
                  <Separator />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -601,7 +637,7 @@ export default function PostJobPage() {
                         Direct Award (Optional)
                     </CardTitle>
                     <CardDescription>
-                        Know a great installer? Skip the bidding process and award this job directly to them by entering their public Installer ID.
+                        Know a great installer? Skip the bidding process and award this job directly to them by searching for their name.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
