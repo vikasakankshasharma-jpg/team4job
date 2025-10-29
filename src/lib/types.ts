@@ -1,4 +1,5 @@
 
+
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {
@@ -244,6 +245,7 @@ export type PlatformSettings = {
     pointsFor5StarRating: number;
     pointsFor4StarRating: number;
     penaltyFor1StarRating: number;
+    penaltyForDeclinedJob: number;
     silverTierPoints: number;
     goldTierPoints: number;
     platinumTierPoints: number;

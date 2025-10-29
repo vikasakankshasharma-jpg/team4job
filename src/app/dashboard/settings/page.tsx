@@ -235,6 +235,7 @@ const initialSettings: Partial<PlatformSettings> = {
     pointsFor5StarRating: 20,
     pointsFor4StarRating: 10,
     penaltyFor1StarRating: -25,
+    penaltyForDeclinedJob: -15,
     silverTierPoints: 500,
     goldTierPoints: 1000,
     platinumTierPoints: 2000,
@@ -247,7 +248,7 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
     const { toast } = useToast();
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
-    const [settings, setSettings] = React.useState<Partial<PlatformSettings>>(initialSettings);
+    const [settings, setSettings] = React.useState<Partial<PlatformSettings>>({});
     
     React.useEffect(() => {
         if (!db) return;
@@ -300,12 +301,12 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="installerCommissionRate">Installer Commission Rate (%)</Label>
-                            <Input id="installerCommissionRate" type="number" value={settings.installerCommissionRate} onChange={handleInputChange} min="0" max="100"/>
+                            <Input id="installerCommissionRate" type="number" value={settings.installerCommissionRate ?? ''} onChange={handleInputChange} min="0" max="100"/>
                             <p className="text-xs text-muted-foreground">The percentage taken from the installer's earnings for a job.</p>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="jobGiverFeeRate">Job Giver Fee Rate (%)</Label>
-                            <Input id="jobGiverFeeRate" type="number" value={settings.jobGiverFeeRate} onChange={handleInputChange} min="0" max="100"/>
+                            <Input id="jobGiverFeeRate" type="number" value={settings.jobGiverFeeRate ?? ''} onChange={handleInputChange} min="0" max="100"/>
                             <p className="text-xs text-muted-foreground">A percentage of the job amount charged to the job giver as a convenience fee.</p>
                         </div>
                     </div>
@@ -409,7 +410,7 @@ function UserReputationSettings() {
 
                 <div>
                     <h3 className="mb-4 text-lg font-medium">Reputation Point System</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-lg border p-4">
                        <div className="space-y-2">
                          <Label htmlFor="pointsForJobCompletion">Points for Job Completion</Label>
                          <Input id="pointsForJobCompletion" type="number" value={settings.pointsForJobCompletion} onChange={handleInputChange} />
@@ -425,6 +426,10 @@ function UserReputationSettings() {
                          <div className="space-y-2">
                          <Label htmlFor="penaltyFor1StarRating">Penalty for 1-Star Rating</Label>
                          <Input id="penaltyFor1StarRating" type="number" value={settings.penaltyFor1StarRating} onChange={handleInputChange} />
+                       </div>
+                       <div className="space-y-2">
+                         <Label htmlFor="penaltyForDeclinedJob">Penalty for Declined Job</Label>
+                         <Input id="penaltyForDeclinedJob" type="number" value={settings.penaltyForDeclinedJob} onChange={handleInputChange} />
                        </div>
                     </div>
                 </div>

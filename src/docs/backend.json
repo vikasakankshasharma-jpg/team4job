@@ -1,4 +1,5 @@
 
+
 {
   "entities": {
     "Address": {
@@ -616,6 +617,7 @@
             "pointsFor5StarRating": { "type": "number" },
             "pointsFor4StarRating": { "type": "number" },
             "penaltyFor1StarRating": { "type": "number" },
+            "penaltyForDeclinedJob": { "type": "number" },
             "silverTierPoints": { "type": "number" },
             "goldTierPoints": { "type": "number" },
             "platinumTierPoints": { "type": "number" },
