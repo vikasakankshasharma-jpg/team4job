@@ -144,7 +144,7 @@ export const onJobStatusChange = functions.firestore
                 await sendNotification(
                     jobGiverId,
                     "Job Declined",
-                    `${installerName} has declined the job: "${jobTitle}". You can now award it to another installer.`,
+                    `${installerName} has declined the job: "${jobTitle}". It is now open for bidding again. You can award it to another installer.`,
                     `/dashboard/jobs/${jobId}`
                 );
             }
