@@ -45,6 +45,10 @@
           "type": "string",
           "description": "URL for the user's real profile picture."
         },
+        "gstin": {
+            "type": "string",
+            "description": "The user's 15-digit Goods and Services Tax Identification Number."
+        },
         "pincodes": {
           "type": "object",
           "properties": {
@@ -239,6 +243,10 @@
         },
         "address": {
           "$ref": "#/entities/Address"
+        },
+        "isGstInvoiceRequired": {
+            "type": "boolean",
+            "description": "Whether the job giver requires a GST invoice for this job."
         },
         "budget": {
           "type": "object",
@@ -635,4 +643,3 @@
     }
   }
 }
-

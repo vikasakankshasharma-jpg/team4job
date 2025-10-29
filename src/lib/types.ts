@@ -1,5 +1,4 @@
 
-
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {
@@ -36,6 +35,7 @@ export type User = {
   };
   aadharNumber?: string;
   kycAddress?: string;
+  gstin?: string;
   payouts?: {
     beneficiaryId?: string;
     accountHolderName?: string;
@@ -96,6 +96,7 @@ export type Job = {
     min: number;
     max: number;
   };
+  isGstInvoiceRequired: boolean;
   status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid';
   deadline: Date | Timestamp;
   jobStartDate?: Date | Timestamp;
@@ -218,4 +219,3 @@ export type PlatformSettings = {
     minJobBudget: number;
     autoVerifyInstallers: boolean;
 };
-
