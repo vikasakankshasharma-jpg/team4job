@@ -57,6 +57,7 @@ import {
   Hourglass,
   ThumbsDown,
   Archive,
+  FileText,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -1215,9 +1216,9 @@ export default function JobDetailPage() {
                                 let authorName = anonymousIdMap.get(authorId) || `Bidder-?`;
                                 let authorAvatar = author.avatarUrl;
                                 if (authorId === jobGiver.id) {
-                                    authorName = jobGiver.name;
-                                    authorAvatar = jobGiver.realAvatarUrl;
-                                } else if (authorId === awardedInstallerId) {
+                                    authorName = "Job Giver";
+                                    authorAvatar = jobGiver.avatarUrl;
+                                } else if (identitiesRevealed && authorId === awardedInstallerId) {
                                     authorName = (job.awardedInstaller as User)?.name;
                                     authorAvatar = (job.awardedInstaller as User)?.realAvatarUrl;
                                 }
@@ -1436,28 +1437,41 @@ export default function JobDetailPage() {
                 <p className="font-semibold">{job.comments?.length || 0}</p>
               </div>
             </div>
+             {job.isGstInvoiceRequired && (
+                <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5" />
+                    <div>
+                        <p className="text-muted-foreground">Invoice</p>
+                        <p className="font-semibold">GST Invoice Required</p>
+                    </div>
+                </div>
+             )}
           </CardContent>
-          {(canRaiseDispute || job.disputeId) && (
-            <>
-              <Separator />
-              <CardContent className="pt-6">
-                {job.disputeId ? (
+          <CardContent className="pt-6">
+                {job.status === 'Completed' && job.invoice && (
+                    <Button asChild className="w-full">
+                        <Link href={`/dashboard/jobs/${job.id}/invoice`}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            View Invoice
+                        </Link>
+                    </Button>
+                )}
+                {canRaiseDispute && !job.disputeId && (
+                     <RaiseDisputeDialog 
+                        job={job} 
+                        user={user} 
+                        onJobUpdate={handleJobUpdate}
+                      />
+                )}
+                 {job.disputeId && (
                    <Button asChild className="w-full">
                        <Link href={`/dashboard/disputes/${job.disputeId}`}>
                           <AlertOctagon className="mr-2 h-4 w-4" />
                           View Dispute
                        </Link>
                    </Button>
-                ) : (
-                  <RaiseDisputeDialog 
-                    job={job} 
-                    user={user} 
-                    onJobUpdate={handleJobUpdate}
-                  />
                 )}
-              </CardContent>
-            </>
-          )}
+          </CardContent>
         </Card>
         
       </div>
