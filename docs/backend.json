@@ -1,5 +1,4 @@
 
-
 {
   "entities": {
     "Address": {
@@ -44,6 +43,10 @@
         "realAvatarUrl": {
           "type": "string",
           "description": "URL for the user's real profile picture."
+        },
+        "gstin": {
+            "type": "string",
+            "description": "The user's 15-digit Goods and Services Tax Identification Number."
         },
         "pincodes": {
           "type": "object",
@@ -104,6 +107,13 @@
                 "ifsc": { "type": "string" }
             }
         },
+        "fcmTokens": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "An array of Firebase Cloud Messaging tokens for sending push notifications to the user's devices."
+        },
         "installerProfile": {
           "$ref": "#/entities/InstallerProfile"
         }
@@ -159,11 +169,11 @@
             "name": { "type": "string" },
             "description": { "type": "string" },
             "price": { "type": "number" },
-            "role": { "type": "string", "enum": ["Job Giver", "Installer"] },
+            "role": { "type": "string", "enum": ["Job Giver", "Installer", "Any"] },
             "features": { "type": "array", "items": { "type": "string" } },
-            "trialPeriodDays": { "type": "number", "description": "Default trial period in days for new users of this role." }
+            "isArchived": { "type": "boolean", "description": "Whether the plan is archived and can no longer be assigned." }
         },
-        "required": ["id", "name", "price", "role", "features"]
+        "required": ["id", "name", "price", "role", "features", "isArchived"]
     },
     "Coupon": {
       "title": "Coupon Code",
@@ -172,7 +182,7 @@
       "properties": {
         "code": {
           "type": "string",
-          "description": "The unique, user-facing coupon code (e.g., 'WELCOME2024'). Acts as the document ID."
+          "description": "The unique, user-facing coupon code (e.g., 'WELCOME2024').Acts as the document ID."
         },
         "description": {
           "type": "string",
@@ -233,6 +243,10 @@
         "address": {
           "$ref": "#/entities/Address"
         },
+        "isGstInvoiceRequired": {
+            "type": "boolean",
+            "description": "Whether the job giver requires a GST invoice for this job."
+        },
         "budget": {
           "type": "object",
           "properties": {
@@ -245,9 +259,13 @@
           },
           "required": ["min", "max"]
         },
+        "travelTip": {
+          "type": "number",
+          "description": "An optional tip to make the job more attractive, paid commission-free to the installer."
+        },
         "status": {
           "type": "string",
-          "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid"]
+          "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid", "Pending Funding"]
         },
         "deadline": {
           "type": "string",
@@ -256,6 +274,14 @@
         "jobStartDate": {
           "type": "string",
           "format": "date-time"
+        },
+        "dateChangeProposal": {
+          "type": "object",
+          "properties": {
+            "newDate": { "type": "string", "format": "date-time" },
+            "proposedBy": { "type": "string", "enum": ["Job Giver", "Installer"] },
+            "status": { "type": "string", "enum": ["pending", "accepted", "rejected"] }
+          }
         },
         "postedAt": {
           "type": "string",
@@ -276,6 +302,13 @@
             },
             "description": "A list of user IDs who have bid on the job, for efficient querying."
         },
+        "disqualifiedInstallerIds": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "A list of user IDs who have declined or timed out on this job offer."
+        },
         "rating": {
           "type": "number"
         },
@@ -291,6 +324,9 @@
           "items": {
             "$ref": "#/entities/JobAttachment"
           }
+        },
+        "invoice": {
+          "$ref": "#/entities/Invoice"
         },
         "comments": {
           "type": "array",
@@ -327,6 +363,23 @@
         "fileType": { "type": "string" }
       },
       "required": ["fileName", "fileUrl", "fileType"]
+    },
+     "Invoice": {
+      "title": "Invoice",
+      "description": "Represents a GST invoice for a completed job.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "jobId": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "subtotal": { "type": "number", "description": "The main service amount (bid amount)." },
+        "travelTip": { "type": "number", "description": "The travel tip amount." },
+        "totalAmount": { "type": "number", "description": "The total taxable amount (subtotal + travelTip)." },
+        "from": { "type": "object", "properties": { "name": { "type": "string"}, "gstin": { "type": "string"} } },
+        "to": { "type": "object", "properties": { "name": { "type": "string"}, "gstin": { "type": "string"} } }
+      },
+      "required": ["id", "jobId", "jobTitle", "date", "subtotal", "totalAmount", "from", "to"]
     },
     "Bid": {
       "title": "Bid",
@@ -452,6 +505,10 @@
         "resolvedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "handledBy": {
+            "type": "string",
+            "description": "The ID of the support team member handling the dispute."
         }
       },
       "required": ["id", "requesterId", "category", "title", "status", "reason", "createdAt"]
@@ -519,7 +576,7 @@
     },
     "Transaction": {
       "title": "Transaction",
-      "description": "Represents a financial transaction for a job, using a Payment Gateway and Payout system.",
+      "description": "Represents a financial transaction for a job.",
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "Our internal unique ID for the transaction." },
@@ -527,26 +584,27 @@
         "jobTitle": { "type": "string" },
         "payerId": { "type": "string", "description": "The user ID of the Job Giver." },
         "payeeId": { "type": "string", "description": "The user ID of the Installer." },
-        "amount": { "type": "number" },
-        "commission": { "type": "number", "description": "The platform commission amount." },
+        "amount": { "type": "number", "description": "The original bid amount." },
+        "travelTip": { "type": "number", "description": "The travel tip, if any." },
+        "commission": { "type": "number", "description": "The platform commission amount taken from the installer." },
+        "jobGiverFee": { "type": "number", "description": "The fee charged to the job giver." },
+        "totalPaidByGiver": { "type": "number", "description": "The total amount charged to the job giver (amount + jobGiverFee + travelTip)." },
+        "payoutToInstaller": { "type": "number", "description": "The net amount paid out to the installer (amount - commission + travelTip)." },
         "status": {
           "type": "string",
           "enum": ["Initiated", "Funded", "Failed", "Released", "Refunded", "Disputed"]
         },
         "paymentGatewayOrderId": { "type": "string", "description": "The order ID from Cashfree Payments." },
         "paymentGatewaySessionId": { "type": "string", "description": "The session ID used to launch the Cashfree checkout." },
-        "escrowAccountId": { "type": "string", "description": "The ID of the Cashfree Escrow account for this transaction." },
-        "holdId": { "type": "string", "description": "The ID of the hold placed on the escrow funds." },
-        "releaseId": { "type": "string", "description": "The ID of the release operation." },
         "payoutTransferId": { "type": "string", "description": "The transfer ID for the payout to the installer." },
         "refundTransferId": { "type": "string", "description": "The transfer ID for a refund to the job giver." },
-        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the transaction was initiated." },
-        "fundedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when payment was successfully captured by the gateway." },
-        "failedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when the payment failed." },
-        "releasedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when funds were released to the installer via the payout system." },
-        "refundedAt": { "type": "string", "format": "date-time", "description": "Timestamp for when funds were refunded to the job giver." }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "fundedAt": { "type": "string", "format": "date-time" },
+        "failedAt": { "type": "string", "format": "date-time" },
+        "releasedAt": { "type": "string", "format": "date-time" },
+        "refundedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "jobId", "payerId", "payeeId", "amount", "commission", "status", "createdAt"]
+      "required": ["id", "jobId", "payerId", "payeeId", "amount", "commission", "jobGiverFee", "totalPaidByGiver", "payoutToInstaller", "status", "createdAt"]
     },
     "PlatformSettings": {
         "title": "Platform Settings",
@@ -555,11 +613,6 @@
         "properties": {
             "installerCommissionRate": { "type": "number" },
             "jobGiverFeeRate": { "type": "number" },
-            "proInstallerPlanPrice": { "type": "number" },
-            "businessJobGiverPlanPrice": { "type": "number" },
-            "bidBundle10": { "type": "number" },
-            "bidBundle25": { "type": "number" },
-            "bidBundle50": { "type": "number" },
             "defaultTrialPeriodDays": { "type": "number" },
             "freeBidsForNewInstallers": { "type": "number" },
             "freePostsForNewJobGivers": { "type": "number" },
@@ -567,6 +620,7 @@
             "pointsFor5StarRating": { "type": "number" },
             "pointsFor4StarRating": { "type": "number" },
             "penaltyFor1StarRating": { "type": "number" },
+            "penaltyForDeclinedJob": { "type": "number" },
             "silverTierPoints": { "type": "number" },
             "goldTierPoints": { "type": "number" },
             "platinumTierPoints": { "type": "number" },
@@ -629,3 +683,5 @@
     }
   }
 }
+
+    

@@ -251,3 +251,5 @@ export type PlatformSettings = {
     minJobBudget: number;
     autoVerifyInstallers: boolean;
 };
+
+    
