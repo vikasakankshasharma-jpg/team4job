@@ -204,8 +204,11 @@ export type Transaction = {
   jobTitle: string;
   payerId: string; // Job Giver ID
   payeeId: string; // Installer ID
-  amount: number;
-  commission: number; // Platform commission
+  amount: number; // The original bid amount
+  commission: number; // The platform commission amount taken from installer
+  jobGiverFee: number; // The fee charged to the job giver
+  totalPaidByGiver: number; // The total amount charged to the job giver (amount + jobGiverFee)
+  payoutToInstaller: number; // The net amount paid out to the installer (amount - commission)
   status: 'Initiated' | 'Funded' | 'Failed' | 'Released' | 'Refunded' | 'Disputed';
   paymentGatewayOrderId?: string;
   paymentGatewaySessionId?: string;
