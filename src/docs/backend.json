@@ -270,6 +270,14 @@
           "type": "string",
           "format": "date-time"
         },
+        "dateChangeProposal": {
+          "type": "object",
+          "properties": {
+            "newDate": { "type": "string", "format": "date-time" },
+            "proposedBy": { "type": "string", "enum": ["Job Giver", "Installer"] },
+            "status": { "type": "string", "enum": ["pending", "accepted", "rejected"] }
+          }
+        },
         "postedAt": {
           "type": "string",
           "format": "date-time"
