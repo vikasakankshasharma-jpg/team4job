@@ -23,20 +23,25 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Loader2, UserPlus } from "lucide-react";
+import { Zap, Loader2, UserPlus, CheckCircle, ShieldCheck } from "lucide-react";
 import { generateJobDetails } from "@/ai/flows/generate-job-details";
 import { useToast } from "@/hooks/use-toast";
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
-import { JobAttachment } from "@/lib/types";
+import { JobAttachment, User } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useHelp } from "@/hooks/use-help";
 import { FileUpload } from "@/components/ui/file-upload";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { Checkbox } from "@/components/ui/checkbox";
+import debounce from "lodash.debounce";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AnimatedAvatar } from "@/components/ui/animated-avatar";
+
 
 const addressSchema = z.object({
   house: z.string().min(3, "Please enter a valid house/building detail."),
@@ -54,6 +59,7 @@ const jobSchema = z.object({
     .string()
     .min(50, { message: "Description must be at least 50 characters." }),
   skills: z.string().min(1, { message: "Please provide at least one skill." }),
+  isGstInvoiceRequired: z.boolean().default(false),
   address: addressSchema,
   budgetMin: z.coerce.number().min(1, { message: "Minimum budget must be at least 1." }),
   budgetMax: z.coerce.number().min(1, { message: "Maximum budget must be at least 1." }),
@@ -80,6 +86,88 @@ const jobSchema = z.object({
     message: "Job start date must be on or after the bidding deadline.",
     path: ["jobStartDate"],
 });
+
+function DirectAwardInput({ control, isMapLoaded }) {
+    const { db } = useFirebase();
+    const [isLoading, setIsLoading] = useState(false);
+    const [installer, setInstaller] = useState<User | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    const debouncedValidate = useCallback(
+        debounce(async (id: string) => {
+            if (!id.trim()) {
+                setInstaller(null);
+                setError(null);
+                setIsLoading(false);
+                return;
+            }
+            const userRef = doc(db, 'users', id);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+                const userData = userSnap.data() as User;
+                if (userData.roles.includes('Installer') && userData.installerProfile?.verified) {
+                    setInstaller(userData);
+                    setError(null);
+                } else {
+                    setInstaller(null);
+                    setError("This user is not a verified installer.");
+                }
+            } else {
+                setInstaller(null);
+                setError("No installer found with this ID.");
+            }
+            setIsLoading(false);
+        }, 500),
+        [db]
+    );
+
+    const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const id = e.target.value;
+        setIsLoading(true);
+        debouncedValidate(id);
+    };
+
+    return (
+        <FormField
+            control={control}
+            name="directAwardInstallerId"
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Installer's Public ID</FormLabel>
+                    <FormControl>
+                        <Input
+                            placeholder="e.g., aBcDeFgHiJkLmNoPqRsTuVwXyZ123"
+                            {...field}
+                             onChange={(e) => {
+                                field.onChange(e);
+                                handleIdChange(e);
+                            }}
+                        />
+                    </FormControl>
+                    <FormDescription>
+                        If you fill this in, the job will be private and only visible to this installer. Public bidding will be disabled.
+                    </FormDescription>
+                     {isLoading && <p className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin"/> Validating...</p>}
+                     {error && !isLoading && <p className="text-sm font-medium text-destructive">{error}</p>}
+                     {installer && !isLoading && (
+                        <div className="flex items-center gap-2 p-2 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
+                             <Avatar className="h-9 w-9">
+                                <AnimatedAvatar svg={installer.avatarUrl} />
+                                <AvatarFallback>{installer.name.substring(0,2)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-semibold text-sm">{installer.name}</p>
+                                <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-green-600"/> Verified Installer</p>
+                            </div>
+                        </div>
+                     )}
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+    );
+}
 
 export default function PostJobPage() {
   const { toast } = useToast();
@@ -122,6 +210,7 @@ export default function PostJobPage() {
       jobTitle: "",
       jobDescription: "",
       skills: "",
+      isGstInvoiceRequired: false,
       address: {
         house: "",
         street: "",
@@ -216,6 +305,7 @@ export default function PostJobPage() {
         title: values.jobTitle,
         description: values.jobDescription,
         skills: values.skills.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
+        isGstInvoiceRequired: values.isGstInvoiceRequired,
         address: values.address,
         budget: {
             min: values.budgetMin,
@@ -356,6 +446,28 @@ export default function PostJobPage() {
                   </FormItem>
                 )}
               />
+               <FormField
+                control={form.control}
+                name="isGstInvoiceRequired"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        GST Invoice Required
+                      </FormLabel>
+                      <FormDescription>
+                        Select this if you are a business and require a GST invoice for this job.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="attachments"
@@ -460,25 +572,7 @@ export default function PostJobPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                     <FormField
-                        control={form.control}
-                        name="directAwardInstallerId"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Installer's Public ID</FormLabel>
-                            <FormControl>
-                            <Input
-                                placeholder="e.g., INSTALLER-20240315-0003"
-                                {...field}
-                            />
-                            </FormControl>
-                             <FormDescription>
-                                If you fill this in, the job will be private and only visible to this installer. Public bidding will be disabled.
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
+                     <DirectAwardInput control={form.control} isMapLoaded={true} />
                 </CardContent>
             </Card>
           <div className="flex items-center justify-end gap-2">
