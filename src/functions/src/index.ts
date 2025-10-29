@@ -80,15 +80,18 @@ export const onJobUpdate = functions.firestore
             const newBid = afterData.bids[newBidsCount - 1];
             const jobGiverId = afterData.jobGiver.id;
             
-            const installerDoc = await newBid.installer.get();
-            const installerName = installerDoc.data()?.name || "An installer";
+            // This assumes the installer object is a DocumentReference
+            if (newBid.installer && typeof newBid.installer.get === 'function') {
+                const installerDoc = await newBid.installer.get();
+                const installerName = installerDoc.data()?.name || "An installer";
 
-            await sendNotification(
-                jobGiverId,
-                "New Bid on Your Job!",
-                `${installerName} placed a bid of ₹${newBid.amount} on your job: "${afterData.title}"`,
-                `/dashboard/jobs/${jobId}`
-            );
+                await sendNotification(
+                    jobGiverId,
+                    "New Bid on Your Job!",
+                    `${installerName} placed a bid of ₹${newBid.amount} on your job: "${afterData.title}"`,
+                    `/dashboard/jobs/${jobId}`
+                );
+            }
         }
 
         // 2. Job Status Change Notifications
@@ -109,24 +112,28 @@ export const onJobUpdate = functions.firestore
             
             // --- To Job Giver ---
             if (afterData.status === 'In Progress' && beforeData.status === 'Awarded') {
-                 const installerDoc = await afterData.awardedInstaller.get();
-                 const installerName = installerDoc.data()?.name || "The installer";
-                 await sendNotification(
-                    jobGiverId,
-                    "Job Accepted!",
-                    `${installerName} has accepted the job: "${jobTitle}". Work can now begin.`,
-                    `/dashboard/jobs/${jobId}`
-                );
+                 if (afterData.awardedInstaller && typeof afterData.awardedInstaller.get === 'function') {
+                    const installerDoc = await afterData.awardedInstaller.get();
+                    const installerName = installerDoc.data()?.name || "The installer";
+                    await sendNotification(
+                        jobGiverId,
+                        "Job Accepted!",
+                        `${installerName} has accepted the job: "${jobTitle}". Work can now begin.`,
+                        `/dashboard/jobs/${jobId}`
+                    );
+                }
             }
              if (afterData.status === 'Open for Bidding' && beforeData.status === 'Awarded') {
-                 const installerDoc = await beforeData.awardedInstaller.get();
-                 const installerName = installerDoc.data()?.name || "The installer";
-                 await sendNotification(
-                    jobGiverId,
-                    "Job Declined",
-                    `${installerName} has declined the job: "${jobTitle}". You can now award it to another installer.`,
-                    `/dashboard/jobs/${jobId}`
-                );
+                 if (beforeData.awardedInstaller && typeof beforeData.awardedInstaller.get === 'function') {
+                    const installerDoc = await beforeData.awardedInstaller.get();
+                    const installerName = installerDoc.data()?.name || "The installer";
+                    await sendNotification(
+                        jobGiverId,
+                        "Job Declined",
+                        `${installerName} has declined the job: "${jobTitle}". You can now award it to another installer.`,
+                        `/dashboard/jobs/${jobId}`
+                    );
+                }
             }
              if (afterData.status === 'Completed' && beforeData.status !== 'Completed') {
                 await sendNotification(
@@ -160,15 +167,17 @@ export const onPrivateMessageCreated = functions.firestore
             // Determine the recipient
             const recipientId = authorId === jobGiverId ? awardedInstallerId : jobGiverId;
             
-            const authorDoc = await newMessage.author.get();
-            const authorName = authorDoc.data()?.name || "Someone";
+             if (newMessage.author && typeof newMessage.author.get === 'function') {
+                const authorDoc = await newMessage.author.get();
+                const authorName = authorDoc.data()?.name || "Someone";
 
-            await sendNotification(
-                recipientId,
-                `New Message from ${authorName}`,
-                `You have a new message on job: "${afterData.title}"`,
-                `/dashboard/jobs/${context.params.jobId}`
-            );
+                await sendNotification(
+                    recipientId,
+                    `New Message from ${authorName}`,
+                    `You have a new message on job: "${afterData.title}"`,
+                    `/dashboard/jobs/${context.params.jobId}`
+                );
+            }
         }
     });
 
@@ -275,3 +284,5 @@ export const onJobCompleted = functions.firestore
         }
     });
 
+
+    

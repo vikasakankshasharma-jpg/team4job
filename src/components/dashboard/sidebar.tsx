@@ -52,7 +52,9 @@ const adminNavItems = [
     { href: "/dashboard/team", icon: UserCog, label: "Team Management" },
     { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
     { href: "/dashboard/transactions", icon: IndianRupee, label: "Transactions" },
-    { href: "/dashboard/settings", icon: Settings, label: "Settings" },
+    { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
+    { href: "/dashboard/subscription-plans", icon: Ticket, label: "Subscriptions" },
+    { href: "/dashboard/blacklist", icon: Ban, label: "Blacklist" },
 ];
 
 const supportTeamNavItems = [
@@ -148,3 +150,5 @@ export function DashboardSidebar() {
     </aside>
   );
 }
+
+    
