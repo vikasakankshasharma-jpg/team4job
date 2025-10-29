@@ -17,7 +17,7 @@ async function getPlatformSettings(): Promise<PlatformSettings> {
     }
     // Return default values if settings are not configured
     return {
-        installerCommissionRate: 10,
+        installerCommissionRate: 5,
         jobGiverFeeRate: 2,
         defaultTrialPeriodDays: 30,
         freeBidsForNewInstallers: 10,

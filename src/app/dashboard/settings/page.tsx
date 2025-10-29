@@ -226,7 +226,7 @@ function PersonalSettingsCard() {
 }
 
 const initialSettings: Partial<PlatformSettings> = {
-    installerCommissionRate: 10,
+    installerCommissionRate: 5,
     jobGiverFeeRate: 2,
     defaultTrialPeriodDays: 30,
     freeBidsForNewInstallers: 10,
