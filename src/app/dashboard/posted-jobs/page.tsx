@@ -97,11 +97,8 @@ function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () 
         setIsLoading(true);
         try {
             const jobRef = doc(db, 'jobs', job.id);
-            const newDescription = `**PROMOTED JOB: Includes a travel tip of ₹${tip}.**\n\n${job.description}`;
             await updateDoc(jobRef, {
-                budget: { ...job.budget, max: job.budget.max + tip },
-                isPromoted: true,
-                description: newDescription,
+                travelTip: tip,
                 deadline: new Date(newDeadline),
                 status: 'Open for Bidding',
             });
@@ -128,7 +125,7 @@ function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () 
                 <DialogHeader>
                     <DialogTitle>Promote Unbid Job</DialogTitle>
                     <DialogDescription>
-                        Attract more installers by offering a travel tip and re-listing the job to the entire city.
+                        Attract more installers by offering a travel tip and re-listing the job. This tip is commission-free for the installer.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -141,7 +138,7 @@ function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () 
                             value={tip}
                             onChange={(e) => setTip(Number(e.target.value))}
                         />
-                        <p className="text-xs text-muted-foreground">This amount will be added to the job budget to incentivize installers from other areas.</p>
+                        <p className="text-xs text-muted-foreground">This amount will be added to the total cost and paid directly to the installer.</p>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="new-deadline">New Bidding Deadline</Label>
@@ -385,7 +382,7 @@ export default function PostedJobsPage() {
                         <span className="font-semibold">Job Type:</span> This column shows how a job was awarded. "Bidding" means you chose from bids, while "Direct" means you awarded it directly to an installer.
                      </li>
                      <li>
-                        <span className="font-semibold">Actions:</span> Use the actions menu (three dots) on each job row to view its details, or re-post a cancelled/un-bid job to save time.
+                        <span className="font-semibold">Actions:</span> Use the actions menu (three dots) on each job row to view its details, re-post a cancelled/un-bid job, or promote an un-bid job to a wider audience.
                      </li>
                 </ul>
                 <p>

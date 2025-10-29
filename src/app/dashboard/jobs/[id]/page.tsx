@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -71,6 +72,7 @@ import {
   Archive,
   FileText,
   Ban,
+  Gift,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -343,7 +345,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   };
 
   const commissionRate = platformSettings?.installerCommissionRate || 10;
-  const earnings = Number(bidAmount) * (1 - commissionRate / 100);
+  const earnings = Number(bidAmount) * (1 - commissionRate / 100) + (job.travelTip || 0);
 
   return (
     <Card>
@@ -372,8 +374,13 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
                     <span className="font-semibold">{Number(bidAmount).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span> (Your Bid)
                 </p>
                  <p className="text-sm">
-                    - <span className="font-semibold">{(Number(bidAmount) - earnings).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span> (Platform Fee at {commissionRate}%)
+                    - <span className="font-semibold">{(Number(bidAmount) * (commissionRate / 100)).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span> (Platform Fee at {commissionRate}%)
                 </p>
+                {job.travelTip && job.travelTip > 0 && (
+                     <p className="text-sm">
+                        + <span className="font-semibold">{(job.travelTip).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span> (Travel Tip)
+                    </p>
+                )}
                 <Separator className="my-1"/>
                  <p className="font-bold text-base text-green-600">
                     ~ {earnings.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
@@ -485,7 +492,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings, isF
 
     const feeRate = platformSettings?.jobGiverFeeRate || 2;
     const feeAmount = bid.amount * (feeRate / 100);
-    const totalPayable = bid.amount + feeAmount;
+    const totalPayable = bid.amount + feeAmount + (job.travelTip || 0);
 
     return (
         <div className={cn("p-4 rounded-lg border", isAwardedToThisBidder && 'border-primary bg-primary/5')}>
@@ -529,6 +536,9 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings, isF
                         <div className="flex-1 space-y-1">
                             <div className="flex justify-between text-sm"><span>Bid Amount:</span> <span className="font-medium">₹{bid.amount.toLocaleString()}</span></div>
                             <div className="flex justify-between text-sm text-muted-foreground"><span>Platform Fee ({feeRate}%):</span> <span className="font-medium">+ ₹{feeAmount.toLocaleString()}</span></div>
+                            {job.travelTip && job.travelTip > 0 && (
+                                <div className="flex justify-between text-sm text-muted-foreground"><span>Travel Tip:</span> <span className="font-medium">+ ₹{job.travelTip.toLocaleString()}</span></div>
+                            )}
                             <Separator className="my-1"/>
                             <div className="flex justify-between font-bold"><span>Total Payable:</span> <span>₹{totalPayable.toLocaleString()}</span></div>
                         </div>
@@ -1381,7 +1391,7 @@ export default function JobDetailPage() {
                                     authorAvatar = (job.awardedInstaller as User)?.realAvatarUrl;
                                 }
 
-                                return <CommentDisplay key={comment.id || authorId + comment.timestamp} comment={comment} authorName={authorName} authorAvatar={authorAvatar} />;
+                                return <CommentDisplay key={comment.id || authorId + comment.timestamp} comment={comment} authorName={authorName} authorAvatar={authorAvatar}/>;
                             })}
                         </div>
                     </>
@@ -1536,6 +1546,9 @@ export default function JobDetailPage() {
                 <p className="text-muted-foreground">Budget</p>
                 <p className="font-semibold">
                   {job.budget ? `₹${job.budget.min.toLocaleString()} - ₹${job.budget.max.toLocaleString()}` : 'Not specified'}
+                   {job.travelTip && job.travelTip > 0 && (
+                    <span className="text-primary font-semibold"> (+ ₹{job.travelTip.toLocaleString()} tip)</span>
+                  )}
                 </p>
               </div>
             </div>
@@ -1655,7 +1668,8 @@ export default function JobDetailPage() {
                                 <AlertDialogTitle>Are you sure you want to cancel this job?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     This action cannot be undone. 
-                                    {job.status === 'In Progress' && " This will terminate the contract with the current installer and the job will be archived. A refund may need to be processed manually if funds have been escrowed."}
+                                    {job.status === 'In Progress' && isFunded && " This will terminate the contract with the current installer. You must contact support to process a refund of the escrowed funds."}
+                                    {job.status === 'In Progress' && !isFunded && " This will terminate the contract with the current installer."}
                                     {job.status !== 'In Progress' && " The job will be marked as 'Cancelled' and will no longer be open for bidding."}
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
@@ -1674,4 +1688,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
 

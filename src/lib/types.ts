@@ -1,3 +1,4 @@
+
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {
@@ -111,6 +112,7 @@ export type Job = {
     min: number;
     max: number;
   };
+  travelTip?: number;
   isGstInvoiceRequired: boolean;
   isPromoted?: boolean;
   status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid';

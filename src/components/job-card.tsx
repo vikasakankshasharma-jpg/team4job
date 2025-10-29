@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Job, User } from "@/lib/types";
-import { MapPin, IndianRupee, Clock, Users, User as UserIcon, Star } from "lucide-react";
+import { MapPin, IndianRupee, Clock, Users, User as UserIcon, Star, Gift } from "lucide-react";
 import Link from "next/link";
 import { format, formatDistanceToNow } from 'date-fns';
 import { getStatusVariant, toDate } from "@/lib/utils";
@@ -69,7 +69,9 @@ export function JobCard({ job }: JobCardProps) {
                 <Badge variant={statusVariant} className="capitalize">
                     {job.status}
                 </Badge>
-                {job.isPromoted && <Badge variant="warning" className="gap-1"><Star className="h-3 w-3" /> Promoted</Badge>}
+                {job.travelTip && job.travelTip > 0 && (
+                    <Badge variant="warning" className="gap-1"><Gift className="h-3 w-3" /> Tip Included</Badge>
+                )}
              </div>
             <CardTitle className="text-lg leading-tight">{job.title}</CardTitle>
             <CardDescription className="font-mono text-xs pt-1">{job.id}</CardDescription>
@@ -96,6 +98,9 @@ export function JobCard({ job }: JobCardProps) {
           <div className="flex items-center gap-2 text-foreground">
             <IndianRupee className="h-4 w-4" />
             <span>{job.budget.min} - {job.budget.max}</span>
+            {job.travelTip && job.travelTip > 0 && (
+              <span className="text-primary font-semibold">(+ ₹{job.travelTip} tip)</span>
+            )}
           </div>
           <div className="flex items-center gap-2 text-foreground">
             <Users className="h-4 w-4" />
