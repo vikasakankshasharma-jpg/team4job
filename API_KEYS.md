@@ -27,6 +27,10 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id"
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your-sender-id"
 NEXT_PUBLIC_FIREBASE_APP_ID="1:your-app-id:web:..."
+
+# This is the VAPID key for Firebase Cloud Messaging (Push Notifications)
+# Find this in your Firebase Project Settings -> Cloud Messaging tab -> Web configuration
+NEXT_PUBLIC_FIREBASE_VAPID_KEY="your-web-push-certificate-key-pair"
 ```
 
 ---
@@ -85,7 +89,7 @@ CASHFREE_CLIENT_SECRET="your_verification_suite_client_secret"
 
 ### 4.2 Cashfree Payment Gateway
 
-Used to collect payments from Job Givers into the escrow account.
+Used to collect payments from Job Givers into the escrow account. The `CLIENT_SECRET` is also used to verify incoming webhooks.
 *   **Path:** **Developers > API Keys > Payment Gateway**
 
 ```env
