@@ -34,8 +34,8 @@ import {
 } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useHelp } from "@/hooks/use-help";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { ShieldCheck } from "lucide-react";
+import { TeamManagementCard } from "@/components/team-management-card";
+import Link from "next/link";
 
 
 export default function TeamManagementPage() {
@@ -99,77 +99,73 @@ export default function TeamManagementPage() {
   }
 
   return (
-    <Card>
-      <CardHeader className="sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <CardTitle className="flex items-center gap-2"><UserCog /> Team Management</CardTitle>
-          <CardDescription>
-            A list of all administrative and support team members.
-          </CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Alert className="mb-6">
-            <ShieldCheck className="h-4 w-4" />
-            <AlertTitle>Security Update</AlertTitle>
-            <AlertDescription>
-                To enhance platform security, new team members must now be created directly in the Firebase Console. This ensures that only authorized administrators can add new administrative accounts.
-            </AlertDescription>
-        </Alert>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Date Added</TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : teamMembers.length > 0 ? (
-              teamMembers.map((teamMember) => (
-                <TableRow key={teamMember.id}>
-                  <TableCell className="font-medium">
-                     <Link href={`/dashboard/users/${teamMember.id}`} className="hover:underline">{teamMember.name}</Link>
-                  </TableCell>
-                  <TableCell>{teamMember.email}</TableCell>
-                  <TableCell>
-                     {teamMember.roles.map(r => {
-                        if (r === 'Admin' || r === 'Support Team') {
-                           return <Badge key={r} variant="secondary">{r}</Badge>
-                        }
-                        return null;
-                     })}
-                  </TableCell>
-                  <TableCell>{format(toDate(teamMember.memberSince), "PP")}</TableCell>
-                  <TableCell>
-                    <Button asChild variant="ghost" size="icon">
-                        <Link href={`/dashboard/users/${teamMember.id}`}>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Link>
-                    </Button>
-                  </TableCell>
+    <div className="grid gap-6">
+        <TeamManagementCard onTeamMemberAdded={fetchTeamMembers} />
+        <Card>
+        <CardHeader className="sm:flex-row sm:items-center sm:justify-between">
+            <div>
+            <CardTitle className="flex items-center gap-2"><UserCog /> Current Team Members</CardTitle>
+            <CardDescription>
+                A list of all administrative and support team members.
+            </CardDescription>
+            </div>
+        </CardHeader>
+        <CardContent>
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Date Added</TableHead>
+                <TableHead>
+                    <span className="sr-only">Actions</span>
+                </TableHead>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  No other team members found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+                {loading ? (
+                <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                    </TableCell>
+                </TableRow>
+                ) : teamMembers.length > 0 ? (
+                teamMembers.map((teamMember) => (
+                    <TableRow key={teamMember.id}>
+                    <TableCell className="font-medium">
+                        <Link href={`/dashboard/users/${teamMember.id}`} className="hover:underline">{teamMember.name}</Link>
+                    </TableCell>
+                    <TableCell>{teamMember.email}</TableCell>
+                    <TableCell>
+                        {teamMember.roles.map(r => {
+                            if (r === 'Admin' || r === 'Support Team') {
+                            return <Badge key={r} variant="secondary">{r}</Badge>
+                            }
+                            return null;
+                        })}
+                    </TableCell>
+                    <TableCell>{format(toDate(teamMember.memberSince), "PP")}</TableCell>
+                    <TableCell>
+                        <Button asChild variant="ghost" size="icon">
+                            <Link href={`/dashboard/users/${teamMember.id}`}>
+                            <MoreHorizontal className="h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </TableCell>
+                    </TableRow>
+                ))
+                ) : (
+                <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                    No other team members found.
+                    </TableCell>
+                </TableRow>
+                )}
+            </TableBody>
+            </Table>
+        </CardContent>
+        </Card>
+    </div>
   );
 }
