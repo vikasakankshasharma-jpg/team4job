@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -929,7 +923,9 @@ function RaiseDisputeDialog({ job, user, onJobUpdate }: { job: Job; user: User; 
 function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
     const { user } = useUser();
     const { toast } = useToast();
+    const { db } = useFirebase();
     const [timeLeft, setTimeLeft] = React.useState('');
+    const [isActionLoading, setIsActionLoading] = React.useState(false);
 
     React.useEffect(() => {
         if (!job.acceptanceDeadline) return;
@@ -941,27 +937,33 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
 
             if (diff <= 0) {
                 setTimeLeft('Expired');
-                // Here you would trigger the auto-cancellation logic
-                return;
+                clearInterval(interval);
+            } else {
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                setTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
             }
-
-            const hours = Math.floor(diff / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            setTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
         }, 1000);
 
         return () => clearInterval(interval);
     }, [job.acceptanceDeadline]);
 
     const handleAccept = async () => {
+        setIsActionLoading(true);
         const update = { status: 'In Progress' as const };
-        onJobUpdate(update);
+        await onJobUpdate(update);
         toast({ title: 'Job Accepted!', description: 'You can now start communicating with the Job Giver.' });
+        setIsActionLoading(false);
     };
     
     const handleDecline = async () => {
-        if (!user) return;
+        if (!user || !db) return;
+        setIsActionLoading(true);
+        
+        const settingsDoc = await getDoc(doc(db, "settings", "platform"));
+        const penalty = settingsDoc.data()?.penaltyForDeclinedJob || 0;
+
         const deadline = toDate(job.deadline);
         const now = new Date();
         const newStatus = now > deadline ? 'Bidding Closed' : 'Open for Bidding';
@@ -972,8 +974,16 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
             acceptanceDeadline: undefined,
             disqualifiedInstallerIds: arrayUnion(user.id) as any,
         };
-        onJobUpdate(update);
-        toast({ title: 'Job Declined', description: `The job has been returned to status: ${newStatus}.`, variant: 'destructive' });
+
+        const userRef = doc(db, 'users', user.id);
+        const userDoc = await getDoc(userRef);
+        const currentPoints = userDoc.data()?.installerProfile?.points || 0;
+
+        await updateDoc(userRef, { 'installerProfile.points': currentPoints + penalty });
+        await onJobUpdate(update);
+        
+        toast({ title: 'Job Declined', description: `The job has been returned to status: ${newStatus}. ${penalty} points have been deducted.`, variant: 'destructive' });
+        setIsActionLoading(false);
     };
 
 
@@ -997,8 +1007,8 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
             <CardFooter className="flex justify-end gap-2">
                 <Dialog>
                     <DialogTrigger asChild>
-                        <Button variant="destructive">
-                            <ThumbsDown className="mr-2 h-4 w-4" />
+                        <Button variant="destructive" disabled={isActionLoading}>
+                            {isActionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
                             Decline
                         </Button>
                     </DialogTrigger>
@@ -1006,7 +1016,7 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
                         <DialogHeader>
                             <DialogTitle>Are you sure you want to decline?</DialogTitle>
                             <DialogDescription>
-                                Declining this job will disqualify you from bidding on it in the future and may affect your reputation score. This action cannot be undone.
+                                Declining this job will disqualify you from bidding on it in the future and will result in a reputation penalty. This action cannot be undone.
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
@@ -1015,7 +1025,8 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-                <Button onClick={handleAccept}>
+                <Button onClick={handleAccept} disabled={isActionLoading}>
+                    {isActionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     <CheckCircle2 className="mr-2 h-4 w-4" />
                     Accept Job
                 </Button>
@@ -1104,7 +1115,6 @@ export default function JobDetailPage() {
         setPlatformSettings(settingsDoc.data() as PlatformSettings);
     }
     
-    // Check for existing transaction
     const transQuery = query(collection(db, "transactions"), where("jobId", "==", id), where("status", "==", "Funded"));
     const transSnap = await getDocs(transQuery);
     setIsFunded(!transSnap.empty);
@@ -1121,7 +1131,25 @@ export default function JobDetailPage() {
         return;
     }
 
-    const jobData = jobSnap.data() as Job;
+    let jobData = jobSnap.data() as Job;
+
+    // --- Automatic decline logic ---
+    if (jobData.status === 'Awarded' && jobData.acceptanceDeadline && toDate(jobData.acceptanceDeadline) < new Date()) {
+        const deadline = toDate(jobData.deadline);
+        const now = new Date();
+        const newStatus = now > deadline ? 'Bidding Closed' : 'Open for Bidding';
+
+        const update: Partial<Job> = { 
+            status: newStatus, 
+            awardedInstaller: undefined, 
+            acceptanceDeadline: undefined,
+            disqualifiedInstallerIds: arrayUnion((jobData.awardedInstaller as DocumentReference).id) as any,
+        };
+        
+        await updateDoc(jobRef, update);
+        jobData = { ...jobData, ...update }; // Update local copy
+        toast({ title: "Offer Expired", description: "The installer did not accept the offer in time. You can now award the job to someone else." });
+    }
 
     // Collect all unique user IDs from the job document
     const userIds = new Set<string>();
@@ -1170,7 +1198,7 @@ export default function JobDetailPage() {
     
     setJob(populatedJob);
     setLoading(false);
-  }, [id, db]);
+  }, [id, db, toast]);
 
   React.useEffect(() => {
     fetchJob();
