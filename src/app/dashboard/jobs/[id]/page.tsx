@@ -3,6 +3,7 @@
 
 
 
+
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -351,7 +352,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
     }
   };
 
-  const commissionRate = platformSettings?.installerCommissionRate || 10;
+  const commissionRate = platformSettings?.installerCommissionRate || 0;
   const earnings = Number(bidAmount) * (1 - commissionRate / 100) + (job.travelTip || 0);
 
   return (
@@ -498,7 +499,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings, isF
     const avatar = identitiesRevealed ? <AvatarImage src={installer.realAvatarUrl} alt={installer.name} /> : <AnimatedAvatar svg={installer.avatarUrl} />;
     const avatarFallback = identitiesRevealed ? installer.name.substring(0, 2) : anonymousId.split('-')[1];
 
-    const feeRate = platformSettings?.jobGiverFeeRate || 2;
+    const feeRate = platformSettings?.jobGiverFeeRate || 0;
     const feeAmount = bid.amount * (feeRate / 100);
     const totalPayable = bid.amount + feeAmount + (job.travelTip || 0);
 
@@ -668,8 +669,9 @@ function FinancialsCard({ job, transaction, platformSettings, user }: { job: Job
   const installer = job.awardedInstaller as User;
   const isInstaller = user.id === installer.id;
 
-  const commissionRate = platformSettings?.installerCommissionRate || 10;
+  const commissionRate = platformSettings?.installerCommissionRate || 0;
   const commission = transaction.amount * (commissionRate / 100);
+  const gstOnCommission = commission * 0.18;
 
   return (
     <Card className="bg-gradient-to-br from-blue-50/20 to-purple-50/20 dark:from-blue-950/20 dark:to-purple-950/20">
@@ -707,9 +709,9 @@ function FinancialsCard({ job, transaction, platformSettings, user }: { job: Job
                 <p><strong>From:</strong> CCTV Job Connect</p>
                 <Separator />
                 <div className="flex justify-between"><span className="text-muted-foreground">Service Fee for Job #{job.id}</span><span>₹{commission.toLocaleString('en-IN')}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">GST @ 18%</span><span>₹{(commission * 0.18).toLocaleString('en-IN')}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">GST @ 18%</span><span>₹{gstOnCommission.toLocaleString('en-IN')}</span></div>
                 <Separator />
-                <div className="flex justify-between font-bold"><span>Total</span><span>₹{(commission * 1.18).toLocaleString('en-IN')}</span></div>
+                <div className="flex justify-between font-bold"><span>Total</span><span>₹{(commission + gstOnCommission).toLocaleString('en-IN')}</span></div>
               </div>
             </DialogContent>
           </Dialog>
@@ -942,9 +944,13 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
     };
     
     const handleDecline = async () => {
-        const update = { status: 'Open for Bidding' as const, awardedInstaller: undefined, acceptanceDeadline: undefined };
+        const deadline = toDate(job.deadline);
+        const now = new Date();
+        const newStatus = now > deadline ? 'Bidding Closed' : 'Open for Bidding';
+
+        const update = { status: newStatus, awardedInstaller: undefined, acceptanceDeadline: undefined };
         onJobUpdate(update);
-        toast({ title: 'Job Declined', description: 'The job is now open for bidding again.', variant: 'destructive' });
+        toast({ title: 'Job Declined', description: `The job has been returned to status: ${newStatus}.`, variant: 'destructive' });
     };
 
 

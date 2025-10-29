@@ -137,14 +137,14 @@ export const onJobStatusChange = functions.firestore
         }
 
         // To Job Giver: Job Declined
-        if (afterData.status === 'Open for Bidding' && beforeData.status === 'Awarded') {
+        if ((afterData.status === 'Open for Bidding' || afterData.status === 'Bidding Closed') && beforeData.status === 'Awarded') {
             if (beforeData.awardedInstaller && typeof beforeData.awardedInstaller.get === 'function') {
                 const installerDoc = await beforeData.awardedInstaller.get();
                 const installerName = installerDoc.data()?.name || "The installer";
                 await sendNotification(
                     jobGiverId,
                     "Job Declined",
-                    `${installerName} has declined the job: "${jobTitle}". It is now open for bidding again. You can award it to another installer.`,
+                    `${installerName} has declined the job: "${jobTitle}". You can now award it to another installer.`,
                     `/dashboard/jobs/${jobId}`
                 );
             }
@@ -345,3 +345,4 @@ export const onJobCompleted = functions.firestore
 
 
     
+
