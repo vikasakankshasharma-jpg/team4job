@@ -706,18 +706,26 @@ function CommentDisplay({ comment, authorName, authorAvatar }: { comment: Commen
     );
 }
 
-function EditDateDialog({ job, onJobUpdate, triggerElement }: { job: Job; onJobUpdate: (updatedPart: Partial<Job>) => void; triggerElement: React.ReactNode }) {
+function EditDateDialog({ job, user, onJobUpdate, triggerElement }: { job: Job; user: User; onJobUpdate: (updatedPart: Partial<Job>) => void; triggerElement: React.ReactNode }) {
     const { toast } = useToast();
     const [newDate, setNewDate] = React.useState<string>(job.jobStartDate ? format(toDate(job.jobStartDate), "yyyy-MM-dd") : "");
     const [isOpen, setIsOpen] = React.useState(false);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     const handleSave = async () => {
-        if (newDate) {
-            onJobUpdate({ jobStartDate: new Date(newDate) });
+        if (newDate && job) {
+            setIsSubmitting(true);
+            const proposal = {
+                newDate: new Date(newDate),
+                proposedBy: user.roles.includes('Job Giver') ? 'Job Giver' : 'Installer',
+                status: 'pending' as const
+            };
+            await onJobUpdate({ dateChangeProposal: proposal });
             toast({
-                title: "Date Updated",
-                description: `Job start date has been changed to ${format(new Date(newDate), "MMM d, yyyy")}.`,
+                title: "Date Change Proposed",
+                description: `A request to change the start date to ${format(new Date(newDate), "MMM d, yyyy")} has been sent.`,
             });
+            setIsSubmitting(false);
             setIsOpen(false);
         }
     };
@@ -727,9 +735,9 @@ function EditDateDialog({ job, onJobUpdate, triggerElement }: { job: Job; onJobU
             <DialogTrigger asChild>{triggerElement}</DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Change Job Start Date</DialogTitle>
+                    <DialogTitle>Propose New Job Start Date</DialogTitle>
                     <DialogDescription>
-                        Select a new start date for this job. The installer will be notified.
+                        Select a new start date for this job. The other party will need to approve this change.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -748,7 +756,10 @@ function EditDateDialog({ job, onJobUpdate, triggerElement }: { job: Job; onJobU
                     <DialogClose asChild>
                         <Button variant="outline">Cancel</Button>
                     </DialogClose>
-                    <Button onClick={handleSave} disabled={!newDate}>Save Changes</Button>
+                    <Button onClick={handleSave} disabled={!newDate || isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Propose Change
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -941,6 +952,47 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
         </Card>
     );
 }
+
+function DateChangeProposalSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
+    if (!job.dateChangeProposal || job.dateChangeProposal.status !== 'pending') {
+        return null;
+    }
+
+    const { toast } = useToast();
+    const isProposer = job.dateChangeProposal.proposedBy === user.roles[0]; // Simplified role check
+
+    const handleAccept = () => {
+        onJobUpdate({ 
+            jobStartDate: job.dateChangeProposal!.newDate,
+            dateChangeProposal: undefined, // Clear proposal
+        });
+        toast({ title: 'Date Change Accepted', description: 'The job start date has been updated.' });
+    };
+
+    const handleDecline = () => {
+        onJobUpdate({ dateChangeProposal: undefined }); // Clear proposal, date remains unchanged
+        toast({ title: 'Date Change Declined', description: 'The job start date remains unchanged.', variant: 'destructive' });
+    };
+
+    return (
+        <Card className="border-amber-500/50 bg-amber-50/50">
+            <CardHeader>
+                <CardTitle>Date Change Proposed</CardTitle>
+                <CardDescription>
+                    {job.dateChangeProposal.proposedBy} has requested to change the job start date to{' '}
+                    <span className="font-semibold">{format(toDate(job.dateChangeProposal.newDate), "MMM d, yyyy")}</span>.
+                </CardDescription>
+            </CardHeader>
+            {!isProposer && (
+                <CardFooter className="flex justify-end gap-2">
+                    <Button variant="destructive" onClick={handleDecline}>Decline</Button>
+                    <Button onClick={handleAccept}>Accept</Button>
+                </CardFooter>
+            )}
+        </Card>
+    );
+}
+
 
 const getRefId = (ref: any): string | null => {
     if (!ref) return null;
@@ -1216,6 +1268,7 @@ export default function JobDetailPage() {
 
 
   const showInstallerAcceptance = isAwardedInstaller && job.status === 'Awarded';
+  const canProposeDateChange = (isJobGiver || isAwardedInstaller) && job.status === 'In Progress' && !job.dateChangeProposal;
 
 
   return (
@@ -1244,6 +1297,13 @@ export default function JobDetailPage() {
           <CardContent>
             <p className="text-foreground">{job.description}</p>
             
+            {job.dateChangeProposal && job.status === 'In Progress' && (
+                <>
+                    <Separator className="my-6" />
+                    <DateChangeProposalSection job={job} user={user} onJobUpdate={handleJobUpdate} />
+                </>
+            )}
+
             {job.attachments && job.attachments.length > 0 && (
               <>
                 <Separator className="my-6" />
@@ -1485,9 +1545,10 @@ export default function JobDetailPage() {
                   <p className="text-muted-foreground">Work Starts</p>
                   <p className="font-semibold">{jobStartDate}</p>
               </div>
-              {isJobGiver && job.status === 'In Progress' && (
+              {canProposeDateChange && (
                 <EditDateDialog 
                     job={job} 
+                    user={user}
                     onJobUpdate={handleJobUpdate} 
                     triggerElement={
                         <Button variant="ghost" size="icon">
@@ -1586,3 +1647,4 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
