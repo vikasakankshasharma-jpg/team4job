@@ -6,65 +6,82 @@ This guide explains how invoices are generated on the platform, especially conce
 
 ---
 
-## 1. When is an Invoice Generated?
+## 1. The Complete Financial Workflow: A Detailed Example
 
-An official invoice is automatically generated under the following conditions:
-1.  The Job Giver has checked the "GST Invoice Required" box when posting the job.
-2.  The job has been successfully marked as "Completed" by the Installer.
+To understand the flow of money and invoices, let's use a clear example.
 
-Once generated, the invoice can be viewed and downloaded by both the Job Giver and the awarded Installer from the Job Detail page.
-
----
-
-## 2. Structure of the Invoice (with GST Example)
-
-The most important concept to understand is that the **total value of the service** includes both the final bid amount and any travel tip offered. Both components are subject to GST.
-
-Let's take a detailed example:
-
--   **Bid Amount Won by Installer:** ₹10,000
--   **Travel Tip Offered by Job Giver:** ₹1,000
--   **Assumed GST Rate:** 18% (This is an example rate. The installer must apply the rate applicable to their services.)
-
-### How the Invoice is Structured:
-
-The invoice will clearly list each component of the transaction value.
-
-| Description                     | SAC Code | Taxable Amount |
-| ------------------------------- | :------: | -------------: |
-| Main Service (Bid Amount)       |   9954   |    ₹10,000.00  |
-| Travel & Convenience Allowance  |   9954   |     ₹1,000.00  |
-| **Subtotal**                    |          |    **₹11,000.00**  |
+**Scenario:**
+*   A Job Giver posts a job with a **Travel Tip** of **₹1,000**.
+*   An Installer wins the job with a **Final Bid** of **₹10,000**.
+*   The platform charges a **10% commission** to the Installer.
 
 ---
 
-### How GST is Calculated on the Invoice:
+### **Step 1: Job Giver Funds the Project**
 
-GST is calculated on the **total taxable value (Subtotal)**.
+When the Job Giver awards the job, they pay the **total project cost** into the platform's secure account.
 
-| Description      | Amount         |
-| ---------------- | --------------:|
-| **Subtotal**     | **₹11,000.00** |
-| CGST @ 9%        |       ₹990.00  |
-| SGST @ 9%        |       ₹990.00  |
-| **Grand Total**  | **₹12,980.00** |
+| Description             | Amount       |
+| ----------------------- | ------------:|
+| Installer's Bid Amount  | ₹10,000.00   |
+| Travel Tip              |  ₹1,000.00   |
+| **Total Paid by Job Giver** | **₹11,000.00** |
 
-*(Note: IGST would apply for inter-state services, but the principle remains the same. The invoice total reflects the full amount including taxes.)*
+*This entire amount is held by the platform until the job is successfully completed.*
 
 ---
 
-## 3. Key Takeaways for Each Role
+### **Step 2: Job Completion & Payout**
 
-### For Installers (Service Providers)
+Once the job is marked as "Completed," the platform processes the payouts.
 
-*   **Your Responsibility:** You are responsible for collecting and remitting GST on the **entire amount** you receive from the Job Giver (`Bid Amount + Travel Tip`).
-*   **Platform Fees:** The commission you pay to CCTV Job Connect is a separate transaction. The platform will provide you with an invoice for that service, on which we charge GST. This is an input cost for your business.
-*   **Your GSTIN:** Ensure your GSTIN is correctly entered in your profile. It will be automatically added to the invoices generated for your completed jobs.
+1.  **Payout to the Installer:** The platform calculates the installer's net earnings.
+    *   Total Due to Installer: `₹10,000 (Bid) + ₹1,000 (Tip) = ₹11,000`
+    *   Platform Commission: `10% of ₹10,000 (Bid) = ₹1,000`
+    *   **Final Payout to Installer:** `₹11,000 - ₹1,000 = **₹10,000.00**`
 
-### For Job Givers (Service Recipients)
+2.  **Platform Revenue:**
+    *   The platform retains its **₹1,000.00** commission.
 
-*   **Total Cost:** The total amount you pay is the `Bid Amount + Platform Fee + Travel Tip`. The final invoice you receive from the Installer will be for the `Bid Amount + Travel Tip + Applicable GST`.
-*   **Input Tax Credit (ITC):** If you are a registered business, you can claim ITC on the GST paid, based on the invoice provided by the Installer. Ensure you have selected the "GST Invoice Required" option when posting a job.
-*   **Your GSTIN:** Ensure your GSTIN is correctly entered in your profile to have it automatically included on the invoices you receive, which is mandatory for claiming ITC.
+---
 
-By structuring the invoice this way, we ensure transparency and provide a clear, compliant document for your financial records.
+## 2. The Invoicing Process (Who Invoices Whom?)
+
+There are **two separate invoicing events** that happen in this transaction.
+
+### **Invoice 1: From Installer to Job Giver (For the Main Service)**
+
+This is the primary invoice for the work done. The platform generates this on behalf of the Installer.
+
+*   **Who issues it?** The **Installer**.
+*   **Who receives it?** The **Job Giver**.
+*   **What's on it?** The total value of the service provided.
+
+| Description                     | Taxable Amount |
+| ------------------------------- | -------------: |
+| Main Service (Bid Amount)       |    ₹10,000.00  |
+| Travel & Convenience Allowance  |     ₹1,000.00  |
+| **Subtotal (Taxable Value)**    |    **₹11,000.00**  |
+| CGST @ 9% (Example)             |       ₹990.00  |
+| SGST @ 9% (Example)             |       ₹990.00  |
+| **Grand Total**                 | **₹12,980.00** |
+
+*The Job Giver uses this invoice to claim Input Tax Credit (ITC) if they are a registered business.*
+
+### **Invoice 2: From Platform to Installer (For the Commission)**
+
+This is the invoice for the service provided by the platform (i.e., connecting the installer with a job).
+
+*   **Who issues it?** **CCTV Job Connect** (The Platform).
+*   **Who receives it?** The **Installer**.
+*   **What's on it?** The commission fee charged by the platform.
+
+| Description         | Taxable Amount |
+| ------------------- | -------------: |
+| Platform Commission |     ₹1,000.00  |
+| GST @ 18% (Example) |       ₹180.00  |
+| **Total**           |     **₹1,180.00**  |
+
+*The Installer uses this invoice to claim ITC on the GST they paid for the platform's service. This is a business expense for the Installer.*
+
+By structuring the finances and invoicing this way, all transactions are transparent, compliant, and correctly documented for accounting and tax purposes for all three parties involved.
