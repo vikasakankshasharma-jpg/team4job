@@ -71,6 +71,7 @@ import {
   FileText,
   Ban,
   Gift,
+  Check,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -86,6 +87,7 @@ import { doc, getDoc, updateDoc, arrayUnion, setDoc, DocumentReference, collecti
 import axios from 'axios';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { FileUpload } from "@/components/ui/file-upload";
+import { Checkbox } from "@/components/ui/checkbox";
 
 
 declare const cashfree: any;
@@ -437,177 +439,133 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   );
 }
 
-function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings, isFunded }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousId: string, platformSettings: PlatformSettings | null, isFunded: boolean }) {
+function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings, selected, onSelect,isDisabled }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousId: string, platformSettings: PlatformSettings | null, selected: boolean, onSelect: (id: string) => void, isDisabled: boolean }) {
     const { user: jobGiver, role } = useUser();
-    const { toast } = useToast();
-    const { db } = useFirebase();
     const [timeAgo, setTimeAgo] = React.useState('');
-    const [isFunding, setIsFunding] = React.useState(false);
     const installer = bid.installer as User;
-
-    const awardedInstallerId = (job.awardedInstaller instanceof DocumentReference) 
-        ? job.awardedInstaller.id 
-        : (job.awardedInstaller as User)?.id;
-
-    const isAwardedToThisBidder = awardedInstallerId === installer.id;
-    const isJobAwarded = !!job.awardedInstaller;
 
     React.useEffect(() => {
         if(bid.timestamp) {
             setTimeAgo(formatDistanceToNow(toDate(bid.timestamp), { addSuffix: true }));
         }
     }, [bid.timestamp]);
-
-    const handleAwardAndFundJob = async () => {
-        if (!db || !jobGiver) return;
-        setIsFunding(true);
-        
-        try {
-            const { data } = await axios.post('/api/escrow/initiate-payment', {
-                jobId: job.id,
-                jobTitle: job.title,
-                jobGiverId: jobGiver.id,
-                installerId: installer.id,
-                amount: bid.amount,
-                travelTip: job.travelTip || 0
-            });
-
-            if (!data.payment_session_id) throw new Error("Could not retrieve payment session ID.");
-
-            const cashfreeInstance = new cashfree(data.payment_session_id);
-            cashfreeInstance.checkout({ payment_method: "upi" });
-
-        } catch (error: any) {
-             toast({
-                title: "Failed to Initiate Payment",
-                description: error.response?.data?.error || "An unexpected error occurred. Please try again.",
-                variant: "destructive"
-            });
-             setIsFunding(false);
-        }
-    };
-
-    const handleAwardWithoutFunding = async () => {
-        const acceptanceDeadline = new Date();
-        acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
-        onJobUpdate({ 
-            awardedInstaller: doc(db, 'users', installer.id),
-            status: 'Awarded',
-            acceptanceDeadline,
-        });
-        toast({
-            title: "Job Awarded!",
-            description: `${installer.name} has been notified. You will be notified when they accept.`,
-        });
-    };
     
     const isAdmin = role === 'Admin';
     const isJobGiver = role === 'Job Giver';
-    const identitiesRevealed = job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' && job.status !== 'Awarded' || role === 'Admin';
+    const identitiesRevealed = job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' || role === 'Admin';
 
     const installerName = identitiesRevealed ? installer.name : anonymousId;
     const avatar = identitiesRevealed ? <AvatarImage src={installer.realAvatarUrl} alt={installer.name} /> : <AnimatedAvatar svg={installer.avatarUrl} />;
     const avatarFallback = identitiesRevealed ? installer.name.substring(0, 2) : anonymousId.split('-')[1];
 
-    const feeRate = platformSettings?.jobGiverFeeRate || 0;
-    const feeAmount = bid.amount * (feeRate / 100);
-    const totalPayable = bid.amount + feeAmount + (job.travelTip || 0);
-
     return (
-        <div className={cn("p-4 rounded-lg border", isAwardedToThisBidder && 'border-primary bg-primary/5')}>
-            <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                    <Avatar>
-                       {avatar}
-                        <AvatarFallback>{avatarFallback}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <div className="flex items-center gap-2">
-                           {identitiesRevealed ? (
-                                <Link href={`/dashboard/users/${installer.id}`} className="font-semibold hover:underline">{installerName}</Link>
-                           ) : (
-                                <p className="font-semibold">{installerName}</p>
-                           )}
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Star className="h-3 w-3 fill-primary text-primary" />
-                            <span>{installer.installerProfile?.rating} ({installer.installerProfile?.reviews} reviews)</span>
+        <div className={cn("p-4 rounded-lg border flex gap-4", selected && 'border-primary bg-primary/5')}>
+            <Checkbox id={`select-${installer.id}`} checked={selected} onCheckedChange={() => onSelect(installer.id)} className="mt-1" disabled={isDisabled && !selected} />
+            <div className="flex-1">
+                <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                        <Avatar>
+                           {avatar}
+                            <AvatarFallback>{avatarFallback}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <div className="flex items-center gap-2">
+                               {identitiesRevealed ? (
+                                    <Link href={`/dashboard/users/${installer.id}`} className="font-semibold hover:underline">{installerName}</Link>
+                               ) : (
+                                    <p className="font-semibold">{installerName}</p>
+                               )}
+                            </div>
+                            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
+                                <span className="flex items-center gap-1"><Trophy className="h-3 w-3 text-amber-500" /> {installer.installerProfile?.tier} Tier</span>
+                                <span className="flex items-center gap-1"><Star className="h-3 w-3 fill-primary text-primary" /> {installer.installerProfile?.rating} ({installer.installerProfile?.reviews} reviews)</span>
+                            </div>
                         </div>
                     </div>
+                    <div className="text-right">
+                        <p className="text-lg font-bold">₹{bid.amount.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                    </div>
                 </div>
-                <div className="text-right">
-                    <p className="text-lg font-bold">₹{bid.amount.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">{timeAgo}</p>
-                </div>
+                <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
             </div>
-            <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
-            {isJobGiver && !isJobAwarded && (
-                isFunded ? (
-                    <div className="mt-4 flex items-center justify-end gap-4 p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200">
-                        <p className="text-sm font-medium text-green-700 dark:text-green-300">Funds are already held for this job.</p>
-                        <Button size="sm" onClick={handleAwardWithoutFunding} disabled={isFunding}>
-                            <Award className="mr-2 h-4 w-4" />
-                            Award Job
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="mt-4 flex flex-col md:flex-row items-start md:items-center gap-4 p-3 bg-secondary rounded-lg">
-                        <div className="flex-1 space-y-1">
-                            <div className="flex justify-between text-sm"><span>Bid Amount:</span> <span className="font-medium">₹{bid.amount.toLocaleString()}</span></div>
-                            <div className="flex justify-between text-sm text-muted-foreground"><span>Platform Fee ({feeRate}%):</span> <span className="font-medium">+ ₹{feeAmount.toLocaleString()}</span></div>
-                            {job.travelTip && job.travelTip > 0 && (
-                                <div className="flex justify-between text-sm text-muted-foreground"><span>Travel Tip:</span> <span className="font-medium">+ ₹{job.travelTip.toLocaleString()}</span></div>
-                            )}
-                            <Separator className="my-1"/>
-                            <div className="flex justify-between font-bold"><span>Total Payable:</span> <span>₹{totalPayable.toLocaleString()}</span></div>
-                        </div>
-                        <Button size="sm" onClick={handleAwardAndFundJob} disabled={isFunding} className="w-full md:w-auto">
-                            {isFunding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            <Award className="mr-2 h-4 w-4" />
-                            Award & Fund Job
-                        </Button>
-                    </div>
-                )
-            )}
         </div>
     );
 }
 
 function BidsSection({ job, onJobUpdate, anonymousIdMap, platformSettings, isFunded }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousIdMap: Map<string, string>, platformSettings: PlatformSettings | null, isFunded: boolean }) {
-    const { role } = useUser();
-    
-    const calculateBidScore = (bid: Bid, job: Job) => {
-        const profile = (bid.installer as User).installerProfile;
-        if (!profile) return -Infinity;
-        const priceRange = job.budget.max - job.budget.min;
-        const priceScore = priceRange > 0 ? (job.budget.max - bid.amount) / priceRange : 1;
-        const ratingScore = profile.rating / 5;
-        const reputationScore = Math.log1p(profile.points) / Math.log1p(3000);
-        const W_PRICE = 0.5;
-        const W_RATING = 0.3;
-        const W_REPUTATION = 0.2;
-        return (priceScore * W_PRICE) + (ratingScore * W_RATING) + (reputationScore * W_REPUTATION);
+    const { toast } = useToast();
+    const { user, role } = useUser();
+    const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>([]);
+    const [isSendingOffers, setIsSendingOffers] = React.useState(false);
+
+    const handleSelectInstaller = (id: string) => {
+        setSelectedInstallers(prev => {
+            if (prev.includes(id)) {
+                return prev.filter(i => i !== id);
+            }
+            if (prev.length < 3) {
+                return [...prev, id];
+            }
+            toast({
+                title: "Selection Limit Reached",
+                description: "You can select a maximum of 3 installers to send offers to.",
+                variant: "destructive"
+            });
+            return prev;
+        });
     }
+
+    const handleSendOffers = async () => {
+        if (selectedInstallers.length === 0) {
+            toast({ title: "No Installers Selected", description: "Please select at least one installer to send an offer." });
+            return;
+        }
+        setIsSendingOffers(true);
+        const acceptanceDeadline = new Date();
+        acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
+
+        const update: Partial<Job> = {
+            status: "Awarded",
+            selectedInstallers: selectedInstallers.map((id, index) => ({ installerId: id, rank: index + 1 })),
+            acceptanceDeadline,
+        };
+        await onJobUpdate(update);
+        toast({
+            title: "Offers Sent!",
+            description: `Offers have been sent to ${selectedInstallers.length} installer(s). The first one to accept gets the job.`,
+        });
+        setIsSendingOffers(false);
+    };
 
     const sortedBids = React.useMemo(() => {
         if (!job.bids) return [];
-        return [...job.bids]
-            .map(bid => ({ bid, score: calculateBidScore(bid, job) }))
-            .sort((a, b) => b.score - a.score);
-    }, [job.bids, job.budget]);
+        return [...job.bids].sort((a,b) => b.amount - a.amount);
+    }, [job.bids]);
 
+    const isJobAwarded = !!job.awardedInstaller;
 
   return (
     <Card id="bids-section">
       <CardHeader>
-        <CardTitle>Received Bids ({job.bids?.length || 0})</CardTitle>
-        <CardDescription>
-          {role === 'Admin' ? 'Reviewing bids placed on this job.' : job.awardedInstaller ? 'An installer has been selected for this job.' : 
-          'Review bids and select an installer for the project.'}
-        </CardDescription>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+                <CardTitle>Received Bids ({job.bids?.length || 0})</CardTitle>
+                <CardDescription>
+                  {isJobAwarded ? 'An installer has been selected for this job.' : 
+                  'Select up to 3 installers to send offers to. The first to accept wins the job.'}
+                </CardDescription>
+            </div>
+            {!isJobAwarded && (
+                <Button onClick={handleSendOffers} disabled={isSendingOffers || selectedInstallers.length === 0}>
+                    {isSendingOffers && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Send Offers to Selected ({selectedInstallers.length})
+                </Button>
+            )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {sortedBids.map(({ bid }) => (
+        {sortedBids.map((bid) => (
           <JobGiverBid 
             key={(bid.installer as User).id}
             bid={bid} 
@@ -615,7 +573,9 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap, platformSettings, isFun
             onJobUpdate={onJobUpdate}
             anonymousId={anonymousIdMap.get((bid.installer as User).id) || `Bidder-?`}
             platformSettings={platformSettings}
-            isFunded={isFunded}
+            selected={selectedInstallers.includes((bid.installer as User).id)}
+            onSelect={handleSelectInstaller}
+            isDisabled={isJobAwarded || selectedInstallers.length >= 3}
           />
         ))}
       </CardContent>
@@ -951,9 +911,24 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
 
     const handleAccept = async () => {
         setIsActionLoading(true);
-        const update = { status: 'In Progress' as const };
+        // "First to confirm" logic: check if someone else accepted it first
+        const jobRef = doc(db, 'jobs', job.id);
+        const jobSnap = await getDoc(jobRef);
+        const latestJobData = jobSnap.data() as Job;
+
+        if (latestJobData.status !== 'Awarded') {
+             toast({ title: 'Job No Longer Available', description: 'Another installer has already accepted this job.', variant: 'destructive' });
+             setIsActionLoading(false);
+             onJobUpdate(latestJobData); // Refresh the UI with the latest data
+             return;
+        }
+
+        const update: Partial<Job> = { 
+            status: 'Pending Funding',
+            awardedInstaller: doc(db, 'users', user!.id)
+        };
         await onJobUpdate(update);
-        toast({ title: 'Job Accepted!', description: 'You can now start communicating with the Job Giver.' });
+        toast({ title: 'Job Accepted!', description: 'The Job Giver has been notified to fund the project.', variant: "success" });
         setIsActionLoading(false);
     };
     
@@ -963,17 +938,20 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
         
         const settingsDoc = await getDoc(doc(db, "settings", "platform"));
         const penalty = settingsDoc.data()?.penaltyForDeclinedJob || 0;
-
-        const deadline = toDate(job.deadline);
-        const now = new Date();
-        const newStatus = now > deadline ? 'Bidding Closed' : 'Open for Bidding';
-
+        
+        const newSelectedInstallers = (job.selectedInstallers || []).filter(s => s.installerId !== user.id);
         const update: Partial<Job> = { 
-            status: newStatus, 
-            awardedInstaller: undefined, 
-            acceptanceDeadline: undefined,
             disqualifiedInstallerIds: arrayUnion(user.id) as any,
+            selectedInstallers: newSelectedInstallers
         };
+
+        if (newSelectedInstallers.length === 0) {
+            const deadline = toDate(job.deadline);
+            const now = new Date();
+            update.status = now > deadline ? 'Bidding Closed' : 'Open for Bidding';
+            update.awardedInstaller = undefined;
+            update.acceptanceDeadline = undefined;
+        }
 
         const userRef = doc(db, 'users', user.id);
         const userDoc = await getDoc(userRef);
@@ -982,7 +960,7 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
         await updateDoc(userRef, { 'installerProfile.points': currentPoints + penalty });
         await onJobUpdate(update);
         
-        toast({ title: 'Job Declined', description: `The job has been returned to status: ${newStatus}. ${penalty} points have been deducted.`, variant: 'destructive' });
+        toast({ title: 'Offer Declined', description: `You have declined the offer for this job. ${penalty} points have been deducted.`, variant: 'destructive' });
         setIsActionLoading(false);
     };
 
@@ -990,9 +968,9 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Awaiting Your Acceptance</CardTitle>
+                <CardTitle>You've Received an Offer!</CardTitle>
                 <CardDescription>
-                    The Job Giver has awarded this job to you. You must accept it within the time limit to proceed.
+                    The Job Giver has shortlisted you for this job. Accept the offer to secure the project. The first installer to accept wins.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-center">
@@ -1001,7 +979,7 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
                     Time to accept: {timeLeft}
                 </div>
                  <p className="text-xs text-muted-foreground">
-                    If you do not accept within the time limit, the job will be automatically declined and it may affect your reputation score.
+                    If you do not accept within the time limit, the offer will expire and may affect your reputation score.
                 </p>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
@@ -1016,7 +994,7 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
                         <DialogHeader>
                             <DialogTitle>Are you sure you want to decline?</DialogTitle>
                             <DialogDescription>
-                                Declining this job will disqualify you from bidding on it in the future and will result in a reputation penalty. This action cannot be undone.
+                                Declining this offer will result in a reputation penalty. This action cannot be undone.
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
@@ -1096,6 +1074,7 @@ export default function JobDetailPage() {
   const [transaction, setTransaction] = React.useState<Transaction | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
+  const [isFunding, setIsFunding] = React.useState(false);
   const [isFunded, setIsFunded] = React.useState(false);
 
   const [newComment, setNewComment] = React.useState("");
@@ -1143,7 +1122,6 @@ export default function JobDetailPage() {
             status: newStatus, 
             awardedInstaller: undefined, 
             acceptanceDeadline: undefined,
-            disqualifiedInstallerIds: arrayUnion((jobData.awardedInstaller as DocumentReference).id) as any,
         };
         
         await updateDoc(jobRef, update);
@@ -1158,6 +1136,8 @@ export default function JobDetailPage() {
     
     const awardedInstallerId = getRefId(jobData.awardedInstaller);
     if (awardedInstallerId) userIds.add(awardedInstallerId);
+    
+    (jobData.selectedInstallers || []).forEach(s => userIds.add(s.installerId));
 
     (jobData.bids || []).forEach(bid => {
         const installerId = getRefId(bid.installer);
@@ -1212,10 +1192,10 @@ export default function JobDetailPage() {
         if (paymentStatus === 'success') {
             toast({
                 title: "Payment Successful!",
-                description: "The job has been awarded and the installer has been notified.",
+                description: "The job is now in progress.",
                 variant: "success",
             });
-            // Re-fetch job data to show the updated "Awarded" status
+            // Re-fetch job data to show the updated "In Progress" status
             fetchJob();
         } else if (paymentStatus === 'failure') {
             toast({
@@ -1349,6 +1329,41 @@ export default function JobDetailPage() {
           variant: "destructive"
       });
   }
+  
+  const handleFundJob = async () => {
+        if (!db || !user || !job || !job.awardedInstaller) return;
+        setIsFunding(true);
+        
+        try {
+            const { data } = await axios.post('/api/escrow/initiate-payment', {
+                jobId: job.id,
+                jobTitle: job.title,
+                jobGiverId: user.id,
+                installerId: getRefId(job.awardedInstaller),
+                amount: (job.bids.find(b => getRefId(b.installer) === getRefId(job.awardedInstaller))?.amount || 0),
+                travelTip: job.travelTip || 0
+            });
+
+            if (!data.payment_session_id) throw new Error("Could not retrieve payment session ID.");
+
+            const cashfreeInstance = new cashfree(data.payment_session_id);
+            cashfreeInstance.checkout({ 
+                payment_method: "upi",
+                onComplete: async () => {
+                     await handleJobUpdate({ status: 'In Progress' });
+                }
+            });
+
+        } catch (error: any) {
+             toast({
+                title: "Failed to Initiate Payment",
+                description: error.response?.data?.error || "An unexpected error occurred. Please try again.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsFunding(false);
+        }
+    };
 
   if (loading) {
     return <PageSkeleton />;
@@ -1359,6 +1374,7 @@ export default function JobDetailPage() {
   }
 
   const awardedInstallerId = getRefId(job.awardedInstaller);
+  const isSelectedInstaller = role === "Installer" && (job.selectedInstallers || []).some(s => s.installerId === user.id);
   const isAwardedInstaller = role === "Installer" && user.id === awardedInstallerId;
   const jobGiver = job.jobGiver as User;
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
@@ -1377,8 +1393,7 @@ export default function JobDetailPage() {
       ? 'public'
       : 'none';
 
-
-  const showInstallerAcceptance = isAwardedInstaller && job.status === 'Awarded';
+  const showInstallerAcceptance = isSelectedInstaller && job.status === 'Awarded';
   const canProposeDateChange = (isJobGiver || isAwardedInstaller) && job.status === 'In Progress' && !job.dateChangeProposal;
 
 
@@ -1408,6 +1423,25 @@ export default function JobDetailPage() {
           <CardContent>
             <p className="text-foreground">{job.description}</p>
             
+            {job.status === 'Pending Funding' && isJobGiver && (
+                <>
+                    <Separator className="my-6" />
+                    <Card className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+                        <CardHeader>
+                            <CardTitle>Action Required: Fund Project</CardTitle>
+                            <CardDescription>The installer has accepted your offer. Please complete the payment to secure the service and begin the work.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button onClick={handleFundJob} disabled={isFunding}>
+                                {isFunding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                <Wallet className="mr-2 h-4 w-4" />
+                                Proceed to Payment
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </>
+            )}
+
             {job.dateChangeProposal && job.status === 'In Progress' && (
                 <>
                     <Separator className="my-6" />
@@ -1603,12 +1637,12 @@ export default function JobDetailPage() {
         </Card>
 
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
-        {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} platformSettings={platformSettings} isFunded={isFunded} />}
+        {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && job.status !== "Awarded" && job.status !== "In Progress" && job.status !== "Completed" && job.status !== "Pending Funding" && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} platformSettings={platformSettings} isFunded={isFunded} />}
 
       </div>
 
       <div className="space-y-8">
-        {(role === 'Job Giver' && (job.status === 'In Progress' || job.status === 'Awarded')) && (
+        {(role === 'Job Giver' && (job.status === 'In Progress' || job.status === 'Awarded' || job.status === 'Pending Funding')) && (
             <JobGiverOTPCard job={job} />
         )}
         <Card>
