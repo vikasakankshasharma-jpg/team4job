@@ -4,6 +4,7 @@
 
 
 
+
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -304,7 +305,22 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
 
   const installer = user.installerProfile;
   if (!installer) return null;
+
+  const isDisqualified = job.disqualifiedInstallerIds?.includes(user.id);
   
+  if (isDisqualified) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Bidding Unavailable</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-destructive">You are not eligible to bid on this job because you previously declined the offer.</p>
+            </CardContent>
+        </Card>
+    )
+  }
+
   const handlePlaceBid = async () => {
     if (!bidAmount || !bidProposal) {
       toast({ title: "Missing Information", description: "Please provide both a bid amount and a proposal.", variant: "destructive" });
@@ -911,6 +927,7 @@ function RaiseDisputeDialog({ job, user, onJobUpdate }: { job: Job; user: User; 
 }
 
 function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
+    const { user } = useUser();
     const { toast } = useToast();
     const [timeLeft, setTimeLeft] = React.useState('');
 
@@ -944,11 +961,17 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
     };
     
     const handleDecline = async () => {
+        if (!user) return;
         const deadline = toDate(job.deadline);
         const now = new Date();
         const newStatus = now > deadline ? 'Bidding Closed' : 'Open for Bidding';
 
-        const update = { status: newStatus, awardedInstaller: undefined, acceptanceDeadline: undefined };
+        const update: Partial<Job> = { 
+            status: newStatus, 
+            awardedInstaller: undefined, 
+            acceptanceDeadline: undefined,
+            disqualifiedInstallerIds: arrayUnion(user.id) as any,
+        };
         onJobUpdate(update);
         toast({ title: 'Job Declined', description: `The job has been returned to status: ${newStatus}.`, variant: 'destructive' });
     };
@@ -983,7 +1006,7 @@ function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdat
                         <DialogHeader>
                             <DialogTitle>Are you sure you want to decline?</DialogTitle>
                             <DialogDescription>
-                                Declining a job after being awarded will negatively impact your reputation score. This action cannot be undone.
+                                Declining this job will disqualify you from bidding on it in the future and may affect your reputation score. This action cannot be undone.
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
