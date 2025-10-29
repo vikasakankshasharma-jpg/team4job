@@ -121,20 +121,21 @@ export const onJobStatusChange = functions.firestore
                 `/dashboard/jobs/${jobId}`
             );
         }
-
-        // To Job Giver: Job Accepted
-        if (afterData.status === 'In Progress' && beforeData.status === 'Awarded') {
+        
+        // To Job Giver: Job Accepted and needs funding
+        if (afterData.status === 'Pending Funding' && beforeData.status === 'Awarded') {
             if (afterData.awardedInstaller && typeof afterData.awardedInstaller.get === 'function') {
                 const installerDoc = await afterData.awardedInstaller.get();
                 const installerName = installerDoc.data()?.name || "The installer";
                 await sendNotification(
                     jobGiverId,
-                    "Job Accepted!",
-                    `${installerName} has accepted the job: "${jobTitle}". Work can now begin.`,
+                    "Action Required: Fund Your Job",
+                    `${installerName} has accepted the job: "${jobTitle}". Please complete the payment to begin the work.`,
                     `/dashboard/jobs/${jobId}`
                 );
             }
         }
+
 
         // --- Logic for Declined or Missed Job Offer ---
         if ((afterData.status === 'Open for Bidding' || afterData.status === 'Bidding Closed') && beforeData.status === 'Awarded') {
@@ -373,5 +374,6 @@ export const onJobCompleted = functions.firestore
 
 
     
+
 
 

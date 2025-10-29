@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
@@ -79,12 +80,6 @@ const jobSchema = z.object({
 }, {
     message: "Bidding deadline is required unless you are using Direct Award.",
     path: ["deadline"],
-}).refine(data => {
-    if (!data.deadline) return true; // Skip if no deadline (direct award)
-    return new Date(data.jobStartDate) >= new Date(data.deadline);
-}, {
-    message: "Job start date must be on or after the bidding deadline.",
-    path: ["jobStartDate"],
 });
 
 function DirectAwardInput({ control, isMapLoaded }) {
@@ -557,7 +552,7 @@ export default function PostJobPage() {
                     <FormItem>
                         <FormLabel>Job Work Start Date</FormLabel>
                         <FormControl>
-                         <Input type="date" {...field} min={form.getValues('deadline') || new Date().toISOString().split("T")[0]} />
+                         <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
