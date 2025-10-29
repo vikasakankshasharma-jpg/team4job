@@ -29,15 +29,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirebase } from "@/hooks/use-user";
 import { Loader2, UserPlus } from "lucide-react";
 import React from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { ShieldCheck } from "lucide-react";
-
+import axios from "axios";
 
 const teamMemberSchema = z.object({
   name: z.string().min(2, "Name is required."),
@@ -48,7 +42,6 @@ const teamMemberSchema = z.object({
 
 export function TeamManagementCard({ onTeamMemberAdded }: { onTeamMemberAdded: () => void }) {
   const { toast } = useToast();
-  const { db, auth } = useFirebase();
   const [isLoading, setIsLoading] = React.useState(false);
 
   const form = useForm<z.infer<typeof teamMemberSchema>>({
@@ -61,17 +54,27 @@ export function TeamManagementCard({ onTeamMemberAdded }: { onTeamMemberAdded: (
     },
   });
 
-  // THIS FUNCTION IS NO LONGER USED AND IS A SECURITY RISK.
-  // TEAM MEMBERS SHOULD BE ADDED VIA FIREBASE CONSOLE.
   async function onSubmit(values: z.infer<typeof teamMemberSchema>) {
-    // This client-side user creation is insecure and is disabled.
-    // The UI now directs admins to use the Firebase Console.
-    toast({
-        title: "Action Disabled",
-        description: "For security, new team members must be added directly in the Firebase Console.",
-        variant: "destructive",
-    });
-    return;
+    setIsLoading(true);
+    try {
+        await axios.post('/api/admin/create-user', values);
+        toast({
+            title: "Team Member Added",
+            description: `${values.name} has been added to the team as a ${values.role}.`,
+            variant: "success"
+        });
+        form.reset();
+        onTeamMemberAdded(); // This will refresh the list of team members
+    } catch (error: any) {
+        console.error("Error creating team member:", error);
+        toast({
+            title: "Error Creating User",
+            description: error.response?.data?.error || "An unexpected error occurred.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   return (
@@ -79,23 +82,84 @@ export function TeamManagementCard({ onTeamMemberAdded }: { onTeamMemberAdded: (
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><UserPlus /> Add Team Member</CardTitle>
          <CardDescription>
-            For security, new team members must be created directly in the Firebase Console.
+            Create a new administrative or support account for your platform.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Alert>
-            <ShieldCheck className="h-4 w-4" />
-            <AlertTitle>How to Add a Team Member</AlertTitle>
-            <AlertDescription>
-                <ol className="list-decimal list-inside space-y-2 mt-2">
-                    <li>Go to the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="font-semibold underline">Firebase Console</a> for this project.</li>
-                    <li>Navigate to the **Authentication** section.</li>
-                    <li>Click **Add user** and create a new account with their email and a temporary password.</li>
-                    <li>Navigate to the **Firestore Database** section.</li>
-                    <li>In the `users` collection, find the new user's document (by their UID) and add the appropriate role (`Admin` or `Support Team`) to their `roles` array.</li>
-                </ol>
-            </AlertDescription>
-        </Alert>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Jane Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="jane.doe@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Temporary Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Support Team">Support Team</SelectItem>
+                            <SelectItem value="Admin">Admin</SelectItem>
+                        </SelectContent>
+                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+             </div>
+             <div className="flex justify-end">
+                <Button type="submit" disabled={isLoading}>
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Create Team Member
+                </Button>
+             </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );
