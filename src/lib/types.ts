@@ -1,5 +1,4 @@
 
-
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {
@@ -89,7 +88,7 @@ export type Invoice = {
   jobId: string;
   jobTitle: string;
   date: Date | Timestamp;
-  subtotal: number; // Renamed from amount
+  subtotal: number;
   travelTip: number;
   totalAmount: number;
   from: {
@@ -118,7 +117,7 @@ export type Job = {
   travelTip?: number;
   isGstInvoiceRequired: boolean;
   isPromoted?: boolean;
-  status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid';
+  status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid' | 'Pending Funding';
   deadline: Date | Timestamp;
   jobStartDate?: Date | Timestamp;
   dateChangeProposal?: {
@@ -236,8 +235,8 @@ export type Transaction = {
 };
 
 export type PlatformSettings = {
-    installerCommissionRate: number;
-    jobGiverFeeRate: number;
+    installerCommissionRate?: number;
+    jobGiverFeeRate?: number;
     defaultTrialPeriodDays: number;
     freeBidsForNewInstallers: number;
     freePostsForNewJobGivers: number;
