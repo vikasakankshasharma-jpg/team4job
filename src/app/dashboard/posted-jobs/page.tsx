@@ -16,7 +16,7 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2 } from "lucide-react";
+import { PlusCircle, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import {
   Table,
@@ -90,19 +90,10 @@ function PostedJobsTable({ jobs, title, description, footerText, loading }: { jo
       <DropdownMenuItem key="view" asChild><Link href={`/dashboard/jobs/${job.id}`}>View Details</Link></DropdownMenuItem>
     ];
 
-    switch (job.status) {
-        case 'Open for Bidding':
-            actions.push(<DropdownMenuItem key="edit">Edit</DropdownMenuItem>);
-            actions.push(<DropdownMenuItem key="close">Close Bidding</DropdownMenuItem>);
-            break;
-        case 'Unbid':
-            actions.push(<DropdownMenuItem key="edit">Edit</DropdownMenuItem>);
-            actions.push(<DropdownMenuItem key="repost">Repost Job</DropdownMenuItem>);
-            break;
-        default:
-            // No special actions for other statuses, 'View Details' is always available
-            break;
+    if (job.status === 'Unbid' || job.status === 'Cancelled') {
+        actions.push(<DropdownMenuItem key="repost" asChild><Link href={`/dashboard/post-job?repostJobId=${job.id}`}><RefreshCw className="mr-2 h-4 w-4" />Repost Job</Link></DropdownMenuItem>);
     }
+    
     return actions;
   }
 
@@ -284,14 +275,14 @@ export default function PostedJobsPage() {
                         <span className="font-semibold">Active:</span> Shows all jobs that are currently open for bidding, in progress, or waiting for your action. This is where you'll manage ongoing projects.
                     </li>
                     <li>
-                        <span className="font-semibold">Archived:</span> Shows all your jobs that have been completed. This is your history of successful hires.
+                        <span className="font-semibold">Archived:</span> Shows all your jobs that have been completed, cancelled, or went un-bid. This is your history of past jobs.
                     </li>
                      <li>
                         <span className="font-semibold">Job Type:</span> This column shows how a job was awarded. "Bidding" means you chose from bids, while "Direct" means you awarded it directly to an installer.
                      </li>
                      <li>
-                        <span className="font-semibold">Actions:</span> Use the actions menu (three dots) on each job row to view its details, edit it (if it's still open for bidding), or perform other relevant actions.
-                    </li>
+                        <span className="font-semibold">Actions:</span> Use the actions menu (three dots) on each job row to view its details, or re-post a cancelled/un-bid job to save time.
+                     </li>
                 </ul>
                 <p>
                   Click on any job title to go to its detail page, where you can review bids from installers. You can also use the "Post New Job" button to quickly create a new listing.
@@ -309,8 +300,8 @@ export default function PostedJobsPage() {
     );
   }
   
-  const activeJobs = jobs.filter(job => job.status !== 'Completed' && job.status !== 'Cancelled').sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
-  const archivedJobs = jobs.filter(job => job.status === 'Completed' || job.status === 'Cancelled').sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+  const activeJobs = jobs.filter(job => job.status !== 'Completed' && job.status !== 'Cancelled' && job.status !== 'Unbid').sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+  const archivedJobs = jobs.filter(job => job.status === 'Completed' || job.status === 'Cancelled' || job.status === 'Unbid').sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
 
 
   return (
@@ -344,7 +335,7 @@ export default function PostedJobsPage() {
           <PostedJobsTable 
             jobs={archivedJobs}
             title="My Archived Jobs"
-            description="A history of your completed or cancelled projects."
+            description="A history of your completed, cancelled, or un-bid projects."
             footerText={`Showing 1-${archivedJobs.length} of ${archivedJobs.length} archived jobs`}
             loading={loading}
           />
