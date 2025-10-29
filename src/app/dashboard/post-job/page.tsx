@@ -82,106 +82,60 @@ const jobSchema = z.object({
     path: ["deadline"],
 });
 
-function DirectAwardInput({ control, isMapLoaded }) {
+function DirectAwardInput({ control }) {
     const { db } = useFirebase();
-    const [searchTerm, setSearchTerm] = useState('');
-    const [installers, setInstallers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedInstaller, setSelectedInstaller] = useState<User | null>(null);
-    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-    const { setValue, trigger } = useFormContext();
+    const { getValues } = useFormContext();
 
-    const debouncedSearch = useCallback(
-        debounce(async (search: string) => {
-            if (search.trim().length < 2) {
-                setInstallers([]);
+    const debouncedCheck = useCallback(
+        debounce(async (id: string) => {
+            if (!id) {
+                setSelectedInstaller(null);
                 setIsLoading(false);
                 return;
             }
+            const userRef = doc(db, "users", id);
+            const userSnap = await getDoc(userRef);
 
-            const q = query(
-                collection(db, 'users'),
-                where('roles', 'array-contains', 'Installer'),
-                where('installerProfile.verified', '==', true),
-                orderBy('name'),
-                startAt(search.trim())
-                // Firebase does not support case-insensitive or partial text search natively.
-                // This will only match names starting with the search term.
-                // For a full solution, a third-party search service like Algolia would be needed.
-            );
-
-            const querySnapshot = await getDocs(q);
-            const results = querySnapshot.docs.map(doc => doc.data() as User)
-                               .filter(u => u.name.toLowerCase().includes(search.toLowerCase()));
-
-            setInstallers(results);
+            if (userSnap.exists() && userSnap.data().roles.includes('Installer') && userSnap.data().installerProfile?.verified) {
+                setSelectedInstaller(userSnap.data() as User);
+            } else {
+                setSelectedInstaller(null);
+            }
             setIsLoading(false);
         }, 500),
         [db]
     );
 
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        setSearchTerm(value);
-        if (value) {
-            setIsLoading(true);
-            setIsPopoverOpen(true);
-            debouncedSearch(value);
-        } else {
-            setIsPopoverOpen(false);
-            setInstallers([]);
-            setSelectedInstaller(null);
-            setValue('directAwardInstallerId', '');
-        }
+        setIsLoading(true);
+        debouncedCheck(value);
     };
 
-    const handleSelectInstaller = (installer: User) => {
-        setSelectedInstaller(installer);
-        setSearchTerm(installer.name);
-        setValue('directAwardInstallerId', installer.id, { shouldValidate: true });
-        setIsPopoverOpen(false);
-        setInstallers([]);
-    };
-    
     return (
         <FormField
             control={control}
             name="directAwardInstallerId"
             render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Installer's Name or ID</FormLabel>
-                    <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                                <Input
-                                    placeholder="e.g., Vikram Kumar"
-                                    value={searchTerm}
-                                    onChange={handleSearchChange}
-                                />
-                            </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
-                                <CommandList>
-                                    {isLoading && <div className="p-4 text-sm text-center">Searching...</div>}
-                                    {!isLoading && installers.length === 0 && searchTerm && <div className="p-4 text-sm text-center">No verified installers found.</div>}
-                                    {installers.map((installer) => (
-                                        <CommandItem key={installer.id} onSelect={() => handleSelectInstaller(installer)}>
-                                             <Avatar className="h-9 w-9 mr-3">
-                                                <AvatarImage src={installer.realAvatarUrl} alt={installer.name} />
-                                                <AvatarFallback>{installer.name.substring(0,2)}</AvatarFallback>
-                                            </Avatar>
-                                            {installer.name}
-                                        </CommandItem>
-                                    ))}
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
+                    <FormLabel>Installer's Public ID (Optional)</FormLabel>
+                    <FormControl>
+                         <Input
+                            placeholder="Paste installer's public ID here..."
+                            {...field}
+                            onChange={(e) => {
+                                field.onChange(e);
+                                handleIdChange(e);
+                            }}
+                        />
+                    </FormControl>
                     <FormDescription>
                         If you fill this in, the job will be private and only visible to this installer. Public bidding will be disabled.
                     </FormDescription>
-                     {selectedInstaller && (
+                    {isLoading && <p className="text-sm text-muted-foreground">Verifying ID...</p>}
+                    {selectedInstaller && !isLoading && (
                         <div className="flex items-center gap-2 p-2 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
                              <Avatar className="h-9 w-9">
                                 <AvatarImage src={selectedInstaller.realAvatarUrl} alt={selectedInstaller.name} />
@@ -192,6 +146,11 @@ function DirectAwardInput({ control, isMapLoaded }) {
                                 <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-green-600"/> Verified Installer</p>
                             </div>
                         </div>
+                     )}
+                     {!selectedInstaller && getValues('directAwardInstallerId') && !isLoading && (
+                         <div className="flex items-center gap-2 p-2 rounded-md bg-destructive/10 border border-destructive/20 text-destructive">
+                             <p className="text-sm font-medium">No verified installer found for this ID.</p>
+                         </div>
                      )}
                     <FormMessage />
                 </FormItem>
@@ -637,11 +596,11 @@ export default function PostJobPage() {
                         Direct Award (Optional)
                     </CardTitle>
                     <CardDescription>
-                        Know a great installer? Skip the bidding process and award this job directly to them by searching for their name.
+                        Know an installer you trust? Enter their public ID to award the job directly to them, skipping the public bidding process.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                     <DirectAwardInput control={form.control} isMapLoaded={true} />
+                     <DirectAwardInput control={form.control} />
                 </CardContent>
             </Card>
           <div className="flex items-center justify-end gap-2">
