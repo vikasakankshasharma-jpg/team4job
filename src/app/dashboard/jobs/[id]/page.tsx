@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
-import { notFound, useParams } from "next/navigation";
+import { notFound, useParams, useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -379,40 +380,11 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
             }
 
             // Step 2: Launch Cashfree checkout
-            const cashfree = new (window as any).Cashfree(data.payment_session_id);
-            cashfree.checkout({
-                payment_method: "upi", // or cards, netbanking etc.
-                onComplete: async (paymentData: any) => {
-                    console.log("Cashfree onComplete:", paymentData);
-                    // Webhook will handle the final status update to "Funded"
-                    const acceptanceDeadline = new Date();
-                    acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
-
-                    const jobUpdate = {
-                        awardedInstaller: doc(db, 'users', installer.id),
-                        status: 'Awarded' as const,
-                        acceptanceDeadline,
-                    };
-                    onJobUpdate(jobUpdate);
-                    
-                    toast({
-                        title: "Payment Successful!",
-                        description: `${installer.name} has been awarded the job and has 24 hours to accept.`,
-                        variant: "success",
-                    });
-                },
-                onError: (errorData: any) => {
-                    console.error("Cashfree onError:", errorData);
-                    toast({
-                        title: "Payment Failed",
-                        description: errorData.error.message || "The payment could not be completed. Please try again.",
-                        variant: "destructive"
-                    });
-                },
-                onDismiss: () => {
-                    console.log("Payment dismissed by user");
-                }
+            const cashfreeInstance = new cashfree(data.payment_session_id);
+            cashfreeInstance.checkout({
+                payment_method: "upi",
             });
+            // The onComplete/onError logic is handled by the redirect URL now
 
         } catch (error: any) {
              toast({
@@ -420,8 +392,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId }: { bid: Bid, job: Jo
                 description: error.response?.data?.error || "An unexpected error occurred. Please try again.",
                 variant: "destructive"
             });
-        } finally {
-            setIsFunding(false);
+             setIsFunding(false);
         }
     };
     
@@ -899,6 +870,7 @@ export default function JobDetailPage() {
   const { user, role } = useUser();
   const { db, storage } = useFirebase();
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params.id as string;
   const { toast } = useToast();
   
@@ -979,6 +951,31 @@ export default function JobDetailPage() {
   React.useEffect(() => {
     fetchJob();
   }, [fetchJob]);
+
+  React.useEffect(() => {
+    const paymentStatus = searchParams.get('payment_status');
+    const orderId = searchParams.get('order_id');
+    
+    if (paymentStatus && orderId) {
+        if (paymentStatus === 'success') {
+            toast({
+                title: "Payment Successful!",
+                description: "The job has been awarded and the installer has been notified.",
+                variant: "success",
+            });
+            // Re-fetch job data to show the updated "Awarded" status
+            fetchJob();
+        } else if (paymentStatus === 'failure') {
+            toast({
+                title: "Payment Failed",
+                description: "The payment could not be completed. Please try again.",
+                variant: "destructive",
+            });
+        }
+        // Clean the URL
+        window.history.replaceState(null, '', `/dashboard/jobs/${id}`);
+    }
+  }, [searchParams, id, toast, fetchJob]);
 
   const jobStartDate = React.useMemo(() => {
     if (job?.jobStartDate) {
@@ -1408,3 +1405,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+      
