@@ -687,12 +687,13 @@ async function seedBlacklist() {
 async function seedTransactions(uids: { [email: string]: string }) {
     console.log('\nSeeding transactions...');
     const batch = adminDb.batch();
+    const now = new Date();
 
     // Transaction for Completed Job (job2Id)
     const t1: Transaction = {
-        id: `TXN-${Date.now()}-1`,
+        id: `TXN-JOB2-${Date.now()}`,
         jobId: "JOB-20240615-C3D4",
-        jobTitle: "Factory Security System Overhaul - 32 Cameras",
+        jobTitle: "Factory Security System Overhaul",
         payerId: uids[mockUsers[1].email],
         payeeId: uids[mockUsers[2].email],
         amount: 52000,
@@ -701,12 +702,14 @@ async function seedTransactions(uids: { [email: string]: string }) {
         createdAt: Timestamp.fromDate(new Date('2024-06-03T10:00:00Z')),
         fundedAt: Timestamp.fromDate(new Date('2024-06-03T10:05:00Z')),
         releasedAt: Timestamp.fromDate(new Date('2024-07-22T14:00:00Z')),
+        paymentGatewayOrderId: `cf_order_${Date.now()}-1`,
+        payoutTransferId: `payout_${Date.now()}-1`
     };
     batch.set(adminDb.collection('transactions').doc(t1.id), t1);
 
     // Transaction for In-Progress Job (job3Id) - Funded but not released
     const t2: Transaction = {
-        id: `TXN-${Date.now()}-2`,
+        id: `TXN-JOB3-${Date.now()}`,
         jobId: "JOB-20240718-E5F6",
         jobTitle: "Residential Villa - 4 PTZ Cameras (Disputed)",
         payerId: uids[mockUsers[1].email],
@@ -714,13 +717,65 @@ async function seedTransactions(uids: { [email: string]: string }) {
         amount: 8500,
         status: 'Funded',
         commission: 850,
-        createdAt: Timestamp.fromDate(new Date(new Date().getTime() - 8 * 24 * 60 * 60 * 1000)),
-        fundedAt: Timestamp.fromDate(new Date(new Date().getTime() - 8 * 24 * 60 * 60 * 1000 + 5*60*1000)),
+        createdAt: Timestamp.fromDate(new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000)),
+        fundedAt: Timestamp.fromDate(new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000 + 5*60*1000)),
+        paymentGatewayOrderId: `cf_order_${Date.now()}-2`,
     };
     batch.set(adminDb.collection('transactions').doc(t2.id), t2);
+
+     // Transaction for Awarded Job (job6Id) - Funded
+    const t3: Transaction = {
+        id: `TXN-JOB6-${Date.now()}`,
+        jobId: "JOB-20240728-M3N4",
+        jobTitle: "Warehouse Access Control System - Jogeshwari",
+        payerId: uids[mockUsers[1].email],
+        payeeId: uids[mockUsers[2].email],
+        amount: 19000,
+        status: 'Funded',
+        commission: 1900,
+        createdAt: Timestamp.fromDate(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
+        fundedAt: Timestamp.fromDate(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000 + 5*60*1000)),
+        paymentGatewayOrderId: `cf_order_${Date.now()}-3`,
+    };
+    batch.set(adminDb.collection('transactions').doc(t3.id), t3);
+
+     // Transaction for a Failed Payment
+    const t4: Transaction = {
+        id: `TXN-FAILED-${Date.now()}`,
+        jobId: "JOB-20240725-J9K0",
+        jobTitle: "Urgent: Replace 4 Cameras at Andheri Office",
+        payerId: uids[mockUsers[4].email],
+        payeeId: uids[mockUsers[3].email],
+        amount: 6500,
+        status: 'Failed',
+        commission: 650,
+        createdAt: Timestamp.fromDate(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)),
+        fundedAt: undefined,
+        failedAt: Timestamp.fromDate(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000 + 2*60*1000)),
+        paymentGatewayOrderId: `cf_order_${Date.now()}-4`,
+    };
+    batch.set(adminDb.collection('transactions').doc(t4.id), t4);
+
+    // Transaction for a Refunded payment
+    const t5: Transaction = {
+        id: `TXN-REFUND-${Date.now()}`,
+        jobId: "JOB-SOME-OLD-JOB",
+        jobTitle: "Office Camera Maintenance",
+        payerId: uids[mockUsers[1].email],
+        payeeId: uids[mockUsers[8].email],
+        amount: 5000,
+        status: 'Refunded',
+        commission: 500,
+        createdAt: Timestamp.fromDate(new Date('2024-05-10T10:00:00Z')),
+        fundedAt: Timestamp.fromDate(new Date('2024-05-10T10:05:00Z')),
+        refundedAt: Timestamp.fromDate(new Date('2024-05-12T16:00:00Z')),
+        paymentGatewayOrderId: `cf_order_${Date.now()}-5`,
+        refundTransferId: `refund_${Date.now()}-5`,
+    };
+    batch.set(adminDb.collection('transactions').doc(t5.id), t5);
     
     await batch.commit();
-    console.log(`- Committed 2 transactions.`);
+    console.log(`- Committed 5 transactions.`);
 }
 
 async function seedSubscriptionPlans() {
