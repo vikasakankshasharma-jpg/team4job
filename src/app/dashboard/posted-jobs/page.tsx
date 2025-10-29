@@ -71,14 +71,15 @@ const getRefId = (ref: any): string | null => {
   return ref.id || null;
 }
 
-const statusDescriptions: Record<Job['status'], string> = {
+const statusDescriptions: Record<string, string> = {
   "Open for Bidding": "The job is live and installers can place bids.",
   "Bidding Closed": "The bidding deadline has passed. You can now review bids and award the job.",
   "Awarded": "You have awarded the job to an installer. Waiting for them to accept.",
   "In Progress": "The installer has accepted the job and work is underway.",
   "Completed": "The job has been successfully completed and paid for.",
   "Cancelled": "This job has been cancelled.",
-  "Unbid": "The bidding deadline passed with no bids received."
+  "Unbid": "The bidding deadline passed with no bids received.",
+  "Pending Funding": "The installer has accepted; awaiting your payment to start the job."
 };
 
 function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () => void }) {
@@ -446,3 +447,5 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
+
+    
