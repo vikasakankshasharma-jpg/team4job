@@ -55,11 +55,16 @@ const jobGiverSteps: Step[] = [
 
 const Tour = () => {
   const [runTour, setRunTour] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { role } = useUser();
   const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     // Start tour if tour=true is in the URL and not on mobile
@@ -83,7 +88,7 @@ const Tour = () => {
 
   const steps = role === 'Installer' ? installerSteps : jobGiverSteps;
 
-  if (isMobile) {
+  if (isMobile || !isClient) {
     return null;
   }
 
