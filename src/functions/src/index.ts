@@ -33,7 +33,7 @@ async function sendNotification(userId: string, title: string, body: string, lin
     const userDoc = await admin.firestore().collection("users").doc(userId).get();
     const userData = userDoc.data();
 
-    if (!userData || !userData.fcmTokens || userData.fcmTokens.length === 0) {
+    if (!userData || !userData.fcmTokens || !userData.fcmTokens.length === 0) {
         console.log(`User ${userId} has no FCM tokens. Cannot send notification.`);
         return;
     }
@@ -136,17 +136,45 @@ export const onJobStatusChange = functions.firestore
             }
         }
 
-        // To Job Giver: Job Declined
+        // --- Logic for Declined or Missed Job Offer ---
         if ((afterData.status === 'Open for Bidding' || afterData.status === 'Bidding Closed') && beforeData.status === 'Awarded') {
-            if (beforeData.awardedInstaller && typeof beforeData.awardedInstaller.get === 'function') {
-                const installerDoc = await beforeData.awardedInstaller.get();
-                const installerName = installerDoc.data()?.name || "The installer";
-                await sendNotification(
-                    jobGiverId,
-                    "Job Declined",
-                    `${installerName} has declined the job: "${jobTitle}". You can now award it to another installer.`,
-                    `/dashboard/jobs/${jobId}`
-                );
+            const declinedInstallerRef = beforeData.awardedInstaller;
+            if (!declinedInstallerRef || typeof declinedInstallerRef.get !== 'function') return;
+
+            const installerDoc = await declinedInstallerRef.get();
+            const installerName = installerDoc.data()?.name || "The installer";
+            
+            // Notify Job Giver
+            await sendNotification(
+                jobGiverId,
+                "Job Offer Declined",
+                `${installerName} has declined or missed the offer for job: "${jobTitle}". You can now award it to another installer.`,
+                `/dashboard/jobs/${jobId}`
+            );
+            
+            // Apply reputation penalty
+            const settingsRef = admin.firestore().collection('settings').doc('platform');
+            const settingsSnap = await settingsRef.get();
+            const penalty = settingsSnap.data()?.penaltyForDeclinedJob || -15; // Default to -15 if not set
+
+            if (penalty < 0) {
+                 try {
+                    await admin.firestore().runTransaction(async (transaction) => {
+                        const installerProfileDoc = await transaction.get(declinedInstallerRef);
+                        if (!installerProfileDoc.exists) return;
+                        const currentPoints = installerProfileDoc.data()?.installerProfile?.points || 0;
+                        transaction.update(declinedInstallerRef, { 'installerProfile.points': currentPoints + penalty });
+                    });
+                     console.log(`Applied penalty of ${penalty} points to installer ${declinedInstallerRef.id} for declining job ${jobId}.`);
+                     await sendNotification(
+                        declinedInstallerRef.id,
+                        "Reputation Penalty Applied",
+                        `You received a ${penalty} point penalty for declining or not responding to the job offer: "${jobTitle}".`,
+                        `/dashboard/profile`
+                    );
+                } catch (error) {
+                    console.error("Error applying reputation penalty for decline:", error);
+                }
             }
         }
 
@@ -345,4 +373,5 @@ export const onJobCompleted = functions.firestore
 
 
     
+
 
