@@ -343,12 +343,9 @@
         "selectedInstallers": {
             "type": "array",
             "items": {
-                "type": "object",
-                "properties": {
-                    "installerId": { "type": "string" },
-                    "rank": { "type": "number" }
-                }
-            }
+                "type": "string"
+            },
+            "description": "A list of installer IDs who have been shortlisted and sent an offer."
         }
       },
       "required": ["id", "title", "description", "jobGiver", "location", "address", "budget", "status", "deadline", "postedAt"]
