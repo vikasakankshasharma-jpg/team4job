@@ -439,8 +439,8 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   );
 }
 
-function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings, selected, onSelect,isDisabled }: { bid: Bid, job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousId: string, platformSettings: PlatformSettings | null, selected: boolean, onSelect: (id: string) => void, isDisabled: boolean }) {
-    const { user: jobGiver, role } = useUser();
+function JobGiverBid({ bid, job, anonymousId, selected, onSelect, isDisabled }: { bid: Bid, job: Job, anonymousId: string, selected: boolean, onSelect: (id: string) => void, isDisabled: boolean }) {
+    const { role } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
 
@@ -493,9 +493,8 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings, sel
     );
 }
 
-function BidsSection({ job, onJobUpdate, anonymousIdMap, platformSettings, isFunded }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousIdMap: Map<string, string>, platformSettings: PlatformSettings | null, isFunded: boolean }) {
+function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousIdMap: Map<string, string> }) {
     const { toast } = useToast();
-    const { user, role } = useUser();
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>([]);
     const [isSendingOffers, setIsSendingOffers] = React.useState(false);
 
@@ -570,9 +569,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap, platformSettings, isFun
             key={(bid.installer as User).id}
             bid={bid} 
             job={job} 
-            onJobUpdate={onJobUpdate}
             anonymousId={anonymousIdMap.get((bid.installer as User).id) || `Bidder-?`}
-            platformSettings={platformSettings}
             selected={selectedInstallers.includes((bid.installer as User).id)}
             onSelect={handleSelectInstaller}
             isDisabled={isJobAwarded || selectedInstallers.length >= 3}
@@ -1112,21 +1109,26 @@ export default function JobDetailPage() {
 
     let jobData = jobSnap.data() as Job;
 
-    // --- Automatic decline logic ---
+    // --- Automatic decline logic for EXPIRED job offers ---
     if (jobData.status === 'Awarded' && jobData.acceptanceDeadline && toDate(jobData.acceptanceDeadline) < new Date()) {
         const deadline = toDate(jobData.deadline);
         const now = new Date();
         const newStatus = now > deadline ? 'Bidding Closed' : 'Open for Bidding';
 
+        // Disqualify all installers who were selected but didn't accept
+        const expiredInstallerIds = (jobData.selectedInstallers || []).map(s => s.installerId);
+
         const update: Partial<Job> = { 
             status: newStatus, 
             awardedInstaller: undefined, 
             acceptanceDeadline: undefined,
+            selectedInstallers: [], // Clear the selection
+            disqualifiedInstallerIds: arrayUnion(...expiredInstallerIds) as any,
         };
         
         await updateDoc(jobRef, update);
         jobData = { ...jobData, ...update }; // Update local copy
-        toast({ title: "Offer Expired", description: "The installer did not accept the offer in time. You can now award the job to someone else." });
+        toast({ title: "Offer Expired", description: "The selected installer(s) did not accept the offer in time. You can now award the job to someone else." });
     }
 
     // Collect all unique user IDs from the job document
@@ -1637,7 +1639,7 @@ export default function JobDetailPage() {
         </Card>
 
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
-        {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && job.status !== "Awarded" && job.status !== "In Progress" && job.status !== "Completed" && job.status !== "Pending Funding" && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} platformSettings={platformSettings} isFunded={isFunded} />}
+        {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && job.status !== "Awarded" && job.status !== "In Progress" && job.status !== "Completed" && job.status !== "Pending Funding" && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
 
       </div>
 
