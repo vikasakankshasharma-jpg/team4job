@@ -1,6 +1,7 @@
 
 
 
+
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -157,12 +158,17 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
         if (job.isGstInvoiceRequired) {
             const jobGiver = job.jobGiver as User;
             const awardedInstaller = job.awardedInstaller as User;
+            const bidAmount = transactionData.amount;
+            const tipAmount = transactionData.travelTip || 0;
+            
             invoiceData = {
                 id: `INV-${job.id}`,
                 jobId: job.id,
                 jobTitle: job.title,
                 date: new Date(),
-                amount: transactionData.amount,
+                subtotal: bidAmount,
+                travelTip: tipAmount,
+                totalAmount: bidAmount + tipAmount,
                 from: {
                     name: awardedInstaller.name,
                     gstin: awardedInstaller.gstin || "Not Provided",
@@ -451,6 +457,7 @@ function JobGiverBid({ bid, job, onJobUpdate, anonymousId, platformSettings, isF
                 jobGiverId: jobGiver.id,
                 installerId: installer.id,
                 amount: bid.amount,
+                travelTip: job.travelTip || 0
             });
 
             if (!data.payment_session_id) throw new Error("Could not retrieve payment session ID.");
@@ -1688,5 +1695,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-

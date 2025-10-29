@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Address": {
@@ -354,18 +355,20 @@
     },
      "Invoice": {
       "title": "Invoice",
-      "description": "Represents a GST invoice uploaded by an installer for a completed job.",
+      "description": "Represents a GST invoice for a completed job.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "jobId": { "type": "string" },
         "jobTitle": { "type": "string" },
         "date": { "type": "string", "format": "date-time" },
-        "amount": { "type": "number" },
+        "subtotal": { "type": "number", "description": "The main service amount (bid amount)." },
+        "travelTip": { "type": "number", "description": "The travel tip amount." },
+        "totalAmount": { "type": "number", "description": "The total taxable amount (subtotal + travelTip)." },
         "from": { "type": "object", "properties": { "name": { "type": "string"}, "gstin": { "type": "string"} } },
         "to": { "type": "object", "properties": { "name": { "type": "string"}, "gstin": { "type": "string"} } }
       },
-      "required": ["id", "jobId", "jobTitle", "date", "amount", "from", "to"]
+      "required": ["id", "jobId", "jobTitle", "date", "subtotal", "totalAmount", "from", "to"]
     },
     "Bid": {
       "title": "Bid",
@@ -571,10 +574,11 @@
         "payerId": { "type": "string", "description": "The user ID of the Job Giver." },
         "payeeId": { "type": "string", "description": "The user ID of the Installer." },
         "amount": { "type": "number", "description": "The original bid amount." },
+        "travelTip": { "type": "number", "description": "The travel tip, if any." },
         "commission": { "type": "number", "description": "The platform commission amount taken from the installer." },
         "jobGiverFee": { "type": "number", "description": "The fee charged to the job giver." },
-        "totalPaidByGiver": { "type": "number", "description": "The total amount charged to the job giver (amount + jobGiverFee)." },
-        "payoutToInstaller": { "type": "number", "description": "The net amount paid out to the installer (amount - commission)." },
+        "totalPaidByGiver": { "type": "number", "description": "The total amount charged to the job giver (amount + jobGiverFee + travelTip)." },
+        "payoutToInstaller": { "type": "number", "description": "The net amount paid out to the installer (amount - commission + travelTip)." },
         "status": {
           "type": "string",
           "enum": ["Initiated", "Funded", "Failed", "Released", "Refunded", "Disputed"]

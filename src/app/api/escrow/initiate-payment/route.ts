@@ -37,7 +37,7 @@ async function getPlatformSettings(): Promise<PlatformSettings> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { jobId, jobTitle, jobGiverId, installerId, amount } = await req.json();
+    const { jobId, jobTitle, jobGiverId, installerId, amount, travelTip } = await req.json();
 
     if (!jobId || !jobGiverId || !installerId || !amount) {
       return NextResponse.json({ error: 'Missing required payment details' }, { status: 400 });
@@ -59,8 +59,9 @@ export async function POST(req: NextRequest) {
     const platformSettings = await getPlatformSettings();
     const installerCommission = amount * (platformSettings.installerCommissionRate / 100);
     const jobGiverFee = amount * (platformSettings.jobGiverFeeRate / 100);
-    const totalPaidByGiver = amount + jobGiverFee;
-    const payoutToInstaller = amount - installerCommission;
+    const tipAmount = travelTip || 0;
+    const totalPaidByGiver = amount + jobGiverFee + tipAmount;
+    const payoutToInstaller = amount - installerCommission + tipAmount;
 
     // 3. Create a new Transaction document in Firestore
     const transactionId = `TXN-${jobId}-${Date.now()}`;
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
         payerId: jobGiverId,
         payeeId: installerId,
         amount, // Original bid amount
+        travelTip: tipAmount,
         commission: installerCommission,
         jobGiverFee: jobGiverFee,
         totalPaidByGiver: totalPaidByGiver,
@@ -97,7 +99,7 @@ export async function POST(req: NextRequest) {
         order_meta: {
             return_url: `https://cctv-job-connect.web.app/dashboard/jobs/${jobId}?payment_status=success&order_id={order_id}`,
         },
-        order_note: `Payment for job: ${jobTitle} (Includes platform fee)`
+        order_note: `Payment for job: ${jobTitle} (Includes platform fee & tip)`
     };
 
     const response = await axios.post(

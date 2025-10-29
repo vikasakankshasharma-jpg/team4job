@@ -88,7 +88,9 @@ export type Invoice = {
   jobId: string;
   jobTitle: string;
   date: Date | Timestamp;
-  amount: number;
+  subtotal: number; // Renamed from amount
+  travelTip: number;
+  totalAmount: number;
   from: {
     name: string;
     gstin: string;
@@ -211,10 +213,11 @@ export type Transaction = {
   payerId: string; // Job Giver ID
   payeeId: string; // Installer ID
   amount: number; // The original bid amount
+  travelTip?: number; // The travel tip, if any
   commission: number; // The platform commission amount taken from installer
   jobGiverFee: number; // The fee charged to the job giver
-  totalPaidByGiver: number; // The total amount charged to the job giver (amount + jobGiverFee)
-  payoutToInstaller: number; // The net amount paid out to the installer (amount - commission)
+  totalPaidByGiver: number; // The total amount charged to the job giver (amount + jobGiverFee + travelTip)
+  payoutToInstaller: number; // The net amount paid out to the installer (amount - commission + travelTip)
   status: 'Initiated' | 'Funded' | 'Failed' | 'Released' | 'Refunded' | 'Disputed';
   paymentGatewayOrderId?: string;
   paymentGatewaySessionId?: string;
