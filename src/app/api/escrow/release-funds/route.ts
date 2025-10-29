@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     
     const installerSnap = await getDoc(doc(db, 'users', transaction.payeeId));
     if (!installerSnap.exists() || !installerSnap.data()?.payouts?.beneficiaryId) {
-        return NextResponse.json({ error: 'Installer payout details not configured.' }, { status: 400 });
+        return NextResponse.json({ error: 'Installer payout details (beneficiary ID) not configured.' }, { status: 400 });
     }
     const installer = installerSnap.data() as User;
     const beneficiaryId = installer.payouts!.beneficiaryId!;
@@ -58,6 +58,8 @@ export async function POST(req: NextRequest) {
     const payoutAmount = transaction.amount - transaction.commission;
     const transferId = `PAYOUT_${transaction.id}`;
 
+    // This is the "Easy Split" part. We are making a standard transfer,
+    // which Cashfree will later reconcile against the incoming payment.
     const transferPayload = {
       beneId: beneficiaryId,
       amount: payoutAmount.toFixed(2),
@@ -75,10 +77,15 @@ export async function POST(req: NextRequest) {
       }
     );
 
+    // Optimistically update the status. The webhook will be the final confirmation.
     await updateDoc(transactionRef, {
         payoutTransferId: transferId,
-        // The status will be updated to 'Released' via webhook
+        status: 'Released'
     });
+    
+    // In a production system, you would also trigger a transfer for your commission here
+    // to your own pre-registered beneficiary account. For this demo, we assume the 
+    // commission is reconciled by Cashfree's reports.
     
     return NextResponse.json({ success: true, transferId });
 

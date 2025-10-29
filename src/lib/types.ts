@@ -219,4 +219,3 @@ export type PlatformSettings = {
     autoVerifyInstallers: boolean;
 };
 
-    
