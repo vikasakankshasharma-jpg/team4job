@@ -1229,6 +1229,45 @@ export default function JobDetailPage() {
             setIsFunding(false);
         }
     };
+    
+    const handleAttachmentDelete = async (attachmentToDelete: JobAttachment) => {
+      if (!job || !storage) return;
+      
+      try {
+        // Create a reference to the file to delete
+        const fileRef = ref(storage, attachmentToDelete.fileUrl);
+        
+        // Delete the file
+        await deleteObject(fileRef);
+
+        // Remove the attachment from the job's attachments array in Firestore
+        await handleJobUpdate({
+            attachments: arrayRemove(attachmentToDelete) as any
+        });
+
+        toast({
+            title: "Attachment Deleted",
+            description: `Successfully deleted ${attachmentToDelete.fileName}.`,
+            variant: "success",
+        });
+      } catch (error: any) {
+          console.error("Error deleting attachment:", error);
+          if (error.code === 'storage/object-not-found') {
+               // If file doesn't exist in storage, just remove it from firestore
+                await handleJobUpdate({
+                    attachments: arrayRemove(attachmentToDelete) as any
+                });
+                toast({ title: "Attachment Removed", description: "The attachment reference was removed, though the file was not found in storage.", variant: "warning" });
+          } else {
+             toast({
+                title: "Error Deleting Attachment",
+                description: "An unexpected error occurred. Please try again.",
+                variant: "destructive",
+            });
+          }
+      }
+    };
+
 
   if (loading) {
     return <PageSkeleton />;
@@ -1321,16 +1360,38 @@ export default function JobDetailPage() {
                   <h3 className="font-semibold mb-4">Attachments</h3>
                   <div className="space-y-2">
                     {job.attachments.map((file, idx) => (
-                      <a 
-                        key={idx} 
-                        href={file.fileUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="flex items-center gap-2 text-primary hover:underline bg-primary/10 p-2 rounded-md text-sm"
-                      >
-                        <FileIcon className="h-4 w-4" />
-                        <span>{file.fileName}</span>
-                      </a>
+                      <div key={idx} className="flex items-center justify-between p-2 rounded-md bg-secondary/50">
+                        <a 
+                          href={file.fileUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="flex items-center gap-2 text-primary hover:underline"
+                        >
+                          <FileIcon className="h-4 w-4" />
+                          <span className="text-sm">{file.fileName}</span>
+                        </a>
+                         {canEditJob && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>This will permanently delete the attachment "{file.fileName}". This action cannot be undone.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleAttachmentDelete(file)} className={cn(buttonVariants({variant: "destructive"}))}>
+                                      Delete
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
