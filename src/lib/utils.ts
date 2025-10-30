@@ -18,6 +18,8 @@ export const getStatusVariant = (status: Job['status']): "default" | "secondary"
             return 'outline';
         case 'Awarded':
             return 'info';
+        case 'Pending Funding':
+            return 'info';
         case 'In Progress':
             return 'default';
         case 'Completed':
