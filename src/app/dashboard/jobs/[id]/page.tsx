@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -9,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -92,6 +92,63 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 
 declare const cashfree: any;
+
+function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
+    const [rating, setRating] = React.useState(job.rating || 0);
+    const [hoverRating, setHoverRating] = React.useState(0);
+    const [review, setReview] = React.useState('');
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const { toast } = useToast();
+
+    const handleRatingSubmit = async () => {
+        if (rating === 0) {
+            toast({ title: "Please select a rating", variant: "destructive" });
+            return;
+        }
+        setIsSubmitting(true);
+        await onJobUpdate({ rating, review: review || "" });
+        toast({ title: "Thank you for your feedback!", description: "Your rating has been submitted.", variant: "success" });
+        setIsSubmitting(false);
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Leave a Review</CardTitle>
+                <CardDescription>Your feedback is important. Please rate your experience with the installer.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="flex justify-center space-x-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                            key={star}
+                            className={cn(
+                                "h-10 w-10 cursor-pointer transition-all",
+                                (hoverRating >= star || rating >= star)
+                                    ? "text-yellow-400 fill-yellow-400"
+                                    : "text-muted-foreground"
+                            )}
+                            onMouseEnter={() => setHoverRating(star)}
+                            onMouseLeave={() => setHoverRating(0)}
+                            onClick={() => setRating(star)}
+                        />
+                    ))}
+                </div>
+                 <Textarea
+                    placeholder="Share details of your own experience with this installer (optional)..."
+                    value={review}
+                    onChange={(e) => setReview(e.target.value)}
+                />
+            </CardContent>
+            <CardFooter>
+                 <Button onClick={handleRatingSubmit} disabled={isSubmitting || rating === 0}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit Review
+                </Button>
+            </CardFooter>
+        </Card>
+    );
+}
 
 function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
   const { toast } = useToast();
@@ -183,15 +240,14 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
         // --- 5. Update Job Status and invoice data locally and in Firestore ---
         const updatedJobData: Partial<Job> = { 
             status: 'Completed', 
-            rating: 5, // Default to 5-star rating, user can change later
-            attachments: arrayUnion(...uploadedAttachments) as any, // Add completion proof to job attachments
+            attachments: arrayUnion(...uploadedAttachments) as any,
             ...(invoiceData && { invoice: invoiceData }),
         };
         onJobUpdate(updatedJobData);
         
         toast({
           title: "Job Completed!",
-          description: "Payout has been initiated and invoice has been generated. You will receive a notification once it's processed.",
+          description: "Payout has been initiated. The Job Giver can now rate your work.",
           variant: 'success'
         });
 
@@ -1665,7 +1721,11 @@ export default function JobDetailPage() {
             {job.status === 'Completed' && (
               <>
                   <Separator className="my-6" />
-                  <FinancialsCard job={job} transaction={transaction} platformSettings={platformSettings} user={user} />
+                  {isJobGiver && !job.rating ? (
+                     <RatingSection job={job} onJobUpdate={handleJobUpdate} />
+                  ) : (
+                     <FinancialsCard job={job} transaction={transaction} platformSettings={platformSettings} user={user} />
+                  )}
               </>
             )}
           </CardContent>

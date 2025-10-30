@@ -1,5 +1,4 @@
 
-
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as express from "express";
@@ -231,23 +230,6 @@ export const onJobCompleted = functions.firestore
             
             // Default reputation values if not set
             const pointsForCompletion = settings.pointsForJobCompletion || 50;
-            const pointsFor5Star = settings.pointsFor5StarRating || 20;
-            const pointsFor4Star = settings.pointsFor4StarRating || 10;
-            const penaltyFor1Star = settings.penaltyFor1StarRating || -25;
-            
-            const silverTierPoints = settings.silverTierPoints || 500;
-            const goldTierPoints = settings.goldTierPoints || 1000;
-            const platinumTierPoints = settings.platinumTierPoints || 2000;
-
-            let pointsEarned = pointsForCompletion;
-            
-            if (afterData.rating === 5) {
-                pointsEarned += pointsFor5Star;
-            } else if (afterData.rating === 4) {
-                pointsEarned += pointsFor4Star;
-            } else if (afterData.rating === 1) {
-                pointsEarned += penaltyFor1Star;
-            }
             
             try {
                 await admin.firestore().runTransaction(async (transaction) => {
@@ -261,8 +243,12 @@ export const onJobCompleted = functions.firestore
                     }
 
                     const currentPoints = installerData.installerProfile.points || 0;
-                    const newPoints = currentPoints + pointsEarned;
+                    const newPoints = currentPoints + pointsForCompletion;
                     
+                    const silverTierPoints = settings.silverTierPoints || 500;
+                    const goldTierPoints = settings.goldTierPoints || 1000;
+                    const platinumTierPoints = settings.platinumTierPoints || 2000;
+
                     let newTier = installerData.installerProfile.tier || 'Bronze';
                     if (newPoints >= platinumTierPoints) {
                         newTier = 'Platinum';
@@ -274,7 +260,6 @@ export const onJobCompleted = functions.firestore
 
                     const monthYear = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
                     
-                    // Update reputation history
                     const history = installerData.installerProfile.reputationHistory || [];
                     const monthIndex = history.findIndex((h: {month:string}) => h.month === monthYear);
                     if (monthIndex > -1) {
@@ -283,7 +268,6 @@ export const onJobCompleted = functions.firestore
                         history.push({ month: monthYear, points: newPoints });
                     }
                     
-                    // Limit history to last 12 months for performance
                     if (history.length > 12) {
                         history.shift();
                     }
@@ -292,25 +276,95 @@ export const onJobCompleted = functions.firestore
                         'installerProfile.points': newPoints,
                         'installerProfile.tier': newTier,
                         'installerProfile.reputationHistory': history,
-                        'installerProfile.reviews': admin.firestore.FieldValue.increment(1)
                     });
                 });
-                console.log(`Successfully updated reputation for installer ${installerRef.id}. Awarded ${pointsEarned} points.`);
+                console.log(`Successfully updated reputation for installer ${installerRef.id}. Awarded ${pointsForCompletion} points for completion.`);
                 
                 await sendNotification(
                     installerRef.id,
                     "Reputation Updated!",
-                    `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`,
+                    `You earned ${pointsForCompletion} points for completing the job: "${afterData.title}"`,
                     `/dashboard/profile`
                 );
             } catch (error) {
-                console.error("Error updating reputation:", error);
+                console.error("Error updating reputation for job completion:", error);
+            }
+        }
+        
+        // Check if a rating was just added
+        if (beforeData.rating !== afterData.rating && afterData.status === "Completed") {
+             const installerRef = afterData.awardedInstaller;
+            if (!installerRef) return;
+            
+            const settingsRef = admin.firestore().collection('settings').doc('platform');
+            const settingsSnap = await settingsRef.get();
+            const settings = settingsSnap.data() || {};
+            
+            const pointsFor5Star = settings.pointsFor5StarRating || 20;
+            const pointsFor4Star = settings.pointsFor4StarRating || 10;
+            const penaltyFor1Star = settings.penaltyFor1StarRating || -25;
+            
+            let ratingPoints = 0;
+            if (afterData.rating === 5) ratingPoints = pointsFor5Star;
+            else if (afterData.rating === 4) ratingPoints = pointsFor4Star;
+            else if (afterData.rating === 1) ratingPoints = penaltyFor1Star;
+            else ratingPoints = 0;
+
+            if (ratingPoints === 0) return; // No points change for 2-3 stars
+
+            try {
+                 await admin.firestore().runTransaction(async (transaction) => {
+                    const installerDoc = await transaction.get(installerRef);
+                    if (!installerDoc.exists || !installerDoc.data()?.installerProfile) {
+                        throw new Error("Installer profile not found!");
+                    }
+                    
+                    const installerData = installerDoc.data();
+                    const currentPoints = installerData!.installerProfile.points || 0;
+                    const newPoints = currentPoints + ratingPoints;
+
+                     const silverTierPoints = settings.silverTierPoints || 500;
+                    const goldTierPoints = settings.goldTierPoints || 1000;
+                    const platinumTierPoints = settings.platinumTierPoints || 2000;
+
+                    let newTier = installerData!.installerProfile.tier || 'Bronze';
+                    if (newPoints >= platinumTierPoints) newTier = 'Platinum';
+                    else if (newPoints >= goldTierPoints) newTier = 'Gold';
+                    else if (newPoints >= silverTierPoints) newTier = 'Silver';
+
+                     const monthYear = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+                    const history = installerData!.installerProfile.reputationHistory || [];
+                    const monthIndex = history.findIndex((h: {month:string}) => h.month === monthYear);
+                    if (monthIndex > -1) {
+                        history[monthIndex].points = newPoints;
+                    } else {
+                        history.push({ month: monthYear, points: newPoints });
+                    }
+                    if (history.length > 12) history.shift();
+
+                    transaction.update(installerRef, {
+                        'installerProfile.points': newPoints,
+                        'installerProfile.tier': newTier,
+                        'installerProfile.reputationHistory': history,
+                        'installerProfile.reviews': admin.firestore.FieldValue.increment(1)
+                    });
+                });
+                console.log(`Awarded ${ratingPoints} points to ${installerRef.id} for a ${afterData.rating}-star rating.`);
+                await sendNotification(
+                    installerRef.id,
+                    "New Rating Received!",
+                    `You received a ${afterData.rating}-star rating for job "${afterData.title}" and your reputation score has been updated.`,
+                    `/dashboard/profile`
+                );
+            } catch (error) {
+                console.error("Error updating reputation for rating:", error);
             }
         }
     });
 
 
     
+
 
 
 
