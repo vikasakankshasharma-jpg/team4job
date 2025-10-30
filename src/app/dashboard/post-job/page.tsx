@@ -42,6 +42,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 
 const addressSchema = z.object({
@@ -329,9 +340,13 @@ export default function PostJobPage() {
     try {
         if (isEditMode && editJobId) {
             jobData.deadline = new Date(values.deadline);
+            // In edit mode, we clear existing bids to ensure fairness
+            jobData.bids = [];
+            jobData.bidderIds = [];
+            
             const jobRef = doc(db, "jobs", editJobId);
             await updateDoc(jobRef, jobData);
-            toast({ title: "Job Updated Successfully!", });
+            toast({ title: "Job Updated Successfully!", description: "Existing bids have been cleared and bidders notified." });
             router.push(`/dashboard/jobs/${editJobId}`);
 
         } else {
@@ -405,6 +420,44 @@ export default function PostJobPage() {
    if (!userLoading && role !== 'Job Giver') {
     return null; // Redirect is handled by the hook
   }
+  
+  const SubmitButton = () => {
+    const buttonText = isEditMode ? 'Save Changes' : (repostJobId ? 'Re-post Job' : 'Post Job');
+    
+    if (isEditMode) {
+      return (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button type="button" disabled={isProcessing || isGenerating}>
+                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {buttonText}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to save changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Editing a live job will remove all existing bids to ensure fairness. Previous bidders will be notified and will need to bid again on the updated job details. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={form.handleSubmit(onSubmit)}>
+                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirm & Save"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )
+    }
+
+    return (
+        <Button type="submit" disabled={isProcessing || isGenerating}>
+            {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {buttonText}
+        </Button>
+    )
+  }
 
   return (
     <div className="mx-auto grid max-w-4xl flex-1 auto-rows-max gap-4">
@@ -415,7 +468,7 @@ export default function PostJobPage() {
         {isProcessing && <Loader2 className="h-5 w-5 animate-spin" />}
       </div>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+        <form onSubmit={e => e.preventDefault()} className="grid gap-4">
           <Card>
             <CardHeader>
               <CardTitle>Job Details</CardTitle>
@@ -638,10 +691,7 @@ export default function PostJobPage() {
             <Button variant="outline" type="button" onClick={() => router.back()}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isProcessing || isGenerating}>
-                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditMode ? 'Save Changes' : (repostJobId ? 'Re-post Job' : 'Post Job')}
-            </Button>
+            <SubmitButton />
           </div>
         </form>
       </Form>
