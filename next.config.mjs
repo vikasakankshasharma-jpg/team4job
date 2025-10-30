@@ -1,9 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    // This is required to fix the 404 errors in the IDE's preview window
-    deploymentId: 'standalone',
-  },
   async headers() {
     return [
       {
@@ -18,11 +14,6 @@ const nextConfig = {
       }
     ]
   },
-  allowedDevOrigins: [
-    "https://9000-firebase-studio-1758725206340.cluster-w5vd22whf5gmav2vgkomwtc4go.cloudworkstations.dev",
-    "https://3003-firebase-studio-1758725206340.cluster-w5vd22whf5gmav2vgkomwtc4go.cloudworkstations.dev",
-    "https://3000-firebase-studio-1758725206340.cluster-w5vd22whf5gmav2vgkomwtc4go.cloudworkstations.dev",
-  ],
 };
 
 export default nextConfig;

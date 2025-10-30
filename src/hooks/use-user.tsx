@@ -52,6 +52,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isAdminUser = userData.roles.includes("Admin");
       setIsAdmin(isAdminUser);
 
+      // Implement role priority: Admin > Support Team > Last Used > Default
       if (isAdminUser) {
         setRoleState("Admin");
         localStorage.setItem('userRole', "Admin");
