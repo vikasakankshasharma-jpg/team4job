@@ -127,6 +127,48 @@ export const onJobEdited = functions.firestore
     });
 
 /**
+ * Triggered when an installer accepts or declines a job offer.
+ */
+export const onJobAwarded = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+        const beforeData = change.before.data();
+        const afterData = change.after.data();
+        const jobGiverId = afterData.jobGiver.id;
+
+        // Case 1: Installer accepts the job (status changes to 'Pending Funding')
+        if (beforeData.status !== 'Pending Funding' && afterData.status === 'Pending Funding') {
+            if (afterData.awardedInstaller && typeof afterData.awardedInstaller.get === 'function') {
+                const installerDoc = await afterData.awardedInstaller.get();
+                const installerName = installerDoc.data()?.name || "The installer";
+                await sendNotification(
+                    jobGiverId,
+                    "Offer Accepted!",
+                    `${installerName} has accepted your offer for "${afterData.title}". Please proceed to fund the project.`,
+                    `/dashboard/jobs/${context.params.jobId}`
+                );
+            }
+        }
+        
+        // Case 2: Installer declines the job (status reverts from 'Awarded' to 'Bidding Closed' or 'Open for Bidding')
+        const wasAwarded = (beforeData.status === 'Awarded');
+        const isNowOpen = (afterData.status === 'Bidding Closed' || afterData.status === 'Open for Bidding');
+        if (wasAwarded && isNowOpen && beforeData.awardedInstaller && !afterData.awardedInstaller) {
+            if (beforeData.awardedInstaller && typeof beforeData.awardedInstaller.get === 'function') {
+                const installerDoc = await beforeData.awardedInstaller.get();
+                const installerName = installerDoc.data()?.name || "The installer";
+                await sendNotification(
+                    jobGiverId,
+                    "Offer Declined",
+                    `${installerName} has declined your offer for "${afterData.title}". You can now award the job to another installer.`,
+                    `/dashboard/jobs/${context.params.jobId}`
+                );
+            }
+        }
+    });
+
+
+/**
  * Triggered when a new private message is added to a job.
  * Notifies the recipient.
  */
@@ -208,7 +250,7 @@ export const onJobDateChange = functions.firestore
 
 /**
  * Triggered when a job is updated, specifically to handle reputation points
- * when a job status changes to "Completed".
+ * and completion notifications.
  */
 export const onJobCompleted = functions.firestore
     .document("jobs/{jobId}")
@@ -224,11 +266,18 @@ export const onJobCompleted = functions.firestore
                 return;
             }
 
+            // Notify Job Giver that job is complete
+            await sendNotification(
+                afterData.jobGiver.id,
+                "Job Completed!",
+                `The job "${afterData.title}" has been marked as complete. Please leave a review for the installer.`,
+                `/dashboard/jobs/${context.params.jobId}`
+            );
+
             const settingsRef = admin.firestore().collection('settings').doc('platform');
             const settingsSnap = await settingsRef.get();
             const settings = settingsSnap.data() || {};
             
-            // Default reputation values if not set
             const pointsForCompletion = settings.pointsForJobCompletion || 50;
             
             try {
@@ -362,12 +411,6 @@ export const onJobCompleted = functions.firestore
         }
     });
 
-
     
 
-
-
-
-
-
-
+    
