@@ -321,7 +321,7 @@ function JobGiverOTPCard({ job }: { job: Job }) {
           Job Completion OTP
         </CardTitle>
         <CardDescription>
-          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payout from the Marketplace Settlement account.
+          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payout from the Cashfree Marketplace Settlement account.
         </CardDescription>
       </CardHeader>
       <CardContent className="text-center">
@@ -1658,7 +1658,7 @@ export default function JobDetailPage() {
              <div className="flex items-center gap-3">
               <MessageSquare className="h-5 w-5" />
               <div>
-                <p className="text-muted-foreground">Public Comments</p>
+                <p className="text-muted-foreground">Public Q&A</p>
                 <p className="font-semibold">{job.comments?.length || 0}</p>
               </div>
             </div>
@@ -1703,7 +1703,7 @@ export default function JobDetailPage() {
                                 <AlertDialogTitle>Are you sure you want to cancel this job?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     This action cannot be undone. 
-                                    {job.status === 'In Progress' && isFunded && " The contract with the installer will be terminated. You must raise a dispute to process a refund of the funds held in the Marketplace Settlement account."}
+                                    {job.status === 'In Progress' && isFunded && " The contract with the installer will be terminated. You must raise a dispute to process a refund from the Cashfree Marketplace Settlement account."}
                                     {job.status === 'In Progress' && !isFunded && " This will terminate the contract with the current installer. No reputation will be lost."}
                                     {job.status !== 'In Progress' && " The job will be marked as 'Cancelled' and will no longer be open for bidding."}
                                 </AlertDialogDescription>
