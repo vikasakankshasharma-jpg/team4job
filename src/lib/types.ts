@@ -116,7 +116,6 @@ export type Job = {
   };
   travelTip?: number;
   isGstInvoiceRequired: boolean;
-  isPromoted?: boolean;
   status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid' | 'Pending Funding';
   deadline: Date | Timestamp;
   jobStartDate?: Date | Timestamp;
