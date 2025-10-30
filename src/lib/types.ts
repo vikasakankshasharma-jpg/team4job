@@ -222,9 +222,6 @@ export type Transaction = {
   status: 'Initiated' | 'Funded' | 'Failed' | 'Released' | 'Refunded' | 'Disputed';
   paymentGatewayOrderId?: string;
   paymentGatewaySessionId?: string;
-  escrowAccountId?: string;
-  holdId?: string;
-  releaseId?: string;
   payoutTransferId?: string;
   refundTransferId?: string;
   createdAt: Date | Timestamp;
