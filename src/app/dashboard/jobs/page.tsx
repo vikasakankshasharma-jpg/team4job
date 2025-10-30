@@ -69,7 +69,8 @@ export default function BrowseJobsPage() {
   const fetchJobs = React.useCallback(async () => {
     if (!db) return;
     setLoading(true);
-    const openJobsQuery = query(collection(db, 'jobs'), where('status', '==', 'Open for Bidding'));
+    // Fetch both "Open for Bidding" and "Unbid" jobs
+    const openJobsQuery = query(collection(db, 'jobs'), where('status', 'in', ['Open for Bidding', 'Unbid']));
     const jobSnapshot = await getDocs(openJobsQuery);
     const userIds = new Set<string>();
     jobSnapshot.docs.forEach(doc => {
@@ -124,6 +125,9 @@ export default function BrowseJobsPage() {
                      <li>
                         <span className="font-semibold">Clear Filters:</span> If you have any filters active, a "Clear" button will appear. Click it to reset your search and see all available jobs again.
                     </li>
+                    <li>
+                        <span className="font-semibold">Recommended Tab:</span> This tab includes "Unbid" jobs in your area, giving you a second chance at opportunities you may have missed.
+                    </li>
                 </ul>
                 <p>Each job card gives you a quick summary. Click "View Job & Bid" to see the full details and place your offer.</p>
             </div>
@@ -153,14 +157,16 @@ export default function BrowseJobsPage() {
     });
   }
 
-  const filteredJobs = filterJobs(jobs);
+  // "All" tab should only show currently open jobs.
+  const openForBiddingJobs = React.useMemo(() => jobs.filter(job => job.status === 'Open for Bidding'), [jobs]);
+  const filteredJobs = filterJobs(openForBiddingJobs);
 
   const recommendedJobs = React.useMemo(() => {
     if (!user?.installerProfile) return [];
     
     const installerSkills = new Set(user.installerProfile.skills.map(s => s.toLowerCase()));
 
-    const scoredJobs = jobs
+    const scoredJobs = jobs // Includes both 'Open for Bidding' and 'Unbid'
         .map(job => {
             let score = 0;
             const residentialMatch = user.pincodes.residential && job.location.includes(user.pincodes.residential);
@@ -174,6 +180,10 @@ export default function BrowseJobsPage() {
             if (!locationMatch) return null; // Exclude jobs not in selected pincodes
 
             score += 10; // Base score for location match
+
+            if (job.status === 'Unbid') {
+                score += 5; // Give a slight boost to unbid jobs to surface them
+            }
 
             if (job.skills && job.skills.length > 0) {
                 const jobSkills = new Set(job.skills.map(s => s.toLowerCase()));
@@ -223,7 +233,7 @@ export default function BrowseJobsPage() {
       <Tabs defaultValue="recommended">
         <div className="flex items-center">
           <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="all">All Jobs</TabsTrigger>
             <TabsTrigger value="recommended">Recommended</TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
@@ -322,7 +332,7 @@ export default function BrowseJobsPage() {
             </CardContent>
             <CardFooter>
                <div className="text-xs text-muted-foreground">
-                Showing <strong>1-{filteredJobs.length}</strong> of <strong>{jobs.length}</strong> jobs
+                Showing <strong>1-{filteredJobs.length}</strong> of <strong>{openForBiddingJobs.length}</strong> jobs
               </div>
             </CardFooter>
           </Card>
@@ -334,7 +344,7 @@ export default function BrowseJobsPage() {
                     <div>
                         <CardTitle>Recommended For You</CardTitle>
                         <CardDescription>
-                            Jobs that match your profile pincode(s) and skills.
+                            Jobs that match your profile pincode(s) and skills, including unbid opportunities.
                         </CardDescription>
                     </div>
                      {user && user.pincodes.office && (
@@ -374,3 +384,5 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
+
+    
