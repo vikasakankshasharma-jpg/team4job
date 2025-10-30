@@ -435,7 +435,7 @@
         "content": {
           "type": "string"
         },
-         "attachments": {
+        "attachments": {
           "type": "array",
           "items": {
             "$ref": "#/entities/JobAttachment"
@@ -683,5 +683,3 @@
     }
   }
 }
-
-    
