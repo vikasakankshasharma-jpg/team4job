@@ -1712,7 +1712,6 @@ export default function JobDetailPage() {
                                 <AlertDialogAction onClick={handleCancelJob} className={cn(buttonVariants({variant: "destructive"}))}>Confirm Cancellation</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
-                    </AlertDialog>
                 )}
               </div>
           </CardContent>
