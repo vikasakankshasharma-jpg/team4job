@@ -33,7 +33,7 @@ async function sendNotification(userId: string, title: string, body: string, lin
     const userDoc = await admin.firestore().collection("users").doc(userId).get();
     const userData = userDoc.data();
 
-    if (!userData || !userData.fcmTokens || !userData.fcmTokens.length === 0) {
+    if (!userData || !userData.fcmTokens || userData.fcmTokens.length === 0) {
         console.log(`User ${userId} has no FCM tokens. Cannot send notification.`);
         return;
     }
@@ -95,104 +95,41 @@ export const onBidCreated = functions.firestore
     });
 
 /**
- * Triggered when a job's status changes.
+ * Triggered when a job is updated, to notify installers if the job details changed.
  */
-export const onJobStatusChange = functions.firestore
+export const onJobEdited = functions.firestore
     .document("jobs/{jobId}")
     .onUpdate(async (change, context) => {
         const beforeData = change.before.data();
         const afterData = change.after.data();
-        const jobId = context.params.jobId;
 
-        if (beforeData.status === afterData.status) {
-            return; // No status change
-        }
+        // Check if the job was edited while open for bidding AND bids were cleared
+        if (
+            beforeData.status === 'Open for Bidding' &&
+            afterData.status === 'Open for Bidding' &&
+            (beforeData.bids?.length > 0) &&
+            (afterData.bids?.length === 0)
+        ) {
+            const previousBidderIds = (beforeData.bidderIds || []);
+            if (previousBidderIds.length === 0) return;
 
-        const jobGiverId = afterData.jobGiver.id;
-        const awardedInstallerId = afterData.awardedInstaller?.id;
-        const jobTitle = afterData.title;
-
-        // To Installer: Job Awarded
-        if (afterData.status === 'Awarded' && beforeData.status !== 'Awarded' && awardedInstallerId) {
-            await sendNotification(
-                awardedInstallerId,
-                "You've Been Awarded a Job!",
-                `Congratulations! You have been awarded the job: "${jobTitle}". You have 24 hours to accept.`,
-                `/dashboard/jobs/${jobId}`
+            const notificationPromises = previousBidderIds.map((installerId: string) => 
+                sendNotification(
+                    installerId,
+                    "Job Updated",
+                    `The job "${afterData.title}" has been updated. Please review the changes and bid again if you're still interested.`,
+                    `/dashboard/jobs/${context.params.jobId}`
+                )
             );
-        }
-        
-        // To Job Giver: Job Accepted and needs funding
-        if (afterData.status === 'Pending Funding' && beforeData.status === 'Awarded') {
-            if (afterData.awardedInstaller && typeof afterData.awardedInstaller.get === 'function') {
-                const installerDoc = await afterData.awardedInstaller.get();
-                const installerName = installerDoc.data()?.name || "The installer";
-                await sendNotification(
-                    jobGiverId,
-                    "Action Required: Fund Your Job",
-                    `${installerName} has accepted the job: "${jobTitle}". Please complete the payment to begin the work.`,
-                    `/dashboard/jobs/${jobId}`
-                );
-            }
-        }
 
-
-        // --- Logic for Declined or Missed Job Offer ---
-        if ((afterData.status === 'Open for Bidding' || afterData.status === 'Bidding Closed') && beforeData.status === 'Awarded') {
-            const declinedInstallerRef = beforeData.awardedInstaller;
-            if (!declinedInstallerRef || typeof declinedInstallerRef.get !== 'function') return;
-
-            const installerDoc = await declinedInstallerRef.get();
-            const installerName = installerDoc.data()?.name || "The installer";
-            
-            // Notify Job Giver
-            await sendNotification(
-                jobGiverId,
-                "Job Offer Declined",
-                `${installerName} has declined or missed the offer for job: "${jobTitle}". You can now award it to another installer.`,
-                `/dashboard/jobs/${jobId}`
-            );
-            
-            // Apply reputation penalty
-            const settingsRef = admin.firestore().collection('settings').doc('platform');
-            const settingsSnap = await settingsRef.get();
-            const penalty = settingsSnap.data()?.penaltyForDeclinedJob || -15; // Default to -15 if not set
-
-            if (penalty < 0) {
-                 try {
-                    await admin.firestore().runTransaction(async (transaction) => {
-                        const installerProfileDoc = await transaction.get(declinedInstallerRef);
-                        if (!installerProfileDoc.exists) return;
-                        const currentPoints = installerProfileDoc.data()?.installerProfile?.points || 0;
-                        transaction.update(declinedInstallerRef, { 'installerProfile.points': currentPoints + penalty });
-                    });
-                     console.log(`Applied penalty of ${penalty} points to installer ${declinedInstallerRef.id} for declining job ${jobId}.`);
-                     await sendNotification(
-                        declinedInstallerRef.id,
-                        "Reputation Penalty Applied",
-                        `You received a ${penalty} point penalty for declining or not responding to the job offer: "${jobTitle}".`,
-                        `/dashboard/profile`
-                    );
-                } catch (error) {
-                    console.error("Error applying reputation penalty for decline:", error);
-                }
-            }
-        }
-
-        // To Job Giver: Job Completed
-        if (afterData.status === 'Completed' && beforeData.status !== 'Completed') {
-            await sendNotification(
-                jobGiverId,
-                "Job Marked as Complete",
-                `The job "${jobTitle}" has been marked as complete by the installer. Please provide a rating.`,
-                `/dashboard/jobs/${jobId}`
-            );
+            await Promise.all(notificationPromises);
+            console.log(`Notified ${previousBidderIds.length} previous bidders about job update for ${context.params.jobId}`);
         }
     });
 
-
 /**
  * Triggered when a new private message is added to a job.
+ * Notifies the recipient.
  */
 export const onPrivateMessageCreated = functions.firestore
     .document("jobs/{jobId}")
@@ -374,6 +311,7 @@ export const onJobCompleted = functions.firestore
 
 
     
+
 
 
 
