@@ -533,9 +533,12 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, isDisabled }: 
                                ) : (
                                     <p className="font-semibold">{installerName}</p>
                                )}
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    {installer.installerProfile?.tier && tierIcons[installer.installerProfile.tier]}
+                                    <span>{installer.installerProfile?.tier} Tier</span>
+                                </div>
                             </div>
                             <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
-                                <span className="flex items-center gap-1"><Trophy className="h-3 w-3 text-amber-500" /> {installer.installerProfile?.tier} Tier</span>
                                 <span className="flex items-center gap-1"><Star className="h-3 w-3 fill-primary text-primary" /> {installer.installerProfile?.rating} ({installer.installerProfile?.reviews} reviews)</span>
                             </div>
                         </div>
@@ -866,239 +869,6 @@ function EditDateDialog({ job, user, onJobUpdate, triggerElement }: { job: Job; 
     );
 }
 
-function RaiseDisputeDialog({ job, user, onJobUpdate }: { job: Job; user: User; onJobUpdate: (updatedPart: Partial<Job>) => void; }) {
-    const { toast } = useToast();
-    const { db } = useFirebase();
-    const [reason, setReason] = React.useState("");
-    const [isOpen, setIsOpen] = React.useState(false);
-    const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-    const handleRaiseDispute = async () => {
-        if (!reason.trim()) {
-            toast({ title: "Reason is required", variant: "destructive" });
-            return;
-        }
-        setIsSubmitting(true);
-        
-        const newDisputeId = `DISPUTE-${Date.now()}`;
-        
-        // Ensure awardedInstaller is not null and get its reference
-        const awardedInstaller = job.awardedInstaller;
-        if (!awardedInstaller) {
-            toast({ title: "Error", description: "No installer has been awarded this job.", variant: "destructive"});
-            setIsSubmitting(false);
-            return;
-        }
-
-        const newDispute: Partial<Dispute> = {
-            id: newDisputeId,
-            requesterId: user.id,
-            category: "Job Dispute",
-            title: `Dispute for job: ${job.title.slice(0, 30)}...`,
-            jobId: job.id,
-            jobTitle: job.title,
-            status: 'Open',
-            reason: reason,
-            parties: {
-                jobGiverId: (job.jobGiver as User | DocumentReference).id,
-                installerId: (awardedInstaller as User | DocumentReference).id,
-            },
-            messages: [{
-                authorId: user.id,
-                authorRole: user.roles.includes('Admin') ? 'Admin' : (user.roles.includes('Job Giver') ? 'Job Giver' : 'Installer'),
-                content: `Initial complaint: ${reason}`,
-                timestamp: new Date()
-            }],
-            createdAt: new Date(),
-        };
-
-        try {
-            await setDoc(doc(db, "disputes", newDisputeId), newDispute);
-            onJobUpdate({ disputeId: newDisputeId });
-
-            toast({
-                title: "Dispute Raised Successfully",
-                description: "An admin will review your case shortly. You can view the dispute from this page.",
-            });
-            setIsOpen(false);
-        } catch (error) {
-            console.error("Error raising dispute:", error);
-            toast({ title: "Error", description: "Failed to raise dispute.", variant: "destructive"});
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button variant="destructive" className="w-full">
-                <AlertOctagon className="mr-2 h-4 w-4" />
-                Raise a Dispute
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Raise a Dispute for "{job.title}"</DialogTitle>
-                    <DialogDescription>
-                        Explain the issue clearly. An admin will review the case. This action cannot be undone.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                    <Textarea
-                        placeholder="Clearly describe the problem, e.g., 'The work was not completed as agreed upon...' or 'Payment has not been released after completion...'",
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                        rows={5}
-                    />
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="outline" disabled={isSubmitting}>Cancel</Button>
-                    </DialogClose>
-                    <Button onClick={handleRaiseDispute} disabled={!reason.trim() || isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Submit Dispute
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
-    const { user } = useUser();
-    const { toast } = useToast();
-    const { db } = useFirebase();
-    const [timeLeft, setTimeLeft] = React.useState('');
-    const [isActionLoading, setIsActionLoading] = React.useState(false);
-
-    React.useEffect(() => {
-        if (!job.acceptanceDeadline) return;
-
-        const interval = setInterval(() => {
-            const now = new Date();
-            const deadline = toDate(job.acceptanceDeadline!);
-            const diff = deadline.getTime() - now.getTime();
-
-            if (diff <= 0) {
-                setTimeLeft('Expired');
-                clearInterval(interval);
-            } else {
-                const hours = Math.floor(diff / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                setTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-            }
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [job.acceptanceDeadline]);
-
-    const handleAccept = async () => {
-        setIsActionLoading(true);
-        // "First to confirm" logic: check if someone else accepted it first
-        const jobRef = doc(db, 'jobs', job.id);
-        const jobSnap = await getDoc(jobRef);
-        const latestJobData = jobSnap.data() as Job;
-
-        if (latestJobData.status !== 'Awarded') {
-             toast({ title: 'Job No Longer Available', description: 'Another installer has already accepted this job.', variant: 'destructive' });
-             setIsActionLoading(false);
-             onJobUpdate(latestJobData); // Refresh the UI with the latest data
-             return;
-        }
-
-        const update: Partial<Job> = { 
-            status: 'Pending Funding',
-            awardedInstaller: doc(db, 'users', user!.id)
-        };
-        await onJobUpdate(update);
-        toast({ title: 'Job Accepted!', description: 'The Job Giver has been notified to fund the project.', variant: "success" });
-        setIsActionLoading(false);
-    };
-    
-    const handleDecline = async () => {
-        if (!user || !db) return;
-        setIsActionLoading(true);
-        
-        const settingsDoc = await getDoc(doc(db, "settings", "platform"));
-        const penalty = settingsDoc.data()?.penaltyForDeclinedJob || 0;
-        
-        const newSelectedInstallers = (job.selectedInstallers || []).filter(s => s.installerId !== user.id);
-        const update: Partial<Job> = { 
-            disqualifiedInstallerIds: arrayUnion(user.id) as any,
-            selectedInstallers: newSelectedInstallers
-        };
-
-        if (newSelectedInstallers.length === 0) {
-            const deadline = toDate(job.deadline);
-            const now = new Date();
-            update.status = now > deadline ? 'Bidding Closed' : 'Open for Bidding';
-            update.awardedInstaller = undefined;
-            update.acceptanceDeadline = undefined;
-        }
-
-        const userRef = doc(db, 'users', user.id);
-        const userDoc = await getDoc(userRef);
-        const currentPoints = userDoc.data()?.installerProfile?.points || 0;
-
-        await updateDoc(userRef, { 'installerProfile.points': currentPoints + penalty });
-        await onJobUpdate(update);
-        
-        toast({ title: 'Offer Declined', description: `You have declined the offer for this job. ${penalty} points have been deducted.`, variant: 'destructive' });
-        setIsActionLoading(false);
-    };
-
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>You've Received an Offer!</CardTitle>
-                <CardDescription>
-                    The Job Giver has shortlisted you for this job. Accept the offer to secure the project. The first installer to accept wins.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-center">
-                 <div className="flex items-center justify-center gap-2 text-lg font-semibold text-amber-600">
-                    <Hourglass className="h-5 w-5" />
-                    Time to accept: {timeLeft}
-                </div>
-                 <p className="text-xs text-muted-foreground">
-                    If you do not accept within the time limit, the offer will expire and may affect your reputation score.
-                </p>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button variant="destructive" disabled={isActionLoading}>
-                            {isActionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
-                            Decline
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Are you sure you want to decline?</DialogTitle>
-                            <DialogDescription>
-                                Declining this offer will result in a reputation penalty. This action cannot be undone.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                            <DialogClose asChild><Button variant="destructive" onClick={handleDecline}>Confirm Decline</Button></DialogClose>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-                <Button onClick={handleAccept} disabled={isActionLoading}>
-                    {isActionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                    Accept Job
-                </Button>
-            </CardFooter>
-        </Card>
-    );
-}
-
 function DateChangeProposalSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
     if (!job.dateChangeProposal || job.dateChangeProposal.status !== 'pending') {
         return null;
@@ -1140,7 +910,6 @@ function DateChangeProposalSection({ job, user, onJobUpdate }: { job: Job, user:
         </Card>
     );
 }
-
 
 const getRefId = (ref: any): string | null => {
     if (!ref) return null;
@@ -1476,7 +1245,6 @@ export default function JobDetailPage() {
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
   
   const canEditJob = isJobGiver && job.status === 'Open for Bidding';
-  const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
   const canCancelJob = isJobGiver && (job.status === 'In Progress' || job.status === 'Open for Bidding' || job.status === 'Bidding Closed');
   
   const identitiesRevealed = (job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' && job.status !== 'Awarded') || role === 'Admin';
@@ -1759,7 +1527,7 @@ export default function JobDetailPage() {
                 <p className="font-semibold">
                   {job.budget ? `₹${job.budget.min.toLocaleString()} - ₹${job.budget.max.toLocaleString()}` : 'Not specified'}
                    {job.travelTip && job.travelTip > 0 && (
-                    <span className="text-primary font-semibold"> (+ ₹{job.travelTip.toLocaleString()} tip)</span>
+                    <span className="text-primary font-semibold">(+ ₹{job.travelTip.toLocaleString()} tip)</span>
                   )}
                 </p>
               </div>
@@ -1859,21 +1627,6 @@ export default function JobDetailPage() {
                             View Invoice
                         </Link>
                     </Button>
-                )}
-                {canRaiseDispute && !job.disputeId && (
-                     <RaiseDisputeDialog 
-                        job={job} 
-                        user={user} 
-                        onJobUpdate={handleJobUpdate}
-                      />
-                )}
-                 {job.disputeId && (
-                   <Button asChild className="w-full">
-                       <Link href={`/dashboard/disputes/${job.disputeId}`}>
-                          <AlertOctagon className="mr-2 h-4 w-4" />
-                          View Dispute
-                       </Link>
-                   </Button>
                 )}
                 {canCancelJob && (
                      <AlertDialog>
