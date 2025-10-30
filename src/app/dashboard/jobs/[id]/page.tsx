@@ -911,6 +911,7 @@ function DateChangeProposalSection({ job, user, onJobUpdate }: { job: Job, user:
     );
 }
 
+
 const getRefId = (ref: any): string | null => {
     if (!ref) return null;
     if (typeof ref === 'string') return ref;
@@ -1702,7 +1703,7 @@ export default function JobDetailPage() {
                                 <AlertDialogTitle>Are you sure you want to cancel this job?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     This action cannot be undone. 
-                                    {job.status === 'In Progress' && isFunded && " This will terminate the contract with the current installer. You must raise a dispute or contact support to process a refund of the funds held in the settlement account."}
+                                    {job.status === 'In Progress' && isFunded && " The contract with the installer will be terminated. You must raise a dispute to process a refund of the funds held in the settlement account."}
                                     {job.status === 'In Progress' && !isFunded && " This will terminate the contract with the current installer. No reputation will be lost."}
                                     {job.status !== 'In Progress' && " The job will be marked as 'Cancelled' and will no longer be open for bidding."}
                                 </AlertDialogDescription>
