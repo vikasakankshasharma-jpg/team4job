@@ -47,6 +47,18 @@ import { useRouter } from "next/navigation";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
 
+// Helper function to extract city from a full address string
+// This is a simple implementation and might need to be more robust for production
+const getCityFromAddress = (fullAddress: string | undefined): string | null => {
+    if (!fullAddress) return null;
+    const parts = fullAddress.split(',').map(p => p.trim());
+    // Assuming city is the second to last part, before the state
+    if (parts.length >= 3) {
+        return parts[parts.length - 2];
+    }
+    return null;
+}
+
 
 export default function BrowseJobsPage() {
   const { user, role } = useUser();
@@ -147,8 +159,7 @@ export default function BrowseJobsPage() {
         }
         // Skills filter
         if (selectedSkills.length > 0) {
-            if (!job.skills) return false;
-            const jobSkills = job.skills.map(s => s.toLowerCase());
+            const jobSkills = (job.skills || []).map(s => s.toLowerCase());
             if (!selectedSkills.every(skill => jobSkills.includes(skill.toLowerCase()))) {
                 return false;
             }
@@ -164,25 +175,42 @@ export default function BrowseJobsPage() {
   const recommendedJobs = React.useMemo(() => {
     if (!user?.installerProfile) return [];
     
-    const installerSkills = new Set(user.installerProfile.skills.map(s => s.toLowerCase()));
+    const installerSkills = new Set((user.installerProfile.skills || []).map(s => s.toLowerCase()));
+    const installerCity = getCityFromAddress(user.address?.fullAddress);
 
     const scoredJobs = jobs // Includes both 'Open for Bidding' and 'Unbid'
         .map(job => {
             let score = 0;
+            let locationMatchType: 'pincode' | 'city' | null = null;
+            
+            // --- Primary Match: Pincode ---
             const residentialMatch = user.pincodes.residential && job.location.includes(user.pincodes.residential);
             const officeMatch = user.pincodes.office && job.location.includes(user.pincodes.office);
-            
-            let locationMatch = false;
-            if (recommendedPincodeFilter === "all" && (residentialMatch || officeMatch)) locationMatch = true;
-            if (recommendedPincodeFilter === "residential" && residentialMatch) locationMatch = true;
-            if (recommendedPincodeFilter === "office" && officeMatch) locationMatch = true;
 
-            if (!locationMatch) return null; // Exclude jobs not in selected pincodes
+            if (
+                (recommendedPincodeFilter === "all" && (residentialMatch || officeMatch)) ||
+                (recommendedPincodeFilter === "residential" && residentialMatch) ||
+                (recommendedPincodeFilter === "office" && officeMatch)
+            ) {
+                locationMatchType = 'pincode';
+                score += 20; // High score for direct pincode match
+            }
 
-            score += 10; // Base score for location match
+            // --- Secondary Match: City (for Unbid jobs) ---
+            if (job.status === 'Unbid' && installerCity) {
+                const jobCity = getCityFromAddress(job.fullAddress);
+                if (jobCity && jobCity.toLowerCase() === installerCity.toLowerCase()) {
+                    if (!locationMatchType) { // Only if not already matched by pincode
+                      locationMatchType = 'city';
+                      score += 10; // Lower score for city match
+                    }
+                }
+            }
+
+            if (!locationMatchType) return null; // Exclude if no location match
 
             if (job.status === 'Unbid') {
-                score += 5; // Give a slight boost to unbid jobs to surface them
+                score += 5; // Boost unbid jobs to surface them
             }
 
             if (job.skills && job.skills.length > 0) {
@@ -191,9 +219,9 @@ export default function BrowseJobsPage() {
                 score += matchingSkills.length * 5; // Add points for each matching skill
             }
             
-            return { ...job, score };
+            return { ...job, score, locationMatchType };
         })
-        .filter((j): j is Job & { score: number } => j !== null);
+        .filter((j): j is Job & { score: number, locationMatchType: string } => j !== null);
 
     return scoredJobs.sort((a, b) => b.score - a.score);
   }, [user, jobs, recommendedPincodeFilter]);
@@ -275,7 +303,7 @@ export default function BrowseJobsPage() {
                        </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-80 p-0" align="start">
-                        <div className="p-4 space-y-2">
+                        <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
                             {allSkills.map(skill => (
                                 <div key={skill} className="flex items-center space-x-2">
                                     <Checkbox 
@@ -384,5 +412,7 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
+
+    
 
     
