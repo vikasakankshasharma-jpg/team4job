@@ -21,7 +21,7 @@ To understand the flow of money and invoices, let's use a clear example with spe
 
 ### **Step 1: Job Giver Funds the Project (Total Payment)**
 
-When the Job Giver awards the job, they pay the **total project cost** into the platform's secure account. This total is composed of the service cost for the installer and the service fee for the platform.
+When the Job Giver awards the job, they pay the **total project cost** into the platform's secure **Marketplace Settlement account**, powered by Cashfree. This total is composed of the service cost for the installer and the service fee for the platform.
 
 | Description                               | Amount (INR) |
 | ----------------------------------------- | ------------:|
@@ -37,7 +37,7 @@ When the Job Giver awards the job, they pay the **total project cost** into the 
 
 ### **Step 2: Job Completion & Payouts (The "Split")**
 
-Once the job is marked as "Completed," the platform processes the payouts.
+Once the job is marked as "Completed," the platform processes the payouts using Cashfree's "Easy Split" feature.
 
 1.  **Payout to the Installer:** The platform calculates the installer's net earnings.
     *   Total Due to Installer: `₹10,000 (Bid) + ₹1,000 (Tip) = ₹11,000`

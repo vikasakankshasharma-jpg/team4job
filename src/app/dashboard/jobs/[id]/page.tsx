@@ -90,7 +90,7 @@ import axios from 'axios';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
-
+import { InstallerAcceptanceSection, tierIcons } from "@/components/job/installer-acceptance-section";
 
 declare const cashfree: any;
 
@@ -206,7 +206,7 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
         const transactionDoc = querySnapshot.docs[0];
         const transactionData = transactionDoc.data() as Transaction;
 
-        // --- 3. Call backend to release the escrow ---
+        // --- 3. Call backend to release the funds from the settlement account ---
         await axios.post('/api/escrow/release-funds', {
             transactionId: transactionDoc.id,
         });
@@ -321,7 +321,7 @@ function JobGiverOTPCard({ job }: { job: Job }) {
           Job Completion OTP
         </CardTitle>
         <CardDescription>
-          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payout.
+          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payout from the held funds.
         </CardDescription>
       </CardHeader>
       <CardContent className="text-center">
@@ -1333,7 +1333,7 @@ export default function JobDetailPage() {
                     <Card className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
                         <CardHeader>
                             <CardTitle>Action Required: Fund Project</CardTitle>
-                            <CardDescription>The installer has accepted your offer. Please complete the payment to secure the service and begin the work.</CardDescription>
+                            <CardDescription>The installer has accepted your offer. Please complete the payment to secure the service and start the work.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Button onClick={handleFundJob} disabled={isFunding}>
@@ -1702,7 +1702,7 @@ export default function JobDetailPage() {
                                 <AlertDialogTitle>Are you sure you want to cancel this job?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     This action cannot be undone. 
-                                    {job.status === 'In Progress' && isFunded && " This will terminate the contract with the current installer. You must raise a dispute or contact support to process a refund of the escrowed funds."}
+                                    {job.status === 'In Progress' && isFunded && " This will terminate the contract with the current installer. You must raise a dispute or contact support to process a refund of the funds held in the settlement account."}
                                     {job.status === 'In Progress' && !isFunded && " This will terminate the contract with the current installer. No reputation will be lost."}
                                     {job.status !== 'In Progress' && " The job will be marked as 'Cancelled' and will no longer be open for bidding."}
                                 </AlertDialogDescription>
@@ -1721,5 +1721,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    

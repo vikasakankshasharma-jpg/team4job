@@ -3,7 +3,7 @@
 
 This document outlines the essential API keys required for the CCTV Job Connect application to function correctly. These keys must be stored in an environment file (e.g., `.env.local`) at the root of the project.
 
-**IMPORTANT NOTE ON CASHFREE PRODUCTS:** For regulatory compliance in India, this marketplace application must use Cashfree's **Marketplace Settlement** feature (also known as "Accounts" or "Easy Split"). This ensures that funds from Job Givers are held in a regulated escrow account, not directly in the platform's bank account. You must enable this feature in your Cashfree dashboard. The integration will use the `Payment Gateway` credentials for collecting funds and the `Payouts` credentials for splitting the funds after job completion.
+**IMPORTANT NOTE ON CASHFREE PRODUCTS:** For regulatory compliance in India, this marketplace application must use Cashfree's **Marketplace Settlement** feature (also known as "Accounts" or "Easy Split"). This ensures that funds from Job Givers are held in a regulated account managed by Cashfree, not directly in the platform's bank account. You must enable this feature in your Cashfree dashboard. The integration will use the `Payment Gateway` credentials for collecting funds and the `Payouts` credentials for splitting the funds after job completion.
 
 ---
 
@@ -89,7 +89,7 @@ CASHFREE_CLIENT_SECRET="your_verification_suite_client_secret"
 
 ### 4.2 Cashfree Payment Gateway
 
-Used to collect payments from Job Givers into the escrow account. The `CLIENT_SECRET` is also used to verify incoming webhooks.
+Used to collect payments from Job Givers into the Marketplace Settlement account. The `CLIENT_SECRET` is also used to verify incoming webhooks.
 *   **Path:** **Developers > API Keys > Payment Gateway**
 
 ```env
@@ -102,7 +102,7 @@ CASHFREE_PAYMENTS_CLIENT_SECRET="your_payment_gateway_client_secret"
 
 ### 4.3 Cashfree Payouts
 
-Used to disburse funds from the escrow account to the Installer and the platform (as commission).
+Used to disburse funds from the Marketplace Settlement account to the Installer and the platform (as commission).
 *   **Path:** **Developers > API Keys > Payouts**
 
 ```env
