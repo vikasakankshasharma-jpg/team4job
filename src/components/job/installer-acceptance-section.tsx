@@ -26,11 +26,15 @@ export function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJ
 
     const handleAccept = async () => {
         setIsLoading(true);
+        const fundingDeadline = new Date();
+        fundingDeadline.setHours(fundingDeadline.getHours() + 48); // 48 hours for job giver to fund
+
         const update = { 
             awardedInstaller: doc(db, 'users', user.id),
             status: "Pending Funding" as const,
             selectedInstallers: [], // Clear the selections, as this installer won
-            acceptanceDeadline: undefined, // Clear the deadline
+            acceptanceDeadline: undefined, // Clear the acceptance deadline
+            fundingDeadline: fundingDeadline,
         };
         await onJobUpdate(update);
         setIsLoading(false);

@@ -231,6 +231,58 @@ export const onJobCompleted = functions.firestore
     });
 
 /**
+ * Handles scheduled cleanup of jobs that are stuck in "Pending Funding".
+ * Runs every 6 hours.
+ */
+export const handleUnfundedJobs = functions.pubsub.schedule('every 6 hours').onRun(async (context) => {
+    console.log('Running scheduled function to handle unfunded jobs...');
+    const now = admin.firestore.Timestamp.now();
+    const fortyEightHoursAgo = admin.firestore.Timestamp.fromMillis(now.toMillis() - 48 * 60 * 60 * 1000);
+
+    const q = admin.firestore().collection('jobs')
+        .where('status', '==', 'Pending Funding')
+        .where('fundingDeadline', '<=', fortyEightHoursAgo);
+
+    const snapshot = await q.get();
+
+    if (snapshot.empty) {
+        console.log('No stale unfunded jobs found.');
+        return null;
+    }
+
+    const batch = admin.firestore().batch();
+    const notificationPromises: Promise<void>[] = [];
+
+    snapshot.docs.forEach(doc => {
+        const job = doc.data();
+        console.log(`Cancelling job ${doc.id} due to funding timeout.`);
+        batch.update(doc.ref, { status: 'Cancelled' });
+
+        // Notify Job Giver
+        notificationPromises.push(sendNotification(
+            job.jobGiver.id,
+            'Job Cancelled',
+            `Your job "${job.title}" was automatically cancelled because it was not funded within 48 hours of acceptance.`,
+            `/dashboard/jobs/${doc.id}`
+        ));
+
+        // Notify Installer
+        notificationPromises.push(sendNotification(
+            job.awardedInstaller.id,
+            'Job Cancelled',
+            `Job "${job.title}" was cancelled as the Job Giver did not complete payment. You are now free to bid on other jobs.`,
+            `/dashboard/jobs/${doc.id}`
+        ));
+    });
+
+    await batch.commit();
+    await Promise.all(notificationPromises);
+
+    console.log(`Cancelled ${snapshot.size} unfunded jobs.`);
+    return null;
+});
+
+/**
  * Triggered when there is a date change proposal on a job.
  */
 export const onJobDateChange = functions.firestore
