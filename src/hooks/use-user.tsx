@@ -52,17 +52,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isAdminUser = userData.roles.includes("Admin");
       setIsAdmin(isAdminUser);
 
-      // Implement role priority: Admin > Support Team > Last Used > Default
-      if (isAdminUser) {
-        setRoleState("Admin");
-        localStorage.setItem('userRole', "Admin");
-      } else if (userData.roles.includes("Support Team")) {
-        setRoleState("Support Team");
-        localStorage.setItem('userRole', "Support Team");
-      } else if (storedRole && userData.roles.includes(storedRole)) {
+      if (storedRole && userData.roles.includes(storedRole)) {
         setRoleState(storedRole);
       } else {
-        const initialRole = userData.roles.includes("Installer") ? "Installer" : "Job Giver";
+        const initialRole = userData.roles.includes("Admin") ? "Admin"
+                          : userData.roles.includes("Support Team") ? "Support Team"
+                          : userData.roles.includes("Installer") ? "Installer"
+                          : "Job Giver";
         setRoleState(initialRole);
         localStorage.setItem('userRole', initialRole);
       }
@@ -248,3 +244,5 @@ export function useUser() {
 
 // This is kept for non-hook usage, but useAuth and useFirestore are preferred.
 export { useFirebase, useAuth, useFirestore };
+
+    
