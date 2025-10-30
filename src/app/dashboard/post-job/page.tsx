@@ -33,7 +33,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { Job, JobAttachment, User } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
-import { doc, setDoc, getDoc, collection, query, where, getDocs, limit, startAt, orderBy } from "firebase/firestore";
+import { doc, setDoc, getDoc, collection, query, where, getDocs, limit, startAt, orderBy, updateDoc } from "firebase/firestore";
 import { useHelp } from "@/hooks/use-help";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -168,7 +168,7 @@ export default function PostJobPage() {
   const searchParams = useSearchParams();
   const [mapCenter, setMapCenter] = React.useState<{lat: number, lng: number} | null>(null);
   const { setHelp } = useHelp();
-  const [isReposting, setIsReposting] = React.useState(false);
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
@@ -195,12 +195,15 @@ export default function PostJobPage() {
   });
   
   const repostJobId = searchParams.get('repostJobId');
+  const editJobId = searchParams.get('editJobId');
+  const isEditMode = !!editJobId;
 
   React.useEffect(() => {
-    async function prefillFormForRepost() {
-        if (repostJobId && db) {
-            setIsReposting(true);
-            const jobRef = doc(db, 'jobs', repostJobId);
+    async function prefillForm() {
+        const jobId = editJobId || repostJobId;
+        if (jobId && db) {
+            setIsProcessing(true);
+            const jobRef = doc(db, 'jobs', jobId);
             const jobSnap = await getDoc(jobRef);
             if (jobSnap.exists()) {
                 const jobData = jobSnap.data() as Job;
@@ -212,23 +215,29 @@ export default function PostJobPage() {
                     address: jobData.address,
                     budgetMin: jobData.budget.min,
                     budgetMax: jobData.budget.max,
-                    deadline: "",
-                    jobStartDate: "",
-                    directAwardInstallerId: "",
+                    deadline: isEditMode ? format(toDate(jobData.deadline), "yyyy-MM-dd") : "",
+                    jobStartDate: jobData.jobStartDate ? format(toDate(jobData.jobStartDate), "yyyy-MM-dd") : "",
+                    directAwardInstallerId: "", // Never prefill direct award
                 });
-                toast({ title: "Re-posting Job", description: "Job details have been pre-filled. Please set a new deadline." });
+                
+                const toastTitle = isEditMode ? "Editing Job" : "Re-posting Job";
+                const toastDescription = isEditMode
+                    ? "You are now editing an existing job posting."
+                    : "Job details have been pre-filled. Please set a new deadline.";
+
+                toast({ title: toastTitle, description: toastDescription });
             } else {
-                 toast({ title: "Error", description: "Could not find the original job to repost.", variant: "destructive" });
+                 toast({ title: "Error", description: "Could not find the original job to load.", variant: "destructive" });
             }
-            setIsReposting(false);
+            setIsProcessing(false);
         }
     }
-    prefillFormForRepost();
-  }, [repostJobId, db, form, toast]);
+    prefillForm();
+  }, [editJobId, repostJobId, db, form, toast, isEditMode]);
 
   React.useEffect(() => {
     setHelp({
-        title: "Post a New Job",
+        title: isEditMode ? "Edit Job" : "Post a New Job",
         content: (
             <div className="space-y-4 text-sm">
                 <p>Follow these steps to create a job listing and attract the best installers.</p>
@@ -238,12 +247,12 @@ export default function PostJobPage() {
                     <li><span className="font-semibold">Location & Address:</span> Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.</li>
                     <li><span className="font-semibold">Attachments:</span> Upload site photos, floor plans, or any other relevant documents to give installers a better understanding of the job.</li>
                     <li><span className="font-semibold">Dates & Budget:</span> Set your bidding deadline, the date you want work to start, and your budget range.</li>
-                    <li><span className="font-semibold">Direct Award (Optional):</span> If you already know an installer on our platform, you can enter their public ID here to award the job to them directly, skipping the public bidding process.</li>
+                    {!isEditMode && <li><span className="font-semibold">Direct Award (Optional):</span> If you already know an installer on our platform, you can enter their public ID here to award the job to them directly, skipping the public bidding process.</li>}
                 </ul>
             </div>
         )
     })
-  }, [setHelp]);
+  }, [setHelp, isEditMode]);
 
   useEffect(() => {
     if (!userLoading && role !== 'Job Giver') {
@@ -298,34 +307,11 @@ export default function PostJobPage() {
         return;
     }
     
-    const today = new Date();
-    const datePart = today.toISOString().slice(0, 10).replace(/-/g, '');
-    const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const newJobId = `JOB-${datePart}-${randomPart}`;
-    
-    // 1. Upload attachments to Firebase Storage
-    const attachmentUrls: JobAttachment[] = [];
-    if (values.attachments && values.attachments.length > 0) {
-      for (const file of values.attachments) {
-        const fileRef = ref(storage, `jobs/${newJobId}/${file.name}`);
-        await uploadBytes(fileRef, file);
-        const downloadURL = await getDownloadURL(fileRef);
-        attachmentUrls.push({
-          fileName: file.name,
-          fileUrl: downloadURL,
-          fileType: file.type,
-        });
-      }
-    }
-    
-    const status = values.directAwardInstallerId ? "Awarded" : "Open for Bidding";
+    setIsProcessing(true);
+
     const [pincode] = values.address.cityPincode.split(',');
-
-    const acceptanceDeadline = new Date();
-    acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
-
+    
     const jobData: any = { 
-        id: newJobId, 
         title: values.jobTitle,
         description: values.jobDescription,
         skills: values.skills.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
@@ -337,57 +323,96 @@ export default function PostJobPage() {
         },
         location: pincode.trim(),
         fullAddress: values.address.fullAddress,
-        jobGiver: doc(db, 'users', user.id),
-        status,
-        bids: [],
-        comments: [],
-        postedAt: new Date(),
-        attachments: attachmentUrls,
-        completionOtp: Math.floor(100000 + Math.random() * 900000).toString(),
         jobStartDate: new Date(values.jobStartDate),
     };
 
-    if (values.directAwardInstallerId) {
-        jobData.awardedInstaller = doc(db, 'users', values.directAwardInstallerId);
-        jobData.deadline = new Date(); // Set deadline to now for direct award
-        jobData.acceptanceDeadline = acceptanceDeadline; // Add acceptance deadline for direct award
-    } else {
-        jobData.deadline = new Date(values.deadline);
-    }
-    
     try {
-        await setDoc(doc(db, "jobs", newJobId), jobData);
-        toast({
-            title: repostJobId ? "Job Re-posted Successfully!" : "Job Posted Successfully!",
-            description: `Your job is now ${status === 'Awarded' ? 'awarded' : 'live and open for bidding'}.`,
-        });
-        form.reset();
-        router.push(`/dashboard/posted-jobs`);
+        if (isEditMode && editJobId) {
+            jobData.deadline = new Date(values.deadline);
+            const jobRef = doc(db, "jobs", editJobId);
+            await updateDoc(jobRef, jobData);
+            toast({ title: "Job Updated Successfully!", });
+            router.push(`/dashboard/jobs/${editJobId}`);
+
+        } else {
+             // Create new job logic
+            const today = new Date();
+            const datePart = today.toISOString().slice(0, 10).replace(/-/g, '');
+            const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+            const newJobId = `JOB-${datePart}-${randomPart}`;
+            
+            const attachmentUrls: JobAttachment[] = [];
+            if (values.attachments && values.attachments.length > 0) {
+              for (const file of values.attachments) {
+                const fileRef = ref(storage, `jobs/${newJobId}/${file.name}`);
+                await uploadBytes(fileRef, file);
+                const downloadURL = await getDownloadURL(fileRef);
+                attachmentUrls.push({
+                  fileName: file.name,
+                  fileUrl: downloadURL,
+                  fileType: file.type,
+                });
+              }
+            }
+
+            jobData.id = newJobId;
+            jobData.jobGiver = doc(db, 'users', user.id);
+            jobData.status = values.directAwardInstallerId ? "Awarded" : "Open for Bidding";
+            jobData.bids = [];
+            jobData.comments = [];
+            jobData.postedAt = new Date();
+            jobData.attachments = attachmentUrls;
+            jobData.completionOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+            if (values.directAwardInstallerId) {
+                const acceptanceDeadline = new Date();
+                acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
+                jobData.awardedInstaller = doc(db, 'users', values.directAwardInstallerId);
+                jobData.deadline = new Date(); // Set deadline to now for direct award
+                jobData.acceptanceDeadline = acceptanceDeadline;
+            } else {
+                jobData.deadline = new Date(values.deadline);
+            }
+            
+            await setDoc(doc(db, "jobs", newJobId), jobData);
+            toast({
+                title: repostJobId ? "Job Re-posted Successfully!" : "Job Posted Successfully!",
+                description: `Your job is now ${jobData.status === 'Awarded' ? 'awarded' : 'live and open for bidding'}.`,
+            });
+            form.reset();
+            router.push(`/dashboard/posted-jobs`);
+        }
     } catch (error) {
-        console.error("Error posting job:", error);
+        console.error("Error processing job:", error);
         toast({
             title: "Failed to post job",
             description: "An error occurred while saving your job. Please try again.",
             variant: "destructive",
         });
+    } finally {
+        setIsProcessing(false);
     }
   }
 
-  if (userLoading || role !== 'Job Giver') {
+  if (userLoading || (isEditMode && isProcessing)) {
     return (
         <div className="flex h-48 items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
     );
   }
+  
+   if (!userLoading && role !== 'Job Giver') {
+    return null; // Redirect is handled by the hook
+  }
 
   return (
     <div className="mx-auto grid max-w-4xl flex-1 auto-rows-max gap-4">
       <div className="flex items-center gap-4">
         <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-          {repostJobId ? 'Re-post Job' : 'Post a New Job'}
+          {isEditMode ? 'Edit Job' : (repostJobId ? 'Re-post Job' : 'Post a New Job')}
         </h1>
-        {isReposting && <Loader2 className="h-5 w-5 animate-spin" />}
+        {isProcessing && <Loader2 className="h-5 w-5 animate-spin" />}
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
@@ -395,9 +420,11 @@ export default function PostJobPage() {
             <CardHeader>
               <CardTitle>Job Details</CardTitle>
               <CardDescription>
-                {repostJobId 
-                    ? "Review and update the job details, then set a new deadline to re-list it."
-                    : "Fill in the details for your job posting. Use the AI generator for a quick start."
+                {isEditMode 
+                    ? "Update the details of your job posting."
+                    : (repostJobId 
+                        ? "Review and update the job details, then set a new deadline to re-list it."
+                        : "Fill in the details for your job posting. Use the AI generator for a quick start.")
                 }
               </CardDescription>
             </CardHeader>
@@ -496,23 +523,25 @@ export default function PostJobPage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="attachments"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Attachments</FormLabel>
-                     <FormControl>
-                       <FileUpload 
-                          onFilesChange={(files) => field.onChange(files)} 
-                          maxFiles={5}
-                        />
-                    </FormControl>
-                    <FormDescription>Upload site photos, floor plans, or other relevant documents (max 5 files).</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+               {!isEditMode && (
+                 <FormField
+                    control={form.control}
+                    name="attachments"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Attachments</FormLabel>
+                         <FormControl>
+                           <FileUpload 
+                              onFilesChange={(files) => field.onChange(files)} 
+                              maxFiles={5}
+                            />
+                        </FormControl>
+                        <FormDescription>Upload site photos, floor plans, or other relevant documents (max 5 files).</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+               )}
               <Separator />
                <AddressForm
                   pincodeName="address.cityPincode"
@@ -589,27 +618,29 @@ export default function PostJobPage() {
               </div>
             </CardContent>
           </Card>
-           <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <UserPlus className="h-5 w-5" />
-                        Direct Award (Optional)
-                    </CardTitle>
-                    <CardDescription>
-                        Know an installer you trust? Enter their public ID to award the job directly to them, skipping the public bidding process.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <DirectAwardInput control={form.control} />
-                </CardContent>
-            </Card>
+           {!isEditMode && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <UserPlus className="h-5 w-5" />
+                            Direct Award (Optional)
+                        </CardTitle>
+                        <CardDescription>
+                            Know an installer you trust? Enter their public ID to award the job directly to them, skipping the public bidding process.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <DirectAwardInput control={form.control} />
+                    </CardContent>
+                </Card>
+           )}
           <div className="flex items-center justify-end gap-2">
-            <Button variant="outline" type="button" onClick={() => form.reset()}>
+            <Button variant="outline" type="button" onClick={() => router.back()}>
               Cancel
             </Button>
-            <Button type="submit" disabled={form.formState.isSubmitting || isGenerating}>
-                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {repostJobId ? 'Re-post Job' : 'Post Job'}
+            <Button type="submit" disabled={isProcessing || isGenerating}>
+                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isEditMode ? 'Save Changes' : (repostJobId ? 'Re-post Job' : 'Post Job')}
             </Button>
           </div>
         </form>
