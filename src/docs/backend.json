@@ -1,4 +1,5 @@
 
+
 {
   "entities": {
     "Address": {
@@ -295,6 +296,16 @@
         "awardedInstaller": {
           "$ref": "#/entities/UserProfile"
         },
+        "selectedInstallers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "installerId": { "type": "string" },
+                    "rank": { "type": "number" }
+                }
+            }
+        },
         "bidderIds": {
             "type": "array",
             "items": {
@@ -338,16 +349,6 @@
             "type": "array",
             "items": {
                 "$ref": "#/entities/PrivateMessage"
-            }
-        },
-        "selectedInstallers": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "installerId": { "type": "string" },
-                    "rank": { "type": "number" }
-                }
             }
         }
       },
@@ -683,3 +684,4 @@
     }
   }
 }
+

@@ -131,6 +131,7 @@ export type Job = {
   bidderIds?: string[];
   disqualifiedInstallerIds?: string[];
   awardedInstaller?: User | DocumentReference;
+  selectedInstallers?: { installerId: string, rank: number }[];
   rating?: number;
   review?: string;
   completionOtp?: string;
@@ -139,7 +140,6 @@ export type Job = {
   invoice?: Invoice;
   comments: Comment[];
   privateMessages?: PrivateMessage[];
-  selectedInstallers?: { installerId: string, rank: number }[];
 };
 
 export type DisputeAttachment = {
