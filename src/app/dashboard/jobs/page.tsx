@@ -52,9 +52,10 @@ import type { DocumentReference } from "firebase/firestore";
 const getCityFromAddress = (fullAddress: string | undefined): string | null => {
     if (!fullAddress) return null;
     const parts = fullAddress.split(',').map(p => p.trim());
-    // Assuming city is the second to last part, before the state
+    // Assuming city is the second to last part, before the state and pincode
     if (parts.length >= 3) {
-        return parts[parts.length - 2];
+        // e.g., "123 Main St, Anytown, CA 12345" -> "Anytown"
+        return parts[parts.length - 3];
     }
     return null;
 }
@@ -372,7 +373,7 @@ export default function BrowseJobsPage() {
                     <div>
                         <CardTitle>Recommended For You</CardTitle>
                         <CardDescription>
-                            Jobs that match your profile pincode(s) and skills, including unbid opportunities.
+                            Jobs that match your profile pincode(s) and skills, including unbid opportunities in your city.
                         </CardDescription>
                     </div>
                      {user && user.pincodes.office && (
@@ -412,7 +413,3 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
-
-    
-
-    
