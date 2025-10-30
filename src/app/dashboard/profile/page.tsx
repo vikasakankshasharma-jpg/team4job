@@ -480,7 +480,7 @@ export default function ProfilePage() {
             <div className="space-y-4 text-sm">
                 <p>This is your personal profile page. Here, you can view and manage your information.</p>
                 <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Your Details:</span> View your name, user ID, email, and location info. Click "Edit Profile" to update your name or pincodes.</li>
+                    <li><span className="font-semibold">Your Details:</span> View your name, user ID, email, and location info. Click "Edit Profile" to update your name, pincodes, or GSTIN.</li>
                     <li><span className="font-semibold">Role Switching:</span> If you have both "Job Giver" and "Installer" roles, you can switch between them in the user menu (top right).</li>
                     {role === 'Installer' && (
                         <>
