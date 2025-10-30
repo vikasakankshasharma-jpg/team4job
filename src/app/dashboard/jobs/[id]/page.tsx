@@ -633,12 +633,45 @@ function FinancialsCard({ job, transaction, platformSettings, user }: { job: Job
     return null;
   }
   
+  const isInstaller = user.roles.includes('Installer');
+  const isJobGiver = user.roles.includes('Job Giver');
+  
   const installer = job.awardedInstaller as User;
-  const isInstaller = user.id === installer.id;
+  const jobGiver = job.jobGiver as User;
 
-  const commissionRate = platformSettings?.installerCommissionRate || 0;
-  const commission = transaction.amount * (commissionRate / 100);
+  const commission = transaction.commission;
   const gstOnCommission = commission * 0.18;
+  const jobGiverFee = transaction.jobGiverFee;
+  const gstOnJobGiverFee = jobGiverFee * 0.18;
+
+  const InvoiceDialog = ({ isForInstaller }: { isForInstaller: boolean }) => (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Platform Service Fee Invoice</DialogTitle>
+        <DialogDescription>
+          This invoice is for the service fee paid to the platform for this job.
+        </DialogDescription>
+      </DialogHeader>
+      <div className="space-y-4 text-sm">
+        <p><strong>Billed To:</strong> {isForInstaller ? installer.name : jobGiver.name}</p>
+        <p><strong>From:</strong> CCTV Job Connect</p>
+        <Separator />
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Platform Service Fee for Job #{job.id}</span>
+          <span>₹{(isForInstaller ? commission : jobGiverFee).toLocaleString('en-IN')}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">GST @ 18%</span>
+          <span>₹{(isForInstaller ? gstOnCommission : gstOnJobGiverFee).toLocaleString('en-IN')}</span>
+        </div>
+        <Separator />
+        <div className="flex justify-between font-bold">
+          <span>Total</span>
+          <span>₹{(isForInstaller ? (commission + gstOnCommission) : (jobGiverFee + gstOnJobGiverFee)).toLocaleString('en-IN')}</span>
+        </div>
+      </div>
+    </DialogContent>
+  );
 
   return (
     <Card className="bg-gradient-to-br from-blue-50/20 to-purple-50/20 dark:from-blue-950/20 dark:to-purple-950/20">
@@ -655,34 +688,32 @@ function FinancialsCard({ job, transaction, platformSettings, user }: { job: Job
             <span className="font-semibold text-green-600">₹{transaction.payoutToInstaller.toLocaleString('en-IN')}</span>
         </div>
          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Platform Commission</span>
+            <span className="text-muted-foreground">Platform Fee (from Installer)</span>
             <span className="font-semibold text-red-600">- ₹{transaction.commission.toLocaleString('en-IN')}</span>
         </div>
+        <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Platform Fee (from Job Giver)</span>
+            <span className="font-semibold text-red-600">- ₹{transaction.jobGiverFee.toLocaleString('en-IN')}</span>
+        </div>
         <Separator />
-        {isInstaller && (
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="link" className="p-0 h-auto text-sm">View Platform Commission Invoice</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Platform Commission Invoice</DialogTitle>
-                <DialogDescription>
-                  This invoice is for the service fee paid to the platform for this job.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 text-sm">
-                <p><strong>Billed To:</strong> {installer.name}</p>
-                <p><strong>From:</strong> CCTV Job Connect</p>
-                <Separator />
-                <div className="flex justify-between"><span className="text-muted-foreground">Service Fee for Job #{job.id}</span><span>₹{commission.toLocaleString('en-IN')}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">GST @ 18%</span><span>₹{gstOnCommission.toLocaleString('en-IN')}</span></div>
-                <Separator />
-                <div className="flex justify-between font-bold"><span>Total</span><span>₹{(commission + gstOnCommission).toLocaleString('en-IN')}</span></div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+        <div className="space-y-2">
+            {isInstaller && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="link" className="p-0 h-auto text-sm">View My Commission Invoice</Button>
+                </DialogTrigger>
+                <InvoiceDialog isForInstaller={true} />
+              </Dialog>
+            )}
+             {isJobGiver && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="link" className="p-0 h-auto text-sm">View My Platform Fee Invoice</Button>
+                </DialogTrigger>
+                <InvoiceDialog isForInstaller={false} />
+              </Dialog>
+            )}
+        </div>
       </CardContent>
     </Card>
   )
@@ -1800,5 +1831,3 @@ export default function JobDetailPage() {
     </div>
   );
 }
-
-    
