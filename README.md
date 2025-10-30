@@ -34,19 +34,19 @@ This document serves as the master prompt and detailed specification for buildin
     *   **AI Feature:** A "AI Bid Assistant" button helps installers craft an effective cover letter based on the job description and their own skills.
 4.  **Awarding & Payment (Job Giver):**
     *   After the deadline, the Job Giver reviews all bids and awards the job to one installer.
-    *   **CRITICAL PAYMENT FLOW:** Upon awarding, the Job Giver funds the project amount via Cashfree Payment Gateway. These funds are held in a regulated escrow account managed by Cashfree (using their "Accounts" or "Easy Split" product), NOT in the platform's own bank account.
+    *   **CRITICAL PAYMENT FLOW:** Upon awarding, the Job Giver funds the project amount via Cashfree Payment Gateway. These funds are held in a regulated account managed by Cashfree using their **Marketplace Settlement ("Easy Split")** product, NOT in the platform's own bank account.
 5.  **Acceptance (Installer):**
     *   The awarded installer has 24 hours to accept or decline the job.
     *   If accepted, the job status changes to "In Progress".
 6.  **Job Completion & Payout:**
     *   The Job Giver has a 6-digit "Completion OTP".
     *   Once the work is done, the installer enters this OTP to mark the job "Completed".
-    *   **CRITICAL PAYOUT FLOW:** This OTP action triggers an API call to Cashfree's "Accounts" product to "split" the payment from escrow. Cashfree automatically transfers the agreed-upon amount to the installer's bank account and the platform's commission to the platform's account.
+    *   **CRITICAL PAYOUT FLOW:** This OTP action triggers an API call to Cashfree's Payouts product to "split" the payment from the central account. Cashfree automatically transfers the agreed-upon amount to the installer's bank account and the platform's commission to the platform's account.
 
 ### Other Key Features
-*   **Compliant Payments & Payouts:** The platform uses Cashfree's **Marketplace Settlement ("Accounts" / "Easy Split")** feature. This ensures regulatory compliance by using Cashfree's master escrow account to hold funds, rather than holding them directly in the platform's bank account. This is a critical architectural choice to avoid needing a Payment Aggregator license.
+*   **Compliant Payments & Payouts:** The platform uses Cashfree's **Marketplace Settlement ("Easy Split")** feature. This ensures regulatory compliance by using Cashfree's master account to hold funds, rather than holding them directly in the platform's bank account. This is a critical architectural choice to avoid needing a Payment Aggregator license.
 *   **Reputation System (Installers):** A points-based system. Installers earn points for completed jobs and good ratings, advancing through tiers (Bronze, Silver, Gold, Platinum).
-*   **Dispute Resolution:** A system for Job Givers or Installers to raise a "Job Dispute" on a project. Admins can review the dispute thread and, if necessary, trigger a full or partial refund from the escrowed funds via an API call.
+*   **Dispute Resolution:** A system for Job Givers or Installers to raise a "Job Dispute" on a project. Admins can review the dispute thread and, if necessary, trigger a full or partial refund from the held funds via an API call.
 *   **Admin Dashboard:** A separate interface for Admins to view all users, all jobs, and manage disputes, coupons, and a platform blacklist.
 *   **Role-Based Access Control (RBAC):** The UI and available actions are strictly controlled based on the user's current role (Job Giver, Installer, or Admin).
 
