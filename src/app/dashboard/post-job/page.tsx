@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Loader2, UserPlus, CheckCircle, ShieldCheck, RefreshCw } from "lucide-react";
+import { Zap, Loader2, UserPlus, ShieldCheck } from "lucide-react";
 import { generateJobDetails } from "@/ai/flows/generate-job-details";
 import { useToast } from "@/hooks/use-toast";
 import React, { useEffect, useState, useCallback } from "react";
@@ -33,15 +33,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { Job, JobAttachment, User, PlatformSettings } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
-import { doc, setDoc, getDoc, collection, query, where, getDocs, limit, startAt, orderBy, updateDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { useHelp } from "@/hooks/use-help";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
 import debounce from "lodash.debounce";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AnimatedAvatar } from "@/components/ui/animated-avatar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -172,7 +169,7 @@ function DirectAwardInput({ control }) {
     );
 }
 
-export default function PostJobPage() {
+export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
   const { user, role, loading: userLoading } = useUser();
@@ -701,5 +698,3 @@ export default function PostJobPage() {
     </div>
   );
 }
-
-    
