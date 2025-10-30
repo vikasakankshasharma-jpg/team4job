@@ -21,8 +21,6 @@ import {
   IndianRupee,
   UserCog,
   CreditCard,
-  Ticket,
-  Ban,
 } from "lucide-react";
 import { Logo } from "@/components/icons";
 import { usePathname } from "next/navigation";
@@ -113,22 +111,6 @@ export function DashboardSidebar() {
               <TooltipContent side="right">{item.label}</TooltipContent>
             </Tooltip>
           ))}
-          {isAdmin && (
-            <Tooltip>
-               <TooltipTrigger asChild>
-                <Link
-                  href="/dashboard/settings"
-                  className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                  pathname.startsWith('/dashboard/settings') && 'bg-accent text-accent-foreground'
-                  )}
-                >
-                  <Ticket className="h-5 w-5" />
-                  <span className="sr-only">Monetization</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Monetization & Rules</TooltipContent>
-            </Tooltip>
-          )}
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
             <Tooltip>
@@ -145,7 +127,6 @@ export function DashboardSidebar() {
               </TooltipTrigger>
               <TooltipContent side="right">Profile</TooltipContent>
             </Tooltip>
-          {!isAdmin && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
@@ -160,7 +141,6 @@ export function DashboardSidebar() {
               </TooltipTrigger>
               <TooltipContent side="right">Settings</TooltipContent>
             </Tooltip>
-          )}
         </nav>
       </TooltipProvider>
     </aside>
