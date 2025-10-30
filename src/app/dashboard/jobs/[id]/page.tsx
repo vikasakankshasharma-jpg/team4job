@@ -72,6 +72,7 @@ import {
   Ban,
   Gift,
   Check,
+  Edit,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -1412,6 +1413,7 @@ export default function JobDetailPage() {
   const jobGiver = job.jobGiver as User;
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
   
+  const canEditJob = isJobGiver && job.status === 'Open for Bidding';
   const canRaiseDispute = (isJobGiver || isAwardedInstaller) && (job.status === 'In Progress' || job.status === 'Completed');
   const canCancelJob = isJobGiver && (job.status === 'In Progress' || job.status === 'Open for Bidding' || job.status === 'Bidding Closed');
   
@@ -1775,6 +1777,14 @@ export default function JobDetailPage() {
           </CardContent>
           <CardContent className="pt-6 border-t">
               <div className="space-y-2">
+                 {canEditJob && (
+                    <Button asChild className="w-full" variant="secondary">
+                        <Link href={`/dashboard/post-job?editJobId=${job.id}`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Job
+                        </Link>
+                    </Button>
+                )}
                 {job.status === 'Completed' && job.invoice && (
                     <Button asChild className="w-full">
                         <Link href={`/dashboard/jobs/${job.id}/invoice`}>
