@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     // 2. Create user profile in Firestore
     const userRef = db.collection('users').doc(userRecord.uid);
 
-    const newUserProfile: User = {
+    const newUserProfile: Partial<User> = {
       id: userRecord.uid,
       name,
       email,
@@ -48,7 +48,6 @@ export async function POST(req: NextRequest) {
       pincodes: { residential: '000000' }, // Placeholder
       address: {
         cityPincode: "000000",
-        fullAddress: "Address not set",
         house: "N/A",
         street: "N/A"
       }
@@ -69,4 +68,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
-
