@@ -206,7 +206,7 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
         const transactionDoc = querySnapshot.docs[0];
         const transactionData = transactionDoc.data() as Transaction;
 
-        // --- 3. Call backend to release the funds from the settlement account ---
+        // --- 3. Call backend to release the funds from the Marketplace Settlement account ---
         await axios.post('/api/escrow/release-funds', {
             transactionId: transactionDoc.id,
         });
@@ -321,7 +321,7 @@ function JobGiverOTPCard({ job }: { job: Job }) {
           Job Completion OTP
         </CardTitle>
         <CardDescription>
-          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payout from the held funds.
+          Once you are satisfied with the completed work, share this code with the installer. They will use it to mark the job as complete and trigger the payout from the Marketplace Settlement account.
         </CardDescription>
       </CardHeader>
       <CardContent className="text-center">
@@ -1703,7 +1703,7 @@ export default function JobDetailPage() {
                                 <AlertDialogTitle>Are you sure you want to cancel this job?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     This action cannot be undone. 
-                                    {job.status === 'In Progress' && isFunded && " The contract with the installer will be terminated. You must raise a dispute to process a refund of the funds held in the settlement account."}
+                                    {job.status === 'In Progress' && isFunded && " The contract with the installer will be terminated. You must raise a dispute to process a refund of the funds held in the Marketplace Settlement account."}
                                     {job.status === 'In Progress' && !isFunded && " This will terminate the contract with the current installer. No reputation will be lost."}
                                     {job.status !== 'In Progress' && " The job will be marked as 'Cancelled' and will no longer be open for bidding."}
                                 </AlertDialogDescription>

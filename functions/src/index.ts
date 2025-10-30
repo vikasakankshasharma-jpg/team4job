@@ -79,15 +79,17 @@ export const onBidCreated = functions.firestore
             const newBid = afterData.bids[newBidsCount - 1];
             const jobGiverId = afterData.jobGiver.id;
             
-            const installerDoc = await newBid.installer.get();
-            const installerName = installerDoc.data()?.name || "An installer";
+            if (newBid.installer && typeof newBid.installer.get === 'function') {
+              const installerDoc = await newBid.installer.get();
+              const installerName = installerDoc.data()?.name || "An installer";
 
-            await sendNotification(
-                jobGiverId,
-                "New Bid on Your Job!",
-                `${installerName} placed a bid of ₹${newBid.amount} on your job: "${afterData.title}"`,
-                `/dashboard/jobs/${context.params.jobId}`
-            );
+              await sendNotification(
+                  jobGiverId,
+                  "New Bid on Your Job!",
+                  `${installerName} placed a bid of ₹${newBid.amount} on your job: "${afterData.title}"`,
+                  `/dashboard/jobs/${context.params.jobId}`
+              );
+            }
         }
     });
 
@@ -225,5 +227,102 @@ export const onJobCompleted = functions.firestore
             } catch (error) {
                 console.error("Error updating reputation:", error);
             }
+        }
+    });
+
+/**
+ * Handles scheduled cleanup of jobs that are stuck in "Pending Funding".
+ * Runs every 6 hours.
+ */
+export const handleUnfundedJobs = functions.pubsub.schedule('every 6 hours').onRun(async (context) => {
+    console.log('Running scheduled function to handle unfunded jobs...');
+    const now = admin.firestore.Timestamp.now();
+    
+    // Set deadline to 48 hours ago
+    const fortyEightHoursAgo = admin.firestore.Timestamp.fromMillis(now.toMillis() - 48 * 60 * 60 * 1000);
+
+    const q = admin.firestore().collection('jobs')
+        .where('status', '==', 'Pending Funding')
+        .where('fundingDeadline', '<=', fortyEightHoursAgo);
+
+    const snapshot = await q.get();
+
+    if (snapshot.empty) {
+        console.log('No stale unfunded jobs found.');
+        return null;
+    }
+
+    const batch = admin.firestore().batch();
+    const notificationPromises: Promise<void>[] = [];
+
+    snapshot.docs.forEach(doc => {
+        const job = doc.data();
+        console.log(`Cancelling job ${doc.id} due to funding timeout.`);
+        batch.update(doc.ref, { status: 'Cancelled' });
+
+        // Notify Job Giver
+        notificationPromises.push(sendNotification(
+            job.jobGiver.id,
+            'Job Cancelled',
+            `Your job "${job.title}" was automatically cancelled because it was not funded within 48 hours of acceptance.`,
+            `/dashboard/jobs/${doc.id}`
+        ));
+
+        // Notify Installer
+        notificationPromises.push(sendNotification(
+            job.awardedInstaller.id,
+            'Job Cancelled',
+            `Job "${job.title}" was cancelled as the Job Giver did not complete payment. You are now free to bid on other jobs.`,
+            `/dashboard/jobs/${doc.id}`
+        ));
+    });
+
+    await batch.commit();
+    await Promise.all(notificationPromises);
+
+    console.log(`Cancelled ${snapshot.size} unfunded jobs.`);
+    return null;
+});
+
+/**
+ * Triggered when there is a date change proposal on a job.
+ */
+export const onJobDateChange = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+        const beforeData = change.before.data();
+        const afterData = change.after.data();
+        const jobId = context.params.jobId;
+
+        // Date Change Proposed
+        if (!beforeData.dateChangeProposal && afterData.dateChangeProposal && afterData.dateChangeProposal.status === 'pending') {
+            const proposal = afterData.dateChangeProposal;
+            const jobGiverId = afterData.jobGiver.id;
+            const awardedInstallerId = afterData.awardedInstaller.id;
+            const proposerId = proposal.proposedBy === 'Job Giver' ? jobGiverId : awardedInstallerId;
+            const recipientId = proposal.proposedBy === 'Job Giver' ? awardedInstallerId : jobGiverId;
+
+            const proposerDoc = await admin.firestore().collection("users").doc(proposerId).get();
+            const proposerName = proposerDoc.data()?.name || 'The other party';
+
+            await sendNotification(
+                recipientId,
+                "Date Change Proposed",
+                `${proposerName} has proposed a new start date for job: "${afterData.title}".`,
+                `/dashboard/jobs/${jobId}`
+            );
+        }
+
+        // Date Change Accepted/Rejected
+        if (beforeData.dateChangeProposal && beforeData.dateChangeProposal.status === 'pending' && !afterData.dateChangeProposal) {
+            const proposerId = beforeData.dateChangeProposal.proposedBy === 'Job Giver' ? afterData.jobGiver.id : afterData.awardedInstaller.id;
+            const wasAccepted = afterData.jobStartDate !== beforeData.jobStartDate;
+            
+            await sendNotification(
+                proposerId,
+                `Date Change ${wasAccepted ? 'Accepted' : 'Rejected'}`,
+                `Your proposed date change for job "${afterData.title}" was ${wasAccepted ? 'accepted' : 'rejected'}.`,
+                `/dashboard/jobs/${jobId}`
+            );
         }
     });
