@@ -293,6 +293,11 @@
             "format": "date-time",
             "description": "The timestamp by which an awarded installer must accept the job."
         },
+        "fundingDeadline": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp by which a Job Giver must fund an accepted job."
+        },
         "awardedInstaller": {
           "$ref": "#/entities/UserProfile"
         },
