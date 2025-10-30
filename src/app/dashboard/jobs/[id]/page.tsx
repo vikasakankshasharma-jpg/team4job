@@ -1702,8 +1702,8 @@ export default function JobDetailPage() {
                                 <AlertDialogTitle>Are you sure you want to cancel this job?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     This action cannot be undone. 
-                                    {job.status === 'In Progress' && isFunded && " This will terminate the contract with the current installer. You must contact support to process a refund of the escrowed funds."}
-                                    {job.status === 'In Progress' && !isFunded && " This will terminate the contract with the current installer."}
+                                    {job.status === 'In Progress' && isFunded && " This will terminate the contract with the current installer. You must raise a dispute or contact support to process a refund of the escrowed funds."}
+                                    {job.status === 'In Progress' && !isFunded && " This will terminate the contract with the current installer. No reputation will be lost."}
                                     {job.status !== 'In Progress' && " The job will be marked as 'Cancelled' and will no longer be open for bidding."}
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
@@ -1721,3 +1721,5 @@ export default function JobDetailPage() {
     </div>
   );
 }
+
+    
