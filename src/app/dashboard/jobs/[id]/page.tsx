@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -1166,6 +1167,7 @@ export default function JobDetailPage() {
 
   const [newPrivateMessage, setNewPrivateMessage] = React.useState("");
   const [privateMessageAttachments, setPrivateMessageAttachments] = React.useState<File[]>([]);
+  const [isSendingMessage, setIsSendingMessage] = React.useState(false);
   
   const [deadlineRelative, setDeadlineRelative] = React.useState('');
   const [deadlineAbsolute, setDeadlineAbsolute] = React.useState('');
@@ -1384,8 +1386,10 @@ export default function JobDetailPage() {
       return;
     }
     
+    setIsSendingMessage(true);
+
     const uploadPromises = privateMessageAttachments.map(async file => {
-        const fileRef = ref(storage, `jobs/${job.id}/${file.name}`);
+        const fileRef = ref(storage, `jobs/${job.id}/private_messages/${Date.now()}_${file.name}`);
         await uploadBytes(fileRef, file);
         const fileUrl = await getDownloadURL(fileRef);
         return { fileName: file.name, fileUrl, fileType: file.type };
@@ -1393,7 +1397,8 @@ export default function JobDetailPage() {
 
     const uploadedAttachments = await Promise.all(uploadPromises);
 
-    const newMessageObject: Omit<PrivateMessage, 'id'> = {
+    const newMessageObject: PrivateMessage = {
+      id: `MSG-${Date.now()}`,
       author: doc(db, 'users', user.id),
       timestamp: new Date(),
       content: newPrivateMessage,
@@ -1406,6 +1411,7 @@ export default function JobDetailPage() {
 
     setNewPrivateMessage("");
     setPrivateMessageAttachments([]);
+    setIsSendingMessage(false);
      toast({
       title: "Message Sent!",
     });
@@ -1657,7 +1663,8 @@ export default function JobDetailPage() {
                             />
                             <div className="flex justify-between items-center">
                                  <FileUpload onFilesChange={setPrivateMessageAttachments} maxFiles={3} />
-                                <Button size="sm" onClick={handlePostPrivateMessage} disabled={!newPrivateMessage.trim() && privateMessageAttachments.length === 0}>
+                                <Button size="sm" onClick={handlePostPrivateMessage} disabled={isSendingMessage || (!newPrivateMessage.trim() && privateMessageAttachments.length === 0)}>
+                                  {isSendingMessage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   <Send className="mr-2 h-4 w-4" />
                                   Send
                                 </Button>
