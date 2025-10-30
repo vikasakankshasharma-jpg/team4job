@@ -55,7 +55,7 @@ export type User = {
 };
 
 export type Comment = {
-  id: string;
+  id?: string;
   author: User | DocumentReference;
   timestamp: Date | Timestamp;
   content: string;
@@ -70,7 +70,7 @@ export type PrivateMessage = {
 };
 
 export type Bid = {
-  id: string;
+  id?: string;
   installer: User | DocumentReference;
   amount: number;
   timestamp: Date | Timestamp;

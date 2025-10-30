@@ -53,7 +53,7 @@ export default function TeamManagementPage() {
             <div className="space-y-4 text-sm">
                 <p>This page is where you, as a primary admin, can manage your administrative team.</p>
                 <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Add Team Member:</span> To add a new team member, you must create an account for them directly in the Firebase Authentication console. Assign them an "Admin" or "Support Team" role in their Firestore user document.</li>
+                    <li><span className="font-semibold">Add Team Member:</span> Use the form to create a new Admin or Support Team user. They will be sent an email to log in with the temporary password you set.</li>
                     <li><span className="font-semibold">Roles:</span>
                         <ul className="list-disc space-y-1 pl-5 mt-1">
                              <li><span className="font-semibold">Admin:</span> Has full access to all platform features.</li>
