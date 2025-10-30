@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
-import { Job, JobAttachment, User } from "@/lib/types";
+import { Job, JobAttachment, User, PlatformSettings } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
 import { doc, setDoc, getDoc, collection, query, where, getDocs, limit, startAt, orderBy, updateDoc } from "firebase/firestore";
 import { useHelp } from "@/hooks/use-help";
@@ -54,6 +54,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { format } from "date-fns";
+import { useFormContext } from "react-hook-form";
 
 
 const addressSchema = z.object({
@@ -598,6 +599,7 @@ export default function PostJobPage() {
                )}
               <Separator />
                <AddressForm
+                  control={form.control}
                   pincodeName="address.cityPincode"
                   houseName="address.house"
                   streetName="address.street"
@@ -699,3 +701,5 @@ export default function PostJobPage() {
     </div>
   );
 }
+
+    
