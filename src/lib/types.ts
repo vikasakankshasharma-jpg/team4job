@@ -132,6 +132,7 @@ export type Job = {
   disqualifiedInstallerIds?: string[];
   awardedInstaller?: User | DocumentReference;
   rating?: number;
+  review?: string;
   completionOtp?: string;
   disputeId?: string;
   attachments?: JobAttachment[];
@@ -251,5 +252,3 @@ export type PlatformSettings = {
     minJobBudget: number;
     autoVerifyInstallers: boolean;
 };
-
-    
