@@ -27,7 +27,8 @@ import axios from "axios";
 declare const cashfree: any;
 
 function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () => void }) {
-    const { user, db } = useFirebase();
+    const { user } = useUser();
+    const { db } = useFirebase();
     const { toast } = useToast();
     const [couponCode, setCouponCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -58,7 +59,7 @@ function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () =
             return;
         }
         
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userDoc = await getDoc(doc(db, 'users', user.id));
         const userData = userDoc.data();
         const userRoles = userData?.roles || [];
         const userRole = userRoles.includes('Installer') ? 'Installer' : 'Job Giver';
@@ -69,9 +70,10 @@ function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () =
             return;
         }
         
-        const userRef = doc(db, 'users', user.uid);
+        const userRef = doc(db, 'users', user.id);
         const currentExpiry = userData?.subscription && toDate(userData.subscription.expiresAt) > now ? toDate(userData.subscription.expiresAt) : now;
-        const newExpiryDate = new Date(currentExpiry.setDate(currentExpiry.getDate() + coupon.durationDays));
+        const newExpiryDate = new Date(currentExpiry);
+        newExpiryDate.setDate(newExpiryDate.getDate() + coupon.durationDays);
 
         await updateDoc(userRef, {
             'subscription.planId': coupon.planId,
@@ -174,6 +176,8 @@ export default function BillingPage() {
         jobGiverId: user.id, // Payer is the user
         installerId: 'PLATFORM', // Payee is the platform
         amount: plan.price,
+        travelTip: 0,
+        jobGiverFee: 0,
       });
 
       if (!response.data.payment_session_id) {
@@ -183,23 +187,27 @@ export default function BillingPage() {
       const cashfree = new (window as any).Cashfree(response.data.payment_session_id);
       cashfree.checkout({
         payment_method: "upi",
-        onComplete: async () => {
-          const now = new Date();
-          const currentExpiry = user.subscription && toDate(user.subscription.expiresAt) > now ? toDate(user.subscription.expiresAt) : now;
-          const newExpiryDate = new Date(currentExpiry.setFullYear(currentExpiry.getFullYear() + 1)); // Assuming annual plans
+        onComplete: async (data: any) => {
+          if (data.order && data.order.status === 'PAID') {
+            const now = new Date();
+            const currentExpiry = user.subscription && toDate(user.subscription.expiresAt) > now ? toDate(user.subscription.expiresAt) : now;
+            const newExpiryDate = new Date(currentExpiry.setFullYear(currentExpiry.getFullYear() + 1)); // Assuming annual plans
 
-          await updateDoc(doc(db, 'users', user.id), {
-            'subscription.planId': plan.id,
-            'subscription.planName': plan.name,
-            'subscription.expiresAt': newExpiryDate,
-          });
+            await updateDoc(doc(db, 'users', user.id), {
+              'subscription.planId': plan.id,
+              'subscription.planName': plan.name,
+              'subscription.expiresAt': newExpiryDate,
+            });
 
-          toast({
-            title: "Purchase Successful!",
-            description: `You are now subscribed to the ${plan.name} plan.`,
-            variant: "success",
-          });
-          fetchUser();
+            toast({
+              title: "Purchase Successful!",
+              description: `You are now subscribed to the ${plan.name} plan.`,
+              variant: "success",
+            });
+            fetchUser();
+          } else {
+              throw new Error("Payment was not successful.");
+          }
         },
         onError: (errorData: any) => {
           console.error("Cashfree onError:", errorData);

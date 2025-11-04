@@ -145,7 +145,7 @@ function PlanForm({ plan, onSave }: { plan?: SubscriptionPlan, onSave: () => voi
                 <FormItem>
                   <FormLabel>Plan ID</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., pro-installer" {...field} disabled={!!plan} />
+                    <Input placeholder="e.g., pro-installer-annual" {...field} disabled={!!plan} />
                   </FormControl>
                   <FormDescription>A unique ID for the plan. Cannot be changed later.</FormDescription>
                   <FormMessage />
@@ -158,7 +158,7 @@ function PlanForm({ plan, onSave }: { plan?: SubscriptionPlan, onSave: () => voi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Plan Name</FormLabel>
-                  <FormControl><Input placeholder="e.g., Pro Installer" {...field} /></FormControl>
+                  <FormControl><Input placeholder="e.g., Pro Installer (Annual)" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}

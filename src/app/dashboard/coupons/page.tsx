@@ -98,7 +98,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
     } : {
       code: "",
       description: "",
-      planId: "pro-installer",
+      planId: "pro-installer-annual",
       durationDays: 30,
       applicableToRole: 'Any',
       isActive: true,
@@ -179,7 +179,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
                     <FormItem>
                       <FormLabel>Plan ID</FormLabel>
                       <FormControl>
-                        <Input placeholder="pro-installer" {...field} />
+                        <Input placeholder="pro-installer-annual" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
