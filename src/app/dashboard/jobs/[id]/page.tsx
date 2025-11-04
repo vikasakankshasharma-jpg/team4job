@@ -1166,7 +1166,7 @@ export default function JobDetailPage() {
         return { fileName: file.name, fileUrl, fileType: file.type };
     });
 
-    const uploadedAttachments = await Promise.all(uploadPromises);
+    const uploadedAttachments = await Promise.all(uploadedAttachments);
 
     const newMessageObject: PrivateMessage = {
       id: `MSG-${Date.now()}`,
@@ -1270,21 +1270,21 @@ export default function JobDetailPage() {
       }
     };
 
-  const handleReportNoShow = async () => {
+  const handleReportAbandonment = async () => {
     if (!user || !job || !job.awardedInstaller) return;
     
-    const newDisputeId = `DISPUTE-NOSHOW-${Date.now()}`;
+    const newDisputeId = `DISPUTE-ABANDON-${Date.now()}`;
     const awardedInstaller = job.awardedInstaller as User;
     const jobGiver = job.jobGiver as User;
 
     const disputeData: Omit<Dispute, 'id'> = {
         requesterId: user.id,
         category: "Job Dispute",
-        title: `Installer No-Show for Job: ${job.title}`,
+        title: `Installer Unresponsive for Job: ${job.title}`,
         jobId: job.id,
         jobTitle: job.title,
         status: 'Open',
-        reason: "The job start date has passed, and the awarded installer has not shown up or has been unresponsive. I am reporting this as a no-show/job abandonment.",
+        reason: "The job has been funded, but the awarded installer has become unresponsive. I am reporting this to request mediation.",
         parties: {
             jobGiverId: jobGiver.id,
             installerId: awardedInstaller.id,
@@ -1292,7 +1292,7 @@ export default function JobDetailPage() {
         messages: [{
             authorId: user.id,
             authorRole: "Job Giver",
-            content: "The job start date has passed, and the awarded installer has not shown up or has been unresponsive. I am reporting this as a no-show/job abandonment.",
+            content: "The job has been funded, but the awarded installer has become unresponsive. I am reporting this to request mediation.",
             timestamp: new Date()
         }],
         createdAt: new Date(),
@@ -1326,7 +1326,7 @@ export default function JobDetailPage() {
   
   const canEditJob = isJobGiver && job.status === 'Open for Bidding';
   const canCancelJob = isJobGiver && (job.status === 'In Progress' || job.status === 'Open for Bidding' || job.status === 'Bidding Closed');
-  const canReportNoShow = isJobGiver && job.status === 'In Progress' && isFunded && job.jobStartDate && isPast(toDate(job.jobStartDate));
+  const canReportAbandonment = isJobGiver && job.status === 'In Progress' && isFunded;
   
   const identitiesRevealed = (job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' && job.status !== 'Awarded') || role === 'Admin';
   const showJobGiverRealIdentity = identitiesRevealed;
@@ -1731,24 +1731,24 @@ export default function JobDetailPage() {
                         </Link>
                     </Button>
                 )}
-                 {canReportNoShow && (
+                 {canReportAbandonment && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="destructive" className="w-full">
                             <AlertOctagon className="mr-2 h-4 w-4" />
-                            Report Installer No-Show
+                            Report: Installer Not Responding
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Report Installer No-Show?</AlertDialogTitle>
+                            <AlertDialogTitle>Report Installer Not Responding?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                This will immediately pause the project and create a dispute ticket for admin review. Use this if the job start date has passed and the installer is unresponsive.
+                                This will immediately pause the project and create a dispute ticket for admin review. Use this if the installer is unresponsive after you have funded the job.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleReportNoShow} className={cn(buttonVariants({variant: "destructive"}))}>Confirm & Create Dispute</AlertDialogAction>
+                            <AlertDialogAction onClick={handleReportAbandonment} className={cn(buttonVariants({variant: "destructive"}))}>Confirm & Create Dispute</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
@@ -1766,7 +1766,7 @@ export default function JobDetailPage() {
                                 <AlertDialogTitle>Are you sure you want to cancel this job?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     This action cannot be undone. 
-                                    {job.status === 'In Progress' && isFunded && " A dispute must be raised to process a refund from the Cashfree Marketplace Settlement account."}
+                                    {job.status === 'In Progress' && isFunded && " The funds are held securely. You must contact support through the dispute system to process a refund."}
                                     {job.status === 'In Progress' && !isFunded && " This will terminate the contract with the current installer. No reputation will be lost."}
                                     {job.status !== 'In Progress' && " The job will be marked as 'Cancelled' and will no longer be open for bidding."}
                                 </AlertDialogDescription>
