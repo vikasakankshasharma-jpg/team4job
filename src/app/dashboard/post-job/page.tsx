@@ -75,10 +75,14 @@ const jobSchema = z.object({
   address: addressSchema,
   budgetMin: z.coerce.number().min(1, { message: "Minimum budget must be at least 1." }),
   budgetMax: z.coerce.number().min(1, { message: "Maximum budget must be at least 1." }),
-  deadline: z.string().refine((val) => new Date(val) > new Date(), {
-    message: "Deadline must be in the future.",
-  }).or(z.literal(""))
-  ,
+  deadline: z.string().refine((val) => {
+    if (!val) return true; // Allow empty if direct awarding
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return new Date(val) >= today;
+  }, {
+    message: "Deadline cannot be in the past.",
+  }).or(z.literal("")),
   jobStartDate: z.string().min(1, { message: "Please select a job start date." }),
   attachments: z.array(z.instanceof(File)).optional(),
   directAwardInstallerId: z.string().optional(),
@@ -91,6 +95,12 @@ const jobSchema = z.object({
 }, {
     message: "Bidding deadline is required unless you are using Direct Award.",
     path: ["deadline"],
+}).refine(data => {
+    if (!data.deadline || !data.jobStartDate) return true;
+    return new Date(data.jobStartDate) >= new Date(data.deadline);
+}, {
+    message: "Job start date cannot be before the bidding deadline.",
+    path: ["jobStartDate"],
 });
 
 function DirectAwardInput({ control }) {
@@ -718,3 +728,5 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
     </div>
   );
 }
+
+    
