@@ -266,7 +266,7 @@
         },
         "status": {
           "type": "string",
-          "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid", "Pending Funding"]
+          "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid", "Pending Funding", "Disputed"]
         },
         "deadline": {
           "type": "string",

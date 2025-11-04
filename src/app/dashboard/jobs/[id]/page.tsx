@@ -2,7 +2,7 @@
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
-import { notFound, useParams, useSearchParams } from "next/navigation";
+import { notFound, useParams, useSearchParams, useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -75,7 +75,7 @@ import {
   Check,
   Edit,
 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, isPast } from "date-fns";
 import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
@@ -206,7 +206,7 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
         const transactionDoc = querySnapshot.docs[0];
         const transactionData = transactionDoc.data() as Transaction;
 
-        // --- 3. Call backend to release the funds from the Marketplace Settlement account ---
+        // --- 3. Call backend to release the funds from the Cashfree Marketplace Settlement account ---
         await axios.post('/api/escrow/release-funds', {
             transactionId: transactionDoc.id,
         });
@@ -923,6 +923,7 @@ export default function JobDetailPage() {
   const { db, storage } = useFirebase();
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const id = params.id as string;
   const { toast } = useToast();
   
@@ -1269,6 +1270,45 @@ export default function JobDetailPage() {
       }
     };
 
+  const handleReportNoShow = async () => {
+    if (!user || !job || !job.awardedInstaller) return;
+    
+    const newDisputeId = `DISPUTE-NOSHOW-${Date.now()}`;
+    const awardedInstaller = job.awardedInstaller as User;
+    const jobGiver = job.jobGiver as User;
+
+    const disputeData: Omit<Dispute, 'id'> = {
+        requesterId: user.id,
+        category: "Job Dispute",
+        title: `Installer No-Show for Job: ${job.title}`,
+        jobId: job.id,
+        jobTitle: job.title,
+        status: 'Open',
+        reason: "The job start date has passed, and the awarded installer has not shown up or has been unresponsive. I am reporting this as a no-show/job abandonment.",
+        parties: {
+            jobGiverId: jobGiver.id,
+            installerId: awardedInstaller.id,
+        },
+        messages: [{
+            authorId: user.id,
+            authorRole: "Job Giver",
+            content: "The job start date has passed, and the awarded installer has not shown up or has been unresponsive. I am reporting this as a no-show/job abandonment.",
+            timestamp: new Date()
+        }],
+        createdAt: new Date(),
+    };
+    
+    await setDoc(doc(db, "disputes", newDisputeId), { ...disputeData, id: newDisputeId });
+    await handleJobUpdate({ status: 'Disputed', disputeId: newDisputeId });
+
+    toast({
+        title: "Dispute Created",
+        description: "An admin will review the case shortly. You have been redirected to the dispute page.",
+    });
+
+    router.push(`/dashboard/disputes/${newDisputeId}`);
+  };
+
 
   if (loading) {
     return <PageSkeleton />;
@@ -1286,13 +1326,14 @@ export default function JobDetailPage() {
   
   const canEditJob = isJobGiver && job.status === 'Open for Bidding';
   const canCancelJob = isJobGiver && (job.status === 'In Progress' || job.status === 'Open for Bidding' || job.status === 'Bidding Closed');
+  const canReportNoShow = isJobGiver && job.status === 'In Progress' && isFunded && job.jobStartDate && isPast(toDate(job.jobStartDate));
   
   const identitiesRevealed = (job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' && job.status !== 'Awarded') || role === 'Admin';
   const showJobGiverRealIdentity = identitiesRevealed;
   
   const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || isJobGiver || role === 'Admin');
   const communicationMode: 'public' | 'private' | 'none' =
-    (job.status === 'In Progress' || job.status === 'Completed') && (isJobGiver || isAwardedInstaller || role === 'Admin')
+    (job.status === 'In Progress' || job.status === 'Completed' || job.status === 'Disputed') && (isJobGiver || isAwardedInstaller || role === 'Admin')
       ? 'private'
       : job.status === 'Open for Bidding'
       ? 'public'
@@ -1574,7 +1615,7 @@ export default function JobDetailPage() {
       </div>
 
       <div className="space-y-8">
-        {(role === 'Job Giver' && (job.status === 'In Progress' || job.status === 'Awarded' || job.status === 'Pending Funding')) && (
+        {(isJobGiver && (job.status === 'In Progress' || job.status === 'Awarded' || job.status === 'Pending Funding')) && (
             <JobGiverOTPCard job={job} />
         )}
         <Card>
@@ -1690,6 +1731,28 @@ export default function JobDetailPage() {
                         </Link>
                     </Button>
                 )}
+                 {canReportNoShow && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="w-full">
+                            <AlertOctagon className="mr-2 h-4 w-4" />
+                            Report Installer No-Show
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Report Installer No-Show?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will immediately pause the project and create a dispute ticket for admin review. Use this if the job start date has passed and the installer is unresponsive.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleReportNoShow} className={cn(buttonVariants({variant: "destructive"}))}>Confirm & Create Dispute</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                )}
                 {canCancelJob && (
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -1703,7 +1766,7 @@ export default function JobDetailPage() {
                                 <AlertDialogTitle>Are you sure you want to cancel this job?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     This action cannot be undone. 
-                                    {job.status === 'In Progress' && isFunded && " The contract with the installer will be terminated. You must raise a dispute to process a refund from the Cashfree Marketplace Settlement account."}
+                                    {job.status === 'In Progress' && isFunded && " A dispute must be raised to process a refund from the Cashfree Marketplace Settlement account."}
                                     {job.status === 'In Progress' && !isFunded && " This will terminate the contract with the current installer. No reputation will be lost."}
                                     {job.status !== 'In Progress' && " The job will be marked as 'Cancelled' and will no longer be open for bidding."}
                                 </AlertDialogDescription>
