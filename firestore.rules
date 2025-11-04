@@ -19,11 +19,10 @@ service cloud.firestore {
 
     function isRequestingUserAdmin() {
       let userData = getUserData(request.auth.uid);
-      // Safely check for the existence of the 'roles' map and the 'Admin' key.
-      // This prevents null reference errors if a user document doesn't have a roles field.
+      // Safely check for the existence of the 'roles' array and the 'Admin' value.
       return isSignedIn() && 
              'roles' in userData && 
-             userData.roles is map && 
+             userData.roles is list && 
              'Admin' in userData.roles;
     }
 
@@ -47,8 +46,7 @@ service cloud.firestore {
     match /jobs/{jobId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
-      // Correctly compare the document reference path to the user's UID.
-      allow update: if isSignedIn() && (get(/databases/$(database)/documents/$(resource.data.jobGiver.path)).id == request.auth.uid || isRequestingUserAdmin());
+      allow update: if isSignedIn() && (get(resource.data.jobGiver).id == request.auth.uid || isRequestingUserAdmin());
       allow delete: if isRequestingUserAdmin();
     }
 
@@ -86,6 +84,11 @@ service cloud.firestore {
       allow read, list: if isSignedIn();
       allow create, update, delete: if isRequestingUserAdmin();
     }
+    
+    match /settings/platform {
+        allow read: if isSignedIn();
+        allow write: if isRequestingUserAdmin();
+    }
 
     // Transactions are private.
     // They can be read by the payer, payee, or an admin.
@@ -97,7 +100,7 @@ service cloud.firestore {
         isRequestingUserAdmin()
       );
       allow list: if isRequestingUserAdmin(); // Only admins can list all transactions
-      allow write: if false;
+      allow write: if false; // Should only be written by backend functions
     }
   }
 }

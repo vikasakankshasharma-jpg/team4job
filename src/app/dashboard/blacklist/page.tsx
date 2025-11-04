@@ -42,19 +42,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, Trash2, List, Grid } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/hooks/use-user";
 import { BlacklistEntry } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import React, { useState } from "react";
 import { format } from "date-fns";
 import {
   collection,
-  getDocs,
   doc,
   setDoc,
   deleteDoc,
-  query,
-  orderBy,
 } from "firebase/firestore";
 
 const blacklistSchema = z.object({
@@ -82,15 +79,14 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
   async function onSubmit(values: z.infer<typeof blacklistSchema>) {
     setIsSubmitting(true);
     const id = `BL-${values.type.toUpperCase()}-${Date.now()}`;
-    const newEntry: BlacklistEntry = {
+    const newEntry: Omit<BlacklistEntry, 'createdAt'> = {
       id,
       ...values,
-      createdAt: new Date(),
     };
 
     try {
       if (!db) throw new Error("Firestore not available");
-      await setDoc(doc(db, "blacklist", id), newEntry);
+      await setDoc(doc(db, "blacklist", id), { ...newEntry, createdAt: new Date() });
       toast({
         title: "Entry Added",
         description: `Successfully blacklisted ${values.type}: ${values.value}.`,
