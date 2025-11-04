@@ -11,9 +11,10 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { AnimatedAvatar } from '@/components/ui/animated-avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Star, Briefcase, Medal, Gem, Award, Search, ShieldCheck, UserX, Heart } from 'lucide-react';
+import { Loader2, Star, Briefcase, Medal, Gem, Award, Search, ShieldCheck, UserX, Heart, Zap } from 'lucide-react';
 import { useUser, useFirebase } from '@/hooks/use-user';
 import { User } from '@/lib/types';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
@@ -29,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { allSkills } from '@/lib/data';
-import { AnimatedAvatar } from '@/components/ui/animated-avatar';
+import { toDate } from '@/lib/utils';
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-5 w-5 text-yellow-700" />,
@@ -54,7 +55,7 @@ const InstallerCard = ({ installer, currentUser, onUpdate }: { installer: User, 
             <CardHeader>
                 <div className="flex items-center gap-4">
                     <Avatar className="h-12 w-12">
-                        <AvatarImage src={installer.realAvatarUrl} />
+                        <AnimatedAvatar svg={installer.realAvatarUrl} />
                         <AvatarFallback>{installer.name.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
@@ -107,6 +108,8 @@ export default function FindInstallersPage() {
   const [filters, setFilters] = useState(initialFilters);
   const { setHelp } = useHelp();
   const router = useRouter();
+  
+  const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
 
   useEffect(() => {
     if (role && role !== 'Job Giver') {
@@ -121,6 +124,7 @@ export default function FindInstallersPage() {
         <div className="space-y-4 text-sm">
           <p>This is your directory to discover and vet professional installers on the platform.</p>
           <ul className="list-disc space-y-2 pl-5">
+            <li><span className="font-semibold">Premium Feature:</span> Access to this directory requires an active subscription.</li>
             <li><span className="font-semibold">Search & Filter:</span> Use the filters to find installers by name, location (pincode), skill set, or reputation tier.</li>
             <li><span className="font-semibold">Review Profiles:</span> Click on any installer's name to view their detailed profile, including their full work history and reviews.</li>
             <li><span className="font-semibold">Favorite & Block:</span> Use the action buttons to add installers to your personal "Favorite" list for future Direct Awards, or "Block" them to prevent them from bidding on your jobs.</li>
@@ -131,6 +135,10 @@ export default function FindInstallersPage() {
   }, [setHelp]);
 
   useEffect(() => {
+    if (!isSubscribed) {
+        setLoading(false);
+        return;
+    }
     const fetchInstallers = async () => {
         if (!db) return;
         setLoading(true);
@@ -145,7 +153,7 @@ export default function FindInstallersPage() {
         setLoading(false);
     };
     fetchInstallers();
-  }, [db]);
+  }, [db, isSubscribed]);
   
    const handleUpdate = async (installerId: string, action: 'favorite' | 'unfavorite' | 'block' | 'unblock') => {
     if (!user || !db) return;
@@ -200,6 +208,25 @@ export default function FindInstallersPage() {
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  if (!isSubscribed) {
+      return (
+          <Card className="text-center">
+              <CardHeader>
+                  <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                    <Zap className="h-8 w-8 text-primary" />
+                  </div>
+                  <CardTitle className="mt-4">Upgrade to Access Installer Directory</CardTitle>
+                  <CardDescription>This is a premium feature. Upgrade your plan to browse, discover, and directly contact top-rated installers.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <Button asChild>
+                      <Link href="/dashboard/billing">Upgrade My Plan</Link>
+                  </Button>
+              </CardContent>
+          </Card>
+      )
   }
 
   return (
