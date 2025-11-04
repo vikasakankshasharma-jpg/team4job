@@ -27,7 +27,7 @@ import { useRouter } from "next/navigation";
 import { Transaction, User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, or } from "firebase/firestore";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
 
@@ -47,7 +47,7 @@ const initialFilters = {
 };
 
 export default function TransactionsPage() {
-  const { isAdmin, loading: userLoading } = useUser();
+  const { user, isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -87,17 +87,26 @@ export default function TransactionsPage() {
   }, [isAdmin, userLoading, router]);
 
   const fetchTransactionsAndUsers = useCallback(async () => {
-    if (!db || !isAdmin) return;
+    if (!db || !user) return;
     setLoading(true);
     
-    const transactionsQuery = query(collection(db, "transactions"));
+    let transactionsQuery;
+    if (isAdmin) {
+        transactionsQuery = query(collection(db, "transactions"));
+    } else {
+        transactionsQuery = query(collection(db, "transactions"), or(
+            where("payerId", "==", user.id),
+            where("payeeId", "==", user.id)
+        ));
+    }
+
     const transactionsSnapshot = await getDocs(transactionsQuery);
     const transactionsList = transactionsSnapshot.docs.map(doc => doc.data() as Transaction);
 
     const userIds = new Set<string>();
     transactionsList.forEach(t => {
       userIds.add(t.payerId);
-      userIds.add(t.payeeId);
+      if (t.payeeId) userIds.add(t.payeeId);
     });
 
     if (userIds.size > 0) {
@@ -112,19 +121,19 @@ export default function TransactionsPage() {
     
     setTransactions(transactionsList.sort((a,b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime()));
     setLoading(false);
-  }, [db, isAdmin]);
+  }, [db, user, isAdmin]);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (user) {
       fetchTransactionsAndUsers();
     }
-  }, [isAdmin, fetchTransactionsAndUsers]);
+  }, [user, fetchTransactionsAndUsers]);
 
   const enrichedTransactions = useMemo(() => {
     return transactions.map(t => ({
       ...t,
-      payerName: usersMap.get(t.payerId)?.name || t.payerName || t.payerId,
-      payeeName: usersMap.get(t.payeeId)?.name || t.payeeName || t.payeeId,
+      payerName: usersMap.get(t.payerId)?.name || t.payerId,
+      payeeName: usersMap.get(t.payeeId)?.name || t.payeeId,
     }));
   }, [transactions, usersMap]);
 
@@ -135,8 +144,8 @@ export default function TransactionsPage() {
         t.id.toLowerCase().includes(search) ||
         t.jobId.toLowerCase().includes(search) ||
         t.jobTitle.toLowerCase().includes(search) ||
-        t.payerName.toLowerCase().includes(search) ||
-        t.payeeName.toLowerCase().includes(search);
+        (t.payerName && t.payerName.toLowerCase().includes(search)) ||
+        (t.payeeName && t.payeeName.toLowerCase().includes(search));
       
       const matchesStatus = filters.status === 'all' || t.status === filters.status;
 
@@ -164,38 +173,40 @@ export default function TransactionsPage() {
   const activeFiltersCount = Object.values(filters).filter(v => v && v !== 'all').length;
   const allStatuses = ["All", ...Array.from(new Set(transactions.map(t => t.status)))];
 
-  if (userLoading || !isAdmin) {
+  if (userLoading) {
     return <div className="flex h-48 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
 
   return (
     <div className="grid gap-6">
-        <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Value Released</CardTitle>
-                    <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">₹{stats.totalReleased.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">Total funds paid out to installers</p>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Funds Currently Held</CardTitle>
-                    <Hourglass className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">₹{stats.totalFunded.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">Funds from job givers awaiting job completion</p>
-                </CardContent>
-            </Card>
-        </div>
+        {isAdmin && (
+            <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Value Released</CardTitle>
+                        <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">₹{stats.totalReleased.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground">Total funds paid out to installers</p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Funds Currently Held</CardTitle>
+                        <Hourglass className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">₹{stats.totalFunded.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground">Funds from job givers awaiting job completion</p>
+                    </CardContent>
+                </Card>
+            </div>
+        )}
         <Card>
         <CardHeader>
             <CardTitle>Transactions</CardTitle>
-            <CardDescription>A log of all financial transactions on the platform.</CardDescription>
+            <CardDescription>A log of all your financial transactions on the platform.</CardDescription>
         </CardHeader>
         <CardContent>
              <div className="mb-4 flex flex-col sm:flex-row items-center gap-2">
@@ -240,7 +251,7 @@ export default function TransactionsPage() {
                 </TableRow>
                 ) : filteredTransactions.length > 0 ? (
                 filteredTransactions.map((t) => {
-                    const latestTimestamp = toDate(t.releasedAt || t.fundedAt || t.createdAt);
+                    const latestTimestamp = toDate(t.releasedAt || t.fundedAt || t.failedAt || t.createdAt);
                     return (
                         <TableRow key={t.id}>
                             <TableCell className="font-mono text-xs">{t.id}</TableCell>
