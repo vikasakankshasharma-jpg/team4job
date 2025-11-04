@@ -98,7 +98,7 @@ export function JobCard({ job }: JobCardProps) {
           </div>
           <div className="flex items-center gap-2 text-foreground">
             <IndianRupee className="h-4 w-4" />
-            <span>{job.budget.min} - {job.budget.max}</span>
+            <span>{job.budget.min.toLocaleString()} - {job.budget.max.toLocaleString()}</span>
             {job.travelTip && job.travelTip > 0 && (
               <span className="text-primary font-semibold">(+ ₹{job.travelTip.toLocaleString()} tip)</span>
             )}
