@@ -237,6 +237,8 @@ export const onJobCompleted = functions.firestore
 export const handleUnfundedJobs = functions.pubsub.schedule('every 6 hours').onRun(async (context) => {
     console.log('Running scheduled function to handle unfunded jobs...');
     const now = admin.firestore.Timestamp.now();
+    
+    // Set deadline to 48 hours ago
     const fortyEightHoursAgo = admin.firestore.Timestamp.fromMillis(now.toMillis() - 48 * 60 * 60 * 1000);
 
     const q = admin.firestore().collection('jobs')
@@ -324,3 +326,55 @@ export const onJobDateChange = functions.firestore
             );
         }
     });
+
+/**
+ * Handles scheduled cleanup of jobs where the award offer has expired.
+ * Runs every hour.
+ */
+export const handleExpiredAwards = functions.pubsub.schedule('every 1 hours').onRun(async (context) => {
+    console.log('Running scheduled function to handle expired job awards...');
+    const now = admin.firestore.Timestamp.now();
+
+    const q = admin.firestore().collection('jobs')
+        .where('status', '==', 'Awarded')
+        .where('acceptanceDeadline', '<=', now);
+
+    const snapshot = await q.get();
+
+    if (snapshot.empty) {
+        console.log('No expired awards found.');
+        return null;
+    }
+
+    const batch = admin.firestore().batch();
+    const notificationPromises: Promise<void>[] = [];
+
+    snapshot.docs.forEach(doc => {
+        const job = doc.data();
+        console.log(`Reverting job ${doc.id} to 'Bidding Closed' due to expired award.`);
+
+        const timedOutInstallerIds = (job.selectedInstallers || []).map((s: { installerId: string; }) => s.installerId);
+
+        batch.update(doc.ref, {
+            status: 'Bidding Closed',
+            awardedInstaller: admin.firestore.FieldValue.delete(),
+            acceptanceDeadline: admin.firestore.FieldValue.delete(),
+            selectedInstallers: [],
+            disqualifiedInstallerIds: admin.firestore.FieldValue.arrayUnion(...timedOutInstallerIds),
+        });
+
+        // Notify Job Giver that the offer expired
+        notificationPromises.push(sendNotification(
+            job.jobGiver.id,
+            'Offer Expired',
+            `Your offer for job "${job.title}" expired without being accepted. You can now award it to another installer.`,
+            `/dashboard/jobs/${doc.id}`
+        ));
+    });
+
+    await batch.commit();
+    await Promise.all(notificationPromises);
+
+    console.log(`Processed ${snapshot.size} expired awards.`);
+    return null;
+});
