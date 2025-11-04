@@ -158,15 +158,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids', '/dashboard/verify-installer'];
     const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs'];
     const adminOnlyPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/settings', '/dashboard/subscription-plans', '/dashboard/coupons', '/dashboard/blacklist'];
+    const supportOnlyPaths = ['/dashboard/disputes'];
     
     const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
     const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
     const isAdminPage = adminOnlyPaths.some(p => pathname.startsWith(p));
+    const isSupportPage = supportOnlyPaths.some(p => pathname.startsWith(p));
+
     
     if (role === 'Job Giver' && isInstallerPage) {
         router.push('/dashboard');
     } else if (role === 'Installer' && isJobGiverPage) {
         router.push('/dashboard');
+    } else if (role === 'Support Team' && !(isSupportPage || pathname === '/dashboard' || pathname.startsWith('/dashboard/profile'))) {
+        router.push('/dashboard/disputes');
     } else if (role !== 'Admin' && isAdminPage) {
         router.push('/dashboard');
     }
@@ -247,5 +252,3 @@ export function useUser() {
 
 // This is kept for non-hook usage, but useAuth and useFirestore are preferred.
 export { useFirebase, useAuth, useFirestore };
-
-    
