@@ -70,6 +70,7 @@ const jobSchema = z.object({
     .string()
     .min(50, { message: "Description must be at least 50 characters." }),
   skills: z.string().min(1, { message: "Please provide at least one skill." }),
+  travelTip: z.coerce.number().optional(),
   isGstInvoiceRequired: z.boolean().default(false),
   address: addressSchema,
   budgetMin: z.coerce.number().min(1, { message: "Minimum budget must be at least 1." }),
@@ -187,6 +188,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
       jobTitle: "",
       jobDescription: "",
       skills: "",
+      travelTip: 0,
       isGstInvoiceRequired: false,
       address: {
         house: "",
@@ -223,6 +225,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                     skills: (jobData.skills || []).join(', '),
                     isGstInvoiceRequired: jobData.isGstInvoiceRequired,
                     address: jobData.address,
+                    travelTip: jobData.travelTip || 0,
                     budgetMin: jobData.budget.min,
                     budgetMax: jobData.budget.max,
                     deadline: isEditMode ? format(toDate(jobData.deadline), "yyyy-MM-dd") : "",
@@ -325,6 +328,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
         title: values.jobTitle,
         description: values.jobDescription,
         skills: values.skills.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
+        travelTip: values.travelTip || 0,
         isGstInvoiceRequired: values.isGstInvoiceRequired,
         address: values.address,
         budget: {
@@ -664,6 +668,22 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                       <FormControl>
                         <Input type="number" placeholder="e.g., 20000" {...field} className={cn(isGenerating && "opacity-50")} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="travelTip"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Travel Tip (₹, Optional)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="e.g., 500" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Attract more bids by offering a commission-free travel tip.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

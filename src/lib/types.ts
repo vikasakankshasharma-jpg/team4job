@@ -217,7 +217,7 @@ export type Transaction = {
   payerId: string; // Job Giver ID
   payeeId: string; // Installer ID
   amount: number; // The original bid amount
-  travelTip?: number; // The travel tip, if any
+  travelTip?: number;
   commission: number; // The platform commission amount taken from installer
   jobGiverFee: number; // The fee charged to the job giver
   totalPaidByGiver: number; // The total amount charged to the job giver (amount + jobGiverFee + travelTip)
