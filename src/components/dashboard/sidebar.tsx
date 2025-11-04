@@ -22,11 +22,13 @@ import {
   UserCog,
   CreditCard,
   Heart,
+  Zap,
 } from "lucide-react";
 import { Logo } from "@/components/icons";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
+import { toDate } from "@/lib/utils";
 
 const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
@@ -38,7 +40,7 @@ const installerNavItems = [
 
 const jobGiverNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
-  { href: "/dashboard/installers", icon: Search, label: "Find Installers", tourId: "find-installers"},
+  { href: "/dashboard/installers", icon: Search, label: "Find Installers", tourId: "find-installers", premium: true },
   { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job", tourId: "post-job" },
   { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs", tourId: "posted-jobs" },
   { href: "/dashboard/my-installers", icon: Heart, label: "My Installers", tourId: "my-installers" },
@@ -64,7 +66,9 @@ const supportTeamNavItems = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const { role, isAdmin } = useUser();
+  const { user, role } = useUser();
+  
+  const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
 
   const getNavItems = () => {
     switch (role) {
@@ -95,25 +99,31 @@ export function DashboardSidebar() {
             <span className="sr-only">CCTV Job Connect</span>
           </Link>
 
-          {navItems.map((item) => (
-            <Tooltip key={item.href}>
-              <TooltipTrigger asChild>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                    pathname.startsWith(item.href) && item.href !== '/dashboard' && "bg-accent text-accent-foreground",
-                    pathname === '/dashboard' && item.href === '/dashboard' && "bg-accent text-accent-foreground"
-                  )}
-                  data-tour={item.tourId}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span className="sr-only">{item.label}</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">{item.label}</TooltipContent>
-            </Tooltip>
-          ))}
+          {navItems.map((item) => {
+            const linkPath = item.premium && !isSubscribed ? "/dashboard/billing" : item.href;
+            return (
+              <Tooltip key={item.href}>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={linkPath}
+                    className={cn(
+                      "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8 relative",
+                      pathname.startsWith(item.href) && item.href !== '/dashboard' && "bg-accent text-accent-foreground",
+                      pathname === '/dashboard' && item.href === '/dashboard' && "bg-accent text-accent-foreground"
+                    )}
+                    data-tour={item.tourId}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {item.premium && !isSubscribed && (
+                        <Zap className="absolute -bottom-1 -right-1 h-4 w-4 fill-amber-400 text-amber-500" />
+                    )}
+                    <span className="sr-only">{item.label}</span>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">{item.label}{item.premium && !isSubscribed && " (Upgrade)"}</TooltipContent>
+              </Tooltip>
+            )
+          })}
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
             <Tooltip>
