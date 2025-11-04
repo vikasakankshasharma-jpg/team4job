@@ -1751,7 +1751,6 @@ export default function JobDetailPage() {
                             <AlertDialogAction onClick={handleReportAbandonment} className={cn(buttonVariants({variant: "destructive"}))}>Confirm & Create Dispute</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
-                    </AlertDialog>
                 )}
                 {canCancelJob && (
                      <AlertDialog>
