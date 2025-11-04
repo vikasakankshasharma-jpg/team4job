@@ -19,19 +19,45 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
   password: z.string().min(1, { message: "Password cannot be empty." }),
 });
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_SECONDS = 60;
+
 export function LoginForm() {
   const router = useRouter();
   const { login, user } = useUser();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [lockoutUntil, setLockoutUntil] = useState<Date | null>(null);
+  const [remainingTime, setRemainingTime] = useState(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (lockoutUntil) {
+      const updateRemainingTime = () => {
+        const now = new Date();
+        const timeLeft = Math.max(0, Math.ceil((lockoutUntil.getTime() - now.getTime()) / 1000));
+        setRemainingTime(timeLeft);
+        if (timeLeft === 0) {
+          setLockoutUntil(null);
+          setLoginAttempts(0);
+          clearInterval(interval);
+        }
+      };
+      updateRemainingTime();
+      interval = setInterval(updateRemainingTime, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [lockoutUntil]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -41,6 +67,8 @@ export function LoginForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (lockoutUntil) return;
+
     setIsLoading(true);
     const isDemoUser = values.email.endsWith("@example.com");
     const success = await login(values.email, values.password);
@@ -56,11 +84,24 @@ export function LoginForm() {
          }
        }, 500);
     } else {
-      toast({
-        title: "Login Failed",
-        description: "Invalid credentials. Please check your email and password.",
-        variant: "destructive",
-      });
+      const newAttemptCount = loginAttempts + 1;
+      setLoginAttempts(newAttemptCount);
+
+      if (newAttemptCount >= MAX_LOGIN_ATTEMPTS) {
+        const newLockoutUntil = new Date(new Date().getTime() + LOCKOUT_DURATION_SECONDS * 1000);
+        setLockoutUntil(newLockoutUntil);
+        toast({
+          title: "Too Many Failed Attempts",
+          description: `For your security, login has been temporarily disabled. Please try again in ${LOCKOUT_DURATION_SECONDS} seconds.`,
+          variant: "destructive",
+        });
+      } else {
+         toast({
+          title: "Login Failed",
+          description: `Invalid credentials. You have ${MAX_LOGIN_ATTEMPTS - newAttemptCount} attempts remaining.`,
+          variant: "destructive",
+        });
+      }
       setIsLoading(false);
     }
   }
@@ -68,6 +109,14 @@ export function LoginForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {lockoutUntil && (
+          <Alert variant="destructive">
+            <AlertTitle>Login Locked</AlertTitle>
+            <AlertDescription>
+              Too many failed login attempts. Please try again in {remainingTime} seconds.
+            </AlertDescription>
+          </Alert>
+        )}
         <FormField
           control={form.control}
           name="email"
@@ -75,7 +124,7 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Email Address</FormLabel>
                <FormControl>
-                  <Input type="email" placeholder="name@example.com" {...field} />
+                  <Input type="email" placeholder="name@example.com" {...field} disabled={!!lockoutUntil} />
                 </FormControl>
               <FormMessage />
             </FormItem>
@@ -88,13 +137,13 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
                <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
+                  <Input type="password" placeholder="••••••••" {...field} disabled={!!lockoutUntil} />
                 </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full" disabled={isLoading || !!lockoutUntil}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Log In
         </Button>
