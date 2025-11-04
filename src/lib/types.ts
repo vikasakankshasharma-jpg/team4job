@@ -107,7 +107,7 @@ export type Job = {
   id:string;
   title: string;
   description: string;
-  skills: string[];
+  skills?: string[];
   jobGiver: User | DocumentReference;
   location: string;
   fullAddress: string;

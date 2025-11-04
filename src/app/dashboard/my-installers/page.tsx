@@ -19,9 +19,9 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { AnimatedAvatar } from '@/components/ui/animated-avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Star, Heart, UserX, Briefcase, Medal, Gem, Award, Search, Users, ShieldCheck, MessageCircle } from 'lucide-react';
+import { Loader2, Star, Heart, UserX, Briefcase, Medal, Gem, Award, Search, Users, ShieldCheck } from 'lucide-react';
 import { useUser, useFirebase } from '@/hooks/use-user';
-import { User, Job, Bid } from '@/lib/types';
+import { User, Job } from '@/lib/types';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import type { DocumentReference } from 'firebase/firestore';
 import { useHelp } from '@/hooks/use-help';
@@ -51,13 +51,13 @@ const InstallerCard = ({ installer, user, onUpdate }: { installer: User, user: U
       <CardHeader>
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
-            <AnimatedAvatar svg={installer.avatarUrl} />
+            <AnimatedAvatar svg={installer.realAvatarUrl} />
             <AvatarFallback>{installer.name.substring(0, 2)}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <CardTitle className="text-lg"><Link href={`/dashboard/users/${installer.id}`} className="hover:underline">{installer.name}</Link></CardTitle>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {tierIcons[installer.installerProfile?.tier || 'Bronze']}
+              {installer.installerProfile && tierIcons[installer.installerProfile.tier]}
               <span>{installer.installerProfile?.tier} Tier</span>
               {installer.installerProfile?.verified && <ShieldCheck className="h-4 w-4 text-green-600" />}
             </div>
@@ -117,12 +117,11 @@ export default function MyInstallersPage() {
       title: 'My Installers',
       content: (
         <div className="space-y-4 text-sm">
-          <p>This is your personal CRM for managing installers you've interacted with on the platform.</p>
+          <p>This is your personal CRM for managing installers you've worked with on the platform.</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Previously Hired:</span> A list of all installers who have completed jobs for you.</li>
-            <li><span className="font-semibold">Past Bidders:</span> A complete history of every unique installer who has ever bid on one of your jobs.</li>
-            <li><span className="font-semibold">Favorites:</span> Your curated list of preferred installers. Use the heart icon to add or remove installers from this list.</li>
-            <li><span className="font-semibold">Blocked:</span> A list of installers you no longer wish to interact with. Blocked installers will not be able to see or bid on your public job postings.</li>
+            <li><span className="font-semibold">Previously Hired:</span> A list of all installers who have completed jobs for you. This is your primary network.</li>
+            <li><span className="font-semibold">Favorites:</span> From your "Previously Hired" list, you can add installers to this curated list for quick access when you want to use the "Direct Award" feature.</li>
+            <li><span className="font-semibold">Blocked:</span> Add installers from your "Previously Hired" list here to prevent them from seeing or bidding on your future public jobs.</li>
           </ul>
         </div>
       ),
@@ -133,30 +132,27 @@ export default function MyInstallersPage() {
     if (!db || !user) return;
     setLoading(true);
     
-    // 1. Get all jobs posted by the current user
-    const jobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', doc(db, 'users', user.id)));
+    // Get all jobs posted by the current user that are completed
+    const jobsQuery = query(
+        collection(db, 'jobs'), 
+        where('jobGiver', '==', doc(db, 'users', user.id)),
+        where('status', '==', 'Completed')
+    );
     const jobsSnapshot = await getDocs(jobsQuery);
     
-    const installerIds = new Set<string>();
+    const hiredInstallerIds = new Set<string>();
 
     jobsSnapshot.docs.forEach(jobDoc => {
       const jobData = jobDoc.data() as Job;
-      // Add awarded installer
       const awardedId = getRefId(jobData.awardedInstaller);
-      if (awardedId) installerIds.add(awardedId);
-      
-      // Add all bidders
-      (jobData.bids || []).forEach(bid => {
-        const bidderId = getRefId(bid.installer);
-        if (bidderId) installerIds.add(bidderId);
-      });
+      if (awardedId) hiredInstallerIds.add(awardedId);
     });
 
-    // Also include manually favorited/blocked installers
-    (user.favoriteInstallerIds || []).forEach(id => installerIds.add(id));
-    (user.blockedInstallerIds || []).forEach(id => installerIds.add(id));
+    // Also include manually favorited/blocked installers so they always appear in their respective lists
+    (user.favoriteInstallerIds || []).forEach(id => hiredInstallerIds.add(id));
+    (user.blockedInstallerIds || []).forEach(id => hiredInstallerIds.add(id));
     
-    const installerIdArray = Array.from(installerIds);
+    const installerIdArray = Array.from(hiredInstallerIds);
     const fetchedInstallers: User[] = [];
 
     if (installerIdArray.length > 0) {
@@ -218,30 +214,13 @@ export default function MyInstallersPage() {
       );
   }, [installers, search]);
 
-  const { hired, bidders, favorites, blocked } = useMemo(() => {
-    const hiredSet = new Set<string>();
-    const bidderSet = new Set<string>();
-
-    const jobs = (user ? getDocs(query(collection(db, 'jobs'), where('jobGiver', '==', doc(db, 'users', user.id)))) : Promise.resolve({ docs: [] }));
-    jobs.then(snapshot => {
-      snapshot.docs.forEach(jobDoc => {
-        const job = jobDoc.data() as Job;
-        if (job.status === 'Completed' && job.awardedInstaller) {
-          hiredSet.add(getRefId(job.awardedInstaller)!);
-        }
-        (job.bids || []).forEach(bid => {
-          bidderSet.add(getRefId(bid.installer)!);
-        });
-      });
-    });
-
+  const { hired, favorites, blocked } = useMemo(() => {
     return {
-      hired: filteredInstallers.filter(i => hiredSet.has(i.id)),
-      bidders: filteredInstallers.filter(i => bidderSet.has(i.id)),
+      hired: filteredInstallers.filter(i => installers.some(inst => inst.id === i.id)),
       favorites: filteredInstallers.filter(i => user?.favoriteInstallerIds?.includes(i.id)),
       blocked: filteredInstallers.filter(i => user?.blockedInstallerIds?.includes(i.id)),
     };
-  }, [filteredInstallers, user, db]);
+  }, [filteredInstallers, user, installers]);
 
   if (loading || !user) {
     return (
@@ -286,17 +265,13 @@ export default function MyInstallersPage() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="hired">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="hired"><Briefcase className="mr-2 h-4 w-4" />Hired</TabsTrigger>
-            <TabsTrigger value="bidders"><Users className="mr-2 h-4 w-4" />Bidders</TabsTrigger>
             <TabsTrigger value="favorites"><Heart className="mr-2 h-4 w-4" />Favorites</TabsTrigger>
             <TabsTrigger value="blocked"><UserX className="mr-2 h-4 w-4" />Blocked</TabsTrigger>
           </TabsList>
           <TabsContent value="hired" className="pt-6">
             {renderTabContent(hired, "You haven't hired any installers yet.")}
-          </TabsContent>
-          <TabsContent value="bidders" className="pt-6">
-            {renderTabContent(bidders, "No installers have bid on your jobs yet.")}
           </TabsContent>
           <TabsContent value="favorites" className="pt-6">
             {renderTabContent(favorites, "You haven't added any installers to your favorites.")}
