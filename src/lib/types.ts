@@ -43,6 +43,8 @@ export type User = {
     ifsc?: string;
   };
   fcmTokens?: string[];
+  favoriteInstallerIds?: string[];
+  blockedInstallerIds?: string[];
   installerProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;

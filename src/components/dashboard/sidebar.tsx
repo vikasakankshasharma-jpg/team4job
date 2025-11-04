@@ -21,6 +21,7 @@ import {
   IndianRupee,
   UserCog,
   CreditCard,
+  Heart,
 } from "lucide-react";
 import { Logo } from "@/components/icons";
 import { usePathname } from "next/navigation";
@@ -39,6 +40,7 @@ const jobGiverNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
   { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job", tourId: "post-job" },
   { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs", tourId: "posted-jobs" },
+  { href: "/dashboard/my-installers", icon: Heart, label: "My Installers", tourId: "my-installers" },
   { href: "/dashboard/billing", icon: CreditCard, label: "Subscription" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
 ];

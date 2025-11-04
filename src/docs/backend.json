@@ -115,6 +115,16 @@
             },
             "description": "An array of Firebase Cloud Messaging tokens for sending push notifications to the user's devices."
         },
+        "favoriteInstallerIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "A Job Giver's list of favorite installer IDs."
+        },
+        "blockedInstallerIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "A Job Giver's personal list of blocked installer IDs."
+        },
         "installerProfile": {
           "$ref": "#/entities/InstallerProfile"
         }
