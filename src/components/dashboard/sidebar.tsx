@@ -30,14 +30,15 @@ import { useUser } from "@/hooks/use-user";
 
 const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
-  { href: "/dashboard/jobs", icon: Search, label: "Browse Jobs", tourId: "all-jobs" },
-  { href: "/dashboard/my-bids", icon: Briefcase, label: "My Bids", tourId: "my-bids" },
+  { href: "/dashboard/jobs", icon: Briefcase, label: "Browse Jobs", tourId: "all-jobs" },
+  { href: "/dashboard/my-bids", icon: FileText, label: "My Bids", tourId: "my-bids" },
   { href: "/dashboard/billing", icon: CreditCard, label: "Subscription" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
 ];
 
 const jobGiverNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
+  { href: "/dashboard/installers", icon: Search, label: "Find Installers", tourId: "find-installers"},
   { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job", tourId: "post-job" },
   { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs", tourId: "posted-jobs" },
   { href: "/dashboard/my-installers", icon: Heart, label: "My Installers", tourId: "my-installers" },
