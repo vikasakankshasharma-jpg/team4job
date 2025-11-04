@@ -48,9 +48,9 @@ import { useHelp } from "@/hooks/use-help"
 import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore"
 import type { PlatformSettings, SubscriptionPlan, Coupon, BlacklistEntry } from "@/lib/types"
 import { useFirebase } from "@/hooks/use-user"
-import SubscriptionPlansSettings from "../subscription-plans/page"
-import CouponsSettings from "../coupons/page"
-import BlacklistSettings from "../blacklist/page"
+import SubscriptionPlansSettings from "@/app/dashboard/subscription-plans/page"
+import CouponsSettings from "@/app/dashboard/coupons/page"
+import BlacklistSettings from "@/app/dashboard/blacklist/page"
 import { Separator } from "@/components/ui/separator"
 
 function ThemeSelector() {

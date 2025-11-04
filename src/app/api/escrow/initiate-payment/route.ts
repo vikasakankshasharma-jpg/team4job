@@ -1,4 +1,5 @@
 
+
 import { NextRequest, NextResponse } from 'next/server';
 import { doc, getDoc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/server-init';
@@ -14,41 +15,43 @@ async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
     if (settingsSnap.exists()) {
         return settingsSnap.data() as PlatformSettings;
     }
-    // Return an empty object if no settings are configured
-    return {};
+    // Return default values if no settings are configured
+    return {
+        installerCommissionRate: 5,
+        jobGiverFeeRate: 2,
+    };
 }
 
 
 export async function POST(req: NextRequest) {
   try {
-    const { jobId, jobTitle, jobGiverId, installerId, amount, travelTip } = await req.json();
+    const { jobId, jobTitle, jobGiverId, installerId, amount, travelTip, jobGiverFee } = await req.json();
 
-    if (!jobId || !jobGiverId || !installerId || !amount) {
+    if (!jobId || !jobGiverId || !installerId || amount === undefined) {
       return NextResponse.json({ error: 'Missing required payment details' }, { status: 400 });
     }
     
     // 1. Fetch Job Giver and Installer details
     const [jobGiverSnap, installerSnap] = await Promise.all([
         getDoc(doc(db, 'users', jobGiverId)),
-        getDoc(doc(db, 'users', installerId)),
+        installerId === 'PLATFORM' ? Promise.resolve(null) : getDoc(doc(db, 'users', installerId)),
     ]);
 
-    if (!jobGiverSnap.exists() || !installerSnap.exists()) {
+    if (!jobGiverSnap.exists() || (installerId !== 'PLATFORM' && !installerSnap?.exists())) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     const jobGiver = jobGiverSnap.data() as User;
-    const installer = installerSnap.data() as User;
 
     // 2. Calculate fees and final amounts based on platform settings
     const platformSettings = await getPlatformSettings();
-    const installerCommissionRate = platformSettings.installerCommissionRate ?? 0;
-    const jobGiverFeeRate = platformSettings.jobGiverFeeRate ?? 0;
+    const isSubscription = jobId.startsWith('SUB-');
     
-    const installerCommission = amount * (installerCommissionRate / 100);
-    const jobGiverFee = amount * (jobGiverFeeRate / 100);
+    const calculatedJobGiverFee = isSubscription ? 0 : (jobGiverFee ?? (amount * (platformSettings.jobGiverFeeRate! / 100)));
+    const calculatedCommission = isSubscription ? 0 : amount * (platformSettings.installerCommissionRate! / 100);
     const tipAmount = travelTip || 0;
-    const totalPaidByGiver = amount + jobGiverFee + tipAmount;
-    const payoutToInstaller = amount - installerCommission + tipAmount;
+    
+    const totalPaidByGiver = amount + calculatedJobGiverFee + tipAmount;
+    const payoutToInstaller = amount - calculatedCommission + tipAmount;
 
     // 3. Create a new Transaction document in Firestore
     const transactionId = `TXN-${jobId}-${Date.now()}`;
@@ -60,10 +63,10 @@ export async function POST(req: NextRequest) {
         jobTitle,
         payerId: jobGiverId,
         payeeId: installerId,
-        amount, // Original bid amount
+        amount, // Original bid/plan amount
         travelTip: tipAmount,
-        commission: installerCommission,
-        jobGiverFee: jobGiverFee,
+        commission: calculatedCommission,
+        jobGiverFee: calculatedJobGiverFee,
         totalPaidByGiver: totalPaidByGiver,
         payoutToInstaller: payoutToInstaller,
         status: 'Initiated',
@@ -84,9 +87,9 @@ export async function POST(req: NextRequest) {
             customer_name: jobGiver.name,
         },
         order_meta: {
-            return_url: `https://cctv-job-connect.web.app/dashboard/jobs/${jobId}?payment_status=success&order_id={order_id}`,
+            return_url: isSubscription ? `https://cctv-job-connect.web.app/dashboard/billing?payment_status=success&order_id={order_id}` : `https://cctv-job-connect.web.app/dashboard/jobs/${jobId}?payment_status=success&order_id={order_id}`,
         },
-        order_note: `Payment for job: ${jobTitle} (Includes platform fee & tip)`
+        order_note: `Payment for: ${jobTitle}`
     };
 
     const response = await axios.post(
