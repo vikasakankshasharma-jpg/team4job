@@ -70,6 +70,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
         const twoMonthsAgoYear = getYear(twoMonthsAgoDate);
         
         return installers
+            .filter(i => i.installerProfile)
             .map(installer => {
                 const history = installer.installerProfile?.reputationHistory || [];
                 const lastMonthEntry = history.find(h => {
