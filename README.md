@@ -10,7 +10,7 @@ This document serves as the master prompt and detailed specification for buildin
 **Core Purpose:** A sophisticated, AI-enhanced marketplace connecting "Job Givers" (clients) with verified, skilled "Installers" for CCTV installation and maintenance services. The platform is architected around a subscription model to support professional users and ensure sustainable revenue.
 
 **Target Audience:**
-*   **Job Givers:** Homeowners, business owners, and property managers needing CCTV services. This includes both one-time clients and high-volume "Pro" users who manage multiple properties.
+*   **Job Givers:** Homeowners, business owners, and property managers needing CCTV services. This includes both non-technical novices and high-volume "Pro" users who manage multiple properties.
 *   **Installers:** Vetted, professional CCTV and security system installers seeking employment opportunities, from individual contractors to small businesses.
 
 ---
@@ -18,7 +18,7 @@ This document serves as the master prompt and detailed specification for buildin
 ## 2. Core Features & Business Logic
 
 ### User & Subscription System
-*   **Dual Roles & Role Switching:** Users can sign up as a "Job Giver" or an "Installer". A user can hold both roles and instantly switch between modes from their profile menu without logging out.
+*   **Dual Roles & Role Switching:** Users can sign up as a "Job Giver" or "Installer". A user can hold both roles and instantly switch between modes from their profile menu without logging out.
 *   **Subscription Model:** The platform operates on a freemium model. New users receive a trial or a basic plan. Access to premium features (e.g., browsing the Installer Directory, lower commission rates) requires an active paid subscription.
 *   **Billing Management:** A dedicated "Billing" page where users can view their current plan, upgrade their subscription via Cashfree, and redeem promotional coupon codes.
 *   **Installer KYC Verification:** Installers MUST complete an Aadhar OTP verification process to become "verified." This is a mandatory prerequisite for bidding on jobs and receiving payouts, ensuring a trusted marketplace.
@@ -26,8 +26,9 @@ This document serves as the master prompt and detailed specification for buildin
 
 ### The Complete Job Lifecycle
 1.  **Job Posting (Job Giver):**
-    *   Job Givers post detailed job listings, including title, description, skills, location (pincode-based), budget, and bidding deadline.
-    *   **AI Feature:** An "AI Generate" button uses the job title to create a compelling job description, a list of required skills, and a realistic budget estimate.
+    *   **AI Job Scoping Wizard:** For novice users, a conversational interface asks for a simple description (e.g., "I need cameras for my shop"). The AI then generates a complete, structured job post with a professional title, description, suggested skills, and budget.
+    *   **Manual Posting:** Expert users can skip the wizard and fill out a detailed form manually, including title, description, skills, location, budget, and bidding deadline.
+    *   **AI-Assisted Details:** In manual mode, an "AI Generate" button uses the job title to create a compelling job description, a list of required skills, and a realistic budget estimate.
     *   **Direct Award (Optional):** A Job Giver can skip public bidding by entering a known installer's public ID, sending the job offer directly to them.
 2.  **Job Discovery (Installer):**
     *   Verified installers browse public jobs via a searchable, filterable interface.
@@ -61,7 +62,7 @@ This document serves as the master prompt and detailed specification for buildin
     *   **Promote & Re-list:** Add a `travelTip` (a commission-free bonus for the installer) and re-list the job to attract more interest.
 
 ### Platform Management & Monetization
-*   **Admin Dashboard:** A comprehensive backend for administrators to manage the entire platform.
+*   **Admin Dashboard & Reports:** A comprehensive backend for administrators to manage the platform, featuring KPI cards, charts on user growth and financials, and data export capabilities.
 *   **Team Management:** A dedicated section for the primary Admin to create and manage other `Admin` and `Support Team` user accounts.
 *   **Monetization Settings:** Admins can configure platform-wide settings, including installer commission rates, job giver fees, and create/manage `SubscriptionPlan` and `Coupon` entities.
 *   **Global Blacklist:** A critical security feature allowing Admins to block specific User IDs or pincodes, preventing them from registering, logging in, or posting jobs.
@@ -125,7 +126,7 @@ To test the platform's features, use the following credentials. All accounts are
 │   │   ├── my-installers/   # [Job Giver] Manage hired/favorite/blocked installers
 │   │   ├── post-job/        # [Job Giver] Page to create a new job
 │   │   ├── posted-jobs/     # [Job Giver] View jobs they have posted
-│_  │   ├── profile/         # User's own profile page
+│   │   ├── profile/         # User's own profile page
 │   │   ├── reports/         # [Admin] Reports and analytics
 │   │   ├── settings/        # App settings (Personal & Admin)
 │   │   ├── subscription-plans/ # [Admin] Manage subscription plans

@@ -13,3 +13,4 @@ import '@/ai/flows/aadhar-verification.ts';
 import '@/ai/flows/grant-pro-plan.ts';
 import '@/ai/flows/reward-top-performers.ts';
 import '@/ai/flows/get-bids-for-installer.ts';
+import '@/ai/flows/job-scoping-wizard.ts';
