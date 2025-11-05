@@ -49,7 +49,9 @@ This document serves as the master prompt and detailed specification for buildin
     *   The Job Giver shares a 6-digit `completionOtp` with the installer.
     *   The installer enters the OTP to mark the job as "Completed."
     *   This OTP trigger initiates an API call to Cashfree's Payouts product, which automatically splits the payment from the settlement account: the installer receives their earnings, and the platform receives its commission.
-8.  **Feedback:** The Job Giver can rate the installer and leave a review, which impacts the installer's reputation points.
+8.  **Feedback & Invoicing:**
+    *   The Job Giver can rate the installer and leave a review, which impacts the installer's reputation points.
+    *   Upon completion, a formal invoice from the Installer to the Job Giver is automatically generated and made available on the job details page.
 
 ### Exception & Recovery Workflows
 *   **Award Expiration:** A scheduled function (`handleExpiredAwards`) runs hourly. If an "Awarded" job's `acceptanceDeadline` passes, it automatically reverts to "Bidding Closed," allowing the Job Giver to award it to someone else.
