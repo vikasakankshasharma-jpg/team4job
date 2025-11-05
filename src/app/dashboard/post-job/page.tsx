@@ -23,8 +23,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Loader2, UserPlus, ShieldCheck } from "lucide-react";
+import { Zap, Loader2, UserPlus, ShieldCheck, Wand2, Edit } from "lucide-react";
 import { generateJobDetails } from "@/ai/flows/generate-job-details";
+import { jobScopingWizard } from "@/ai/flows/job-scoping-wizard";
 import { useToast } from "@/hooks/use-toast";
 import React, { useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -190,6 +191,8 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
   const [mapCenter, setMapCenter] = React.useState<{lat: number, lng: number} | null>(null);
   const { setHelp } = useHelp();
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [wizardQuery, setWizardQuery] = useState("");
 
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
@@ -224,6 +227,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
     async function prefillForm() {
         const jobId = editJobId || repostJobId;
         if (jobId && db) {
+            setShowManualForm(true); // Always show form if editing/reposting
             setIsProcessing(true);
             const jobRef = doc(db, 'jobs', jobId);
             const jobSnap = await getDoc(jobRef);
@@ -265,11 +269,10 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
             <div className="space-y-4 text-sm">
                 <p>Follow these steps to create a job listing and attract the best installers.</p>
                 <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Job Title:</span> Write a clear and concise title. This is the first thing installers see.</li>
-                    <li><span className="font-semibold">AI Generate:</span> After writing a title, click the "AI Generate" button. Our AI will write a professional job description, suggest required skills, and estimate a fair budget for you.</li>
+                    <li><span className="font-semibold">AI Job Wizard:</span> Not sure where to start? Just describe your needs in plain language (e.g., "I need cameras for my 2-bedroom apartment") and our AI wizard will create a detailed job post for you.</li>
+                    <li><span className="font-semibold">Manual Mode:</span> If you know the technical details, you can switch to manual mode to fill out the form yourself.</li>
                     <li><span className="font-semibold">Location & Address:</span> Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.</li>
                     <li><span className="font-semibold">Attachments:</span> Upload site photos, floor plans, or any other relevant documents to give installers a better understanding of the job.</li>
-                    <li><span className="font-semibold">Dates & Budget:</span> Set your bidding deadline, the date you want work to start, and your budget range.</li>
                     {!isEditMode && <li><span className="font-semibold">Direct Award (Optional):</span> If you already know an installer on our platform, you can enter their public ID here to award the job to them directly, skipping the public bidding process.</li>}
                 </ul>
             </div>
@@ -317,6 +320,38 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
       toast({
         title: "Generation Failed",
         description: "There was an error generating details. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleWizardSubmit = async () => {
+    if (!wizardQuery.trim()) {
+      toast({ title: "Please describe your needs.", variant: "destructive" });
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const result = await jobScopingWizard({ userQuery: wizardQuery });
+      if (result) {
+        form.setValue("jobTitle", result.jobTitle, { shouldValidate: true });
+        form.setValue("jobDescription", result.jobDescription, { shouldValidate: true });
+        form.setValue("skills", result.suggestedSkills.join(', '), { shouldValidate: true });
+        form.setValue("budgetMin", result.budgetMin, { shouldValidate: true });
+        form.setValue("budgetMax", result.budgetMax, { shouldValidate: true });
+        setShowManualForm(true);
+        toast({
+          title: "Job Post Generated!",
+          description: "Your job post has been created. Please review the details and set your location and deadline below.",
+        });
+      }
+    } catch (error) {
+      console.error("Error with Job Scoping Wizard:", error);
+      toast({
+        title: "Generation Failed",
+        description: "There was an error generating the job post. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -480,253 +515,282 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
         </h1>
         {isProcessing && <Loader2 className="h-5 w-5 animate-spin" />}
       </div>
-      <Form {...form}>
-        <form onSubmit={e => e.preventDefault()} className="grid gap-4">
-          <Card>
+
+      {!showManualForm && !isEditMode && (
+         <Card>
             <CardHeader>
-              <CardTitle>Job Details</CardTitle>
+              <CardTitle className="flex items-center gap-2"><Wand2 /> AI Job Scoping Wizard</CardTitle>
               <CardDescription>
-                {isEditMode 
-                    ? "Update the details of your job posting."
-                    : (repostJobId 
-                        ? "Review and update the job details, then set a new deadline to re-list it."
-                        : "Fill in the details for your job posting. Use the AI generator for a quick start.")
-                }
+                Don't know the technical details? Just describe your needs in plain language, and our AI will create a professional job post for you.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <FormField
-                control={form.control}
-                name="jobTitle"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Job Title</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., Install 8 IP Cameras for an Office"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="jobDescription"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel>Job Description</FormLabel>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleGenerateDetails}
-                        disabled={isGenerating || !isJobTitleValid}
-                      >
-                        {isGenerating ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Zap className="mr-2 h-4 w-4" />
-                        )}
-                        AI Generate
-                      </Button>
-                    </div>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe the project requirements, scope, and any important details..."
-                        className={cn("min-h-32", isGenerating && "opacity-50")}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="skills"
-                render={({ field }) => (
-                  <FormItem>
-                     <div className="flex items-center justify-between">
-                        <FormLabel>Required Skills</FormLabel>
-                         {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                     </div>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., IP Cameras, NVR Setup, Cabling"
-                        className={cn(isGenerating && "opacity-50")}
-                        {...field}
-                      />
-                    </FormControl>
-                     <FormDescription>
-                      Enter a comma-separated list of skills.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="isGstInvoiceRequired"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        GST Invoice Required
-                      </FormLabel>
-                      <FormDescription>
-                        Select this if you are a business and require a GST invoice for this job.
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-               {!isEditMode && (
+            <CardContent className="space-y-4">
+               <Textarea
+                  placeholder="e.g., 'I need 4 cameras for my 1500 sq. ft. clothing store in Delhi.' or 'My home security cameras are not working.'"
+                  value={wizardQuery}
+                  onChange={(e) => setWizardQuery(e.target.value)}
+                  className="min-h-24"
+                />
+                <Button onClick={handleWizardSubmit} disabled={isGenerating || !wizardQuery.trim()}>
+                    {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Generate Job Post
+                </Button>
+            </CardContent>
+             <CardFooter>
+                <Button variant="link" onClick={() => setShowManualForm(true)} className="p-0 h-auto">
+                    I know what I need, I'll fill out the form myself.
+                </Button>
+             </CardFooter>
+          </Card>
+      )}
+
+      {(showManualForm || isEditMode) && (
+        <Form {...form}>
+          <form onSubmit={e => e.preventDefault()} className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Job Details</CardTitle>
+                <CardDescription>
+                  {isEditMode 
+                      ? "Update the details of your job posting."
+                      : (repostJobId 
+                          ? "Review and update the job details, then set a new deadline to re-list it."
+                          : "Fill in the details for your job posting. Use the AI generator for a quick start.")
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="jobTitle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Job Title</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., Install 8 IP Cameras for an Office"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="jobDescription"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Job Description</FormLabel>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleGenerateDetails}
+                          disabled={isGenerating || !isJobTitleValid}
+                        >
+                          {isGenerating ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Zap className="mr-2 h-4 w-4" />
+                          )}
+                          AI Generate
+                        </Button>
+                      </div>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Describe the project requirements, scope, and any important details..."
+                          className={cn("min-h-32", isGenerating && "opacity-50")}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                  <FormField
+                  control={form.control}
+                  name="skills"
+                  render={({ field }) => (
+                    <FormItem>
+                       <div className="flex items-center justify-between">
+                          <FormLabel>Required Skills</FormLabel>
+                           {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                       </div>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., IP Cameras, NVR Setup, Cabling"
+                          className={cn(isGenerating && "opacity-50")}
+                          {...field}
+                        />
+                      </FormControl>
+                       <FormDescription>
+                        Enter a comma-separated list of skills.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="isGstInvoiceRequired"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          GST Invoice Required
+                        </FormLabel>
+                        <FormDescription>
+                          Select this if you are a business and require a GST invoice for this job.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                 {!isEditMode && (
+                   <FormField
+                      control={form.control}
+                      name="attachments"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Attachments</FormLabel>
+                           <FormControl>
+                             <FileUpload 
+                                onFilesChange={(files) => field.onChange(files)} 
+                                maxFiles={5}
+                              />
+                          </FormControl>
+                          <FormDescription>Upload site photos, floor plans, or other relevant documents (max 5 files).</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                 )}
+                <Separator />
+                 <AddressForm
                     control={form.control}
-                    name="attachments"
+                    pincodeName="address.cityPincode"
+                    houseName="address.house"
+                    streetName="address.street"
+                    landmarkName="address.landmark"
+                    fullAddressName="address.fullAddress"
+                    onLocationGeocoded={setMapCenter}
+                    mapCenter={mapCenter}
+                    isMapLoaded={isMapLoaded}
+                  />
+                   <Separator />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                      control={form.control}
+                      name="deadline"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Bidding Deadline</FormLabel>
+                          <FormControl>
+                           <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardInstallerId} />
+                          </FormControl>
+                           <FormDescription>Not applicable if you are using Direct Award.</FormDescription>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+                   <FormField
+                      control={form.control}
+                      name="jobStartDate"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Job Work Start Date</FormLabel>
+                          <FormControl>
+                           <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} />
+                          </FormControl>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="budgetMin"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Attachments</FormLabel>
-                         <FormControl>
-                           <FileUpload 
-                              onFilesChange={(files) => field.onChange(files)} 
-                              maxFiles={5}
-                            />
+                        <div className="flex items-center justify-between">
+                          <FormLabel>Minimum Budget (₹)</FormLabel>                         {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                        </div>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 10000" {...field} className={cn(isGenerating && "opacity-50")} />
                         </FormControl>
-                        <FormDescription>Upload site photos, floor plans, or other relevant documents (max 5 files).</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-               )}
-              <Separator />
-               <AddressForm
-                  control={form.control}
-                  pincodeName="address.cityPincode"
-                  houseName="address.house"
-                  streetName="address.street"
-                  landmarkName="address.landmark"
-                  fullAddressName="address.fullAddress"
-                  onLocationGeocoded={setMapCenter}
-                  mapCenter={mapCenter}
-                  isMapLoaded={isMapLoaded}
-                />
-                 <Separator />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
+                  <FormField
                     control={form.control}
-                    name="deadline"
+                    name="budgetMax"
                     render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Bidding Deadline</FormLabel>
+                      <FormItem>
+                        <div className="flex items-center justify-between">
+                          <FormLabel>Maximum Budget (₹)</FormLabel>
+                          {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                        </div>
                         <FormControl>
-                         <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardInstallerId} />
-                        </FormControl>
-                         <FormDescription>Not applicable if you are using Direct Award.</FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="jobStartDate"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Job Work Start Date</FormLabel>
-                        <FormControl>
-                         <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} />
+                          <Input type="number" placeholder="e.g., 20000" {...field} className={cn(isGenerating && "opacity-50")} />
                         </FormControl>
                         <FormMessage />
-                    </FormItem>
+                      </FormItem>
                     )}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="budgetMin"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center justify-between">
-                        <FormLabel>Minimum Budget (₹)</FormLabel>                         {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                      </div>
-                      <FormControl>
-                        <Input type="number" placeholder="e.g., 10000" {...field} className={cn(isGenerating && "opacity-50")} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="budgetMax"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center justify-between">
-                        <FormLabel>Maximum Budget (₹)</FormLabel>
-                        {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                      </div>
-                      <FormControl>
-                        <Input type="number" placeholder="e.g., 20000" {...field} className={cn(isGenerating && "opacity-50")} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="travelTip"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Travel Tip (₹, Optional)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="e.g., 500" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Attract more bids by offering a commission-free travel tip.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
-           {!isEditMode && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <UserPlus className="h-5 w-5" />
-                            Direct Award (Optional)
-                        </CardTitle>
-                        <CardDescription>
-                            Know an installer you trust? Enter their public ID to award the job directly to them, skipping the public bidding process.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <DirectAwardInput control={form.control} />
-                    </CardContent>
-                </Card>
-           )}
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="outline" type="button" onClick={() => router.back()}>
-              Cancel
-            </Button>
-            <SubmitButton />
-          </div>
-        </form>
-      </Form>
+                  />
+                   <FormField
+                    control={form.control}
+                    name="travelTip"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Travel Tip (₹, Optional)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 500" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Attract more bids by offering a commission-free travel tip.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+             {!isEditMode && (
+                  <Card>
+                      <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                              <UserPlus className="h-5 w-5" />
+                              Direct Award (Optional)
+                          </CardTitle>
+                          <CardDescription>
+                              Know an installer you trust? Enter their public ID to award the job directly to them, skipping the public bidding process.
+                          </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <DirectAwardInput control={form.control} />
+                      </CardContent>
+                  </Card>
+             )}
+            <div className="flex items-center justify-end gap-2">
+              <Button variant="outline" type="button" onClick={() => router.back()}>
+                Cancel
+              </Button>
+              <SubmitButton />
+            </div>
+          </form>
+        </Form>
+      )}
     </div>
   );
 }
-
-    
