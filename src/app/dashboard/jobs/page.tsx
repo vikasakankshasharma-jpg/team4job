@@ -47,17 +47,16 @@ import { useRouter } from "next/navigation";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
 
-// Helper function to extract city from a full address string
-// This is a simple implementation and might need to be more robust for production
-const getCityFromAddress = (fullAddress: string | undefined): string | null => {
-    if (!fullAddress) return null;
+// Helper function to extract location parts from a full address string
+const getLocationParts = (fullAddress: string | undefined): { city: string | null; state: string | null } => {
+    if (!fullAddress) return { city: null, state: null };
     const parts = fullAddress.split(',').map(p => p.trim());
-    // Assuming city is the second to last part, before the state and pincode
     if (parts.length >= 3) {
-        // e.g., "123 Main St, Anytown, CA 12345" -> "Anytown"
-        return parts[parts.length - 3];
+        // e.g., "123 Main St, Anytown, CA 12345" -> city: "Anytown", state: "CA"
+        // Note: This is a simplified assumption. Real-world addresses can be more complex.
+        return { city: parts[parts.length - 2], state: parts[parts.length - 1].split(' ')[0] };
     }
-    return null;
+    return { city: null, state: null };
 }
 
 
@@ -177,14 +176,14 @@ export default function BrowseJobsPage() {
     if (!user?.installerProfile) return [];
     
     const installerSkills = new Set((user.installerProfile.skills || []).map(s => s.toLowerCase()));
-    const installerCity = getCityFromAddress(user.address?.fullAddress);
+    const { city: installerCity, state: installerState } = getLocationParts(user.address?.fullAddress);
 
     const scoredJobs = jobs // Includes both 'Open for Bidding' and 'Unbid'
         .map(job => {
             let score = 0;
-            let locationMatchType: 'pincode' | 'city' | null = null;
+            let locationMatchType: 'pincode' | 'city' | 'state' | null = null;
             
-            // --- Primary Match: Pincode ---
+            // --- Tier 1 Match: Pincode ---
             const residentialMatch = user.pincodes.residential && job.location.includes(user.pincodes.residential);
             const officeMatch = user.pincodes.office && job.location.includes(user.pincodes.office);
 
@@ -197,21 +196,27 @@ export default function BrowseJobsPage() {
                 score += 20; // High score for direct pincode match
             }
 
-            // --- Secondary Match: City (for Unbid or Promoted jobs) ---
+            // --- Tier 2 & 3: City & State for Unbid/Promoted jobs ---
             const isPromoted = (job.travelTip || 0) > 0;
             if (job.status === 'Unbid' || isPromoted) {
-                if (installerCity) {
-                    const jobCity = getCityFromAddress(job.fullAddress);
-                    if (jobCity && jobCity.toLowerCase() === installerCity.toLowerCase()) {
-                        if (!locationMatchType) { // Only score if not already matched by pincode
-                          locationMatchType = 'city';
-                          score += 10; // Lower score for city match
-                        }
+                 const { city: jobCity, state: jobState } = getLocationParts(job.fullAddress);
+
+                 // Tier 2: City Match
+                if (installerCity && jobCity && jobCity.toLowerCase() === installerCity.toLowerCase()) {
+                    if (!locationMatchType) { // Only score if not already matched by pincode
+                      locationMatchType = 'city';
+                      score += 10;
+                    }
+                // Tier 3: State Match
+                } else if (installerState && jobState && jobState.toLowerCase() === installerState.toLowerCase()) {
+                    if (!locationMatchType) { // Only score if not matched by pincode or city
+                        locationMatchType = 'state';
+                        score += 5; 
                     }
                 }
             }
 
-            if (!locationMatchType) return null; // Exclude if no location match
+            if (!locationMatchType) return null; // Exclude if no location match at all
 
             if (job.status === 'Unbid') {
                 score += 5; // Boost unbid jobs to surface them
