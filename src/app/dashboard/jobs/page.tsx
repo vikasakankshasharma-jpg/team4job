@@ -46,6 +46,7 @@ import type { Job, User } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
+import { useSearch } from "@/hooks/use-search";
 
 // Helper function to extract location parts from a full address string
 const getLocationParts = (fullAddress: string | undefined): { city: string | null; state: string | null } => {
@@ -54,7 +55,9 @@ const getLocationParts = (fullAddress: string | undefined): { city: string | nul
     if (parts.length >= 3) {
         // e.g., "123 Main St, Anytown, CA 12345" -> city: "Anytown", state: "CA"
         // Note: This is a simplified assumption. Real-world addresses can be more complex.
-        return { city: parts[parts.length - 2], state: parts[parts.length - 1].split(' ')[0] };
+        const stateAndZip = parts[parts.length - 1].split(' ');
+        const state = stateAndZip.length > 1 ? stateAndZip[0] : parts[parts.length-1];
+        return { city: parts[parts.length - 2], state: state };
     }
     return { city: null, state: null };
 }
@@ -66,7 +69,7 @@ export default function BrowseJobsPage() {
   const router = useRouter();
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [searchPincode, setSearchPincode] = React.useState("");
+  const { searchQuery } = useSearch();
   const [budget, setBudget] = React.useState([0, 150000]);
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
   const [recommendedPincodeFilter, setRecommendedPincodeFilter] = React.useState("all");
@@ -149,8 +152,8 @@ export default function BrowseJobsPage() {
   
   const filterJobs = (jobsToFilter: Job[]) => {
     return jobsToFilter.filter((job) => {
-        // Pincode filter
-        if (searchPincode !== "" && !job.location.includes(searchPincode)) {
+        // Pincode filter from global search
+        if (searchQuery !== "" && !job.location.includes(searchQuery)) {
             return false;
         }
         // Budget filter
@@ -241,7 +244,6 @@ export default function BrowseJobsPage() {
   const filteredRecommendedJobs = filterJobs(recommendedJobs);
 
   const clearFilters = () => {
-    setSearchPincode("");
     setBudget([0, 150000]);
     setSelectedSkills([]);
   }
@@ -255,7 +257,6 @@ export default function BrowseJobsPage() {
   };
   
   const activeFiltersCount = [
-    searchPincode !== "", 
     budget[0] !== 0 || budget[1] !== 150000,
     selectedSkills.length > 0
   ].filter(Boolean).length;
@@ -332,17 +333,7 @@ export default function BrowseJobsPage() {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-            <div className="relative">
-                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                 <Input 
-                    type="search" 
-                    placeholder="Search by Pincode..." 
-                    className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px] h-8"
-                    value={searchPincode}
-                    onChange={(e) => setSearchPincode(e.target.value)}
-                 />
-            </div>
-             {activeFiltersCount > 0 && (
+            {activeFiltersCount > 0 && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 <X className="h-4 w-4 mr-1" />
                 Clear
@@ -372,7 +363,7 @@ export default function BrowseJobsPage() {
             </CardContent>
             <CardFooter>
                <div className="text-xs text-muted-foreground">
-                Showing <strong>1-{filteredJobs.length}</strong> of <strong>{openForBiddingJobs.length}</strong> jobs
+                Showing <strong>{filteredJobs.length}</strong> of <strong>{openForBiddingJobs.length}</strong> open jobs
               </div>
             </CardFooter>
           </Card>
@@ -415,7 +406,7 @@ export default function BrowseJobsPage() {
             </CardContent>
             <CardFooter>
                <div className="text-xs text-muted-foreground">
-                Showing <strong>{filteredRecommendedJobs.length}</strong> of <strong>{recommendedJobs.length}</strong> recommended jobs
+                Showing <strong>{filteredRecommendedJobs.length}</strong> recommended jobs
               </div>
             </CardFooter>
           </Card>
