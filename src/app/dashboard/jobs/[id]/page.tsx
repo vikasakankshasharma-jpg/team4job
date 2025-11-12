@@ -905,8 +905,44 @@ function DateChangeProposalSection({ job, user, onJobUpdate }: { job: Job, user:
             </CardHeader>
             {!isProposer && (
                 <CardFooter className="flex justify-end gap-2">
-                    <Button variant="destructive" onClick={handleDecline}>Decline</Button>
-                    <Button onClick={handleAccept}>Accept</Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive">Decline</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will decline the proposed date change. The original start date will be kept.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDecline} className={cn(buttonVariants({ variant: 'destructive' }))}>
+                                    Confirm Decline
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button>Accept</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Accept Date Change?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will officially change the job start date to {format(toDate(job.dateChangeProposal.newDate), "PPP")}. Are you sure?
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleAccept}>
+                                    Yes, Accept
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </CardFooter>
             )}
         </Card>
