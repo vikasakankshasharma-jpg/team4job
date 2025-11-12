@@ -104,6 +104,16 @@ export type Invoice = {
   };
 }
 
+export type AdditionalTask = {
+  id: string;
+  description: string;
+  status: 'pending-quote' | 'quoted' | 'approved' | 'declined';
+  quoteAmount?: number;
+  quoteDetails?: string;
+  createdBy: 'Job Giver' | 'Installer';
+  createdAt: Date | Timestamp;
+}
+
 export type Job = {
   id:string;
   title: string;
@@ -141,6 +151,7 @@ export type Job = {
   disputeId?: string;
   attachments?: JobAttachment[];
   invoice?: Invoice;
+  additionalTasks?: AdditionalTask[];
   comments: Comment[];
   privateMessages?: PrivateMessage[];
 };
