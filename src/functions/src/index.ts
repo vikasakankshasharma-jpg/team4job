@@ -1,5 +1,4 @@
 
-
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as express from "express";
@@ -330,7 +329,7 @@ export const onJobDateChange = functions.firestore
 
 /**
  * Handles scheduled cleanup of jobs where the award offer has expired.
- * Runs every hour.
+ * Runs every hour. This function is now strategy-aware.
  */
 export const handleExpiredAwards = functions.pubsub.schedule('every 1 hours').onRun(async (context) => {
     console.log('Running scheduled function to handle expired job awards...');
@@ -347,34 +346,54 @@ export const handleExpiredAwards = functions.pubsub.schedule('every 1 hours').on
         return null;
     }
 
-    const batch = admin.firestore().batch();
-    const notificationPromises: Promise<void>[] = [];
-
-    snapshot.docs.forEach(doc => {
+    for (const doc of snapshot.docs) {
         const job = doc.data();
-        console.log(`Reverting job ${doc.id} to 'Bidding Closed' due to expired award.`);
+        const remainingInstallers = (job.selectedInstallers || [])
+            .filter((s: { installerId: string }) => s.installerId !== job.awardedInstaller?.id)
+            .sort((a: { rank: number }, b: { rank: number }) => a.rank - b.rank);
+        
+        const isSequential = remainingInstallers.some((s: { rank: number }) => s.rank > 1);
+        
+        if (isSequential && remainingInstallers.length > 0) {
+            // --- Sequential Strategy: Offer to next in line ---
+            const nextInstaller = remainingInstallers[0];
+            const newAcceptanceDeadline = admin.firestore.Timestamp.fromMillis(now.toMillis() + 24 * 60 * 60 * 1000);
+            
+            console.log(`Job ${doc.id}: Sequential offer expired for ${job.awardedInstaller?.id}. Offering to next installer: ${nextInstaller.installerId}`);
 
-        const timedOutInstallerIds = (job.selectedInstallers || []).map((s: { installerId: string; }) => s.installerId);
+            await doc.ref.update({
+                awardedInstaller: admin.firestore().doc(`users/${nextInstaller.installerId}`),
+                acceptanceDeadline: newAcceptanceDeadline
+            });
 
-        batch.update(doc.ref, {
-            status: 'Bidding Closed',
-            awardedInstaller: admin.firestore.FieldValue.delete(),
-            acceptanceDeadline: admin.firestore.FieldValue.delete(),
-            selectedInstallers: [],
-            disqualifiedInstallerIds: admin.firestore.FieldValue.arrayUnion(...timedOutInstallerIds),
-        });
+            // Notify the next installer
+            await sendNotification(
+                nextInstaller.installerId,
+                'You Have a New Job Offer!',
+                `You have received an offer for the job: "${job.title}". Please respond within 24 hours.`,
+                `/dashboard/jobs/${doc.id}`
+            );
 
-        // Notify Job Giver that the offer expired
-        notificationPromises.push(sendNotification(
-            job.jobGiver.id,
-            'Offer Expired',
-            `Your offer for job "${job.title}" expired without being accepted. You can now award it to another installer.`,
-            `/dashboard/jobs/${doc.id}`
-        ));
-    });
+        } else {
+            // --- Simultaneous Strategy or End of Sequential List ---
+            console.log(`Job ${doc.id}: All offers expired or simultaneous offer timed out. Reverting to 'Bidding Closed'.`);
 
-    await batch.commit();
-    await Promise.all(notificationPromises);
+            await doc.ref.update({
+                status: 'Bidding Closed',
+                awardedInstaller: admin.firestore.FieldValue.delete(),
+                acceptanceDeadline: admin.firestore.FieldValue.delete(),
+                selectedInstallers: [] // Clear selections
+            });
+
+            // Notify Job Giver that the offer(s) expired
+            await sendNotification(
+                job.jobGiver.id,
+                'Offer(s) Expired',
+                `Your offer(s) for job "${job.title}" expired without being accepted. You can now award it to another installer.`,
+                `/dashboard/jobs/${doc.id}`
+            );
+        }
+    }
 
     console.log(`Processed ${snapshot.size} expired awards.`);
     return null;
