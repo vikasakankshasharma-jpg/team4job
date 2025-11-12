@@ -76,10 +76,12 @@ import {
   Check,
   Edit,
   Plus,
+  BrainCircuit,
+  Lightbulb,
 } from "lucide-react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import React from "react";
-import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
+import { analyzeBidsFlow, AnalyzeBidsOutput } from "@/ai/flows/analyze-bids";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bid, Job, Comment, User, JobAttachment, PrivateMessage, Dispute, Transaction, Invoice, PlatformSettings, AdditionalTask } from "@/lib/types";
@@ -560,6 +562,8 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
     const { toast } = useToast();
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>([]);
     const [isSendingOffers, setIsSendingOffers] = React.useState(false);
+    const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+    const [analysisResult, setAnalysisResult] = React.useState<AnalyzeBidsOutput | null>(null);
 
     const handleSelectInstaller = (id: string) => {
         setSelectedInstallers(prev => {
@@ -577,6 +581,34 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
             return prev;
         });
     }
+
+    const handleAnalyzeBids = async () => {
+        setIsAnalyzing(true);
+        try {
+            const bidderProfiles = job.bids.map(bid => {
+                const installer = bid.installer as User;
+                return {
+                    anonymousId: anonymousIdMap.get(installer.id) || 'Unknown Bidder',
+                    bidAmount: bid.amount,
+                    tier: installer.installerProfile?.tier || 'Bronze',
+                    rating: installer.installerProfile?.rating || 0,
+                    reviewCount: installer.installerProfile?.reviews || 0,
+                };
+            });
+
+            const result = await analyzeBidsFlow({
+                jobTitle: job.title,
+                jobDescription: job.description,
+                bidders: bidderProfiles,
+            });
+            setAnalysisResult(result);
+        } catch (error) {
+            console.error("Error analyzing bids:", error);
+            toast({ title: "Analysis Failed", description: "Could not get AI-powered analysis. Please try again.", variant: "destructive" });
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
 
     const handleSendOffers = async () => {
         if (selectedInstallers.length === 0) {
@@ -618,12 +650,54 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
                   'Select up to 3 installers to send offers to. The first to accept wins the job.'}
                 </CardDescription>
             </div>
-            {!isJobAwarded && (
-                <Button onClick={handleSendOffers} disabled={isSendingOffers || selectedInstallers.length === 0}>
-                    {isSendingOffers && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Send Offers to Selected ({selectedInstallers.length})
-                </Button>
-            )}
+            <div className="flex gap-2">
+                 {job.bids && job.bids.length > 1 && !isJobAwarded && (
+                     <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" onClick={handleAnalyzeBids} disabled={isAnalyzing}>
+                                {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                Analyze Bids with AI
+                            </Button>
+                        </DialogTrigger>
+                        {analysisResult && (
+                             <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                    <DialogTitle>AI Bid Analysis</DialogTitle>
+                                    <DialogDescription>{analysisResult.summary}</DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+                                    <div className="p-4 rounded-lg border border-primary/50 bg-primary/5">
+                                        <h3 className="font-semibold flex items-center gap-2"><Trophy className="h-5 w-5 text-primary"/> Top Recommendation: {analysisResult.topRecommendation.anonymousId}</h3>
+                                        <p className="text-sm text-muted-foreground mt-1">{analysisResult.topRecommendation.reasoning}</p>
+                                    </div>
+                                     <div className="p-4 rounded-lg border border-green-500/50 bg-green-500/5">
+                                        <h3 className="font-semibold flex items-center gap-2"><Lightbulb className="h-5 w-5 text-green-600"/> Best Value: {analysisResult.bestValue.anonymousId}</h3>
+                                        <p className="text-sm text-muted-foreground mt-1">{analysisResult.bestValue.reasoning}</p>
+                                    </div>
+                                    {analysisResult.redFlags.length > 0 && (
+                                        <div className="p-4 rounded-lg border border-destructive/50 bg-destructive/5">
+                                            <h3 className="font-semibold flex items-center gap-2"><AlertOctagon className="h-5 w-5 text-destructive"/> Potential Red Flags</h3>
+                                            <ul className="mt-2 space-y-2">
+                                                {analysisResult.redFlags.map(flag => (
+                                                    <li key={flag.anonymousId} className="text-sm text-muted-foreground">
+                                                        <strong className="text-foreground">{flag.anonymousId}:</strong> {flag.concern}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            </DialogContent>
+                        )}
+                     </Dialog>
+                 )}
+                {!isJobAwarded && (
+                    <Button onClick={handleSendOffers} disabled={isSendingOffers || selectedInstallers.length === 0}>
+                        {isSendingOffers && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Send Offers to Selected ({selectedInstallers.length})
+                    </Button>
+                )}
+            </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
