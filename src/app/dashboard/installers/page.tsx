@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { allSkills } from '@/lib/data';
 import { toDate } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-5 w-5 text-yellow-700" />,
@@ -265,6 +266,7 @@ export default function FindInstallersPage() {
         </div>
       </CardHeader>
       <CardContent>
+        <TooltipProvider>
          {loading ? (
              <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin"/></div>
          ) : filteredInstallers.length > 0 ? (
@@ -276,6 +278,7 @@ export default function FindInstallersPage() {
          ) : (
              <p className="text-muted-foreground text-center py-8">No installers found matching your criteria.</p>
          )}
+         </TooltipProvider>
       </CardContent>
     </Card>
   );
