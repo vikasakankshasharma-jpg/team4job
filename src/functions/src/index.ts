@@ -315,9 +315,9 @@ export const onJobDateChange = functions.firestore
         }
 
         // Date Change Accepted/Rejected
-        if (beforeData.dateChangeProposal && beforeData.dateChangeProposal.status === 'pending' && !afterData.dateChangeProposal) {
-            const proposerId = beforeData.dateChangeProposal.proposedBy === 'Job Giver' ? afterData.jobGiver.id : afterData.awardedInstaller.id;
+        if (beforeData.dateChangeProposal && beforeData.dateChangeProposal.status === 'pending' && (!afterData.dateChangeProposal || afterData.dateChangeProposal.status !== 'pending')) {
             const wasAccepted = afterData.jobStartDate !== beforeData.jobStartDate;
+            const proposerId = beforeData.dateChangeProposal.proposedBy === 'Job Giver' ? afterData.jobGiver.id : afterData.awardedInstaller.id;
             
             await sendNotification(
                 proposerId,

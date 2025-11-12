@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -74,13 +75,14 @@ import {
   Gift,
   Check,
   Edit,
+  Plus,
 } from "lucide-react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import React from "react";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bid, Job, Comment, User, JobAttachment, PrivateMessage, Dispute, Transaction, Invoice, PlatformSettings } from "@/lib/types";
+import { Bid, Job, Comment, User, JobAttachment, PrivateMessage, Dispute, Transaction, Invoice, PlatformSettings, AdditionalTask } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate, cn, validateMessageContent } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -911,6 +913,167 @@ function DateChangeProposalSection({ job, user, onJobUpdate }: { job: Job, user:
     );
 }
 
+function AdditionalTasksSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
+    const isInstaller = user.roles.includes('Installer');
+    const isJobGiver = user.roles.includes('Job Giver');
+    const [openTaskDialog, setOpenTaskDialog] = React.useState(false);
+    const [openQuoteDialog, setOpenQuoteDialog] = React.useState<string | null>(null);
+    const [newTaskDescription, setNewTaskDescription] = React.useState("");
+    const [quoteAmount, setQuoteAmount] = React.useState<number | "">("");
+    const [quoteDetails, setQuoteDetails] = React.useState("");
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const { toast } = useToast();
+
+    const handleAddTask = () => {
+        if (!newTaskDescription.trim()) return;
+        
+        const newTask: AdditionalTask = {
+            id: `TASK-${Date.now()}`,
+            description: newTaskDescription,
+            status: 'pending-quote',
+            createdBy: isJobGiver ? 'Job Giver' : 'Installer',
+            createdAt: new Date(),
+        };
+
+        const updatedTasks = [...(job.additionalTasks || []), newTask];
+        onJobUpdate({ additionalTasks: updatedTasks });
+        setNewTaskDescription("");
+        setOpenTaskDialog(false);
+    };
+    
+    const handleSubmitQuote = (taskId: string) => {
+        if (quoteAmount === "" || quoteAmount <= 0) return;
+        
+        const updatedTasks = (job.additionalTasks || []).map(task => {
+            if (task.id === taskId) {
+                return { ...task, status: 'quoted' as const, quoteAmount: Number(quoteAmount), quoteDetails };
+            }
+            return task;
+        });
+
+        onJobUpdate({ additionalTasks: updatedTasks });
+        setQuoteAmount("");
+        setQuoteDetails("");
+        setOpenQuoteDialog(null);
+    };
+
+    const handleApproveQuote = (taskId: string) => {
+        // In a real implementation, this would trigger a payment flow.
+        // For now, we'll just update the status.
+        toast({
+            title: "Quote Approved (Simulation)",
+            description: "In a real app, you would now be redirected to payment.",
+        });
+        
+        const updatedTasks = (job.additionalTasks || []).map(task => 
+            task.id === taskId ? { ...task, status: 'approved' as const } : task
+        );
+        onJobUpdate({ additionalTasks: updatedTasks });
+    };
+    
+     const handleDeclineQuote = (taskId: string) => {
+        const updatedTasks = (job.additionalTasks || []).map(task => 
+            task.id === taskId ? { ...task, status: 'declined' as const } : task
+        );
+        onJobUpdate({ additionalTasks: updatedTasks });
+    };
+
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Additional Tasks</CardTitle>
+                    <CardDescription>Manage changes to the job scope.</CardDescription>
+                </div>
+                <Dialog open={openTaskDialog} onOpenChange={setOpenTaskDialog}>
+                    <DialogTrigger asChild>
+                         <Button variant="outline" size="sm"><Plus className="mr-2 h-4 w-4" /> Add Task</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Add an Additional Task</DialogTitle>
+                            <DialogDescription>Describe the new work required. The other party will be prompted to provide or approve a quote.</DialogDescription>
+                        </DialogHeader>
+                         <div className="py-4 space-y-2">
+                             <Label htmlFor="task-desc">Task Description</Label>
+                             <Textarea id="task-desc" value={newTaskDescription} onChange={(e) => setNewTaskDescription(e.target.value)} placeholder="e.g., Install one more camera in the back office."/>
+                         </div>
+                        <DialogFooter>
+                            <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
+                            <Button onClick={handleAddTask} disabled={!newTaskDescription.trim()}>Add Task</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </CardHeader>
+            <CardContent>
+                {(job.additionalTasks || []).length > 0 ? (
+                    <div className="space-y-4">
+                        {(job.additionalTasks || []).map(task => (
+                            <div key={task.id} className="p-4 border rounded-lg space-y-3">
+                                <p className="font-semibold">{task.description}</p>
+                                <div className="text-xs text-muted-foreground">Requested by {task.createdBy} on {format(toDate(task.createdAt), "PP")}</div>
+                                
+                                {task.status === 'pending-quote' && (
+                                    isInstaller ? (
+                                        <Dialog open={openQuoteDialog === task.id} onOpenChange={(isOpen) => !isOpen && setOpenQuoteDialog(null)}>
+                                            <DialogTrigger asChild>
+                                                <Button size="sm" onClick={() => setOpenQuoteDialog(task.id)}>Submit Quote</Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Submit Quote for Additional Task</DialogTitle>
+                                                    <DialogDescription>{task.description}</DialogDescription>
+                                                </DialogHeader>
+                                                <div className="py-4 space-y-4">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="quote-amount">Quote Amount (₹)</Label>
+                                                        <Input id="quote-amount" type="number" value={quoteAmount} onChange={e => setQuoteAmount(Number(e.target.value))} />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="quote-details">Details (Optional)</Label>
+                                                        <Textarea id="quote-details" value={quoteDetails} onChange={e => setQuoteDetails(e.target.value)} placeholder="e.g., Includes cost of camera and extra cabling." />
+                                                    </div>
+                                                </div>
+                                                <DialogFooter>
+                                                    <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
+                                                    <Button onClick={() => handleSubmitQuote(task.id)}>Submit Quote</Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
+                                    ) : <Badge variant="outline">Awaiting Quote from Installer</Badge>
+                                )}
+                                
+                                {task.status === 'quoted' && (
+                                     <Card className="bg-secondary/50 p-4">
+                                        <CardHeader className="p-0 pb-2">
+                                            <CardTitle className="text-base">Quote Received</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-0 space-y-2">
+                                            <p className="text-2xl font-bold">₹{task.quoteAmount?.toLocaleString()}</p>
+                                            {task.quoteDetails && <p className="text-sm text-muted-foreground italic">"{task.quoteDetails}"</p>}
+                                            {isJobGiver && (
+                                                 <div className="flex gap-2 pt-2">
+                                                    <Button size="sm" onClick={() => handleApproveQuote(task.id)}>Approve & Pay</Button>
+                                                    <Button size="sm" variant="destructive" onClick={() => handleDeclineQuote(task.id)}>Decline</Button>
+                                                 </div>
+                                            )}
+                                        </CardContent>
+                                     </Card>
+                                )}
+                                
+                                {task.status === 'approved' && <Badge variant="success">Approved</Badge>}
+                                {task.status === 'declined' && <Badge variant="destructive">Declined</Badge>}
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No additional tasks have been added.</p>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 
 const getRefId = (ref: any): string | null => {
     if (!ref) return null;
@@ -1611,6 +1774,10 @@ export default function JobDetailPage() {
 
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
         {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && job.status !== "Awarded" && job.status !== "In Progress" && job.status !== "Completed" && job.status !== "Pending Funding" && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
+        
+        {job.status === 'In Progress' && (isJobGiver || isAwardedInstaller) && (
+            <AdditionalTasksSection job={job} user={user} onJobUpdate={handleJobUpdate} />
+        )}
 
       </div>
 

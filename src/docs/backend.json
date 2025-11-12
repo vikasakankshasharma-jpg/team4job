@@ -344,6 +344,12 @@
         "invoice": {
           "$ref": "#/entities/Invoice"
         },
+        "additionalTasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/AdditionalTask"
+          }
+        },
         "comments": {
           "type": "array",
           "items": {
@@ -379,6 +385,21 @@
         "fileType": { "type": "string" }
       },
       "required": ["fileName", "fileUrl", "fileType"]
+    },
+    "AdditionalTask": {
+      "title": "Additional Task",
+      "description": "Represents an additional task or scope change requested during an in-progress job.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending-quote", "quoted", "approved", "declined"] },
+        "quoteAmount": { "type": "number" },
+        "quoteDetails": { "type": "string" },
+        "createdBy": { "type": "string", "enum": ["Job Giver", "Installer"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "description", "status", "createdBy", "createdAt"]
     },
      "Invoice": {
       "title": "Invoice",
@@ -699,6 +720,7 @@
     }
   }
 }
+
 
 
 
