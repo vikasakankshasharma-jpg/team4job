@@ -137,7 +137,7 @@ export default function BrowseJobsPage() {
                     </li>
                      <li>
                         <span className="font-semibold">Clear Filters:</span> If you have any filters active, a "Clear" button will appear. Click it to reset your search and see all available jobs again.
-                    </li>
+                     </li>
                     <li>
                         <span className="font-semibold">Recommended Tab:</span> This tab includes "Unbid" jobs in your area, giving you a second chance at opportunities you may have missed.
                     </li>
@@ -197,13 +197,16 @@ export default function BrowseJobsPage() {
                 score += 20; // High score for direct pincode match
             }
 
-            // --- Secondary Match: City (for Unbid jobs) ---
-            if (job.status === 'Unbid' && installerCity) {
-                const jobCity = getCityFromAddress(job.fullAddress);
-                if (jobCity && jobCity.toLowerCase() === installerCity.toLowerCase()) {
-                    if (!locationMatchType) { // Only if not already matched by pincode
-                      locationMatchType = 'city';
-                      score += 10; // Lower score for city match
+            // --- Secondary Match: City (for Unbid or Promoted jobs) ---
+            const isPromoted = (job.travelTip || 0) > 0;
+            if (job.status === 'Unbid' || isPromoted) {
+                if (installerCity) {
+                    const jobCity = getCityFromAddress(job.fullAddress);
+                    if (jobCity && jobCity.toLowerCase() === installerCity.toLowerCase()) {
+                        if (!locationMatchType) { // Only score if not already matched by pincode
+                          locationMatchType = 'city';
+                          score += 10; // Lower score for city match
+                        }
                     }
                 }
             }
@@ -212,6 +215,9 @@ export default function BrowseJobsPage() {
 
             if (job.status === 'Unbid') {
                 score += 5; // Boost unbid jobs to surface them
+            }
+            if (isPromoted) {
+                score += 10; // Extra boost for promoted jobs
             }
 
             if (job.skills && job.skills.length > 0) {
