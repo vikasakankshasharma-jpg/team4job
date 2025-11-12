@@ -70,7 +70,7 @@ const supportTeamNavItems = [
 
 export function Header() {
   const pathname = usePathname();
-  const { role } = useUser();
+  const { user, role } = useUser();
   const { searchQuery, setSearchQuery } = useSearch();
   
   const getNavItems = () => {
@@ -92,36 +92,14 @@ export function Header() {
   const breadcrumbSegments = pathname.split('/').filter(Boolean);
 
   const renderBreadcrumbs = () => {
-    if (role === 'Admin') {
-      if (pathname.startsWith('/dashboard/users/')) {
-        return (
-          <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/dashboard/users">Users</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{breadcrumbSegments[breadcrumbSegments.length - 1]}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </>
-        );
+    // This logic can become complex. For now, a simplified version.
+    return breadcrumbSegments.slice(1).map((segment, index) => {
+       // Stop rendering after a dynamic ID segment for cleaner breadcrumbs
+      if (breadcrumbSegments.length > 2 && index > 0) {
+          if(index === 1 && segment.length > 20) return null; // Likely a firestore ID
+          if(index > 1) return null;
       }
-       if(pathname.startsWith('/dashboard/users')) {
-         return (
-          <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Users</BreadcrumbPage>
-            </BreadcrumbItem>
-          </>
-        );
-      }
-    }
-
-    return breadcrumbSegments.slice(1).map((segment, index) => (
+      return (
         <React.Fragment key={segment}>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
@@ -134,7 +112,36 @@ export function Header() {
             )}
         </BreadcrumbItem>
         </React.Fragment>
-    ))
+      )
+    })
+  }
+
+  const renderContextualActions = () => {
+    if (role === 'Job Giver') {
+        return (
+            <Button size="sm" className="h-8 gap-1" asChild>
+                <Link href="/dashboard/post-job">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Post New Job
+                    </span>
+                </Link>
+            </Button>
+        );
+    }
+    if (role === 'Installer') {
+        return (
+             <Button size="sm" className="h-8 gap-1" asChild>
+                <Link href="/dashboard/jobs">
+                    <Search className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Browse Jobs
+                    </span>
+                </Link>
+            </Button>
+        );
+    }
+    return null;
   }
 
   return (
@@ -202,26 +209,33 @@ export function Header() {
             {renderBreadcrumbs()}
           </BreadcrumbList>
         </Breadcrumb>
-        <Badge variant="outline">Beta</Badge>
+        {user?.subscription?.planId === 'trial' && <Badge variant="outline">Trial</Badge>}
       </div>
       <div className="relative ml-auto flex items-center gap-2 md:grow-0">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search..."
-          className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+         {pathname.startsWith('/dashboard/users') || pathname.startsWith('/dashboard/jobs') || pathname.startsWith('/dashboard/all-jobs') ? (
+            <>
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                type="search"
+                placeholder="Search..."
+                className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </>
+         ) : <div className="md:grow"></div>}
       </div>
-      <HelpDialog>
-        <Button variant="outline" size="icon">
-          <HelpCircle className="h-5 w-5" />
-          <span className="sr-only">Help</span>
-        </Button>
-      </HelpDialog>
-      <ThemeToggle />
-      <UserNav />
+      <div className="flex items-center gap-2">
+        {renderContextualActions()}
+        <HelpDialog>
+            <Button variant="outline" size="icon">
+            <HelpCircle className="h-5 w-5" />
+            <span className="sr-only">Help</span>
+            </Button>
+        </HelpDialog>
+        <ThemeToggle />
+        <UserNav />
+      </div>
     </header>
   );
 }
