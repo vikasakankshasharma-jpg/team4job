@@ -97,6 +97,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { InstallerAcceptanceSection, tierIcons } from "@/components/job/installer-acceptance-section";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 
 declare const cashfree: any;
@@ -367,21 +368,6 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   const installer = user.installerProfile;
   if (!installer) return null;
 
-  const isDisqualified = (job.disqualifiedInstallerIds || []).includes(user.id);
-  
-  if (isDisqualified) {
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Bidding Unavailable</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-destructive">You are not eligible to bid on this job because you previously declined or timed out on an offer.</p>
-            </CardContent>
-        </Card>
-    )
-  }
-
   const handlePlaceBid = async () => {
     if (!bidAmount || !bidProposal) {
       toast({ title: "Missing Information", description: "Please provide both a bid amount and a proposal.", variant: "destructive" });
@@ -504,7 +490,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   );
 }
 
-function JobGiverBid({ bid, job, anonymousId, selected, onSelect, isDisabled, isDisqualified, onGrantSecondChance }: { bid: Bid, job: Job, anonymousId: string, selected: boolean, onSelect: (id: string) => void, isDisabled: boolean, isDisqualified: boolean, onGrantSecondChance: (id: string) => void }) {
+function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequentiallySelected }: { bid: Bid, job: Job, anonymousId: string, selected: boolean, onSelect: (id: string) => void, rank?: number, isSequentiallySelected?: boolean }) {
     const { role } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
@@ -515,7 +501,6 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, isDisabled, is
         }
     }, [bid.timestamp]);
     
-    const isJobGiver = role === 'Job Giver';
     const identitiesRevealed = job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' || role === 'Admin';
 
     const installerName = identitiesRevealed ? installer.name : anonymousId;
@@ -523,10 +508,10 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, isDisabled, is
     const avatarFallback = identitiesRevealed ? installer.name.substring(0, 2) : anonymousId.split('-')[1];
 
     return (
-        <div className={cn("p-4 rounded-lg border flex gap-4", selected && 'border-primary bg-primary/5', isDisqualified && 'bg-muted/50 opacity-60')}>
-             {isJobGiver && job.status === 'Bidding Closed' && !isDisqualified && (
-                 <Checkbox id={`select-${installer.id}`} checked={selected} onCheckedChange={() => onSelect(installer.id)} className="mt-1" disabled={isDisabled && !selected} />
-            )}
+        <div className={cn("relative p-4 rounded-lg border flex gap-4 transition-all", selected && 'border-primary bg-primary/5', isSequentiallySelected && 'ring-2 ring-primary')}>
+             {isSequentiallySelected && rank && (
+                <div className="absolute -top-3 -left-3 h-7 w-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">{rank}</div>
+             )}
             <div className="flex-1">
                 <div className="flex justify-between items-start">
                     <div className="flex items-center gap-3">
@@ -557,14 +542,6 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, isDisabled, is
                     </div>
                 </div>
                 <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
-                 {isDisqualified && (
-                    <div className="mt-3 flex items-center justify-between rounded-md bg-destructive/10 border border-destructive/20 p-2">
-                        <p className="text-xs font-semibold text-destructive">Offer expired. This installer did not accept in time.</p>
-                        <Button variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs" onClick={() => onGrantSecondChance(installer.id)}>
-                            <Unlock className="mr-1.5 h-3 w-3" /> Grant Second Chance
-                        </Button>
-                    </div>
-                 )}
             </div>
         </div>
     );
@@ -574,28 +551,52 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
     const { user, db } = useUser();
     const { toast } = useToast();
     const router = useRouter();
+    
+    const [awardStrategy, setAwardStrategy] = React.useState<'simultaneous' | 'sequential'>('simultaneous');
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>([]);
+
     const [isSendingOffers, setIsSendingOffers] = React.useState(false);
     const [isAnalyzing, setIsAnalyzing] = React.useState(false);
     const [analysisResult, setAnalysisResult] = React.useState<AnalyzeBidsOutput | null>(null);
 
     const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
+    
+    React.useEffect(() => {
+        setSelectedInstallers([]);
+    }, [awardStrategy]);
 
     const handleSelectInstaller = (id: string) => {
-        setSelectedInstallers(prev => {
-            if (prev.includes(id)) {
-                return prev.filter(i => i !== id);
-            }
-            if (prev.length < 3) {
-                return [...prev, id];
-            }
-            toast({
-                title: "Selection Limit Reached",
-                description: "You can select a maximum of 3 installers to send offers to.",
-                variant: "destructive"
+        if(awardStrategy === 'simultaneous') {
+            setSelectedInstallers(prev => {
+                if (prev.includes(id)) {
+                    return prev.filter(i => i !== id);
+                }
+                if (prev.length < 3) {
+                    return [...prev, id];
+                }
+                toast({
+                    title: "Selection Limit Reached",
+                    description: "You can select a maximum of 3 installers to send offers to.",
+                    variant: "destructive"
+                });
+                return prev;
             });
-            return prev;
-        });
+        } else { // sequential
+            setSelectedInstallers(prev => {
+                if (prev.includes(id)) {
+                    return prev.filter(i => i !== id);
+                }
+                if (prev.length < 3) {
+                    return [...prev, id];
+                }
+                 toast({
+                    title: "Ranking Limit Reached",
+                    description: "You can rank a maximum of 3 installers.",
+                    variant: "destructive"
+                });
+                return prev;
+            });
+        }
     }
 
     const handleAnalyzeBids = async () => {
@@ -642,23 +643,20 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
 
         const update: Partial<Job> = {
             status: "Awarded",
-            selectedInstallers: selectedInstallers.map((id, index) => ({ installerId: id, rank: index + 1 })),
+            selectedInstallers: selectedInstallers.map((id, index) => ({ 
+                installerId: id, 
+                rank: awardStrategy === 'sequential' ? index + 1 : 1 
+            })),
             acceptanceDeadline,
         };
         await onJobUpdate(update);
         toast({
             title: "Offers Sent!",
-            description: `Offers have been sent to ${selectedInstallers.length} installer(s). The first one to accept gets the job.`,
+            description: awardStrategy === 'simultaneous'
+                ? `Offers sent to ${selectedInstallers.length} installer(s). First to accept wins.`
+                : `Offer sent to your #1 ranked installer. They have 24 hours to respond.`,
         });
         setIsSendingOffers(false);
-    };
-
-    const handleGrantSecondChance = async (installerId: string) => {
-        if (!db) return;
-        await onJobUpdate({
-            disqualifiedInstallerIds: arrayRemove(installerId) as any
-        });
-        toast({ title: 'Second Chance Granted', description: 'This installer can now be selected again.'});
     };
 
     const sortedBids = React.useMemo(() => {
@@ -732,45 +730,67 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
   return (
     <Card id="bids-section">
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <CardTitle>Received Bids ({job.bids?.length || 0})</CardTitle>
                 <CardDescription>
-                  {job.status === 'Bidding Closed'
-                      ? 'Select up to 3 installers to send offers to. The first one to accept wins the job.'
-                      : 'Review the bids submitted for your project.'
-                  }
+                    Review bids and select an installer.
                 </CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
                  {job.bids && job.bids.length > 1 && job.status === 'Bidding Closed' && (
                      <AnalyzeButton />
                  )}
                 {job.status === 'Bidding Closed' && (
                     <Button onClick={handleSendOffers} disabled={isSendingOffers || selectedInstallers.length === 0}>
                         {isSendingOffers && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Send Offers to Selected ({selectedInstallers.length})
+                        Send Offer(s)
                     </Button>
                 )}
             </div>
         </div>
+         {job.status === 'Bidding Closed' && (
+            <div className="pt-4">
+                <Label>Award Strategy</Label>
+                <RadioGroup value={awardStrategy} onValueChange={(v) => setAwardStrategy(v as any)} className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <RadioGroupItem value="simultaneous" id="simultaneous" className="peer sr-only" />
+                        <Label htmlFor="simultaneous" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                            <h4 className="font-semibold">Simultaneous</h4>
+                            <p className="text-xs text-center text-muted-foreground">Offer to all selected (up to 3). First to accept wins.</p>
+                        </Label>
+                    </div>
+                     <div>
+                        <RadioGroupItem value="sequential" id="sequential" className="peer sr-only" />
+                        <Label htmlFor="sequential" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                             <h4 className="font-semibold">Sequential (Ranked)</h4>
+                             <p className="text-xs text-center text-muted-foreground">Offer to installers one by one based on your ranking.</p>
+                        </Label>
+                    </div>
+                </RadioGroup>
+                <p className="text-sm text-muted-foreground mt-2">
+                    {awardStrategy === 'simultaneous' ? 'Click on bids below to select them.' : 'Click on bids below to rank them (1st, 2nd, 3rd).'}
+                </p>
+            </div>
+         )}
       </CardHeader>
       <CardContent className="space-y-4">
         {sortedBids.map((bid) => {
           const installerId = (bid.installer as User).id;
-          const isDisqualified = (job.disqualifiedInstallerIds || []).includes(installerId);
+          const rank = awardStrategy === 'sequential' ? selectedInstallers.indexOf(installerId) + 1 : undefined;
+
           return (
-            <JobGiverBid 
-                key={installerId}
-                bid={bid} 
-                job={job} 
-                anonymousId={anonymousIdMap.get(installerId) || `Bidder-?`}
-                selected={selectedInstallers.includes(installerId)}
-                onSelect={handleSelectInstaller}
-                isDisabled={isJobAwarded || selectedInstallers.length >= 3 || isDisqualified}
-                isDisqualified={isDisqualified}
-                onGrantSecondChance={handleGrantSecondChance}
-            />
+            <div key={installerId} onClick={() => job.status === 'Bidding Closed' && handleSelectInstaller(installerId)} className={cn(job.status === 'Bidding Closed' && "cursor-pointer")}>
+                <JobGiverBid 
+                    bid={bid} 
+                    job={job} 
+                    anonymousId={anonymousIdMap.get(installerId) || `Bidder-?`}
+                    selected={selectedInstallers.includes(installerId)}
+                    onSelect={handleSelectInstaller}
+                    isSequentiallySelected={awardStrategy === 'sequential' && selectedInstallers.includes(installerId)}
+                    rank={rank && rank > 0 ? rank : undefined}
+                />
+            </div>
           )
         })}
       </CardContent>
