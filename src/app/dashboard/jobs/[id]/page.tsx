@@ -77,6 +77,7 @@ import {
   Plus,
   BrainCircuit,
   Lightbulb,
+  Unlock,
 } from "lucide-react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import React from "react";
@@ -366,7 +367,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   const installer = user.installerProfile;
   if (!installer) return null;
 
-  const isDisqualified = job.disqualifiedInstallerIds?.includes(user.id);
+  const isDisqualified = (job.disqualifiedInstallerIds || []).includes(user.id);
   
   if (isDisqualified) {
     return (
@@ -375,7 +376,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
                 <CardTitle>Bidding Unavailable</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-sm text-destructive">You are not eligible to bid on this job because you previously declined the offer.</p>
+                <p className="text-sm text-destructive">You are not eligible to bid on this job because you previously declined or timed out on an offer.</p>
             </CardContent>
         </Card>
     )
@@ -394,8 +395,8 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
     };
     
     onJobUpdate({ 
-        bids: [...(job.bids || []), { ...newBid, id: 'temp-id', installer: user }], // Optimistic update
-        bidderIds: [...(job.bidderIds || []), user.id] 
+        bids: arrayUnion(newBid) as any,
+        bidderIds: arrayUnion(user.id) as any,
     });
 
     toast({ title: "Bid Placed!", description: "Your bid has been submitted successfully." });
@@ -503,7 +504,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   );
 }
 
-function JobGiverBid({ bid, job, anonymousId, selected, onSelect, isDisabled }: { bid: Bid, job: Job, anonymousId: string, selected: boolean, onSelect: (id: string) => void, isDisabled: boolean }) {
+function JobGiverBid({ bid, job, anonymousId, selected, onSelect, isDisabled, isDisqualified, onGrantSecondChance }: { bid: Bid, job: Job, anonymousId: string, selected: boolean, onSelect: (id: string) => void, isDisabled: boolean, isDisqualified: boolean, onGrantSecondChance: (id: string) => void }) {
     const { role } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
@@ -514,7 +515,6 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, isDisabled }: 
         }
     }, [bid.timestamp]);
     
-    const isAdmin = role === 'Admin';
     const isJobGiver = role === 'Job Giver';
     const identitiesRevealed = job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' || role === 'Admin';
 
@@ -523,8 +523,10 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, isDisabled }: 
     const avatarFallback = identitiesRevealed ? installer.name.substring(0, 2) : anonymousId.split('-')[1];
 
     return (
-        <div className={cn("p-4 rounded-lg border flex gap-4", selected && 'border-primary bg-primary/5')}>
-            <Checkbox id={`select-${installer.id}`} checked={selected} onCheckedChange={() => onSelect(installer.id)} className="mt-1" disabled={isDisabled && !selected} />
+        <div className={cn("p-4 rounded-lg border flex gap-4", selected && 'border-primary bg-primary/5', isDisqualified && 'bg-muted/50 opacity-60')}>
+             {isJobGiver && job.status === 'Bidding Closed' && !isDisqualified && (
+                 <Checkbox id={`select-${installer.id}`} checked={selected} onCheckedChange={() => onSelect(installer.id)} className="mt-1" disabled={isDisabled && !selected} />
+            )}
             <div className="flex-1">
                 <div className="flex justify-between items-start">
                     <div className="flex items-center gap-3">
@@ -555,13 +557,21 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, isDisabled }: 
                     </div>
                 </div>
                 <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
+                 {isDisqualified && (
+                    <div className="mt-3 flex items-center justify-between rounded-md bg-destructive/10 border border-destructive/20 p-2">
+                        <p className="text-xs font-semibold text-destructive">Offer expired. This installer did not accept in time.</p>
+                        <Button variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs" onClick={() => onGrantSecondChance(installer.id)}>
+                            <Unlock className="mr-1.5 h-3 w-3" /> Grant Second Chance
+                        </Button>
+                    </div>
+                 )}
             </div>
         </div>
     );
 }
 
 function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousIdMap: Map<string, string> }) {
-    const { user } = useUser();
+    const { user, db } = useUser();
     const { toast } = useToast();
     const router = useRouter();
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>([]);
@@ -643,6 +653,14 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
         setIsSendingOffers(false);
     };
 
+    const handleGrantSecondChance = async (installerId: string) => {
+        if (!db) return;
+        await onJobUpdate({
+            disqualifiedInstallerIds: arrayRemove(installerId) as any
+        });
+        toast({ title: 'Second Chance Granted', description: 'This installer can now be selected again.'});
+    };
+
     const sortedBids = React.useMemo(() => {
         if (!job.bids) return [];
         return [...job.bids].sort((a,b) => b.amount - a.amount);
@@ -718,15 +736,17 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
             <div>
                 <CardTitle>Received Bids ({job.bids?.length || 0})</CardTitle>
                 <CardDescription>
-                  {isJobAwarded ? 'An installer has been selected for this job.' : 
-                  'Select up to 3 installers to send offers to. The first to accept wins the job.'}
+                  {job.status === 'Bidding Closed'
+                      ? 'Select up to 3 installers to send offers to. The first one to accept wins the job.'
+                      : 'Review the bids submitted for your project.'
+                  }
                 </CardDescription>
             </div>
             <div className="flex gap-2">
-                 {job.bids && job.bids.length > 1 && !isJobAwarded && (
+                 {job.bids && job.bids.length > 1 && job.status === 'Bidding Closed' && (
                      <AnalyzeButton />
                  )}
-                {!isJobAwarded && (
+                {job.status === 'Bidding Closed' && (
                     <Button onClick={handleSendOffers} disabled={isSendingOffers || selectedInstallers.length === 0}>
                         {isSendingOffers && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Send Offers to Selected ({selectedInstallers.length})
@@ -736,17 +756,23 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {sortedBids.map((bid) => (
-          <JobGiverBid 
-            key={(bid.installer as User).id}
-            bid={bid} 
-            job={job} 
-            anonymousId={anonymousIdMap.get((bid.installer as User).id) || `Bidder-?`}
-            selected={selectedInstallers.includes((bid.installer as User).id)}
-            onSelect={handleSelectInstaller}
-            isDisabled={isJobAwarded || selectedInstallers.length >= 3}
-          />
-        ))}
+        {sortedBids.map((bid) => {
+          const installerId = (bid.installer as User).id;
+          const isDisqualified = (job.disqualifiedInstallerIds || []).includes(installerId);
+          return (
+            <JobGiverBid 
+                key={installerId}
+                bid={bid} 
+                job={job} 
+                anonymousId={anonymousIdMap.get(installerId) || `Bidder-?`}
+                selected={selectedInstallers.includes(installerId)}
+                onSelect={handleSelectInstaller}
+                isDisabled={isJobAwarded || selectedInstallers.length >= 3 || isDisqualified}
+                isDisqualified={isDisqualified}
+                onGrantSecondChance={handleGrantSecondChance}
+            />
+          )
+        })}
       </CardContent>
     </Card>
   );
@@ -1278,28 +1304,6 @@ export default function JobDetailPage() {
 
     let jobData = jobSnap.data() as Job;
 
-    // --- Automatic decline logic for EXPIRED job offers ---
-    if (jobData.status === 'Awarded' && jobData.acceptanceDeadline && toDate(jobData.acceptanceDeadline) < new Date()) {
-        const deadline = toDate(jobData.deadline);
-        const now = new Date();
-        const newStatus = now > deadline ? 'Bidding Closed' : 'Open for Bidding';
-
-        // Disqualify all installers who were selected but didn't accept
-        const expiredInstallerIds = (jobData.selectedInstallers || []).map(s => s.installerId);
-
-        const update: Partial<Job> = { 
-            status: newStatus, 
-            awardedInstaller: undefined, 
-            acceptanceDeadline: undefined,
-            selectedInstallers: [], // Clear the selection
-            disqualifiedInstallerIds: arrayUnion(...expiredInstallerIds) as any,
-        };
-        
-        await updateDoc(jobRef, update);
-        jobData = { ...jobData, ...update }; // Update local copy
-        toast({ title: "Offer Expired", description: "The selected installer(s) did not accept the offer in time. You can now award the job to someone else." });
-    }
-
     // Collect all unique user IDs from the job document
     const userIds = new Set<string>();
     const jobGiverId = getRefId(jobData.jobGiver);
@@ -1349,7 +1353,7 @@ export default function JobDetailPage() {
     
     setJob(populatedJob);
     setLoading(false);
-  }, [id, db, toast]);
+  }, [id, db]);
 
   React.useEffect(() => {
     fetchJob();
@@ -1918,7 +1922,7 @@ export default function JobDetailPage() {
         </Card>
 
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
-        {(role === "Job Giver" || role === "Admin") && job.bids.length > 0 && job.status !== "Awarded" && job.status !== "In Progress" && job.status !== "Completed" && job.status !== "Pending Funding" && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
+        {(role === "Job Giver" || role === "Admin") && job.bids && job.bids.length > 0 && job.status === 'Bidding Closed' && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
         
         {job.status === 'In Progress' && (isJobGiver || isAwardedInstaller) && (
             <AdditionalTasksSection job={job} user={user} onJobUpdate={handleJobUpdate} />
