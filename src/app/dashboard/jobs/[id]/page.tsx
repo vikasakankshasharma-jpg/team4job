@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -95,6 +94,9 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage
 import { FileUpload } from "@/components/ui/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
 import { InstallerAcceptanceSection, tierIcons } from "@/components/job/installer-acceptance-section";
+import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 declare const cashfree: any;
 
@@ -559,11 +561,15 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, isDisabled }: 
 }
 
 function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousIdMap: Map<string, string> }) {
+    const { user } = useUser();
     const { toast } = useToast();
+    const router = useRouter();
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>([]);
     const [isSendingOffers, setIsSendingOffers] = React.useState(false);
     const [isAnalyzing, setIsAnalyzing] = React.useState(false);
     const [analysisResult, setAnalysisResult] = React.useState<AnalyzeBidsOutput | null>(null);
+
+    const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
 
     const handleSelectInstaller = (id: string) => {
         setSelectedInstallers(prev => {
@@ -583,6 +589,11 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
     }
 
     const handleAnalyzeBids = async () => {
+        if (!isSubscribed) {
+            router.push('/dashboard/billing');
+            return;
+        }
+
         setIsAnalyzing(true);
         try {
             const bidderProfiles = job.bids.map(bid => {
@@ -639,6 +650,67 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
 
     const isJobAwarded = !!job.awardedInstaller;
 
+    const AnalyzeButton = () => {
+        if (!isSubscribed) {
+            return (
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="outline" onClick={() => router.push('/dashboard/billing')}>
+                                <Zap className="mr-2 h-4 w-4 text-amber-500" />
+                                Analyze Bids with AI
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Upgrade to a premium plan to use this feature.</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )
+        }
+
+        return (
+             <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="outline" onClick={handleAnalyzeBids} disabled={isAnalyzing}>
+                        {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                        Analyze Bids with AI
+                    </Button>
+                </DialogTrigger>
+                {analysisResult && (
+                     <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>AI Bid Analysis</DialogTitle>
+                            <DialogDescription>{analysisResult.summary}</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+                            <div className="p-4 rounded-lg border border-primary/50 bg-primary/5">
+                                <h3 className="font-semibold flex items-center gap-2"><Trophy className="h-5 w-5 text-primary"/> Top Recommendation: {analysisResult.topRecommendation.anonymousId}</h3>
+                                <p className="text-sm text-muted-foreground mt-1">{analysisResult.topRecommendation.reasoning}</p>
+                            </div>
+                             <div className="p-4 rounded-lg border border-green-500/50 bg-green-500/5">
+                                <h3 className="font-semibold flex items-center gap-2"><Lightbulb className="h-5 w-5 text-green-600"/> Best Value: {analysisResult.bestValue.anonymousId}</h3>
+                                <p className="text-sm text-muted-foreground mt-1">{analysisResult.bestValue.reasoning}</p>
+                            </div>
+                            {analysisResult.redFlags.length > 0 && (
+                                <div className="p-4 rounded-lg border border-destructive/50 bg-destructive/5">
+                                    <h3 className="font-semibold flex items-center gap-2"><AlertOctagon className="h-5 w-5 text-destructive"/> Potential Red Flags</h3>
+                                    <ul className="mt-2 space-y-2">
+                                        {analysisResult.redFlags.map(flag => (
+                                            <li key={flag.anonymousId} className="text-sm text-muted-foreground">
+                                                <strong className="text-foreground">{flag.anonymousId}:</strong> {flag.concern}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    </DialogContent>
+                )}
+             </Dialog>
+        )
+    }
+
   return (
     <Card id="bids-section">
       <CardHeader>
@@ -652,44 +724,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
             </div>
             <div className="flex gap-2">
                  {job.bids && job.bids.length > 1 && !isJobAwarded && (
-                     <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" onClick={handleAnalyzeBids} disabled={isAnalyzing}>
-                                {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                                Analyze Bids with AI
-                            </Button>
-                        </DialogTrigger>
-                        {analysisResult && (
-                             <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                    <DialogTitle>AI Bid Analysis</DialogTitle>
-                                    <DialogDescription>{analysisResult.summary}</DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
-                                    <div className="p-4 rounded-lg border border-primary/50 bg-primary/5">
-                                        <h3 className="font-semibold flex items-center gap-2"><Trophy className="h-5 w-5 text-primary"/> Top Recommendation: {analysisResult.topRecommendation.anonymousId}</h3>
-                                        <p className="text-sm text-muted-foreground mt-1">{analysisResult.topRecommendation.reasoning}</p>
-                                    </div>
-                                     <div className="p-4 rounded-lg border border-green-500/50 bg-green-500/5">
-                                        <h3 className="font-semibold flex items-center gap-2"><Lightbulb className="h-5 w-5 text-green-600"/> Best Value: {analysisResult.bestValue.anonymousId}</h3>
-                                        <p className="text-sm text-muted-foreground mt-1">{analysisResult.bestValue.reasoning}</p>
-                                    </div>
-                                    {analysisResult.redFlags.length > 0 && (
-                                        <div className="p-4 rounded-lg border border-destructive/50 bg-destructive/5">
-                                            <h3 className="font-semibold flex items-center gap-2"><AlertOctagon className="h-5 w-5 text-destructive"/> Potential Red Flags</h3>
-                                            <ul className="mt-2 space-y-2">
-                                                {analysisResult.redFlags.map(flag => (
-                                                    <li key={flag.anonymousId} className="text-sm text-muted-foreground">
-                                                        <strong className="text-foreground">{flag.anonymousId}:</strong> {flag.concern}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-                                </div>
-                            </DialogContent>
-                        )}
-                     </Dialog>
+                     <AnalyzeButton />
                  )}
                 {!isJobAwarded && (
                     <Button onClick={handleSendOffers} disabled={isSendingOffers || selectedInstallers.length === 0}>
