@@ -156,7 +156,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Role-based route protection
     const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids', '/dashboard/verify-installer'];
-    const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs', '/dashboard/my-installers'];
+    const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs', '/dashboard/my-installers', '/dashboard/installers'];
     const adminOnlyPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/settings', '/dashboard/subscription-plans', '/dashboard/coupons', '/dashboard/blacklist'];
     const supportOnlyPaths = ['/dashboard/disputes'];
     
