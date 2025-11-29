@@ -285,7 +285,7 @@ export const handleUnfundedJobs = functions.pubsub.schedule('every 6 hours').onR
 });
 
 /**
- * Triggered when there is a date change proposal on a job or other status changes.
+ * Triggered for various job status changes to send notifications.
  */
 export const onJobStatusChange = functions.firestore
     .document("jobs/{jobId}")
@@ -294,7 +294,7 @@ export const onJobStatusChange = functions.firestore
         const afterData = change.after.data();
         const jobId = context.params.jobId;
 
-        // --- Date Change Proposal Logic ---
+        // --- Date Change Proposed ---
         if (beforeData.dateChangeProposal?.status !== 'pending' && afterData.dateChangeProposal?.status === 'pending') {
             const proposal = afterData.dateChangeProposal;
             const jobGiverId = afterData.jobGiver.id;
@@ -313,7 +313,7 @@ export const onJobStatusChange = functions.firestore
             );
         }
 
-        // --- Date Change Accepted/Rejected Logic ---
+        // --- Date Change Accepted/Rejected ---
         if (beforeData.dateChangeProposal?.status === 'pending' && afterData.dateChangeProposal?.status !== 'pending') {
             const wasAccepted = afterData.jobStartDate !== beforeData.jobStartDate;
             const proposerId = beforeData.dateChangeProposal.proposedBy === 'Job Giver' ? afterData.jobGiver.id : afterData.awardedInstaller.id;
@@ -326,20 +326,22 @@ export const onJobStatusChange = functions.firestore
             );
         }
         
-        // --- Offer Declined Logic ---
-        if (beforeData.selectedInstallers?.length > afterData.selectedInstallers?.length) {
-           const declinedInstallerId = beforeData.selectedInstallers.find((s: any) => 
-               !afterData.selectedInstallers.some((as: any) => as.installerId === s.installerId)
-           )?.installerId;
-
-           if (declinedInstallerId) {
-                 await sendNotification(
+        // --- Offer Declined ---
+        const beforeDisqualified = beforeData.disqualifiedInstallerIds || [];
+        const afterDisqualified = afterData.disqualifiedInstallerIds || [];
+        if (afterDisqualified.length > beforeDisqualified.length) {
+            const newDisqualifiedId = afterDisqualified.find((id: string) => !beforeDisqualified.includes(id));
+            if (newDisqualifiedId) {
+                const installerDoc = await admin.firestore().collection('users').doc(newDisqualifiedId).get();
+                const installerName = installerDoc.data()?.name || 'An installer';
+                
+                await sendNotification(
                     afterData.jobGiver.id,
                     'An Offer Was Declined',
-                    `An installer has declined your offer for job: "${afterData.title}".`,
+                    `${installerName} has declined your offer for job: "${afterData.title}". You can now send new offers.`,
                     `/dashboard/jobs/${jobId}`
                 );
-           }
+            }
         }
     });
 
