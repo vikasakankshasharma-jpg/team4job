@@ -490,7 +490,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   );
 }
 
-function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequentiallySelected }: { bid: Bid, job: Job, anonymousId: string, selected: boolean, onSelect: (id: string) => void, rank?: number, isSequentiallySelected?: boolean }) {
+function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequentiallySelected, isTopRec, isBestValue, redFlag }: { bid: Bid, job: Job, anonymousId: string, selected: boolean, onSelect: (id: string) => void, rank?: number, isSequentiallySelected?: boolean, isTopRec?: boolean, isBestValue?: boolean, redFlag?: { concern: string } | null }) {
     const { role, isAdmin } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
@@ -507,11 +507,20 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequen
     const avatar = identitiesRevealed ? <AvatarImage src={installer.realAvatarUrl} alt={installer.name} /> : <AnimatedAvatar svg={installer.avatarUrl} />;
     const avatarFallback = identitiesRevealed ? installer.name.substring(0, 2) : anonymousId.split('-')[1];
 
+    const cardClasses = cn(
+        "relative p-4 rounded-lg border flex gap-4 transition-all",
+        selected && 'border-primary bg-primary/5',
+        isSequentiallySelected && 'ring-2 ring-primary',
+        isTopRec && 'border-primary',
+        isBestValue && 'border-green-500',
+        redFlag && 'border-destructive'
+    );
+
     return (
-        <div className={cn("relative p-4 rounded-lg border flex gap-4 transition-all", selected && 'border-primary bg-primary/5', isSequentiallySelected && 'ring-2 ring-primary')}>
-             {isSequentiallySelected && rank && (
+        <div className={cardClasses}>
+            {isSequentiallySelected && rank && (
                 <div className="absolute -top-3 -left-3 h-7 w-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">{rank}</div>
-             )}
+            )}
             <div className="flex-1">
                 <div className="flex justify-between items-start">
                     <div className="flex items-center gap-3">
@@ -541,6 +550,18 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequen
                         <p className="text-xs text-muted-foreground">{timeAgo}</p>
                     </div>
                 </div>
+                {isTopRec && <Badge className="my-2" variant="default"><Trophy className="h-4 w-4 mr-2" /> Top Recommendation</Badge>}
+                {isBestValue && <Badge className="my-2" variant="success"><Lightbulb className="h-4 w-4 mr-2" /> Best Value</Badge>}
+                {redFlag && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Badge className="my-2" variant="destructive"><AlertOctagon className="h-4 w-4 mr-2" /> Red Flag</Badge>
+                            </TooltipTrigger>
+                            <TooltipContent><p>{redFlag.concern}</p></TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
                 <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
             </div>
         </div>
@@ -548,12 +569,14 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequen
 }
 
 function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, anonymousIdMap: Map<string, string> }) {
-    const { user, db } = useUser();
+    const { user, db, isAdmin, role } = useUser();
     const { toast } = useToast();
     const router = useRouter();
     
     const [awardStrategy, setAwardStrategy] = React.useState<'simultaneous' | 'sequential'>('simultaneous');
     const [selectedInstallers, setSelectedInstallers] = React.useState<string[]>([]);
+    const [responseDeadline, setResponseDeadline] = React.useState(24);
+    const [showAdvanced, setShowAdvanced] = React.useState(false);
 
     const [isSendingOffers, setIsSendingOffers] = React.useState(false);
     const [isAnalyzing, setIsAnalyzing] = React.useState(false);
@@ -598,6 +621,14 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
             });
         }
     }
+    
+    const handleReincludeInstaller = async (installerId: string) => {
+        await onJobUpdate({ disqualifiedInstallerIds: arrayRemove(installerId) as any });
+        toast({
+            title: "Installer Re-included",
+            description: "This installer can now be selected for an offer again.",
+        });
+    };
 
     const handleAnalyzeBids = async () => {
         if (!isSubscribed) {
@@ -639,7 +670,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
         }
         setIsSendingOffers(true);
         const acceptanceDeadline = new Date();
-        acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
+        acceptanceDeadline.setHours(acceptanceDeadline.getHours() + responseDeadline);
 
         const update: Partial<Job> = {
             status: "Awarded",
@@ -649,20 +680,57 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
             })),
             acceptanceDeadline,
         };
+        
+        if (awardStrategy === 'sequential') {
+            update.awardedInstaller = doc(db, 'users', selectedInstallers[0]);
+        }
+
         await onJobUpdate(update);
         toast({
             title: "Offers Sent!",
             description: awardStrategy === 'simultaneous'
                 ? `Offers sent to ${selectedInstallers.length} installer(s). First to accept wins.`
-                : `Offer sent to your #1 ranked installer. They have 24 hours to respond.`,
+                : `Offer sent to your #1 ranked installer. They have ${responseDeadline} hours to respond.`,
         });
         setIsSendingOffers(false);
     };
 
     const sortedBids = React.useMemo(() => {
         if (!job.bids) return [];
-        return [...job.bids].sort((a,b) => b.amount - a.amount);
-    }, [job.bids]);
+        let bids = [...job.bids];
+
+        if (analysisResult) {
+            const topRecId = anonymousIdMap.get(analysisResult.topRecommendation.anonymousId);
+            const bestValueId = anonymousIdMap.get(analysisResult.bestValue.anonymousId);
+            const redFlagIds = new Set(analysisResult.redFlags.map(f => anonymousIdMap.get(f.anonymousId)));
+
+            bids.sort((a, b) => {
+                const aId = (a.installer as User).id;
+                const bId = (b.installer as User).id;
+
+                const isARedFlag = redFlagIds.has(aId);
+                const isBRedFlag = redFlagIds.has(bId);
+                if (isARedFlag && !isBRedFlag) return 1;
+                if (!isARedFlag && isBRedFlag) return -1;
+                
+                const isATop = aId === topRecId;
+                const isBTop = bId === topRecId;
+                if (isATop && !isBTop) return -1;
+                if (!isATop && isBTop) return 1;
+
+                const isABest = aId === bestValueId;
+                const isBBest = bId === bestValueId;
+                if (isABest && !isBBest) return -1;
+                if (!isABest && isBBest) return 1;
+
+                return b.amount - a.amount;
+            });
+        } else {
+            bids.sort((a,b) => b.amount - a.amount);
+        }
+
+        return bids;
+    }, [job.bids, analysisResult, anonymousIdMap]);
 
     const isJobAwarded = !!job.awardedInstaller;
 
@@ -750,27 +818,63 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
             </div>
         </div>
          {job.status === 'Bidding Closed' && (
-            <div className="pt-4">
-                <Label>Award Strategy</Label>
-                <RadioGroup value={awardStrategy} onValueChange={(v) => setAwardStrategy(v as any)} className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <RadioGroupItem value="simultaneous" id="simultaneous" className="peer sr-only" />
-                        <Label htmlFor="simultaneous" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                            <h4 className="font-semibold">Simultaneous</h4>
-                            <p className="text-xs text-center text-muted-foreground">Offer to all selected (up to 3). First to accept wins.</p>
-                        </Label>
-                    </div>
-                     <div>
-                        <RadioGroupItem value="sequential" id="sequential" className="peer sr-only" />
-                        <Label htmlFor="sequential" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                             <h4 className="font-semibold">Sequential (Ranked)</h4>
-                             <p className="text-xs text-center text-muted-foreground">Offer to installers one by one based on your ranking.</p>
-                        </Label>
-                    </div>
-                </RadioGroup>
-                <p className="text-sm text-muted-foreground mt-2">
-                    {awardStrategy === 'simultaneous' ? 'Click on bids below to select them.' : 'Click on bids below to rank them (1st, 2nd, 3rd).'}
-                </p>
+            <div className="pt-4 space-y-4">
+                <div>
+                    <Label>Award Strategy</Label>
+                    <RadioGroup value={awardStrategy} onValueChange={(v) => setAwardStrategy(v as any)} className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <RadioGroupItem value="simultaneous" id="simultaneous" className="peer sr-only" />
+                            <Label htmlFor="simultaneous" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                <h4 className="font-semibold">Simultaneous</h4>
+                                <p className="text-xs text-center text-muted-foreground">Offer to all selected (up to 3). First to accept wins.</p>
+                            </Label>
+                        </div>
+                        <div>
+                            <RadioGroupItem value="sequential" id="sequential" className="peer sr-only" />
+                            <Label htmlFor="sequential" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                <h4 className="font-semibold">Sequential (Ranked)</h4>
+                                <p className="text-xs text-center text-muted-foreground">Offer to installers one by one based on your ranking.</p>
+                            </Label>
+                        </div>
+                    </RadioGroup>
+                    <p className="text-sm text-muted-foreground mt-2">
+                        {awardStrategy === 'simultaneous' ? 'Click on bids below to select them.' : 'Click on bids below to rank them (1st, 2nd, 3rd).'}
+                    </p>
+                </div>
+                 <div className="pt-2">
+                    <button onClick={() => setShowAdvanced(!showAdvanced)} className="text-sm font-medium text-primary hover:underline">
+                      Advanced Options
+                    </button>
+                    {showAdvanced && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 p-4 border rounded-lg">
+                            <div className="space-y-2">
+                                <Label>Response Time</Label>
+                                <Select value={String(responseDeadline)} onValueChange={(v) => setResponseDeadline(Number(v))}>
+                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="12">12 Hours</SelectItem>
+                                        <SelectItem value="24">24 Hours (Default)</SelectItem>
+                                        <SelectItem value="48">48 Hours</SelectItem>
+                                        <SelectItem value="72">72 Hours</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {job.disqualifiedInstallerIds && job.disqualifiedInstallerIds.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label>Re-include Installers</Label>
+                                    <div className="space-y-1">
+                                        {job.disqualifiedInstallerIds.map(id => (
+                                            <div key={id} className="flex justify-between items-center text-sm">
+                                                <span>{(job.bids.find(b => (b.installer as User).id === id)?.installer as User)?.name || 'Unknown'}</span>
+                                                <Button size="sm" variant="secondary" onClick={() => handleReincludeInstaller(id)}>Re-include</Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                 </div>
             </div>
          )}
       </CardHeader>
@@ -778,6 +882,16 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
         {sortedBids.map((bid) => {
           const installerId = (bid.installer as User).id;
           const rank = awardStrategy === 'sequential' ? selectedInstallers.indexOf(installerId) + 1 : undefined;
+          
+          let recommendationProps = {};
+          if(analysisResult) {
+            const anonymousId = anonymousIdMap.get(installerId);
+            recommendationProps = {
+                isTopRec: anonymousId === analysisResult.topRecommendation.anonymousId,
+                isBestValue: anonymousId === analysisResult.bestValue.anonymousId,
+                redFlag: analysisResult.redFlags.find(f => f.anonymousId === anonymousId) || null,
+            };
+          }
 
           return (
             <div key={installerId} onClick={() => job.status === 'Bidding Closed' && handleSelectInstaller(installerId)} className={cn(job.status === 'Bidding Closed' && "cursor-pointer")}>
@@ -789,6 +903,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
                     onSelect={handleSelectInstaller}
                     isSequentiallySelected={awardStrategy === 'sequential' && selectedInstallers.includes(installerId)}
                     rank={rank && rank > 0 ? rank : undefined}
+                    {...recommendationProps}
                 />
             </div>
           )
@@ -1468,7 +1583,7 @@ export default function JobDetailPage() {
       content: newComment,
     };
     
-    await handleJobUpdate({ comments: arrayUnion(newCommentObject) });
+    await handleJobUpdate({ comments: arrayUnion(newCommentObject) as any });
 
     setNewComment("");
      toast({
@@ -1498,7 +1613,7 @@ export default function JobDetailPage() {
         return { fileName: file.name, fileUrl, fileType: file.type };
     });
 
-    const uploadedAttachments = await Promise.all(uploadedAttachments);
+    const uploadedAttachments = await Promise.all(uploadPromises);
 
     const newMessageObject: PrivateMessage = {
       id: `MSG-${Date.now()}`,
@@ -1941,7 +2056,7 @@ export default function JobDetailPage() {
           </CardContent>
         </Card>
 
-        {(isAdmin || role === 'Support Team' || (role === "Job Giver" && job.bids && job.bids.length > 0 && (job.status === 'Bidding Closed' || job.status === 'Awarded'))) && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
+        {(isAdmin || role === 'Support Team' || (role === "Job Giver" && job.bids && job.bids.length > 0 && (job.status === 'Bidding Closed' || (job.status === 'Awarded' && !isSelectedInstaller)))) && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
         
         {job.status === 'In Progress' && (isJobGiver || isAwardedInstaller) && (
