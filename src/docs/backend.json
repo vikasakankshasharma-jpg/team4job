@@ -258,18 +258,6 @@
             "type": "boolean",
             "description": "Whether the job giver requires a GST invoice for this job."
         },
-        "budget": {
-          "type": "object",
-          "properties": {
-            "min": {
-              "type": "number"
-            },
-            "max": {
-              "type": "number"
-            }
-          },
-          "required": ["min", "max"]
-        },
         "travelTip": {
           "type": "number",
           "description": "An optional tip to make the job more attractive, paid commission-free to the installer."
@@ -373,7 +361,7 @@
             }
         }
       },
-      "required": ["id", "title", "description", "jobGiver", "location", "address", "budget", "status", "deadline", "postedAt"]
+      "required": ["id", "title", "description", "jobGiver", "location", "address", "status", "deadline", "postedAt"]
     },
     "JobAttachment": {
       "title": "Job Attachment",

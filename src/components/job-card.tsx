@@ -97,16 +97,15 @@ export function JobCard({ job }: JobCardProps) {
             <span>{job.location}</span>
           </div>
           <div className="flex items-center gap-2 text-foreground">
-            <IndianRupee className="h-4 w-4" />
-            <span>{job.budget.min.toLocaleString()} - {job.budget.max.toLocaleString()}</span>
-            {job.travelTip && job.travelTip > 0 && (
-              <span className="text-primary font-semibold">(+ ₹{job.travelTip.toLocaleString()} tip)</span>
-            )}
-          </div>
-          <div className="flex items-center gap-2 text-foreground">
             <Users className="h-4 w-4" />
             <span>{job.bids.length} Bids</span>
           </div>
+          {job.travelTip && job.travelTip > 0 && (
+            <div className="flex items-center gap-2 text-primary font-medium">
+                <IndianRupee className="h-4 w-4" />
+                <span>₹{job.travelTip.toLocaleString()} Travel Tip</span>
+            </div>
+          )}
           {job.status === 'Open for Bidding' && (
              <div className="flex items-center gap-2 text-primary font-medium">
               <Clock className="h-4 w-4" />

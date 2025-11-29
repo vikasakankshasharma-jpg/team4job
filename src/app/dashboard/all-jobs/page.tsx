@@ -308,8 +308,6 @@ export default function AllJobsPage() {
         Bids: (job.bids || []).length,
         'Job Type': getJobType(job),
         'Posted Date': format(toDate(job.postedAt), 'yyyy-MM-dd'),
-        'Budget Min': job.budget.min,
-        'Budget Max': job.budget.max,
         Location: job.location,
     }));
     exportToCsv(`cctv-jobs-${new Date().toISOString().split('T')[0]}.csv`, dataToExport);
