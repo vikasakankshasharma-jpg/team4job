@@ -72,8 +72,6 @@ const jobSchema = z.object({
   travelTip: z.coerce.number().optional(),
   isGstInvoiceRequired: z.boolean().default(false),
   address: addressSchema,
-  budgetMin: z.coerce.number().min(1, { message: "Minimum budget must be at least 1." }),
-  budgetMax: z.coerce.number().min(1, { message: "Maximum budget must be at least 1." }),
   deadline: z.string().refine((val) => {
     if (!val) return true; // Allow empty if direct awarding
     const today = new Date();
@@ -85,9 +83,6 @@ const jobSchema = z.object({
   jobStartDate: z.string().min(1, { message: "Please select a job start date." }),
   attachments: z.array(z.instanceof(File)).optional(),
   directAwardInstallerId: z.string().optional(),
-}).refine(data => data.budgetMax > data.budgetMin, {
-    message: "Maximum budget must be greater than minimum budget.",
-    path: ["budgetMax"],
 }).refine(data => {
     if (data.directAwardInstallerId) return true;
     return data.deadline !== "";
@@ -200,8 +195,6 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
         cityPincode: "",
         fullAddress: "",
       },
-      budgetMin: 0,
-      budgetMax: 0,
       deadline: "",
       jobStartDate: "",
       attachments: [],
@@ -229,8 +222,6 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                     isGstInvoiceRequired: jobData.isGstInvoiceRequired,
                     address: jobData.address,
                     travelTip: jobData.travelTip || 0,
-                    budgetMin: jobData.budget.min,
-                    budgetMax: jobData.budget.max,
                     deadline: isEditMode ? format(toDate(jobData.deadline), "yyyy-MM-dd") : "",
                     jobStartDate: jobData.jobStartDate ? format(toDate(jobData.jobStartDate), "yyyy-MM-dd") : "",
                     directAwardInstallerId: "", // Never prefill direct award
@@ -295,12 +286,10 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
       if (result) {
         form.setValue("jobDescription", result.jobDescription, { shouldValidate: true });
         form.setValue("skills", result.suggestedSkills.join(', '), { shouldValidate: true });
-        form.setValue("budgetMin", result.budgetMin, { shouldValidate: true });
-        form.setValue("budgetMax", result.budgetMax, { shouldValidate: true });
 
         toast({
           title: "AI Suggestions Added!",
-          description: "Description, skills, and budget have been auto-filled.",
+          description: "Description and skills have been auto-filled.",
         });
       }
     } catch (error) {
@@ -332,10 +321,6 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
         travelTip: values.travelTip || 0,
         isGstInvoiceRequired: values.isGstInvoiceRequired,
         address: values.address,
-        budget: {
-            min: values.budgetMin,
-            max: values.budgetMax,
-        },
         location: pincode.trim(),
         fullAddress: values.address.fullAddress,
         jobStartDate: new Date(values.jobStartDate),
@@ -642,37 +627,6 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                 />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                    control={form.control}
-                    name="budgetMin"
-                    render={({ field }) => (
-                    <FormItem>
-                        <div className="flex items-center justify-between">
-                        <FormLabel>Minimum Budget (₹)</FormLabel>                         {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                        </div>
-                        <FormControl>
-                        <Input type="number" placeholder="e.g., 10000" {...field} className={cn(isGenerating && "opacity-50")} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="budgetMax"
-                    render={({ field }) => (
-                    <FormItem>
-                        <div className="flex items-center justify-between">
-                        <FormLabel>Maximum Budget (₹)</FormLabel>
-                        {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                        </div>
-                        <FormControl>
-                        <Input type="number" placeholder="e.g., 20000" {...field} className={cn(isGenerating && "opacity-50")} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
                 <FormField
                     control={form.control}
                     name="travelTip"

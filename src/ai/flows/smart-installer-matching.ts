@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -14,7 +15,6 @@ import {z} from 'genkit';
 const SmartInstallerMatchingInputSchema = z.object({
   jobDescription: z.string().describe('Detailed description of the job requirements.'),
   location: z.string().describe('The location where the job needs to be performed.'),
-  budget: z.number().describe('The budget allocated for the job.'),
   skillsRequired: z.array(z.string()).describe('List of skills required for the job.'),
   availability: z.string().describe('The required availability of the installer.'),
 });
@@ -50,7 +50,6 @@ const smartInstallerMatchingPrompt = ai.definePrompt({
 
   Job Description: {{{jobDescription}}}
   Location: {{{location}}}
-  Budget: {{{budget}}}
   Skills Required: {{#each skillsRequired}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
   Availability: {{{availability}}}
 
