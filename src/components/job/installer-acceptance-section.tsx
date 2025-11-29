@@ -42,7 +42,6 @@ export function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJ
     
     const handleDecline = async () => {
         setIsLoading(true);
-        const myRankedOffer = (job.selectedInstallers || []).find(s => s.installerId === user.id);
         const remainingOffers = (job.selectedInstallers || []).filter(s => s.installerId !== user.id);
 
         let update: Partial<Job> = {
@@ -50,9 +49,10 @@ export function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJ
             selectedInstallers: remainingOffers,
         };
         
-        // If this was the last pending offer, revert the job status
+        // If this was the last pending offer, revert the job status immediately
         if (remainingOffers.length === 0) {
             update.status = "Bidding Closed";
+            update.awardedInstaller = undefined;
             update.acceptanceDeadline = undefined;
         }
 
