@@ -128,6 +128,15 @@ function DirectAwardInput({ control }) {
         debouncedCheck(value);
     };
 
+    const installerId = useWatch({ control, name: "directAwardInstallerId" });
+
+    useEffect(() => {
+      if (installerId) {
+        setIsLoading(true);
+        debouncedCheck(installerId);
+      }
+    }, [installerId, debouncedCheck]);
+
     return (
         <FormField
             control={control}
@@ -204,7 +213,14 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
   
   const repostJobId = searchParams.get('repostJobId');
   const editJobId = searchParams.get('editJobId');
+  const directAwardParam = searchParams.get('directAwardInstallerId');
   const isEditMode = !!editJobId;
+
+  useEffect(() => {
+    if (directAwardParam) {
+        form.setValue('directAwardInstallerId', directAwardParam, { shouldValidate: true });
+    }
+  }, [directAwardParam, form]);
 
   React.useEffect(() => {
     async function prefillForm() {
@@ -374,6 +390,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                 jobData.awardedInstaller = doc(db, 'users', values.directAwardInstallerId);
                 jobData.deadline = new Date(); // Set deadline to now for direct award
                 jobData.acceptanceDeadline = acceptanceDeadline;
+                jobData.selectedInstallers = [{ installerId: values.directAwardInstallerId, rank: 1 }];
             } else {
                 jobData.deadline = new Date(values.deadline);
             }
