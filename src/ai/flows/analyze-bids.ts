@@ -71,7 +71,7 @@ export const analyzeBidsFlow = ai.defineFlow(
 
     const llmResponse = await ai.generate({
       prompt: prompt,
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       output: {
         schema: AnalyzeBidsOutputSchema,
       },

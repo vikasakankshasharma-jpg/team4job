@@ -1942,7 +1942,7 @@ export default function JobDetailPage() {
         </Card>
 
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
-        {(role === "Job Giver" || role === "Admin") && job.bids && job.bids.length > 0 && job.status === 'Bidding Closed' && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
+        {(role === "Job Giver" || role === "Admin") && job.bids && job.bids.length > 0 && (job.status === 'Bidding Closed' || job.status === 'Awarded') && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
         
         {job.status === 'In Progress' && (isJobGiver || isAwardedInstaller) && (
             <AdditionalTasksSection job={job} user={user} onJobUpdate={handleJobUpdate} />

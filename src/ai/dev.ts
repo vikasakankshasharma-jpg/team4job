@@ -15,4 +15,3 @@ import '@/ai/flows/reward-top-performers.ts';
 import '@/ai/flows/get-bids-for-installer.ts';
 import '@/ai/flows/job-scoping-wizard.ts';
 import '@/ai/flows/analyze-bids.ts';
-
