@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit, UserX, UserCheck, Loader2, Ban, Trash2, Gauge, Clock, MessageSquare, Copy } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit, UserX, UserCheck, Loader2, Ban, Trash2, Gauge, Clock, MessageSquare, Copy, UserPlus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, PolarGrid, PolarAngleAxis, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
@@ -424,7 +424,7 @@ function PageSkeleton() {
 
 export default function UserProfilePage() {
   const params = React.use(useParams());
-  const { user: authUser, isAdmin } = useAuthUser();
+  const { user: authUser, isAdmin, role: authUserRole } = useAuthUser();
   const id = params.id as string;
   const { db } = useFirebase();
   const { toast } = useToast();
@@ -585,6 +585,14 @@ export default function UserProfilePage() {
               </div>
             </div>
             {isAdmin && subscription && <ManageSubscriptionDialog user={profileUser} onSubscriptionUpdate={handleSubscriptionUpdate} />}
+            {authUserRole === 'Job Giver' && isInstaller && (
+                 <Button asChild>
+                    <Link href={`/dashboard/post-job?directAwardInstallerId=${userId}`}>
+                        <UserPlus className="mr-2 h-4 w-4"/>
+                        Hire Now for a Project
+                    </Link>
+                </Button>
+            )}
           </div>
         </CardHeader>
         {subscription && (
