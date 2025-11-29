@@ -491,7 +491,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
 }
 
 function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequentiallySelected }: { bid: Bid, job: Job, anonymousId: string, selected: boolean, onSelect: (id: string) => void, rank?: number, isSequentiallySelected?: boolean }) {
-    const { role } = useUser();
+    const { role, isAdmin } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
 
@@ -501,7 +501,7 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequen
         }
     }, [bid.timestamp]);
     
-    const identitiesRevealed = job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' || role === 'Admin';
+    const identitiesRevealed = (job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed') || isAdmin || role === 'Support Team';
 
     const installerName = identitiesRevealed ? installer.name : anonymousId;
     const avatar = identitiesRevealed ? <AvatarImage src={installer.realAvatarUrl} alt={installer.name} /> : <AnimatedAvatar svg={installer.avatarUrl} />;
@@ -1273,7 +1273,7 @@ const getRefId = (ref: any): string | null => {
 }
 
 export default function JobDetailPage() {
-  const { user, role } = useUser();
+  const { user, role, isAdmin } = useUser();
   const { db, storage } = useFirebase();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -1660,12 +1660,12 @@ export default function JobDetailPage() {
   const canCancelJob = isJobGiver && (job.status === 'In Progress' || job.status === 'Open for Bidding' || job.status === 'Bidding Closed');
   const canReportAbandonment = isJobGiver && job.status === 'In Progress' && isFunded;
   
-  const identitiesRevealed = (job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed' && job.status !== 'Awarded') || role === 'Admin';
+  const identitiesRevealed = (job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed') || isAdmin || role === 'Support Team';
   const showJobGiverRealIdentity = identitiesRevealed;
   
-  const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || isJobGiver || role === 'Admin');
+  const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || isJobGiver || isAdmin || role === 'Support Team');
   const communicationMode: 'public' | 'private' | 'none' =
-    (job.status === 'In Progress' || job.status === 'Completed' || job.status === 'Disputed') && (isJobGiver || isAwardedInstaller || role === 'Admin')
+    (job.status === 'In Progress' || job.status === 'Completed' || job.status === 'Disputed') && (isJobGiver || isAwardedInstaller || isAdmin || role === 'Support Team')
       ? 'private'
       : job.status === 'Open for Bidding'
       ? 'public'
@@ -1941,8 +1941,8 @@ export default function JobDetailPage() {
           </CardContent>
         </Card>
 
+        {(isAdmin || role === 'Support Team' || (role === "Job Giver" && job.bids && job.bids.length > 0 && (job.status === 'Bidding Closed' || job.status === 'Awarded'))) && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
         {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
-        {(role === "Job Giver" || role === "Admin") && job.bids && job.bids.length > 0 && (job.status === 'Bidding Closed' || job.status === 'Awarded') && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
         
         {job.status === 'In Progress' && (isJobGiver || isAwardedInstaller) && (
             <AdditionalTasksSection job={job} user={user} onJobUpdate={handleJobUpdate} />
@@ -1959,18 +1959,6 @@ export default function JobDetailPage() {
             <CardTitle>Job Overview</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-foreground">
-            <div className="flex items-center gap-3">
-              <IndianRupee className="h-5 w-5" />
-              <div>
-                <p className="text-muted-foreground">Budget</p>
-                <p className="font-semibold">
-                  {job.budget ? `₹${job.budget.min.toLocaleString()} - ₹${job.budget.max.toLocaleString()}` : 'Not specified'}
-                   {job.travelTip && job.travelTip > 0 && (
-                    <span className="text-primary font-semibold">(+ ₹{job.travelTip.toLocaleString()} tip)</span>
-                  )}
-                </p>
-              </div>
-            </div>
              <div className="flex items-start gap-3">
               <MapPin className="h-5 w-5 mt-1" />
               <div>

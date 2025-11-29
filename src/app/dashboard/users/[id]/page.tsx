@@ -456,21 +456,12 @@ export default function UserProfilePage() {
         if (isTeamMember) {
             // Fetch disputes where this team member has participated
             const disputesQuery = query(disputesRef, where('messages', 'array-contains-any', [{ authorId: user.id }]));
-            promises.push(getDocs(query(disputesRef, where('messages', 'array-contains-any', user.id)))
-                .then(snapshot => setInvolvedDisputes(snapshot.docs.map(d => d.data() as Dispute)))
-                .catch(e => {
-                    // Firebase doesn't support array-contains-any on objects directly, so we have to fetch all and filter
-                    if (e.code === 'invalid-argument') {
-                        return getDocs(disputesRef).then(allDisputesSnapshot => {
-                            const relatedDisputes = allDisputesSnapshot.docs
-                                .map(d => d.data() as Dispute)
-                                .filter(d => d.messages.some(m => m.authorId === user.id));
-                            setInvolvedDisputes(relatedDisputes);
-                        });
-                    }
-                    throw e;
-                })
-            );
+            promises.push(getDocs(disputesRef).then(allDisputesSnapshot => {
+                const relatedDisputes = allDisputesSnapshot.docs
+                    .map(d => d.data() as Dispute)
+                    .filter(d => d.messages.some(m => m.authorId === user.id));
+                setInvolvedDisputes(relatedDisputes);
+            }));
         } else {
             if (user.roles.includes('Job Giver')) {
                 const postedJobsQuery = query(jobsRef, where('jobGiver', '==', userDoc.ref));
@@ -708,7 +699,7 @@ export default function UserProfilePage() {
 
       {!isTeamMember && (roles.includes('Job Giver') || roles.includes('Installer')) && (
         <Card>
-            <Tabs defaultValue="posted">
+            <Tabs defaultValue={roles.includes('Job Giver') ? "posted" : "completed"}>
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <TabsList>
