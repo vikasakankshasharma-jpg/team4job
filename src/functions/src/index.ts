@@ -285,17 +285,17 @@ export const handleUnfundedJobs = functions.pubsub.schedule('every 6 hours').onR
 });
 
 /**
- * Triggered when there is a date change proposal on a job.
+ * Triggered when there is a date change proposal on a job or other status changes.
  */
-export const onJobDateChange = functions.firestore
+export const onJobStatusChange = functions.firestore
     .document("jobs/{jobId}")
     .onUpdate(async (change, context) => {
         const beforeData = change.before.data();
         const afterData = change.after.data();
         const jobId = context.params.jobId;
 
-        // Date Change Proposed
-        if (!beforeData.dateChangeProposal && afterData.dateChangeProposal && afterData.dateChangeProposal.status === 'pending') {
+        // --- Date Change Proposal Logic ---
+        if (beforeData.dateChangeProposal?.status !== 'pending' && afterData.dateChangeProposal?.status === 'pending') {
             const proposal = afterData.dateChangeProposal;
             const jobGiverId = afterData.jobGiver.id;
             const awardedInstallerId = afterData.awardedInstaller.id;
@@ -313,8 +313,8 @@ export const onJobDateChange = functions.firestore
             );
         }
 
-        // Date Change Accepted/Rejected
-        if (beforeData.dateChangeProposal && beforeData.dateChangeProposal.status === 'pending' && (!afterData.dateChangeProposal || afterData.dateChangeProposal.status !== 'pending')) {
+        // --- Date Change Accepted/Rejected Logic ---
+        if (beforeData.dateChangeProposal?.status === 'pending' && afterData.dateChangeProposal?.status !== 'pending') {
             const wasAccepted = afterData.jobStartDate !== beforeData.jobStartDate;
             const proposerId = beforeData.dateChangeProposal.proposedBy === 'Job Giver' ? afterData.jobGiver.id : afterData.awardedInstaller.id;
             
@@ -324,6 +324,22 @@ export const onJobDateChange = functions.firestore
                 `Your proposed date change for job "${afterData.title}" was ${wasAccepted ? 'accepted' : 'rejected'}.`,
                 `/dashboard/jobs/${jobId}`
             );
+        }
+        
+        // --- Offer Declined Logic ---
+        if (beforeData.selectedInstallers?.length > afterData.selectedInstallers?.length) {
+           const declinedInstallerId = beforeData.selectedInstallers.find((s: any) => 
+               !afterData.selectedInstallers.some((as: any) => as.installerId === s.installerId)
+           )?.installerId;
+
+           if (declinedInstallerId) {
+                 await sendNotification(
+                    afterData.jobGiver.id,
+                    'An Offer Was Declined',
+                    `An installer has declined your offer for job: "${afterData.title}".`,
+                    `/dashboard/jobs/${jobId}`
+                );
+           }
         }
     });
 
@@ -348,22 +364,28 @@ export const handleExpiredAwards = functions.pubsub.schedule('every 1 hours').on
 
     for (const doc of snapshot.docs) {
         const job = doc.data();
-        const remainingInstallers = (job.selectedInstallers || [])
-            .filter((s: { installerId: string }) => s.installerId !== job.awardedInstaller?.id)
-            .sort((a: { rank: number }, b: { rank: number }) => a.rank - b.rank);
+        const currentAwardedId = job.awardedInstaller?.id;
+
+        // Disqualify the installer whose offer just expired
+        const updatedDisqualified = admin.firestore.FieldValue.arrayUnion(currentAwardedId);
         
-        const isSequential = remainingInstallers.some((s: { rank: number }) => s.rank > 1);
+        const remainingInstallers = (job.selectedInstallers || [])
+            .filter((s: { installerId: string; }) => s.installerId !== currentAwardedId)
+            .sort((a: { rank: number; }, b: { rank: number; }) => a.rank - b.rank);
+        
+        const isSequential = remainingInstallers.some((s: { rank: number; }) => s.rank > 1);
         
         if (isSequential && remainingInstallers.length > 0) {
             // --- Sequential Strategy: Offer to next in line ---
             const nextInstaller = remainingInstallers[0];
             const newAcceptanceDeadline = admin.firestore.Timestamp.fromMillis(now.toMillis() + 24 * 60 * 60 * 1000);
             
-            console.log(`Job ${doc.id}: Sequential offer expired for ${job.awardedInstaller?.id}. Offering to next installer: ${nextInstaller.installerId}`);
+            console.log(`Job ${doc.id}: Sequential offer expired for ${currentAwardedId}. Offering to next installer: ${nextInstaller.installerId}`);
 
             await doc.ref.update({
                 awardedInstaller: admin.firestore().doc(`users/${nextInstaller.installerId}`),
-                acceptanceDeadline: newAcceptanceDeadline
+                acceptanceDeadline: newAcceptanceDeadline,
+                disqualifiedInstallerIds: updatedDisqualified
             });
 
             // Notify the next installer
@@ -377,12 +399,15 @@ export const handleExpiredAwards = functions.pubsub.schedule('every 1 hours').on
         } else {
             // --- Simultaneous Strategy or End of Sequential List ---
             console.log(`Job ${doc.id}: All offers expired or simultaneous offer timed out. Reverting to 'Bidding Closed'.`);
+            
+            const timedOutInstallerIds = (job.selectedInstallers || []).map((s: { installerId: string; }) => s.installerId);
 
             await doc.ref.update({
                 status: 'Bidding Closed',
                 awardedInstaller: admin.firestore.FieldValue.delete(),
                 acceptanceDeadline: admin.firestore.FieldValue.delete(),
-                selectedInstallers: [] // Clear selections
+                selectedInstallers: [], // Clear selections
+                disqualifiedInstallerIds: admin.firestore.FieldValue.arrayUnion(...timedOutInstallerIds),
             });
 
             // Notify Job Giver that the offer(s) expired
