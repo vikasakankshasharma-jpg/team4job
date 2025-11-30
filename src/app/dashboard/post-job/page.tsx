@@ -84,10 +84,11 @@ const jobSchema = z.object({
   attachments: z.array(z.instanceof(File)).optional(),
   directAwardInstallerId: z.string().optional(),
 }).refine(data => {
+    // If it's a direct award, deadline is not required. Otherwise, it is.
     if (data.directAwardInstallerId) return true;
     return data.deadline !== "";
 }, {
-    message: "Bidding deadline is required unless you are using Direct Award.",
+    message: "Bidding deadline is required for public jobs.",
     path: ["deadline"],
 }).refine(data => {
     if (!data.deadline || !data.jobStartDate) return true;
@@ -96,6 +97,7 @@ const jobSchema = z.object({
     message: "Job start date cannot be before the bidding deadline.",
     path: ["jobStartDate"],
 });
+
 
 function DirectAwardInput({ control }) {
     const { db } = useFirebase();
@@ -155,7 +157,7 @@ function DirectAwardInput({ control }) {
                         />
                     </FormControl>
                     <FormDescription>
-                        If you fill this in, the job will be private and only visible to this installer. Public bidding will be disabled.
+                        To send a private job request to a specific installer, paste their ID here. Public bidding will be disabled.
                     </FormDescription>
                     {isLoading && <p className="text-sm text-muted-foreground">Verifying ID...</p>}
                     {selectedInstaller && !isLoading && (
@@ -268,7 +270,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                     <li><span className="font-semibold">AI-Powered Fields:</span> Use the "AI Generate" button next to the description to get a head start based on your job title.</li>
                     <li><span className="font-semibold">Location & Address:</span> Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.</li>
                     <li><span className="font-semibold">Attachments:</span> Upload site photos, floor plans, or any other relevant documents to give installers a better understanding of the job.</li>
-                    {!isEditMode && <li><span className="font-semibold">Direct Award (Optional):</span> If you already know an installer on our platform, you can enter their public ID here to award the job to them directly, skipping the public bidding process.</li>}
+                    {!isEditMode && <li><span className="font-semibold">Direct Award (Optional):</span> If you already know an installer on our platform, you can enter their public ID here to send them a private request to bid on this job.</li>}
                 </ul>
             </div>
         )
@@ -377,7 +379,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
 
             jobData.id = newJobId;
             jobData.jobGiver = doc(db, 'users', user.id);
-            jobData.status = values.directAwardInstallerId ? "Awarded" : "Open for Bidding";
+            jobData.status = "Open for Bidding"; // Always open, even for direct awards initially
             jobData.bids = [];
             jobData.comments = [];
             jobData.postedAt = new Date();
@@ -385,12 +387,9 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
             jobData.completionOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
             if (values.directAwardInstallerId) {
-                const acceptanceDeadline = new Date();
-                acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
-                jobData.awardedInstaller = doc(db, 'users', values.directAwardInstallerId);
-                jobData.deadline = new Date(); // Set deadline to now for direct award
-                jobData.acceptanceDeadline = acceptanceDeadline;
-                jobData.selectedInstallers = [{ installerId: values.directAwardInstallerId, rank: 1 }];
+                jobData.directAwardInstallerId = values.directAwardInstallerId;
+                // For direct awards, the deadline is still relevant for the installer to respond.
+                jobData.deadline = values.deadline ? new Date(values.deadline) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // Default 7 days
             } else {
                 jobData.deadline = new Date(values.deadline);
             }
@@ -398,7 +397,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
             await setDoc(doc(db, "jobs", newJobId), jobData);
             toast({
                 title: repostJobId ? "Job Re-posted Successfully!" : "Job Posted Successfully!",
-                description: `Your job is now ${jobData.status === 'Awarded' ? 'awarded' : 'live and open for bidding'}.`,
+                description: `Your job is now ${jobData.directAwardInstallerId ? 'sent privately to the installer' : 'live and open for bidding'}.`,
             });
             form.reset();
             router.push(`/dashboard/posted-jobs`);
@@ -624,7 +623,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                         <FormControl>
                         <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardInstallerId} />
                         </FormControl>
-                        <FormDescription>Not applicable if you are using Direct Award.</FormDescription>
+                        <FormDescription>Not applicable if you are sending a direct request.</FormDescription>
                         <FormMessage />
                     </FormItem>
                     )}
@@ -668,10 +667,10 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <UserPlus className="h-5 w-5" />
-                            Direct Award (Optional)
+                            Direct Request (Optional)
                         </CardTitle>
                         <CardDescription>
-                            Know an installer you trust? Enter their public ID to award the job directly to them, skipping the public bidding process.
+                            Know an installer you trust? Enter their public ID to send a private request for them to bid on this job.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

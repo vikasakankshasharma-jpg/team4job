@@ -379,11 +379,18 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
       coverLetter: bidProposal,
       installer: doc(db, 'users', user.id)
     };
+
+    let updatePayload: Partial<Job> = {
+      bids: arrayUnion(newBid) as any,
+      bidderIds: arrayUnion(user.id) as any,
+    };
+
+    // If this is a direct award, the job status moves to Bidding Closed immediately after the bid.
+    if (job.directAwardInstallerId === user.id) {
+        updatePayload.status = 'Bidding Closed';
+    }
     
-    onJobUpdate({ 
-        bids: arrayUnion(newBid) as any,
-        bidderIds: arrayUnion(user.id) as any,
-    });
+    onJobUpdate(updatePayload);
 
     toast({ title: "Bid Placed!", description: "Your bid has been submitted successfully." });
   };
@@ -459,7 +466,6 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
              </Card>
            )}
         </div>
-         <Button onClick={handlePlaceBid} className="w-full md:w-auto">Place Bid</Button>
         <div className="space-y-2">
             <div className="flex justify-between items-center">
                 <label className="text-sm font-medium">Cover Letter / Proposal</label>
@@ -486,6 +492,9 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
             />
         </div>
       </CardContent>
+       <CardFooter>
+          <Button onClick={handlePlaceBid} className="w-full md:w-auto">Place Bid</Button>
+       </CardFooter>
     </Card>
   );
 }
@@ -700,9 +709,9 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
         let bids = [...job.bids];
 
         if (analysisResult) {
-            const topRecId = anonymousIdMap.get(analysisResult.topRecommendation.anonymousId);
-            const bestValueId = anonymousIdMap.get(analysisResult.bestValue.anonymousId);
-            const redFlagIds = new Set(analysisResult.redFlags.map(f => anonymousIdMap.get(f.anonymousId)));
+            const topRecId = Array.from(anonymousIdMap.entries()).find(([, value]) => value === analysisResult.topRecommendation.anonymousId)?.[0];
+            const bestValueId = Array.from(anonymousIdMap.entries()).find(([, value]) => value === analysisResult.bestValue.anonymousId)?.[0];
+            const redFlagIds = new Set(analysisResult.redFlags.map(f => Array.from(anonymousIdMap.entries()).find(([, value]) => value === f.anonymousId)?.[0]);
 
             bids.sort((a, b) => {
                 const aId = (a.installer as User).id;
@@ -1768,6 +1777,7 @@ export default function JobDetailPage() {
   const awardedInstallerId = getRefId(job.awardedInstaller);
   const isSelectedInstaller = role === "Installer" && (job.selectedInstallers || []).some(s => s.installerId === user.id);
   const isAwardedInstaller = role === "Installer" && user.id === awardedInstallerId;
+  const isPrivateBidder = role === "Installer" && user.id === job.directAwardInstallerId && job.bids.length === 0;
   const jobGiver = job.jobGiver as User;
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
   
@@ -1778,11 +1788,11 @@ export default function JobDetailPage() {
   const identitiesRevealed = (job.status !== 'Open for Bidding' && job.status !== 'Bidding Closed') || isAdmin || role === 'Support Team';
   const showJobGiverRealIdentity = identitiesRevealed;
   
-  const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || isJobGiver || isAdmin || role === 'Support Team');
+  const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || isJobGiver || isAdmin || role === 'Support Team') && !job.directAwardInstallerId;
   const communicationMode: 'public' | 'private' | 'none' =
     (job.status === 'In Progress' || job.status === 'Completed' || job.status === 'Disputed') && (isJobGiver || isAwardedInstaller || isAdmin || role === 'Support Team')
       ? 'private'
-      : job.status === 'Open for Bidding'
+      : (job.status === 'Open for Bidding' && !job.directAwardInstallerId)
       ? 'public'
       : 'none';
 
@@ -2056,8 +2066,8 @@ export default function JobDetailPage() {
           </CardContent>
         </Card>
 
-        {(isAdmin || role === 'Support Team' || (role === "Job Giver" && job.bids && job.bids.length > 0 && (job.status === 'Bidding Closed' || (job.status === 'Awarded' && !isSelectedInstaller)))) && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
-        {role === "Installer" && job.status === "Open for Bidding" && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
+        {(isAdmin || role === 'Support Team' || (isJobGiver && (job.status === 'Bidding Closed' || (job.status === 'Awarded' && !isSelectedInstaller)))) && job.bids && job.bids.length > 0 && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
+        {isPrivateBidder && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
         
         {job.status === 'In Progress' && (isJobGiver || isAwardedInstaller) && (
             <AdditionalTasksSection job={job} user={user} onJobUpdate={handleJobUpdate} />
