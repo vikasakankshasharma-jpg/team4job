@@ -78,6 +78,8 @@ import {
   BrainCircuit,
   Lightbulb,
   Unlock,
+  Heart,
+  UserX,
 } from "lucide-react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import React from "react";
@@ -96,7 +98,7 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
 import { InstallerAcceptanceSection, tierIcons } from "@/components/job/installer-acceptance-section";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 
@@ -499,7 +501,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
   );
 }
 
-function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequentiallySelected, isTopRec, isBestValue, redFlag }: { bid: Bid, job: Job, anonymousId: string, selected: boolean, onSelect: (id: string) => void, rank?: number, isSequentiallySelected?: boolean, isTopRec?: boolean, isBestValue?: boolean, redFlag?: { concern: string } | null }) {
+function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequentiallySelected, isTopRec, isBestValue, redFlag, isFavorite, isBlocked }: { bid: Bid, job: Job, anonymousId: string, selected: boolean, onSelect: (id: string) => void, rank?: number, isSequentiallySelected?: boolean, isTopRec?: boolean, isBestValue?: boolean, redFlag?: { concern: string } | null, isFavorite?: boolean, isBlocked?: boolean }) {
     const { role, isAdmin } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
@@ -559,18 +561,24 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequen
                         <p className="text-xs text-muted-foreground">{timeAgo}</p>
                     </div>
                 </div>
-                {isTopRec && <Badge className="my-2" variant="default"><Trophy className="h-4 w-4 mr-2" /> Top Recommendation</Badge>}
-                {isBestValue && <Badge className="my-2" variant="success"><Lightbulb className="h-4 w-4 mr-2" /> Best Value</Badge>}
-                {redFlag && (
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Badge className="my-2" variant="destructive"><AlertOctagon className="h-4 w-4 mr-2" /> Red Flag</Badge>
-                            </TooltipTrigger>
-                            <TooltipContent><p>{redFlag.concern}</p></TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                )}
+                
+                <div className="flex flex-wrap gap-2 my-2">
+                    {isFavorite && <Badge variant="default" className="gap-1.5 pl-2"><Heart className="h-3.5 w-3.5" />Your Favorite</Badge>}
+                    {isBlocked && <Badge variant="destructive" className="gap-1.5 pl-2"><UserX className="h-3.5 w-3.5" />You Blocked</Badge>}
+                    {isTopRec && <Badge variant="outline"><Trophy className="h-4 w-4 mr-2" /> Top Recommendation</Badge>}
+                    {isBestValue && <Badge variant="success"><Lightbulb className="h-4 w-4 mr-2" /> Best Value</Badge>}
+                    {redFlag && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Badge variant="destructive"><AlertOctagon className="h-4 w-4 mr-2" /> Red Flag</Badge>
+                                </TooltipTrigger>
+                                <TooltipContent><p>{redFlag.concern}</p></TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                </div>
+
                 <p className="mt-4 text-sm text-foreground">{bid.coverLetter}</p>
             </div>
         </div>
@@ -647,6 +655,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
 
         setIsAnalyzing(true);
         try {
+            if (!user) throw new Error("User not found");
             const bidderProfiles = job.bids.map(bid => {
                 const installer = bid.installer as User;
                 return {
@@ -655,6 +664,8 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
                     tier: installer.installerProfile?.tier || 'Bronze',
                     rating: installer.installerProfile?.rating || 0,
                     reviewCount: installer.installerProfile?.reviews || 0,
+                    isFavorite: user.favoriteInstallerIds?.includes(installer.id),
+                    isBlocked: user.blockedInstallerIds?.includes(installer.id),
                 };
             });
 
@@ -711,7 +722,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
         if (analysisResult) {
             const topRecId = Array.from(anonymousIdMap.entries()).find(([, value]) => value === analysisResult.topRecommendation.anonymousId)?.[0];
             const bestValueId = Array.from(anonymousIdMap.entries()).find(([, value]) => value === analysisResult.bestValue.anonymousId)?.[0];
-            const redFlagIds = new Set(analysisResult.redFlags.map(f => Array.from(anonymousIdMap.entries()).find(([, value]) => value === f.anonymousId)?.[0]);
+            const redFlagIds = new Set(analysisResult.redFlags.map(f => Array.from(anonymousIdMap.entries()).find(([, value]) => value === f.anonymousId)?.[0]));
 
             bids.sort((a, b) => {
                 const aId = (a.installer as User).id;
@@ -912,6 +923,8 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
                     onSelect={handleSelectInstaller}
                     isSequentiallySelected={awardStrategy === 'sequential' && selectedInstallers.includes(installerId)}
                     rank={rank && rank > 0 ? rank : undefined}
+                    isFavorite={user?.favoriteInstallerIds?.includes(installerId)}
+                    isBlocked={user?.blockedInstallerIds?.includes(installerId)}
                     {...recommendationProps}
                 />
             </div>
