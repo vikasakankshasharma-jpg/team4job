@@ -25,30 +25,44 @@ async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { jobId, jobTitle, jobGiverId, installerId, amount, travelTip, jobGiverFee } = await req.json();
+    const { jobId, jobGiverId } = await req.json();
 
-    if (!jobId || !jobGiverId || !installerId || amount === undefined) {
+    if (!jobId || !jobGiverId) {
       return NextResponse.json({ error: 'Missing required payment details' }, { status: 400 });
     }
     
-    // 1. Fetch Job Giver and Installer details
-    const [jobGiverSnap, installerSnap] = await Promise.all([
+    // 1. Fetch Job, Job Giver, and Installer details
+    const jobRef = doc(db, 'jobs', jobId);
+    const [jobSnap, jobGiverSnap] = await Promise.all([
+        getDoc(jobRef),
         getDoc(doc(db, 'users', jobGiverId)),
-        installerId === 'PLATFORM' ? Promise.resolve(null) : getDoc(doc(db, 'users', installerId)),
     ]);
 
-    if (!jobGiverSnap.exists() || (installerId !== 'PLATFORM' && !installerSnap?.exists())) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    if (!jobSnap.exists()) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+    if (!jobGiverSnap.exists()) return NextResponse.json({ error: 'Job Giver not found' }, { status: 404 });
+
+    const job = jobSnap.data() as Job;
     const jobGiver = jobGiverSnap.data() as User;
+    
+    if (!job.awardedInstaller) return NextResponse.json({ error: 'Job has no awarded installer' }, { status: 400 });
+    
+    const installerId = job.awardedInstaller.id;
+    const installerSnap = await getDoc(doc(db, 'users', installerId));
+    if (!installerSnap.exists()) return NextResponse.json({ error: 'Installer not found' }, { status: 404 });
+
+    // Determine the amount from the winning bid
+    const winningBid = job.bids.find(b => (b.installer as any).id === installerId);
+    if (!winningBid) return NextResponse.json({ error: 'Winning bid not found' }, { status: 400 });
+    const amount = winningBid.amount;
+
 
     // 2. Calculate fees and final amounts based on platform settings
     const platformSettings = await getPlatformSettings();
     const isSubscription = jobId.startsWith('SUB-');
     
-    const calculatedJobGiverFee = isSubscription ? 0 : (jobGiverFee ?? (amount * (platformSettings.jobGiverFeeRate! / 100)));
+    const calculatedJobGiverFee = isSubscription ? 0 : (amount * (platformSettings.jobGiverFeeRate! / 100));
     const calculatedCommission = isSubscription ? 0 : amount * (platformSettings.installerCommissionRate! / 100);
-    const tipAmount = travelTip || 0;
+    const tipAmount = job.travelTip || 0;
     
     const totalPaidByGiver = amount + calculatedJobGiverFee + tipAmount;
     const payoutToInstaller = amount - calculatedCommission + tipAmount;
@@ -60,7 +74,7 @@ export async function POST(req: NextRequest) {
     const newTransaction: Transaction = {
         id: transactionId,
         jobId,
-        jobTitle,
+        jobTitle: job.title,
         payerId: jobGiverId,
         payeeId: installerId,
         amount, // Original bid/plan amount
@@ -89,7 +103,7 @@ export async function POST(req: NextRequest) {
         order_meta: {
             return_url: isSubscription ? `https://cctv-job-connect.web.app/dashboard/billing?payment_status=success&order_id={order_id}` : `https://cctv-job-connect.web.app/dashboard/jobs/${jobId}?payment_status=success&order_id={order_id}`,
         },
-        order_note: `Payment for: ${jobTitle}`
+        order_note: `Payment for: ${job.title}`
     };
 
     const response = await axios.post(

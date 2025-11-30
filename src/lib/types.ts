@@ -140,6 +140,7 @@ export type Job = {
   disqualifiedInstallerIds?: string[];
   awardedInstaller?: User | DocumentReference;
   selectedInstallers?: { installerId: string, rank: number }[];
+  directAwardInstallerId?: string; // ID of the installer this job was directly sent to
   rating?: number;
   review?: string;
   completionOtp?: string;

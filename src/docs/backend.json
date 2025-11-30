@@ -299,6 +299,10 @@
         "awardedInstaller": {
           "$ref": "#/entities/UserProfile"
         },
+        "directAwardInstallerId": {
+          "type": "string",
+          "description": "If this is a direct award, this is the ID of the installer it was sent to."
+        },
         "bidderIds": {
             "type": "array",
             "items": {
