@@ -13,7 +13,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
+  CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Loader2, RefreshCw, Star } from "lucide-react";
@@ -371,13 +371,16 @@ export default function PostedJobsPage() {
         title: 'My Posted Jobs Guide',
         content: (
             <div className="space-y-4 text-sm">
-                <p>This page lists all the jobs you have created. It's split into two tabs:</p>
+                <p>This page lists all the jobs you have created. It's split into three tabs:</p>
                 <ul className="list-disc space-y-2 pl-5">
                     <li>
                         <span className="font-semibold">Active:</span> Shows all jobs that are currently open for bidding, in progress, or waiting for your action. This is where you'll manage ongoing projects.
                     </li>
+                     <li>
+                        <span className="font-semibold">Unbid:</span> Jobs that received no bids. From here you can choose to repost the job as is, or promote it with a travel tip to attract more installers.
+                    </li>
                     <li>
-                        <span className="font-semibold">Archived:</span> Shows all your jobs that have been completed, cancelled, or went un-bid. This is your history of past jobs.
+                        <span className="font-semibold">Archived:</span> Shows all your jobs that have been completed or cancelled. This is your history of past jobs.
                     </li>
                      <li>
                         <span className="font-semibold">Job Type:</span> This column shows how a job was awarded. "Bidding" means you chose from bids, while "Direct" means you awarded it directly to an installer.
@@ -402,14 +405,16 @@ export default function PostedJobsPage() {
     );
   }
   
-  const activeJobs = jobs.filter(job => job.status !== 'Completed' && job.status !== 'Cancelled' && job.status !== 'Unbid').sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
-  const archivedJobs = jobs.filter(job => job.status === 'Completed' || job.status === 'Cancelled' || job.status === 'Unbid').sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+  const activeJobs = jobs.filter(job => !['Completed', 'Cancelled', 'Unbid'].includes(job.status)).sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+  const unbidJobs = jobs.filter(job => job.status === 'Unbid').sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+  const archivedJobs = jobs.filter(job => job.status === 'Completed' || job.status === 'Cancelled').sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
 
 
   return (
      <Tabs defaultValue={tab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="unbid">Unbid</TabsTrigger>
             <TabsTrigger value="archived">Archived</TabsTrigger>
         </TabsList>
         <TabsContent value="active">
@@ -422,11 +427,21 @@ export default function PostedJobsPage() {
             onUpdate={fetchJobs}
           />
         </TabsContent>
+         <TabsContent value="unbid">
+          <PostedJobsTable 
+            jobs={unbidJobs}
+            title="Unbid Jobs"
+            description="Jobs that received no bids. You can repost or promote them."
+            footerText={`You have ${unbidJobs.length} unbid jobs requiring attention.`}
+            loading={loading}
+            onUpdate={fetchJobs}
+          />
+        </TabsContent>
          <TabsContent value="archived">
           <PostedJobsTable 
             jobs={archivedJobs}
             title="My Archived Jobs"
-            description="A history of your completed, cancelled, or un-bid projects."
+            description="A history of your completed or cancelled projects."
             footerText={`Showing 1-${archivedJobs.length} of ${archivedJobs.length} archived jobs`}
             loading={loading}
             onUpdate={fetchJobs}

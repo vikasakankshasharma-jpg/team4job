@@ -425,3 +425,56 @@ export const handleExpiredAwards = functions.pubsub.schedule('every 1 hours').on
     console.log(`Processed ${snapshot.size} expired awards.`);
     return null;
 });
+
+/**
+ * Finds jobs that have passed their deadline with no bids and marks them as 'Unbid'.
+ * Runs every hour.
+ */
+export const handleUnbidJobs = functions.pubsub.schedule('every 1 hours').onRun(async (context) => {
+    console.log('Running scheduled function to handle unbid jobs...');
+    const now = admin.firestore.Timestamp.now();
+
+    const q = admin.firestore().collection('jobs')
+        .where('status', '==', 'Open for Bidding')
+        .where('deadline', '<=', now);
+
+    const snapshot = await q.get();
+
+    if (snapshot.empty) {
+        console.log('No jobs found past deadline.');
+        return null;
+    }
+
+    const batch = admin.firestore().batch();
+    const notificationPromises: Promise<void>[] = [];
+    let unbidCount = 0;
+
+    snapshot.docs.forEach(doc => {
+        const job = doc.data();
+        // Check if there are no bids. The 'bids' array is more reliable than 'bidderIds' length if it exists.
+        if (!job.bids || job.bids.length === 0) {
+            unbidCount++;
+            console.log(`Marking job ${doc.id} as 'Unbid'.`);
+            batch.update(doc.ref, { status: 'Unbid' });
+
+            // Notify the Job Giver
+            notificationPromises.push(sendNotification(
+                job.jobGiver.id,
+                'Your Job Received No Bids',
+                `Your job "${job.title}" has expired without any bids. You can now re-list or promote it.`,
+                `/dashboard/posted-jobs?tab=unbid`
+            ));
+        }
+    });
+    
+    if (unbidCount > 0) {
+        await batch.commit();
+        await Promise.all(notificationPromises);
+        console.log(`Successfully marked ${unbidCount} jobs as 'Unbid'.`);
+    } else {
+        console.log('All jobs past deadline have bids.');
+    }
+
+    return null;
+});
+
