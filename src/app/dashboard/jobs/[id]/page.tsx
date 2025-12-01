@@ -80,6 +80,7 @@ import {
   Unlock,
   Heart,
   UserX,
+  RefreshCcw,
 } from "lucide-react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import React from "react";
@@ -104,6 +105,59 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 
 
 declare const cashfree: any;
+
+function ReapplyCard({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
+    const [isLoading, setIsLoading] = React.useState(false);
+    const { toast } = useToast();
+    
+    const handleReapply = async () => {
+        setIsLoading(true);
+        await onJobUpdate({ disqualifiedInstallerIds: arrayRemove(job.awardedInstaller.id) as any });
+        toast({
+            title: "Re-application Request Sent",
+            description: "The Job Giver has been notified. You are now eligible to be selected again.",
+        });
+        setIsLoading(false);
+    };
+
+    return (
+        <Card className="border-amber-500/50 bg-amber-50/50">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                    <Hourglass className="h-5 w-5" />
+                    Offer Expired
+                </CardTitle>
+                <CardDescription>
+                    Your offer for this job expired. You can request to be re-included for consideration, but this will incur a small reputation penalty.
+                </CardDescription>
+            </CardHeader>
+            <CardFooter>
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="warning" disabled={isLoading}>
+                             <RefreshCcw className="mr-2 h-4 w-4" />
+                             Request to Re-apply (-15 Points)
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm Re-application Request</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to request to be re-included? A penalty of 15 reputation points will be deducted from your profile for missing the original deadline.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleReapply} className={buttonVariants({ variant: "warning" })}>
+                                Yes, Request Re-application
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </CardFooter>
+        </Card>
+    );
+}
 
 function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
     const [rating, setRating] = React.useState(job.rating || 0);
@@ -640,13 +694,6 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
         }
     }
     
-    const handleReincludeInstaller = async (installerId: string) => {
-        await onJobUpdate({ disqualifiedInstallerIds: arrayRemove(installerId) as any });
-        toast({
-            title: "Installer Re-included",
-            description: "This installer can now be selected for an offer again.",
-        });
-    };
 
     const handleAnalyzeBids = async () => {
         if (!isSubscribed) {
@@ -880,19 +927,6 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
                                     </SelectContent>
                                 </Select>
                             </div>
-                            {job.disqualifiedInstallerIds && job.disqualifiedInstallerIds.length > 0 && (
-                                <div className="space-y-2">
-                                    <Label>Re-include Installers</Label>
-                                    <div className="space-y-1">
-                                        {job.disqualifiedInstallerIds.map(id => (
-                                            <div key={id} className="flex justify-between items-center text-sm">
-                                                <span>{(job.bids.find(b => (b.installer as User).id === id)?.installer as User)?.name || 'Unknown'}</span>
-                                                <Button size="sm" variant="secondary" onClick={() => handleReincludeInstaller(id)}>Re-include</Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     )}
                  </div>
@@ -1429,7 +1463,7 @@ export default function JobDetailPage() {
   const [newComment, setNewComment] = React.useState("");
 
   const [newPrivateMessage, setNewPrivateMessage] = React.useState("");
-  const [privateMessageAttachments, setPrivateMessageAttachments] = React.useState<File[]>([]);
+  const [privateMessageAttachments, setNewPrivateMessageAttachments] = React.useState<File[]>([]);
   const [isSendingMessage, setIsSendingMessage] = React.useState(false);
   
   const [deadlineRelative, setDeadlineRelative] = React.useState('');
@@ -1615,7 +1649,7 @@ export default function JobDetailPage() {
   };
 
   const handlePostPrivateMessage = async () => {
-    if ((!newPrivateMessage.trim() && privateMessageAttachments.length === 0) || !user || !job || !storage) return;
+    if ((!newPrivateMessage.trim() && newPrivateMessageAttachments.length === 0) || !user || !job || !storage) return;
 
     const validation = validateMessageContent(newPrivateMessage);
     if (!validation.isValid) {
@@ -1629,7 +1663,7 @@ export default function JobDetailPage() {
     
     setIsSendingMessage(true);
 
-    const uploadPromises = privateMessageAttachments.map(async file => {
+    const uploadPromises = newPrivateMessageAttachments.map(async file => {
         const fileRef = ref(storage, `jobs/${job.id}/private_messages/${Date.now()}_${file.name}`);
         await uploadBytes(fileRef, file);
         const fileUrl = await getDownloadURL(fileRef);
@@ -1651,7 +1685,7 @@ export default function JobDetailPage() {
     });
 
     setNewPrivateMessage("");
-    setPrivateMessageAttachments([]);
+    setNewPrivateMessageAttachments([]);
     setIsSendingMessage(false);
      toast({
       title: "Message Sent!",
@@ -1791,6 +1825,8 @@ export default function JobDetailPage() {
   const awardedInstallerId = getRefId(job.awardedInstaller);
   const isSelectedInstaller = role === "Installer" && (job.selectedInstallers || []).some(s => s.installerId === user.id);
   const isAwardedInstaller = role === "Installer" && user.id === awardedInstallerId;
+  const isDisqualified = role === "Installer" && (job.disqualifiedInstallerIds || []).includes(user.id);
+  const canReapply = isDisqualified && job.status === "Bidding Closed";
   const isPrivateBidder = role === "Installer" && user.id === job.directAwardInstallerId && job.bids.length === 0;
   const jobGiver = job.jobGiver as User;
   const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
@@ -1917,6 +1953,14 @@ export default function JobDetailPage() {
                     <InstallerAcceptanceSection job={job} onJobUpdate={handleJobUpdate} />
                  </>
             )}
+            
+            {canReapply && (
+                <>
+                    <Separator className="my-6" />
+                    <ReapplyCard job={job} onJobUpdate={handleJobUpdate} />
+                </>
+            )}
+
 
             {communicationMode === 'private' && (
               <>
@@ -2004,8 +2048,8 @@ export default function JobDetailPage() {
                               onChange={(e) => setNewPrivateMessage(e.target.value)}
                             />
                             <div className="flex justify-between items-center">
-                                 <FileUpload onFilesChange={setPrivateMessageAttachments} maxFiles={3} />
-                                <Button size="sm" onClick={handlePostPrivateMessage} disabled={isSendingMessage || (!newPrivateMessage.trim() && privateMessageAttachments.length === 0)}>
+                                 <FileUpload onFilesChange={setNewPrivateMessageAttachments} maxFiles={3} />
+                                <Button size="sm" onClick={handlePostPrivateMessage} disabled={isSendingMessage || (!newPrivateMessage.trim() && newPrivateMessageAttachments.length === 0)}>
                                   {isSendingMessage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   <Send className="mr-2 h-4 w-4" />
                                   Send

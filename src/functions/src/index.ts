@@ -326,21 +326,52 @@ export const onJobStatusChange = functions.firestore
             );
         }
         
-        // --- Offer Declined ---
+        // --- Installer was disqualified (either by declining or timeout) ---
         const beforeDisqualified = beforeData.disqualifiedInstallerIds || [];
         const afterDisqualified = afterData.disqualifiedInstallerIds || [];
         if (afterDisqualified.length > beforeDisqualified.length) {
             const newDisqualifiedId = afterDisqualified.find((id: string) => !beforeDisqualified.includes(id));
             if (newDisqualifiedId) {
-                const installerDoc = await admin.firestore().collection('users').doc(newDisqualifiedId).get();
-                const installerName = installerDoc.data()?.name || 'An installer';
+                // This logic is now responsible for applying the penalty for timed-out offers.
+                // We assume a decline is an active choice, but a timeout incurs a penalty.
+                // The `handleExpiredAwards` function will add the user to the disqualified list on timeout.
                 
-                await sendNotification(
-                    afterData.jobGiver.id,
-                    'An Offer Was Declined',
-                    `${installerName} has declined your offer for job: "${afterData.title}". You can now send new offers.`,
-                    `/dashboard/jobs/${jobId}`
-                );
+                const settingsRef = admin.firestore().collection('settings').doc('platform');
+                const settingsSnap = await settingsRef.get();
+                const settings = settingsSnap.data() || {};
+                const penaltyForDeclinedJob = settings.penaltyForDeclinedJob || -15; // Default penalty
+                
+                const installerRef = admin.firestore().collection('users').doc(newDisqualifiedId);
+                const installerDoc = await installerRef.get();
+                
+                if (installerDoc.exists) {
+                    const installerData = installerDoc.data();
+                    const installerName = installerData?.name || 'An installer';
+                    
+                    // Check if this disqualification was due to a timeout (status was Awarded) vs an active decline
+                    const wasTimedOut = beforeData.status === 'Awarded';
+                    
+                    if (wasTimedOut) {
+                        await installerRef.update({
+                            'installerProfile.points': admin.firestore.FieldValue.increment(penaltyForDeclinedJob)
+                        });
+                        console.log(`Applied penalty of ${penaltyForDeclinedJob} points to installer ${newDisqualifiedId} for timed-out offer.`);
+                         await sendNotification(
+                            newDisqualifiedId,
+                            'Offer Expired - Points Deducted',
+                            `You missed a job offer for "${afterData.title}". ${Math.abs(penaltyForDeclinedJob)} reputation points have been deducted.`,
+                            `/dashboard/jobs/${jobId}`
+                        );
+                    }
+                    
+                    // Notify the Job Giver in either case (decline or timeout)
+                    await sendNotification(
+                        afterData.jobGiver.id,
+                        'An Offer Was Declined or Expired',
+                        `${installerName} is no longer being considered for your job: "${afterData.title}".`,
+                        `/dashboard/jobs/${jobId}`
+                    );
+                }
             }
         }
     });
@@ -368,7 +399,7 @@ export const handleExpiredAwards = functions.pubsub.schedule('every 1 hours').on
         const job = doc.data();
         const currentAwardedId = job.awardedInstaller?.id;
 
-        // Disqualify the installer whose offer just expired
+        // Disqualify the installer whose offer just expired. This will trigger the penalty in onJobStatusChange.
         const updatedDisqualified = admin.firestore.FieldValue.arrayUnion(currentAwardedId);
         
         const remainingInstallers = (job.selectedInstallers || [])
@@ -478,3 +509,4 @@ export const handleUnbidJobs = functions.pubsub.schedule('every 1 hours').onRun(
     return null;
 });
 
+    
