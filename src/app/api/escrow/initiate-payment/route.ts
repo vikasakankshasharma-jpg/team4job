@@ -1,5 +1,6 @@
 
 
+
 import { NextRequest, NextResponse } from 'next/server';
 import { doc, getDoc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/server-init';
@@ -50,10 +51,21 @@ export async function POST(req: NextRequest) {
     const installerSnap = await getDoc(doc(db, 'users', installerId));
     if (!installerSnap.exists()) return NextResponse.json({ error: 'Installer not found' }, { status: 404 });
 
-    // Determine the amount from the winning bid
-    const winningBid = job.bids.find(b => (b.installer as any).id === installerId);
-    if (!winningBid) return NextResponse.json({ error: 'Winning bid not found' }, { status: 400 });
-    const amount = winningBid.amount;
+    let amount = 0;
+    // Determine the amount from the winning bid for regular jobs
+    if (job.bids && job.bids.length > 0) {
+        const winningBid = job.bids.find(b => (b.installer as any).id === installerId);
+        if (winningBid) {
+            amount = winningBid.amount;
+        }
+    } else if (job.directAwardInstallerId && job.budget) {
+        // For direct awards, use the budget field
+        amount = job.budget.min;
+    }
+    
+    if (amount <= 0) {
+        return NextResponse.json({ error: 'Could not determine a valid bid amount for this job.' }, { status: 400 });
+    }
 
 
     // 2. Calculate fees and final amounts based on platform settings

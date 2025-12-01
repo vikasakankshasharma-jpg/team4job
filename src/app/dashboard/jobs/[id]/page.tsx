@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -216,22 +217,74 @@ function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJo
     );
 }
 
+function JobGiverConfirmationSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
+    const { toast } = useToast();
+    const { db } = useFirebase();
+    const [isLoading, setIsLoading] = React.useState(false);
+
+    const handleApproveAndPay = async () => {
+        setIsLoading(true);
+        try {
+            const q = query(collection(db, "transactions"), where("jobId", "==", job.id), where("status", "==", "Funded"));
+            const querySnapshot = await getDocs(q);
+            if (querySnapshot.empty) {
+                throw new Error("Could not find a funded transaction for this job.");
+            }
+            const transactionDoc = querySnapshot.docs[0];
+
+            await axios.post('/api/escrow/release-funds', {
+                transactionId: transactionDoc.id,
+            });
+
+            await onJobUpdate({ status: 'Completed' });
+
+            toast({
+                title: "Job Approved & Payment Released!",
+                description: "The payment has been released to the installer.",
+                variant: 'success'
+            });
+        } catch (error: any) {
+            console.error("Error approving job:", error);
+            toast({
+                title: "Error Approving Job",
+                description: error.response?.data?.error || "An unexpected error occurred.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+            <CardHeader>
+                <CardTitle>Confirm Job Completion</CardTitle>
+                <CardDescription>The installer has submitted the job for your review. Please examine the proof of work and either approve completion or raise a dispute if there are issues.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <Button onClick={handleApproveAndPay} disabled={isLoading} className="flex-1">
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Approve & Release Payment
+                    </Button>
+                    <Button variant="destructive" className="flex-1">
+                        <AlertOctagon className="mr-2 h-4 w-4" />
+                        Raise a Dispute
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
   const { toast } = useToast();
-  const { db, storage } = useFirebase();
-  const [otp, setOtp] = React.useState('');
+  const { storage } = useFirebase();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [completionFiles, setCompletionFiles] = React.useState<File[]>([]);
 
   const handleCompleteJob = async () => {
-    if (otp !== job.completionOtp) {
-      toast({
-        title: "Invalid OTP",
-        description: "The Job Completion OTP is incorrect. Please ask the Job Giver for the correct code.",
-        variant: "destructive",
-      });
-      return;
-    }
      if (completionFiles.length === 0) {
       toast({
         title: "Proof of Work Required",
@@ -253,75 +306,31 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
     setIsSubmitting(true);
     
     try {
-        // --- 1. Upload proof of completion files ---
         const uploadPromises = completionFiles.map(async (file) => {
-            const storageRef = ref(storage, `jobs/${job.id}/completion_proof/${file.name}`);
+            const storageRef = ref(storage, `jobs/${job.id}/completion_proof/${Date.now()}_${file.name}`);
             await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(storageRef);
             return { fileName: file.name, fileUrl: downloadURL, fileType: file.type };
         });
         const uploadedAttachments = await Promise.all(uploadPromises);
 
-        // --- 2. Find the corresponding "Funded" transaction ---
-        const q = query(collection(db, "transactions"), where("jobId", "==", job.id), where("status", "==", "Funded"));
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
-            throw new Error("Could not find a funded transaction for this job. Please contact support.");
-        }
-        const transactionDoc = querySnapshot.docs[0];
-        const transactionData = transactionDoc.data() as Transaction;
-
-        // --- 3. Call backend to release the funds from the Cashfree Marketplace Settlement account ---
-        await axios.post('/api/escrow/release-funds', {
-            transactionId: transactionDoc.id,
-        });
-        
-        // --- 4. Auto-generate invoice data ---
-        let invoiceData: Invoice | null = null;
-        if (job.isGstInvoiceRequired) {
-            const jobGiver = job.jobGiver as User;
-            const awardedInstaller = job.awardedInstaller as User;
-            const bidAmount = transactionData.amount;
-            const tipAmount = transactionData.travelTip || 0;
-            
-            invoiceData = {
-                id: `INV-${job.id}`,
-                jobId: job.id,
-                jobTitle: job.title,
-                date: new Date(),
-                subtotal: bidAmount,
-                travelTip: tipAmount,
-                totalAmount: bidAmount + tipAmount,
-                from: {
-                    name: awardedInstaller.name,
-                    gstin: awardedInstaller.gstin || "Not Provided",
-                },
-                to: {
-                    name: jobGiver.name,
-                    gstin: jobGiver.gstin || "Not Provided",
-                },
-            };
-        }
-
-        // --- 5. Update Job Status and invoice data locally and in Firestore ---
         const updatedJobData: Partial<Job> = { 
-            status: 'Completed', 
+            status: 'Pending Confirmation', 
             attachments: arrayUnion(...uploadedAttachments) as any,
-            ...(invoiceData && { invoice: invoiceData }),
         };
         onJobUpdate(updatedJobData);
         
         toast({
-          title: "Job Completed!",
-          description: "Payout has been initiated. The Job Giver can now rate your work.",
+          title: "Submitted for Confirmation",
+          description: "Your proof of work has been sent to the Job Giver for approval.",
           variant: 'success'
         });
 
     } catch (error: any) {
-        console.error("Error completing job:", error);
+        console.error("Error submitting for completion:", error);
         toast({
-            title: "Error Completing Job",
-            description: error.response?.data?.error || "An unexpected error occurred while initiating the payout.",
+            title: "Submission Error",
+            description: "An unexpected error occurred while submitting your work.",
             variant: "destructive",
         });
     } finally {
@@ -332,9 +341,9 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Complete This Job</CardTitle>
+        <CardTitle>Submit for Completion</CardTitle>
         <CardDescription>
-          Upload proof of completion (photos/videos) and enter the 6-digit OTP from the Job Giver to mark the job as complete and trigger the payout.
+          Upload proof of completion (photos/videos) to send to the Job Giver for approval. Once they approve, the payment will be released.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -342,25 +351,14 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
             <Label>Proof of Completion</Label>
             <FileUpload onFilesChange={setCompletionFiles} maxFiles={5} />
         </div>
-        <div className="flex items-center gap-4">
-          <Input
-            type="text"
-            placeholder="Enter 6-digit OTP"
-            className="flex-1"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            maxLength={6}
-          />
-          <Button onClick={handleCompleteJob} disabled={otp.length !== 6 || isSubmitting}>
-             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <CheckCircle2 className="mr-2 h-4 w-4" />
-            Complete Job
-          </Button>
-        </div>
-         {!user.payouts?.beneficiaryId && (
-            <p className="text-sm text-destructive">You must set up your payout bank account in your profile before you can complete a job.</p>
-        )}
       </CardContent>
+      <CardFooter>
+          <Button onClick={handleCompleteJob} disabled={completionFiles.length === 0 || isSubmitting}>
+             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Send className="mr-2 h-4 w-4" />
+            Submit for Approval
+          </Button>
+      </CardFooter>
     </Card>
   );
 }
@@ -442,7 +440,6 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
       bidderIds: arrayUnion(user.id) as any,
     };
 
-    // If this is a direct award, the job status moves to Bidding Closed immediately after the bid.
     if (job.directAwardInstallerId === user.id) {
         updatePayload.status = 'Bidding Closed';
     }
@@ -1496,7 +1493,6 @@ export default function JobDetailPage() {
 
     let jobData = jobSnap.data() as Job;
 
-    // Collect all unique user IDs from the job document
     const userIds = new Set<string>();
     const jobGiverId = getRefId(jobData.jobGiver);
     if (jobGiverId) userIds.add(jobGiverId);
@@ -1521,7 +1517,6 @@ export default function JobDetailPage() {
         if (authorId) userIds.add(authorId);
     });
     
-    // Fetch all users in one go
     const usersMap = new Map<string, User>();
     if (userIds.size > 0) {
         const usersQuery = query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds)));
@@ -1533,7 +1528,6 @@ export default function JobDetailPage() {
         });
     }
 
-    // Populate the job object with the fetched user data
     const populatedJob: Job = {
         ...jobData,
         jobGiver: usersMap.get(jobGiverId!) || jobData.jobGiver,
@@ -1562,7 +1556,6 @@ export default function JobDetailPage() {
                 description: "The job is now in progress.",
                 variant: "success",
             });
-            // Re-fetch job data to show the updated "In Progress" status
             fetchJob();
         } else if (paymentStatus === 'failure') {
             toast({
@@ -1571,7 +1564,6 @@ export default function JobDetailPage() {
                 variant: "destructive",
             });
         }
-        // Clean the URL
         window.history.replaceState(null, '', `/dashboard/jobs/${id}`);
     }
   }, [searchParams, id, toast, fetchJob]);
@@ -1616,7 +1608,6 @@ export default function JobDetailPage() {
     if (job) {
       const jobRef = doc(db, 'jobs', job.id);
       await updateDoc(jobRef, updatedPart);
-      // Re-fetch the job to get the latest populated data
       fetchJob();
     }
   }, [job, db, fetchJob]);
@@ -1740,13 +1731,10 @@ export default function JobDetailPage() {
       if (!job || !storage) return;
       
       try {
-        // Create a reference to the file to delete
         const fileRef = ref(storage, attachmentToDelete.fileUrl);
         
-        // Delete the file
         await deleteObject(fileRef);
 
-        // Remove the attachment from the job's attachments array in Firestore
         await handleJobUpdate({
             attachments: arrayRemove(attachmentToDelete) as any
         });
@@ -1759,7 +1747,6 @@ export default function JobDetailPage() {
       } catch (error: any) {
           console.error("Error deleting attachment:", error);
           if (error.code === 'storage/object-not-found') {
-               // If file doesn't exist in storage, just remove it from firestore
                 await handleJobUpdate({
                     attachments: arrayRemove(attachmentToDelete) as any
                 });
@@ -1840,7 +1827,7 @@ export default function JobDetailPage() {
   
   const canPostPublicComment = job.status === 'Open for Bidding' && (role === 'Installer' || isJobGiver || isAdmin || role === 'Support Team') && !job.directAwardInstallerId;
   const communicationMode: 'public' | 'private' | 'none' =
-    (job.status === 'In Progress' || job.status === 'Completed' || job.status === 'Disputed') && (isJobGiver || isAwardedInstaller || isAdmin || role === 'Support Team')
+    (job.status === 'In Progress' || job.status === 'Completed' || job.status === 'Disputed' || job.status === 'Pending Confirmation') && (isJobGiver || isAwardedInstaller || isAdmin || role === 'Support Team')
       ? 'private'
       : (job.status === 'Open for Bidding' && !job.directAwardInstallerId)
       ? 'public'
@@ -1892,6 +1879,13 @@ export default function JobDetailPage() {
                             </Button>
                         </CardContent>
                     </Card>
+                </>
+            )}
+
+            {job.status === 'Pending Confirmation' && isJobGiver && (
+                <>
+                    <Separator className="my-6" />
+                    <JobGiverConfirmationSection job={job} onJobUpdate={handleJobUpdate} />
                 </>
             )}
 
@@ -2049,7 +2043,7 @@ export default function JobDetailPage() {
                             />
                             <div className="flex justify-between items-center">
                                  <FileUpload onFilesChange={setNewPrivateMessageAttachments} maxFiles={3} />
-                                <Button size="sm" onClick={handlePostPrivateMessage} disabled={isSendingMessage || (!newPrivateMessage.trim() && newPrivateMessageAttachments.length === 0)}>
+                                <Button size="sm" onClick={handlePostPrivateMessage} disabled={isSendingMessage || (!newPrivateMessage.trim() && privateMessageAttachments.length === 0)}>
                                   {isSendingMessage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   <Send className="mr-2 h-4 w-4" />
                                   Send
@@ -2134,9 +2128,6 @@ export default function JobDetailPage() {
       </div>
 
       <div className="space-y-8">
-        {(isJobGiver && (job.status === 'In Progress' || job.status === 'Awarded' || job.status === 'Pending Funding')) && (
-            <JobGiverOTPCard job={job} />
-        )}
         <Card>
           <CardHeader>
             <CardTitle>Job Overview</CardTitle>

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
@@ -72,6 +73,10 @@ const jobSchema = z.object({
   travelTip: z.coerce.number().optional(),
   isGstInvoiceRequired: z.boolean().default(false),
   address: addressSchema,
+  budget: z.object({
+      min: z.coerce.number().min(1, "Min budget is required for direct awards."),
+      max: z.coerce.number(),
+  }).optional(),
   deadline: z.string().refine((val) => {
     if (!val) return true; // Allow empty if direct awarding
     const today = new Date();
@@ -84,7 +89,14 @@ const jobSchema = z.object({
   attachments: z.array(z.instanceof(File)).optional(),
   directAwardInstallerId: z.string().optional(),
 }).refine(data => {
-    // If it's a direct award, deadline is not required. Otherwise, it is.
+    if (data.directAwardInstallerId) {
+        return !!data.budget && data.budget.min > 0;
+    }
+    return true;
+}, {
+    message: "A budget is required for a direct award.",
+    path: ["budget.min"],
+}).refine(data => {
     if (data.directAwardInstallerId) return true;
     return data.deadline !== "";
 }, {
@@ -210,6 +222,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
       jobStartDate: "",
       attachments: [],
       directAwardInstallerId: "",
+      budget: { min: 0, max: 0 },
     },
   });
   
@@ -243,6 +256,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                     deadline: isEditMode ? format(toDate(jobData.deadline), "yyyy-MM-dd") : "",
                     jobStartDate: jobData.jobStartDate ? format(toDate(jobData.jobStartDate), "yyyy-MM-dd") : "",
                     directAwardInstallerId: "", // Never prefill direct award
+                    budget: jobData.budget
                 });
                 
                 const toastTitle = isEditMode ? "Editing Job" : "Re-posting Job";
@@ -344,10 +358,16 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
         jobStartDate: new Date(values.jobStartDate),
     };
 
+    if(values.directAwardInstallerId && values.budget) {
+        jobData.budget = {
+            min: values.budget.min,
+            max: values.budget.min // For direct award, min and max are the same
+        };
+    }
+
     try {
         if (isEditMode && editJobId) {
             jobData.deadline = new Date(values.deadline);
-            // In edit mode, we clear existing bids to ensure fairness
             jobData.bids = [];
             jobData.bidderIds = [];
             
@@ -357,7 +377,6 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
             router.push(`/dashboard/jobs/${editJobId}`);
 
         } else {
-             // Create new job logic
             const today = new Date();
             const datePart = today.toISOString().slice(0, 10).replace(/-/g, '');
             const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -379,17 +398,15 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
 
             jobData.id = newJobId;
             jobData.jobGiver = doc(db, 'users', user.id);
-            jobData.status = "Open for Bidding"; // Always open, even for direct awards initially
+            jobData.status = "Open for Bidding";
             jobData.bids = [];
             jobData.comments = [];
             jobData.postedAt = new Date();
             jobData.attachments = attachmentUrls;
-            jobData.completionOtp = Math.floor(100000 + Math.random() * 900000).toString();
-
+            
             if (values.directAwardInstallerId) {
                 jobData.directAwardInstallerId = values.directAwardInstallerId;
-                // For direct awards, the deadline is still relevant for the installer to respond.
-                jobData.deadline = values.deadline ? new Date(values.deadline) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // Default 7 days
+                jobData.deadline = values.deadline ? new Date(values.deadline) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
             } else {
                 jobData.deadline = new Date(values.deadline);
             }
@@ -423,7 +440,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
   }
   
    if (!userLoading && role !== 'Job Giver') {
-    return null; // Redirect is handled by the hook
+    return null;
   }
   
   const SubmitButton = () => {
@@ -623,7 +640,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                         <FormControl>
                         <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardInstallerId} />
                         </FormControl>
-                        <FormDescription>Not applicable if you are sending a direct request.</FormDescription>
+                        <FormDescription>Not applicable for direct awards.</FormDescription>
                         <FormMessage />
                     </FormItem>
                     )}
@@ -670,11 +687,27 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                             Direct Request (Optional)
                         </CardTitle>
                         <CardDescription>
-                            Know an installer you trust? Enter their public ID to send a private request for them to bid on this job.
+                            Know an installer you trust? Send a private request for them to bid on this job.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-4">
                         <DirectAwardInput control={form.control} />
+                        {directAwardInstallerId && (
+                             <FormField
+                                control={form.control}
+                                name="budget.min"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Your Offered Budget (₹)</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" placeholder="e.g. 10000" {...field} />
+                                        </FormControl>
+                                        <FormDescription>This will be the price offered to the installer.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
                     </CardContent>
                 </Card>
             )}
