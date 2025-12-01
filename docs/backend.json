@@ -258,25 +258,13 @@
             "type": "boolean",
             "description": "Whether the job giver requires a GST invoice for this job."
         },
-        "budget": {
-          "type": "object",
-          "properties": {
-            "min": {
-              "type": "number"
-            },
-            "max": {
-              "type": "number"
-            }
-          },
-          "required": ["min", "max"]
-        },
         "travelTip": {
           "type": "number",
           "description": "An optional tip to make the job more attractive, paid commission-free to the installer."
         },
         "status": {
           "type": "string",
-          "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid", "Pending Funding", "Disputed"]
+          "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid", "Pending Funding", "Pending Confirmation", "Disputed"]
         },
         "deadline": {
           "type": "string",
@@ -311,6 +299,10 @@
         "awardedInstaller": {
           "$ref": "#/entities/UserProfile"
         },
+        "directAwardInstallerId": {
+          "type": "string",
+          "description": "If this is a direct award, this is the ID of the installer it was sent to."
+        },
         "bidderIds": {
             "type": "array",
             "items": {
@@ -328,9 +320,6 @@
         "rating": {
           "type": "number"
         },
-        "completionOtp": {
-          "type": "string"
-        },
         "disputeId": {
           "type": "string",
           "description": "The ID of the dispute associated with this job, if any."
@@ -343,6 +332,12 @@
         },
         "invoice": {
           "$ref": "#/entities/Invoice"
+        },
+        "additionalTasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/AdditionalTask"
+          }
         },
         "comments": {
           "type": "array",
@@ -367,7 +362,7 @@
             }
         }
       },
-      "required": ["id", "title", "description", "jobGiver", "location", "address", "budget", "status", "deadline", "postedAt"]
+      "required": ["id", "title", "description", "jobGiver", "location", "address", "status", "deadline", "postedAt"]
     },
     "JobAttachment": {
       "title": "Job Attachment",
@@ -379,6 +374,21 @@
         "fileType": { "type": "string" }
       },
       "required": ["fileName", "fileUrl", "fileType"]
+    },
+    "AdditionalTask": {
+      "title": "Additional Task",
+      "description": "Represents an additional task or scope change requested during an in-progress job.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending-quote", "quoted", "approved", "declined"] },
+        "quoteAmount": { "type": "number" },
+        "quoteDetails": { "type": "string" },
+        "createdBy": { "type": "string", "enum": ["Job Giver", "Installer"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "description", "status", "createdBy", "createdAt"]
     },
      "Invoice": {
       "title": "Invoice",
@@ -699,7 +709,3 @@
     }
   }
 }
-
-
-
-
