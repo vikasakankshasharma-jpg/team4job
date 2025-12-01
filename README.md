@@ -1,4 +1,3 @@
-
 # MASTER PROMPT: CCTV Job Connect PWA (v2.0)
 
 This document serves as the master prompt and detailed specification for building and extending the "CCTV Job Connect" Progressive Web App (PWA). This is a living document reflecting the platform's complete architecture as of the latest update.
@@ -19,8 +18,8 @@ This document serves as the master prompt and detailed specification for buildin
 
 ### User & Subscription System
 *   **Dual Roles & Role Switching:** Users can sign up as a "Job Giver" or "Installer". A user can hold both roles and instantly switch between modes from their profile menu without logging out.
-*   **Subscription Model:** The platform operates on a freemium model. New users receive a trial or a basic plan. Access to premium features (e.g., browsing the Installer Directory, lower commission rates) requires an active paid subscription.
-*   **Billing Management:** A dedicated "Billing" page where users can view their current plan, upgrade their subscription via Cashfree, and redeem promotional coupon codes.
+*   **Subscription Model:** The platform operates on a freemium model. New users receive a trial or a basic plan. Access to premium features (e.g., browsing the Installer Directory, AI Bid Analysis) requires an active paid subscription.
+*   **Billing Management:** A dedicated "Billing" page where users can view their current plan, upgrade their subscription via Cashfree, and redeem promotional coupon codes. The system supports context-aware redirects, returning users to the feature they were trying to access after a successful purchase.
 *   **Installer KYC Verification:** Installers MUST complete an Aadhar OTP verification process to become "verified." This is a mandatory prerequisite for bidding on jobs and receiving payouts, ensuring a trusted marketplace.
 *   **Secure Authentication:** Email/password-based login via Firebase Authentication, protected by client-side login attempt throttling to mitigate brute-force attacks.
 
@@ -28,38 +27,48 @@ This document serves as the master prompt and detailed specification for buildin
 1.  **Job Posting (Job Giver):**
     *   **AI Job Scoping Wizard:** For novice users, a conversational interface asks for a simple description (e.g., "I need cameras for my shop"). The AI then generates a complete, structured job post with a professional title, description, suggested skills, and budget.
     *   **Manual Posting:** Expert users can skip the wizard and fill out a detailed form manually, including title, description, skills, location, budget, and bidding deadline.
-    *   **AI-Assisted Details:** In manual mode, an "AI Generate" button uses the job title to create a compelling job description, a list of required skills, and a realistic budget estimate.
-    *   **Direct Award (Optional):** A Job Giver can skip public bidding by entering a known installer's public ID, sending the job offer directly to them.
-2.  **Job Discovery (Installer):**
-    *   Verified installers browse public jobs via a searchable, filterable interface.
-    *   A "Recommended" tab uses AI to match installers with jobs based on their skills and location, including "Unbid" jobs to create new opportunities.
-3.  **Bidding (Installer):**
-    *   Installers place bids, specifying their price and a cover letter.
-    *   **AI Feature:** An "AI Bid Assistant" helps installers craft a professional and persuasive cover letter based on the job description and their own profile.
-4.  **Awarding (Job Giver):**
-    *   After the deadline, the Job Giver reviews all bids and selects up to 3 installers to send offers to.
-    *   The job status becomes "Awarded," and a 24-hour `acceptanceDeadline` is set.
-5.  **Acceptance & Funding:**
+    *   **AI-Assisted Details:** In manual mode, an "AI Generate" button uses the job title to create a compelling job description and a list of required skills.
+    *   **Direct Award (Private Bid Request):** A Job Giver can skip public bidding by entering a known installer's public ID. This sends a *private request to bid* on the job directly to that installer. The job is not visible to others.
+
+2.  **Bidding & Private Offers:**
+    *   **Public Bidding (Installer):** Verified installers browse public jobs and place bids, specifying their price and a cover letter. An "AI Bid Assistant" helps installers craft a professional and persuasive cover letter.
+    *   **Private Bidding (Installer):** An installer who receives a Direct Award request is prompted to submit their bid privately. This bid becomes the official price for the job.
+
+3.  **Awarding & Bid Analysis (Job Giver):**
+    *   After the deadline (or after a private bid is received), the Job Giver reviews all bids.
+    *   **AI Bid Analysis (Premium Feature):** A subscribed Job Giver can use an AI-powered tool to analyze all bids. The analysis provides a summary, a top recommendation, a "best value" option, and red flags.
+    *   **Relationship-Aware Bidding:** The bidding UI and AI analysis are "Relationship-Aware." Bids from installers previously marked as "Favorite" or "Blocked" by the Job Giver are clearly badged, and the AI heavily weights this personal trust signal in its recommendations.
+    *   **Strategic Awarding:** The Job Giver can select up to 3 installers and choose their award strategy:
+        *   **Simultaneous:** Send offers to all selected installers at once. The first one to accept wins the job.
+        *   **Sequential (Ranked):** Rank the selected installers. The offer is sent to the #1 choice first. If they decline or their time expires, the offer is automatically sent to the #2 choice, and so on.
+
+4.  **Acceptance & Funding:**
     *   The first selected installer to accept the offer wins the job. The job status changes to **"Pending Funding,"** and a 48-hour `fundingDeadline` is set for the Job Giver.
     *   The Job Giver funds the project via Cashfree Payment Gateway. **CRITICAL:** Funds are held in a regulated Marketplace Settlement account ("Easy Split"), not the platform's bank account.
     *   Upon successful funding, the status changes to **"In Progress."**
-6.  **Job Execution & Modifications:**
-    *   The Job Giver and Installer communicate via a private, auditable messaging thread.
-    *   **Formal Date Change:** Either party can formally propose a new `jobStartDate`. The other party must explicitly accept or reject the proposal. This is tracked in the `dateChangeProposal` field.
-7.  **Job Completion & Payout:**
-    *   The Job Giver shares a 6-digit `completionOtp` with the installer.
-    *   The installer enters the OTP to mark the job as "Completed."
-    *   This OTP trigger initiates an API call to Cashfree's Payouts product, which automatically splits the payment from the settlement account: the installer receives their earnings, and the platform receives its commission.
-8.  **Feedback & Invoicing:**
+
+5.  **Job Execution & Scope Changes:**
+    *   The Job Giver and Installer communicate via a private, auditable messaging thread. All communication must remain on the platform.
+    *   **Formal Date Change:** Either party can formally propose a new `jobStartDate`. The other party must explicitly accept or reject the proposal.
+    *   **Additional Tasks:** Either party can propose an additional task. The installer provides a quote, which the Job Giver must approve and fund before work begins.
+
+6.  **Dual-Confirmation Completion & Payout:**
+    *   **Installer Submission:** The installer uploads "Proof of Work" (photos/videos) through the platform and submits the job for review.
+    *   **Job Giver Approval:** The Job Giver receives a notification, reviews the proof, and must explicitly click "Approve & Release Payment."
+    *   **Automated Payout:** The Job Giver's approval is the final trigger. It changes the job status to "Completed" and initiates an API call to Cashfree's Payouts product, which automatically splits the payment from the settlement account: the installer receives their earnings, and the platform receives its commission.
+
+7.  **Feedback & Invoicing:**
     *   The Job Giver can rate the installer and leave a review, which impacts the installer's reputation points.
     *   Upon completion, a formal invoice from the Installer to the Job Giver is automatically generated and made available on the job details page.
 
 ### Exception & Recovery Workflows
-*   **Award Expiration:** A scheduled function (`handleExpiredAwards`) runs hourly. If an "Awarded" job's `acceptanceDeadline` passes, it automatically reverts to "Bidding Closed," allowing the Job Giver to award it to someone else.
-*   **Funding Timeout:** A scheduled function (`handleUnfundedJobs`) runs every 6 hours. If a "Pending Funding" job's `fundingDeadline` passes, it is automatically "Cancelled," and both parties are notified.
-*   **Unbid Jobs:** If a job receives no bids, its status becomes "Unbid." The Job Giver is presented with two options:
+*   **Offer Expiration (Installer):**
+    *   If an installer fails to accept an offer within the time limit, they are penalized with a small reputation point deduction.
+    *   They are then given a one-time option on the job page to "Request to Re-apply," which notifies the Job Giver and makes them eligible for selection again.
+*   **Funding Timeout (Job Giver):** A scheduled function (`handleUnfundedJobs`) runs every 6 hours. If a "Pending Funding" job's `fundingDeadline` passes, it is automatically "Cancelled," and both parties are notified.
+*   **Unbid Jobs (Job Giver):** If a job receives no bids, its status becomes "Unbid." The Job Giver is presented with two recovery options:
     *   **Repost:** Instantly create a new job using the old one as a template.
-    *   **Promote & Re-list:** Add a `travelTip` (a commission-free bonus for the installer) and re-list the job to attract more interest.
+    *   **AI Smart Roster (Premium Feature):** A subscribed Job Giver can use an AI tool to find the top 3-5 matching installers from the entire platform. They can then re-list the job and send private invitations to this curated roster.
 
 ### Platform Management & Monetization
 *   **Admin Dashboard & Reports:** A comprehensive backend for administrators to manage the platform, featuring KPI cards, charts on user growth and financials, and data export capabilities.
@@ -72,7 +81,7 @@ This document serves as the master prompt and detailed specification for buildin
 *   **Installer Directory (Premium Feature):** Subscribed Job Givers can access a searchable directory to proactively find, filter, and review profiles of all verified installers.
 *   **"My Installers" CRM:** A personal CRM for Job Givers to manage their network, with tabs for:
     *   **Previously Hired:** A list of all installers they have successfully worked with.
-    *   **Favorites:** A curated list of preferred installers, sourced from the "Previously Hired" list.
+    *   **Favorites:** A curated list of preferred installers, sourced from the "Previously Hired" list. This list is used to highlight bids from trusted installers.
     *   **Blocked:** A personal blocklist to prevent specific installers from bidding on their jobs.
 
 ---
@@ -176,7 +185,7 @@ All data models are defined in `src/lib/types.ts` and reflected in `docs/backend
 
 *   **`users` collection:** Stores `UserProfile` objects. Key fields include `id`, `name`, `email`, `roles` (array), `status`, `pincodes`, `address`, `subscription`, `favoriteInstallerIds`, `blockedInstallerIds`, and the nested `installerProfile` object.
 *   **`installerProfile` sub-object:** Contains installer-specific data: `tier`, `points`, `skills`, `rating`, `reviews`, `verified`, and `reputationHistory`.
-*   **`jobs` collection:** Stores `Job` objects. This is the central entity, containing all job details, budget, `status`, deadlines (`deadline`, `acceptanceDeadline`, `fundingDeadline`), `dateChangeProposal` object, and embedded arrays for `bids`, `comments`, and `privateMessages`.
+*   **`jobs` collection:** Stores `Job` objects. This is the central entity, containing all job details, `budget`, `status`, deadlines (`deadline`, `acceptanceDeadline`, `fundingDeadline`), `dateChangeProposal` object, and embedded arrays for `bids`, `comments`, and `privateMessages`.
 *   **`disputes` collection:** Stores `Dispute` objects for tracking and resolving all user-raised issues.
 *   **`transactions` collection:** A financial ledger storing all `Transaction` objects, providing an audit trail for payments, payouts, commissions, and fees.
 *   **Admin Collections:**
