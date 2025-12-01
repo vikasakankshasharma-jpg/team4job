@@ -100,6 +100,7 @@ import { InstallerAcceptanceSection, tierIcons } from "@/components/job/installe
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 
 declare const cashfree: any;
