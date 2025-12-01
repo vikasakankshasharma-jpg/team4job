@@ -102,7 +102,7 @@ const InstallerCard = ({ installer, currentUser, onUpdate }: { installer: User, 
 };
 
 export default function FindInstallersPage() {
-  const { user, setUser, role } = useUser();
+  const { user, setUser, role, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const [loading, setLoading] = useState(true);
   const [installers, setInstallers] = useState<User[]>([]);
@@ -136,8 +136,10 @@ export default function FindInstallersPage() {
   }, [setHelp]);
 
   useEffect(() => {
+    if (userLoading) return;
     if (!isSubscribed) {
         setLoading(false);
+        router.push('/dashboard/billing?redirectUrl=/dashboard/installers');
         return;
     }
     const fetchInstallers = async () => {
@@ -154,7 +156,7 @@ export default function FindInstallersPage() {
         setLoading(false);
     };
     fetchInstallers();
-  }, [db, isSubscribed]);
+  }, [db, isSubscribed, userLoading, router]);
   
    const handleUpdate = async (installerId: string, action: 'favorite' | 'unfavorite' | 'block' | 'unblock') => {
     if (!user || !db) return;
@@ -203,7 +205,7 @@ export default function FindInstallersPage() {
     }).sort((a,b) => (b.installerProfile?.points || 0) - (a.installerProfile?.points || 0));
   }, [installers, filters]);
   
-  if (loading || !user) {
+  if (userLoading || !user) {
     return (
       <div className="flex h-64 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -211,22 +213,11 @@ export default function FindInstallersPage() {
     );
   }
 
-  if (!isSubscribed) {
+  if (loading || !isSubscribed) {
       return (
-          <Card className="text-center">
-              <CardHeader>
-                  <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
-                    <Zap className="h-8 w-8 text-primary" />
-                  </div>
-                  <CardTitle className="mt-4">Upgrade to Access Installer Directory</CardTitle>
-                  <CardDescription>This is a premium feature. Upgrade your plan to browse, discover, and directly contact top-rated installers.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <Button asChild>
-                      <Link href="/dashboard/billing">Upgrade My Plan</Link>
-                  </Button>
-              </CardContent>
-          </Card>
+          <div className="flex h-64 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
       )
   }
 

@@ -16,13 +16,15 @@ import { CheckCircle2, CreditCard, Gift, Loader2, Ticket } from "lucide-react";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { SubscriptionPlan, User } from "@/lib/types";
 import { collection, getDocs, query, where, doc, updateDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { format, formatDistanceToNowStrict } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { toDate } from "@/lib/utils";
 import { useHelp } from "@/hooks/use-help";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import axios from "axios";
+import { useSearchParams, useRouter } from "next/navigation";
+
 
 declare const cashfree: any;
 
@@ -123,6 +125,8 @@ export default function BillingPage() {
   const { setHelp } = useHelp();
   const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const fetchPlans = useCallback(async () => {
     if (!db || !role) return;
@@ -183,6 +187,8 @@ export default function BillingPage() {
       if (!response.data.payment_session_id) {
         throw new Error("Could not retrieve payment session ID.");
       }
+      
+      const redirectUrl = searchParams.get('redirectUrl');
 
       const cashfree = new (window as any).Cashfree(response.data.payment_session_id);
       cashfree.checkout({
@@ -205,6 +211,11 @@ export default function BillingPage() {
               variant: "success",
             });
             fetchUser();
+            
+            if (redirectUrl) {
+                router.push(redirectUrl);
+            }
+
           } else {
               throw new Error("Payment was not successful.");
           }

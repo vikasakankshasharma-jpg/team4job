@@ -694,7 +694,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
 
     const handleAnalyzeBids = async () => {
         if (!isSubscribed) {
-            router.push('/dashboard/billing');
+            router.push(`/dashboard/billing?redirectUrl=/dashboard/jobs/${job.id}`);
             return;
         }
 
@@ -805,7 +805,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button variant="outline" onClick={() => router.push('/dashboard/billing')}>
+                            <Button variant="outline" onClick={() => router.push(`/dashboard/billing?redirectUrl=/dashboard/jobs/${job.id}`)}>
                                 <Zap className="mr-2 h-4 w-4 text-amber-500" />
                                 Analyze Bids with AI
                             </Button>
