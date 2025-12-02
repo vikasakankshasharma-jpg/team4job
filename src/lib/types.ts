@@ -129,7 +129,7 @@ export type Job = {
   address: Address;
   travelTip?: number;
   isGstInvoiceRequired: boolean;
-  status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid' | 'Pending Funding' | 'Pending Confirmation' | 'Disputed' | 'Needs Assistance';
+  status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid' | 'Pending Funding' | 'Pending Confirmation' | 'Disputed' | 'Needs Assistance' | 'Cancellation Proposed';
   deadline: Date | Timestamp;
   jobStartDate?: Date | Timestamp;
   isUrgent?: boolean;
@@ -156,6 +156,7 @@ export type Job = {
   additionalTasks?: AdditionalTask[];
   comments: Comment[];
   privateMessages?: PrivateMessage[];
+  cancellationProposer?: 'Job Giver' | 'Installer';
 };
 
 export type DisputeAttachment = {
