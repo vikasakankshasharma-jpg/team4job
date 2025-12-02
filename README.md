@@ -31,8 +31,9 @@ This document serves as the master prompt and detailed specification for buildin
     *   **Direct Award (Private Bid Request):** A Job Giver can skip public bidding by entering a known installer's public ID. This sends a *private request to bid* on the job directly to that installer. The job is not visible to others.
 
 2.  **Bidding & Private Offers:**
-    *   **Public Bidding (Installer):** Verified installers browse public jobs and place bids, specifying their price and a cover letter. An "AI Bid Assistant" helps installers craft a professional and persuasive cover letter.
+    *   **Public Bidding (Installer):** Verified installers browse public jobs and place bids, specifying their price, a cover letter, and a **service warranty period** (e.g., "30 Days"). An "AI Bid Assistant" helps installers craft a professional and persuasive cover letter.
     *   **Private Bidding (Installer):** An installer who receives a Direct Award request is prompted to submit their bid privately. This bid becomes the official price for the job.
+    *   **Marketplace Integrity (Anti-Self-Bidding):** The system strictly prohibits a user from bidding on a job they themselves have posted, preventing reputation farming and price manipulation.
 
 3.  **Awarding & Bid Analysis (Job Giver):**
     *   After the deadline (or after a private bid is received), the Job Giver reviews all bids.
@@ -62,6 +63,11 @@ This document serves as the master prompt and detailed specification for buildin
     *   Upon completion, a formal invoice from the Installer to the Job Giver is automatically generated and made available on the job details page.
 
 ### Exception & Recovery Workflows
+*   **Mutual Cancellation (The "Cancellation Deadlock" Fix):**
+    *   To prevent unnecessary disputes for mutually agreed-upon cancellations, a new workflow has been introduced for jobs that are `In Progress`.
+    *   Either party can initiate a cancellation request, changing the job status to `Cancellation Proposed`.
+    *   The other party is notified and must either "Accept" or "Decline" the request.
+    *   If accepted, the job is marked as `Cancelled`, and the Job Giver is prompted for a refund. If declined, the job reverts to `In Progress`. This avoids the confrontational dispute system for cooperative cases.
 *   **Offer Expiration (Installer):**
     *   If an installer fails to accept an offer within the time limit, they are penalized with a small reputation point deduction.
     *   They are then given a one-time option on the job page to "Request to Re-apply," which notifies the Job Giver and makes them eligible for selection again.
@@ -185,7 +191,7 @@ All data models are defined in `src/lib/types.ts` and reflected in `docs/backend
 
 *   **`users` collection:** Stores `UserProfile` objects. Key fields include `id`, `name`, `email`, `roles` (array), `status`, `pincodes`, `address`, `subscription`, `favoriteInstallerIds`, `blockedInstallerIds`, and the nested `installerProfile` object.
 *   **`installerProfile` sub-object:** Contains installer-specific data: `tier`, `points`, `skills`, `rating`, `reviews`, `verified`, and `reputationHistory`.
-*   **`jobs` collection:** Stores `Job` objects. This is the central entity, containing all job details, `budget`, `status`, deadlines (`deadline`, `acceptanceDeadline`, `fundingDeadline`), `dateChangeProposal` object, and embedded arrays for `bids`, `comments`, and `privateMessages`.
+*   **`jobs` collection:** Stores `Job` objects. This is the central entity, containing all job details, `budget`, `status`, deadlines (`deadline`, `acceptanceDeadline`, `fundingDeadline`), `dateChangeProposal` object, `cancellationProposer`, and embedded arrays for `bids`, `comments`, and `privateMessages`.
 *   **`disputes` collection:** Stores `Dispute` objects for tracking and resolving all user-raised issues.
 *   **`transactions` collection:** A financial ledger storing all `Transaction` objects, providing an audit trail for payments, payouts, commissions, and fees.
 *   **Admin Collections:**

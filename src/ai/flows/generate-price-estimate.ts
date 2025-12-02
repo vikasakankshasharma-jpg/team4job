@@ -43,7 +43,7 @@ const priceEstimatePrompt = ai.definePrompt({
     4.  **Determine Range:**
         -   The **minimum price** should reflect a baseline cost for a professional to take on this job, covering basic labor and time. It should be a competitive but fair starting point.
         -   The **maximum price** should account for higher-quality work, more experienced technicians, unexpected minor complexities, and a reasonable profit margin.
-    5.  **Output Format:** Return the final `min` and `max` price estimate in the specified JSON format. The values should be numbers only, without any currency symbols or commas. Ensure the max is greater than the min.
+    5.  **Output Format:** Return the final \`min\` and \`max\` price estimate in the specified JSON format. The values should be numbers only, without any currency symbols or commas. Ensure the max is greater than the min.
 
     **Example:**
     -   **Input:** Title="Install 2 indoor wifi cameras", Description="Simple setup for my living room."
