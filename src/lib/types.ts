@@ -46,6 +46,7 @@ export type User = {
   fcmTokens?: string[];
   favoriteInstallerIds?: string[];
   blockedInstallerIds?: string[];
+  isFoundingInstaller?: boolean;
   installerProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;
@@ -78,6 +79,7 @@ export type Bid = {
   amount: number;
   timestamp: Date | Timestamp;
   coverLetter?: string;
+  includedItems?: string[];
 };
 
 export type JobAttachment = {
@@ -119,15 +121,18 @@ export type Job = {
   title: string;
   description: string;
   skills?: string[];
+  jobCategory: string;
   jobGiver: User | DocumentReference;
   location: string;
   fullAddress: string;
   address: Address;
   travelTip?: number;
   isGstInvoiceRequired: boolean;
-  status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid' | 'Pending Funding' | 'Pending Confirmation' | 'Disputed';
+  status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid' | 'Pending Funding' | 'Pending Confirmation' | 'Disputed' | 'Needs Assistance';
   deadline: Date | Timestamp;
   jobStartDate?: Date | Timestamp;
+  isUrgent?: boolean;
+  priceEstimate?: { min: number; max: number };
   dateChangeProposal?: {
     newDate: Date | Timestamp;
     proposedBy: 'Job Giver' | 'Installer';
@@ -258,4 +263,10 @@ export type PlatformSettings = {
     platinumTierPoints: number;
     minJobBudget: number;
     autoVerifyInstallers: boolean;
+};
+
+export type JobCategoryTemplate = {
+    id: string;
+    name: string;
+    includedItems: string[];
 };
