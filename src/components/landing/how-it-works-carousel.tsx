@@ -55,7 +55,7 @@ export default function HowItWorksCarousel() {
       opts={{
         align: "start",
       }}
-      className="w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto"
+      className="relative w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto"
     >
       <CarouselContent>
         {howItWorks.map((item, index) => (
