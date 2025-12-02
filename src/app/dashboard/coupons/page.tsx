@@ -480,7 +480,7 @@ export default function CouponsSettings({ coupons, onDataChange }: { coupons: Co
             </TableBody>
             </Table>
         ) : (
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {coupons.length > 0 ? (
                     coupons.map((coupon) => <CouponCard key={coupon.code} coupon={coupon} />)
                 ) : (
