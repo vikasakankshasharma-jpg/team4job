@@ -146,86 +146,80 @@ export const onJobCompleted = functions.firestore
                 return;
             }
 
-            const settingsRef = admin.firestore().collection('settings').doc('platform');
-            const settingsSnap = await settingsRef.get();
-            const settings = settingsSnap.data() || {};
-            
-            // Default reputation values if not set
-            const pointsForCompletion = settings.pointsForJobCompletion || 50;
-            const pointsFor5Star = settings.pointsFor5StarRating || 20;
-            const pointsFor4Star = settings.pointsFor4StarRating || 10;
-            const penaltyFor1Star = settings.penaltyFor1StarRating || -25;
-            
-            const silverTierPoints = settings.silverTierPoints || 500;
-            const goldTierPoints = settings.goldTierPoints || 1000;
-            const platinumTierPoints = settings.platinumTierPoints || 2000;
-
-            let pointsEarned = pointsForCompletion;
-            
-            if (afterData.rating === 5) {
-                pointsEarned += pointsFor5Star;
-            } else if (afterData.rating === 4) {
-                pointsEarned += pointsFor4Star;
-            } else if (afterData.rating === 1) {
-                pointsEarned += penaltyFor1Star;
-            }
+            const db = admin.firestore();
+            const settingsRef = db.collection("settings").doc("platform");
             
             try {
-                await admin.firestore().runTransaction(async (transaction) => {
-                    const installerDoc = await transaction.get(installerRef);
-                    if (!installerDoc.exists) {
-                        throw new Error("Installer profile not found!");
-                    }
+                let promotionNotification: { id: string; title: string; body: string; link: string } | null = null;
+                
+                await db.runTransaction(async (transaction) => {
+                    const [installerDoc, settingsSnap] = await Promise.all([
+                        transaction.get(installerRef),
+                        transaction.get(settingsRef)
+                    ]);
+                    
+                    if (!installerDoc.exists) throw new Error("Installer profile not found!");
+                    
+                    const settings = settingsSnap.data() || {};
                     const installerData = installerDoc.data();
-                    if (!installerData || !installerData.installerProfile) {
-                        throw new Error("Installer profile data is missing.");
-                    }
+                    
+                    if (!installerData || !installerData.installerProfile) throw new Error("Installer profile data is missing.");
+
+                    // Default reputation values
+                    const pointsForCompletion = settings.pointsForJobCompletion || 50;
+                    const pointsFor5Star = settings.pointsFor5StarRating || 20;
+                    const pointsFor4Star = settings.pointsFor4StarRating || 10;
+                    const penaltyFor1Star = settings.penaltyFor1StarRating || -25;
+                    const silverTierPoints = settings.silverTierPoints || 500;
+                    const goldTierPoints = settings.goldTierPoints || 1000;
+                    const platinumTierPoints = settings.platinumTierPoints || 2000;
+
+                    let pointsEarned = pointsForCompletion;
+                    if (afterData.rating === 5) pointsEarned += pointsFor5Star;
+                    else if (afterData.rating === 4) pointsEarned += pointsFor4Star;
+                    else if (afterData.rating === 1) pointsEarned += penaltyFor1Star;
 
                     const currentPoints = installerData.installerProfile.points || 0;
                     const newPoints = currentPoints + pointsEarned;
                     
-                    let newTier = installerData.installerProfile.tier || 'Bronze';
-                    if (newPoints >= platinumTierPoints) {
-                        newTier = 'Platinum';
-                    } else if (newPoints >= goldTierPoints) {
-                        newTier = 'Gold';
-                    } else if (newPoints >= silverTierPoints) {
-                        newTier = 'Silver';
-                    }
+                    const updatePayload: any = {};
+                    let newTier = installerData.installerProfile.tier || "Bronze";
 
-                    const monthYear = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+                    if (newPoints >= platinumTierPoints) newTier = "Platinum";
+                    else if (newPoints >= goldTierPoints) newTier = "Gold";
+                    else if (newPoints >= silverTierPoints) newTier = "Silver";
                     
-                    // Update reputation history
+                    const monthYear = new Date().toLocaleString("default", { month: "long", year: "numeric" });
                     const history = installerData.installerProfile.reputationHistory || [];
-                    const monthIndex = history.findIndex((h: {month:string}) => h.month === monthYear);
-                    if (monthIndex > -1) {
-                        history[monthIndex].points = newPoints;
-                    } else {
-                        history.push({ month: monthYear, points: newPoints });
+                    const monthIndex = history.findIndex((h: { month: string }) => h.month === monthYear);
+                    if (monthIndex > -1) history[monthIndex].points = newPoints;
+                    else history.push({ month: monthYear, points: newPoints });
+                    if (history.length > 12) history.shift();
+
+                    updatePayload["installerProfile.points"] = newPoints;
+                    updatePayload["installerProfile.reputationHistory"] = history;
+                    updatePayload["installerProfile.reviews"] = (installerData.installerProfile.reviews || 0) + 1;
+                    
+                    if (newTier !== installerData.installerProfile.tier) {
+                        updatePayload["installerProfile.tier"] = newTier;
+                        promotionNotification = {
+                            id: installerRef.id,
+                            title: `Congratulations! You've reached ${newTier} Tier!`,
+                            body: `Your excellent performance has promoted you to a ${newTier} Installer.`,
+                            link: "/dashboard/profile"
+                        };
                     }
                     
-                    // Limit history to last 12 months for performance
-                    if (history.length > 12) {
-                        history.shift();
-                    }
-
-                    transaction.update(installerRef, {
-                        'installerProfile.points': newPoints,
-                        'installerProfile.tier': newTier,
-                        'installerProfile.reputationHistory': history,
-                        'installerProfile.reviews': admin.firestore.FieldValue.increment(1)
-                    });
+                    transaction.update(installerRef, updatePayload);
                 });
-                console.log(`Successfully updated reputation for installer ${installerRef.id}. Awarded ${pointsEarned} points.`);
-                
-                await sendNotification(
-                    installerRef.id,
-                    "Reputation Updated!",
-                    `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`,
-                    `/dashboard/profile`
-                );
+
+                console.log(`Successfully updated reputation for installer ${installerRef.id}.`);
+                if (promotionNotification) {
+                    await sendNotification(promotionNotification.id, promotionNotification.title, promotionNotification.body, promotionNotification.link);
+                }
+
             } catch (error) {
-                console.error("Error updating reputation:", error);
+                console.error("Error in onJobCompleted transaction:", error);
             }
         }
     });
@@ -287,7 +281,7 @@ export const handleUnfundedJobs = functions.pubsub.schedule('every 6 hours').onR
 /**
  * Triggered for various job status changes to send notifications.
  */
-export const onJobStatusChange = functions.firestore
+export const onJobDateChange = functions.firestore
     .document("jobs/{jobId}")
     .onUpdate(async (change, context) => {
         const beforeData = change.before.data();
@@ -314,7 +308,7 @@ export const onJobStatusChange = functions.firestore
         }
 
         // --- Date Change Accepted/Rejected ---
-        if (beforeData.dateChangeProposal?.status === 'pending' && afterData.dateChangeProposal?.status !== 'pending') {
+        if (beforeData.dateChangeProposal?.status === 'pending' && (!afterData.dateChangeProposal || afterData.dateChangeProposal.status !== 'pending')) {
             const wasAccepted = afterData.jobStartDate !== beforeData.jobStartDate;
             const proposerId = beforeData.dateChangeProposal.proposedBy === 'Job Giver' ? afterData.jobGiver.id : afterData.awardedInstaller.id;
             
@@ -324,55 +318,6 @@ export const onJobStatusChange = functions.firestore
                 `Your proposed date change for job "${afterData.title}" was ${wasAccepted ? 'accepted' : 'rejected'}.`,
                 `/dashboard/jobs/${jobId}`
             );
-        }
-        
-        // --- Installer was disqualified (either by declining or timeout) ---
-        const beforeDisqualified = beforeData.disqualifiedInstallerIds || [];
-        const afterDisqualified = afterData.disqualifiedInstallerIds || [];
-        if (afterDisqualified.length > beforeDisqualified.length) {
-            const newDisqualifiedId = afterDisqualified.find((id: string) => !beforeDisqualified.includes(id));
-            if (newDisqualifiedId) {
-                // This logic is now responsible for applying the penalty for timed-out offers.
-                // We assume a decline is an active choice, but a timeout incurs a penalty.
-                // The `handleExpiredAwards` function will add the user to the disqualified list on timeout.
-                
-                const settingsRef = admin.firestore().collection('settings').doc('platform');
-                const settingsSnap = await settingsRef.get();
-                const settings = settingsSnap.data() || {};
-                const penaltyForDeclinedJob = settings.penaltyForDeclinedJob || -15; // Default penalty
-                
-                const installerRef = admin.firestore().collection('users').doc(newDisqualifiedId);
-                const installerDoc = await installerRef.get();
-                
-                if (installerDoc.exists) {
-                    const installerData = installerDoc.data();
-                    const installerName = installerData?.name || 'An installer';
-                    
-                    // Check if this disqualification was due to a timeout (status was Awarded) vs an active decline
-                    const wasTimedOut = beforeData.status === 'Awarded';
-                    
-                    if (wasTimedOut) {
-                        await installerRef.update({
-                            'installerProfile.points': admin.firestore.FieldValue.increment(penaltyForDeclinedJob)
-                        });
-                        console.log(`Applied penalty of ${penaltyForDeclinedJob} points to installer ${newDisqualifiedId} for timed-out offer.`);
-                         await sendNotification(
-                            newDisqualifiedId,
-                            'Offer Expired - Points Deducted',
-                            `You missed a job offer for "${afterData.title}". ${Math.abs(penaltyForDeclinedJob)} reputation points have been deducted.`,
-                            `/dashboard/jobs/${jobId}`
-                        );
-                    }
-                    
-                    // Notify the Job Giver in either case (decline or timeout)
-                    await sendNotification(
-                        afterData.jobGiver.id,
-                        'An Offer Was Declined or Expired',
-                        `${installerName} is no longer being considered for your job: "${afterData.title}".`,
-                        `/dashboard/jobs/${jobId}`
-                    );
-                }
-            }
         }
     });
 
@@ -398,8 +343,10 @@ export const handleExpiredAwards = functions.pubsub.schedule('every 1 hours').on
     for (const doc of snapshot.docs) {
         const job = doc.data();
         const currentAwardedId = job.awardedInstaller?.id;
+        
+        if (!currentAwardedId) continue;
 
-        // Disqualify the installer whose offer just expired. This will trigger the penalty in onJobStatusChange.
+        // Disqualify the installer whose offer just expired.
         const updatedDisqualified = admin.firestore.FieldValue.arrayUnion(currentAwardedId);
         
         const remainingInstallers = (job.selectedInstallers || [])
@@ -482,7 +429,6 @@ export const handleUnbidJobs = functions.pubsub.schedule('every 1 hours').onRun(
 
     snapshot.docs.forEach(doc => {
         const job = doc.data();
-        // Check if there are no bids. The 'bids' array is more reliable than 'bidderIds' length if it exists.
         if (!job.bids || job.bids.length === 0) {
             unbidCount++;
             console.log(`Marking job ${doc.id} as 'Unbid'.`);
@@ -509,4 +455,53 @@ export const handleUnbidJobs = functions.pubsub.schedule('every 1 hours').onRun(
     return null;
 });
 
+/**
+ * Triggered when a user's verification status changes.
+ * Awards the "Founding Installer" badge to the first 100 verified installers.
+ */
+export const onUserVerified = functions.firestore
+    .document("users/{userId}")
+    .onUpdate(async (change, context) => {
+        const beforeData = change.before.data();
+        const afterData = change.after.data();
+        const userId = context.params.userId;
+
+        const wasJustVerified = (beforeData.installerProfile?.verified === false || beforeData.installerProfile?.verified === undefined) && afterData.installerProfile?.verified === true;
+
+        if (wasJustVerified && !afterData.isFoundingInstaller) {
+            console.log(`User ${userId} has just been verified. Checking for Founding Installer eligibility.`);
+            const db = admin.firestore();
+            try {
+                await db.runTransaction(async (transaction) => {
+                    const foundingInstallersQuery = db.collection("users").where("isFoundingInstaller", "==", true);
+                    const foundingInstallersSnap = await transaction.get(foundingInstallersQuery);
+
+                    if (foundingInstallersSnap.size < 100) {
+                        console.log(`Founding Installer count is ${foundingInstallersSnap.size}. Awarding badge to user ${userId}.`);
+                        const userRef = db.collection("users").doc(userId);
+                        transaction.update(userRef, { isFoundingInstaller: true });
+
+                        // Notification will be sent outside the transaction after it commits.
+                    } else {
+                        console.log("Founding Installer program is full. No badge awarded.");
+                    }
+                });
+
+                // Re-fetch the user doc to confirm the badge was awarded before notifying.
+                const finalUserDoc = await db.collection("users").doc(userId).get();
+                if (finalUserDoc.data()?.isFoundingInstaller) {
+                    await sendNotification(
+                        userId,
+                        "Congratulations, You're a Founding Installer!",
+                        "You are one of the first 100 installers to be verified on our platform. Enjoy your exclusive badge!",
+                        "/dashboard/profile"
+                    );
+                }
+            } catch (error) {
+                console.error(`Error in Founding Installer transaction for user ${userId}:`, error);
+            }
+        }
+    });
+
+    
     
