@@ -80,6 +80,7 @@ export type Bid = {
   timestamp: Date | Timestamp;
   coverLetter?: string;
   includedItems?: string[];
+  warrantyDuration?: string;
 };
 
 export type JobAttachment = {

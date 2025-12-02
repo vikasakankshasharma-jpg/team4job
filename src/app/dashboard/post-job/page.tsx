@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Zap, Loader2, UserPlus, ShieldCheck } from "lucide-react";
 import { generateJobDetails } from "@/ai/flows/generate-job-details";
+import { generatePriceEstimate } from "@/ai/flows/generate-price-estimate";
 import { useToast } from "@/hooks/use-toast";
 import React, { useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -75,8 +76,8 @@ const jobSchema = z.object({
   travelTip: z.coerce.number().optional(),
   isGstInvoiceRequired: z.boolean().default(false),
   address: addressSchema,
-  budget: z.object({
-      min: z.coerce.number().min(1, "Min budget is required for direct awards."),
+  priceEstimate: z.object({
+      min: z.coerce.number(),
       max: z.coerce.number(),
   }).optional(),
   deadline: z.string().refine((val) => {
@@ -92,12 +93,12 @@ const jobSchema = z.object({
   directAwardInstallerId: z.string().optional(),
 }).refine(data => {
     if (data.directAwardInstallerId) {
-        return !!data.budget && data.budget.min > 0;
+        return !!data.priceEstimate && data.priceEstimate.min > 0;
     }
     return true;
 }, {
     message: "A budget is required for a direct award.",
-    path: ["budget.min"],
+    path: ["priceEstimate.min"],
 }).refine(data => {
     if (data.directAwardInstallerId) return true;
     return data.deadline !== "";
@@ -196,6 +197,7 @@ function DirectAwardInput({ control }) {
 export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isEstimating, setIsEstimating] = React.useState(false); // New state for price estimation
   const { user, role, loading: userLoading } = useUser();
   const { db, storage } = useFirebase();
   const router = useRouter();
@@ -225,7 +227,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
       jobStartDate: "",
       attachments: [],
       directAwardInstallerId: "",
-      budget: { min: 0, max: 0 },
+      priceEstimate: { min: 0, max: 0 },
     },
   });
   
@@ -257,10 +259,10 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                     isGstInvoiceRequired: jobData.isGstInvoiceRequired,
                     address: jobData.address,
                     travelTip: jobData.travelTip || 0,
-                    deadline: isEditMode ? format(toDate(jobData.deadline), "yyyy-MM-dd") : "",
-                    jobStartDate: jobData.jobStartDate ? format(toDate(jobData.jobStartDate), "yyyy-MM-dd") : "",
+                    deadline: isEditMode ? format(new Date(jobData.deadline), "yyyy-MM-dd") : "",
+                    jobStartDate: jobData.jobStartDate ? format(new Date(jobData.jobStartDate), "yyyy-MM-dd") : "",
                     directAwardInstallerId: "", // Never prefill direct award
-                    budget: jobData.budget
+                    priceEstimate: jobData.priceEstimate
                 });
                 
                 const toastTitle = isEditMode ? "Editing Job" : "Re-posting Job";
@@ -285,6 +287,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
             <div className="space-y-4 text-sm">
                 <p>Follow these steps to create a job listing and attract the best installers.</p>
                 <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Budget:</span> Provide a realistic budget range. Use the "AI Suggest" button to get a fair market estimate based on your job details.</li>
                     <li><span className="font-semibold">Job Category:</span> Selecting the right category is crucial. This determines the checklist installers must agree to when bidding.</li>
                     <li><span className="font-semibold">AI-Powered Fields:</span> Use the "AI Generate" button next to the description to get a head start based on your job title.</li>
                     <li><span className="font-semibold">Location & Address:</span> Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.</li>
@@ -303,9 +306,14 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
   }, [role, userLoading, router]);
 
   const jobTitle = useWatch({ control: form.control, name: "jobTitle" });
+  const jobCategory = useWatch({ control: form.control, name: "jobCategory" });
+  const jobDescription = useWatch({ control: form.control, name: "jobDescription" });
   const directAwardInstallerId = useWatch({ control: form.control, name: "directAwardInstallerId" });
   const jobTitleState = form.getFieldState("jobTitle");
   const isJobTitleValid = jobTitle && !jobTitleState.invalid;
+  
+  // Validation for price estimate
+  const canEstimatePrice = jobTitle && jobDescription && jobCategory && jobDescription.length >= 50;
 
   const handleGenerateDetails = async () => {
     if (!isJobTitleValid) {
@@ -340,6 +348,48 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
       setIsGenerating(false);
     }
   };
+
+  const handleEstimatePrice = async () => {
+    if (!canEstimatePrice) {
+        toast({
+            title: "More Details Required",
+            description: "Please fill in the Job Title, Category, and a detailed Description before asking for a price estimate.",
+            variant: "destructive"
+        });
+        return;
+    }
+
+    setIsEstimating(true);
+    try {
+        const result = await generatePriceEstimate({
+            jobTitle,
+            jobDescription,
+            jobCategory
+        });
+
+        if (result && result.priceEstimate) {
+            form.setValue("priceEstimate.min", result.priceEstimate.min, { shouldValidate: true });
+            if (!directAwardInstallerId) {
+                form.setValue("priceEstimate.max", result.priceEstimate.max, { shouldValidate: true });
+            }
+            
+            toast({
+                title: "Budget Estimated!",
+                description: `AI suggests a range of ₹${result.priceEstimate.min} - ₹${result.priceEstimate.max}.`,
+                variant: "success"
+            });
+        }
+    } catch (error) {
+        console.error("Error estimating price:", error);
+        toast({
+            title: "Estimation Failed",
+            description: "Could not generate a price estimate. Please try again later.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsEstimating(false);
+    }
+  };
   
   async function onSubmit(values: z.infer<typeof jobSchema>) {
     if (!user || !db || !storage) {
@@ -351,7 +401,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
 
     const [pincode] = values.address.cityPincode.split(',');
     
-    const jobData: any = { 
+    const jobData: Partial<Job> = { 
         title: values.jobTitle,
         description: values.jobDescription,
         jobCategory: values.jobCategory,
@@ -364,10 +414,10 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
         jobStartDate: new Date(values.jobStartDate),
     };
 
-    if(values.directAwardInstallerId && values.budget) {
-        jobData.budget = {
-            min: values.budget.min,
-            max: values.budget.min // For direct award, min and max are the same
+    if(values.priceEstimate) {
+        jobData.priceEstimate = {
+            min: values.priceEstimate.min,
+            max: values.directAwardInstallerId ? values.priceEstimate.min : values.priceEstimate.max,
         };
     }
 
@@ -693,24 +743,76 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                 />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                    control={form.control}
-                    name="travelTip"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Travel Tip (₹, Optional)</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="e.g., 500" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                        Attract more bids by offering a commission-free travel tip.
-                        </FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+                    <FormField
+                        control={form.control}
+                        name="travelTip"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Travel Tip (₹, Optional)</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="e.g., 500" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                            Attract more bids by offering a commission-free travel tip.
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
                 </div>
             </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Budget</CardTitle>
+                            <CardDescription>
+                                {directAwardInstallerId ? "Set the budget you are offering for this private job." : "Provide an estimated budget range to attract relevant bids."}
+                            </CardDescription>
+                        </div>
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={handleEstimatePrice}
+                            disabled={isEstimating || !canEstimatePrice}
+                        >
+                            {isEstimating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4 text-amber-500" />}
+                            AI Suggest Budget
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <FormField
+                        control={form.control}
+                        name="priceEstimate.min"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>{directAwardInstallerId ? 'Offered Budget (₹)' : 'Minimum Budget (₹)'}</FormLabel>
+                                <FormControl>
+                                    <Input type="number" placeholder="e.g. 8000" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    {!directAwardInstallerId && (
+                        <FormField
+                            control={form.control}
+                            name="priceEstimate.max"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Maximum Budget (₹, Optional)</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" placeholder="e.g. 12000" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    )}
+                </CardContent>
             </Card>
             {!isEditMode && (
                 <Card>
@@ -725,22 +827,6 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <DirectAwardInput control={form.control} />
-                        {directAwardInstallerId && (
-                             <FormField
-                                control={form.control}
-                                name="budget.min"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Your Offered Budget (₹)</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" placeholder="e.g. 10000" {...field} />
-                                        </FormControl>
-                                        <FormDescription>This will be the price offered to the installer.</FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        )}
                     </CardContent>
                 </Card>
             )}
