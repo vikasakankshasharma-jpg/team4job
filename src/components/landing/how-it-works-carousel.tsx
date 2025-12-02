@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -13,21 +14,39 @@ export default function HowItWorksCarousel() {
   const howItWorks = [
     {
       step: 1,
-      title: "Post Your Job",
+      title: "AI-Assisted Job Post",
       description:
-        "Job Givers detail their CCTV needs, budget, and location.",
+        "Describe your needs in plain English. Our AI crafts a professional job post, suggests a fair budget, and can even find matching installers for you.",
     },
     {
       step: 2,
-      title: "Receive Bids",
+      title: "Receive Smart Bids",
       description:
-        "Verified installers bid on your job and communicate via comments.",
+        "Verified installers submit detailed bids. Our AI Bid Assistant helps them write professional proposals.",
     },
     {
       step: 3,
-      title: "Select & Confirm",
+      title: "Analyze & Award Strategically",
       description:
-        "Choose the best installer. Funds are handled securely until the job is done.",
+        "Use our AI Bid Analysis to compare offers. Award the job to multiple installers simultaneously or rank them for sequential offers.",
+    },
+    {
+      step: 4,
+      title: "Fund Securely with Escrow",
+      description:
+        "Fund the job with confidence. Your payment is held securely in a regulated Marketplace Settlement account and is only released when you approve the work.",
+    },
+    {
+      step: 5,
+      title: "Collaborate & Manage",
+      description:
+        "Communicate privately, manage scope changes, and track job progress all in one place.",
+    },
+    {
+      step: 6,
+      title: "Dual-Confirmation & Review",
+      description:
+        "The installer submits proof of work, and you explicitly approve it. Only then are funds released. Leave a review to build the community.",
     },
   ];
 
