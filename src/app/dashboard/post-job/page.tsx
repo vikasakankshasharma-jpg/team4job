@@ -52,7 +52,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { format } from "date-fns";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { jobCategoryTemplates } from "@/lib/job-category-templates";
 
 const addressSchema = z.object({
   house: z.string().min(3, "Please enter a valid house/building detail."),
@@ -69,6 +70,7 @@ const jobSchema = z.object({
   jobDescription: z
     .string()
     .min(50, { message: "Description must be at least 50 characters." }),
+  jobCategory: z.string().min(1, { message: "Please select a job category." }),
   skills: z.string().min(1, { message: "Please provide at least one skill." }),
   travelTip: z.coerce.number().optional(),
   isGstInvoiceRequired: z.boolean().default(false),
@@ -208,6 +210,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
     defaultValues: {
       jobTitle: "",
       jobDescription: "",
+      jobCategory: "",
       skills: "",
       travelTip: 0,
       isGstInvoiceRequired: false,
@@ -249,6 +252,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                 form.reset({
                     jobTitle: jobData.title,
                     jobDescription: jobData.description,
+                    jobCategory: jobData.jobCategory,
                     skills: (jobData.skills || []).join(', '),
                     isGstInvoiceRequired: jobData.isGstInvoiceRequired,
                     address: jobData.address,
@@ -281,6 +285,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
             <div className="space-y-4 text-sm">
                 <p>Follow these steps to create a job listing and attract the best installers.</p>
                 <ul className="list-disc space-y-2 pl-5">
+                    <li><span className="font-semibold">Job Category:</span> Selecting the right category is crucial. This determines the checklist installers must agree to when bidding.</li>
                     <li><span className="font-semibold">AI-Powered Fields:</span> Use the "AI Generate" button next to the description to get a head start based on your job title.</li>
                     <li><span className="font-semibold">Location & Address:</span> Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.</li>
                     <li><span className="font-semibold">Attachments:</span> Upload site photos, floor plans, or any other relevant documents to give installers a better understanding of the job.</li>
@@ -349,6 +354,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
     const jobData: any = { 
         title: values.jobTitle,
         description: values.jobDescription,
+        jobCategory: values.jobCategory,
         skills: values.skills.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
         travelTip: values.travelTip || 0,
         isGstInvoiceRequired: values.isGstInvoiceRequired,
@@ -504,6 +510,33 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+                 <FormField
+                  control={form.control}
+                  name="jobCategory"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Job Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category for your job" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {jobCategoryTemplates.map((template) => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        This helps installers understand the scope of work.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                 control={form.control}
                 name="jobTitle"

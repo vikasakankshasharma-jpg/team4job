@@ -18,6 +18,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatedAvatar } from "./ui/animated-avatar";
 import { cn } from "@/lib/utils";
+import { FoundingInstallerIcon } from "./icons";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 export function UserNav() {
   const { user, role, setRole, logout, isAdmin } = useUser();
@@ -54,7 +56,21 @@ export function UserNav() {
                 <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium leading-none">{user.name}</p>
+                  {user.isFoundingInstaller && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <FoundingInstallerIcon className="h-4 w-4 text-amber-500" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Founding Installer</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
                 <p className="text-xs leading-none text-muted-foreground">
                 {user.email}
                 </p>

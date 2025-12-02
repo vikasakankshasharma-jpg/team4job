@@ -1,0 +1,361 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.onUserVerified = exports.handleExpiredAwards = exports.onJobDateChange = exports.handleUnfundedJobs = exports.onJobCompleted = exports.onPrivateMessageCreated = exports.onBidCreated = exports.api = void 0;
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+const express = require("express");
+admin.initializeApp();
+const app = express();
+app.post("/cashfree-webhook", (req, res) => {
+    console.log("Received Cashfree webhook data:", req.body);
+    res.json({ status: "received" });
+});
+exports.api = functions.https.onRequest(app);
+// --- Push Notification Functions ---
+/**
+ * Sends a push notification to a user.
+ * @param {string} userId The UID of the user to notify.
+ * @param {string} title The title of the notification.
+ * @param {string} body The body of the notification.
+ * @param {string} [link] Optional deep link for the notification.
+ */
+async function sendNotification(userId, title, body, link) {
+    if (!userId) {
+        console.log("No user ID provided, skipping notification.");
+        return;
+    }
+    const userDoc = await admin.firestore().collection("users").doc(userId).get();
+    const userData = userDoc.data();
+    if (!userData || !userData.fcmTokens || userData.fcmTokens.length === 0) {
+        console.log(`User ${userId} has no FCM tokens. Cannot send notification.`);
+        return;
+    }
+    const payload = {
+        notification: {
+            title,
+            body,
+        },
+        webpush: {
+            fcmOptions: {
+                link: link || "https://cctv-job-connect.web.app/dashboard",
+            },
+        },
+        tokens: userData.fcmTokens,
+    };
+    try {
+        console.log(`Sending notification to user ${userId} with tokens:`, userData.fcmTokens);
+        const response = await admin.messaging().sendMulticast(payload);
+        console.log("Successfully sent message:", response);
+        // You can also handle failures and remove invalid tokens here
+    }
+    catch (error) {
+        console.error("Error sending message:", error);
+    }
+}
+/**
+ * Triggered when a new bid is created on a job.
+ * Notifies the Job Giver about the new bid.
+ */
+exports.onBidCreated = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+    var _a, _b, _c;
+    const beforeData = change.before.data();
+    const afterData = change.after.data();
+    const oldBidsCount = ((_a = beforeData.bids) === null || _a === void 0 ? void 0 : _a.length) || 0;
+    const newBidsCount = ((_b = afterData.bids) === null || _b === void 0 ? void 0 : _b.length) || 0;
+    // If a new bid was added
+    if (newBidsCount > oldBidsCount) {
+        const newBid = afterData.bids[newBidsCount - 1];
+        const jobGiverId = afterData.jobGiver.id;
+        if (newBid.installer && typeof newBid.installer.get === "function") {
+            const installerDoc = await newBid.installer.get();
+            const installerName = ((_c = installerDoc.data()) === null || _c === void 0 ? void 0 : _c.name) || "An installer";
+            await sendNotification(jobGiverId, "New Bid on Your Job!", `${installerName} placed a bid of ₹${newBid.amount} ` +
+                `on your job: "${afterData.title}"`, `/dashboard/jobs/${context.params.jobId}`);
+        }
+    }
+});
+/**
+ * Triggered when a new private message is added to a job.
+ * Notifies the recipient.
+ */
+exports.onPrivateMessageCreated = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+    var _a, _b, _c;
+    const beforeData = change.before.data();
+    const afterData = change.after.data();
+    const oldMessagesCount = ((_a = beforeData.privateMessages) === null || _a === void 0 ? void 0 : _a.length) || 0;
+    const newMessagesCount = ((_b = afterData.privateMessages) === null || _b === void 0 ? void 0 : _b.length) || 0;
+    if (newMessagesCount > oldMessagesCount) {
+        const newMessage = afterData.privateMessages[newMessagesCount - 1];
+        const authorId = newMessage.author.id;
+        const jobGiverId = afterData.jobGiver.id;
+        const awardedInstallerId = afterData.awardedInstaller.id;
+        // Determine the recipient
+        const recipientId = authorId === jobGiverId ?
+            awardedInstallerId :
+            jobGiverId;
+        const authorDoc = await newMessage.author.get();
+        const authorName = ((_c = authorDoc.data()) === null || _c === void 0 ? void 0 : _c.name) || "Someone";
+        await sendNotification(recipientId, `New Message from ${authorName}`, `You have a new message on job: "${afterData.title}"`, `/dashboard/jobs/${context.params.jobId}`);
+    }
+});
+/**
+ * Triggered when a job is updated, specifically to handle reputation points
+ * when a job status changes to "Completed".
+ */
+exports.onJobCompleted = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+    const beforeData = change.before.data();
+    const afterData = change.after.data();
+    // Check if the job status just changed to "Completed"
+    if (beforeData.status !== "Completed" &&
+        afterData.status === "Completed") {
+        const installerRef = afterData.awardedInstaller;
+        if (!installerRef) {
+            console.log(`Job ${context.params.jobId} completed without ` +
+                "an awarded installer.");
+            return;
+        }
+        const settingsRef = admin.firestore().collection("settings")
+            .doc("platform");
+        const settingsSnap = await settingsRef.get();
+        const settings = settingsSnap.data() || {};
+        // Default reputation values if not set
+        const pointsForCompletion = settings.pointsForJobCompletion || 50;
+        const pointsFor5Star = settings.pointsFor5StarRating || 20;
+        const pointsFor4Star = settings.pointsFor4StarRating || 10;
+        const penaltyFor1Star = settings.penaltyFor1StarRating || -25;
+        const silverTierPoints = settings.silverTierPoints || 500;
+        const goldTierPoints = settings.goldTierPoints || 1000;
+        const platinumTierPoints = settings.platinumTierPoints || 2000;
+        let pointsEarned = pointsForCompletion;
+        if (afterData.rating === 5) {
+            pointsEarned += pointsFor5Star;
+        }
+        else if (afterData.rating === 4) {
+            pointsEarned += pointsFor4Star;
+        }
+        else if (afterData.rating === 1) {
+            pointsEarned += penaltyFor1Star;
+        }
+        try {
+            await admin.firestore().runTransaction(async (transaction) => {
+                const installerDoc = await transaction.get(installerRef);
+                if (!installerDoc.exists) {
+                    throw new Error("Installer profile not found!");
+                }
+                const installerData = installerDoc.data();
+                if (!installerData || !installerData.installerProfile) {
+                    throw new Error("Installer profile data is missing.");
+                }
+                const currentPoints = installerData.installerProfile.points || 0;
+                const newPoints = currentPoints + pointsEarned;
+                let newTier = installerData.installerProfile.tier || "Bronze";
+                if (newPoints >= platinumTierPoints) {
+                    newTier = "Platinum";
+                }
+                else if (newPoints >= goldTierPoints) {
+                    newTier = "Gold";
+                }
+                else if (newPoints >= silverTierPoints) {
+                    newTier = "Silver";
+                }
+                const monthYear = new Date().toLocaleString("default", { month: "long", year: "numeric" });
+                // Update reputation history
+                const history = installerData.installerProfile.reputationHistory ||
+                    [];
+                const monthIndex = history.findIndex((h) => h.month === monthYear);
+                if (monthIndex > -1) {
+                    history[monthIndex].points = newPoints;
+                }
+                else {
+                    history.push({ month: monthYear, points: newPoints });
+                }
+                // Limit history to last 12 months for performance
+                if (history.length > 12) {
+                    history.shift();
+                }
+                transaction.update(installerRef, {
+                    "installerProfile.points": newPoints,
+                    "installerProfile.tier": newTier,
+                    "installerProfile.reputationHistory": history,
+                    "installerProfile.reviews": admin.firestore.FieldValue
+                        .increment(1),
+                });
+            });
+            console.log(`Successfully updated reputation for installer ${installerRef.id}. Awarded ${pointsEarned} points.`);
+            await sendNotification(installerRef.id, "Reputation Updated!", `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`, "/dashboard/profile");
+        }
+        catch (error) {
+            console.error("Error updating reputation:", error);
+        }
+    }
+});
+/**
+ * Handles scheduled cleanup of jobs that are stuck in "Pending Funding".
+ * Runs every 6 hours.
+ */
+exports.handleUnfundedJobs = functions.pubsub.schedule("every 6 hours").onRun(async (context) => {
+    console.log("Running scheduled function to handle unfunded jobs...");
+    const now = admin.firestore.Timestamp.now();
+    // Set deadline to 48 hours ago
+    const fortyEightHoursAgo = admin.firestore.Timestamp.fromMillis(now.toMillis() - 48 * 60 * 60 * 1000);
+    const q = admin.firestore().collection("jobs")
+        .where("status", "==", "Pending Funding")
+        .where("fundingDeadline", "<=", fortyEightHoursAgo);
+    const snapshot = await q.get();
+    if (snapshot.empty) {
+        console.log("No stale unfunded jobs found.");
+        return null;
+    }
+    const batch = admin.firestore().batch();
+    const notificationPromises = [];
+    snapshot.docs.forEach((doc) => {
+        const job = doc.data();
+        console.log(`Cancelling job ${doc.id} due to funding timeout.`);
+        batch.update(doc.ref, { status: "Cancelled" });
+        // Notify Job Giver
+        notificationPromises.push(sendNotification(job.jobGiver.id, "Job Cancelled", `Your job "${job.title}" was automatically cancelled ` +
+            "because it was not funded within 48 hours of acceptance.", `/dashboard/jobs/${doc.id}`));
+        // Notify Installer
+        notificationPromises.push(sendNotification(job.awardedInstaller.id, "Job Cancelled", `Job "${job.title}" was cancelled as the Job Giver did not ` +
+            "complete payment. You are now free to bid on other jobs.", `/dashboard/jobs/${doc.id}`));
+    });
+    await batch.commit();
+    await Promise.all(notificationPromises);
+    console.log(`Cancelled ${snapshot.size} unfunded jobs.`);
+    return null;
+});
+/**
+ * Triggered when there is a date change proposal on a job.
+ */
+exports.onJobDateChange = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+    var _a;
+    const beforeData = change.before.data();
+    const afterData = change.after.data();
+    const jobId = context.params.jobId;
+    // Date Change Proposed
+    if (!beforeData.dateChangeProposal &&
+        afterData.dateChangeProposal &&
+        afterData.dateChangeProposal.status === "pending") {
+        const proposal = afterData.dateChangeProposal;
+        const jobGiverId = afterData.jobGiver.id;
+        const awardedInstallerId = afterData.awardedInstaller.id;
+        const proposerId = proposal.proposedBy === "Job Giver" ?
+            jobGiverId :
+            awardedInstallerId;
+        const recipientId = proposal.proposedBy === "Job Giver" ?
+            awardedInstallerId :
+            jobGiverId;
+        const proposerDoc = await admin.firestore().collection("users")
+            .doc(proposerId).get();
+        const proposerName = ((_a = proposerDoc.data()) === null || _a === void 0 ? void 0 : _a.name) || "The other party";
+        await sendNotification(recipientId, "Date Change Proposed", `${proposerName} has proposed a new start date for job: "${afterData.title}".`, `/dashboard/jobs/${jobId}`);
+    }
+    // Date Change Accepted/Rejected
+    if (beforeData.dateChangeProposal &&
+        beforeData.dateChangeProposal.status === "pending" &&
+        (!afterData.dateChangeProposal ||
+            afterData.dateChangeProposal.status !== "pending")) {
+        const wasAccepted = afterData.jobStartDate !== beforeData.jobStartDate;
+        const proposerId = beforeData.dateChangeProposal.proposedBy ===
+            "Job Giver" ? afterData.jobGiver.id : afterData.awardedInstaller.id;
+        await sendNotification(proposerId, `Date Change ${wasAccepted ? "Accepted" : "Rejected"}`, `Your proposed date change for job "${afterData.title}" was ${wasAccepted ? "accepted" : "rejected"}.`, `/dashboard/jobs/${jobId}`);
+    }
+});
+/**
+ * Handles scheduled cleanup of jobs where the award offer has expired.
+ * Runs every hour.
+ */
+exports.handleExpiredAwards = functions.pubsub.schedule("every 1 hours").onRun(async (context) => {
+    console.log("Running scheduled function to handle expired job awards...");
+    const now = admin.firestore.Timestamp.now();
+    const q = admin.firestore().collection("jobs")
+        .where("status", "==", "Awarded")
+        .where("acceptanceDeadline", "<=", now);
+    const snapshot = await q.get();
+    if (snapshot.empty) {
+        console.log("No expired awards found.");
+        return null;
+    }
+    const batch = admin.firestore().batch();
+    const notificationPromises = [];
+    snapshot.docs.forEach((doc) => {
+        const job = doc.data();
+        console.log(`Reverting job ${doc.id} to 'Bidding Closed' due to expired award.`);
+        const timedOutInstallerIds = (job.selectedInstallers || []).map((s) => s.installerId);
+        batch.update(doc.ref, {
+            status: "Bidding Closed",
+            awardedInstaller: admin.firestore.FieldValue.delete(),
+            acceptanceDeadline: admin.firestore.FieldValue.delete(),
+            selectedInstallers: [],
+            disqualifiedInstallerIds: admin.firestore.FieldValue.arrayUnion(...timedOutInstallerIds),
+        });
+        // Notify Job Giver that the offer expired
+        notificationPromises.push(sendNotification(job.jobGiver.id, "Offer Expired", `Your offer for job "${job.title}" expired without being accepted. ` +
+            "You can now award it to another installer.", `/dashboard/jobs/${doc.id}`));
+    });
+    await batch.commit();
+    await Promise.all(notificationPromises);
+    console.log(`Processed ${snapshot.size} expired awards.`);
+    return null;
+});
+/**
+ * Triggered when a user's verification status changes.
+ * Awards the "Founding Installer" badge to the first 100 verified installers.
+ */
+exports.onUserVerified = functions.firestore
+    .document("users/{userId}")
+    .onUpdate(async (change, context) => {
+    var _a, _b, _c, _d;
+    const beforeData = change.before.data();
+    const afterData = change.after.data();
+    const userId = context.params.userId;
+    const wasVerified = ((_a = beforeData.installerProfile) === null || _a === void 0 ? void 0 : _a.verified) === false ||
+        ((_b = beforeData.installerProfile) === null || _b === void 0 ? void 0 : _b.verified) === undefined;
+    const isVerified = ((_c = afterData.installerProfile) === null || _c === void 0 ? void 0 : _c.verified) === true;
+    // Proceed only if the installer has just become verified and
+    // is not already a Founding Installer
+    if (wasVerified && isVerified && !afterData.isFoundingInstaller) {
+        console.log(`User ${userId} has just been verified. ` +
+            "Checking for Founding Installer eligibility.");
+        const db = admin.firestore();
+        try {
+            await db.runTransaction(async (transaction) => {
+                const foundingInstallersQuery = db.collection("users")
+                    .where("isFoundingInstaller", "==", true);
+                const foundingInstallersSnap = await transaction
+                    .get(foundingInstallersQuery);
+                if (foundingInstallersSnap.size < 100) {
+                    console.log("Founding Installer count is " +
+                        `${foundingInstallersSnap.size}. ` +
+                        `Awarding badge to user ${userId}.`);
+                    const userRef = db.collection("users").doc(userId);
+                    transaction.update(userRef, { isFoundingInstaller: true });
+                    // This notification will be sent outside the transaction
+                }
+                else {
+                    console.log("Founding Installer program is full. No badge awarded.");
+                }
+            });
+            // Send notification after the transaction commits successfully.
+            // We re-fetch the user data to ensure we have the latest state
+            // before notifying.
+            const finalUserDoc = await db.collection("users").doc(userId).get();
+            if ((_d = finalUserDoc.data()) === null || _d === void 0 ? void 0 : _d.isFoundingInstaller) {
+                await sendNotification(userId, "Congratulations, You're a Founding Installer!", "You are one of the first 100 installers to be verified " +
+                    "on our platform. Enjoy your exclusive badge!", "/dashboard/profile");
+            }
+        }
+        catch (error) {
+            console.error(`Error in Founding Installer transaction for user ${userId}:`, error);
+        }
+    }
+});
+//# sourceMappingURL=index.js.map
