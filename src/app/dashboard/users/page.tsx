@@ -560,7 +560,7 @@ export default function UsersPage() {
         )}
 
         {view === 'grid' && (
-             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {loading ? (
                     <div className="col-span-full text-center py-10 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin" /></div>
                 ) : sortedAndFilteredUsers.length > 0 ? (
@@ -601,5 +601,3 @@ export default function UsersPage() {
     </>
   );
 }
-
-    
