@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Adding this to force a server restart and clear the cache
+  serverRuntimeConfig: {
+    cacheBuster: '2024-07-26T12:00:00Z',
+  },
   images: {
     remotePatterns: [
       {
