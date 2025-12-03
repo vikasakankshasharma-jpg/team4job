@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -424,7 +425,7 @@ function PageSkeleton() {
 
 export default function UserProfilePage() {
   const params = useParams();
-  const { user: authUser, isAdmin, role: authUserRole } = useAuthUser();
+  const { user: authUser, isAdmin } = useAuthUser();
   const id = params.id as string;
   const { db } = useFirebase();
   const { toast } = useToast();
@@ -454,24 +455,26 @@ export default function UserProfilePage() {
         
         const promises = [];
 
+        // Always fetch posted jobs if the user is a Job Giver
+        if (user.roles.includes('Job Giver')) {
+            const postedJobsQuery = query(jobsRef, where('jobGiver', '==', userDoc.ref));
+            promises.push(getDocs(postedJobsQuery).then(s => setUserPostedJobs(s.docs.map(d => d.data() as Job))));
+        }
+
+        // Always fetch completed jobs if the user is an Installer
+        if (user.roles.includes('Installer')) {
+            const completedJobsQuery = query(jobsRef, where('status', '==', 'Completed'), where('awardedInstaller', '==', userDoc.ref));
+            promises.push(getDocs(completedJobsQuery).then(s => setUserCompletedJobs(s.docs.map(d => d.data() as Job))));
+        }
+
         if (isTeamMember) {
-            // Fetch disputes where this team member has participated
-            const disputesQuery = query(disputesRef, where('messages', 'array-contains-any', [{ authorId: user.id }]));
-            promises.push(getDocs(disputesRef).then(allDisputesSnapshot => {
+            const disputesQuery = query(disputesRef);
+            promises.push(getDocs(disputesQuery).then(allDisputesSnapshot => {
                 const relatedDisputes = allDisputesSnapshot.docs
                     .map(d => d.data() as Dispute)
                     .filter(d => d.messages.some(m => m.authorId === user.id));
                 setInvolvedDisputes(relatedDisputes);
             }));
-        } else {
-            if (user.roles.includes('Job Giver')) {
-                const postedJobsQuery = query(jobsRef, where('jobGiver', '==', userDoc.ref));
-                promises.push(getDocs(postedJobsQuery).then(s => setUserPostedJobs(s.docs.map(d => d.data() as Job))));
-            }
-            if (user.roles.includes('Installer')) {
-                const completedJobsQuery = query(jobsRef, where('status', '==', 'Completed'), where('awardedInstaller', '==', userDoc.ref));
-                promises.push(getDocs(completedJobsQuery).then(s => setUserCompletedJobs(s.docs.map(d => d.data() as Job))));
-            }
         }
         
         await Promise.all(promises);
@@ -577,7 +580,7 @@ export default function UserProfilePage() {
               </div>
             </div>
             {isAdmin && subscription && <ManageSubscriptionDialog user={profileUser} onSubscriptionUpdate={handleSubscriptionUpdate} />}
-            {authUserRole === 'Job Giver' && isInstaller && (
+            {authUser?.roles.includes('Job Giver') && isInstaller && (
                  <Button asChild>
                     <Link href={`/dashboard/post-job?directAwardInstallerId=${userId}`}>
                         <UserPlus className="mr-2 h-4 w-4"/>
@@ -603,109 +606,118 @@ export default function UserProfilePage() {
       
       {isTeamMember && involvedDisputes.length > 0 && <DisputePerformanceCard disputes={involvedDisputes} />}
 
-      {isInstaller && !isTeamMember && (
+      {isInstaller && (
         <Card>
             <CardHeader>
                 <CardTitle>Installer Reputation</CardTitle>
                 <CardDescription>This user's performance and trust score on the platform.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6">
-                <div className="flex items-center justify-between p-4 rounded-lg bg-accent/20">
-                    <div className="flex items-center gap-4">
-                        {tierIcons[installerProfile?.tier || 'Bronze']}
-                        <div>
-                            <p className="text-sm">Tier</p>
-                            <p className="text-xl font-bold">{installerProfile?.tier || 'Bronze'}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="text-right">
-                            <p className="text-sm">Reputation Points</p>
-                            <p className="text-xl font-bold text-right">{installerProfile?.points || 0}</p>
-                        </div>
-                    </div>
-                </div>
-                
-                {currentTierInfo && currentTierInfo.next !== 'Max' && installerProfile && (
-                     <div>
-                        <div className="flex justify-between items-center mb-1">
-                            <p className="text-sm font-medium">Progress to {currentTierInfo.next}</p>
-                            <p className="text-sm font-medium">{installerProfile.points} / {currentTierInfo.goal} pts</p>
-                        </div>
-                        <Progress value={progressPercentage} className="h-2"/>
+                {(installerProfile?.points === 0 && installerProfile?.reviews === 0) ? (
+                     <div className="text-center py-8 bg-muted/50 rounded-lg">
+                        <p className="font-semibold">New Installer</p>
+                        <p className="text-sm text-muted-foreground">No reputation data available yet.</p>
                      </div>
-                )}
-                
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-                    <div className="p-4 rounded-lg border">
-                        <Star className="mx-auto h-6 w-6 mb-2 text-primary"/>
-                        <p className="text-2xl font-bold">{(installerProfile?.rating || 0).toFixed(1)}/5.0</p>
-                        <p className="text-sm text-muted-foreground">from {installerProfile?.reviews || 0} reviews</p>
+                ) : (
+                <>
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-accent/20">
+                        <div className="flex items-center gap-4">
+                            {tierIcons[installerProfile?.tier || 'Bronze']}
+                            <div>
+                                <p className="text-sm">Tier</p>
+                                <p className="text-xl font-bold">{installerProfile?.tier || 'Bronze'}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="text-right">
+                                <p className="text-sm">Reputation Points</p>
+                                <p className="text-xl font-bold text-right">{installerProfile?.points || 0}</p>
+                            </div>
+                        </div>
                     </div>
-                    <div className="p-4 rounded-lg border">
-                        <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary"/>
-                        <p className="text-2xl font-bold">{jobsCompletedCount}</p>
-                        <p className="text-sm text-muted-foreground">Jobs Completed</p>
+                    
+                    {currentTierInfo && currentTierInfo.next !== 'Max' && installerProfile && (
+                        <div>
+                            <div className="flex justify-between items-center mb-1">
+                                <p className="text-sm font-medium">Progress to {currentTierInfo.next}</p>
+                                <p className="text-sm font-medium">{installerProfile.points} / {currentTierInfo.goal} pts</p>
+                            </div>
+                            <Progress value={progressPercentage} className="h-2"/>
+                        </div>
+                    )}
+                    
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+                        <div className="p-4 rounded-lg border">
+                            <Star className="mx-auto h-6 w-6 mb-2 text-primary"/>
+                            <p className="text-2xl font-bold">{(installerProfile?.rating || 0).toFixed(1)}/5.0</p>
+                            <p className="text-sm text-muted-foreground">from {installerProfile?.reviews || 0} reviews</p>
+                        </div>
+                        <div className="p-4 rounded-lg border">
+                            <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary"/>
+                            <p className="text-2xl font-bold">{jobsCompletedCount}</p>
+                            <p className="text-sm text-muted-foreground">Jobs Completed</p>
+                        </div>
                     </div>
-                </div>
 
-                <div>
-                    <h4 className="font-semibold mb-3">Skills</h4>
-                    <div className="flex flex-wrap gap-2">
-                        {(installerProfile?.skills || []).length > 0 ? installerProfile?.skills.map(skill => (
-                            <Badge key={skill} variant="secondary">{skill}</Badge>
-                        )) : <p className="text-sm text-muted-foreground">No skills added.</p>}
+                    <div>
+                        <h4 className="font-semibold mb-3">Skills</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {(installerProfile?.skills || []).length > 0 ? installerProfile?.skills.map(skill => (
+                                <Badge key={skill} variant="secondary">{skill}</Badge>
+                            )) : <p className="text-sm text-muted-foreground">No skills added.</p>}
+                        </div>
                     </div>
-                </div>
 
-                {installerProfile?.reputationHistory && installerProfile.reputationHistory.length > 0 && (
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2">
-                                <TrendingUp className="h-5 w-5" />
-                                Reputation History (Last 6 Months)
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={chartConfig} className="h-64 w-full">
-                                <AreaChart data={installerProfile.reputationHistory} margin={{ left: -20, right: 20, top: 10, bottom: 0 }}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis 
-                                        dataKey="month" 
-                                        tickLine={false} 
-                                        axisLine={false} 
-                                        tickMargin={8} 
-                                    />
-                                    <YAxis
-                                         tickLine={false}
-                                         axisLine={false}
-                                         tickMargin={8}
-                                    />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Area 
-                                        dataKey="points" 
-                                        type="natural" 
-                                        fill="var(--color-points)" 
-                                        fillOpacity={0.4} 
-                                        stroke="var(--color-points)" 
-                                    />
-                                </AreaChart>
-                            </ChartContainer>
-                        </CardContent>
-                     </Card>
+                    {installerProfile?.reputationHistory && installerProfile.reputationHistory.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base flex items-center gap-2">
+                                    <TrendingUp className="h-5 w-5" />
+                                    Reputation History (Last 6 Months)
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ChartContainer config={chartConfig} className="h-64 w-full">
+                                    <AreaChart data={installerProfile.reputationHistory} margin={{ left: -20, right: 20, top: 10, bottom: 0 }}>
+                                        <CartesianGrid vertical={false} />
+                                        <XAxis 
+                                            dataKey="month" 
+                                            tickLine={false} 
+                                            axisLine={false} 
+                                            tickMargin={8} 
+                                        />
+                                        <YAxis
+                                            tickLine={false}
+                                            axisLine={false}
+                                            tickMargin={8}
+                                        />
+                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <Area 
+                                            dataKey="points" 
+                                            type="natural" 
+                                            fill="var(--color-points)" 
+                                            fillOpacity={0.4} 
+                                            stroke="var(--color-points)" 
+                                        />
+                                    </AreaChart>
+                                </ChartContainer>
+                            </CardContent>
+                        </Card>
+                    )}
+                 </>
                 )}
             </CardContent>
         </Card>
       )}
 
-      {!isTeamMember && (roles.includes('Job Giver') || roles.includes('Installer')) && (
+      {!isTeamMember && (
         <Card>
-            <Tabs defaultValue={roles.includes('Job Giver') ? "posted" : "completed"}>
+            <Tabs defaultValue={userPostedJobs.length > 0 ? "posted" : "completed"}>
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <TabsList>
-                            {roles.includes('Job Giver') && <TabsTrigger value="posted">Posted Jobs</TabsTrigger>}
-                            {roles.includes('Installer') && <TabsTrigger value="completed">Completed Jobs</TabsTrigger>}
+                            {userPostedJobs.length > 0 && <TabsTrigger value="posted">Posted Jobs</TabsTrigger>}
+                            {userCompletedJobs.length > 0 && <TabsTrigger value="completed">Completed Jobs</TabsTrigger>}
                         </TabsList>
                          <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
                             <Button
@@ -728,49 +740,45 @@ export default function UserProfilePage() {
                     </div>
                 </CardHeader>
 
-                {roles.includes('Job Giver') && (
-                    <TabsContent value="posted">
-                        <CardContent>
-                            {userPostedJobs.length > 0 ? (
-                            jobsView === 'grid' ? (
-                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {userPostedJobs.map(job => (
-                                    <JobCard key={job.id} job={job} />
-                                ))}
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                {userPostedJobs.map(job => (
-                                    <JobListItem key={job.id} job={job} />
-                                ))}
-                                </div>
-                            )
-                            ) : <p className="text-muted-foreground col-span-full text-center py-8">This user has not posted any jobs yet.</p>}
-                        </CardContent>
-                    </TabsContent>
-                )}
+                <TabsContent value="posted">
+                    <CardContent>
+                        {userPostedJobs.length > 0 ? (
+                        jobsView === 'grid' ? (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {userPostedJobs.map(job => (
+                                <JobCard key={job.id} job={job} />
+                            ))}
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                            {userPostedJobs.map(job => (
+                                <JobListItem key={job.id} job={job} />
+                            ))}
+                            </div>
+                        )
+                        ) : <p className="text-muted-foreground col-span-full text-center py-8">This user has not posted any jobs yet.</p>}
+                    </CardContent>
+                </TabsContent>
 
-                {roles.includes('Installer') && (
-                    <TabsContent value="completed">
-                         <CardContent>
-                            {userCompletedJobs.length > 0 ? (
-                            jobsView === 'grid' ? (
-                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {userCompletedJobs.map(job => (
-                                    <JobCard key={job.id} job={job} />
-                                ))}
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                {userCompletedJobs.map(job => (
-                                    <JobListItem key={job.id} job={job} />
-                                ))}
-                                </div>
-                            )
-                            ) : <p className="text-muted-foreground col-span-full text-center py-8">This installer has not completed any jobs yet.</p>}
-                        </CardContent>
-                    </TabsContent>
-                )}
+                <TabsContent value="completed">
+                     <CardContent>
+                        {userCompletedJobs.length > 0 ? (
+                        jobsView === 'grid' ? (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {userCompletedJobs.map(job => (
+                                <JobCard key={job.id} job={job} />
+                            ))}
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                            {userCompletedJobs.map(job => (
+                                <JobListItem key={job.id} job={job} />
+                            ))}
+                            </div>
+                        )
+                        ) : <p className="text-muted-foreground col-span-full text-center py-8">This installer has not completed any jobs yet.</p>}
+                    </CardContent>
+                </TabsContent>
             </Tabs>
         </Card>
       )}
