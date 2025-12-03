@@ -16,7 +16,7 @@ import React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, PolarGrid, PolarAngleAxis, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { format, differenceInMilliseconds } from "date-fns";
-import { notFound, useParams } from "next/navigation";
+import { notFound, useParams, useRouter } from "next/navigation";
 import { JobCard } from "@/components/job-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Job, User, Dispute } from "@/lib/types";
@@ -775,4 +775,5 @@ export default function UserProfilePage() {
       )}
     </div>
   );
-}
+
+    
