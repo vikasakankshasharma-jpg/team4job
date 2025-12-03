@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -68,17 +67,18 @@ const chartConfig = {
 } satisfies ChartConfig
 
 const getRefId = (ref: any): string | null => {
-  if (!ref) return null;
-  if (typeof ref === 'string') return ref;
-  return ref.id || null;
+    if (!ref) return null;
+    if (typeof ref === 'string') return ref;
+    return ref.id || null;
 }
 
 const wasJobAwardedDirectly = (job: Job) => {
     if (!job.awardedInstaller) return false;
     
     const awardedInstallerId = getRefId(job.awardedInstaller);
-    
-    if (job.bids.length === 0 && awardedInstallerId) {
+    if (!awardedInstallerId) return false;
+
+    if (!job.bids || job.bids.length === 0) {
         return true;
     }
 
@@ -450,66 +450,88 @@ export default function UserProfilePage() {
   const [jobsView, setJobsView] = useState<'list' | 'grid'>('list');
 
   useEffect(() => {
-    const fetchAllData = async () => {
-        if (!db || !id) return;
-        
-        setLoading(true);
+    const fetchUserData = async () => {
+      if (!db || !id) return;
+      
+      setLoading(true);
 
-        // 1. Fetch User Profile
-        const userDocRef = doc(db, "users", id);
-        const userDoc = await getDoc(userDocRef);
+      const userDocRef = doc(db, "users", id);
+      const userDoc = await getDoc(userDocRef);
 
-        if (!userDoc.exists()) {
-            setLoading(false);
-            notFound();
-            return;
-        }
-        
-        const fetchedUser = { id: userDoc.id, ...userDoc.data() } as User;
-        setProfileUser(fetchedUser);
-
-        // 2. Fetch related data based on roles
-        const promises = [];
-        const { roles } = fetchedUser;
-        const isInstaller = roles.includes('Installer');
-        const isJobGiver = roles.includes('Job Giver');
-        const isTeamMember = roles.includes('Admin') || roles.includes('Support Team');
-
-        if (isJobGiver) {
-            const postedJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
-            promises.push(getDocs(postedJobsQuery));
-        } else {
-            promises.push(Promise.resolve({ docs: [] }));
-        }
-
-        if (isInstaller) {
-            const completedJobsQuery = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', userDocRef));
-            promises.push(getDocs(completedJobsQuery));
-        } else {
-            promises.push(Promise.resolve({ docs: [] }));
-        }
-
-        if (isTeamMember) {
-            const disputesQuery = query(collection(db, "disputes"), where('handledBy', '==', id));
-            promises.push(getDocs(disputesQuery));
-        } else {
-            promises.push(Promise.resolve({ docs: [] }));
-        }
-        
-        try {
-            const [postedJobsSnapshot, completedJobsSnapshot, disputesSnapshot] = await Promise.all(promises);
-            setUserPostedJobs(postedJobsSnapshot.docs.map(d => d.data() as Job));
-            setUserCompletedJobs(completedJobsSnapshot.docs.map(d => d.data() as Job));
-            setInvolvedDisputes(disputesSnapshot.docs.map(d => d.data() as Dispute));
-        } catch (error) {
-            console.error("Error fetching related user data:", error);
-            toast({ title: "Error", description: "Failed to load some user data."});
-        }
-        
+      if (!userDoc.exists()) {
         setLoading(false);
+        notFound();
+        return;
+      }
+      
+      const fetchedUser = { id: userDoc.id, ...userDoc.data() } as User;
+      setProfileUser(fetchedUser);
+
+      const { roles } = fetchedUser;
+      const isInstaller = roles.includes('Installer');
+      const isJobGiver = roles.includes('Job Giver');
+      const isTeamMember = roles.includes('Admin') || roles.includes('Support Team');
+      
+      const promises: Promise<any>[] = [];
+
+      if (isJobGiver) {
+        promises.push(getDocs(query(collection(db, "jobs"), where('jobGiver', '==', userDocRef))));
+      } else {
+        promises.push(Promise.resolve({ docs: [] }));
+      }
+
+      if (isInstaller) {
+        promises.push(getDocs(query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', userDocRef))));
+      } else {
+        promises.push(Promise.resolve({ docs: [] }));
+      }
+
+      if (isTeamMember) {
+        promises.push(getDocs(query(collection(db, "disputes"), where('handledBy', '==', id))));
+      } else {
+        promises.push(Promise.resolve({ docs: [] }));
+      }
+      
+      try {
+        const [postedJobsSnapshot, completedJobsSnapshot, disputesSnapshot] = await Promise.all(promises);
+
+        const allJobUsers = new Set<string>();
+        const allJobsRaw: Job[] = [...postedJobsSnapshot.docs.map(d => d.data() as Job), ...completedJobsSnapshot.docs.map(d => d.data() as Job)];
+        
+        allJobsRaw.forEach(job => {
+          if (getRefId(job.jobGiver)) allJobUsers.add(getRefId(job.jobGiver)!);
+          if (getRefId(job.awardedInstaller)) allJobUsers.add(getRefId(job.awardedInstaller)!);
+        });
+
+        const usersMap = new Map<string, User>();
+        if (allJobUsers.size > 0) {
+            const usersQuery = query(collection(db, 'users'), where('__name__', 'in', Array.from(allJobUsers)));
+            const userDocs = await getDocs(usersQuery);
+            userDocs.forEach(docSnap => usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User));
+        }
+
+        const populateJob = (job: Job) => {
+            const jobGiverId = getRefId(job.jobGiver);
+            const awardedInstallerId = getRefId(job.awardedInstaller);
+            return {
+                ...job,
+                jobGiver: jobGiverId ? usersMap.get(jobGiverId) : undefined,
+                awardedInstaller: awardedInstallerId ? usersMap.get(awardedInstallerId) : undefined,
+            }
+        };
+        
+        setUserPostedJobs(postedJobsSnapshot.docs.map(d => populateJob(d.data() as Job)));
+        setUserCompletedJobs(completedJobsSnapshot.docs.map(d => populateJob(d.data() as Job)));
+        setInvolvedDisputes(disputesSnapshot.docs.map(d => d.data() as Dispute));
+      } catch (error) {
+        console.error("Error fetching related user data:", error);
+        toast({ title: "Error", description: "Failed to load some user data."});
+      }
+      
+      setLoading(false);
     };
     
-    fetchAllData();
+    fetchUserData();
   }, [id, db, toast]);
   
   
@@ -807,3 +829,5 @@ export default function UserProfilePage() {
     </div>
   );
 }
+
+    
