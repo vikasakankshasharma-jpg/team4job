@@ -16,7 +16,7 @@ import React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, PolarGrid, PolarAngleAxis, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { format, differenceInMilliseconds } from "date-fns";
-import { notFound, useParams, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { JobCard } from "@/components/job-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Job, User, Dispute } from "@/lib/types";
@@ -603,7 +603,7 @@ export default function UserProfilePage() {
       
       {isTeamMember && involvedDisputes.length > 0 && <DisputePerformanceCard disputes={involvedDisputes} />}
 
-      {isInstaller && installerProfile && !isTeamMember && (
+      {isInstaller && !isTeamMember && (
         <Card>
             <CardHeader>
                 <CardTitle>Installer Reputation</CardTitle>
@@ -612,21 +612,21 @@ export default function UserProfilePage() {
             <CardContent className="grid gap-6">
                 <div className="flex items-center justify-between p-4 rounded-lg bg-accent/20">
                     <div className="flex items-center gap-4">
-                        {tierIcons[installerProfile.tier]}
+                        {tierIcons[installerProfile?.tier || 'Bronze']}
                         <div>
                             <p className="text-sm">Tier</p>
-                            <p className="text-xl font-bold">{installerProfile.tier}</p>
+                            <p className="text-xl font-bold">{installerProfile?.tier || 'Bronze'}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="text-right">
                             <p className="text-sm">Reputation Points</p>
-                            <p className="text-xl font-bold text-right">{installerProfile.points}</p>
+                            <p className="text-xl font-bold text-right">{installerProfile?.points || 0}</p>
                         </div>
                     </div>
                 </div>
                 
-                {currentTierInfo && currentTierInfo.next !== 'Max' && (
+                {currentTierInfo && currentTierInfo.next !== 'Max' && installerProfile && (
                      <div>
                         <div className="flex justify-between items-center mb-1">
                             <p className="text-sm font-medium">Progress to {currentTierInfo.next}</p>
@@ -639,8 +639,8 @@ export default function UserProfilePage() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
                     <div className="p-4 rounded-lg border">
                         <Star className="mx-auto h-6 w-6 mb-2 text-primary"/>
-                        <p className="text-2xl font-bold">{installerProfile.rating}/5.0</p>
-                        <p className="text-sm text-muted-foreground">from {installerProfile.reviews} reviews</p>
+                        <p className="text-2xl font-bold">{(installerProfile?.rating || 0).toFixed(1)}/5.0</p>
+                        <p className="text-sm text-muted-foreground">from {installerProfile?.reviews || 0} reviews</p>
                     </div>
                     <div className="p-4 rounded-lg border">
                         <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary"/>
@@ -652,13 +652,13 @@ export default function UserProfilePage() {
                 <div>
                     <h4 className="font-semibold mb-3">Skills</h4>
                     <div className="flex flex-wrap gap-2">
-                        {installerProfile.skills.map(skill => (
+                        {(installerProfile?.skills || []).length > 0 ? installerProfile?.skills.map(skill => (
                             <Badge key={skill} variant="secondary">{skill}</Badge>
-                        ))}
+                        )) : <p className="text-sm text-muted-foreground">No skills added.</p>}
                     </div>
                 </div>
 
-                {installerProfile.reputationHistory && installerProfile.reputationHistory.length > 0 && (
+                {installerProfile?.reputationHistory && installerProfile.reputationHistory.length > 0 && (
                      <Card>
                         <CardHeader>
                             <CardTitle className="text-base flex items-center gap-2">
