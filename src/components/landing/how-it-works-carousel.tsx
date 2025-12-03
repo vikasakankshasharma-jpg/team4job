@@ -60,8 +60,6 @@ export default function HowItWorksCarousel() {
     <div className="relative w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto">
       <Carousel
         plugins={[plugin.current]}
-        onMouseEnter={plugin.current.stop}
-        onMouseLeave={plugin.current.reset}
         opts={{
           align: "start",
           loop: true,
