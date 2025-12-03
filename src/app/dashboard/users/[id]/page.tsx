@@ -439,53 +439,63 @@ export default function UserProfilePage() {
   const [jobsView, setJobsView] = useState<'list' | 'grid'>('list');
 
   useEffect(() => {
-    if (!id || !db) return;
-    
-    const fetchUser = async () => {
-        setLoading(true);
-        const userDoc = await getDoc(doc(db, "users", id));
-        if (!userDoc.exists()) {
-            setProfileUser(null);
-        } else {
-            setProfileUser({ id: userDoc.id, ...userDoc.data() } as User);
-        }
+    async function fetchAllData() {
+      if (!db || !id) {
         setLoading(false);
-    };
-    
-    fetchUser();
-  }, [id, db]);
+        return;
+      }
+      setLoading(true);
 
-  useEffect(() => {
-    if (!profileUser || !db) return;
+      const userDocRef = doc(db, "users", id);
+      const userDoc = await getDoc(userDocRef);
 
-    const fetchRelatedData = async () => {
-      const userDocRef = doc(db, 'users', profileUser.id);
-      const isTeamMember = profileUser.roles.includes('Admin') || profileUser.roles.includes('Support Team');
-      const jobsRef = collection(db, "jobs");
-      const disputesRef = collection(db, "disputes");
+      if (!userDoc.exists()) {
+        setProfileUser(null);
+        setLoading(false);
+        notFound();
+        return;
+      }
       
-      const promises = [];
+      const fetchedUser = { id: userDoc.id, ...userDoc.data() } as User;
+      setProfileUser(fetchedUser);
 
-      if (profileUser.roles.includes('Job Giver')) {
-        const postedJobsQuery = query(jobsRef, where('jobGiver', '==', userDocRef));
-        promises.push(getDocs(postedJobsQuery).then(s => setUserPostedJobs(s.docs.map(d => d.data() as Job))));
+      const promises = [];
+      const isInstaller = fetchedUser.roles.includes('Installer');
+      const isJobGiver = fetchedUser.roles.includes('Job Giver');
+      const isTeamMember = fetchedUser.roles.includes('Admin') || fetchedUser.roles.includes('Support Team');
+
+      if (isJobGiver) {
+        const postedJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
+        promises.push(getDocs(postedJobsQuery).then(snap => snap.docs.map(d => d.data() as Job)));
+      } else {
+        promises.push(Promise.resolve([]));
       }
 
-      if (profileUser.roles.includes('Installer')) {
-        const completedJobsQuery = query(jobsRef, where('status', '==', 'Completed'), where('awardedInstaller', '==', userDocRef));
-        promises.push(getDocs(completedJobsQuery).then(s => setUserCompletedJobs(s.docs.map(d => d.data() as Job))));
+      if (isInstaller) {
+        const completedJobsQuery = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', userDocRef));
+        promises.push(getDocs(completedJobsQuery).then(snap => snap.docs.map(d => d.data() as Job)));
+      } else {
+        promises.push(Promise.resolve([]));
       }
 
       if (isTeamMember) {
-        const disputesQuery = query(disputesRef, where('handledBy', '==', profileUser.id));
-        promises.push(getDocs(disputesQuery).then(s => setInvolvedDisputes(s.docs.map(d => d.data() as Dispute))));
+        const disputesQuery = query(collection(db, "disputes"), where('handledBy', '==', id));
+        promises.push(getDocs(disputesQuery).then(snap => snap.docs.map(d => d.data() as Dispute)));
+      } else {
+        promises.push(Promise.resolve([]));
       }
       
-      await Promise.all(promises);
-    };
+      const [postedJobs, completedJobs, disputes] = await Promise.all(promises);
 
-    fetchRelatedData();
-  }, [profileUser, db]);
+      setUserPostedJobs(postedJobs);
+      setUserCompletedJobs(completedJobs);
+      setInvolvedDisputes(disputes);
+      
+      setLoading(false);
+    }
+    
+    fetchAllData();
+  }, [id, db]);
   
   const handleSubscriptionUpdate = (newExpiry: Date) => {
     setProfileUser(prev => prev ? {
@@ -555,7 +565,7 @@ export default function UserProfilePage() {
                 <CardTitle className="text-3xl">{name}</CardTitle>
                 {getUserStatusBadge()}
               </div>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground mt-1">
+               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground mt-1">
                  {roles.map(r => <Badge key={r} variant="outline" className="font-normal">{r}</Badge>)}
                  {installerProfile?.verified && <Badge variant="secondary" className="gap-1 pl-2 font-normal"><ShieldCheck className="h-4 w-4 text-green-600"/> Verified</Badge>}
               </div>
@@ -712,7 +722,7 @@ export default function UserProfilePage() {
       )}
 
         <Card>
-            <Tabs defaultValue="posted">
+            <Tabs defaultValue={isJobGiver ? "posted" : "completed"}>
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <TabsList>
