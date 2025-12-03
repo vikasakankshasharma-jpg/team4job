@@ -568,7 +568,7 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
     const summary = React.useMemo(() => {
         return transactions.reduce((acc, t) => {
             if (t.status === 'Released') {
-                acc.totalReleased += t.payoutToInstaller; // Use payoutToInstaller for accuracy
+                acc.totalReleased += t.payoutToInstaller;
                 acc.platformRevenue += t.commission + t.jobGiverFee;
             }
             if (t.status === 'Funded') {
@@ -611,7 +611,7 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
                 </Card>
             </CardContent>
         </Card>
-    );
+    )
 }
 
 
@@ -729,7 +729,7 @@ function AdminDashboard() {
   }
 
   return (
-    <div className="p-4 sm:px-6 sm:py-0 space-y-6">
+    <div className="space-y-6">
         <h1 className="text-2xl font-bold tracking-tight">Welcome, Admin!</h1>
         <div className="space-y-6">
             <FinancialSummaryCard transactions={transactions} />
@@ -948,5 +948,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
