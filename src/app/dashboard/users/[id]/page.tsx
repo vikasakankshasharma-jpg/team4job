@@ -423,7 +423,7 @@ function PageSkeleton() {
 }
 
 export default function UserProfilePage() {
-  const params = React.use(useParams());
+  const params = useParams();
   const { user: authUser, isAdmin, role: authUserRole } = useAuthUser();
   const id = params.id as string;
   const { db } = useFirebase();
