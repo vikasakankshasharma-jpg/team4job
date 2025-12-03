@@ -72,6 +72,7 @@ export function Header() {
   const pathname = usePathname();
   const { user, role } = useUser();
   const { searchQuery, setSearchQuery } = useSearch();
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   
   const getNavItems = () => {
     switch (role) {
@@ -146,7 +147,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-      <Sheet>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
           <Button size="icon" variant="outline" className="sm:hidden">
             <PanelLeft className="h-5 w-5" />
@@ -161,6 +162,7 @@ export function Header() {
             <Link
               href="#"
               className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
+              onClick={() => setIsSheetOpen(false)}
             >
               <Briefcase className="h-5 w-5 transition-all group-hover:scale-110" />
               <span className="sr-only">CCTV Job Connect</span>
@@ -172,6 +174,7 @@ export function Header() {
                 className={cn("flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
                   pathname === item.href && "text-foreground"
                 )}
+                onClick={() => setIsSheetOpen(false)}
               >
                 <item.icon className="h-5 w-5" />
                 {item.label}
@@ -182,6 +185,7 @@ export function Header() {
                 className={cn("flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
                   pathname === '/dashboard/profile' && "text-foreground"
                 )}
+                onClick={() => setIsSheetOpen(false)}
               >
                 <UserIcon className="h-5 w-5" />
                 Profile
@@ -191,6 +195,7 @@ export function Header() {
                 className={cn("flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
                   pathname.startsWith('/dashboard/settings') && "text-foreground"
                 )}
+                onClick={() => setIsSheetOpen(false)}
               >
                 <Settings className="h-5 w-5" />
                 Settings
