@@ -26,6 +26,8 @@ import {
   Clock,
   Award,
   Medal,
+  Bot,
+  HardDriveDownload,
 } from "lucide-react";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
@@ -38,25 +40,26 @@ import { differenceInMilliseconds, format, getMonth, getYear, startOfMonth, subM
 import { ChartContainer, ChartConfig } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, RadialBar, RadialBarChart, PolarGrid, PolarAngleAxis, CartesianGrid } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 
 const StatCard = ({ title, value, description, icon: Icon, href, iconBgColor, iconColor }) => (
-    <Link href={href} className="block hover:shadow-lg transition-shadow duration-300 rounded-lg">
-        <Card>
+    <Link href={href} className="block hover:shadow-lg transition-shadow duration-300 rounded-lg h-full">
+        <Card className="flex flex-col h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{title}</CardTitle>
                 <div className={cn("p-2 rounded-full", iconBgColor)}>
                     <Icon className={cn("h-4 w-4", iconColor)} />
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-grow">
                 <div className="text-2xl font-bold">{value}</div>
                 {description && <p className="text-xs text-muted-foreground">{description}</p>}
             </CardContent>
         </Card>
     </Link>
 );
+
 
 function DisputePerformanceCard({ disputes }: { disputes: Dispute[] }) {
     const totalDisputes = disputes.length;
@@ -150,8 +153,8 @@ function InstallerDashboard() {
 
         const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot] = await Promise.all([
             getDocs(openJobsQuery),
-            getDocs(myBidsSnapshot),
-            getDocs(myAwardedSnapshot)
+            getDocs(myBidsQuery),
+            getDocs(myAwardedQuery)
         ]);
 
         const myJobsSet = new Set([...myBidsSnapshot.docs.map(d => d.id), ...myAwardedSnapshot.docs.map(d => d.id)]);
@@ -710,7 +713,7 @@ function AdminDashboard() {
             const monthData = data.find(m => m.name === monthName);
             if (monthData) {
                 if (user.roles.includes('Installer')) monthData.Installers++;
-                if (user.roles.includes('Job Giver')) monthData["Job Givers"]++;
+                if (user.roles.includes('Job Givers')) monthData["Job Givers"]++;
             }
         }
     });
@@ -726,79 +729,76 @@ function AdminDashboard() {
   }
 
   return (
-    <>
-      <div className="flex items-center mb-8">
-        <h1 className="text-lg font-semibold md:text-2xl">Welcome, Admin!</h1>
-      </div>
-      
-      <div className="grid gap-6">
-          <FinancialSummaryCard transactions={transactions} />
-          
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard 
-                title="Total Users"
-                value={stats.totalUsers}
-                description={`${allUsers.filter(u=>u.roles.includes('Installer')).length} Installers, ${allUsers.filter(u=>u.roles.includes('Job Giver')).length} Job Givers`}
-                icon={Users}
-                href="/dashboard/users"
-                iconBgColor="bg-blue-100 dark:bg-blue-900"
-                iconColor="text-blue-600 dark:text-blue-300"
-            />
-            <StatCard 
-                title="Total Jobs"
-                value={stats.totalJobs}
-                description="View every job in the platform"
-                icon={Briefcase}
-                href="/dashboard/all-jobs"
-                iconBgColor="bg-purple-100 dark:bg-purple-900"
-                iconColor="text-purple-600 dark:text-purple-300"
-            />
-            <StatCard 
-                title="Open Disputes"
-                value={stats.openDisputes}
-                description="Cases requiring review"
-                icon={AlertOctagon}
-                href="/dashboard/disputes"
-                iconBgColor="bg-red-100 dark:bg-red-900"
-                iconColor="text-red-600 dark:text-red-300"
-            />
-            <StatCard 
-                title="Value Released"
-                value={`₹${stats.totalValueReleased.toLocaleString()}`}
-                description="Paid out to installers"
-                icon={IndianRupee}
-                href="/dashboard/transactions"
-                iconBgColor="bg-green-100 dark:bg-green-900"
-                iconColor="text-green-600 dark:text-green-300"
-            />
-        </div>
+    <div className="p-4 sm:px-6 sm:py-0 space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight">Welcome, Admin!</h1>
+        <div className="space-y-6">
+            <FinancialSummaryCard transactions={transactions} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-                <TopPerformersCard installers={allUsers.filter(u => u.installerProfile)} />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <StatCard 
+                    title="Total Users"
+                    value={stats.totalUsers}
+                    description={`${allUsers.filter(u=>u.roles.includes('Installer')).length} Installers, ${allUsers.filter(u=>u.roles.includes('Job Giver')).length} Job Givers`}
+                    icon={Users}
+                    href="/dashboard/users"
+                    iconBgColor="bg-blue-500"
+                    iconColor="text-white"
+                />
+                <StatCard 
+                    title="Total Jobs"
+                    value={stats.totalJobs}
+                    description="View every job in the platform"
+                    icon={Briefcase}
+                    href="/dashboard/all-jobs"
+                    iconBgColor="bg-purple-500"
+                    iconColor="text-white"
+                />
+                <StatCard 
+                    title="Open Disputes"
+                    value={stats.openDisputes}
+                    description="Cases requiring review"
+                    icon={AlertOctagon}
+                    href="/dashboard/disputes"
+                    iconBgColor="bg-red-500"
+                    iconColor="text-white"
+                />
+                <StatCard 
+                    title="Value Released"
+                    value={`₹${stats.totalValueReleased.toLocaleString()}`}
+                    description="Paid out to installers"
+                    icon={IndianRupee}
+                    href="/dashboard/transactions"
+                    iconBgColor="bg-green-500"
+                    iconColor="text-white"
+                />
             </div>
-            <Card>
-                <CardHeader>
-                    <CardTitle>User Growth</CardTitle>
-                    <CardDescription>New users in the last 6 months.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={userGrowthData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="Installers" stackId="a" fill="hsl(var(--primary))" />
-                            <Bar dataKey="Job Givers" stackId="a" fill="hsl(var(--secondary))" />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                    <TopPerformersCard installers={allUsers.filter(u => u.installerProfile)} />
+                </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>User Growth</CardTitle>
+                        <CardDescription>New users in the last 6 months.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={userGrowthData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="Installers" stackId="a" fill="hsl(var(--primary))" />
+                                <Bar dataKey="Job Givers" stackId="a" fill="hsl(var(--secondary))" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
-      </div>
-    </>
+    </div>
   );
 }
 
@@ -948,3 +948,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
