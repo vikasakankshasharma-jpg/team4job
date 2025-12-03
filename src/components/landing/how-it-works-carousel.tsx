@@ -51,33 +51,36 @@ export default function HowItWorksCarousel() {
   ];
 
   return (
-    <Carousel
-      opts={{
-        align: "start",
-      }}
-      className="relative w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto"
-    >
-      <CarouselContent>
-        {howItWorks.map((item, index) => (
-          <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-            <div className="p-1 h-full">
-              <Card className="text-center h-full flex flex-col">
-                <CardHeader>
-                  <div className="mx-auto w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mb-4">
-                    {item.step}
-                  </div>
-                  <CardTitle>{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-muted-foreground">{item.description}</p>
-                </CardContent>
-              </Card>
-            </div>
-          </CarouselItem>
-        ))}
-      </CarouselContent>
-      <CarouselPrevious />
-      <CarouselNext />
-    </Carousel>
+    <div className="relative w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto">
+      <Carousel
+        opts={{
+          align: "start",
+          loop: true,
+        }}
+        className="relative w-full"
+      >
+        <CarouselContent>
+          {howItWorks.map((item, index) => (
+            <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+              <div className="p-1 h-full">
+                <Card className="text-center h-full flex flex-col">
+                  <CardHeader>
+                    <div className="mx-auto w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mb-4">
+                      {item.step}
+                    </div>
+                    <CardTitle>{item.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p className="text-muted-foreground">{item.description}</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious className="absolute left-[-50px] top-1/2 -translate-y-1/2" />
+        <CarouselNext className="absolute right-[-50px] top-1/2 -translate-y-1/2" />
+      </Carousel>
+    </div>
   );
 }
