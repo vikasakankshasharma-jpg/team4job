@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit, UserX, UserCheck, Loader2, Ban, Trash2, Gauge, Clock, MessageSquare, Copy, UserPlus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, PolarGrid, PolarAngleAxis, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { format, differenceInMilliseconds } from "date-fns";
@@ -482,10 +482,10 @@ export default function UserProfilePage() {
   }, [id, db]);
 
   React.useEffect(() => {
-    if (id) {
+    if (id && db) {
         fetchUserData();
     }
-  }, [id, fetchUserData]);
+  }, [id, db, fetchUserData]);
   
   const handleSubscriptionUpdate = (newExpiry: Date) => {
     setProfileUser(prev => prev ? {
@@ -607,17 +607,17 @@ export default function UserProfilePage() {
       
       {isTeamMember && involvedDisputes.length > 0 && <DisputePerformanceCard disputes={involvedDisputes} />}
 
-      {isInstaller && installerProfile && (
+      {isInstaller && (
         <Card>
             <CardHeader>
                 <CardTitle>Installer Reputation</CardTitle>
                 <CardDescription>This user's performance and trust score on the platform.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6">
-                {(installerProfile.points === 0 && installerProfile.reviews === 0) ? (
+                {!installerProfile ? (
                      <div className="text-center py-8 bg-muted/50 rounded-lg">
                         <p className="font-semibold">New Installer</p>
-                        <p className="text-sm text-muted-foreground">No reputation data available yet.</p>
+                        <p className="text-sm text-muted-foreground">This user has not completed their installer setup.</p>
                      </div>
                 ) : (
                 <>
@@ -713,12 +713,12 @@ export default function UserProfilePage() {
 
       {(isJobGiver || isInstaller) && (
         <Card>
-            <Tabs defaultValue="posted">
+            <Tabs defaultValue={isJobGiver ? "posted" : "completed"}>
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <TabsList>
-                            {isJobGiver && <TabsTrigger value="posted">Posted Jobs</TabsTrigger>}
-                            {isInstaller && <TabsTrigger value="completed">Completed Jobs</TabsTrigger>}
+                            {isJobGiver && <TabsTrigger value="posted">Posted Jobs ({userPostedJobs.length})</TabsTrigger>}
+                            {isInstaller && <TabsTrigger value="completed">Completed Jobs ({userCompletedJobs.length})</TabsTrigger>}
                         </TabsList>
                          <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
                             <Button
