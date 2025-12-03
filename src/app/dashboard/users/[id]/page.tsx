@@ -439,7 +439,7 @@ export default function UserProfilePage() {
   const [jobsView, setJobsView] = useState<'list' | 'grid'>('list');
 
   useEffect(() => {
-    async function fetchAllData() {
+    const fetchUserData = async () => {
       if (!db || !id) {
         setLoading(false);
         return;
@@ -459,42 +459,45 @@ export default function UserProfilePage() {
       const fetchedUser = { id: userDoc.id, ...userDoc.data() } as User;
       setProfileUser(fetchedUser);
 
+      // --- Start fetching related data only AFTER user is fetched ---
       const promises = [];
-      const isInstaller = fetchedUser.roles.includes('Installer');
-      const isJobGiver = fetchedUser.roles.includes('Job Giver');
-      const isTeamMember = fetchedUser.roles.includes('Admin') || fetchedUser.roles.includes('Support Team');
+      const { roles } = fetchedUser;
+      const isInstaller = roles.includes('Installer');
+      const isJobGiver = roles.includes('Job Giver');
+      const isTeamMember = roles.includes('Admin') || roles.includes('Support Team');
 
       if (isJobGiver) {
         const postedJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
-        promises.push(getDocs(postedJobsQuery).then(snap => snap.docs.map(d => d.data() as Job)));
+        promises.push(getDocs(postedJobsQuery));
       } else {
-        promises.push(Promise.resolve([]));
+        promises.push(Promise.resolve({ docs: [] })); // Empty promise for consistent indexing
       }
 
       if (isInstaller) {
         const completedJobsQuery = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', userDocRef));
-        promises.push(getDocs(completedJobsQuery).then(snap => snap.docs.map(d => d.data() as Job)));
+        promises.push(getDocs(completedJobsQuery));
       } else {
-        promises.push(Promise.resolve([]));
+        promises.push(Promise.resolve({ docs: [] }));
       }
 
       if (isTeamMember) {
         const disputesQuery = query(collection(db, "disputes"), where('handledBy', '==', id));
-        promises.push(getDocs(disputesQuery).then(snap => snap.docs.map(d => d.data() as Dispute)));
+        promises.push(getDocs(disputesQuery));
       } else {
-        promises.push(Promise.resolve([]));
+        promises.push(Promise.resolve({ docs: [] }));
       }
       
-      const [postedJobs, completedJobs, disputes] = await Promise.all(promises);
+      const [postedJobsSnapshot, completedJobsSnapshot, disputesSnapshot] = await Promise.all(promises);
 
-      setUserPostedJobs(postedJobs);
-      setUserCompletedJobs(completedJobs);
-      setInvolvedDisputes(disputes);
-      
+      setUserPostedJobs(postedJobsSnapshot.docs.map(d => d.data() as Job));
+      setUserCompletedJobs(completedJobsSnapshot.docs.map(d => d.data() as Job));
+      setInvolvedDisputes(disputesSnapshot.docs.map(d => d.data() as Dispute));
+      // --- End of related data fetching ---
+
       setLoading(false);
-    }
+    };
     
-    fetchAllData();
+    fetchUserData();
   }, [id, db]);
   
   const handleSubscriptionUpdate = (newExpiry: Date) => {
@@ -511,12 +514,8 @@ export default function UserProfilePage() {
     setProfileUser(prev => prev ? { ...prev, ...data } : null);
   }
 
-  if (loading) {
+  if (loading || !profileUser) {
     return <PageSkeleton />;
-  }
-
-  if (!profileUser) {
-    notFound();
   }
 
   const { name, email, id: userId, memberSince, realAvatarUrl, address, roles, subscription, status, suspensionEndDate } = profileUser;
@@ -722,7 +721,7 @@ export default function UserProfilePage() {
       )}
 
         <Card>
-            <Tabs defaultValue={isJobGiver ? "posted" : "completed"}>
+            <Tabs defaultValue="posted">
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <TabsList>
