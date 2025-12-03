@@ -150,8 +150,8 @@ function InstallerDashboard() {
 
         const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot] = await Promise.all([
             getDocs(openJobsQuery),
-            getDocs(myBidsQuery),
-            getDocs(myAwardedQuery)
+            getDocs(myBidsSnapshot),
+            getDocs(myAwardedSnapshot)
         ]);
 
         const myJobsSet = new Set([...myBidsSnapshot.docs.map(d => d.id), ...myAwardedSnapshot.docs.map(d => d.id)]);
@@ -546,6 +546,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                                                 <span>{installer.installerProfile?.tier} Tier</span>
                                             </div>
                                         </div>
+                                    </div>
                                </TableCell>
                                <TableCell className="text-right font-semibold text-green-600">+{installer.monthlyPoints} pts</TableCell>
                            </TableRow>
@@ -564,14 +565,14 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
     const summary = React.useMemo(() => {
         return transactions.reduce((acc, t) => {
             if (t.status === 'Released') {
-                acc.totalReleased += t.amount;
+                acc.totalReleased += t.payoutToInstaller; // Use payoutToInstaller for accuracy
                 acc.platformRevenue += t.commission + t.jobGiverFee;
             }
             if (t.status === 'Funded') {
-                acc.fundsHeld += t.amount;
+                acc.fundsHeld += t.totalPaidByGiver;
             }
             if (t.status === 'Funded' || t.status === 'Released') {
-                 acc.totalVolume += t.amount;
+                 acc.totalVolume += t.totalPaidByGiver;
             }
             return acc;
         }, {
@@ -607,8 +608,9 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
                 </Card>
             </CardContent>
         </Card>
-    )
+    );
 }
+
 
 function AdminDashboard() {
   const { user } = useUser();
@@ -642,7 +644,7 @@ function AdminDashboard() {
         const totalValueReleased = transactionsSnapshot.docs
             .map(d => d.data() as Transaction)
             .filter(t => t.status === 'Released')
-            .reduce((sum, t) => sum + t.amount, 0);
+            .reduce((sum, t) => sum + t.payoutToInstaller, 0);
 
         setStats({
             totalUsers: usersSnapshot.size,
@@ -946,5 +948,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
