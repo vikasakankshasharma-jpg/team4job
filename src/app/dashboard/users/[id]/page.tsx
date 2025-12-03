@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit, UserX, UserCheck, Loader2, Ban, Trash2, Gauge, Clock, MessageSquare, Copy, UserPlus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, PolarGrid, PolarAngleAxis, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { format, differenceInMilliseconds } from "date-fns";
@@ -431,61 +431,61 @@ export default function UserProfilePage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const [profileUser, setProfileUser] = React.useState<User | null | undefined>(undefined);
-  const [userPostedJobs, setUserPostedJobs] = React.useState<Job[]>([]);
-  const [userCompletedJobs, setUserCompletedJobs] = React.useState<Job[]>([]);
-  const [involvedDisputes, setInvolvedDisputes] = React.useState<Dispute[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [jobsView, setJobsView] = React.useState<'list' | 'grid'>('list');
+  const [profileUser, setProfileUser] = useState<User | null>(null);
+  const [userPostedJobs, setUserPostedJobs] = useState<Job[]>([]);
+  const [userCompletedJobs, setUserCompletedJobs] = useState<Job[]>([]);
+  const [involvedDisputes, setInvolvedDisputes] = useState<Dispute[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [jobsView, setJobsView] = useState<'list' | 'grid'>('list');
 
-  const fetchUserData = useCallback(async () => {
+  useEffect(() => {
+    if (!id || !db) return;
+    
+    const fetchUser = async () => {
         setLoading(true);
         const userDoc = await getDoc(doc(db, "users", id));
         if (!userDoc.exists()) {
             setProfileUser(null);
-            setLoading(false);
-            return;
+        } else {
+            setProfileUser({ id: userDoc.id, ...userDoc.data() } as User);
         }
-        const user = { id: userDoc.id, ...userDoc.data() } as User;
-        setProfileUser(user);
-        
-        const isTeamMember = user.roles.includes('Admin') || user.roles.includes('Support Team');
-        const jobsRef = collection(db, "jobs");
-        const disputesRef = collection(db, "disputes");
-        
-        const promises = [];
-
-        // Always fetch posted jobs if the user is a Job Giver
-        if (user.roles.includes('Job Giver')) {
-            const postedJobsQuery = query(jobsRef, where('jobGiver', '==', userDoc.ref));
-            promises.push(getDocs(postedJobsQuery).then(s => setUserPostedJobs(s.docs.map(d => d.data() as Job))));
-        }
-
-        // Always fetch completed jobs if the user is an Installer
-        if (user.roles.includes('Installer')) {
-            const completedJobsQuery = query(jobsRef, where('status', '==', 'Completed'), where('awardedInstaller', '==', userDoc.ref));
-            promises.push(getDocs(completedJobsQuery).then(s => setUserCompletedJobs(s.docs.map(d => d.data() as Job))));
-        }
-
-        if (isTeamMember) {
-            const disputesQuery = query(disputesRef);
-            promises.push(getDocs(disputesQuery).then(allDisputesSnapshot => {
-                const relatedDisputes = allDisputesSnapshot.docs
-                    .map(d => d.data() as Dispute)
-                    .filter(d => d.messages.some(m => m.authorId === user.id));
-                setInvolvedDisputes(relatedDisputes);
-            }));
-        }
-        
-        await Promise.all(promises);
         setLoading(false);
+    };
+    
+    fetchUser();
   }, [id, db]);
 
-  React.useEffect(() => {
-    if (id && db) {
-        fetchUserData();
-    }
-  }, [id, db, fetchUserData]);
+  useEffect(() => {
+    if (!profileUser || !db) return;
+
+    const fetchRelatedData = async () => {
+      const userDocRef = doc(db, 'users', profileUser.id);
+      const isTeamMember = profileUser.roles.includes('Admin') || profileUser.roles.includes('Support Team');
+      const jobsRef = collection(db, "jobs");
+      const disputesRef = collection(db, "disputes");
+      
+      const promises = [];
+
+      if (profileUser.roles.includes('Job Giver')) {
+        const postedJobsQuery = query(jobsRef, where('jobGiver', '==', userDocRef));
+        promises.push(getDocs(postedJobsQuery).then(s => setUserPostedJobs(s.docs.map(d => d.data() as Job))));
+      }
+
+      if (profileUser.roles.includes('Installer')) {
+        const completedJobsQuery = query(jobsRef, where('status', '==', 'Completed'), where('awardedInstaller', '==', userDocRef));
+        promises.push(getDocs(completedJobsQuery).then(s => setUserCompletedJobs(s.docs.map(d => d.data() as Job))));
+      }
+
+      if (isTeamMember) {
+        const disputesQuery = query(disputesRef, where('handledBy', '==', profileUser.id));
+        promises.push(getDocs(disputesQuery).then(s => setInvolvedDisputes(s.docs.map(d => d.data() as Dispute))));
+      }
+      
+      await Promise.all(promises);
+    };
+
+    fetchRelatedData();
+  }, [profileUser, db]);
   
   const handleSubscriptionUpdate = (newExpiry: Date) => {
     setProfileUser(prev => prev ? {
@@ -501,11 +501,11 @@ export default function UserProfilePage() {
     setProfileUser(prev => prev ? { ...prev, ...data } : null);
   }
 
-  if (loading || profileUser === undefined) {
+  if (loading) {
     return <PageSkeleton />;
   }
 
-  if (profileUser === null) {
+  if (!profileUser) {
     notFound();
   }
 
@@ -711,9 +711,8 @@ export default function UserProfilePage() {
         </Card>
       )}
 
-      {(isJobGiver || isInstaller) && (
         <Card>
-            <Tabs defaultValue={isJobGiver ? "posted" : "completed"}>
+            <Tabs defaultValue="posted">
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <TabsList>
@@ -786,7 +785,6 @@ export default function UserProfilePage() {
                 )}
             </Tabs>
         </Card>
-      )}
     </div>
   );
 }
