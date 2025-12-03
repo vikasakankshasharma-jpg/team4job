@@ -1,6 +1,7 @@
 
 "use client";
 
+import React from "react";
 import {
   Carousel,
   CarouselContent,
@@ -9,8 +10,13 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Autoplay from "embla-carousel-autoplay";
 
 export default function HowItWorksCarousel() {
+  const plugin = React.useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: true })
+  );
+
   const howItWorks = [
     {
       step: 1,
@@ -53,6 +59,9 @@ export default function HowItWorksCarousel() {
   return (
     <div className="relative w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto">
       <Carousel
+        plugins={[plugin.current]}
+        onMouseEnter={plugin.current.stop}
+        onMouseLeave={plugin.current.reset}
         opts={{
           align: "start",
           loop: true,
