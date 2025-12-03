@@ -67,13 +67,24 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-const wasJobAwardedDirectly = (job: Job) => {
-    if (!job.awardedInstaller || job.bids.length > 0) return false;
-    
-    const awardedInstallerId = (job.awardedInstaller as User)?.id;
-    const hasBids = (job.bids || []).some(bid => (bid.installer as User).id === awardedInstallerId);
+const getRefId = (ref: any): string | null => {
+  if (!ref) return null;
+  if (typeof ref === 'string') return ref;
+  return ref.id || null;
+}
 
-    return !hasBids;
+const wasJobAwardedDirectly = (job: Job) => {
+    if (!job.awardedInstaller) return false;
+    
+    const awardedInstallerId = getRefId(job.awardedInstaller);
+    
+    if (job.bids.length === 0 && awardedInstallerId) {
+        return true;
+    }
+
+    const hasBidFromAwarded = (job.bids || []).some(bid => getRefId(bid.installer) === awardedInstallerId);
+
+    return !hasBidFromAwarded;
 };
 
 function ManageSubscriptionDialog({ user, onSubscriptionUpdate }: { user: User, onSubscriptionUpdate: (newExpiry: Date) => void }) {
@@ -312,7 +323,7 @@ function JobListItem({ job }: { job: Job }) {
             <span className="flex items-center gap-1">
               {(job.bids || []).length} Bids
             </span>
-            {job.awardedInstaller && (
+            {getRefId(job.awardedInstaller) && (
               <span className="flex items-center gap-1">
                 <Award className="h-3 w-3" />
                 {isDirectAward ? 'Direct Award' : 'Bidding'}
@@ -439,66 +450,68 @@ export default function UserProfilePage() {
   const [jobsView, setJobsView] = useState<'list' | 'grid'>('list');
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!db || !id) {
+    const fetchAllData = async () => {
+        if (!db || !id) return;
+        
+        setLoading(true);
+
+        // 1. Fetch User Profile
+        const userDocRef = doc(db, "users", id);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+            setLoading(false);
+            notFound();
+            return;
+        }
+        
+        const fetchedUser = { id: userDoc.id, ...userDoc.data() } as User;
+        setProfileUser(fetchedUser);
+
+        // 2. Fetch related data based on roles
+        const promises = [];
+        const { roles } = fetchedUser;
+        const isInstaller = roles.includes('Installer');
+        const isJobGiver = roles.includes('Job Giver');
+        const isTeamMember = roles.includes('Admin') || roles.includes('Support Team');
+
+        if (isJobGiver) {
+            const postedJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
+            promises.push(getDocs(postedJobsQuery));
+        } else {
+            promises.push(Promise.resolve({ docs: [] }));
+        }
+
+        if (isInstaller) {
+            const completedJobsQuery = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', userDocRef));
+            promises.push(getDocs(completedJobsQuery));
+        } else {
+            promises.push(Promise.resolve({ docs: [] }));
+        }
+
+        if (isTeamMember) {
+            const disputesQuery = query(collection(db, "disputes"), where('handledBy', '==', id));
+            promises.push(getDocs(disputesQuery));
+        } else {
+            promises.push(Promise.resolve({ docs: [] }));
+        }
+        
+        try {
+            const [postedJobsSnapshot, completedJobsSnapshot, disputesSnapshot] = await Promise.all(promises);
+            setUserPostedJobs(postedJobsSnapshot.docs.map(d => d.data() as Job));
+            setUserCompletedJobs(completedJobsSnapshot.docs.map(d => d.data() as Job));
+            setInvolvedDisputes(disputesSnapshot.docs.map(d => d.data() as Dispute));
+        } catch (error) {
+            console.error("Error fetching related user data:", error);
+            toast({ title: "Error", description: "Failed to load some user data."});
+        }
+        
         setLoading(false);
-        return;
-      }
-      setLoading(true);
-
-      const userDocRef = doc(db, "users", id);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        setProfileUser(null);
-        setLoading(false);
-        notFound();
-        return;
-      }
-      
-      const fetchedUser = { id: userDoc.id, ...userDoc.data() } as User;
-      setProfileUser(fetchedUser);
-
-      // --- Start fetching related data only AFTER user is fetched ---
-      const promises = [];
-      const { roles } = fetchedUser;
-      const isInstaller = roles.includes('Installer');
-      const isJobGiver = roles.includes('Job Giver');
-      const isTeamMember = roles.includes('Admin') || roles.includes('Support Team');
-
-      if (isJobGiver) {
-        const postedJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
-        promises.push(getDocs(postedJobsQuery));
-      } else {
-        promises.push(Promise.resolve({ docs: [] })); // Empty promise for consistent indexing
-      }
-
-      if (isInstaller) {
-        const completedJobsQuery = query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', userDocRef));
-        promises.push(getDocs(completedJobsQuery));
-      } else {
-        promises.push(Promise.resolve({ docs: [] }));
-      }
-
-      if (isTeamMember) {
-        const disputesQuery = query(collection(db, "disputes"), where('handledBy', '==', id));
-        promises.push(getDocs(disputesQuery));
-      } else {
-        promises.push(Promise.resolve({ docs: [] }));
-      }
-      
-      const [postedJobsSnapshot, completedJobsSnapshot, disputesSnapshot] = await Promise.all(promises);
-
-      setUserPostedJobs(postedJobsSnapshot.docs.map(d => d.data() as Job));
-      setUserCompletedJobs(completedJobsSnapshot.docs.map(d => d.data() as Job));
-      setInvolvedDisputes(disputesSnapshot.docs.map(d => d.data() as Dispute));
-      // --- End of related data fetching ---
-
-      setLoading(false);
     };
     
-    fetchUserData();
-  }, [id, db]);
+    fetchAllData();
+  }, [id, db, toast]);
+  
   
   const handleSubscriptionUpdate = (newExpiry: Date) => {
     setProfileUser(prev => prev ? {
@@ -748,50 +761,47 @@ export default function UserProfilePage() {
                         </div>
                     </div>
                 </CardHeader>
+                <CardContent>
+                    {isJobGiver && (
+                        <TabsContent value="posted">
+                                {userPostedJobs.length > 0 ? (
+                                jobsView === 'grid' ? (
+                                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                    {userPostedJobs.map(job => (
+                                        <JobCard key={job.id} job={job} />
+                                    ))}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                    {userPostedJobs.map(job => (
+                                        <JobListItem key={job.id} job={job} />
+                                    ))}
+                                    </div>
+                                )
+                                ) : <p className="text-muted-foreground col-span-full text-center py-8">This user has not posted any jobs yet.</p>}
+                        </TabsContent>
+                    )}
 
-                {isJobGiver && (
-                    <TabsContent value="posted">
-                        <CardContent>
-                            {userPostedJobs.length > 0 ? (
-                            jobsView === 'grid' ? (
-                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {userPostedJobs.map(job => (
-                                    <JobCard key={job.id} job={job} />
-                                ))}
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                {userPostedJobs.map(job => (
-                                    <JobListItem key={job.id} job={job} />
-                                ))}
-                                </div>
-                            )
-                            ) : <p className="text-muted-foreground col-span-full text-center py-8">This user has not posted any jobs yet.</p>}
-                        </CardContent>
-                    </TabsContent>
-                )}
-
-                {isInstaller && (
-                    <TabsContent value="completed">
-                         <CardContent>
-                            {userCompletedJobs.length > 0 ? (
-                            jobsView === 'grid' ? (
-                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {userCompletedJobs.map(job => (
-                                    <JobCard key={job.id} job={job} />
-                                ))}
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                {userCompletedJobs.map(job => (
-                                    <JobListItem key={job.id} job={job} />
-                                ))}
-                                </div>
-                            )
-                            ) : <p className="text-muted-foreground col-span-full text-center py-8">This installer has not completed any jobs yet.</p>}
-                        </CardContent>
-                    </TabsContent>
-                )}
+                    {isInstaller && (
+                        <TabsContent value="completed">
+                                {userCompletedJobs.length > 0 ? (
+                                jobsView === 'grid' ? (
+                                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                    {userCompletedJobs.map(job => (
+                                        <JobCard key={job.id} job={job} />
+                                    ))}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                    {userCompletedJobs.map(job => (
+                                        <JobListItem key={job.id} job={job} />
+                                    ))}
+                                    </div>
+                                )
+                                ) : <p className="text-muted-foreground col-span-full text-center py-8">This installer has not completed any jobs yet.</p>}
+                        </TabsContent>
+                    )}
+                </CardContent>
             </Tabs>
         </Card>
     </div>
