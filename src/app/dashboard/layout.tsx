@@ -16,9 +16,9 @@ export default function DashboardLayout({
       <SearchProvider>
         <div className="flex min-h-screen w-full flex-row bg-muted/40">
           <DashboardSidebar />
-          <div className="grid flex-1 auto-rows-auto">
+          <div className="flex flex-1 flex-col">
             <Header />
-            <main className="grid items-start gap-4 p-4 sm:px-6 md:gap-8">
+            <main className="flex-1 overflow-y-auto p-4 sm:px-6 md:gap-8">
               {children}
             </main>
           </div>
