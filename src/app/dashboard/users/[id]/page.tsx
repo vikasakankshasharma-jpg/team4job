@@ -41,7 +41,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
 
@@ -428,6 +427,7 @@ export default function UserProfilePage() {
   const id = params.id as string;
   const { db } = useFirebase();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [profileUser, setProfileUser] = React.useState<User | null | undefined>(undefined);
   const [userPostedJobs, setUserPostedJobs] = React.useState<Job[]>([]);
@@ -775,5 +775,4 @@ export default function UserProfilePage() {
       )}
     </div>
   );
-
-    
+}
