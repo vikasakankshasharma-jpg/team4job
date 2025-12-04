@@ -218,10 +218,10 @@ export function Header() {
           {renderBreadcrumbs()}
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="relative ml-auto flex items-center gap-2 md:grow-0">
+      <div className="relative ml-auto flex items-center gap-4 md:grow-0">
          {user?.subscription?.planId === 'trial' && daysLeft > 0 && !isTeamMember && <Badge variant="warning">Trial ({daysLeft} days left)</Badge>}
          {pathname.startsWith('/dashboard/users') || pathname.startsWith('/dashboard/jobs') || pathname.startsWith('/dashboard/all-jobs') ? (
-            <>
+            <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                 type="search"
@@ -230,7 +230,7 @@ export function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 />
-            </>
+            </div>
          ) : <div className="md:grow"></div>}
       </div>
       <div className="flex items-center gap-2">
