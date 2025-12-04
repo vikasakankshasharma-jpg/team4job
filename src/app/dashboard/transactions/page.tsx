@@ -21,15 +21,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, IndianRupee, ArrowRight, X, Wallet, CheckCircle2, ShieldEllipsis, Hourglass } from "lucide-react";
+import { Loader2, IndianRupee, ArrowRight, X, Wallet, CheckCircle2, ShieldEllipsis, Hourglass, Calendar as CalendarIcon } from "lucide-react";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { Transaction, User } from "@/lib/types";
-import { toDate } from "@/lib/utils";
-import { format, formatDistanceToNow } from "date-fns";
+import { toDate, cn } from "@/lib/utils";
+import { format, formatDistanceToNow, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { collection, getDocs, query, where, or } from "firebase/firestore";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
+import { DateRange } from "react-day-picker";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const getStatusVariant = (status: Transaction['status']) => {
   switch (status) {
@@ -55,6 +58,8 @@ export default function TransactionsPage() {
   const [filters, setFilters] = useState(initialFilters);
   const [usersMap, setUsersMap] = useState<Map<string, User>>(new Map());
   const { setHelp } = useHelp();
+  const [dateFilter, setDateFilter] = useState<string>("all");
+  const [customDate, setCustomDate] = React.useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
     setHelp({
@@ -63,17 +68,9 @@ export default function TransactionsPage() {
         <div className="space-y-4 text-sm">
           <p>This page provides a detailed audit trail of every financial transaction that occurs on the platform. It's an essential tool for accounting and tracking revenue.</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">KPI Cards:</span> At the top, you'll find key performance indicators showing the total value of funds released to installers and the amount currently held in the system for active jobs.</li>
+            <li><span className="font-semibold">KPI Cards & Date Filters:</span> At the top, you'll find key performance indicators. Use the date filter to see the total value of funds released to installers over specific periods. "Currently Held" always shows the real-time balance.</li>
             <li><span className="font-semibold">Transaction Log:</span> The main table shows a chronological list of all transactions, including payments from Job Givers, payouts to Installers, and any refunds.</li>
             <li><span className="font-semibold">Search & Filter:</span> Use the controls to quickly find specific transactions. You can search by Transaction ID, Job ID, or user name, and filter by the transaction status.</li>
-            <li><span className="font-semibold">Status Tracking:</span>
-              <ul className="list-disc space-y-1 pl-5 mt-1">
-                <li><span className="font-semibold text-blue-500">Funded:</span> Job Giver has paid; funds are held.</li>
-                <li><span className="font-semibold text-green-500">Released:</span> Payout successfully sent to the installer.</li>
-                <li><span className="font-semibold text-gray-500">Refunded:</span> Funds returned to the Job Giver.</li>
-                <li><span className="font-semibold text-red-500">Failed:</span> The transaction did not complete.</li>
-              </ul>
-            </li>
           </ul>
         </div>
       )
@@ -128,6 +125,58 @@ export default function TransactionsPage() {
       fetchTransactionsAndUsers();
     }
   }, [user, fetchTransactionsAndUsers]);
+  
+  const stats = useMemo(() => {
+    let startDate: Date | null = null;
+    let endDate: Date | null = null;
+    const now = new Date();
+
+    switch(dateFilter){
+        case 'today':
+            startDate = startOfDay(now);
+            endDate = endOfDay(now);
+            break;
+        case 'week':
+            startDate = startOfWeek(now);
+            endDate = endOfWeek(now);
+            break;
+        case 'month':
+            startDate = startOfMonth(now);
+            endDate = endOfMonth(now);
+            break;
+        case 'year':
+            startDate = startOfYear(now);
+            endDate = endOfYear(now);
+            break;
+        case 'custom':
+            if (customDate?.from) {
+                startDate = startOfDay(customDate.from);
+                endDate = customDate.to ? endOfDay(customDate.to) : endOfDay(customDate.from);
+            }
+            break;
+    }
+
+    const filteredTransactions = transactions.filter(t => {
+        if (!startDate || !endDate || t.status !== 'Released') return true;
+        const releasedDate = t.releasedAt ? toDate(t.releasedAt) : null;
+        if (!releasedDate) return false;
+        return releasedDate >= startDate && releasedDate <= endDate;
+    });
+
+    return transactions.reduce((acc, t) => {
+        if(t.status === 'Released'){
+            const releasedDate = t.releasedAt ? toDate(t.releasedAt) : null;
+            if(!startDate || !endDate || (releasedDate && releasedDate >= startDate && releasedDate <= endDate)) {
+               acc.totalReleased += t.amount;
+            }
+        }
+        if(t.status === 'Funded'){
+            acc.totalFunded += t.amount;
+        }
+        return acc;
+    }, { totalReleased: 0, totalFunded: 0 });
+  }, [transactions, dateFilter, customDate]);
+
 
   const enrichedTransactions = useMemo(() => {
     return transactions.map(t => ({
@@ -153,18 +202,6 @@ export default function TransactionsPage() {
     });
   }, [enrichedTransactions, filters]);
   
-  const stats = useMemo(() => {
-    return transactions.reduce((acc, t) => {
-        if(t.status === 'Released'){
-            acc.totalReleased += t.amount;
-        }
-        if(t.status === 'Funded'){
-            acc.totalFunded += t.amount;
-        }
-        return acc;
-    }, { totalReleased: 0, totalFunded: 0 });
-  }, [transactions]);
-
   const handleFilterChange = (filterName: keyof typeof filters, value: string) => {
     setFilters(prev => ({ ...prev, [filterName]: value }));
   };
@@ -180,6 +217,57 @@ export default function TransactionsPage() {
   return (
     <div className="grid gap-6">
         {isAdmin && (
+            <>
+            <div className="flex justify-end items-center gap-2">
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="week">This Week</SelectItem>
+                        <SelectItem value="month">This Month</SelectItem>
+                        <SelectItem value="year">This Year</SelectItem>
+                        <SelectItem value="custom">Custom Range</SelectItem>
+                    </SelectContent>
+                </Select>
+                 {dateFilter === 'custom' && (
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                id="date"
+                                variant={"outline"}
+                                className={cn("w-[300px] justify-start text-left font-normal", !customDate && "text-muted-foreground")}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {customDate?.from ? (
+                                    customDate.to ? (
+                                        <>
+                                        {format(customDate.from, "LLL dd, y")} -{" "}
+                                        {format(customDate.to, "LLL dd, y")}
+                                        </>
+                                    ) : (
+                                        format(customDate.from, "LLL dd, y")
+                                    )
+                                ) : (
+                                    <span>Pick a date</span>
+                                )}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                                initialFocus
+                                mode="range"
+                                defaultMonth={customDate?.from}
+                                selected={customDate}
+                                onSelect={setCustomDate}
+                                numberOfMonths={2}
+                            />
+                        </PopoverContent>
+                    </Popover>
+                 )}
+            </div>
             <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -188,12 +276,12 @@ export default function TransactionsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">₹{stats.totalReleased.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground">Total funds paid out to installers</p>
+                        <p className="text-xs text-muted-foreground">Funds paid out to installers in selected period</p>
                     </CardContent>
                 </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Funds Currently Held</CardTitle>
+                        <CardTitle className="text-sm font-medium">Currently Held in Escrow</CardTitle>
                         <Hourglass className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -202,6 +290,7 @@ export default function TransactionsPage() {
                     </CardContent>
                 </Card>
             </div>
+            </>
         )}
         <Card>
         <CardHeader>
