@@ -195,13 +195,17 @@ export const onJobCompleted = functions.firestore
                     else history.push({ month: monthYear, points: newPoints });
                     if (history.length > 12) history.shift();
 
-                    const newReviewCount = (installerData.installerProfile.reviews || 0) + 1;
+                    const currentReviews = installerData.installerProfile.reviews || 0;
+                    const newReviewCount = currentReviews + 1;
+                    const currentTotalRating = (installerData.installerProfile.rating || 0) * currentReviews;
+                    const newAverageRating = (currentTotalRating + afterData.rating) / newReviewCount;
 
                     transaction.update(installerRef, {
                         "installerProfile.points": newPoints,
                         "installerProfile.tier": newTier,
                         "installerProfile.reputationHistory": history,
                         "installerProfile.reviews": newReviewCount,
+                        "installerProfile.rating": newAverageRating,
                     });
                 });
 
@@ -216,8 +220,7 @@ export const onJobCompleted = functions.firestore
                     const completedJobsSnap = await completedJobsQuery.get();
                     const completedJobsCount = completedJobsSnap.size;
                     
-                    const totalRating = (installerData.installerProfile.rating || 0) * (installerData.installerProfile.reviews || 0);
-                    const newAverageRating = (totalRating + afterData.rating) / ((installerData.installerProfile.reviews || 0) + 1);
+                    const newAverageRating = installerData.installerProfile.rating || 0;
 
                     const disputesQuery = db.collection("disputes").where("parties.installerId", "==", installerRef.id).where("status", "!=", "Resolved");
                     const disputesSnap = await disputesQuery.get();
@@ -296,6 +299,181 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
 });
 
 /**
+ * Implements the "Job Rescue Plan" for jobs at risk of going unbid.
+ * Runs every hour.
+ */
+export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(async (context) => {
+    console.log("Running Job Rescue Plan...");
+    const now = admin.firestore.Timestamp.now();
+    const db = admin.firestore();
+
+    // Stage 1: Auto-Extend & Promote
+    const stage1Query = db.collection("jobs")
+        .where("status", "==", "Open for Bidding")
+        .where("bids", "==", [])
+        .where("deadline", "<=", admin.firestore.Timestamp.fromMillis(now.toMillis() + 48 * 60 * 60 * 1000)); // Within 48 hours of deadline
+
+    const stage1Snapshot = await stage1Query.get();
+
+    stage1Snapshot.forEach(async (doc) => {
+        const job = doc.data();
+        const extensionHours = job.isUrgent ? 6 : 24;
+        const newDeadline = admin.firestore.Timestamp.fromMillis(now.toMillis() + extensionHours * 60 * 60 * 1000);
+
+        await doc.ref.update({ deadline: newDeadline });
+        console.log(`Stage 1: Extended deadline for job ${doc.id} by ${extensionHours} hours.`);
+
+        await sendNotification(
+            job.jobGiver.id,
+            "We're still looking for you!",
+            `Your job "${job.title}" has been promoted and its deadline extended to find the best installers. `,
+            `/dashboard/jobs/${doc.id}`
+        );
+    });
+
+    // Stage 2: Manual Intervention
+    const stage2Query = db.collection("jobs")
+        .where("status", "==", "Open for Bidding")
+        .where("bids", "==", [])
+        .where("deadline", "<=", now);
+
+    const stage2Snapshot = await stage2Query.get();
+
+    stage2Snapshot.forEach(async (doc) => {
+        const job = doc.data();
+        await doc.ref.update({ status: "Needs Assistance" });
+        console.log(`Stage 2: Job ${doc.id} moved to 'Needs Assistance'.`);
+
+        // This could also trigger an email/alert to the admin team.
+        await sendNotification(
+            job.jobGiver.id,
+            "Your Job Needs Personal Attention",
+            `Our automated search for "${job.title}" has completed. Our support team will now personally assist you. `,
+            `/dashboard/jobs/${doc.id}`
+        );
+    });
+
+    return null;
+});
+
+/**
+ * Triggered when there is a date change proposal on a job.
+ */
+export const onJobDateChange = functions.firestore
+    .document("jobs/{jobId}")
+    .onUpdate(async (change, context) => {
+      const beforeData = change.before.data();
+      const afterData = change.after.data();
+      const jobId = context.params.jobId;
+
+      // Date Change Proposed
+      if (!beforeData.dateChangeProposal &&
+          afterData.dateChangeProposal &&
+          afterData.dateChangeProposal.status === "pending") {
+        const proposal = afterData.dateChangeProposal;
+        const jobGiverId = afterData.jobGiver.id;
+        const awardedInstallerId = afterData.awardedInstaller.id;
+        const proposerId = proposal.proposedBy === "Job Giver" ?
+          jobGiverId :
+          awardedInstallerId;
+        const recipientId = proposal.proposedBy === "Job Giver" ?
+          awardedInstallerId :
+          jobGiverId;
+
+        const proposerDoc = await admin.firestore().collection("users")
+            .doc(proposerId).get();
+        const proposerName = proposerDoc.data()?.name || "The other party";
+
+        await sendNotification(
+            recipientId,
+            "Date Change Proposed",
+            `${proposerName} has proposed a new start date for job: "${
+              afterData.title
+            }".`,
+            `/dashboard/jobs/${jobId}`
+        );
+      }
+
+      // Date Change Accepted/Rejected
+      if (beforeData.dateChangeProposal?.status === "pending" &&
+          (afterData.dateChangeProposal?.status !== "pending")) {
+        const wasAccepted = afterData.jobStartDate !== beforeData.jobStartDate;
+        const proposerId = beforeData.dateChangeProposal.proposedBy ===
+          "Job Giver" ? afterData.jobGiver.id : afterData.awardedInstaller.id;
+
+        await sendNotification(
+            proposerId,
+            `Date Change ${wasAccepted ? "Accepted" : "Rejected"}`,
+            `Your proposed date change for job "${afterData.title}" was ${
+              wasAccepted ? "accepted" : "rejected"
+            }.`,
+            `/dashboard/jobs/${jobId}`
+        );
+      }
+    });
+
+/**
+ * Handles scheduled cleanup of jobs where the award offer has expired.
+ * Runs every hour.
+ */
+export const handleExpiredAwards = functions.pubsub.schedule(
+    "every 1 hours"
+).onRun(async (context) => {
+  console.log("Running scheduled function to handle expired job awards...");
+  const now = admin.firestore.Timestamp.now();
+
+  const q = admin.firestore().collection("jobs")
+      .where("status", "==", "Awarded")
+      .where("acceptanceDeadline", "<=", now);
+
+  const snapshot = await q.get();
+
+  if (snapshot.empty) {
+    console.log("No expired awards found.");
+    return null;
+  }
+
+  const batch = admin.firestore().batch();
+  const notificationPromises: Promise<void>[] = [];
+
+  snapshot.docs.forEach((doc) => {
+    const job = doc.data();
+    console.log(
+        `Reverting job ${doc.id} to 'Bidding Closed' due to expired award.`
+    );
+
+    const timedOutInstallerIds = (job.selectedInstallers || []).map(
+        (s: { installerId: string; }) => s.installerId
+    );
+
+    batch.update(doc.ref, {
+      status: "Bidding Closed",
+      awardedInstaller: admin.firestore.FieldValue.delete(),
+      acceptanceDeadline: admin.firestore.FieldValue.delete(),
+      selectedInstallers: [],
+      disqualifiedInstallerIds: admin.firestore.FieldValue.arrayUnion(
+          ...timedOutInstallerIds
+      ),
+    });
+
+    // Notify Job Giver that the offer expired
+    notificationPromises.push(sendNotification(
+        job.jobGiver.id,
+        "Offer Expired",
+        `Your offer for job "${job.title}" expired without being accepted. ` +
+        "You can now award it to another installer.",
+        `/dashboard/jobs/${doc.id}`
+    ));
+  });
+
+  await batch.commit();
+  await Promise.all(notificationPromises);
+
+  console.log(`Processed ${snapshot.size} expired awards.`);
+  return null;
+});
+
+/**
  * Triggered when a user's verification status changes.
  * Awards the "Founding Installer" badge to the first 100 verified installers.
  */
@@ -344,3 +522,5 @@ export const onUserVerified = functions.firestore
     });
 
     
+
+      
