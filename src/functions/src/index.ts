@@ -190,7 +190,7 @@ export const onJobCompleted = functions.firestore
 
                     const monthYear = new Date().toLocaleString("default", { month: "long", year: "numeric" });
                     const history = installerData.installerProfile.reputationHistory || [];
-                    const monthIndex = history.findIndex((h: { month: string }) => h.month === monthYear);
+                    const monthIndex = history.findIndex((h) => h.month === monthYear);
                     if (monthIndex > -1) history[monthIndex].points = newPoints;
                     else history.push({ month: monthYear, points: newPoints });
                     if (history.length > 12) history.shift();
