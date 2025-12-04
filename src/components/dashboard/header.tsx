@@ -72,7 +72,7 @@ const supportTeamNavItems = [
 
 export function Header() {
   const pathname = usePathname();
-  const { user, role } = useUser();
+  const { user, role, isAdmin } = useUser();
   const { searchQuery, setSearchQuery } = useSearch();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   
@@ -148,6 +148,7 @@ export function Header() {
   }
   
   const daysLeft = user?.subscription?.expiresAt ? differenceInDays(toDate(user.subscription.expiresAt), new Date()) : 0;
+  const isTeamMember = role === 'Admin' || role === 'Support Team';
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -217,8 +218,8 @@ export function Header() {
           {renderBreadcrumbs()}
         </BreadcrumbList>
       </Breadcrumb>
-      {user?.subscription?.planId === 'trial' && daysLeft > 0 && <Badge variant="warning">Trial ({daysLeft} days left)</Badge>}
       <div className="relative ml-auto flex items-center gap-2 md:grow-0">
+         {user?.subscription?.planId === 'trial' && daysLeft > 0 && !isTeamMember && <Badge variant="warning">Trial ({daysLeft} days left)</Badge>}
          {pathname.startsWith('/dashboard/users') || pathname.startsWith('/dashboard/jobs') || pathname.startsWith('/dashboard/all-jobs') ? (
             <>
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
