@@ -151,7 +151,7 @@ export function Header() {
   const isTeamMember = role === 'Admin' || role === 'Support Team';
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+    <header className="sticky top-0 z-30 flex h-auto flex-wrap items-center gap-4 border-b bg-background px-4 py-2 sm:px-6">
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
           <Button size="icon" variant="outline" className="sm:hidden">
@@ -166,7 +166,7 @@ export function Header() {
           <nav className="grid gap-6 text-lg font-medium">
             <Link
               href="#"
-              className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
+              className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
               onClick={() => setIsSheetOpen(false)}
             >
               <Briefcase className="h-5 w-5 transition-all group-hover:scale-110" />
@@ -218,10 +218,10 @@ export function Header() {
           {renderBreadcrumbs()}
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="relative ml-auto flex items-center gap-4 md:grow-0">
+      <div className="flex w-full flex-1 items-center justify-end gap-4 md:ml-auto md:w-auto md:flex-grow-0">
          {user?.subscription?.planId === 'trial' && daysLeft > 0 && !isTeamMember && <Badge variant="warning">Trial ({daysLeft} days left)</Badge>}
          {pathname.startsWith('/dashboard/users') || pathname.startsWith('/dashboard/jobs') || pathname.startsWith('/dashboard/all-jobs') ? (
-            <div className="relative">
+            <div className="relative w-full md:w-auto">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                 type="search"
@@ -231,9 +231,8 @@ export function Header() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 />
             </div>
-         ) : <div className="md:grow"></div>}
-      </div>
-      <div className="flex items-center gap-2">
+         ) : <div className="hidden md:block md:flex-grow"></div>}
+
         {renderContextualActions()}
         <HelpDialog>
             <Button variant="outline" size="icon">

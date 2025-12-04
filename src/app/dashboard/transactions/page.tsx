@@ -218,9 +218,9 @@ export default function TransactionsPage() {
     <div className="grid gap-6">
         {isAdmin && (
             <>
-            <div className="flex justify-end items-center gap-2">
+            <div className="flex justify-end items-center gap-2 flex-wrap">
                 <Select value={dateFilter} onValueChange={setDateFilter}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-full sm:w-[180px]">
                         <SelectValue placeholder="Select period" />
                     </SelectTrigger>
                     <SelectContent>
@@ -238,7 +238,7 @@ export default function TransactionsPage() {
                             <Button
                                 id="date"
                                 variant={"outline"}
-                                className={cn("w-[300px] justify-start text-left font-normal", !customDate && "text-muted-foreground")}
+                                className={cn("w-full sm:w-[300px] justify-start text-left font-normal", !customDate && "text-muted-foreground")}
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {customDate?.from ? (
