@@ -45,10 +45,14 @@ export function JobCard({ job }: JobCardProps) {
   const displayStatus = myBidStatus ? myBidStatus.text : job.status;
   const statusVariant = myBidStatus ? myBidStatus.variant : getStatusVariant(job.status);
   
-  const getButtonText = (status: Job['status']) => {
-    switch (status) {
+  const getButtonText = () => {
+    if(myBidStatus) {
+        if(myBidStatus.text === 'Awarded to You' || myBidStatus.text === 'In Progress' || myBidStatus.text === 'Pending Funding') return "View Job & Respond";
+        if(myBidStatus.text === 'Completed & Won') return 'View Completed Job';
+    }
+    switch (job.status) {
       case 'Open for Bidding':
-        return 'View Job & Bid';
+        return hasBidded ? 'View & Modify Bid' : 'View Job & Bid';
       case 'Bidding Closed':
         return 'View Bids';
       case 'Awarded':
@@ -64,7 +68,7 @@ export function JobCard({ job }: JobCardProps) {
     }
   }
 
-  const buttonText = getButtonText(job.status);
+  const buttonText = getButtonText();
   const buttonVariant = statusVariant === 'success' ? 'success' : statusVariant === 'warning' ? 'warning' : statusVariant === 'info' ? 'info' : 'default';
 
   return (
@@ -128,3 +132,5 @@ export function JobCard({ job }: JobCardProps) {
     </Card>
   );
 }
+
+    

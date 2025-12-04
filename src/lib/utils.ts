@@ -120,6 +120,7 @@ export const getMyBidStatus = (job: Job, user: User): { text: string; variant: "
         if (job.status === 'Completed') return { text: 'Completed & Won', variant: 'success' };
         if (job.status === 'In Progress') return { text: 'In Progress', variant: 'info' };
         if (job.status === 'Awarded') return { text: 'Awarded to You', variant: 'success' };
+        if (job.status === 'Pending Funding') return { text: 'Pending Funding', variant: 'info' };
     }
 
     if (job.status === 'Cancelled') return { text: 'Cancelled', variant: 'destructive' };
@@ -131,3 +132,5 @@ export const getMyBidStatus = (job: Job, user: User): { text: string; variant: "
     
     return { text: job.status, variant: getStatusVariant(job.status) };
 }
+
+    
