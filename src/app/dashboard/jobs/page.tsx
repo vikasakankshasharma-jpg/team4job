@@ -415,5 +415,3 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
-
-    
