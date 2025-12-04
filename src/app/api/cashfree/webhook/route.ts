@@ -1,8 +1,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { doc, updateDoc, getDocs, collection, query, where, Timestamp } from 'firebase/firestore';
+import { doc, updateDoc, getDocs, collection, query, where, Timestamp, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/server-init';
 import { verifyWebhookSignature } from '@/lib/cashfree-utils';
+import { Transaction, User, SubscriptionPlan } from '@/lib/types';
+import { toDate } from '@/lib/utils';
 
 /**
  * This webhook endpoint handles real-time notifications from Cashfree for both Payments and Payouts.
@@ -41,6 +43,14 @@ export async function POST(req: NextRequest) {
 
       // Find the transaction in Firestore using the orderId. In our app, our internal transactionId is the orderId.
       const transactionRef = doc(db, "transactions", orderId);
+      const transactionSnap = await getDoc(transactionRef);
+      
+      if (!transactionSnap.exists()) {
+           console.warn(`[Webhook] Transaction ${orderId} not found.`);
+           return NextResponse.json({ status: 'error', message: 'Transaction not found' }, { status: 404 });
+      }
+
+      const transaction = transactionSnap.data() as Transaction;
       
       if (data.type === "PAYMENT_SUCCESS_WEBHOOK") {
          await updateDoc(transactionRef, {
@@ -49,6 +59,36 @@ export async function POST(req: NextRequest) {
             paymentGatewayOrderId: data.data.order.order_id, // Redundant but good for audit
         });
         console.log(`[Webhook] Transaction ${orderId} successfully marked as 'Funded'.`);
+        
+        // Handle Subscription Activation
+        if (transaction.transactionType === 'SUBSCRIPTION' && transaction.planId && transaction.payerId) {
+             const userRef = doc(db, 'users', transaction.payerId);
+             const planRef = doc(db, 'subscriptionPlans', transaction.planId);
+             
+             const [userSnap, planSnap] = await Promise.all([getDoc(userRef), getDoc(planRef)]);
+             
+             if (userSnap.exists() && planSnap.exists()) {
+                 const userData = userSnap.data() as User;
+                 const planData = planSnap.data() as SubscriptionPlan;
+                 
+                 const now = new Date();
+                 const currentExpiry = userData.subscription && toDate(userData.subscription.expiresAt) > now 
+                    ? toDate(userData.subscription.expiresAt) 
+                    : now;
+                 
+                 // Add 1 year to the current expiry (or now)
+                 const newExpiryDate = new Date(currentExpiry);
+                 newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1);
+                 
+                 await updateDoc(userRef, {
+                    'subscription.planId': planData.id,
+                    'subscription.planName': planData.name,
+                    'subscription.expiresAt': Timestamp.fromDate(newExpiryDate),
+                 });
+                 console.log(`[Webhook] Subscription activated for user ${transaction.payerId} with plan ${planData.name}`);
+             }
+        }
+
       } else if (data.type === "PAYMENT_FAILED_WEBHOOK") {
          await updateDoc(transactionRef, {
             status: 'Failed',

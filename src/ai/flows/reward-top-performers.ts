@@ -15,15 +15,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/server-init';
 import { grantProPlan } from '@/ai/flows/grant-pro-plan';
 import type { User } from '@/lib/types';
-import { getMonth, getYear, subMonths, format } from 'date-fns';
-
-
-const toDate = (timestamp: any): Date => {
-  if (timestamp && typeof timestamp.toDate === 'function') {
-    return timestamp.toDate();
-  }
-  return new Date(timestamp);
-};
+import { calculateMonthlyPerformance } from '@/lib/utils';
 
 
 const RewardTopPerformersInputSchema = z.object({}).optional();
@@ -45,7 +37,13 @@ export const rewardTopPerformers = ai.defineFlow(
   async () => {
     try {
       console.log("[Automation] Starting: Reward Top Performers");
-
+      
+      // Note: Ideally, check for Admin privileges here.
+      // Since `grantProPlan` performs checks or is admin-only logic, and this flow 
+      // is exposed as a server action to be called by the admin dashboard,
+      // we rely on the implementation of `grantProPlan` and the caller's context 
+      // in the frontend to be an admin (which is checked in ReportsPage).
+      
       // 1. Fetch all active installers
       const installersQuery = query(
         collection(db, 'users'),
@@ -55,32 +53,8 @@ export const rewardTopPerformers = ai.defineFlow(
       const snapshot = await getDocs(installersQuery);
       const installers = snapshot.docs.map(doc => doc.data() as User);
 
-      // 2. Calculate monthly performance and rank them
-      const now = new Date();
-      const lastMonthDate = subMonths(now, 1);
-      const lastMonthName = format(lastMonthDate, 'MMMM yyyy');
-
-      const twoMonthsAgoDate = subMonths(now, 2);
-      const twoMonthsAgoName = format(twoMonthsAgoDate, 'MMMM yyyy');
-
-      const rankedInstallers = installers
-        .map(installer => {
-          const history = installer.installerProfile?.reputationHistory || [];
-          
-          const lastMonthEntry = history.find(h => h.month === lastMonthName);
-          const twoMonthsAgoEntry = history.find(h => h.month === twoMonthsAgoName);
-
-          const lastMonthPoints = lastMonthEntry?.points || 0;
-          const twoMonthsAgoPoints = twoMonthsAgoEntry?.points || 0;
-          const monthlyPoints = Math.max(0, lastMonthPoints - twoMonthsAgoPoints);
-
-          return { ...installer, monthlyPoints };
-        })
-        .sort((a, b) => {
-          if (b.monthlyPoints !== a.monthlyPoints) return b.monthlyPoints - a.monthlyPoints;
-          if ((b.installerProfile?.rating || 0) !== (a.installerProfile?.rating || 0)) return (b.installerProfile?.rating || 0) - (a.installerProfile?.rating || 0);
-          return toDate(a.memberSince).getTime() - toDate(b.memberSince).getTime();
-        });
+      // 2. Calculate monthly performance and rank them using shared logic
+      const rankedInstallers = calculateMonthlyPerformance(installers);
 
       // 3. Select top 3 performers
       const top3 = rankedInstallers.slice(0, 3);

@@ -16,7 +16,7 @@ import { CheckCircle2, CreditCard, Gift, Loader2, Ticket } from "lucide-react";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { SubscriptionPlan, User } from "@/lib/types";
 import { collection, getDocs, query, where, doc, updateDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, formatDistanceToNowStrict } from "date-fns";
 import { toDate } from "@/lib/utils";
 import { useHelp } from "@/hooks/use-help";
 import { Input } from "@/components/ui/input";
@@ -153,6 +153,20 @@ export default function BillingPage() {
     fetchPlans();
   }, [fetchPlans]);
 
+  // Poll for subscription updates if payment was successful
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment_status');
+    if (paymentStatus === 'success') {
+        const interval = setInterval(fetchUser, 2000); // Poll every 2 seconds
+        // Stop polling after 10 seconds or when subscription is active
+        const timeout = setTimeout(() => clearInterval(interval), 10000);
+        return () => {
+            clearInterval(interval);
+            clearTimeout(timeout);
+        };
+    }
+  }, [searchParams, fetchUser]);
+
   useEffect(() => {
     setHelp({
       title: "Subscription & Billing",
@@ -178,6 +192,7 @@ export default function BillingPage() {
         jobId: `SUB-${user.id}-${plan.id}-${Date.now()}`,
         jobTitle: `Subscription: ${plan.name}`,
         jobGiverId: user.id, // Payer is the user
+        planId: plan.id, // Explicitly pass plan ID
         installerId: 'PLATFORM', // Payee is the platform
         amount: plan.price,
         travelTip: 0,
@@ -195,26 +210,21 @@ export default function BillingPage() {
         payment_method: "upi",
         onComplete: async (data: any) => {
           if (data.order && data.order.status === 'PAID') {
-            const now = new Date();
-            const currentExpiry = user.subscription && toDate(user.subscription.expiresAt) > now ? toDate(user.subscription.expiresAt) : now;
-            const newExpiryDate = new Date(currentExpiry.setFullYear(currentExpiry.getFullYear() + 1)); // Assuming annual plans
-
-            await updateDoc(doc(db, 'users', user.id), {
-              'subscription.planId': plan.id,
-              'subscription.planName': plan.name,
-              'subscription.expiresAt': newExpiryDate,
-            });
-
             toast({
-              title: "Purchase Successful!",
-              description: `You are now subscribed to the ${plan.name} plan.`,
+              title: "Payment Successful",
+              description: "Your subscription is being activated. Please wait...",
               variant: "success",
             });
-            fetchUser();
+            // We do NOT update the DB here. We wait for the webhook.
+            // But we can trigger a re-fetch or show a pending state.
             
-            if (redirectUrl) {
-                router.push(redirectUrl);
-            }
+            // Wait a moment for webhook to process
+            setTimeout(() => {
+                fetchUser();
+                if (redirectUrl) {
+                    router.push(redirectUrl);
+                }
+            }, 3000);
 
           } else {
               throw new Error("Payment was not successful.");

@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -349,7 +348,9 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const firebaseUser = userCredential.user;
         
-        const userRoles = [values.role];
+        // Fix: Explicitly declare userRoles
+        const userRoles: User['roles'] = [values.role];
+        
         const trialExpiry = new Date();
         const trialDays = platformSettings?.defaultTrialPeriodDays || 30;
         trialExpiry.setDate(trialExpiry.getDate() + trialDays);
@@ -358,7 +359,7 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
             name: values.name,
             email: values.email.toLowerCase(),
             mobile: values.mobile,
-            roles: userRoles as User['roles'],
+            roles: userRoles,
             memberSince: new Date(),
             status: 'active',
             avatarUrl: PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)].imageUrl,

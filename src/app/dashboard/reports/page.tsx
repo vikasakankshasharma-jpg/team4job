@@ -15,7 +15,7 @@ import { Loader2, Users, Briefcase, IndianRupee, PieChart, Download, Award, Star
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadialBar, RadialBarChart, PolarGrid, PolarAngleAxis } from "recharts";
 import { User, Job, SubscriptionPlan, Transaction, Dispute } from "@/lib/types";
 import { collection, getDocs, query, doc, updateDoc } from "firebase/firestore";
-import { toDate, exportToCsv } from "@/lib/utils";
+import { toDate, exportToCsv, calculateMonthlyPerformance, RankedInstaller } from "@/lib/utils";
 import { format, startOfMonth, subMonths, getMonth, getYear, differenceInMilliseconds } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -51,59 +51,31 @@ const tierIcons: Record<string, React.ReactNode> = {
   Platinum: <Award className="h-4 w-4 text-cyan-400" />,
 };
 
-interface MonthlyPerformance extends User {
-    monthlyPoints: number;
-}
-
 function TopPerformersCard({ installers }: { installers: User[] }) {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
-    const rankedInstallers = useMemo(() => {
-        const now = new Date();
-        const lastMonthDate = subMonths(now, 1);
-        const lastMonthName = format(lastMonthDate, 'MMMM yyyy');
-
-        const twoMonthsAgoDate = subMonths(now, 2);
-        const twoMonthsAgoName = format(twoMonthsAgoDate, 'MMMM yyyy');
-        
-        return installers
-            .filter(i => i.installerProfile)
-            .map(installer => {
-                const history = installer.installerProfile?.reputationHistory || [];
-                
-                const lastMonthEntry = history.find(h => h.month === lastMonthName);
-                const twoMonthsAgoEntry = history.find(h => h.month === twoMonthsAgoName);
-
-                const lastMonthPoints = lastMonthEntry?.points || 0;
-                const twoMonthsAgoPoints = twoMonthsAgoEntry?.points || 0;
-                const monthlyPoints = Math.max(0, lastMonthPoints - twoMonthsAgoPoints);
-                
-                return { ...installer, monthlyPoints };
-            })
-            .sort((a, b) => {
-                // 1. Sort by monthly points (descending)
-                if (b.monthlyPoints !== a.monthlyPoints) {
-                    return b.monthlyPoints - a.monthlyPoints;
-                }
-                // 2. Sort by rating (descending)
-                if ((b.installerProfile?.rating || 0) !== (a.installerProfile?.rating || 0)) {
-                    return (b.installerProfile?.rating || 0) - (a.installerProfile?.rating || 0);
-                }
-                // 3. Sort by memberSince (oldest first, so ascending)
-                return toDate(a.memberSince).getTime() - toDate(b.memberSince).getTime();
-            });
+    const rankedInstallers: RankedInstaller[] = useMemo(() => {
+        return calculateMonthlyPerformance(installers);
     }, [installers]);
     
     const handleRunAutomation = async () => {
         setIsLoading(true);
         try {
             const result = await rewardTopPerformers({});
-            toast({
-                title: "Automation Complete!",
-                description: result.summary,
-                variant: 'success',
-            });
+            if (result.success) {
+                 toast({
+                    title: "Automation Complete!",
+                    description: result.summary,
+                    variant: 'success',
+                });
+            } else {
+                 toast({
+                    title: "Automation Failed",
+                    description: result.summary,
+                    variant: 'destructive',
+                });
+            }
         } catch (error: any) {
             console.error("Failed to run automation:", error);
             toast({
