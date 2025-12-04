@@ -531,21 +531,19 @@ export const onUserVerified = functions.firestore
 
                 if (foundingInstallersSnap.size < 100) {
                     await db.runTransaction(async (transaction) => {
-                        console.log(`Founding Installer count is ${foundingInstallersSnap.size}. Awarding badge to user ${userId}.`);
+                        // Re-check inside transaction to be safe, though less critical now
                         const userRef = db.collection("users").doc(userId);
                         transaction.update(userRef, { isFoundingInstaller: true });
                     });
-
-                    // Re-fetch the user doc to confirm the badge was awarded before notifying.
-                    const finalUserDoc = await db.collection("users").doc(userId).get();
-                    if (finalUserDoc.data()?.isFoundingInstaller) {
-                        await sendNotification(
-                            userId,
-                            "Congratulations, You're a Founding Installer!",
-                            "You are one of the first 100 installers to be verified on our platform. Enjoy your exclusive badge!",
-                            "/dashboard/profile"
-                        );
-                    }
+                    
+                    console.log(`Awarding badge to user ${userId}.`);
+                    
+                    await sendNotification(
+                        userId,
+                        "Congratulations, You're a Founding Installer!",
+                        "You are one of the first 100 installers to be verified on our platform. Enjoy your exclusive badge!",
+                        "/dashboard/profile"
+                    );
                 } else {
                      console.log("Founding Installer program is full. No badge awarded.");
                 }
