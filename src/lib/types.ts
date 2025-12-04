@@ -23,6 +23,7 @@ export type User = {
     office?: string;
   };
   address: Address;
+  district?: string; // Added for district-wise queries
   roles: ('Job Giver' | 'Installer' | 'Admin' | 'Support Team')[];
   memberSince: Date | Timestamp;
   lastLoginAt?: Date | Timestamp;

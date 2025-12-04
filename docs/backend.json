@@ -37,6 +37,10 @@
           "description": "The user's 10-digit mobile number."
         },
         "address": { "$ref": "#/entities/Address" },
+        "district": {
+          "type": "string",
+          "description": "The district of the user, derived from their address, for regional querying."
+        },
         "avatarUrl": {
           "type": "string",
           "description": "URL for the user's anonymous SVG avatar."
@@ -264,7 +268,7 @@
         },
         "status": {
           "type": "string",
-          "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid", "Pending Funding", "Pending Confirmation", "Disputed"]
+          "enum": ["Open for Bidding", "Bidding Closed", "Awarded", "In Progress", "Completed", "Cancelled", "Unbid", "Pending Funding", "Disputed"]
         },
         "deadline": {
           "type": "string",
@@ -319,6 +323,9 @@
         },
         "rating": {
           "type": "number"
+        },
+        "completionOtp": {
+          "type": "string"
         },
         "disputeId": {
           "type": "string",
