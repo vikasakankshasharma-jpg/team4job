@@ -62,31 +62,21 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
     const rankedInstallers = useMemo(() => {
         const now = new Date();
         const lastMonthDate = subMonths(now, 1);
-        const lastMonth = getMonth(lastMonthDate);
-        const lastMonthYear = getYear(lastMonthDate);
+        const lastMonthName = format(lastMonthDate, 'MMMM yyyy');
 
         const twoMonthsAgoDate = subMonths(now, 2);
-        const twoMonthsAgo = getMonth(twoMonthsAgoDate);
-        const twoMonthsAgoYear = getYear(twoMonthsAgoDate);
+        const twoMonthsAgoName = format(twoMonthsAgoDate, 'MMMM yyyy');
         
         return installers
             .filter(i => i.installerProfile)
             .map(installer => {
                 const history = installer.installerProfile?.reputationHistory || [];
-                const lastMonthEntry = history.find(h => {
-                    const [month, year] = h.month.split(' ');
-                    const monthIndex = new Date(Date.parse(month +" 1, 2012")).getMonth();
-                    return monthIndex === lastMonth && parseInt(year) === lastMonthYear;
-                });
-                const twoMonthsAgoEntry = history.find(h => {
-                     const [month, year] = h.month.split(' ');
-                    const monthIndex = new Date(Date.parse(month +" 1, 2012")).getMonth();
-                    return monthIndex === twoMonthsAgo && parseInt(year) === twoMonthsAgoYear;
-                });
+                
+                const lastMonthEntry = history.find(h => h.month === lastMonthName);
+                const twoMonthsAgoEntry = history.find(h => h.month === twoMonthsAgoName);
 
                 const lastMonthPoints = lastMonthEntry?.points || 0;
                 const twoMonthsAgoPoints = twoMonthsAgoEntry?.points || 0;
-
                 const monthlyPoints = Math.max(0, lastMonthPoints - twoMonthsAgoPoints);
                 
                 return { ...installer, monthlyPoints };
@@ -513,14 +503,17 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
     const summary = useMemo(() => {
         return transactions.reduce((acc, t) => {
             if (t.status === 'Released') {
-                acc.totalReleased += t.amount;
-                acc.platformRevenue += t.commission;
+                acc.totalReleased += t.payoutToInstaller;
+                acc.platformRevenue += t.commission + t.jobGiverFee;
                 acc.payoutsCount++;
             }
-            if (t.status === 'Funded' || t.status === 'Released') {
-                acc.totalVolume += t.amount;
+            if (t.status === 'Funded') {
+                acc.fundsHeld += t.totalPaidByGiver;
             }
-            if (t.status === 'Refunded') {
+            if (t.status === 'Funded' || t.status === 'Released') {
+                 acc.totalVolume += t.totalPaidByGiver;
+            }
+             if (t.status === 'Refunded') {
                 acc.refundsCount++;
             }
             return acc;
@@ -530,6 +523,7 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
             platformRevenue: 0,
             payoutsCount: 0,
             refundsCount: 0,
+            fundsHeld: 0,
         });
     }, [transactions]);
     
@@ -537,27 +531,27 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
         <Card className="col-span-full">
             <CardHeader>
                 <CardTitle>Financial Summary</CardTitle>
-                <CardDescription>A summary of all financial activities on the platform.</CardDescription>
+                <CardDescription>A real-time overview of financial activities on the platform.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
                  <Card className="p-4">
-                    <p className="text-sm text-muted-foreground">Total Volume</p>
+                    <p className="text-sm font-medium">Total Volume</p>
                     <p className="text-2xl font-bold">₹{summary.totalVolume.toLocaleString()}</p>
                 </Card>
                 <Card className="p-4">
-                    <p className="text-sm text-muted-foreground">Platform Revenue</p>
-                    <p className="text-2xl font-bold">₹{summary.platformRevenue.toLocaleString()}</p>
+                    <p className="text-sm font-medium">Platform Revenue</p>
+                    <p className="text-2xl font-bold text-green-600">₹{summary.platformRevenue.toLocaleString()}</p>
                 </Card>
                  <Card className="p-4">
-                    <p className="text-sm text-muted-foreground">Funds Released</p>
+                    <p className="text-sm font-medium">Funds Released</p>
                     <p className="text-2xl font-bold">₹{summary.totalReleased.toLocaleString()}</p>
                 </Card>
                  <Card className="p-4">
-                    <p className="text-sm text-muted-foreground">Payouts Processed</p>
-                    <p className="text-2xl font-bold">{summary.payoutsCount}</p>
+                    <p className="text-sm font-medium">Funds Held</p>
+                    <p className="text-2xl font-bold">₹{summary.fundsHeld.toLocaleString()}</p>
                 </Card>
                 <Card className="p-4">
-                    <p className="text-sm text-muted-foreground">Refunds Processed</p>
+                    <p className="text-sm font-medium">Refunds Processed</p>
                     <p className="text-2xl font-bold">{summary.refundsCount}</p>
                 </Card>
             </CardContent>

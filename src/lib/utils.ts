@@ -32,14 +32,14 @@ export const getStatusVariant = (status: Job['status']): "default" | "secondary"
 }
 
 export const toDate = (timestamp: any): Date => {
+  if (!timestamp) return new Date();
   if (timestamp instanceof Timestamp) {
     return timestamp.toDate();
   }
   if (timestamp instanceof Date) {
     return timestamp;
   }
-  // Fallback for other types, though this should be avoided
-  // by ensuring data is correctly typed.
+  // Fallback for string or number representations
   return new Date(timestamp);
 };
 
