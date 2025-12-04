@@ -55,7 +55,7 @@ export function exportToCsv(filename: string, rows: object[]) {
     '\n' +
     rows.map(row => {
       return keys.map(k => {
-        let cell = row[k] === null || row[k] === undefined ? '' : row[k];
+        let cell = (row as any)[k] === null || (row as any)[k] === undefined ? '' : (row as any)[k];
         cell = cell instanceof Date
           ? cell.toLocaleString()
           : cell.toString().replace(/"/g, '""');

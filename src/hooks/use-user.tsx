@@ -46,7 +46,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   const updateUserState = useCallback((userData: User | null) => {
-    setLoading(true);
     setUser(userData);
     if (userData) {
       const storedRole = localStorage.getItem('userRole') as Role;
@@ -70,11 +69,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdmin(false);
       localStorage.removeItem('userRole');
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
     if (!auth || !db) return;
+    setLoading(true);
 
     errorEmitter.on('permission-error', (error: FirestorePermissionError) => {
       console.error("Intercepted Firestore Permission Error:", error);
@@ -86,7 +85,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      setLoading(true);
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
@@ -224,7 +222,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole: handleSetRole,
     logout: handleLogout,
     login: handleLogin,
-  }), [user, role, isAdmin, loading, setUser]);
+  }), [user, role, isAdmin, loading]);
   
   const publicPaths = ['/login', '/'];
   const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
