@@ -1,4 +1,6 @@
 
+'use server';
+
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as express from "express";
@@ -178,9 +180,13 @@ export const onJobCompleted = functions.firestore
             const platinumTierPoints = settings.platinumTierPoints || 2000;
 
             let pointsEarned = pointsForCompletion;
-            if (afterData.rating === 5) pointsEarned += pointsFor5Star;
-            else if (afterData.rating === 4) pointsEarned += pointsFor4Star;
-            else if (afterData.rating === 1) pointsEarned += penaltyFor1Star;
+            if (afterData.rating === 5) {
+                pointsEarned += pointsFor5Star;
+            } else if (afterData.rating === 4) {
+                pointsEarned += pointsFor4Star;
+            } else if (afterData.rating === 1) {
+                pointsEarned += penaltyFor1Star;
+            }
 
             try {
                 await db.runTransaction(async (transaction) => {
@@ -464,6 +470,16 @@ export const handleExpiredAwards = functions.pubsub.schedule(
     const timedOutInstallerIds = (job.selectedInstallers || []).map(
         (s: { installerId: string; }) => s.installerId
     );
+
+    // Notify each installer whose offer expired
+    timedOutInstallerIds.forEach(installerId => {
+      notificationPromises.push(sendNotification(
+          installerId,
+          "Offer Expired",
+          `Your offer for job "${job.title}" has expired. You can request to re-apply from the job page.`,
+          `/dashboard/jobs/${doc.id}`
+      ));
+    });
 
     batch.update(doc.ref, {
       status: "Bidding Closed",
