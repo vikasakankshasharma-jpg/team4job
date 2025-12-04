@@ -84,6 +84,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     avatarUrl: PlaceHolderImages[0].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/admin/200/200',
     address: { house: '1', street: 'Admin Lane', cityPincode: '110001, Connaught Place S.O', fullAddress: '1 Admin Lane, Connaught Place, New Delhi, 110001' },
+    district: 'New Delhi',
     pincodes: { residential: '110001' }
   },
   { // 1: Job Giver
@@ -96,6 +97,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     avatarUrl: PlaceHolderImages[1].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/priya/200/200',
     address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O', fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001' },
+    district: 'Bengaluru',
     pincodes: { residential: '560001' }
   },
     { // 2: Dual Role (Installer/Job Giver)
@@ -108,6 +110,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     avatarUrl: PlaceHolderImages[2].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/vikram/200/200',
     address: { house: '42/C', street: 'Link Road', cityPincode: '400053, Andheri West S.O', fullAddress: '42/C, Link Road, Andheri West, Mumbai, 400053' },
+    district: 'Mumbai',
     pincodes: { residential: '400053', office: '400063' },
     installerProfile: {
       tier: 'Gold',
@@ -132,6 +135,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     avatarUrl: PlaceHolderImages[3].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/ravi/200/200',
     address: { house: 'Plot 88', street: 'Sector 18', cityPincode: '122022, Gurgaon S.O', fullAddress: 'Plot 88, Sector 18, Gurgaon, Haryana, 122022' },
+    district: 'Gurgaon',
     pincodes: { residential: '122022' },
     installerProfile: {
       tier: 'Bronze',
@@ -155,6 +159,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     avatarUrl: PlaceHolderImages[4].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/sunita/200/200',
     address: { house: 'Flat 101', street: 'Koregaon Park', cityPincode: '411001, Pune S.O', fullAddress: 'Flat 101, Koregaon Park, Pune, 411001' },
+    district: 'Pune',
     pincodes: { residential: '411001' },
   },
   { // 5: New Installer
@@ -167,6 +172,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     avatarUrl: PlaceHolderImages[5].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/arjun/200/200',
     address: { house: '15/A', street: 'Salt Lake', cityPincode: '700091, Salt Lake S.O', fullAddress: '15/A, Salt Lake, Kolkata, 700091' },
+    district: 'Kolkata',
     pincodes: { residential: '700091' },
     installerProfile: {
       tier: 'Bronze',
@@ -188,6 +194,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     avatarUrl: PlaceHolderImages[6].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/anil/200/200',
     address: { house: '7, Janpath', street: 'Connaught Place', cityPincode: '110001, Connaught Place S.O', fullAddress: '7, Janpath, Connaught Place, New Delhi, 110001' },
+    district: 'New Delhi',
     pincodes: { residential: '110001' },
     installerProfile: {
       tier: 'Bronze',
@@ -210,6 +217,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     avatarUrl: PlaceHolderImages[7].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/sanjay/200/200',
     address: { house: 'House 55', street: 'Sector 22', cityPincode: '160022, Sector 22 S.O', fullAddress: 'House 55, Sector 22, Chandigarh, 160022' },
+    district: 'Chandigarh',
     pincodes: { residential: '160022' },
     installerProfile: {
       tier: 'Silver',
@@ -231,6 +239,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     avatarUrl: PlaceHolderImages[0].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/deepika/200/200',
     address: { house: 'Penthouse A', street: 'Marine Drive', cityPincode: '400002, Kalbadevi S.O', fullAddress: 'Penthouse A, Marine Drive, Mumbai, 400002' },
+    district: 'Mumbai',
     pincodes: { residential: '400002' },
     installerProfile: {
       tier: 'Platinum',
@@ -252,6 +261,7 @@ const mockUsers: Omit<User, 'id'>[] = [
     avatarUrl: PlaceHolderImages[1].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/amit/200/200',
     address: { house: '10B', street: 'Support Street', cityPincode: '110001, Connaught Place S.O', fullAddress: '10B, Support Street, Connaught Place, New Delhi, 110001' },
+    district: 'New Delhi',
     pincodes: { residential: '110001' }
   },
 ];

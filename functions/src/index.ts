@@ -510,7 +510,7 @@ export const handleExpiredAwards = functions.pubsub.schedule(
 
 /**
  * Triggered when a user's verification status changes.
- * Awards the "Founding Installer" badge to the first 100 verified installers.
+ * Awards the "Founding Installer" badge to the first 100 verified installers in a district.
  */
 export const onUserVerified = functions.firestore
     .document("users/{userId}")
@@ -521,45 +521,35 @@ export const onUserVerified = functions.firestore
 
         const wasJustVerified = (beforeData.installerProfile?.verified === false || beforeData.installerProfile?.verified === undefined) && afterData.installerProfile?.verified === true;
 
-        if (wasJustVerified && !afterData.isFoundingInstaller) {
-            console.log(`User ${userId} has just been verified. Checking for Founding Installer eligibility.`);
+        if (wasJustVerified && !afterData.isFoundingInstaller && afterData.district) {
+            console.log(`User ${userId} in district ${afterData.district} has just been verified. Checking for Founding Installer eligibility.`);
             const db = admin.firestore();
+            
             try {
-                 // Query must be done outside the transaction
-                const foundingInstallersQuery = db.collection("users").where("isFoundingInstaller", "==", true);
+                // Query must be done outside the transaction
+                const foundingInstallersQuery = db.collection("users")
+                    .where("isFoundingInstaller", "==", true)
+                    .where("district", "==", afterData.district);
                 const foundingInstallersSnap = await foundingInstallersQuery.get();
 
                 if (foundingInstallersSnap.size < 100) {
                     await db.runTransaction(async (transaction) => {
-                        // Re-check inside transaction to be safe, though less critical now
+                        console.log(`Founding Installer count in ${afterData.district} is ${foundingInstallersSnap.size}. Awarding badge to user ${userId}.`);
                         const userRef = db.collection("users").doc(userId);
                         transaction.update(userRef, { isFoundingInstaller: true });
                     });
                     
-                    console.log(`Awarding badge to user ${userId}.`);
-                    
                     await sendNotification(
                         userId,
                         "Congratulations, You're a Founding Installer!",
-                        "You are one of the first 100 installers to be verified on our platform. Enjoy your exclusive badge!",
+                        `You are one of the first 100 installers in ${afterData.district} to be verified. Enjoy your exclusive badge!`,
                         "/dashboard/profile"
                     );
                 } else {
-                     console.log("Founding Installer program is full. No badge awarded.");
+                     console.log(`Founding Installer program in ${afterData.district} is full. No badge awarded.`);
                 }
             } catch (error) {
                 console.error(`Error in Founding Installer transaction for user ${userId}:`, error);
             }
         }
     });
-
-    
-
-      
-
-    
-
-    
-
-    
-
