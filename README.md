@@ -1,3 +1,4 @@
+
 # MASTER PROMPT: CCTV Job Connect PWA (v2.0)
 
 This document serves as the master prompt and detailed specification for building and extending the "CCTV Job Connect" Progressive Web App (PWA). This is a living document reflecting the platform's complete architecture as of the latest update.
@@ -31,12 +32,12 @@ This document serves as the master prompt and detailed specification for buildin
     *   **Direct Award (Private Bid Request):** A Job Giver can skip public bidding by entering a known installer's public ID. This sends a *private request to bid* on the job directly to that installer. The job is not visible to others.
 
 2.  **Bidding & Private Offers:**
-    *   **Public Bidding (Installer):** Verified installers browse public jobs and place bids, specifying their price, a cover letter, and a **service warranty period** (e.g., "30 Days"). An "AI Bid Assistant" helps installers craft a professional and persuasive cover letter.
+    *   **Public Bidding (Installer):** Verified installers browse public jobs and place bids, specifying their price and a cover letter. An "AI Bid Assistant" helps installers craft a professional and persuasive cover letter.
     *   **Private Bidding (Installer):** An installer who receives a Direct Award request is prompted to submit their bid privately. This bid becomes the official price for the job.
     *   **Marketplace Integrity (Anti-Self-Bidding):** The system strictly prohibits a user from bidding on a job they themselves have posted, preventing reputation farming and price manipulation.
 
 3.  **Awarding & Bid Analysis (Job Giver):**
-    *   After the deadline (or after a private bid is received), the Job Giver reviews all bids.
+    *   After the bidding deadline (or after a private bid is received), the Job Giver reviews all bids.
     *   **AI Bid Analysis (Premium Feature):** A subscribed Job Giver can use an AI-powered tool to analyze all bids. The analysis provides a summary, a top recommendation, a "best value" option, and red flags.
     *   **Relationship-Aware Bidding:** The bidding UI and AI analysis are "Relationship-Aware." Bids from installers previously marked as "Favorite" or "Blocked" by the Job Giver are clearly badged, and the AI heavily weights this personal trust signal in its recommendations.
     *   **Strategic Awarding:** The Job Giver can select up to 3 installers and choose their award strategy:
@@ -54,7 +55,7 @@ This document serves as the master prompt and detailed specification for buildin
     *   **Additional Tasks:** Either party can propose an additional task. The installer provides a quote, which the Job Giver must approve and fund before work begins.
 
 6.  **Dual-Confirmation Completion & Payout:**
-    *   **Installer Submission:** The installer uploads "Proof of Work" (photos/videos) through the platform and submits the job for review.
+    *   **Installer Submission:** The installer uploads "Proof of Work" (photos/videos) through the platform and submits the job for review, changing the status to `Pending Confirmation`.
     *   **Job Giver Approval:** The Job Giver receives a notification, reviews the proof, and must explicitly click "Approve & Release Payment."
     *   **Automated Payout:** The Job Giver's approval is the final trigger. It changes the job status to "Completed" and initiates an API call to Cashfree's Payouts product, which automatically splits the payment from the settlement account: the installer receives their earnings, and the platform receives its commission.
 
@@ -63,18 +64,12 @@ This document serves as the master prompt and detailed specification for buildin
     *   Upon completion, a formal invoice from the Installer to the Job Giver is automatically generated and made available on the job details page.
 
 ### Exception & Recovery Workflows
-*   **Mutual Cancellation (The "Cancellation Deadlock" Fix):**
-    *   To prevent unnecessary disputes for mutually agreed-upon cancellations, a new workflow has been introduced for jobs that are `In Progress`.
-    *   Either party can initiate a cancellation request, changing the job status to `Cancellation Proposed`.
-    *   The other party is notified and must either "Accept" or "Decline" the request.
-    *   If accepted, the job is marked as `Cancelled`, and the Job Giver is prompted for a refund. If declined, the job reverts to `In Progress`. This avoids the confrontational dispute system for cooperative cases.
-*   **Offer Expiration (Installer):**
-    *   If an installer fails to accept an offer within the time limit, they are penalized with a small reputation point deduction.
-    *   They are then given a one-time option on the job page to "Request to Re-apply," which notifies the Job Giver and makes them eligible for selection again.
+*   **Mutual Cancellation:** Either party can initiate a cancellation request for `In Progress` jobs. The other party is notified to "Accept" or "Decline." If accepted, the job is marked `Cancelled`, and the Job Giver is prompted for a refund.
+*   **Offer Expiration (Installer):** If an installer fails to accept an offer within the time limit, they are penalized with a small reputation point deduction. They are then given a one-time option on the job page to "Request to Re-apply," which notifies the Job Giver and makes them eligible for selection again.
 *   **Funding Timeout (Job Giver):** A scheduled function (`handleUnfundedJobs`) runs every 6 hours. If a "Pending Funding" job's `fundingDeadline` passes, it is automatically "Cancelled," and both parties are notified.
 *   **Unbid Jobs (Job Giver):** If a job receives no bids, its status becomes "Unbid." The Job Giver is presented with two recovery options:
     *   **Repost:** Instantly create a new job using the old one as a template.
-    *   **AI Smart Roster (Premium Feature):** A subscribed Job Giver can use an AI tool to find the top 3-5 matching installers from the entire platform. They can then re-list the job and send private invitations to this curated roster.
+    *   **Promote & Re-list:** Add a commission-free `travelTip` to the job and set a new deadline to attract a wider range of installers.
 
 ### Platform Management & Monetization
 *   **Admin Dashboard & Reports:** A comprehensive backend for administrators to manage the platform, featuring KPI cards, charts on user growth and financials, and data export capabilities.
@@ -133,6 +128,7 @@ To test the platform's features, use the following credentials. All accounts are
 │   │   ├── page.tsx         # Role-specific dashboard homepage
 │   │   ├── all-jobs/        # [Admin] View all jobs
 │   │   ├── blacklist/       # [Admin] Manage blacklisted users/pincodes
+│   │   ├── billing/         # [User] Manage subscription
 │   │   ├── coupons/         # [Admin] Manage coupons
 │   │   ├── disputes/        # View/manage disputes
 │   │   ├── installers/      # [Job Giver] Installer Directory
@@ -164,7 +160,7 @@ To test the platform's features, use the following credentials. All accounts are
 │   └── ...                  # Other custom hooks
 ├── lib/
 │   ├── firebase/
-│   │   ├── client-provider.ts # Client-side Firebase initialization
+│   │   ├── client-provider.tsx # Client-side Firebase initialization
 │   │   ├── server-init.ts   # Server-side Firebase Admin initialization
 │   │   └── seed.ts          # Database seeding script
 │   ├── types.ts             # All TypeScript type definitions for Firestore entities
