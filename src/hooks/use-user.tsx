@@ -175,6 +175,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         router.push('/dashboard');
     } else if (role === 'Support Team' && !(isSupportPage || pathname === '/dashboard' || pathname.startsWith('/dashboard/profile'))) {
         router.push('/dashboard/disputes');
+    } else if (userIsAdmin && (isInstallerPage || isJobGiverPage)) {
+        router.push('/dashboard');
     } else if (!userIsAdmin && isAdminPage) {
         router.push('/dashboard');
     }
