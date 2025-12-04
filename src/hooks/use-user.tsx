@@ -45,7 +45,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const pathname = usePathname();
   const { toast } = useToast();
 
-  const updateUserState = (userData: User | null) => {
+  const updateUserState = useCallback((userData: User | null) => {
     setUser(userData);
     if (userData) {
       const storedRole = localStorage.getItem('userRole') as Role;
@@ -69,7 +69,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdmin(false);
       localStorage.removeItem('userRole');
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (!auth || !db) return;
@@ -167,18 +167,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isAdminPage = adminOnlyPaths.some(p => pathname.startsWith(p));
     const isSupportPage = supportOnlyPaths.some(p => pathname.startsWith(p));
 
-    
+    const userIsAdmin = user.roles.includes("Admin");
+
     if (role === 'Job Giver' && isInstallerPage) {
         router.push('/dashboard');
     } else if (role === 'Installer' && isJobGiverPage) {
         router.push('/dashboard');
     } else if (role === 'Support Team' && !(isSupportPage || pathname === '/dashboard' || pathname.startsWith('/dashboard/profile'))) {
         router.push('/dashboard/disputes');
-    } else if (role !== 'Admin' && isAdminPage) {
+    } else if (!userIsAdmin && isAdminPage) {
         router.push('/dashboard');
     }
 
-  }, [role, pathname, user, router, isAdmin, loading]);
+  }, [role, pathname, user, router, loading]);
 
 
   const handleSetRole = (newRole: Role) => {
@@ -221,7 +222,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole: handleSetRole,
     logout: handleLogout,
     login: handleLogin,
-  }), [user, role, isAdmin, loading, setUser]);
+  }), [user, role, isAdmin, loading]);
   
   const publicPaths = ['/login', '/'];
   const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
