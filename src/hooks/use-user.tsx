@@ -46,6 +46,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   const updateUserState = useCallback((userData: User | null) => {
+    setLoading(true);
     setUser(userData);
     if (userData) {
       const storedRole = localStorage.getItem('userRole') as Role;
@@ -69,6 +70,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdmin(false);
       localStorage.removeItem('userRole');
     }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -222,7 +224,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole: handleSetRole,
     logout: handleLogout,
     login: handleLogin,
-  }), [user, role, isAdmin, loading, handleSetRole, handleLogout, handleLogin]);
+  }), [user, role, isAdmin, loading, setUser]);
   
   const publicPaths = ['/login', '/'];
   const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
@@ -255,5 +257,3 @@ export function useUser() {
 
 // This is kept for non-hook usage, but useAuth and useFirestore are preferred.
 export { useFirebase, useAuth, useFirestore };
-
-    
