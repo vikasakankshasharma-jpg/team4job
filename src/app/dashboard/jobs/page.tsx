@@ -157,7 +157,7 @@ export default function BrowseJobsPage() {
             return false;
         }
         // Budget filter
-        if (job.budget.max < budget[0] || job.budget.min > budget[1]) {
+        if (job.budget && (job.budget.max < budget[0] || job.budget.min > budget[1])) {
             return false;
         }
         // Skills filter
@@ -415,3 +415,5 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
+
+    

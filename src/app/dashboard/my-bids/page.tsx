@@ -357,3 +357,5 @@ function MyBidsPageContent() {
 export default function MyBidsPage() {
     return <MyBidsPageContent />
 }
+
+    

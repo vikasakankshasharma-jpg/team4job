@@ -190,9 +190,14 @@ export const onJobCompleted = functions.firestore
 
                     const monthYear = new Date().toLocaleString("default", { month: "long", year: "numeric" });
                     const history = installerData.installerProfile.reputationHistory || [];
-                    const monthIndex = history.findIndex((h: { month: string; }) => h.month === monthYear);
-                    if (monthIndex > -1) history[monthIndex].points = newPoints;
-                    else history.push({ month: monthYear, points: newPoints });
+                    const monthIndex = history.findIndex((h) => h.month === monthYear);
+                    
+                    if (monthIndex > -1) {
+                        history[monthIndex].points += pointsEarned;
+                    } else {
+                        const lastMonth = history.length > 0 ? history[history.length - 1] : { points: 0 };
+                        history.push({ month: monthYear, points: lastMonth.points + pointsEarned });
+                    }
                     if (history.length > 12) history.shift();
 
                     const currentReviews = installerData.installerProfile.reviews || 0;
@@ -524,5 +529,7 @@ export const onUserVerified = functions.firestore
     
 
       
+
+    
 
     

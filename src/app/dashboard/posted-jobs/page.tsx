@@ -409,14 +409,23 @@ export default function PostedJobsPage() {
   const unbidJobs = jobs.filter(job => job.status === 'Unbid').sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
   const archivedJobs = jobs.filter(job => job.status === 'Completed' || job.status === 'Cancelled').sort((a,b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
 
+  const pageTitle = tab === 'active' ? `My Active Jobs (${activeJobs.length})` : tab === 'unbid' ? `Unbid Jobs (${unbidJobs.length})` : `Archived Jobs (${archivedJobs.length})`;
 
   return (
      <Tabs defaultValue={tab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="active">Active ({activeJobs.length})</TabsTrigger>
-            <TabsTrigger value="unbid">Unbid ({unbidJobs.length})</TabsTrigger>
-            <TabsTrigger value="archived">Archived ({archivedJobs.length})</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+            <TabsList className="grid w-full max-w-md grid-cols-3">
+                <TabsTrigger value="active">Active ({activeJobs.length})</TabsTrigger>
+                <TabsTrigger value="unbid">Unbid ({unbidJobs.length})</TabsTrigger>
+                <TabsTrigger value="archived">Archived ({archivedJobs.length})</TabsTrigger>
+            </TabsList>
+            <Button asChild>
+                <Link href="/dashboard/post-job">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Post New Job
+                </Link>
+            </Button>
+        </div>
         <TabsContent value="active">
           <PostedJobsTable 
             jobs={activeJobs}
@@ -450,3 +459,5 @@ export default function PostedJobsPage() {
       </Tabs>
   )
 }
+
+    
