@@ -45,7 +45,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const pathname = usePathname();
   const { toast } = useToast();
 
-  const updateUserState = useCallback((userData: User | null) => {
+  const updateUserState = (userData: User | null) => {
     setUser(userData);
     if (userData) {
       const storedRole = localStorage.getItem('userRole') as Role;
@@ -69,8 +69,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdmin(false);
       localStorage.removeItem('userRole');
     }
-    setLoading(false);
-  }, []);
+  };
 
   useEffect(() => {
     if (!auth || !db) return;
@@ -119,14 +118,17 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
              toast({ title: 'Login Error', description: 'Could not find your user profile. Please contact support.', variant: 'destructive' });
              signOut(auth).then(() => updateUserState(null));
            }
+           setLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
             signOut(auth).then(() => updateUserState(null));
+            setLoading(false);
         });
 
         return () => unsubscribeDoc();
       } else {
         updateUserState(null);
+        setLoading(false);
       }
     });
 
