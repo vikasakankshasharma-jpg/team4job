@@ -413,16 +413,16 @@ export default function PostedJobsPage() {
   return (
      <Tabs defaultValue={tab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="unbid">Unbid</TabsTrigger>
-            <TabsTrigger value="archived">Archived</TabsTrigger>
+            <TabsTrigger value="active">Active ({activeJobs.length})</TabsTrigger>
+            <TabsTrigger value="unbid">Unbid ({unbidJobs.length})</TabsTrigger>
+            <TabsTrigger value="archived">Archived ({archivedJobs.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="active">
           <PostedJobsTable 
             jobs={activeJobs}
             title="My Active Jobs"
             description="Manage your job postings and review bids from installers."
-            footerText={`Showing 1-${activeJobs.length} of ${activeJobs.length} active jobs`}
+            footerText={`You have ${activeJobs.length} active jobs.`}
             loading={loading}
             onUpdate={fetchJobs}
           />
@@ -442,7 +442,7 @@ export default function PostedJobsPage() {
             jobs={archivedJobs}
             title="My Archived Jobs"
             description="A history of your completed or cancelled projects."
-            footerText={`Showing 1-${archivedJobs.length} of ${archivedJobs.length} archived jobs`}
+            footerText={`You have ${archivedJobs.length} archived jobs.`}
             loading={loading}
             onUpdate={fetchJobs}
           />
