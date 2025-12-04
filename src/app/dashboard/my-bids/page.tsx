@@ -7,7 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -329,7 +329,7 @@ function MyBidsPageContent() {
                     filteredBids.map(bid => {
                       const job = jobsById.get(bid.jobId);
                       if (!job || !user) return null; 
-                      return <MyBidRow key={bid.id} bid={bid} job={job} user={user} />
+                      return <MyBidRow key={bid.id || bid.jobId} bid={bid} job={job} user={user} />
                     })
                   ) : (
                     <TableRow>
@@ -351,7 +351,7 @@ function MyBidsPageContent() {
                         filteredBids.map(bid => {
                             const job = jobsById.get(bid.jobId);
                             if (!job || !user) return null;
-                            return <MyBidCard key={bid.id} bid={bid} job={job} user={user} />;
+                            return <MyBidCard key={bid.id || bid.jobId} bid={bid} job={job} user={user} />;
                         })
                     ) : (
                         <div className="col-span-full text-center py-10 text-muted-foreground">

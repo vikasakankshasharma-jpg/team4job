@@ -46,7 +46,7 @@ service cloud.firestore {
     match /jobs/{jobId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (get(resource.data.jobGiver).id == request.auth.uid || isRequestingUserAdmin());
+      allow update: if isSignedIn() && (resource.data.jobGiver.id == request.auth.uid || isRequestingUserAdmin());
       allow delete: if isRequestingUserAdmin();
     }
 
