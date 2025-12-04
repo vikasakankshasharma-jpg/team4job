@@ -525,30 +525,29 @@ export const onUserVerified = functions.firestore
             console.log(`User ${userId} has just been verified. Checking for Founding Installer eligibility.`);
             const db = admin.firestore();
             try {
-                await db.runTransaction(async (transaction) => {
-                    const foundingInstallersQuery = db.collection("users").where("isFoundingInstaller", "==", true);
-                    const foundingInstallersSnap = await transaction.get(foundingInstallersQuery);
+                 // Query must be done outside the transaction
+                const foundingInstallersQuery = db.collection("users").where("isFoundingInstaller", "==", true);
+                const foundingInstallersSnap = await foundingInstallersQuery.get();
 
-                    if (foundingInstallersSnap.size < 100) {
+                if (foundingInstallersSnap.size < 100) {
+                    await db.runTransaction(async (transaction) => {
                         console.log(`Founding Installer count is ${foundingInstallersSnap.size}. Awarding badge to user ${userId}.`);
                         const userRef = db.collection("users").doc(userId);
                         transaction.update(userRef, { isFoundingInstaller: true });
+                    });
 
-                        // Notification will be sent outside the transaction after it commits.
-                    } else {
-                        console.log("Founding Installer program is full. No badge awarded.");
+                    // Re-fetch the user doc to confirm the badge was awarded before notifying.
+                    const finalUserDoc = await db.collection("users").doc(userId).get();
+                    if (finalUserDoc.data()?.isFoundingInstaller) {
+                        await sendNotification(
+                            userId,
+                            "Congratulations, You're a Founding Installer!",
+                            "You are one of the first 100 installers to be verified on our platform. Enjoy your exclusive badge!",
+                            "/dashboard/profile"
+                        );
                     }
-                });
-
-                // Re-fetch the user doc to confirm the badge was awarded before notifying.
-                const finalUserDoc = await db.collection("users").doc(userId).get();
-                if (finalUserDoc.data()?.isFoundingInstaller) {
-                    await sendNotification(
-                        userId,
-                        "Congratulations, You're a Founding Installer!",
-                        "You are one of the first 100 installers to be verified on our platform. Enjoy your exclusive badge!",
-                        "/dashboard/profile"
-                    );
+                } else {
+                     console.log("Founding Installer program is full. No badge awarded.");
                 }
             } catch (error) {
                 console.error(`Error in Founding Installer transaction for user ${userId}:`, error);
@@ -565,3 +564,4 @@ export const onUserVerified = functions.firestore
     
 
     
+
