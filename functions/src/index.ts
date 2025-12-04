@@ -520,5 +520,3 @@ export const onUserVerified = functions.firestore
             }
         }
     });
-
-    
