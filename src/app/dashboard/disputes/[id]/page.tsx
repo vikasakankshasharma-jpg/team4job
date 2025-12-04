@@ -89,7 +89,7 @@ function PageSkeleton() {
 }
 
 export default function DisputeDetailPage() {
-  const { user, role, isAdmin } = useUser();
+  const { user, role, isAdmin, loading: userLoading } = useUser();
   const { db, storage } = useFirebase();
   const params = useParams();
   const id = params.id as string;
@@ -170,7 +170,7 @@ export default function DisputeDetailPage() {
     fetchDisputeAndTransaction();
   }, [id, db]);
   
-  if (loading) {
+  if (loading || userLoading) {
     return <PageSkeleton />;
   }
 

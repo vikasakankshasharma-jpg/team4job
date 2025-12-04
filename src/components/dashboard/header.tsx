@@ -38,6 +38,8 @@ import { HelpDialog } from "../help-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useSearch } from "@/hooks/use-search";
 import { Badge } from "../ui/badge";
+import { toDate } from "@/lib/utils";
+import { differenceInDays } from "date-fns";
 
 const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
@@ -144,6 +146,8 @@ export function Header() {
     }
     return null;
   }
+  
+  const daysLeft = user?.subscription?.expiresAt ? differenceInDays(toDate(user.subscription.expiresAt), new Date()) : 0;
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -203,19 +207,17 @@ export function Header() {
           </nav>
         </SheetContent>
       </Sheet>
-      <div className="flex items-center gap-2">
-        <Breadcrumb className="hidden md:flex">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/dashboard">Dashboard</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            {renderBreadcrumbs()}
-          </BreadcrumbList>
-        </Breadcrumb>
-        {user?.subscription?.planId === 'trial' && <Badge variant="outline">Trial</Badge>}
-      </div>
+      <Breadcrumb className="hidden md:flex">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/dashboard">Dashboard</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          {renderBreadcrumbs()}
+        </BreadcrumbList>
+      </Breadcrumb>
+      {user?.subscription?.planId === 'trial' && daysLeft > 0 && <Badge variant="warning">Trial ({daysLeft} days left)</Badge>}
       <div className="relative ml-auto flex items-center gap-2 md:grow-0">
          {pathname.startsWith('/dashboard/users') || pathname.startsWith('/dashboard/jobs') || pathname.startsWith('/dashboard/all-jobs') ? (
             <>
