@@ -1,7 +1,7 @@
 
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { Job } from "./types";
+import { Job, User } from "./types";
 import { Timestamp } from "firebase/firestore";
 
 export function cn(...inputs: ClassValue[]) {
@@ -104,4 +104,30 @@ export function validateMessageContent(message: string): { isValid: boolean; rea
     }
 
     return { isValid: true };
+}
+
+const getRefId = (ref: any): string | null => {
+  if (!ref) return null;
+  if (typeof ref === 'string') return ref;
+  return ref.id || null;
+}
+
+export const getMyBidStatus = (job: Job, user: User): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
+    const awardedId = getRefId(job.awardedInstaller);
+    const won = awardedId === user.id;
+
+    if (won) {
+        if (job.status === 'Completed') return { text: 'Completed & Won', variant: 'success' };
+        if (job.status === 'In Progress') return { text: 'In Progress', variant: 'info' };
+        if (job.status === 'Awarded') return { text: 'Awarded to You', variant: 'success' };
+    }
+
+    if (job.status === 'Cancelled') return { text: 'Cancelled', variant: 'destructive' };
+    if (job.status === 'Open for Bidding') return { text: 'Bidded', variant: 'default' };
+
+    if ((job.status === 'Bidding Closed' || job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') && !won) {
+        return { text: 'Not Selected', variant: 'destructive' };
+    }
+    
+    return { text: job.status, variant: getStatusVariant(job.status) };
 }

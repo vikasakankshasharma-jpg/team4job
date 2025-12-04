@@ -15,16 +15,18 @@ import type { Job, User } from "@/lib/types";
 import { MapPin, IndianRupee, Clock, Users, User as UserIcon, Star, Gift } from "lucide-react";
 import Link from "next/link";
 import { format, formatDistanceToNow } from 'date-fns';
-import { getStatusVariant, toDate } from "@/lib/utils";
+import { getStatusVariant, toDate, getMyBidStatus } from "@/lib/utils";
 import React from "react";
 import { AnimatedAvatar } from "./ui/animated-avatar";
 import { CardDescription } from "./ui/card";
+import { useUser } from "@/hooks/use-user";
 
 type JobCardProps = {
   job: Job;
 };
 
 export function JobCard({ job }: JobCardProps) {
+  const { user } = useUser();
   const [timeRemaining, setTimeRemaining] = React.useState('');
   const [postedAt, setPostedAt] = React.useState('');
 
@@ -37,7 +39,11 @@ export function JobCard({ job }: JobCardProps) {
     }
   }, [job.deadline, job.postedAt]);
 
-  const statusVariant = getStatusVariant(job.status);
+  const hasBidded = user && job.bidderIds?.includes(user.id);
+  const myBidStatus = hasBidded && user ? getMyBidStatus(job, user) : null;
+  
+  const displayStatus = myBidStatus ? myBidStatus.text : job.status;
+  const statusVariant = myBidStatus ? myBidStatus.variant : getStatusVariant(job.status);
   
   const getButtonText = (status: Job['status']) => {
     switch (status) {
@@ -68,7 +74,7 @@ export function JobCard({ job }: JobCardProps) {
           <div className="flex-1">
              <div className="flex items-center gap-2 mb-2">
                 <Badge variant={statusVariant} className="capitalize">
-                    {job.status}
+                    {displayStatus}
                 </Badge>
                 {job.travelTip && job.travelTip > 0 && (
                     <Badge variant="warning" className="gap-1"><Gift className="h-3 w-3" /> Tip Included</Badge>
