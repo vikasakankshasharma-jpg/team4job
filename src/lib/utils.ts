@@ -3,6 +3,7 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Job, User } from "./types";
 import { Timestamp } from "firebase/firestore";
+import { subMonths, format, parse } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -133,4 +134,87 @@ export const getMyBidStatus = (job: Job, user: User): { text: string; variant: "
     return { text: job.status, variant: getStatusVariant(job.status) };
 }
 
+export interface RankedInstaller extends User {
+    monthlyPoints: number;
+}
+
+/**
+ * Calculates monthly performance points for a list of installers and ranks them.
+ * 
+ * @param installers List of users (installers)
+ * @param referenceDate The date relative to which "last month" is calculated. Defaults to now.
+ * @returns Sorted list of installers with 'monthlyPoints' property.
+ */
+export function calculateMonthlyPerformance(installers: User[], referenceDate: Date = new Date()): RankedInstaller[] {
+    const lastMonthDate = subMonths(referenceDate, 1);
+    const lastMonthName = format(lastMonthDate, 'MMMM yyyy');
+
+    const twoMonthsAgoDate = subMonths(referenceDate, 2);
+    // We don't rely solely on exact name match for the baseline, but use it as a primary lookup
     
+    return installers
+        .filter(i => i.roles.includes('Installer') && i.installerProfile)
+        .map(installer => {
+            const history = installer.installerProfile?.reputationHistory || [];
+            
+            // 1. Find the cumulative points at the end of Last Month
+            let lastMonthPoints = 0;
+            const lastMonthEntry = history.find(h => h.month === lastMonthName);
+            
+            if (lastMonthEntry) {
+                lastMonthPoints = lastMonthEntry.points;
+            } else {
+                // If no entry for last month, we need to find the latest entry BEFORE or during last month
+                // Ideally, history is sorted. Let's assume chronological order.
+                // We reverse to find the latest applicable entry.
+                const relevantEntry = [...history].reverse().find(h => {
+                    const hDate = parse(h.month, 'MMMM yyyy', new Date());
+                    return hDate <= lastMonthDate; // Entries from last month or before
+                });
+                lastMonthPoints = relevantEntry ? relevantEntry.points : 0;
+            }
+
+            // 2. Find the cumulative points at the end of Two Months Ago (Baseline)
+            // This represents the points the user started the month with.
+            let baselinePoints = 0;
+            const twoMonthsAgoEntry = history.find(h => {
+                const hDate = parse(h.month, 'MMMM yyyy', new Date());
+                // We want the entry that represents the state at the END of the month prior to the calculation month.
+                // So if calculation month is March, we want points at end of February.
+                // Here "lastMonth" is the target month (e.g., February). "twoMonthsAgo" is January.
+                // So baseline is end of January.
+                return hDate.getMonth() === twoMonthsAgoDate.getMonth() && hDate.getFullYear() === twoMonthsAgoDate.getFullYear();
+            });
+
+            if (twoMonthsAgoEntry) {
+                baselinePoints = twoMonthsAgoEntry.points;
+            } else {
+                // Fallback: Find latest entry BEFORE the target month started
+                const relevantEntry = [...history].reverse().find(h => {
+                    const hDate = parse(h.month, 'MMMM yyyy', new Date());
+                    return hDate <= twoMonthsAgoDate;
+                });
+                baselinePoints = relevantEntry ? relevantEntry.points : 0;
+            }
+            
+            // If user has no history before the target month, baseline is 0.
+            // If user has no history at all, both are 0.
+            
+            // Calculate delta
+            const monthlyPoints = Math.max(0, lastMonthPoints - baselinePoints);
+            
+            return { ...installer, monthlyPoints };
+        })
+        .sort((a, b) => {
+            // 1. Sort by monthly points (descending)
+            if (b.monthlyPoints !== a.monthlyPoints) {
+                return b.monthlyPoints - a.monthlyPoints;
+            }
+            // 2. Sort by rating (descending)
+            if ((b.installerProfile?.rating || 0) !== (a.installerProfile?.rating || 0)) {
+                return (b.installerProfile?.rating || 0) - (a.installerProfile?.rating || 0);
+            }
+            // 3. Sort by memberSince (oldest first, so ascending)
+            return toDate(a.memberSince).getTime() - toDate(b.memberSince).getTime();
+        });
+}

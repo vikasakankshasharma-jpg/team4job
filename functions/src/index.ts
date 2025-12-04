@@ -26,33 +26,33 @@ export const api = functions.https.onRequest(app);
 async function sendNotification(
     userId: string, title: string, body: string, link?: string
 ) {
-  if (!userId) {
-    console.log("No user ID provided, skipping notification.");
-    return;
-  }
-
-  const userDoc = await admin.firestore().collection("users").doc(userId).get();
-  const userData = userDoc.data();
-
-  if (!userData || !userData.fcmTokens || userData.fcmTokens.length === 0) {
-    console.log(`User ${userId} has no FCM tokens. Cannot send notification.`);
-    return;
-  }
-
-  const payload: admin.messaging.MulticastMessage = {
-    notification: {
-      title,
-      body,
-    },
-    webpush: {
-      fcmOptions: {
-        link: link || "https://cctv-job-connect.web.app/dashboard",
-      },
-    },
-    tokens: userData.fcmTokens,
-  };
-
   try {
+    if (!userId) {
+      console.log("No user ID provided, skipping notification.");
+      return;
+    }
+
+    const userDoc = await admin.firestore().collection("users").doc(userId).get();
+    const userData = userDoc.data();
+
+    if (!userData || !userData.fcmTokens || userData.fcmTokens.length === 0) {
+      console.log(`User ${userId} has no FCM tokens. Cannot send notification.`);
+      return;
+    }
+
+    const payload: admin.messaging.MulticastMessage = {
+      notification: {
+        title,
+        body,
+      },
+      webpush: {
+        fcmOptions: {
+          link: link || "https://cctv-job-connect.web.app/dashboard",
+        },
+      },
+      tokens: userData.fcmTokens,
+    };
+
     console.log(
         `Sending notification to user ${userId} with tokens:`,
         userData.fcmTokens
@@ -61,7 +61,8 @@ async function sendNotification(
     console.log("Successfully sent message:", response);
     // You can also handle failures and remove invalid tokens here
   } catch (error) {
-    console.error("Error sending message:", error);
+    console.error(`Error sending notification to user ${userId}:`, error);
+    // Suppress error so calling functions don't fail
   }
 }
 
@@ -85,16 +86,20 @@ export const onBidCreated = functions.firestore
         const jobGiverId = afterData.jobGiver.id;
 
         if (newBid.installer && typeof newBid.installer.get === "function") {
-          const installerDoc = await newBid.installer.get();
-          const installerName = installerDoc.data()?.name || "An installer";
+          try {
+            const installerDoc = await newBid.installer.get();
+            const installerName = installerDoc.data()?.name || "An installer";
 
-          await sendNotification(
-              jobGiverId,
-              "New Bid on Your Job!",
-              `${installerName} placed a bid of ₹${newBid.amount} ` +
-              `on your job: "${afterData.title}"`,
-              `/dashboard/jobs/${context.params.jobId}`
-          );
+            await sendNotification(
+                jobGiverId,
+                "New Bid on Your Job!",
+                `${installerName} placed a bid of ₹${newBid.amount} ` +
+                `on your job: "${afterData.title}"`,
+                `/dashboard/jobs/${context.params.jobId}`
+            );
+          } catch (e) {
+             console.error("Error sending bid notification:", e);
+          }
         }
       }
     });
@@ -123,15 +128,19 @@ export const onPrivateMessageCreated = functions.firestore
           awardedInstallerId :
           jobGiverId;
 
-        const authorDoc = await newMessage.author.get();
-        const authorName = authorDoc.data()?.name || "Someone";
+        try {
+            const authorDoc = await newMessage.author.get();
+            const authorName = authorDoc.data()?.name || "Someone";
 
-        await sendNotification(
-            recipientId,
-            `New Message from ${authorName}`,
-            `You have a new message on job: "${afterData.title}"`,
-            `/dashboard/jobs/${context.params.jobId}`
-        );
+            await sendNotification(
+                recipientId,
+                `New Message from ${authorName}`,
+                `You have a new message on job: "${afterData.title}"`,
+                `/dashboard/jobs/${context.params.jobId}`
+            );
+        } catch (e) {
+            console.error("Error sending message notification:", e);
+        }
       }
     });
 
@@ -215,7 +224,9 @@ export const onJobCompleted = functions.firestore
                 });
 
                 console.log(`Successfully updated reputation for installer ${installerRef.id}. Awarded ${pointsEarned} points.`);
-                await sendNotification(installerRef.id, "Reputation Updated!", `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`, "/dashboard/profile");
+                
+                // Fire and forget notification
+                sendNotification(installerRef.id, "Reputation Updated!", `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`, "/dashboard/profile").catch(console.error);
 
                 // --- Pro Installer Promotion Logic ---
                 const installerDoc = await installerRef.get();
@@ -233,7 +244,7 @@ export const onJobCompleted = functions.firestore
                     if (completedJobsCount >= 5 && newAverageRating >= 4.5 && disputesSnap.empty) {
                         await installerRef.update({ "installerProfile.tier": "Silver" });
                         console.log(`Promoted installer ${installerRef.id} to Pro Installer (Silver).`);
-                        await sendNotification(installerRef.id, "Congratulations! You're a Pro Installer!", "You have been promoted to a Pro Installer for your excellent performance.", "/dashboard/profile");
+                        sendNotification(installerRef.id, "Congratulations! You're a Pro Installer!", "You have been promoted to a Pro Installer for your excellent performance.", "/dashboard/profile").catch(console.error);
                     }
                 }
 
@@ -297,7 +308,8 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
   });
 
   await batch.commit();
-  await Promise.all(notificationPromises);
+  // Ensure we don't crash if notifications fail
+  await Promise.allSettled(notificationPromises);
 
   console.log(`Cancelled ${snapshot.size} unfunded jobs.`);
   return null;
@@ -328,12 +340,12 @@ export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(
         await doc.ref.update({ deadline: newDeadline });
         console.log(`Stage 1: Extended deadline for job ${doc.id} by ${extensionHours} hours.`);
 
-        await sendNotification(
+        sendNotification(
             job.jobGiver.id,
             "We're still looking for you!",
             `Your job "${job.title}" has been promoted and its deadline extended to find the best installers. `,
             `/dashboard/jobs/${doc.id}`
-        );
+        ).catch(console.error);
     });
 
     // Stage 2: Manual Intervention
@@ -350,12 +362,12 @@ export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(
         console.log(`Stage 2: Job ${doc.id} moved to 'Needs Assistance'.`);
 
         // This could also trigger an email/alert to the admin team.
-        await sendNotification(
+        sendNotification(
             job.jobGiver.id,
             "Your Job Needs Personal Attention",
             `Our automated search for "${job.title}" has completed. Our support team will now personally assist you. `,
             `/dashboard/jobs/${doc.id}`
-        );
+        ).catch(console.error);
     });
 
     return null;
@@ -385,18 +397,20 @@ export const onJobDateChange = functions.firestore
           awardedInstallerId :
           jobGiverId;
 
-        const proposerDoc = await admin.firestore().collection("users")
-            .doc(proposerId).get();
-        const proposerName = proposerDoc.data()?.name || "The other party";
+        try {
+            const proposerDoc = await admin.firestore().collection("users")
+                .doc(proposerId).get();
+            const proposerName = proposerDoc.data()?.name || "The other party";
 
-        await sendNotification(
-            recipientId,
-            "Date Change Proposed",
-            `${proposerName} has proposed a new start date for job: "${
-              afterData.title
-            }".`,
-            `/dashboard/jobs/${jobId}`
-        );
+            await sendNotification(
+                recipientId,
+                "Date Change Proposed",
+                `${proposerName} has proposed a new start date for job: "${
+                afterData.title
+                }".`,
+                `/dashboard/jobs/${jobId}`
+            );
+        } catch (e) { console.error(e); }
       }
 
       // Date Change Accepted/Rejected
@@ -406,14 +420,14 @@ export const onJobDateChange = functions.firestore
         const proposerId = beforeData.dateChangeProposal.proposedBy ===
           "Job Giver" ? afterData.jobGiver.id : afterData.awardedInstaller.id;
 
-        await sendNotification(
+        sendNotification(
             proposerId,
             `Date Change ${wasAccepted ? "Accepted" : "Rejected"}`,
             `Your proposed date change for job "${afterData.title}" was ${
               wasAccepted ? "accepted" : "rejected"
             }.`,
             `/dashboard/jobs/${jobId}`
-        );
+        ).catch(console.error);
       }
     });
 
@@ -472,7 +486,7 @@ export const handleExpiredAwards = functions.pubsub.schedule(
   });
 
   await batch.commit();
-  await Promise.all(notificationPromises);
+  await Promise.allSettled(notificationPromises);
 
   console.log(`Processed ${snapshot.size} expired awards.`);
   return null;
