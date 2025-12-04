@@ -19,7 +19,7 @@ const badgeVariants = cva(
         success:
           "border-transparent bg-success text-success-foreground",
         warning:
-          "border-transparent bg-warning text-warning-foreground",
+          "border-transparent bg-amber-500 text-white hover:bg-amber-600",
         info:
           "border-transparent bg-info text-info-foreground",
       },
@@ -41,7 +41,3 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 export { Badge, badgeVariants }
-
-    
-
-  

@@ -5,6 +5,7 @@ import React, { createContext, useContext, useMemo } from 'react';
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 // --- Types ---
@@ -12,6 +13,7 @@ interface FirebaseContextValue {
   app: FirebaseApp;
   auth: Auth;
   db: Firestore;
+  storage: FirebaseStorage;
 }
 
 // --- Context ---
@@ -36,8 +38,9 @@ export const FirebaseClientProvider: React.FC<{ children: React.ReactNode }> = (
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const storage = getStorage(app);
 
-    return { app, auth, db };
+    return { app, auth, db, storage };
   }, []);
 
   return (
@@ -71,4 +74,12 @@ export const useFirestore = () => {
         throw new Error("useFirestore must be used within a FirebaseClientProvider");
     }
     return context.db;
+}
+
+export const useStorage = () => {
+    const context = useContext(FirebaseContext);
+    if (!context) {
+        throw new Error("useStorage must be used within a FirebaseClientProvider");
+    }
+    return context.storage;
 }
