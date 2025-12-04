@@ -239,7 +239,7 @@ export const onJobCompleted = functions.firestore
  * Handles scheduled cleanup of jobs that are stuck in "Pending Funding".
  * Runs every 6 hours.
  */
-export const handleStaleFunding = functions.pubsub.schedule(
+export const handleUnfundedJobs = functions.pubsub.schedule(
     "every 6 hours"
 ).onRun(async (context) => {
   console.log("Running scheduled function to handle stale funding...");
@@ -520,3 +520,5 @@ export const onUserVerified = functions.firestore
             }
         }
     });
+
+    
