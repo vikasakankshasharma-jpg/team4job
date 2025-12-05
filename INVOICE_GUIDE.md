@@ -27,11 +27,13 @@ When the Job Giver awards the job, they pay the **total project cost** into the 
 | ----------------------------------------- | ------------:|
 | Installer's Bid Amount                    |    ₹10,000.00  |
 | Travel Tip for Installer                  |     ₹1,000.00  |
+| **Total Service Value (Installer)**       | **₹11,000.00** |
+| GST on Service Value (18% of ₹11,000)     |     ₹1,980.00  |
 | Platform Fee (5% of Bid Amount)           |       ₹500.00  |
 | GST on Platform Fee (18% of ₹500)         |        ₹90.00  |
-| **Total Paid by Job Giver to Platform**   | **₹11,590.00** |
+| **Total Paid by Job Giver to Platform**   | **₹13,570.00** |
 
-*This entire amount is collected by the platform. The ₹11,000 portion for the installer is held until the job is successfully completed.*
+*This entire amount is collected by the platform. The portion for the installer (`₹11,000` + GST) is held until the job is successfully completed.*
 
 ---
 
@@ -127,3 +129,4 @@ Think of it this way:
 **`₹10,500 = (₹11,000) - (₹500)`**
 
 This method is standard practice in marketplaces and ensures all transactions are settled efficiently and transparently.
+
