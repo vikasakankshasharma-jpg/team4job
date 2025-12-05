@@ -84,21 +84,40 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     });
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
+        // --- Immediate check on auth change ---
+        try {
+            const initialUserDoc = await getDoc(userDocRef);
+            if (!initialUserDoc.exists()) {
+                toast({ title: 'Login Error', description: 'Could not find your user profile. Please contact support.', variant: 'destructive' });
+                signOut(auth);
+                return;
+            }
+
+            const userData = { id: initialUserDoc.id, ...initialUserDoc.data() } as User;
+
+            if (userData.status === 'deactivated' || userData.status === 'suspended') {
+                 toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
+                 signOut(auth);
+                 return;
+            }
+        } catch (e) {
+            console.error("Initial user fetch failed:", e);
+            signOut(auth);
+            return;
+        }
+        // --- End immediate check ---
+
         const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
            if (userDoc.exists()) {
              const userData = { id: userDoc.id, ...userDoc.data() } as User;
-             notFoundRetries.current.delete(firebaseUser.uid);
              
-             const blacklistQuery = query(collection(db, "blacklist"), where("value", "==", firebaseUser.uid), where("type", "==", "user"));
-             const blacklistSnapshot = await getDocs(blacklistQuery);
-             
-             if (!blacklistSnapshot.empty || userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && toDate(userData.suspensionEndDate) > new Date())) {
+             if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && toDate(userData.suspensionEndDate) > new Date())) {
                 toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
-                signOut(auth).then(() => updateUserState(null));
+                signOut(auth); // The snapshot listener will handle state cleanup
              } else {
                 updateUserState(userData);
                 // Update last login timestamp without triggering a full re-render cycle
@@ -107,21 +126,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
              }
            } else {
-              const currentRetries = notFoundRetries.current.get(firebaseUser.uid) || 0;
-              if (currentRetries < 3) { // Increased retries to 3
-                  notFoundRetries.current.set(firebaseUser.uid, currentRetries + 1);
-                  return; // Wait for next snapshot
-              }
-             
-             console.error("User document not found for authenticated user after retries:", firebaseUser.uid);
-             notFoundRetries.current.delete(firebaseUser.uid);
-             toast({ title: 'Login Error', description: 'Could not find your user profile. Please contact support.', variant: 'destructive' });
-             signOut(auth).then(() => updateUserState(null));
+             // This case should be rare now due to the initial getDoc, but kept as a fallback.
+             console.error("User document not found for authenticated user in snapshot listener:", firebaseUser.uid);
+             toast({ title: 'Login Error', description: 'Your user profile disappeared. Please contact support.', variant: 'destructive' });
+             signOut(auth);
            }
            setLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
-            signOut(auth).then(() => updateUserState(null));
+            signOut(auth);
             setLoading(false);
         });
 
@@ -257,3 +270,5 @@ export function useUser() {
 
 // This is kept for non-hook usage, but useAuth and useFirestore are preferred.
 export { useFirebase, useAuth, useFirestore };
+
+    
