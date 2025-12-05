@@ -1,4 +1,3 @@
-
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -9,9 +8,9 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Adding this to force a server restart and clear the cache
+  // Configured for Google Antigravity IDE
   serverRuntimeConfig: {
-    cacheBuster: '2024-07-30T10:00:00Z',
+    ide: 'antigravity',
   },
   images: {
     remotePatterns: [
