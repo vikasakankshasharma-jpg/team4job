@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import * as functions from "firebase-functions";
@@ -188,6 +189,9 @@ export const onJobCompleted = functions.firestore
                 pointsEarned += penaltyFor1Star;
             }
 
+            let finalAverageRating = 0;
+            let finalReviewCount = 0;
+
             try {
                 await db.runTransaction(async (transaction) => {
                     const installerDoc = await transaction.get(installerRef);
@@ -219,6 +223,9 @@ export const onJobCompleted = functions.firestore
                     const newReviewCount = currentReviews + 1;
                     const currentTotalRating = (installerData.installerProfile.rating || 0) * currentReviews;
                     const newAverageRating = (currentTotalRating + afterData.rating) / newReviewCount;
+                    
+                    finalAverageRating = newAverageRating;
+                    finalReviewCount = newReviewCount;
 
                     transaction.update(installerRef, {
                         "installerProfile.points": newPoints,
@@ -235,19 +242,14 @@ export const onJobCompleted = functions.firestore
                 sendNotification(installerRef.id, "Reputation Updated!", `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`, "/dashboard/profile").catch(console.error);
 
                 // --- Pro Installer Promotion Logic ---
+                // Re-fetch the document AFTER the transaction to get the latest data.
                 const installerDoc = await installerRef.get();
                 const installerData = installerDoc.data();
                 if (installerData && installerData.installerProfile.tier === "Bronze") {
-                    const completedJobsQuery = db.collection("jobs").where("awardedInstaller", "==", installerRef).where("status", "==", "Completed");
-                    const completedJobsSnap = await completedJobsQuery.get();
-                    const completedJobsCount = completedJobsSnap.size;
-                    
-                    const newAverageRating = installerData.installerProfile.rating || 0;
-
                     const disputesQuery = db.collection("disputes").where("parties.installerId", "==", installerRef.id).where("status", "!=", "Resolved");
                     const disputesSnap = await disputesQuery.get();
 
-                    if (completedJobsCount >= 5 && newAverageRating >= 4.5 && disputesSnap.empty) {
+                    if (finalReviewCount >= 5 && finalAverageRating >= 4.5 && disputesSnap.empty) {
                         await installerRef.update({ "installerProfile.tier": "Silver" });
                         console.log(`Promoted installer ${installerRef.id} to Pro Installer (Silver).`);
                         sendNotification(installerRef.id, "Congratulations! You're a Pro Installer!", "You have been promoted to a Pro Installer for your excellent performance.", "/dashboard/profile").catch(console.error);
@@ -322,62 +324,41 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
 });
 
 /**
- * Implements the "Job Rescue Plan" for jobs at risk of going unbid.
+ * Implements the "Job Rescue Plan" for jobs that have officially become "Unbid".
  * Runs every hour.
  */
 export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(async (context) => {
-    console.log("Running Job Rescue Plan...");
-    const now = admin.firestore.Timestamp.now();
+    console.log("Running Job Rescue Plan for Unbid jobs...");
     const db = admin.firestore();
 
-    // Stage 1: Auto-Extend & Promote
-    const stage1Query = db.collection("jobs")
-        .where("status", "==", "Open for Bidding")
-        .where("bids", "==", [])
-        .where("deadline", "<=", admin.firestore.Timestamp.fromMillis(now.toMillis() + 48 * 60 * 60 * 1000)); // Within 48 hours of deadline
+    // Query for jobs that are 'Unbid' and haven't been updated to 'Needs Assistance'
+    const unbidQuery = db.collection("jobs")
+        .where("status", "==", "Unbid");
 
-    const stage1Snapshot = await stage1Query.get();
+    const unbidSnapshot = await unbidQuery.get();
 
-    stage1Snapshot.forEach(async (doc) => {
-        const job = doc.data();
-        const extensionHours = job.isUrgent ? 6 : 24;
-        const newDeadline = admin.firestore.Timestamp.fromMillis(now.toMillis() + extensionHours * 60 * 60 * 1000);
+    if (unbidSnapshot.empty) {
+        console.log("No 'Unbid' jobs found needing assistance.");
+        return null;
+    }
 
-        await doc.ref.update({ deadline: newDeadline });
-        console.log(`Stage 1: Extended deadline for job ${doc.id} by ${extensionHours} hours.`);
-
-        sendNotification(
-            job.jobGiver.id,
-            "We're still looking for you!",
-            `Your job "${job.title}" has been promoted and its deadline extended to find the best installers. `,
-            `/dashboard/jobs/${doc.id}`
-        ).catch(console.error);
-    });
-
-    // Stage 2: Manual Intervention
-    const stage2Query = db.collection("jobs")
-        .where("status", "==", "Open for Bidding")
-        .where("bids", "==", [])
-        .where("deadline", "<=", now);
-
-    const stage2Snapshot = await stage2Query.get();
-
-    stage2Snapshot.forEach(async (doc) => {
+    unbidSnapshot.forEach(async (doc) => {
         const job = doc.data();
         await doc.ref.update({ status: "Needs Assistance" });
-        console.log(`Stage 2: Job ${doc.id} moved to 'Needs Assistance'.`);
+        console.log(`Job Rescue: Job ${doc.id} moved to 'Needs Assistance'.`);
 
-        // This could also trigger an email/alert to the admin team.
+        // Notify the Job Giver that their job needs attention and present recovery options.
         sendNotification(
             job.jobGiver.id,
-            "Your Job Needs Personal Attention",
-            `Our automated search for "${job.title}" has completed. Our support team will now personally assist you. `,
+            "Your Job Needs Attention",
+            `Your job "${job.title}" did not receive any bids. You can now re-post or promote it from the job page.`,
             `/dashboard/jobs/${doc.id}`
         ).catch(console.error);
     });
 
     return null;
 });
+
 
 /**
  * Triggered when there is a date change proposal on a job.
@@ -534,9 +515,14 @@ export const onUserVerified = functions.firestore
 
                 if (foundingInstallersSnap.size < 100) {
                     await db.runTransaction(async (transaction) => {
-                        console.log(`Founding Installer count in ${afterData.district} is ${foundingInstallersSnap.size}. Awarding badge to user ${userId}.`);
+                        // Re-verify inside transaction to ensure atomicity, even though it's not ideal.
+                        // For this specific, low-contention case, it's acceptable.
                         const userRef = db.collection("users").doc(userId);
-                        transaction.update(userRef, { isFoundingInstaller: true });
+                        const freshSnap = await transaction.get(userRef);
+                        if(freshSnap.exists() && !freshSnap.data()?.isFoundingInstaller) {
+                             console.log(`Founding Installer count in ${afterData.district} is ${foundingInstallersSnap.size}. Awarding badge to user ${userId}.`);
+                             transaction.update(userRef, { isFoundingInstaller: true });
+                        }
                     });
                     
                     await sendNotification(
@@ -553,3 +539,19 @@ export const onUserVerified = functions.firestore
             }
         }
     });
+
+    
+
+      
+
+    
+
+    
+
+    
+
+
+
+    
+
+    
