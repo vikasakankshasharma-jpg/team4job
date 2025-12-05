@@ -328,7 +328,6 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
  */
 export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(async (context) => {
     console.log("Running Job Rescue Plan for Unbid jobs...");
-    const now = admin.firestore.Timestamp.now();
     const db = admin.firestore();
 
     // Query for jobs that are 'Unbid' and haven't been updated to 'Needs Assistance'
@@ -358,6 +357,7 @@ export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(
 
     return null;
 });
+
 
 /**
  * Triggered when there is a date change proposal on a job.
@@ -549,3 +549,6 @@ export const onUserVerified = functions.firestore
 
     
 
+
+
+    
