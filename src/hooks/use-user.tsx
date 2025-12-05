@@ -176,7 +176,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else if (role === 'Support Team' && !(isSupportPage || pathname === '/dashboard' || pathname.startsWith('/dashboard/profile'))) {
         router.push('/dashboard/disputes');
     } else if (userIsAdmin && (isInstallerPage || isJobGiverPage)) {
-        router.push('/dashboard');
+        // Admins can access most pages, but we could redirect them if needed
     } else if (!userIsAdmin && isAdminPage) {
         router.push('/dashboard');
     }
@@ -224,7 +224,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole: handleSetRole,
     logout: handleLogout,
     login: handleLogin,
-  }), [user, role, isAdmin, loading]);
+  }), [user, role, isAdmin, loading, handleSetRole, handleLogout, handleLogin]);
   
   const publicPaths = ['/login', '/'];
   const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
