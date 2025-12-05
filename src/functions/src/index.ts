@@ -323,56 +323,35 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
 });
 
 /**
- * Implements the "Job Rescue Plan" for jobs at risk of going unbid.
+ * Implements the "Job Rescue Plan" for jobs that have officially become "Unbid".
  * Runs every hour.
  */
 export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(async (context) => {
-    console.log("Running Job Rescue Plan...");
+    console.log("Running Job Rescue Plan for Unbid jobs...");
     const now = admin.firestore.Timestamp.now();
     const db = admin.firestore();
 
-    // Stage 1: Auto-Extend & Promote
-    const stage1Query = db.collection("jobs")
-        .where("status", "==", "Open for Bidding")
-        .where("bids", "==", [])
-        .where("deadline", "<=", admin.firestore.Timestamp.fromMillis(now.toMillis() + 48 * 60 * 60 * 1000)); // Within 48 hours of deadline
+    // Query for jobs that are 'Unbid' and haven't been updated to 'Needs Assistance'
+    const unbidQuery = db.collection("jobs")
+        .where("status", "==", "Unbid");
 
-    const stage1Snapshot = await stage1Query.get();
+    const unbidSnapshot = await unbidQuery.get();
 
-    stage1Snapshot.forEach(async (doc) => {
-        const job = doc.data();
-        const extensionHours = job.isUrgent ? 6 : 24;
-        const newDeadline = admin.firestore.Timestamp.fromMillis(now.toMillis() + extensionHours * 60 * 60 * 1000);
+    if (unbidSnapshot.empty) {
+        console.log("No 'Unbid' jobs found needing assistance.");
+        return null;
+    }
 
-        await doc.ref.update({ deadline: newDeadline });
-        console.log(`Stage 1: Extended deadline for job ${doc.id} by ${extensionHours} hours.`);
-
-        sendNotification(
-            job.jobGiver.id,
-            "We're still looking for you!",
-            `Your job "${job.title}" has been promoted and its deadline extended to find the best installers. `,
-            `/dashboard/jobs/${doc.id}`
-        ).catch(console.error);
-    });
-
-    // Stage 2: Manual Intervention
-    const stage2Query = db.collection("jobs")
-        .where("status", "==", "Open for Bidding")
-        .where("bids", "==", [])
-        .where("deadline", "<=", now);
-
-    const stage2Snapshot = await stage2Query.get();
-
-    stage2Snapshot.forEach(async (doc) => {
+    unbidSnapshot.forEach(async (doc) => {
         const job = doc.data();
         await doc.ref.update({ status: "Needs Assistance" });
-        console.log(`Stage 2: Job ${doc.id} moved to 'Needs Assistance'.`);
+        console.log(`Job Rescue: Job ${doc.id} moved to 'Needs Assistance'.`);
 
-        // This could also trigger an email/alert to the admin team.
+        // Notify the Job Giver that their job needs attention and present recovery options.
         sendNotification(
             job.jobGiver.id,
-            "Your Job Needs Personal Attention",
-            `Our automated search for "${job.title}" has completed. Our support team will now personally assist you. `,
+            "Your Job Needs Attention",
+            `Your job "${job.title}" did not receive any bids. You can now re-post or promote it from the job page.`,
             `/dashboard/jobs/${doc.id}`
         ).catch(console.error);
     });
@@ -511,7 +490,7 @@ export const handleExpiredAwards = functions.pubsub.schedule(
 
 /**
  * Triggered when a user's verification status changes.
- * Awards the "Founding Installer" badge to the first 100 verified installers.
+ * Awards the "Founding Installer" badge to the first 100 verified installers in a district.
  */
 export const onUserVerified = functions.firestore
     .document("users/{userId}")
@@ -522,34 +501,37 @@ export const onUserVerified = functions.firestore
 
         const wasJustVerified = (beforeData.installerProfile?.verified === false || beforeData.installerProfile?.verified === undefined) && afterData.installerProfile?.verified === true;
 
-        if (wasJustVerified && !afterData.isFoundingInstaller) {
-            console.log(`User ${userId} has just been verified. Checking for Founding Installer eligibility.`);
+        if (wasJustVerified && !afterData.isFoundingInstaller && afterData.district) {
+            console.log(`User ${userId} in district ${afterData.district} has just been verified. Checking for Founding Installer eligibility.`);
             const db = admin.firestore();
+            
             try {
-                await db.runTransaction(async (transaction) => {
-                    const foundingInstallersQuery = db.collection("users").where("isFoundingInstaller", "==", true);
-                    const foundingInstallersSnap = await transaction.get(foundingInstallersQuery);
+                // Query must be done outside the transaction
+                const foundingInstallersQuery = db.collection("users")
+                    .where("isFoundingInstaller", "==", true)
+                    .where("district", "==", afterData.district);
+                const foundingInstallersSnap = await foundingInstallersQuery.get();
 
-                    if (foundingInstallersSnap.size < 100) {
-                        console.log(`Founding Installer count is ${foundingInstallersSnap.size}. Awarding badge to user ${userId}.`);
+                if (foundingInstallersSnap.size < 100) {
+                    await db.runTransaction(async (transaction) => {
+                        // Re-verify inside transaction to ensure atomicity, even though it's not ideal.
+                        // For this specific, low-contention case, it's acceptable.
                         const userRef = db.collection("users").doc(userId);
-                        transaction.update(userRef, { isFoundingInstaller: true });
-
-                        // Notification will be sent outside the transaction after it commits.
-                    } else {
-                        console.log("Founding Installer program is full. No badge awarded.");
-                    }
-                });
-
-                // Re-fetch the user doc to confirm the badge was awarded before notifying.
-                const finalUserDoc = await db.collection("users").doc(userId).get();
-                if (finalUserDoc.data()?.isFoundingInstaller) {
+                        const freshSnap = await transaction.get(userRef);
+                        if(freshSnap.exists() && !freshSnap.data()?.isFoundingInstaller) {
+                             console.log(`Founding Installer count in ${afterData.district} is ${foundingInstallersSnap.size}. Awarding badge to user ${userId}.`);
+                             transaction.update(userRef, { isFoundingInstaller: true });
+                        }
+                    });
+                    
                     await sendNotification(
                         userId,
                         "Congratulations, You're a Founding Installer!",
-                        "You are one of the first 100 installers to be verified on our platform. Enjoy your exclusive badge!",
+                        `You are one of the first 100 installers in ${afterData.district} to be verified. Enjoy your exclusive badge!`,
                         "/dashboard/profile"
                     );
+                } else {
+                     console.log(`Founding Installer program in ${afterData.district} is full. No badge awarded.`);
                 }
             } catch (error) {
                 console.error(`Error in Founding Installer transaction for user ${userId}:`, error);
@@ -566,3 +548,4 @@ export const onUserVerified = functions.firestore
     
 
     
+
