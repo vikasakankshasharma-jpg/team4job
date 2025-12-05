@@ -189,6 +189,9 @@ export const onJobCompleted = functions.firestore
                 pointsEarned += penaltyFor1Star;
             }
 
+            let finalAverageRating = 0;
+            let finalReviewCount = 0;
+
             try {
                 await db.runTransaction(async (transaction) => {
                     const installerDoc = await transaction.get(installerRef);
@@ -220,6 +223,9 @@ export const onJobCompleted = functions.firestore
                     const newReviewCount = currentReviews + 1;
                     const currentTotalRating = (installerData.installerProfile.rating || 0) * currentReviews;
                     const newAverageRating = (currentTotalRating + afterData.rating) / newReviewCount;
+                    
+                    finalAverageRating = newAverageRating;
+                    finalReviewCount = newReviewCount;
 
                     transaction.update(installerRef, {
                         "installerProfile.points": newPoints,
@@ -236,19 +242,14 @@ export const onJobCompleted = functions.firestore
                 sendNotification(installerRef.id, "Reputation Updated!", `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`, "/dashboard/profile").catch(console.error);
 
                 // --- Pro Installer Promotion Logic ---
+                // Re-fetch the document AFTER the transaction to get the latest data.
                 const installerDoc = await installerRef.get();
                 const installerData = installerDoc.data();
                 if (installerData && installerData.installerProfile.tier === "Bronze") {
-                    const completedJobsQuery = db.collection("jobs").where("awardedInstaller", "==", installerRef).where("status", "==", "Completed");
-                    const completedJobsSnap = await completedJobsQuery.get();
-                    const completedJobsCount = completedJobsSnap.size;
-                    
-                    const newAverageRating = installerData.installerProfile.rating || 0;
-
                     const disputesQuery = db.collection("disputes").where("parties.installerId", "==", installerRef.id).where("status", "!=", "Resolved");
                     const disputesSnap = await disputesQuery.get();
 
-                    if (completedJobsCount >= 5 && newAverageRating >= 4.5 && disputesSnap.empty) {
+                    if (finalReviewCount >= 5 && finalAverageRating >= 4.5 && disputesSnap.empty) {
                         await installerRef.update({ "installerProfile.tier": "Silver" });
                         console.log(`Promoted installer ${installerRef.id} to Pro Installer (Silver).`);
                         sendNotification(installerRef.id, "Congratulations! You're a Pro Installer!", "You have been promoted to a Pro Installer for your excellent performance.", "/dashboard/profile").catch(console.error);
@@ -550,5 +551,7 @@ export const onUserVerified = functions.firestore
     
 
 
+
+    
 
     
