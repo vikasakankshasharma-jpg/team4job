@@ -5,3 +5,36 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+
+env:
+  # Firebase Configuration
+  - variable: FIREBASE_PROJECT_ID
+    value: studio-1890574003-16f26
+  - variable: FIREBASE_CLIENT_EMAIL
+    value: firebase-adminsdk-fbsvc@studio-1890574003-16f26.iam.gserviceaccount.com
+  - variable: FIREBASE_PRIVATE_KEY
+    secret: firebase-private-key
+  
+  # Google Services
+  - variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    value: AIzaSyDyz5Ku7bukk2NX_03-05fowrh11GEtCbQ
+  - variable: GEMINI_API_KEY
+    value: AIzaSyCg6OjGn9jmxzd-hbe8RGJA3vOqlBL8soY
+  
+  # Cashfree Payment Gateway
+  - variable: CASHFREE_PAYMENTS_CLIENT_ID
+    value: TEST108295432c02e6166e285ab80d8f34592801
+  - variable: CASHFREE_PAYOUTS_CLIENT_SECRET
+    secret: cashfree-payouts-secret
+  
+  # Cashfree Payouts
+  - variable: CASHFREE_PAYOUTS_CLIENT_ID
+    value: CF10829543D41GSOB0ISBS73B3NE3G
+  - variable: CASHFREE_SECRET_KEY
+    secret: cashfree-secret-key
+  
+  # Cashfree Secure ID (KYC)
+  - variable: CASHFREE_CLIENT_ID
+    value: CF10829543D41H0F30ISBS73B3NE40
+  - variable: CASHFREE_CLIENT_SECRET
+    secret: cashfree-client-secret
