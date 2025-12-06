@@ -75,8 +75,14 @@ export default function InvoicePage() {
         notFound();
     }
 
-    const { subtotal, travelTip, totalAmount } = job.invoice;
+    const { subtotal, travelTip } = job.invoice;
     const sacCode = "9954"; // SAC for Repair, maintenance and installation services
+    const gstRate = 0.18; // 18% GST
+
+    const taxableValue = subtotal + travelTip;
+    const gstAmount = taxableValue * gstRate;
+    const grandTotal = taxableValue + gstAmount;
+
 
     return (
         <div className="max-w-4xl mx-auto p-4 sm:p-8 bg-background">
@@ -86,14 +92,13 @@ export default function InvoicePage() {
                     <p className="text-muted-foreground">#{job.invoice.id}</p>
                 </div>
                 <div className="text-right">
-                    <h2 className="text-lg font-semibold">CCTV Job Connect</h2>
-                    <p className="text-xs text-muted-foreground">Platform Facilitator</p>
+                    {/* The invoice is from the Installer, not the platform */}
                 </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-8 mb-8">
                 <div>
-                    <h3 className="font-semibold mb-2">Billed To:</h3>
+                    <h3 className="font-semibold mb-2">Billed To (Job Giver):</h3>
                     <div className="text-sm text-muted-foreground">
                         <p className="font-bold text-foreground">{jobGiver.name}</p>
                         <p>{jobGiver.address.fullAddress}</p>
@@ -131,7 +136,7 @@ export default function InvoicePage() {
                         <tr className="border-b">
                             <th className="p-2 text-left font-semibold">Description</th>
                             <th className="p-2 text-center font-semibold">SAC Code</th>
-                            <th className="p-2 text-right font-semibold">Amount</th>
+                            <th className="p-2 text-right font-semibold">Taxable Amount</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -157,15 +162,19 @@ export default function InvoicePage() {
             </div>
 
             <div className="flex justify-end mt-4">
-                <div className="w-full max-w-xs space-y-2 text-sm">
+                <div className="w-full max-w-sm space-y-2 text-sm">
                     <div className="flex justify-between">
-                        <span>Subtotal</span>
-                        <span>₹{totalAmount.toLocaleString('en-IN')}</span>
+                        <span>Subtotal (Taxable Value)</span>
+                        <span>₹{taxableValue.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span>GST @ {(gstRate * 100).toFixed(0)}%</span>
+                        <span>₹{gstAmount.toLocaleString('en-IN')}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between text-lg font-bold">
-                        <span>Total</span>
-                        <span>₹{totalAmount.toLocaleString('en-IN')}</span>
+                        <span>Grand Total</span>
+                        <span>₹{grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                     </div>
                 </div>
             </div>
@@ -173,7 +182,7 @@ export default function InvoicePage() {
              <Separator className="my-8" />
              
              <div className="space-y-4 text-xs text-muted-foreground">
-                <p><strong className="font-semibold">Note:</strong> This is a digitally generated invoice and does not require a physical signature. The total amount is inclusive of all applicable taxes.</p>
+                <p><strong className="font-semibold">Note:</strong> This is a digitally generated invoice on behalf of the service provider by CCTV Job Connect.</p>
                 <p><strong className="font-semibold">Disclaimer:</strong> CCTV Job Connect acts as a marketplace facilitator. The responsibility for GST compliance, including charging the correct tax rate (CGST, SGST, or IGST) and remitting the tax to the government, lies solely with the service provider (Installer). The service recipient (Job Giver) is responsible for verifying the GST details for input tax credit purposes.</p>
              </div>
 

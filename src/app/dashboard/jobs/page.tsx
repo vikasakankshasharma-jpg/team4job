@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -18,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ListFilter, Search, X } from "lucide-react";
+import { ListFilter, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,19 +48,21 @@ import type { DocumentReference } from "firebase/firestore";
 import { useSearch } from "@/hooks/use-search";
 
 // Helper function to extract location parts from a full address string
-const getLocationParts = (fullAddress: string | undefined): { city: string | null; state: string | null } => {
-    if (!fullAddress) return { city: null, state: null };
-    const parts = fullAddress.split(',').map(p => p.trim());
-    if (parts.length >= 3) {
-        // e.g., "123 Main St, Anytown, CA 12345" -> city: "Anytown", state: "CA"
-        // Note: This is a simplified assumption. Real-world addresses can be more complex.
-        const stateAndZip = parts[parts.length - 1].split(' ');
-        const state = stateAndZip.length > 1 ? stateAndZip[0] : parts[parts.length-1];
-        return { city: parts[parts.length - 2], state: state };
-    }
-    return { city: null, state: null };
-}
-
+const getLocationParts = (
+  fullAddress: string | undefined
+): { city: string | null; state: string | null } => {
+  if (!fullAddress) return { city: null, state: null };
+  
+  const parts = fullAddress.split(',').map(p => p.trim());
+  
+  if (parts.length >= 3) {
+    const stateAndZip = parts[parts.length - 1].split(' ');
+    const state = stateAndZip.length > 1 ? stateAndZip[0] : parts[parts.length - 1];
+    return { city: parts[parts.length - 2], state: state };
+  }
+  
+  return { city: null, state: null };
+};
 
 export default function BrowseJobsPage() {
   const { user, role } = useUser();
@@ -80,26 +81,38 @@ export default function BrowseJobsPage() {
       router.push('/dashboard');
     }
   }, [role, router]);
-  
+
   const fetchJobs = React.useCallback(async () => {
     if (!db) return;
+    
     setLoading(true);
-    // Fetch both "Open for Bidding" and "Unbid" jobs
-    const openJobsQuery = query(collection(db, 'jobs'), where('status', 'in', ['Open for Bidding', 'Unbid']));
-    const jobSnapshot = await getDocs(openJobsQuery);
-    const userIds = new Set<string>();
-    jobSnapshot.docs.forEach(doc => {
+    
+    try {
+      // Fetch both "Open for Bidding" and "Unbid" jobs
+      const openJobsQuery = query(
+        collection(db, 'jobs'),
+        where('status', 'in', ['Open for Bidding', 'Unbid'])
+      );
+      const jobSnapshot = await getDocs(openJobsQuery);
+      
+      const userIds = new Set<string>();
+      jobSnapshot.docs.forEach(doc => {
         const jobGiverRef = doc.data().jobGiver as DocumentReference;
         if (jobGiverRef?.id) {
-            userIds.add(jobGiverRef.id);
+          userIds.add(jobGiverRef.id);
         }
-    });
-    
-    if (userIds.size > 0) {
-        const usersQuery = query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds)));
+      });
+
+      if (userIds.size > 0) {
+        const usersQuery = query(
+          collection(db, 'users'),
+          where('__name__', 'in', Array.from(userIds))
+        );
         const usersSnapshot = await getDocs(usersQuery);
-        const userMap = new Map(usersSnapshot.docs.map(doc => [doc.id, doc.data() as User]));
-        
+        const userMap = new Map(
+          usersSnapshot.docs.map(doc => [doc.id, doc.data() as User])
+        );
+
         const jobList = jobSnapshot.docs.map(doc => {
           const jobData = doc.data() as Job;
           const jobGiverId = (jobData.jobGiver as DocumentReference)?.id;
@@ -109,11 +122,15 @@ export default function BrowseJobsPage() {
           };
         });
         setJobs(jobList);
-    } else {
+      } else {
         setJobs([]);
+      }
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+      setJobs([]);
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   }, [db]);
 
   React.useEffect(() => {
@@ -122,121 +139,148 @@ export default function BrowseJobsPage() {
 
   React.useEffect(() => {
     setHelp({
-        title: 'Browse Jobs Guide',
-        content: (
-            <div className="space-y-4 text-sm">
-                <p>This page is where you find new projects. Here’s how to use the tools to your advantage:</p>
-                <ul className="list-disc space-y-2 pl-5">
-                    <li>
-                        <span className="font-semibold">Search by Pincode:</span> Use the search bar at the top right to find jobs in a specific area. This helps you find work close to home.
-                    </li>
-                    <li>
-                        <span className="font-semibold">Filter Menu:</span> Click the "Filter" button to open a menu with more powerful options:
-                        <ul className="list-disc space-y-1 pl-5 mt-1">
-                            <li><span className="font-semibold">Budget Range:</span> Drag the slider to only see jobs that match your expected pay.</li>
-                            <li><span className="font-semibold">Skills:</span> Select one or more skills to narrow down jobs that match your expertise (e.g., "IP Cameras", "Access Control").</li>
-                        </ul>
-                    </li>
-                     <li>
-                        <span className="font-semibold">Clear Filters:</span> If you have any filters active, a "Clear" button will appear. Click it to reset your search and see all available jobs again.
-                     </li>
-                    <li>
-                        <span className="font-semibold">Recommended Tab:</span> This tab includes "Unbid" jobs in your area, giving you a second chance at opportunities you may have missed.
-                    </li>
-                </ul>
-                <p>Each job card gives you a quick summary. Click "View Job & Bid" to see the full details and place your offer.</p>
-            </div>
-        )
+      title: 'Browse Jobs Guide',
+      content: (
+        <div className="space-y-4 text-sm">
+          <p>This page is where you find new projects. Here's how to use the tools to your advantage:</p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>
+              <span className="font-semibold">Search by Pincode:</span> Use the search bar at the top right to find jobs in a specific area. This helps you find work close to home.
+            </li>
+            <li>
+              <span className="font-semibold">Filter Menu:</span> Click the "Filter" button to open a menu with more powerful options:
+              <ul className="list-disc space-y-1 pl-5 mt-1">
+                <li>
+                  <span className="font-semibold">Budget Range:</span> Drag the slider to only see jobs that match your expected pay.
+                </li>
+                <li>
+                  <span className="font-semibold">Skills:</span> Select one or more skills to narrow down jobs that match your expertise (e.g., "IP Cameras", "Access Control").
+                </li>
+              </ul>
+            </li>
+            <li>
+              <span className="font-semibold">Clear Filters:</span> If you have any filters active, a "Clear" button will appear. Click it to reset your search and see all available jobs again.
+            </li>
+            <li>
+              <span className="font-semibold">Recommended Tab:</span> This tab includes "Unbid" jobs in your area, giving you a second chance at opportunities you may have missed.
+            </li>
+          </ul>
+          <p>Each job card gives you a quick summary. Click "View Job & Bid" to see the full details and place your offer.</p>
+        </div>
+      )
     });
   }, [setHelp]);
-  
+
   const filterJobs = (jobsToFilter: Job[]) => {
     return jobsToFilter.filter((job) => {
-        // Pincode filter from global search
-        if (searchQuery !== "" && !job.location.includes(searchQuery)) {
-            return false;
+      // Pincode filter from global search
+      if (searchQuery !== "" && !job.location.includes(searchQuery)) {
+        return false;
+      }
+      
+      // Budget filter
+      if (job.budget && (job.budget.max < budget[0] || job.budget.min > budget[1])) {
+        return false;
+      }
+      
+      // Skills filter
+      if (selectedSkills.length > 0) {
+        const jobSkills = (job.skills || []).map(s => s.toLowerCase());
+        if (!selectedSkills.every(skill => jobSkills.includes(skill.toLowerCase()))) {
+          return false;
         }
-        // Budget filter
-        if (job.budget && (job.budget.max < budget[0] || job.budget.min > budget[1])) {
-            return false;
-        }
-        // Skills filter
-        if (selectedSkills.length > 0) {
-            const jobSkills = (job.skills || []).map(s => s.toLowerCase());
-            if (!selectedSkills.every(skill => jobSkills.includes(skill.toLowerCase()))) {
-                return false;
-            }
-        }
-        return true;
+      }
+      
+      return true;
     });
-  }
+  };
 
   // "All" tab should only show currently open jobs.
-  const openForBiddingJobs = React.useMemo(() => jobs.filter(job => job.status === 'Open for Bidding'), [jobs]);
+  const openForBiddingJobs = React.useMemo(
+    () => jobs.filter(job => job.status === 'Open for Bidding'),
+    [jobs]
+  );
+  
   const filteredJobs = filterJobs(openForBiddingJobs);
 
   const recommendedJobs = React.useMemo(() => {
     if (!user?.installerProfile) return [];
-    
-    const installerSkills = new Set((user.installerProfile.skills || []).map(s => s.toLowerCase()));
-    const { city: installerCity, state: installerState } = getLocationParts(user.address?.fullAddress);
 
-    const scoredJobs = jobs // Includes both 'Open for Bidding' and 'Unbid'
-        .map(job => {
-            let score = 0;
-            let locationMatchType: 'pincode' | 'city' | 'state' | null = null;
-            
-            // --- Tier 1 Match: Pincode ---
-            const residentialMatch = user.pincodes.residential && job.location.includes(user.pincodes.residential);
-            const officeMatch = user.pincodes.office && job.location.includes(user.pincodes.office);
+    const installerSkills = new Set(
+      (user.installerProfile.skills || []).map(s => s.toLowerCase())
+    );
+    const { city: installerCity, state: installerState } = getLocationParts(
+      user.address?.fullAddress
+    );
 
-            if (
-                (recommendedPincodeFilter === "all" && (residentialMatch || officeMatch)) ||
-                (recommendedPincodeFilter === "residential" && residentialMatch) ||
-                (recommendedPincodeFilter === "office" && officeMatch)
-            ) {
-                locationMatchType = 'pincode';
-                score += 20; // High score for direct pincode match
+    const scoredJobs = jobs
+      .map(job => {
+        let score = 0;
+        let locationMatchType: 'pincode' | 'city' | 'state' | null = null;
+
+        // --- Tier 1 Match: Pincode ---
+        const residentialMatch = user.pincodes.residential && 
+          job.location.includes(user.pincodes.residential);
+        const officeMatch = user.pincodes.office && 
+          job.location.includes(user.pincodes.office);
+
+        if (
+          (recommendedPincodeFilter === "all" && (residentialMatch || officeMatch)) ||
+          (recommendedPincodeFilter === "residential" && residentialMatch) ||
+          (recommendedPincodeFilter === "office" && officeMatch)
+        ) {
+          locationMatchType = 'pincode';
+          score += 20; // High score for direct pincode match
+        }
+
+        // --- Tier 2 & 3: City & State for Unbid/Promoted jobs ---
+        const isPromoted = (job.travelTip || 0) > 0;
+        if (job.status === 'Unbid' || isPromoted) {
+          const { city: jobCity, state: jobState } = getLocationParts(
+            job.fullAddress || ''
+          );
+
+          // Tier 2: City Match
+          if (installerCity && jobCity && 
+              jobCity.toLowerCase() === installerCity.toLowerCase()) {
+            if (!locationMatchType) {
+              locationMatchType = 'city';
+              score += 10;
             }
-
-            // --- Tier 2 & 3: City & State for Unbid/Promoted jobs ---
-            const isPromoted = (job.travelTip || 0) > 0;
-            if (job.status === 'Unbid' || isPromoted) {
-                 const { city: jobCity, state: jobState } = getLocationParts(job.fullAddress);
-
-                 // Tier 2: City Match
-                if (installerCity && jobCity && jobCity.toLowerCase() === installerCity.toLowerCase()) {
-                    if (!locationMatchType) { // Only score if not already matched by pincode
-                      locationMatchType = 'city';
-                      score += 10;
-                    }
-                // Tier 3: State Match
-                } else if (installerState && jobState && jobState.toLowerCase() === installerState.toLowerCase()) {
-                    if (!locationMatchType) { // Only score if not matched by pincode or city
-                        locationMatchType = 'state';
-                        score += 5; 
-                    }
-                }
+          }
+          // Tier 3: State Match
+          else if (installerState && jobState && 
+                   jobState.toLowerCase() === installerState.toLowerCase()) {
+            if (!locationMatchType) {
+              locationMatchType = 'state';
+              score += 5;
             }
+          }
+        }
 
-            if (!locationMatchType) return null; // Exclude if no location match at all
+        if (!locationMatchType) return null; // Exclude if no location match at all
 
-            if (job.status === 'Unbid') {
-                score += 5; // Boost unbid jobs to surface them
-            }
-            if (isPromoted) {
-                score += 10; // Extra boost for promoted jobs
-            }
+        if (job.status === 'Unbid') {
+          score += 5; // Boost unbid jobs to surface them
+        }
+        if (isPromoted) {
+          score += 10; // Extra boost for promoted jobs
+        }
 
-            if (job.skills && job.skills.length > 0) {
-                const jobSkills = new Set(job.skills.map(s => s.toLowerCase()));
-                const matchingSkills = [...jobSkills].filter(skill => installerSkills.has(skill));
-                score += matchingSkills.length * 5; // Add points for each matching skill
-            }
-            
-            return { ...job, score, locationMatchType };
-        })
-        .filter((j): j is Job & { score: number, locationMatchType: string } => j !== null);
+        if (job.skills && job.skills.length > 0) {
+          const jobSkills = new Set(job.skills.map(s => s.toLowerCase()));
+          const matchingSkills = [...jobSkills].filter(skill => 
+            installerSkills.has(skill)
+          );
+          score += matchingSkills.length * 5; // Add points for each matching skill
+        }
+
+        return { ...job, score, locationMatchType };
+      })
+      .filter((j): j is Job & { 
+        score: number; 
+        locationMatchType: 'pincode' | 'city' | 'state' 
+      } => j !== null);
 
     return scoredJobs.sort((a, b) => b.score - a.score);
   }, [user, jobs, recommendedPincodeFilter]);
@@ -246,16 +290,16 @@ export default function BrowseJobsPage() {
   const clearFilters = () => {
     setBudget([0, 150000]);
     setSelectedSkills([]);
-  }
+  };
 
   const handleSkillChange = (skill: string) => {
-    setSelectedSkills(prev => 
-      prev.includes(skill) 
-        ? prev.filter(s => s !== skill) 
+    setSelectedSkills(prev =>
+      prev.includes(skill)
+        ? prev.filter(s => s !== skill)
         : [...prev, skill]
     );
   };
-  
+
   const activeFiltersCount = [
     budget[0] !== 0 || budget[1] !== 150000,
     selectedSkills.length > 0
@@ -285,16 +329,23 @@ export default function BrowseJobsPage() {
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Filter
                   </span>
-                  {activeFiltersCount > 0 && <Badge variant="secondary" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">{activeFiltersCount}</Badge>}
+                  {activeFiltersCount > 0 && (
+                    <Badge 
+                      variant="secondary" 
+                      className="rounded-full h-5 w-5 p-0 flex items-center justify-center"
+                    >
+                      {activeFiltersCount}
+                    </Badge>
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80 p-4 space-y-4">
                 <DropdownMenuLabel>Filter by</DropdownMenuLabel>
                 <DropdownMenuSeparator className="-mx-4" />
-                
+
                 <div className="space-y-2">
                   <Label>Budget Range</Label>
-                   <Slider
+                  <Slider
                     min={0}
                     max={150000}
                     step={1000}
@@ -311,23 +362,30 @@ export default function BrowseJobsPage() {
                   <Label>Skills</Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                       <Button variant="outline" className="w-full justify-start font-normal">
-                          {selectedSkills.length > 0 ? `${selectedSkills.length} skill(s) selected` : "Select skills"}
-                       </Button>
+                      <Button variant="outline" className="w-full justify-start font-normal">
+                        {selectedSkills.length > 0
+                          ? `${selectedSkills.length} skill(s) selected`
+                          : "Select skills"}
+                      </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-80 p-0" align="start">
-                        <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
-                            {allSkills.map(skill => (
-                                <div key={skill} className="flex items-center space-x-2">
-                                    <Checkbox 
-                                        id={`skill-${skill}`}
-                                        checked={selectedSkills.includes(skill)}
-                                        onCheckedChange={() => handleSkillChange(skill)}
-                                    />
-                                    <Label htmlFor={`skill-${skill}`} className="capitalize font-normal">{skill}</Label>
-                                </div>
-                            ))}
-                        </div>
+                      <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
+                        {allSkills.map(skill => (
+                          <div key={skill} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`skill-${skill}`}
+                              checked={selectedSkills.includes(skill)}
+                              onCheckedChange={() => handleSkillChange(skill)}
+                            />
+                            <Label
+                              htmlFor={`skill-${skill}`}
+                              className="capitalize font-normal cursor-pointer"
+                            >
+                              {skill}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
                     </PopoverContent>
                   </Popover>
                 </div>
@@ -341,6 +399,7 @@ export default function BrowseJobsPage() {
             )}
           </div>
         </div>
+
         <TabsContent value="all">
           <Card>
             <CardHeader>
@@ -350,63 +409,78 @@ export default function BrowseJobsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredJobs.map(job => (
-                        <JobCard key={job.id} job={job} />
-                    ))}
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredJobs.map(job => (
+                  <JobCard key={job.id} job={job} />
+                ))}
+              </div>
+              {filteredJobs.length === 0 && (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground">
+                    No jobs found matching your criteria.
+                  </p>
                 </div>
-                 {filteredJobs.length === 0 && (
-                  <div className="text-center py-10">
-                    <p className="text-muted-foreground">No jobs found matching your criteria.</p>
-                  </div>
-                )}
+              )}
             </CardContent>
             <CardFooter>
-               <div className="text-xs text-muted-foreground">
-                Showing <strong>{filteredJobs.length}</strong> of <strong>{openForBiddingJobs.length}</strong> open jobs
+              <div className="text-xs text-muted-foreground">
+                Showing <strong>{filteredJobs.length}</strong> of{" "}
+                <strong>{openForBiddingJobs.length}</strong> open jobs
               </div>
             </CardFooter>
           </Card>
         </TabsContent>
+
         <TabsContent value="recommended">
-           <Card>
+          <Card>
             <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                    <div>
-                        <CardTitle>Recommended For You</CardTitle>
-                        <CardDescription>
-                            Jobs that match your profile pincode(s) and skills, including unbid opportunities in your city.
-                        </CardDescription>
-                    </div>
-                     {user && user.pincodes.office && (
-                         <Select value={recommendedPincodeFilter} onValueChange={setRecommendedPincodeFilter}>
-                            <SelectTrigger className="w-full sm:w-[240px]">
-                                <SelectValue placeholder="Filter by pincode..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All My Pincodes</SelectItem>
-                                <SelectItem value="residential">Residential: {user.pincodes.residential}</SelectItem>
-                                <SelectItem value="office">Office: {user.pincodes.office}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                     )}
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div>
+                  <CardTitle>Recommended For You</CardTitle>
+                  <CardDescription>
+                    Jobs that match your profile pincode(s) and skills, including unbid
+                    opportunities in your city.
+                  </CardDescription>
                 </div>
+                {user && user.pincodes.office && (
+                  <Select
+                    value={recommendedPincodeFilter}
+                    onValueChange={setRecommendedPincodeFilter}
+                  >
+                    <SelectTrigger className="w-full sm:w-[240px]">
+                      <SelectValue placeholder="Filter by pincode..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All My Pincodes</SelectItem>
+                      <SelectItem value="residential">
+                        Residential: {user.pincodes.residential}
+                      </SelectItem>
+                      <SelectItem value="office">
+                        Office: {user.pincodes.office}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredRecommendedJobs.map(job => (
-                        <JobCard key={job.id} job={job} />
-                    ))}
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredRecommendedJobs.map(job => (
+                  <JobCard key={job.id} job={job} />
+                ))}
+              </div>
+              {filteredRecommendedJobs.length === 0 && (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground">
+                    No recommended jobs found for the selected filter.
+                  </p>
                 </div>
-                 {filteredRecommendedJobs.length === 0 && (
-                  <div className="text-center py-10">
-                    <p className="text-muted-foreground">No recommended jobs found for the selected filter.</p>
-                  </div>
-                )}
+              )}
             </CardContent>
             <CardFooter>
-               <div className="text-xs text-muted-foreground">
-                Showing <strong>{filteredRecommendedJobs.length}</strong> recommended jobs
+              <div className="text-xs text-muted-foreground">
+                Showing <strong>{filteredRecommendedJobs.length}</strong> recommended
+                jobs
               </div>
             </CardFooter>
           </Card>
@@ -415,5 +489,3 @@ export default function BrowseJobsPage() {
     </div>
   );
 }
-
-    
