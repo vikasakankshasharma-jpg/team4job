@@ -12,7 +12,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import axios from 'axios';
-import { doc, getDoc } from 'firebase/firestore';
+
 import { db } from '@/lib/firebase/server-init';
 import { PlatformSettings } from '@/lib/types';
 
@@ -42,20 +42,20 @@ export type InitiateAadharOutput = z.infer<typeof InitiateAadharOutputSchema>;
  */
 async function callCashfreeToRequestOtp(aadharNumber: string): Promise<{ success: boolean, verificationId?: string, error?: string }> {
   console.log(`[Cashfree KYC] Requesting OTP for Aadhar: ${aadharNumber.slice(0, 4)}...`);
-  
+
   if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
-      console.error("[Cashfree KYC] Missing Cashfree API credentials.");
-      return { success: false, error: 'Server configuration error: Missing KYC API credentials.' };
+    console.error("[Cashfree KYC] Missing Cashfree API credentials.");
+    return { success: false, error: 'Server configuration error: Missing KYC API credentials.' };
   }
-  
+
   const verificationId = `CCTV_KYC_${Date.now()}`;
 
   try {
     const response = await axios.post(
       `${CASHFREE_API_BASE}/v2/aadhaar-verification/otp`,
-      { 
+      {
         verification_id: verificationId,
-        aadhaar_number: aadharNumber 
+        aadhaar_number: aadharNumber
       },
       {
         headers: {
@@ -69,11 +69,11 @@ async function callCashfreeToRequestOtp(aadharNumber: string): Promise<{ success
 
     const data = response.data;
     if (response.status === 200 && data.ref_id) {
-        console.log(`[Cashfree KYC] OTP sent successfully. Verification ID: ${verificationId}, Ref ID: ${data.ref_id}`);
-        return { success: true, verificationId: verificationId };
+      console.log(`[Cashfree KYC] OTP sent successfully. Verification ID: ${verificationId}, Ref ID: ${data.ref_id}`);
+      return { success: true, verificationId: verificationId };
     } else {
-        console.error('[Cashfree KYC] Failed to request OTP:', data);
-        return { success: false, error: data.message || 'Failed to initiate OTP request.' };
+      console.error('[Cashfree KYC] Failed to request OTP:', data);
+      return { success: false, error: data.message || 'Failed to initiate OTP request.' };
     }
   } catch (error: any) {
     console.error('[Cashfree KYC] API call error on OTP request:', error.response?.data || error.message);
@@ -90,15 +90,15 @@ export const initiateAadharVerification = ai.defineFlow(
   async (input) => {
     // For demo purposes, if the Aadhar number is the test number, simulate success without a real API call.
     if (input.aadharNumber === '999999990019') {
-        const mockVerificationId = `VERIF_MOCK_${Date.now()}`;
-        console.log(`[Cashfree KYC] Using mock OTP flow for test Aadhar. Verification ID: ${mockVerificationId}`);
-        return {
-            success: true,
-            verificationId: mockVerificationId,
-            message: 'An OTP has been sent to the mobile number linked with your Aadhar.',
-        };
+      const mockVerificationId = `VERIF_MOCK_${Date.now()}`;
+      console.log(`[Cashfree KYC] Using mock OTP flow for test Aadhar. Verification ID: ${mockVerificationId}`);
+      return {
+        success: true,
+        verificationId: mockVerificationId,
+        message: 'An OTP has been sent to the mobile number linked with your Aadhar.',
+      };
     }
-    
+
     const { success, verificationId, error } = await callCashfreeToRequestOtp(input.aadharNumber);
 
     if (!success || !verificationId) {
@@ -144,58 +144,58 @@ export type ConfirmAadharOutput = z.infer<typeof ConfirmAadharOutputSchema>;
  * @returns A verification status and KYC data.
  */
 async function callCashfreeToVerifyOtp(verificationId: string, otp: string): Promise<{ success: boolean; kycData?: z.infer<typeof ConfirmAadharOutputSchema>['kycData']; error?: string }> {
-    console.log(`[Cashfree KYC] Verifying OTP for Verification ID: ${verificationId}`);
+  console.log(`[Cashfree KYC] Verifying OTP for Verification ID: ${verificationId}`);
 
-    if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
-      console.error("[Cashfree KYC] Missing Cashfree API credentials.");
-      return { success: false, error: 'Server configuration error: Missing KYC API credentials.' };
-    }
+  if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
+    console.error("[Cashfree KYC] Missing Cashfree API credentials.");
+    return { success: false, error: 'Server configuration error: Missing KYC API credentials.' };
+  }
 
-    try {
-        const response = await axios.post(
-            `${CASHFREE_API_BASE}/v2/aadhaar-verification/verify`,
-            { otp, verification_id: verificationId },
-            {
-                headers: {
-                    'x-client-id': process.env.CASHFREE_CLIENT_ID,
-                    'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
-                    'x-api-version': CASHFREE_API_VERSION,
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-
-        const data = response.data;
-        if (response.status === 200 && data.status === 'VALID' && data.verified === true) {
-             console.log('[Cashfree KYC] Verification successful. Returning KYC data.');
-             return { 
-                 success: true, 
-                 kycData: { 
-                     name: data.name, 
-                     mobile: data.mobile, 
-                     pincode: data.pincode 
-                 } 
-            };
-        } else {
-            console.error('[Cashfree KYC] OTP Verification failed:', data);
-            return { success: false, error: data.message || 'OTP verification failed.' };
+  try {
+    const response = await axios.post(
+      `${CASHFREE_API_BASE}/v2/aadhaar-verification/verify`,
+      { otp, verification_id: verificationId },
+      {
+        headers: {
+          'x-client-id': process.env.CASHFREE_CLIENT_ID,
+          'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
+          'x-api-version': CASHFREE_API_VERSION,
+          'Content-Type': 'application/json'
         }
-    } catch (error: any) {
-        console.error('[Cashfree KYC] API call error on OTP verification:', error.response?.data || error.message);
-        return { success: false, error: error.response?.data?.message || 'An unexpected error occurred.' };
+      }
+    );
+
+    const data = response.data;
+    if (response.status === 200 && data.status === 'VALID' && data.verified === true) {
+      console.log('[Cashfree KYC] Verification successful. Returning KYC data.');
+      return {
+        success: true,
+        kycData: {
+          name: data.name,
+          mobile: data.mobile,
+          pincode: data.pincode
+        }
+      };
+    } else {
+      console.error('[Cashfree KYC] OTP Verification failed:', data);
+      return { success: false, error: data.message || 'OTP verification failed.' };
     }
+  } catch (error: any) {
+    console.error('[Cashfree KYC] API call error on OTP verification:', error.response?.data || error.message);
+    return { success: false, error: error.response?.data?.message || 'An unexpected error occurred.' };
+  }
 }
 
 async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
-    const settingsRef = doc(db, 'settings', 'platform');
-    const settingsSnap = await getDoc(settingsRef);
-    if (settingsSnap.exists()) {
-        return settingsSnap.data() as PlatformSettings;
-    }
-    // Return default values if settings are not configured
-    return {
-        autoVerifyInstallers: true, // Default to auto-verifying
-    };
+  const settingsRef = db.collection('settings').doc('platform');
+  const settingsSnap = await settingsRef.get();
+  if (settingsSnap.exists) {
+    return settingsSnap.data() as PlatformSettings;
+  }
+  // Return default values if settings are not configured
+  return {
+    autoVerifyInstallers: true, // Default to auto-verifying
+  };
 }
 
 
@@ -208,21 +208,21 @@ export const confirmAadharVerification = ai.defineFlow(
   async (input) => {
     // For demo purposes, if the transaction is a mock one and OTP is correct, simulate success.
     if (input.verificationId.startsWith('VERIF_MOCK_') && input.otp === '123456') {
-        console.log('[Cashfree KYC] Using mock verification for test OTP.');
-         const mockKycData = {
-            name: 'Ramesh Kumar',
-            mobile: '9876543210',
-            pincode: '110001'
-        };
-        const settings = await getPlatformSettings();
-        const autoVerify = settings.autoVerifyInstallers ?? true;
-        return {
-            isVerified: autoVerify,
-            message: autoVerify ? 'Aadhar verification successful. Your profile is now marked as verified.' : 'Aadhar verification successful. Your profile is pending admin approval.',
-            kycData: mockKycData,
-        };
+      console.log('[Cashfree KYC] Using mock verification for test OTP.');
+      const mockKycData = {
+        name: 'Ramesh Kumar',
+        mobile: '9876543210',
+        pincode: '110001'
+      };
+      const settings = await getPlatformSettings();
+      const autoVerify = settings.autoVerifyInstallers ?? true;
+      return {
+        isVerified: autoVerify,
+        message: autoVerify ? 'Aadhar verification successful. Your profile is now marked as verified.' : 'Aadhar verification successful. Your profile is pending admin approval.',
+        kycData: mockKycData,
+      };
     }
-    
+
     const { success, error, kycData } = await callCashfreeToVerifyOtp(input.verificationId, input.otp);
 
     if (!success) {
@@ -234,10 +234,10 @@ export const confirmAadharVerification = ai.defineFlow(
 
     const settings = await getPlatformSettings();
     const autoVerify = settings.autoVerifyInstallers ?? true;
-    
+
     return {
       isVerified: autoVerify,
-      message: autoVerify 
+      message: autoVerify
         ? 'Aadhar verification successful. Your profile is now marked as verified.'
         : 'Aadhar verification successful. Your profile is pending admin approval.',
       kycData: kycData,
@@ -245,4 +245,3 @@ export const confirmAadharVerification = ai.defineFlow(
   }
 );
 
-    

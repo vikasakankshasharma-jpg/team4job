@@ -21,11 +21,11 @@ const defaultCenter = {
 };
 
 interface MapInputProps {
-    name: string;
-    label: string;
-    control: Control<any>;
-    center?: { lat: number; lng: number } | null;
-    isMapLoaded: boolean;
+  name: string;
+  label: string;
+  control: Control<any>;
+  center?: { lat: number; lng: number } | null;
+  isMapLoaded: boolean;
 }
 
 export function MapInput({ name, label, control, center: propCenter, isMapLoaded }: MapInputProps) {
@@ -33,7 +33,7 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
   const { setValue } = useFormContext();
 
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [marker, setMarker] = useState<google.maps.LatLngLiteral | null>(propCenter);
+  const [marker, setMarker] = useState<google.maps.LatLngLiteral | null>(propCenter || null);
   const [center, setCenter] = useState(propCenter || defaultCenter);
 
   const geocodeAddress = useCallback(
@@ -45,7 +45,7 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
             const location = results[0].geometry.location;
             const newPos = { lat: location.lat(), lng: location.lng() };
             if (map) {
-                map.panTo(newPos);
+              map.panTo(newPos);
             }
             setCenter(newPos);
             setMarker(newPos);
@@ -55,7 +55,7 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
     },
     [isMapLoaded, map]
   );
-  
+
   const debouncedGeocode = useCallback(debounce(geocodeAddress, 1000), [geocodeAddress]);
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
       setCenter(propCenter);
       setMarker(propCenter);
       if (map) {
-          map.panTo(propCenter);
+        map.panTo(propCenter);
       }
     }
   }, [propCenter, map]);
@@ -87,15 +87,15 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
 
   const onMapLoad = useCallback((mapInstance: google.maps.Map) => {
     setMap(mapInstance);
-    if(marker){
-        mapInstance.panTo(marker);
+    if (marker) {
+      mapInstance.panTo(marker);
     }
   }, [marker]);
 
   const onUnmount = useCallback(() => {
     setMap(null);
   }, []);
-  
+
   const handleAddressChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setValue(name, event.target.value, { shouldValidate: true, shouldDirty: true });
     debouncedGeocode(event.target.value);
@@ -103,39 +103,39 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
 
   if (!isMapLoaded) {
     return (
-        <FormItem>
-            <FormLabel>{label}</FormLabel>
-            <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading Map...</span>
-            </div>
+      <FormItem>
+        <FormLabel>{label}</FormLabel>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Loading Map...</span>
+        </div>
       </FormItem>
     );
   }
 
   return (
     <FormItem>
-        <FormLabel>{label}</FormLabel>
-        <Input
-            placeholder="Type address or click on map"
-            {...addressField}
-            onChange={handleAddressChange}
-        />
-        <GoogleMap
-            mapContainerStyle={containerStyle}
-            center={center}
-            zoom={15}
-            onLoad={onMapLoad}
-            onUnmount={onUnmount}
-            onClick={onMapClick}
-            options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
-        >
-            {marker && <Marker position={marker} />}
-        </GoogleMap>
-        <FormDescription>
-            Click on the map to pin the exact job location or type the full address. This is required.
-        </FormDescription>
-        <FormMessage>{addressFieldState.error?.message}</FormMessage>
+      <FormLabel>{label}</FormLabel>
+      <Input
+        placeholder="Type address or click on map"
+        {...addressField}
+        onChange={handleAddressChange}
+      />
+      <GoogleMap
+        mapContainerStyle={containerStyle}
+        center={center}
+        zoom={15}
+        onLoad={onMapLoad}
+        onUnmount={onUnmount}
+        onClick={onMapClick}
+        options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
+      >
+        {marker && <Marker position={marker} />}
+      </GoogleMap>
+      <FormDescription>
+        Click on the map to pin the exact job location or type the full address. This is required.
+      </FormDescription>
+      <FormMessage>{addressFieldState.error?.message}</FormMessage>
     </FormItem>
   );
 }

@@ -5,7 +5,7 @@ export type Address = {
   house?: string;
   street?: string;
   landmark?: string;
-  cityPincode: string; 
+  cityPincode: string;
   fullAddress?: string;
 };
 
@@ -118,7 +118,7 @@ export type AdditionalTask = {
 }
 
 export type Job = {
-  id:string;
+  id: string;
   title: string;
   description: string;
   skills?: string[];
@@ -157,6 +157,7 @@ export type Job = {
   comments: Comment[];
   privateMessages?: PrivateMessage[];
   cancellationProposer?: 'Job Giver' | 'Installer';
+  completionOtp?: string;
 };
 
 export type DisputeAttachment = {
@@ -174,23 +175,23 @@ export type DisputeMessage = {
 }
 
 export type Dispute = {
-    id: string;
-    requesterId: string;
-    category: "Job Dispute" | "Billing Inquiry" | "Technical Support" | "Skill Request" | "General Question";
-    title: string;
-    jobId?: string;
-    jobTitle?: string;
-    status: 'Open' | 'Under Review' | 'Resolved';
-    reason: string;
-    parties?: {
-        jobGiverId: string;
-        installerId: string;
-    };
-    messages: DisputeMessage[];
-    resolution?: string;
-    createdAt: Date | Timestamp;
-    resolvedAt?: Date | Timestamp;
-    handledBy?: string; // Support Team member ID
+  id: string;
+  requesterId: string;
+  category: "Job Dispute" | "Billing Inquiry" | "Technical Support" | "Skill Request" | "General Question";
+  title: string;
+  jobId?: string;
+  jobTitle?: string;
+  status: 'Open' | 'Under Review' | 'Resolved';
+  reason: string;
+  parties?: {
+    jobGiverId: string;
+    installerId: string;
+  };
+  messages: DisputeMessage[];
+  resolution?: string;
+  createdAt: Date | Timestamp;
+  resolvedAt?: Date | Timestamp;
+  handledBy?: string; // Support Team member ID
 };
 
 export type Role = "Job Giver" | "Installer" | "Admin" | "Support Team";
@@ -217,12 +218,12 @@ export type Coupon = {
 };
 
 export type BlacklistEntry = {
-    id: string;
-    type: 'user' | 'pincode';
-    value: string;
-    role: 'Any' | 'Installer' | 'Job Giver';
-    reason: string;
-    createdAt: Date | Timestamp;
+  id: string;
+  type: 'user' | 'pincode';
+  value: string;
+  role: 'Any' | 'Installer' | 'Job Giver';
+  reason: string;
+  createdAt: Date | Timestamp;
 };
 
 export type Transaction = {
@@ -252,25 +253,25 @@ export type Transaction = {
 };
 
 export type PlatformSettings = {
-    installerCommissionRate?: number;
-    jobGiverFeeRate?: number;
-    defaultTrialPeriodDays: number;
-    freeBidsForNewInstallers: number;
-    freePostsForNewJobGivers: number;
-    pointsForJobCompletion: number;
-    pointsFor5StarRating: number;
-    pointsFor4StarRating: number;
-    penaltyFor1StarRating: number;
-    penaltyForDeclinedJob: number;
-    silverTierPoints: number;
-    goldTierPoints: number;
-    platinumTierPoints: number;
-    minJobBudget: number;
-    autoVerifyInstallers: boolean;
+  installerCommissionRate?: number;
+  jobGiverFeeRate?: number;
+  defaultTrialPeriodDays: number;
+  freeBidsForNewInstallers: number;
+  freePostsForNewJobGivers: number;
+  pointsForJobCompletion: number;
+  pointsFor5StarRating: number;
+  pointsFor4StarRating: number;
+  penaltyFor1StarRating: number;
+  penaltyForDeclinedJob: number;
+  silverTierPoints: number;
+  goldTierPoints: number;
+  platinumTierPoints: number;
+  minJobBudget: number;
+  autoVerifyInstallers: boolean;
 };
 
 export type JobCategoryTemplate = {
-    id: string;
-    name: string;
-    includedItems: string[];
+  id: string;
+  name: string;
+  includedItems: string[];
 };

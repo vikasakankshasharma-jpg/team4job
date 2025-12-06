@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+
 import { db } from '@/lib/firebase/server-init';
 import { User } from '@/lib/types';
 import axios from 'axios';
@@ -10,21 +10,21 @@ const CASHFREE_API_BASE = 'https://payout-api.cashfree.com/payouts';
 
 // Function to get the bearer token from Cashfree
 async function getCashfreeBearerToken(): Promise<string> {
-    const response = await axios.post(
-        `${CASHFREE_API_BASE}/auth`,
-        {}, // Empty body for client credentials grant
-        {
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Client-Id': process.env.CASHFREE_PAYOUTS_CLIENT_ID,
-                'X-Client-Secret': process.env.CASHFREE_PAYOUTS_CLIENT_SECRET,
-            },
-        }
-    );
-    if (response.data?.data?.token) {
-        return response.data.data.token;
+  const response = await axios.post(
+    `${CASHFREE_API_BASE}/auth`,
+    {}, // Empty body for client credentials grant
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Client-Id': process.env.CASHFREE_PAYOUTS_CLIENT_ID,
+        'X-Client-Secret': process.env.CASHFREE_PAYOUTS_CLIENT_SECRET,
+      },
     }
-    throw new Error('Failed to authenticate with Cashfree Payouts.');
+  );
+  if (response.data?.data?.token) {
+    return response.data.data.token;
+  }
+  throw new Error('Failed to authenticate with Cashfree Payouts.');
 }
 
 export async function POST(req: NextRequest) {
@@ -36,10 +36,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Fetch user details from Firestore
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
+    const userRef = db.collection('users').doc(userId);
+    const userSnap = await userRef.get();
 
-    if (!userSnap.exists()) {
+    if (!userSnap.exists) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     const user = userSnap.data() as User;
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       ifsc: ifsc,
       address1: user.address.street || "Not Provided",
     };
-    
+
     // 5. Make the API call to Cashfree to add the beneficiary
     await axios.post(
       `${CASHFREE_API_BASE}/beneficiaries`,
@@ -72,18 +72,18 @@ export async function POST(req: NextRequest) {
         },
       }
     );
-    
+
     // 6. If successful, store the beneficiaryId and masked account number in our DB
     const lastFourDigits = accountNumber.slice(-4);
     const maskedAccountNumber = `**** **** ${lastFourDigits}`;
 
-    await updateDoc(userRef, {
-        'payouts.beneficiaryId': beneficiaryId,
-        'payouts.accountHolderName': accountHolderName,
-        'payouts.accountNumberMasked': maskedAccountNumber,
-        'payouts.ifsc': ifsc,
+    await userRef.update({
+      'payouts.beneficiaryId': beneficiaryId,
+      'payouts.accountHolderName': accountHolderName,
+      'payouts.accountNumberMasked': maskedAccountNumber,
+      'payouts.ifsc': ifsc,
     });
-    
+
     // 7. Return success to the frontend
     return NextResponse.json({ success: true, beneficiaryId });
 

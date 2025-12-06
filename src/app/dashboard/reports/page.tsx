@@ -3,11 +3,11 @@
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
@@ -27,7 +27,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { type ChartConfig } from "@/components/ui/chart";
 
 
-function KpiCard({ title, value, description, icon: Icon, iconBgColor }) {
+interface KpiCardProps {
+    title: string;
+    value: string | number;
+    description: string;
+    icon: React.ElementType;
+    iconBgColor: string;
+}
+
+function KpiCard({ title, value, description, icon: Icon, iconBgColor }: KpiCardProps) {
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -45,10 +53,10 @@ function KpiCard({ title, value, description, icon: Icon, iconBgColor }) {
 }
 
 const tierIcons: Record<string, React.ReactNode> = {
-  Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
-  Silver: <Medal className="h-4 w-4 text-gray-400" />,
-  Gold: <Award className="h-4 w-4 text-amber-500" />,
-  Platinum: <Award className="h-4 w-4 text-cyan-400" />,
+    Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
+    Silver: <Medal className="h-4 w-4 text-gray-400" />,
+    Gold: <Award className="h-4 w-4 text-amber-500" />,
+    Platinum: <Award className="h-4 w-4 text-cyan-400" />,
 };
 
 function TopPerformersCard({ installers }: { installers: User[] }) {
@@ -58,19 +66,19 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
     const rankedInstallers: RankedInstaller[] = useMemo(() => {
         return calculateMonthlyPerformance(installers);
     }, [installers]);
-    
+
     const handleRunAutomation = async () => {
         setIsLoading(true);
         try {
             const result = await rewardTopPerformers({});
             if (result.success) {
-                 toast({
+                toast({
                     title: "Automation Complete!",
                     description: result.summary,
-                    variant: 'success',
+                    variant: 'default',
                 });
             } else {
-                 toast({
+                toast({
                     title: "Automation Failed",
                     description: result.summary,
                     variant: 'destructive',
@@ -87,7 +95,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
             setIsLoading(false);
         }
     }
-    
+
     const lastMonthName = format(subMonths(new Date(), 1), 'MMMM yyyy');
 
     return (
@@ -116,9 +124,9 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                     </TableHeader>
                     <TableBody>
                         {rankedInstallers.slice(0, 5).map((installer, index) => (
-                           <TableRow key={installer.id} className={index < 3 ? "bg-primary/5" : ""}>
-                               <TableCell className="font-bold text-lg">{index + 1}</TableCell>
-                               <TableCell>
+                            <TableRow key={installer.id} className={index < 3 ? "bg-primary/5" : ""}>
+                                <TableCell className="font-bold text-lg">{index + 1}</TableCell>
+                                <TableCell>
                                     <div className="flex items-center gap-3">
                                         <Avatar className="h-9 w-9 hidden sm:flex">
                                             <AnimatedAvatar svg={installer.avatarUrl} />
@@ -132,19 +140,19 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                                             </div>
                                         </div>
                                     </div>
-                               </TableCell>
-                               <TableCell className="font-semibold text-green-600">+{installer.monthlyPoints} pts</TableCell>
-                               <TableCell>
+                                </TableCell>
+                                <TableCell className="font-semibold text-green-600">+{installer.monthlyPoints} pts</TableCell>
+                                <TableCell>
                                     <div className="flex items-center gap-1">
                                         <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                                         <span>{installer.installerProfile?.rating.toFixed(1)}</span>
                                     </div>
-                               </TableCell>
-                           </TableRow>
+                                </TableCell>
+                            </TableRow>
                         ))}
                     </TableBody>
                 </Table>
-                 {rankedInstallers.length === 0 && (
+                {rankedInstallers.length === 0 && (
                     <p className="text-center py-8 text-muted-foreground">Not enough data to generate performance report.</p>
                 )}
             </CardContent>
@@ -166,16 +174,16 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
             if (installer.address.fullAddress) {
                 const parts = installer.address.fullAddress.split(', ');
                 const pincode = installer.address.cityPincode.split(',')[0].trim();
-                
+
                 if (parts.length >= 3) {
                     const city = parts[parts.length - 2];
                     const state = parts[parts.length - 1];
 
-                    if(state && city) {
+                    if (state && city) {
                         states.add(state);
                         if (!citiesByState[state]) citiesByState[state] = new Set();
                         citiesByState[state].add(city);
-                        
+
                         const cityKey = `${state}-${city}`;
                         if (!pincodesByCity[cityKey]) pincodesByCity[cityKey] = new Set();
                         if (pincode) pincodesByCity[cityKey].add(pincode);
@@ -183,14 +191,14 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
                 }
             }
         });
-        
+
         return {
             states: Array.from(states).sort(),
             citiesByState: Object.fromEntries(Object.entries(citiesByState).map(([k, v]) => [k, Array.from(v).sort()])),
             pincodesByCity: Object.fromEntries(Object.entries(pincodesByCity).map(([k, v]) => [k, Array.from(v).sort()]))
         };
     }, [installers]);
-    
+
     useEffect(() => {
         setSelectedCity('all');
         setSelectedPincode('all');
@@ -207,10 +215,10 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
             result = result.filter(u => u.address.fullAddress?.includes(selectedState));
         }
         if (selectedCity !== 'all') {
-             result = result.filter(u => u.address.fullAddress?.includes(selectedCity));
+            result = result.filter(u => u.address.fullAddress?.includes(selectedCity));
         }
         if (selectedPincode !== 'all') {
-             result = result.filter(u => u.address.cityPincode.startsWith(selectedPincode));
+            result = result.filter(u => u.address.cityPincode.startsWith(selectedPincode));
         }
 
         return result.sort((a, b) => (b.installerProfile?.points || 0) - (a.installerProfile?.points || 0));
@@ -218,7 +226,7 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
     }, [installers, selectedState, selectedCity, selectedPincode]);
 
     const topInstallersForChart = filteredInstallers.slice(0, 10);
-    
+
     const handleDownload = () => {
         if (filteredInstallers.length === 0) {
             alert('No data to export for the current filter.');
@@ -240,10 +248,10 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
             officePincode: u.pincodes.office || '',
         }));
 
-        const stateName = selectedState === 'all' ? 'all-states' : selectedState.replace(' ','-');
-        const cityName = selectedCity === 'all' ? 'all-cities' : selectedCity.replace(' ','-');
+        const stateName = selectedState === 'all' ? 'all-states' : selectedState.replace(' ', '-');
+        const cityName = selectedCity === 'all' ? 'all-cities' : selectedCity.replace(' ', '-');
         const pincodeName = selectedPincode === 'all' ? 'all-pincodes' : selectedPincode;
-        
+
         const filename = `installers-report-${stateName}-${cityName}-${pincodeName}.csv`;
         exportToCsv(filename, dataToExport);
     }
@@ -259,12 +267,12 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
                         <CardTitle>All-Time Reputation Leaderboard</CardTitle>
                         <CardDescription>Top installers by total reputation points, with geographic filters.</CardDescription>
                     </div>
-                     <Button onClick={handleDownload} variant="outline" size="sm">
+                    <Button onClick={handleDownload} variant="outline" size="sm">
                         <Download className="mr-2 h-4 w-4" />
                         Download Report
                     </Button>
                 </div>
-                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
                     <Select value={selectedState} onValueChange={setSelectedState}>
                         <SelectTrigger><SelectValue placeholder="Filter by State" /></SelectTrigger>
                         <SelectContent>
@@ -272,7 +280,7 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
                             {locationData.states.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
                         </SelectContent>
                     </Select>
-                     <Select value={selectedCity} onValueChange={setSelectedCity} disabled={selectedState === 'all'}>
+                    <Select value={selectedCity} onValueChange={setSelectedCity} disabled={selectedState === 'all'}>
                         <SelectTrigger><SelectValue placeholder="Filter by City" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Cities</SelectItem>
@@ -286,7 +294,7 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
                             {pincodesForCity.map(pincode => <SelectItem key={pincode} value={pincode}>{pincode}</SelectItem>)}
                         </SelectContent>
                     </Select>
-                 </div>
+                </div>
             </CardHeader>
             <CardContent>
                 {topInstallersForChart.length > 0 ? (
@@ -320,7 +328,7 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
             let data: any[] = [];
             let filename = `cctv-export-${dataType}-${new Date().toISOString().split('T')[0]}.csv`;
 
-            switch(dataType) {
+            switch (dataType) {
                 case 'users':
                     data = users.map(u => ({
                         id: u.id,
@@ -346,14 +354,14 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
                     data = disputes;
                     break;
             }
-            
+
             if (data.length === 0) {
                 toast({ title: "No Data", description: `There is no data to export for ${dataType}.`, variant: "destructive" });
                 return;
             }
             exportToCsv(filename, data);
             toast({ title: "Export Successful", description: `${data.length} records exported for ${dataType}.` });
-        } catch(error) {
+        } catch (error) {
             console.error(`Failed to export ${dataType}:`, error);
             toast({ title: "Export Failed", description: "An error occurred during the export.", variant: "destructive" });
         } finally {
@@ -395,7 +403,7 @@ function DisputeResolutionReport({ disputes }: { disputes: Dispute[] }) {
         const totalResolutionTime = resolvedDisputes
             .filter(d => d.createdAt && d.resolvedAt)
             .reduce((acc, d) => acc + differenceInMilliseconds(toDate(d.resolvedAt!), toDate(d.createdAt)), 0);
-        
+
         const avgResolutionTimeDays = resolvedDisputes.length > 0
             ? (totalResolutionTime / resolvedDisputes.length) / (1000 * 60 * 60 * 24)
             : 0;
@@ -426,13 +434,13 @@ function DisputeResolutionReport({ disputes }: { disputes: Dispute[] }) {
             </Card>
         );
     }
-    
+
     const performanceChartConfig = {
-      value: { label: 'Resolved' },
-      fill: {
-        label: "Fill",
-        color: "hsl(var(--primary) / 0.2)",
-      },
+        value: { label: 'Resolved' },
+        fill: {
+            label: "Fill",
+            color: "hsl(var(--primary) / 0.2)",
+        },
     } satisfies ChartConfig;
 
     return (
@@ -455,8 +463,8 @@ function DisputeResolutionReport({ disputes }: { disputes: Dispute[] }) {
                     </Card>
                 </div>
                 <div>
-                     <h4 className="text-sm font-medium mb-2">Disputes by Category</h4>
-                     <ResponsiveContainer width="100%" height={150}>
+                    <h4 className="text-sm font-medium mb-2">Disputes by Category</h4>
+                    <ResponsiveContainer width="100%" height={150}>
                         <BarChart data={report.categoryData} layout="vertical" margin={{ left: 20 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                             <XAxis type="number" />
@@ -483,9 +491,9 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
                 acc.fundsHeld += t.totalPaidByGiver;
             }
             if (t.status === 'Funded' || t.status === 'Released') {
-                 acc.totalVolume += t.totalPaidByGiver;
+                acc.totalVolume += t.totalPaidByGiver;
             }
-             if (t.status === 'Refunded') {
+            if (t.status === 'Refunded') {
                 acc.refundsCount++;
             }
             return acc;
@@ -498,7 +506,7 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
             fundsHeld: 0,
         });
     }, [transactions]);
-    
+
     return (
         <Card className="col-span-full">
             <CardHeader>
@@ -506,7 +514,7 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
                 <CardDescription>A real-time overview of financial activities on the platform.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-                 <Card className="p-4">
+                <Card className="p-4">
                     <p className="text-sm font-medium">Total Volume</p>
                     <p className="text-2xl font-bold">₹{summary.totalVolume.toLocaleString()}</p>
                 </Card>
@@ -514,11 +522,11 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
                     <p className="text-sm font-medium">Platform Revenue</p>
                     <p className="text-2xl font-bold text-green-600">₹{summary.platformRevenue.toLocaleString()}</p>
                 </Card>
-                 <Card className="p-4">
+                <Card className="p-4">
                     <p className="text-sm font-medium">Funds Released</p>
                     <p className="text-2xl font-bold">₹{summary.totalReleased.toLocaleString()}</p>
                 </Card>
-                 <Card className="p-4">
+                <Card className="p-4">
                     <p className="text-sm font-medium">Funds Held</p>
                     <p className="text-2xl font-bold">₹{summary.fundsHeld.toLocaleString()}</p>
                 </Card>
@@ -533,173 +541,173 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
 
 
 export default function ReportsPage() {
-  const { isAdmin, loading: userLoading } = useUser();
-  const { db } = useFirebase();
-  const router = useRouter();
-  const [users, setUsers] = React.useState<User[]>([]);
-  const [jobs, setJobs] = React.useState<Job[]>([]);
-  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
-  const [disputes, setDisputes] = React.useState<Dispute[]>([]);
-  const [loading, setLoading] = React.useState(true);
+    const { isAdmin, loading: userLoading } = useUser();
+    const { db } = useFirebase();
+    const router = useRouter();
+    const [users, setUsers] = React.useState<User[]>([]);
+    const [jobs, setJobs] = React.useState<Job[]>([]);
+    const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+    const [disputes, setDisputes] = React.useState<Dispute[]>([]);
+    const [loading, setLoading] = React.useState(true);
 
-  useEffect(() => {
-    if (!userLoading && !isAdmin) {
-      router.push('/dashboard');
-    }
-  }, [isAdmin, userLoading, router]);
-
-  const fetchData = React.useCallback(async () => {
-    if (!db || !isAdmin) return;
-    setLoading(true);
-    const [usersSnapshot, jobsSnapshot, transactionsSnapshot, disputesSnapshot] = await Promise.all([
-        getDocs(query(collection(db, "users"))),
-        getDocs(query(collection(db, "jobs"))),
-        getDocs(query(collection(db, "transactions"))),
-        getDocs(query(collection(db, "disputes"))),
-    ]);
-    setUsers(usersSnapshot.docs.map(doc => doc.data() as User));
-    setJobs(jobsSnapshot.docs.map(doc => doc.data() as Job));
-    setTransactions(transactionsSnapshot.docs.map(doc => doc.data() as Transaction));
-    setDisputes(disputesSnapshot.docs.map(doc => doc.data() as Dispute));
-    setLoading(false);
-  }, [db, isAdmin]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-
-  const reportData = useMemo(() => {
-    if (users.length === 0 && jobs.length === 0) return null;
-
-    const totalUsers = users.length;
-    const installerCount = users.filter(u => u.roles.includes("Installer")).length;
-    const jobGiverCount = users.filter(u => u.roles.includes("Job Giver")).length;
-
-    const totalJobs = jobs.length;
-    const completedJobs = jobs.filter(j => j.status === 'Completed');
-    const fillRate = totalJobs > 0 ? (completedJobs.length / totalJobs) * 100 : 0;
-
-    const now = new Date();
-    const userGrowthData = Array.from({ length: 6 }).map((_, i) => {
-        const monthDate = subMonths(startOfMonth(now), i);
-        const monthName = format(monthDate, 'MMM');
-        return {
-            name: monthName,
-            Installers: 0,
-            "Job Givers": 0,
-        };
-    }).reverse();
-
-    users.forEach(user => {
-        const joinDate = toDate(user.memberSince);
-        if (joinDate > subMonths(now, 6)) {
-            const monthName = format(joinDate, 'MMM');
-            const monthData = userGrowthData.find(m => m.name === monthName);
-            if (monthData) {
-                if (user.roles.includes('Installer')) monthData.Installers++;
-                if (user.roles.includes('Job Giver')) monthData["Job Givers"]++;
-            }
+    useEffect(() => {
+        if (!userLoading && !isAdmin) {
+            router.push('/dashboard');
         }
-    });
+    }, [isAdmin, userLoading, router]);
 
-    const jobStatusDistribution = jobs.reduce((acc, job) => {
-        acc[job.status] = (acc[job.status] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
-    const jobStatusData = Object.entries(jobStatusDistribution).map(([name, value]) => ({ name, value }));
+    const fetchData = React.useCallback(async () => {
+        if (!db || !isAdmin) return;
+        setLoading(true);
+        const [usersSnapshot, jobsSnapshot, transactionsSnapshot, disputesSnapshot] = await Promise.all([
+            getDocs(query(collection(db, "users"))),
+            getDocs(query(collection(db, "jobs"))),
+            getDocs(query(collection(db, "transactions"))),
+            getDocs(query(collection(db, "disputes"))),
+        ]);
+        setUsers(usersSnapshot.docs.map(doc => doc.data() as User));
+        setJobs(jobsSnapshot.docs.map(doc => doc.data() as Job));
+        setTransactions(transactionsSnapshot.docs.map(doc => doc.data() as Transaction));
+        setDisputes(disputesSnapshot.docs.map(doc => doc.data() as Dispute));
+        setLoading(false);
+    }, [db, isAdmin]);
 
-    const allInstallers = users.filter(u => u.installerProfile);
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
-    return {
-        totalUsers,
-        installerCount,
-        jobGiverCount,
-        totalJobs,
-        fillRate,
-        userGrowthData,
-        jobStatusData,
-        allInstallers,
-    };
-  }, [users, jobs]);
 
-  if (userLoading || !isAdmin || loading) {
+    const reportData = useMemo(() => {
+        if (users.length === 0 && jobs.length === 0) return null;
+
+        const totalUsers = users.length;
+        const installerCount = users.filter(u => u.roles.includes("Installer")).length;
+        const jobGiverCount = users.filter(u => u.roles.includes("Job Giver")).length;
+
+        const totalJobs = jobs.length;
+        const completedJobs = jobs.filter(j => j.status === 'Completed');
+        const fillRate = totalJobs > 0 ? (completedJobs.length / totalJobs) * 100 : 0;
+
+        const now = new Date();
+        const userGrowthData = Array.from({ length: 6 }).map((_, i) => {
+            const monthDate = subMonths(startOfMonth(now), i);
+            const monthName = format(monthDate, 'MMM');
+            return {
+                name: monthName,
+                Installers: 0,
+                "Job Givers": 0,
+            };
+        }).reverse();
+
+        users.forEach(user => {
+            const joinDate = toDate(user.memberSince);
+            if (joinDate > subMonths(now, 6)) {
+                const monthName = format(joinDate, 'MMM');
+                const monthData = userGrowthData.find(m => m.name === monthName);
+                if (monthData) {
+                    if (user.roles.includes('Installer')) monthData.Installers++;
+                    if (user.roles.includes('Job Giver')) monthData["Job Givers"]++;
+                }
+            }
+        });
+
+        const jobStatusDistribution = jobs.reduce((acc, job) => {
+            acc[job.status] = (acc[job.status] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        const jobStatusData = Object.entries(jobStatusDistribution).map(([name, value]) => ({ name, value }));
+
+        const allInstallers = users.filter(u => u.installerProfile);
+
+        return {
+            totalUsers,
+            installerCount,
+            jobGiverCount,
+            totalJobs,
+            fillRate,
+            userGrowthData,
+            jobStatusData,
+            allInstallers,
+        };
+    }, [users, jobs]);
+
+    if (userLoading || !isAdmin || loading) {
+        return (
+            <div className="flex h-48 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
+
+    if (!reportData) {
+        return <p>No data available to generate reports.</p>
+    }
+
+    const { totalUsers, installerCount, jobGiverCount, totalJobs, fillRate, userGrowthData, jobStatusData, allInstallers } = reportData;
+
     return (
-      <div className="flex h-48 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+        <div className="grid gap-6">
+            <CardHeader className="p-0">
+                <CardTitle>Platform Reports</CardTitle>
+                <CardDescription>An overview of key metrics and trends across the platform.</CardDescription>
+            </CardHeader>
+
+            <FinancialSummaryCard transactions={transactions} />
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <KpiCard title="Total Users" value={totalUsers} description={`${installerCount} Installers, ${jobGiverCount} Job Givers`} icon={Users} iconBgColor="bg-blue-500" />
+                <KpiCard title="Total Jobs" value={totalJobs} description="All jobs created on the platform" icon={Briefcase} iconBgColor="bg-purple-500" />
+                <KpiCard title="Job Fill Rate" value={`${fillRate.toFixed(1)}%`} description="Of jobs posted are completed" icon={PieChart} iconBgColor="bg-amber-500" />
+            </div>
+
+            <DataExportCard users={users} jobs={jobs} transactions={transactions} disputes={disputes} />
+
+            <div className="grid gap-6 lg:grid-cols-2">
+                <TopPerformersCard installers={allInstallers} />
+                <AllTimeLeaderboardCard installers={allInstallers} />
+            </div>
+
+            <DisputeResolutionReport disputes={disputes} />
+
+            <div className="grid gap-6 lg:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>User Growth</CardTitle>
+                        <CardDescription>New users registered in the last 6 months.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <AreaChart data={userGrowthData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Legend />
+                                <Area type="monotone" dataKey="Installers" stackId="1" stroke="#8884d8" fill="#8884d8" />
+                                <Area type="monotone" dataKey="Job Givers" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Job Status Distribution</CardTitle>
+                        <CardDescription>Current status of all jobs on the platform.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={jobStatusData} layout="vertical" margin={{ left: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis type="number" />
+                                <YAxis type="category" dataKey="name" width={120} />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="value" name="Number of Jobs" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
     );
-  }
-
-  if (!reportData) {
-      return <p>No data available to generate reports.</p>
-  }
-  
-  const { totalUsers, installerCount, jobGiverCount, totalJobs, fillRate, userGrowthData, jobStatusData, allInstallers } = reportData;
-
-  return (
-    <div className="grid gap-6">
-      <CardHeader className="p-0">
-        <CardTitle>Platform Reports</CardTitle>
-        <CardDescription>An overview of key metrics and trends across the platform.</CardDescription>
-      </CardHeader>
-      
-      <FinancialSummaryCard transactions={transactions} />
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <KpiCard title="Total Users" value={totalUsers} description={`${installerCount} Installers, ${jobGiverCount} Job Givers`} icon={Users} iconBgColor="bg-blue-500" />
-        <KpiCard title="Total Jobs" value={totalJobs} description="All jobs created on the platform" icon={Briefcase} iconBgColor="bg-purple-500" />
-        <KpiCard title="Job Fill Rate" value={`${fillRate.toFixed(1)}%`} description="Of jobs posted are completed" icon={PieChart} iconBgColor="bg-amber-500" />
-      </div>
-
-      <DataExportCard users={users} jobs={jobs} transactions={transactions} disputes={disputes} />
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <TopPerformersCard installers={allInstallers} />
-        <AllTimeLeaderboardCard installers={allInstallers} />
-      </div>
-      
-      <DisputeResolutionReport disputes={disputes} />
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>User Growth</CardTitle>
-            <CardDescription>New users registered in the last 6 months.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={userGrowthData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Area type="monotone" dataKey="Installers" stackId="1" stroke="#8884d8" fill="#8884d8" />
-                <Area type="monotone" dataKey="Job Givers" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Job Status Distribution</CardTitle>
-            <CardDescription>Current status of all jobs on the platform.</CardDescription>
-          </CardHeader>
-          <CardContent>
-             <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={jobStatusData} layout="vertical" margin={{ left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis type="category" dataKey="name" width={120} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="value" name="Number of Jobs" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
 }

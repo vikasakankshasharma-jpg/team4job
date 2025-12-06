@@ -30,7 +30,15 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { toDate } from "@/lib/utils";
 
-const installerNavItems = [
+type NavItem = {
+  href: string;
+  icon: React.ForwardRefExoticComponent<any>;
+  label: string;
+  tourId?: string;
+  premium?: boolean;
+};
+
+const installerNavItems: NavItem[] = [
   { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
   { href: "/dashboard/jobs", icon: Briefcase, label: "Browse Jobs", tourId: "all-jobs" },
   { href: "/dashboard/my-bids", icon: FileText, label: "My Bids", tourId: "my-bids" },
@@ -38,7 +46,7 @@ const installerNavItems = [
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
 ];
 
-const jobGiverNavItems = [
+const jobGiverNavItems: NavItem[] = [
   { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
   { href: "/dashboard/installers", icon: Search, label: "Find Installers", tourId: "find-installers", premium: true },
   { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job", tourId: "post-job" },
@@ -48,17 +56,17 @@ const jobGiverNavItems = [
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
 ];
 
-const adminNavItems = [
-    { href: "/dashboard", icon: Home, label: "Dashboard" },
-    { href: "/dashboard/reports", icon: FileText, label: "Reports" },
-    { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
-    { href: "/dashboard/team", icon: UserCog, label: "Team Management" },
-    { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
-    { href: "/dashboard/transactions", icon: IndianRupee, label: "Transactions" },
-    { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
+const adminNavItems: NavItem[] = [
+  { href: "/dashboard", icon: Home, label: "Dashboard" },
+  { href: "/dashboard/reports", icon: FileText, label: "Reports" },
+  { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
+  { href: "/dashboard/team", icon: UserCog, label: "Team Management" },
+  { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
+  { href: "/dashboard/transactions", icon: IndianRupee, label: "Transactions" },
+  { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
 ];
 
-const supportTeamNavItems = [
+const supportTeamNavItems: NavItem[] = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
 ];
@@ -67,7 +75,7 @@ const supportTeamNavItems = [
 export function DashboardSidebar() {
   const pathname = usePathname();
   const { user, role } = useUser();
-  
+
   const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
 
   const getNavItems = () => {
@@ -115,7 +123,7 @@ export function DashboardSidebar() {
                   >
                     <item.icon className="h-5 w-5" />
                     {item.premium && !isSubscribed && (
-                        <Zap className="absolute -bottom-1 -right-1 h-4 w-4 fill-amber-400 text-amber-500" />
+                      <Zap className="absolute -bottom-1 -right-1 h-4 w-4 fill-amber-400 text-amber-500" />
                     )}
                     <span className="sr-only">{item.label}</span>
                   </Link>
@@ -126,34 +134,34 @@ export function DashboardSidebar() {
           })}
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                  <Link
-                      href="/dashboard/profile"
-                      className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                      pathname.startsWith('/dashboard/profile') && "bg-accent text-accent-foreground"
-                      )}
-                  >
-                      <UserIcon className="h-5 w-5" />
-                      <span className="sr-only">Profile</span>
-                  </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Profile</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/dashboard/settings"
-                  className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/dashboard/profile"
+                className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
+                  pathname.startsWith('/dashboard/profile') && "bg-accent text-accent-foreground"
+                )}
+              >
+                <UserIcon className="h-5 w-5" />
+                <span className="sr-only">Profile</span>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">Profile</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/dashboard/settings"
+                className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
                   pathname.startsWith('/dashboard/settings') && 'bg-accent text-accent-foreground'
-                  )}
-                >
-                  <Settings className="h-5 w-5" />
-                  <span className="sr-only">Settings</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Settings</TooltipContent>
-            </Tooltip>
+                )}
+              >
+                <Settings className="h-5 w-5" />
+                <span className="sr-only">Settings</span>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">Settings</TooltipContent>
+          </Tooltip>
         </nav>
       </TooltipProvider>
     </aside>

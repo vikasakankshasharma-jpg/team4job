@@ -5,20 +5,20 @@ import { useUser, useFirebase } from "@/hooks/use-user";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+    CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2, Banknote } from "lucide-react";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Progress } from "@/components/ui/progress";
 import React, { useEffect, useCallback } from "react";
@@ -35,13 +35,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+    FormDescription,
 } from "@/components/ui/form";
 import { allSkills } from "@/lib/data";
 import { User } from "@/lib/types";
@@ -56,10 +56,10 @@ import { useRouter } from "next/navigation";
 
 
 const tierIcons = {
-  Bronze: <Medal className="h-6 w-6 text-yellow-700" />,
-  Silver: <Medal className="h-6 w-6 text-gray-400" />,
-  Gold: <Gem className="h-6 w-6 text-amber-500" />,
-  Platinum: <Gem className="h-6 w-6 text-cyan-400" />,
+    Bronze: <Medal className="h-6 w-6 text-yellow-700" />,
+    Silver: <Medal className="h-6 w-6 text-gray-400" />,
+    Gold: <Gem className="h-6 w-6 text-amber-500" />,
+    Platinum: <Gem className="h-6 w-6 text-cyan-400" />,
 };
 
 const tierData = {
@@ -70,10 +70,10 @@ const tierData = {
 };
 
 const chartConfig = {
-  points: {
-    label: "Points",
-    color: "hsl(var(--primary))",
-  },
+    points: {
+        label: "Points",
+        color: "hsl(var(--primary))",
+    },
 } satisfies ChartConfig
 
 
@@ -128,7 +128,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                     <FormField
+                    <FormField
                         control={form.control}
                         name="name"
                         render={({ field }) => (
@@ -141,7 +141,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                             </FormItem>
                         )}
                     />
-                     <FormField
+                    <FormField
                         control={form.control}
                         name="residentialPincode"
                         render={({ field }) => (
@@ -155,7 +155,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                         )}
                     />
                     {isInstaller && (
-                         <FormField
+                        <FormField
                             control={form.control}
                             name="officePincode"
                             render={({ field }) => (
@@ -170,7 +170,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                             )}
                         />
                     )}
-                     <Card>
+                    <Card>
                         <CardHeader className="p-4">
                             <CardTitle className="text-base">Business & GST Information</CardTitle>
                         </CardHeader>
@@ -190,13 +190,13 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                                 )}
                             />
                         </CardContent>
-                     </Card>
+                    </Card>
                     <DialogFooter>
                         <DialogClose asChild>
                             <Button type="button" variant="secondary">Cancel</Button>
                         </DialogClose>
                         <DialogClose asChild>
-                             <Button type="submit">Save Changes</Button>
+                            <Button type="submit">Save Changes</Button>
                         </DialogClose>
                     </DialogFooter>
                 </form>
@@ -218,13 +218,13 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
     const [isOpen, setIsOpen] = React.useState(false);
 
     const handleSkillChange = (skill: string) => {
-        setSelectedSkills(prev => 
-            prev.includes(skill) 
-            ? prev.filter(s => s !== skill) 
-            : [...prev, skill]
+        setSelectedSkills(prev =>
+            prev.includes(skill)
+                ? prev.filter(s => s !== skill)
+                : [...prev, skill]
         );
     };
-    
+
     const handleSave = async () => {
         if (!userId || !db) return;
         const userRef = doc(db, 'users', userId);
@@ -232,7 +232,7 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
         onSave(selectedSkills);
         setIsOpen(false);
     }
-    
+
     const handleRequestSkill = () => {
         if (newSkillRequest.trim()) {
             toast({
@@ -270,7 +270,7 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
                             <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                                 {allSkills.map(skill => (
                                     <div key={skill} className="flex items-center space-x-2">
-                                        <Checkbox 
+                                        <Checkbox
                                             id={`skill-${skill}`}
                                             checked={selectedSkills.includes(skill)}
                                             onCheckedChange={() => handleSkillChange(skill)}
@@ -284,8 +284,8 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
                                 <h4 className="font-medium leading-none mb-2">Request New Skill</h4>
                                 <p className="text-sm text-muted-foreground mb-2">Can't find your skill? Request it here.</p>
                                 <div className="flex gap-2">
-                                    <Input 
-                                        placeholder="e.g., AI Analytics" 
+                                    <Input
+                                        placeholder="e.g., AI Analytics"
                                         value={newSkillRequest}
                                         onChange={(e) => setNewSkillRequest(e.target.value)}
                                     />
@@ -306,41 +306,41 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
 }
 
 function CompletedJobsStat() {
-  const { user, role } = useUser();
-  const { db } = useFirebase();
-  const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
-  const [loading, setLoading] = React.useState(true);
+    const { user, role } = useUser();
+    const { db } = useFirebase();
+    const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
+    const [loading, setLoading] = React.useState(true);
 
-  useEffect(() => {
-    if (!user || role !== 'Installer' || !db) {
-      setLoading(false);
-      return;
-    }
-    const fetchJobsData = async () => {
-      setLoading(true);
-      const q = query(
-        collection(db, 'jobs'),
-        where('status', '==', 'Completed'),
-        where('awardedInstaller', '==', doc(db, 'users', user.id))
-      );
-      const querySnapshot = await getDocs(q);
-      setJobsCompletedCount(querySnapshot.size);
-      setLoading(false);
-    };
-    fetchJobsData();
-  }, [user, role, db]);
+    useEffect(() => {
+        if (!user || role !== 'Installer' || !db) {
+            setLoading(false);
+            return;
+        }
+        const fetchJobsData = async () => {
+            setLoading(true);
+            const q = query(
+                collection(db, 'jobs'),
+                where('status', '==', 'Completed'),
+                where('awardedInstaller', '==', doc(db, 'users', user.id))
+            );
+            const querySnapshot = await getDocs(q);
+            setJobsCompletedCount(querySnapshot.size);
+            setLoading(false);
+        };
+        fetchJobsData();
+    }, [user, role, db]);
 
-  return (
-    <Link href="/dashboard/my-bids?status=Completed" className="block p-4 rounded-lg border hover:bg-accent transition-colors">
-      <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary" />
-      {loading ? (
-        <Skeleton className="h-8 w-1/2 mx-auto" />
-      ) : (
-        <p className="text-2xl font-bold">{jobsCompletedCount}</p>
-      )}
-      <p className="text-sm text-muted-foreground">Jobs Completed</p>
-    </Link>
-  );
+    return (
+        <Link href="/dashboard/my-bids?status=Completed" className="block p-4 rounded-lg border hover:bg-accent transition-colors">
+            <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary" />
+            {loading ? (
+                <Skeleton className="h-8 w-1/2 mx-auto" />
+            ) : (
+                <p className="text-2xl font-bold">{jobsCompletedCount}</p>
+            )}
+            <p className="text-sm text-muted-foreground">Jobs Completed</p>
+        </Link>
+    );
 }
 
 const beneficiarySchema = z.object({
@@ -373,7 +373,7 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
             toast({
                 title: "Bank Account Added",
                 description: "Your bank account has been successfully registered for payouts.",
-                variant: "success",
+                variant: "default",
             });
             onUpdate(); // This will re-fetch user data
         } catch (error: any) {
@@ -391,58 +391,58 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Banknote className="h-5 w-5"/> Payout Settings</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Banknote className="h-5 w-5" /> Payout Settings</CardTitle>
                 <CardDescription>Manage the bank account where you receive payments for completed jobs.</CardDescription>
             </CardHeader>
             <CardContent>
                 {user.payouts?.beneficiaryId ? (
                     <div className="space-y-4">
-                         <div className="flex items-start justify-between rounded-lg border p-4 bg-secondary">
-                             <div>
+                        <div className="flex items-start justify-between rounded-lg border p-4 bg-secondary">
+                            <div>
                                 <p className="font-semibold">{user.payouts.accountHolderName}</p>
                                 <p className="text-sm text-muted-foreground">{user.payouts.accountNumberMasked}</p>
                                 <p className="text-sm text-muted-foreground font-mono">{user.payouts.ifsc}</p>
                             </div>
                             <Badge variant="success" className="gap-2"><Check className="h-4 w-4" /> Registered</Badge>
-                         </div>
-                         <p className="text-xs text-muted-foreground">To change your bank account, please contact support.</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">To change your bank account, please contact support.</p>
                     </div>
                 ) : (
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                           <FormField
-                              control={form.control}
-                              name="accountHolderName"
-                              render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Account Holder Name</FormLabel>
-                                    <FormControl><Input placeholder="Name as per bank records" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                              )}
+                            <FormField
+                                control={form.control}
+                                name="accountHolderName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Account Holder Name</FormLabel>
+                                        <FormControl><Input placeholder="Name as per bank records" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField
-                                  control={form.control}
-                                  name="accountNumber"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Bank Account Number</FormLabel>
-                                        <FormControl><Input placeholder="Enter account number" {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                  )}
+                                    control={form.control}
+                                    name="accountNumber"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Bank Account Number</FormLabel>
+                                            <FormControl><Input placeholder="Enter account number" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
                                 />
-                                 <FormField
-                                  control={form.control}
-                                  name="ifsc"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>IFSC Code</FormLabel>
-                                        <FormControl><Input placeholder="Enter 11-digit IFSC" {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                  )}
+                                <FormField
+                                    control={form.control}
+                                    name="ifsc"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>IFSC Code</FormLabel>
+                                            <FormControl><Input placeholder="Enter 11-digit IFSC" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
                                 />
                             </div>
                             <Button type="submit" disabled={isLoading}>
@@ -458,323 +458,323 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
 }
 
 export default function ProfilePage() {
-  const { user, role, setUser, setRole, loading: userLoading } = useUser();
-  const { db } = useFirebase();
-  const [isReputationOpen, setIsReputationOpen] = React.useState(false);
-  const { toast } = useToast();
-  const { setHelp } = useHelp();
-  const router = useRouter();
+    const { user, role, setUser, setRole, loading: userLoading } = useUser();
+    const { db } = useFirebase();
+    const [isReputationOpen, setIsReputationOpen] = React.useState(false);
+    const { toast } = useToast();
+    const { setHelp } = useHelp();
+    const router = useRouter();
 
-  const fetchUser = useCallback(async () => {
-    if (!db || !user) return;
-    const userDoc = await getDoc(doc(db, 'users', user.id));
-    if (userDoc.exists() && setUser) {
-      setUser({ id: userDoc.id, ...userDoc.data() } as User);
-    }
-  }, [db, user, setUser]);
+    const fetchUser = useCallback(async () => {
+        if (!db || !user) return;
+        const userDoc = await getDoc(doc(db, 'users', user.id));
+        if (userDoc.exists() && setUser) {
+            setUser({ id: userDoc.id, ...userDoc.data() } as User);
+        }
+    }, [db, user, setUser]);
 
-  React.useEffect(() => {
-    setHelp({
-        title: "Your Profile",
-        content: (
-            <div className="space-y-4 text-sm">
-                <p>This is your personal profile page. Here, you can view and manage your information.</p>
-                <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Your Details:</span> View your name, user ID, email, and location info. Click "Edit Profile" to update your name, pincodes, or GSTIN.</li>
-                    <li><span className="font-semibold">Role Switching:</span> If you have both "Job Giver" and "Installer" roles, you can switch between them in the user menu (top right).</li>
-                    {role === 'Installer' && (
-                        <>
-                         <li><span className="font-semibold">Installer Reputation:</span> This section tracks your performance. Complete jobs and get good ratings to earn points and advance to higher tiers (Bronze, Silver, Gold, Platinum).</li>
-                         <li><span className="font-semibold">Skills:</span> Click the pencil icon to add or remove skills from your profile. This helps Job Givers find you.</li>
-                         <li><span className="font-semibold">Payout Settings:</span> Add your bank account details here to receive payments for completed jobs.</li>
-                        </>
-                    )}
-                    <li><span className="font-semibold">Become an Installer/Job Giver:</span> If you only have one role, you'll see a prompt to activate the other, expanding your opportunities on the platform.</li>
-                </ul>
+    React.useEffect(() => {
+        setHelp({
+            title: "Your Profile",
+            content: (
+                <div className="space-y-4 text-sm">
+                    <p>This is your personal profile page. Here, you can view and manage your information.</p>
+                    <ul className="list-disc space-y-2 pl-5">
+                        <li><span className="font-semibold">Your Details:</span> View your name, user ID, email, and location info. Click "Edit Profile" to update your name, pincodes, or GSTIN.</li>
+                        <li><span className="font-semibold">Role Switching:</span> If you have both "Job Giver" and "Installer" roles, you can switch between them in the user menu (top right).</li>
+                        {role === 'Installer' && (
+                            <>
+                                <li><span className="font-semibold">Installer Reputation:</span> This section tracks your performance. Complete jobs and get good ratings to earn points and advance to higher tiers (Bronze, Silver, Gold, Platinum).</li>
+                                <li><span className="font-semibold">Skills:</span> Click the pencil icon to add or remove skills from your profile. This helps Job Givers find you.</li>
+                                <li><span className="font-semibold">Payout Settings:</span> Add your bank account details here to receive payments for completed jobs.</li>
+                            </>
+                        )}
+                        <li><span className="font-semibold">Become an Installer/Job Giver:</span> If you only have one role, you'll see a prompt to activate the other, expanding your opportunities on the platform.</li>
+                    </ul>
+                </div>
+            )
+        });
+    }, [setHelp, role]);
+
+    if (userLoading) {
+        return (
+            <div className="flex h-48 items-center justify-center">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Loading Profile...</span>
+                </div>
             </div>
-        )
-    });
-  }, [setHelp, role]);
-  
-  if (userLoading) {
+        );
+    }
+
+    if (!user || !db) {
+        return <div>User not found.</div>
+    }
+
+    const installerProfile = user.installerProfile;
+    const isJobGiverOnly = user.roles.length === 1 && user.roles[0] === "Job Giver";
+    const isInstallerOnly = user.roles.length === 1 && user.roles[0] === "Installer";
+
+    const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
+    const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
+
+    const handleProfileSave = (values: z.infer<typeof editProfileSchema>) => {
+        if (setUser) {
+            setUser(prevUser => {
+                if (!prevUser) return null;
+                return {
+                    ...prevUser,
+                    name: values.name,
+                    pincodes: {
+                        residential: values.residentialPincode,
+                        office: values.officePincode || prevUser.pincodes.office,
+                    },
+                    gstin: values.gstin || prevUser.gstin,
+                };
+            });
+        }
+    };
+
+    const handleSkillsSave = (newSkills: string[]) => {
+        if (setUser) {
+            setUser(prevUser => {
+                if (!prevUser || !prevUser.installerProfile) return prevUser;
+                const updatedProfile = { ...prevUser.installerProfile, skills: newSkills };
+                return { ...prevUser, installerProfile: updatedProfile };
+            });
+            toast({
+                title: "Skills Updated",
+                description: "Your list of skills has been saved.",
+            });
+        }
+    }
+
+    const handleBecomeJobGiver = async () => {
+        if (setUser && setRole && user && db) {
+            const userRef = doc(db, 'users', user.id);
+            await updateDoc(userRef, { roles: arrayUnion('Job Giver') });
+            const updatedUser = { ...user, roles: [...user.roles, 'Job Giver'] as User['roles'] };
+            setUser(updatedUser);
+            setRole('Job Giver');
+            toast({
+                title: "Job Giver Role Activated!",
+                description: "You can now post jobs and hire installers.",
+                variant: "default",
+            });
+        }
+    };
+
+    const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
+
     return (
-      <div className="flex h-48 items-center justify-center">
-        <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Loading Profile...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user || !db) {
-    return <div>User not found.</div>
-  }
-  
-  const installerProfile = user.installerProfile;
-  const isJobGiverOnly = user.roles.length === 1 && user.roles[0] === "Job Giver";
-  const isInstallerOnly = user.roles.length === 1 && user.roles[0] === "Installer";
-
-  const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
-  const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
-
-  const handleProfileSave = (values: z.infer<typeof editProfileSchema>) => {
-    if(setUser) {
-      setUser(prevUser => {
-        if (!prevUser) return null;
-        return { 
-            ...prevUser, 
-            name: values.name,
-            pincodes: {
-                residential: values.residentialPincode,
-                office: values.officePincode || prevUser.pincodes.office,
-            },
-            gstin: values.gstin || prevUser.gstin,
-        };
-      });
-    }
-  };
-  
-  const handleSkillsSave = (newSkills: string[]) => {
-    if (setUser) {
-        setUser(prevUser => {
-            if (!prevUser || !prevUser.installerProfile) return prevUser;
-            const updatedProfile = { ...prevUser.installerProfile, skills: newSkills };
-            return { ...prevUser, installerProfile: updatedProfile };
-        });
-        toast({
-            title: "Skills Updated",
-            description: "Your list of skills has been saved.",
-        });
-    }
-  }
-
-  const handleBecomeJobGiver = async () => {
-    if (setUser && setRole && user && db) {
-        const userRef = doc(db, 'users', user.id);
-        await updateDoc(userRef, { roles: arrayUnion('Job Giver') });
-        const updatedUser = { ...user, roles: [...user.roles, 'Job Giver'] as User['roles'] };
-        setUser(updatedUser);
-        setRole('Job Giver');
-        toast({
-            title: "Job Giver Role Activated!",
-            description: "You can now post jobs and hire installers.",
-            variant: "success",
-        });
-    }
-  };
-  
-  const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
-
-  return (
-    <div className="grid gap-8">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            <Avatar className="h-24 w-24 border-2 border-primary">
-              <AvatarImage src={user.realAvatarUrl} alt={user.name} />
-              <AvatarFallback className="text-3xl">
-                {user.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="flex items-center gap-4">
-                <CardTitle className="text-3xl">{user.name}</CardTitle>
-              </div>
-               <div className="flex flex-col mt-1">
-                <p className="text-muted-foreground">{user.email}</p>
-                <p className="text-sm text-muted-foreground font-mono truncate max-w-sm">{user.id}</p>
-              </div>
-
-               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mt-2">
-                <div className="flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4" />
-                    <span>Member since {format(toDate(user.memberSince), 'MMMM yyyy')}</span>
-                </div>
-                 <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>{user.pincodes.residential} (Home)</span>
-                </div>
-                 {user.pincodes.office && (
-                    <div className="flex items-center gap-2">
-                        <Building className="h-4 w-4" />
-                        <span>{user.pincodes.office} (Office)</span>
-                    </div>
-                 )}
-              </div>
-
-              <div className="mt-4">
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button>Edit Profile</Button>
-                    </DialogTrigger>
-                    <EditProfileForm user={user} onSave={handleProfileSave} />
-                </Dialog>
-              </div>
-            </div>
-            {isSubscribed && (
-                 <div className="text-right">
-                    <p className="font-semibold">{user.subscription.planName}</p>
-                    <p className="text-sm text-muted-foreground">Expires: {format(toDate(user.subscription.expiresAt), "MMM d, yyyy")}</p>
-                 </div>
-            )}
-          </div>
-        </CardHeader>
-      </Card>
-      
-      {role === "Installer" && installerProfile && (
         <div className="grid gap-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>Installer Reputation</CardTitle>
-                    <CardDescription>Your performance and trust score on the platform.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-6">
-                     <Collapsible
-                        open={isReputationOpen}
-                        onOpenChange={setIsReputationOpen}
-                     >
-                        <CollapsibleTrigger asChild>
-                            <div className="flex items-center justify-between p-4 rounded-lg bg-accent/20 cursor-pointer hover:bg-accent/30 transition-colors">
-                                <div className="flex items-center gap-4">
-                                    {tierIcons[installerProfile.tier]}
-                                    <div>
-                                        <p className="text-sm">Tier</p>
-                                        <p className="text-xl font-bold">{installerProfile.tier}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <div className="text-right">
-                                        <p className="text-sm">Reputation Points</p>
-                                        <p className="text-xl font-bold text-right">{installerProfile.points}</p>
-                                    </div>
-                                    <ChevronsUpDown className="h-5 w-5 text-muted-foreground" />
-                                </div>
+                    <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                        <Avatar className="h-24 w-24 border-2 border-primary">
+                            <AvatarImage src={user.realAvatarUrl} alt={user.name} />
+                            <AvatarFallback className="text-3xl">
+                                {user.name.charAt(0)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-4">
+                                <CardTitle className="text-3xl">{user.name}</CardTitle>
                             </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-6 pt-6">
-                            <div className="text-sm text-muted-foreground p-4 border rounded-lg space-y-4">
-                               <div>
-                                    <h4 className="font-semibold text-foreground mb-2">How Reputation Works</h4>
-                                    <p>Earn points for completing jobs and receiving positive ratings. Higher points unlock new tiers, giving you more visibility and access to premium jobs.</p>
-                               </div>
-                               <div>
-                                    <h4 className="font-semibold text-foreground mb-2">Point System</h4>
-                                    <ul className="list-disc list-inside space-y-1">
-                                       <li><span className="font-semibold">Complete a Job:</span> +50 points</li>
-                                       <li><span className="font-semibold">Receive a 5-Star Rating:</span> +20 points</li>
-                                       <li><span className="font-semibold">Receive a 4-Star Rating:</span> +10 points</li>
-                                       <li><span className="font-semibold">On-time Completion Bonus:</span> +15 points</li>
-                                       <li><span className="font-semibold">Job Canceled or 1-Star Rating:</span> -25 points</li>
-                                    </ul>
-                               </div>
-                               <div>
-                                    <h4 className="font-semibold text-foreground mb-2">Reputation Tiers</h4>
-                                   <ul className="list-disc list-inside space-y-1">
-                                       <li><span className="font-semibold">Bronze:</span> 0 - 499 points</li>
-                                       <li><span className="font-semibold">Silver:</span> 500 - 999 points</li>
-                                       <li><span className="font-semibold">Gold:</span> 1000 - 1999 points</li>
-                                       <li><span className="font-semibold">Platinum:</span> 2000+ points</li>
-                                   </ul>
-                               </div>
+                            <div className="flex flex-col mt-1">
+                                <p className="text-muted-foreground">{user.email}</p>
+                                <p className="text-sm text-muted-foreground font-mono truncate max-w-sm">{user.id}</p>
                             </div>
-                            {currentTierInfo && currentTierInfo.next !== 'Max' && (
-                                 <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <p className="text-sm font-medium">Progress to {currentTierInfo.next}</p>
-                                        <p className="text-sm font-medium">{installerProfile.points} / {currentTierInfo.goal} pts</p>
+
+                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mt-2">
+                                <div className="flex items-center gap-2">
+                                    <CalendarDays className="h-4 w-4" />
+                                    <span>Member since {format(toDate(user.memberSince), 'MMMM yyyy')}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="h-4 w-4" />
+                                    <span>{user.pincodes.residential} (Home)</span>
+                                </div>
+                                {user.pincodes.office && (
+                                    <div className="flex items-center gap-2">
+                                        <Building className="h-4 w-4" />
+                                        <span>{user.pincodes.office} (Office)</span>
                                     </div>
-                                    <Progress value={progressPercentage} className="h-2"/>
-                                 </div>
-                            )}
-                            {installerProfile.reputationHistory && installerProfile.reputationHistory.length > 0 && (
-                                 <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-base flex items-center gap-2">
-                                            <TrendingUp className="h-5 w-5" />
-                                            Reputation History (Last 6 Months)
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <ChartContainer config={chartConfig} className="h-64 w-full">
-                                            <AreaChart data={installerProfile.reputationHistory} margin={{ left: -20, right: 20, top: 10, bottom: 0 }}>
-                                                <CartesianGrid vertical={false} />
-                                                <XAxis 
-                                                    dataKey="month" 
-                                                    tickLine={false} 
-                                                    axisLine={false} 
-                                                    tickMargin={8} 
-                                                />
-                                                <YAxis
-                                                     tickLine={false}
-                                                     axisLine={false}
-                                                     tickMargin={8}
-                                                />
-                                                <ChartTooltip content={<ChartTooltipContent />} />
-                                                <Area 
-                                                    dataKey="points" 
-                                                    type="natural" 
-                                                    fill="var(--color-points)" 
-                                                    fillOpacity={0.4} 
-                                                    stroke="var(--color-points)" 
-                                                />
-                                            </AreaChart>
-                                        </ChartContainer>
-                                    </CardContent>
-                                 </Card>
-                            )}
-                        </CollapsibleContent>
-                    </Collapsible>
+                                )}
+                            </div>
 
-
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-                        <div className="p-4 rounded-lg border">
-                            <Star className="mx-auto h-6 w-6 mb-2 text-primary"/>
-                            <p className="text-2xl font-bold">{installerProfile.rating}/5.0</p>
-                            <p className="text-sm text-muted-foreground">from {installerProfile.reviews} reviews</p>
+                            <div className="mt-4">
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button>Edit Profile</Button>
+                                    </DialogTrigger>
+                                    <EditProfileForm user={user} onSave={handleProfileSave} />
+                                </Dialog>
+                            </div>
                         </div>
-                        <CompletedJobsStat />
+                        {isSubscribed && (
+                            <div className="text-right">
+                                <p className="font-semibold">{user.subscription?.planName}</p>
+                                <p className="text-sm text-muted-foreground">Expires: {user.subscription?.expiresAt ? format(toDate(user.subscription.expiresAt), "MMM d, yyyy") : 'N/A'}</p>
+                            </div>
+                        )}
                     </div>
-
-                    <div>
-                        <h4 className="font-semibold mb-3">Skills</h4>
-                        <SkillsEditor initialSkills={installerProfile.skills} onSave={handleSkillsSave} userId={user.id}/>
-                    </div>
-                </CardContent>
+                </CardHeader>
             </Card>
-            <PayoutsCard user={user} onUpdate={fetchUser} />
+
+            {role === "Installer" && installerProfile && (
+                <div className="grid gap-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Installer Reputation</CardTitle>
+                            <CardDescription>Your performance and trust score on the platform.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-6">
+                            <Collapsible
+                                open={isReputationOpen}
+                                onOpenChange={setIsReputationOpen}
+                            >
+                                <CollapsibleTrigger asChild>
+                                    <div className="flex items-center justify-between p-4 rounded-lg bg-accent/20 cursor-pointer hover:bg-accent/30 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            {tierIcons[installerProfile.tier]}
+                                            <div>
+                                                <p className="text-sm">Tier</p>
+                                                <p className="text-xl font-bold">{installerProfile.tier}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-right">
+                                                <p className="text-sm">Reputation Points</p>
+                                                <p className="text-xl font-bold text-right">{installerProfile.points}</p>
+                                            </div>
+                                            <ChevronsUpDown className="h-5 w-5 text-muted-foreground" />
+                                        </div>
+                                    </div>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="space-y-6 pt-6">
+                                    <div className="text-sm text-muted-foreground p-4 border rounded-lg space-y-4">
+                                        <div>
+                                            <h4 className="font-semibold text-foreground mb-2">How Reputation Works</h4>
+                                            <p>Earn points for completing jobs and receiving positive ratings. Higher points unlock new tiers, giving you more visibility and access to premium jobs.</p>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-foreground mb-2">Point System</h4>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                <li><span className="font-semibold">Complete a Job:</span> +50 points</li>
+                                                <li><span className="font-semibold">Receive a 5-Star Rating:</span> +20 points</li>
+                                                <li><span className="font-semibold">Receive a 4-Star Rating:</span> +10 points</li>
+                                                <li><span className="font-semibold">On-time Completion Bonus:</span> +15 points</li>
+                                                <li><span className="font-semibold">Job Canceled or 1-Star Rating:</span> -25 points</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-foreground mb-2">Reputation Tiers</h4>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                <li><span className="font-semibold">Bronze:</span> 0 - 499 points</li>
+                                                <li><span className="font-semibold">Silver:</span> 500 - 999 points</li>
+                                                <li><span className="font-semibold">Gold:</span> 1000 - 1999 points</li>
+                                                <li><span className="font-semibold">Platinum:</span> 2000+ points</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    {currentTierInfo && currentTierInfo.next !== 'Max' && (
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <p className="text-sm font-medium">Progress to {currentTierInfo.next}</p>
+                                                <p className="text-sm font-medium">{installerProfile.points} / {currentTierInfo.goal} pts</p>
+                                            </div>
+                                            <Progress value={progressPercentage} className="h-2" />
+                                        </div>
+                                    )}
+                                    {installerProfile.reputationHistory && installerProfile.reputationHistory.length > 0 && (
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle className="text-base flex items-center gap-2">
+                                                    <TrendingUp className="h-5 w-5" />
+                                                    Reputation History (Last 6 Months)
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <ChartContainer config={chartConfig} className="h-64 w-full">
+                                                    <AreaChart data={installerProfile.reputationHistory} margin={{ left: -20, right: 20, top: 10, bottom: 0 }}>
+                                                        <CartesianGrid vertical={false} />
+                                                        <XAxis
+                                                            dataKey="month"
+                                                            tickLine={false}
+                                                            axisLine={false}
+                                                            tickMargin={8}
+                                                        />
+                                                        <YAxis
+                                                            tickLine={false}
+                                                            axisLine={false}
+                                                            tickMargin={8}
+                                                        />
+                                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                                        <Area
+                                                            dataKey="points"
+                                                            type="natural"
+                                                            fill="var(--color-points)"
+                                                            fillOpacity={0.4}
+                                                            stroke="var(--color-points)"
+                                                        />
+                                                    </AreaChart>
+                                                </ChartContainer>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                </CollapsibleContent>
+                            </Collapsible>
+
+
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+                                <div className="p-4 rounded-lg border">
+                                    <Star className="mx-auto h-6 w-6 mb-2 text-primary" />
+                                    <p className="text-2xl font-bold">{installerProfile.rating}/5.0</p>
+                                    <p className="text-sm text-muted-foreground">from {installerProfile.reviews} reviews</p>
+                                </div>
+                                <CompletedJobsStat />
+                            </div>
+
+                            <div>
+                                <h4 className="font-semibold mb-3">Skills</h4>
+                                <SkillsEditor initialSkills={installerProfile.skills} onSave={handleSkillsSave} userId={user.id} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <PayoutsCard user={user} onUpdate={fetchUser} />
+                </div>
+            )}
+
+            {isJobGiverOnly && (
+                <Card className="bg-accent/20 border-dashed">
+                    <CardHeader>
+                        <CardTitle>Expand Your Opportunities</CardTitle>
+                        <CardDescription>Want to find work on the platform? Become a verified installer to start bidding on jobs.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild>
+                            <Link href="/dashboard/verify-installer">
+                                Become an Installer <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
+
+            {isInstallerOnly && (
+                <Card className="bg-accent/20 border-dashed">
+                    <CardHeader>
+                        <CardTitle>Ready to Hire?</CardTitle>
+                        <CardDescription>Activate your Job Giver profile to post jobs and find the perfect installer for your projects.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button onClick={handleBecomeJobGiver}>
+                            Start Hiring as a Job Giver <PlusCircle className="ml-2 h-4 w-4" />
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
         </div>
-      )}
-
-      {isJobGiverOnly && (
-         <Card className="bg-accent/20 border-dashed">
-            <CardHeader>
-                <CardTitle>Expand Your Opportunities</CardTitle>
-                <CardDescription>Want to find work on the platform? Become a verified installer to start bidding on jobs.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button asChild>
-                    <Link href="/dashboard/verify-installer">
-                        Become an Installer <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                </Button>
-            </CardContent>
-         </Card>
-      )}
-
-       {isInstallerOnly && (
-         <Card className="bg-accent/20 border-dashed">
-            <CardHeader>
-                <CardTitle>Ready to Hire?</CardTitle>
-                <CardDescription>Activate your Job Giver profile to post jobs and find the perfect installer for your projects.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button onClick={handleBecomeJobGiver}>
-                    Start Hiring as a Job Giver <PlusCircle className="ml-2 h-4 w-4" />
-                </Button>
-            </CardContent>
-         </Card>
-      )}
-    </div>
-  );
+    );
 }

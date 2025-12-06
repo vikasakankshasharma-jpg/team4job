@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -29,13 +29,14 @@ import { generateJobDetails } from "@/ai/flows/generate-job-details";
 import { generatePriceEstimate } from "@/ai/flows/generate-price-estimate";
 import { useToast } from "@/hooks/use-toast";
 import React, { useEffect, useState, useCallback } from "react";
-import { cn } from "@/lib/utils";
+import { cn, toDate } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { Job, JobAttachment, User, PlatformSettings } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useHelp } from "@/hooks/use-help";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -77,8 +78,8 @@ const jobSchema = z.object({
   isGstInvoiceRequired: z.boolean().default(false),
   address: addressSchema,
   priceEstimate: z.object({
-      min: z.coerce.number(),
-      max: z.coerce.number(),
+    min: z.coerce.number(),
+    max: z.coerce.number(),
   }).optional(),
   deadline: z.string().refine((val) => {
     if (!val) return true; // Allow empty if direct awarding
@@ -92,106 +93,106 @@ const jobSchema = z.object({
   attachments: z.array(z.instanceof(File)).optional(),
   directAwardInstallerId: z.string().optional(),
 }).refine(data => {
-    if (data.directAwardInstallerId) {
-        return !!data.priceEstimate && data.priceEstimate.min > 0;
-    }
-    return true;
+  if (data.directAwardInstallerId) {
+    return !!data.priceEstimate && data.priceEstimate.min > 0;
+  }
+  return true;
 }, {
-    message: "A budget is required for a direct award.",
-    path: ["priceEstimate.min"],
+  message: "A budget is required for a direct award.",
+  path: ["priceEstimate.min"],
 }).refine(data => {
-    if (data.directAwardInstallerId) return true;
-    return data.deadline !== "";
+  if (data.directAwardInstallerId) return true;
+  return data.deadline !== "";
 }, {
-    message: "Bidding deadline is required for public jobs.",
-    path: ["deadline"],
+  message: "Bidding deadline is required for public jobs.",
+  path: ["deadline"],
 }).refine(data => {
-    if (!data.deadline || !data.jobStartDate) return true;
-    return new Date(data.jobStartDate) >= new Date(data.deadline);
+  if (!data.deadline || !data.jobStartDate) return true;
+  return new Date(data.jobStartDate) >= new Date(data.deadline);
 }, {
-    message: "Job start date cannot be before the bidding deadline.",
-    path: ["jobStartDate"],
+  message: "Job start date cannot be before the bidding deadline.",
+  path: ["jobStartDate"],
 });
 
 
-function DirectAwardInput({ control }) {
-    const { db } = useFirebase();
-    const [isLoading, setIsLoading] = useState(false);
-    const [selectedInstaller, setSelectedInstaller] = useState<User | null>(null);
+function DirectAwardInput({ control }: { control: Control<any> }) {
+  const { db } = useFirebase();
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedInstaller, setSelectedInstaller] = useState<User | null>(null);
 
-    const debouncedCheck = useCallback(
-        debounce(async (id: string) => {
-            if (!id) {
-                setSelectedInstaller(null);
-                setIsLoading(false);
-                return;
-            }
-            const userRef = doc(db, "users", id);
-            const userSnap = await getDoc(userRef);
-
-            if (userSnap.exists() && userSnap.data().roles.includes('Installer') && userSnap.data().installerProfile?.verified) {
-                setSelectedInstaller(userSnap.data() as User);
-            } else {
-                setSelectedInstaller(null);
-            }
-            setIsLoading(false);
-        }, 500),
-        [db]
-    );
-
-    const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setIsLoading(true);
-        debouncedCheck(value);
-    };
-
-    const installerId = useWatch({ control, name: "directAwardInstallerId" });
-
-    useEffect(() => {
-      if (installerId) {
-        setIsLoading(true);
-        debouncedCheck(installerId);
+  const debouncedCheck = useCallback(
+    debounce(async (id: string) => {
+      if (!id) {
+        setSelectedInstaller(null);
+        setIsLoading(false);
+        return;
       }
-    }, [installerId, debouncedCheck]);
+      const userRef = doc(db, "users", id);
+      const userSnap = await getDoc(userRef);
 
-    return (
-        <FormField
-            control={control}
-            name="directAwardInstallerId"
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Installer's Public ID (Optional)</FormLabel>
-                    <FormControl>
-                         <Input
-                            placeholder="Paste installer's public ID here..."
-                            {...field}
-                            onChange={(e) => {
-                                field.onChange(e);
-                                handleIdChange(e);
-                            }}
-                        />
-                    </FormControl>
-                    <FormDescription>
-                        To send a private job request to a specific installer, paste their ID here. Public bidding will be disabled.
-                    </FormDescription>
-                    {isLoading && <p className="text-sm text-muted-foreground">Verifying ID...</p>}
-                    {selectedInstaller && !isLoading && (
-                        <div className="flex items-center gap-2 p-2 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
-                             <Avatar className="h-9 w-9">
-                                <AvatarImage src={selectedInstaller.realAvatarUrl} alt={selectedInstaller.name} />
-                                <AvatarFallback>{selectedInstaller.name.substring(0,2)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="font-semibold text-sm">{selectedInstaller.name}</p>
-                                <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-green-600"/> Verified Installer</p>
-                            </div>
-                        </div>
-                     )}
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-    );
+      if (userSnap.exists() && userSnap.data().roles.includes('Installer') && userSnap.data().installerProfile?.verified) {
+        setSelectedInstaller(userSnap.data() as User);
+      } else {
+        setSelectedInstaller(null);
+      }
+      setIsLoading(false);
+    }, 500),
+    [db]
+  );
+
+  const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setIsLoading(true);
+    debouncedCheck(value);
+  };
+
+  const installerId = useWatch({ control, name: "directAwardInstallerId" });
+
+  useEffect(() => {
+    if (installerId) {
+      setIsLoading(true);
+      debouncedCheck(installerId);
+    }
+  }, [installerId, debouncedCheck]);
+
+  return (
+    <FormField
+      control={control}
+      name="directAwardInstallerId"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Installer's Public ID (Optional)</FormLabel>
+          <FormControl>
+            <Input
+              placeholder="Paste installer's public ID here..."
+              {...field}
+              onChange={(e) => {
+                field.onChange(e);
+                handleIdChange(e);
+              }}
+            />
+          </FormControl>
+          <FormDescription>
+            To send a private job request to a specific installer, paste their ID here. Public bidding will be disabled.
+          </FormDescription>
+          {isLoading && <p className="text-sm text-muted-foreground">Verifying ID...</p>}
+          {selectedInstaller && !isLoading && (
+            <div className="flex items-center gap-2 p-2 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={selectedInstaller.realAvatarUrl} alt={selectedInstaller.name} />
+                <AvatarFallback>{selectedInstaller.name.substring(0, 2)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-semibold text-sm">{selectedInstaller.name}</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-green-600" /> Verified Installer</p>
+              </div>
+            </div>
+          )}
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
 }
 
 export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
@@ -202,7 +203,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
   const { db, storage } = useFirebase();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [mapCenter, setMapCenter] = React.useState<{lat: number, lng: number} | null>(null);
+  const [mapCenter, setMapCenter] = React.useState<{ lat: number, lng: number } | null>(null);
   const { setHelp } = useHelp();
   const [isProcessing, setIsProcessing] = React.useState(false);
 
@@ -230,7 +231,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
       priceEstimate: { min: 0, max: 0 },
     },
   });
-  
+
   const repostJobId = searchParams.get('repostJobId');
   const editJobId = searchParams.get('editJobId');
   const directAwardParam = searchParams.get('directAwardInstallerId');
@@ -238,64 +239,64 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
 
   useEffect(() => {
     if (directAwardParam) {
-        form.setValue('directAwardInstallerId', directAwardParam, { shouldValidate: true });
+      form.setValue('directAwardInstallerId', directAwardParam, { shouldValidate: true });
     }
   }, [directAwardParam, form]);
 
   React.useEffect(() => {
     async function prefillForm() {
-        const jobId = editJobId || repostJobId;
-        if (jobId && db) {
-            setIsProcessing(true);
-            const jobRef = doc(db, 'jobs', jobId);
-            const jobSnap = await getDoc(jobRef);
-            if (jobSnap.exists()) {
-                const jobData = jobSnap.data() as Job;
-                form.reset({
-                    jobTitle: jobData.title,
-                    jobDescription: jobData.description,
-                    jobCategory: jobData.jobCategory,
-                    skills: (jobData.skills || []).join(', '),
-                    isGstInvoiceRequired: jobData.isGstInvoiceRequired,
-                    address: jobData.address,
-                    travelTip: jobData.travelTip || 0,
-                    deadline: isEditMode ? format(new Date(jobData.deadline), "yyyy-MM-dd") : "",
-                    jobStartDate: jobData.jobStartDate ? format(new Date(jobData.jobStartDate), "yyyy-MM-dd") : "",
-                    directAwardInstallerId: "", // Never prefill direct award
-                    priceEstimate: jobData.priceEstimate
-                });
-                
-                const toastTitle = isEditMode ? "Editing Job" : "Re-posting Job";
-                const toastDescription = isEditMode
-                    ? "You are now editing an existing job posting."
-                    : "Job details have been pre-filled. Please set a new deadline.";
+      const jobId = editJobId || repostJobId;
+      if (jobId && db) {
+        setIsProcessing(true);
+        const jobRef = doc(db, 'jobs', jobId);
+        const jobSnap = await getDoc(jobRef);
+        if (jobSnap.exists()) {
+          const jobData = jobSnap.data() as Job;
+          form.reset({
+            jobTitle: jobData.title,
+            jobDescription: jobData.description,
+            jobCategory: jobData.jobCategory,
+            skills: (jobData.skills || []).join(', '),
+            isGstInvoiceRequired: jobData.isGstInvoiceRequired,
+            address: jobData.address,
+            travelTip: jobData.travelTip || 0,
+            deadline: isEditMode && jobData.deadline ? format(toDate(jobData.deadline), "yyyy-MM-dd") : "",
+            jobStartDate: jobData.jobStartDate ? format(toDate(jobData.jobStartDate), "yyyy-MM-dd") : "",
+            directAwardInstallerId: "", // Never prefill direct award
+            priceEstimate: jobData.priceEstimate
+          });
 
-                toast({ title: toastTitle, description: toastDescription });
-            } else {
-                 toast({ title: "Error", description: "Could not find the original job to load.", variant: "destructive" });
-            }
-            setIsProcessing(false);
+          const toastTitle = isEditMode ? "Editing Job" : "Re-posting Job";
+          const toastDescription = isEditMode
+            ? "You are now editing an existing job posting."
+            : "Job details have been pre-filled. Please set a new deadline.";
+
+          toast({ title: toastTitle, description: toastDescription });
+        } else {
+          toast({ title: "Error", description: "Could not find the original job to load.", variant: "destructive" });
         }
+        setIsProcessing(false);
+      }
     }
     prefillForm();
   }, [editJobId, repostJobId, db, form, toast, isEditMode]);
 
   React.useEffect(() => {
     setHelp({
-        title: isEditMode ? "Edit Job" : "Post a New Job",
-        content: (
-            <div className="space-y-4 text-sm">
-                <p>Follow these steps to create a job listing and attract the best installers.</p>
-                <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Budget:</span> Provide a realistic budget range. Use the "AI Suggest" button to get a fair market estimate based on your job details.</li>
-                    <li><span className="font-semibold">Job Category:</span> Selecting the right category is crucial. This determines the checklist installers must agree to when bidding.</li>
-                    <li><span className="font-semibold">AI-Powered Fields:</span> Use the "AI Generate" button next to the description to get a head start based on your job title.</li>
-                    <li><span className="font-semibold">Location & Address:</span> Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.</li>
-                    <li><span className="font-semibold">Attachments:</span> Upload site photos, floor plans, or any other relevant documents to give installers a better understanding of the job.</li>
-                    {!isEditMode && <li><span className="font-semibold">Direct Award (Optional):</span> If you already know an installer on our platform, you can enter their public ID here to send them a private request to bid on this job.</li>}
-                </ul>
-            </div>
-        )
+      title: isEditMode ? "Edit Job" : "Post a New Job",
+      content: (
+        <div className="space-y-4 text-sm">
+          <p>Follow these steps to create a job listing and attract the best installers.</p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li><span className="font-semibold">Budget:</span> Provide a realistic budget range. Use the "AI Suggest" button to get a fair market estimate based on your job details.</li>
+            <li><span className="font-semibold">Job Category:</span> Selecting the right category is crucial. This determines the checklist installers must agree to when bidding.</li>
+            <li><span className="font-semibold">AI-Powered Fields:</span> Use the "AI Generate" button next to the description to get a head start based on your job title.</li>
+            <li><span className="font-semibold">Location & Address:</span> Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.</li>
+            <li><span className="font-semibold">Attachments:</span> Upload site photos, floor plans, or any other relevant documents to give installers a better understanding of the job.</li>
+            {!isEditMode && <li><span className="font-semibold">Direct Award (Optional):</span> If you already know an installer on our platform, you can enter their public ID here to send them a private request to bid on this job.</li>}
+          </ul>
+        </div>
+      )
     })
   }, [setHelp, isEditMode]);
 
@@ -311,7 +312,7 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
   const directAwardInstallerId = useWatch({ control: form.control, name: "directAwardInstallerId" });
   const jobTitleState = form.getFieldState("jobTitle");
   const isJobTitleValid = jobTitle && !jobTitleState.invalid;
-  
+
   // Validation for price estimate
   const canEstimatePrice = jobTitle && jobDescription && jobCategory && jobDescription.length >= 50;
 
@@ -351,164 +352,164 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
 
   const handleEstimatePrice = async () => {
     if (!canEstimatePrice) {
-        toast({
-            title: "More Details Required",
-            description: "Please fill in the Job Title, Category, and a detailed Description before asking for a price estimate.",
-            variant: "destructive"
-        });
-        return;
+      toast({
+        title: "More Details Required",
+        description: "Please fill in the Job Title, Category, and a detailed Description before asking for a price estimate.",
+        variant: "destructive"
+      });
+      return;
     }
 
     setIsEstimating(true);
     try {
-        const result = await generatePriceEstimate({
-            jobTitle,
-            jobDescription,
-            jobCategory
-        });
+      const result = await generatePriceEstimate({
+        jobTitle,
+        jobDescription,
+        jobCategory
+      });
 
-        if (result && result.priceEstimate) {
-            form.setValue("priceEstimate.min", result.priceEstimate.min, { shouldValidate: true });
-            if (!directAwardInstallerId) {
-                form.setValue("priceEstimate.max", result.priceEstimate.max, { shouldValidate: true });
-            }
-            
-            toast({
-                title: "Budget Estimated!",
-                description: `AI suggests a range of ₹${result.priceEstimate.min} - ₹${result.priceEstimate.max}.`,
-                variant: "success"
-            });
+      if (result && result.priceEstimate) {
+        form.setValue("priceEstimate.min", result.priceEstimate.min, { shouldValidate: true });
+        if (!directAwardInstallerId) {
+          form.setValue("priceEstimate.max", result.priceEstimate.max, { shouldValidate: true });
         }
-    } catch (error) {
-        console.error("Error estimating price:", error);
+
         toast({
-            title: "Estimation Failed",
-            description: "Could not generate a price estimate. Please try again later.",
-            variant: "destructive"
+          title: "Budget Estimated!",
+          description: `AI suggests a range of ₹${result.priceEstimate.min} - ₹${result.priceEstimate.max}.`,
+          variant: "default"
         });
+      }
+    } catch (error) {
+      console.error("Error estimating price:", error);
+      toast({
+        title: "Estimation Failed",
+        description: "Could not generate a price estimate. Please try again later.",
+        variant: "destructive"
+      });
     } finally {
-        setIsEstimating(false);
+      setIsEstimating(false);
     }
   };
-  
+
   async function onSubmit(values: z.infer<typeof jobSchema>) {
     if (!user || !db || !storage) {
-        toast({ title: "Error", description: "You must be logged in to post a job.", variant: "destructive" });
-        return;
+      toast({ title: "Error", description: "You must be logged in to post a job.", variant: "destructive" });
+      return;
     }
-    
+
     setIsProcessing(true);
 
     const [pincode] = values.address.cityPincode.split(',');
-    
-    const jobData: Partial<Job> = { 
-        title: values.jobTitle,
-        description: values.jobDescription,
-        jobCategory: values.jobCategory,
-        skills: values.skills.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
-        travelTip: values.travelTip || 0,
-        isGstInvoiceRequired: values.isGstInvoiceRequired,
-        address: values.address,
-        location: pincode.trim(),
-        fullAddress: values.address.fullAddress,
-        jobStartDate: new Date(values.jobStartDate),
+
+    const jobData: Partial<Job> = {
+      title: values.jobTitle,
+      description: values.jobDescription,
+      jobCategory: values.jobCategory,
+      skills: values.skills.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
+      travelTip: values.travelTip || 0,
+      isGstInvoiceRequired: values.isGstInvoiceRequired,
+      address: values.address,
+      location: pincode.trim(),
+      fullAddress: values.address.fullAddress,
+      jobStartDate: new Date(values.jobStartDate),
     };
 
-    if(values.priceEstimate) {
-        jobData.priceEstimate = {
-            min: values.priceEstimate.min,
-            max: values.directAwardInstallerId ? values.priceEstimate.min : values.priceEstimate.max,
-        };
+    if (values.priceEstimate) {
+      jobData.priceEstimate = {
+        min: values.priceEstimate.min,
+        max: values.directAwardInstallerId ? values.priceEstimate.min : values.priceEstimate.max,
+      };
     }
 
     try {
-        if (isEditMode && editJobId) {
-            jobData.deadline = new Date(values.deadline);
-            jobData.bids = [];
-            jobData.bidderIds = [];
-            
-            const jobRef = doc(db, "jobs", editJobId);
-            await updateDoc(jobRef, jobData);
-            toast({ title: "Job Updated Successfully!", description: "Existing bids have been cleared and bidders notified." });
-            router.push(`/dashboard/jobs/${editJobId}`);
+      if (isEditMode && editJobId) {
+        jobData.deadline = new Date(values.deadline);
+        jobData.bids = [];
+        jobData.bidderIds = [];
 
-        } else {
-            const today = new Date();
-            const datePart = today.toISOString().slice(0, 10).replace(/-/g, '');
-            const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
-            const newJobId = `JOB-${datePart}-${randomPart}`;
-            
-            const attachmentUrls: JobAttachment[] = [];
-            if (values.attachments && values.attachments.length > 0) {
-              for (const file of values.attachments) {
-                const fileRef = ref(storage, `jobs/${newJobId}/${file.name}`);
-                await uploadBytes(fileRef, file);
-                const downloadURL = await getDownloadURL(fileRef);
-                attachmentUrls.push({
-                  fileName: file.name,
-                  fileUrl: downloadURL,
-                  fileType: file.type,
-                });
-              }
-            }
+        const jobRef = doc(db, "jobs", editJobId);
+        await updateDoc(jobRef, jobData);
+        toast({ title: "Job Updated Successfully!", description: "Existing bids have been cleared and bidders notified." });
+        router.push(`/dashboard/jobs/${editJobId}`);
 
-            jobData.id = newJobId;
-            jobData.jobGiver = doc(db, 'users', user.id);
-            jobData.status = "Open for Bidding";
-            jobData.bids = [];
-            jobData.comments = [];
-            jobData.postedAt = new Date();
-            jobData.attachments = attachmentUrls;
-            
-            if (values.directAwardInstallerId) {
-                jobData.directAwardInstallerId = values.directAwardInstallerId;
-                jobData.deadline = values.deadline ? new Date(values.deadline) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-            } else {
-                jobData.deadline = new Date(values.deadline);
-            }
-            
-            await setDoc(doc(db, "jobs", newJobId), jobData);
-            toast({
-                title: repostJobId ? "Job Re-posted Successfully!" : "Job Posted Successfully!",
-                description: `Your job is now ${jobData.directAwardInstallerId ? 'sent privately to the installer' : 'live and open for bidding'}.`,
+      } else {
+        const today = new Date();
+        const datePart = today.toISOString().slice(0, 10).replace(/-/g, '');
+        const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const newJobId = `JOB-${datePart}-${randomPart}`;
+
+        const attachmentUrls: JobAttachment[] = [];
+        if (values.attachments && values.attachments.length > 0) {
+          for (const file of values.attachments) {
+            const fileRef = ref(storage, `jobs/${newJobId}/${file.name}`);
+            await uploadBytes(fileRef, file);
+            const downloadURL = await getDownloadURL(fileRef);
+            attachmentUrls.push({
+              fileName: file.name,
+              fileUrl: downloadURL,
+              fileType: file.type,
             });
-            form.reset();
-            router.push(`/dashboard/posted-jobs`);
+          }
         }
-    } catch (error) {
-        console.error("Error processing job:", error);
+
+        jobData.id = newJobId;
+        jobData.jobGiver = doc(db, 'users', user.id);
+        jobData.status = "Open for Bidding";
+        jobData.bids = [];
+        jobData.comments = [];
+        jobData.postedAt = new Date();
+        jobData.attachments = attachmentUrls;
+
+        if (values.directAwardInstallerId) {
+          jobData.directAwardInstallerId = values.directAwardInstallerId;
+          jobData.deadline = values.deadline ? new Date(values.deadline) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        } else {
+          jobData.deadline = new Date(values.deadline);
+        }
+
+        await setDoc(doc(db, "jobs", newJobId), jobData);
         toast({
-            title: "Failed to post job",
-            description: "An error occurred while saving your job. Please try again.",
-            variant: "destructive",
+          title: repostJobId ? "Job Re-posted Successfully!" : "Job Posted Successfully!",
+          description: `Your job is now ${jobData.directAwardInstallerId ? 'sent privately to the installer' : 'live and open for bidding'}.`,
         });
+        form.reset();
+        router.push(`/dashboard/posted-jobs`);
+      }
+    } catch (error) {
+      console.error("Error processing job:", error);
+      toast({
+        title: "Failed to post job",
+        description: "An error occurred while saving your job. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-        setIsProcessing(false);
+      setIsProcessing(false);
     }
   }
 
   if (userLoading || (isEditMode && isProcessing)) {
     return (
-        <div className="flex h-48 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+      <div className="flex h-48 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
     );
   }
-  
-   if (!userLoading && role !== 'Job Giver') {
+
+  if (!userLoading && role !== 'Job Giver') {
     return null;
   }
-  
+
   const SubmitButton = () => {
     const buttonText = isEditMode ? 'Save Changes' : (repostJobId ? 'Re-post Job' : 'Post Job');
-    
+
     if (isEditMode) {
       return (
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button type="button" disabled={isProcessing || isGenerating}>
-                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {buttonText}
+              {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {buttonText}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -530,10 +531,10 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
     }
 
     return (
-        <Button type="submit" disabled={isProcessing || isGenerating} onClick={form.handleSubmit(onSubmit)}>
-            {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {buttonText}
-        </Button>
+      <Button type="submit" disabled={isProcessing || isGenerating} onClick={form.handleSubmit(onSubmit)}>
+        {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {buttonText}
+      </Button>
     )
   }
 
@@ -547,295 +548,294 @@ export default function PostJobPage({ isMapLoaded }: { isMapLoaded: boolean }) {
       </div>
       <Form {...form}>
         <form onSubmit={e => e.preventDefault()} className="grid gap-4">
-            <Card>
+          <Card>
             <CardHeader>
-                <CardTitle>Job Details</CardTitle>
-                <CardDescription>
-                {isEditMode 
-                    ? "Update the details of your job posting."
-                    : (repostJobId 
-                        ? "Review and update the job details, then set a new deadline to re-list it."
-                        : "Fill in the details for your job posting. Use the AI generator for a quick start.")
+              <CardTitle>Job Details</CardTitle>
+              <CardDescription>
+                {isEditMode
+                  ? "Update the details of your job posting."
+                  : (repostJobId
+                    ? "Review and update the job details, then set a new deadline to re-list it."
+                    : "Fill in the details for your job posting. Use the AI generator for a quick start.")
                 }
-                </CardDescription>
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                 <FormField
-                  control={form.control}
-                  name="jobCategory"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Job Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a category for your job" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {jobCategoryTemplates.map((template) => (
-                            <SelectItem key={template.id} value={template.id}>
-                              {template.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        This helps installers understand the scope of work.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
+              <FormField
+                control={form.control}
+                name="jobCategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Job Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category for your job" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {jobCategoryTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      This helps installers understand the scope of work.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
                 control={form.control}
                 name="jobTitle"
                 render={({ field }) => (
-                    <FormItem>
+                  <FormItem>
                     <FormLabel>Job Title</FormLabel>
                     <FormControl>
-                        <Input
+                      <Input
                         placeholder="e.g., Install 8 IP Cameras for an Office"
                         {...field}
-                        />
+                      />
                     </FormControl>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
-                <FormField
+              />
+              <FormField
                 control={form.control}
                 name="jobDescription"
                 render={({ field }) => (
-                    <FormItem>
+                  <FormItem>
                     <div className="flex items-center justify-between">
-                        <FormLabel>Job Description</FormLabel>
-                        <Button
+                      <FormLabel>Job Description</FormLabel>
+                      <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={handleGenerateDetails}
                         disabled={isGenerating || !isJobTitleValid}
-                        >
+                      >
                         {isGenerating ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
-                            <Zap className="mr-2 h-4 w-4" />
+                          <Zap className="mr-2 h-4 w-4" />
                         )}
                         AI Generate
-                        </Button>
+                      </Button>
                     </div>
                     <FormControl>
-                        <Textarea
+                      <Textarea
                         placeholder="Describe the project requirements, scope, and any important details..."
                         className={cn("min-h-32", isGenerating && "opacity-50")}
                         {...field}
-                        />
+                      />
                     </FormControl>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
-                <FormField
+              />
+              <FormField
                 control={form.control}
                 name="skills"
                 render={({ field }) => (
-                    <FormItem>
+                  <FormItem>
                     <div className="flex items-center justify-between">
-                        <FormLabel>Required Skills</FormLabel>
-                        {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                      <FormLabel>Required Skills</FormLabel>
+                      {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                     </div>
                     <FormControl>
-                        <Input
+                      <Input
                         placeholder="e.g., IP Cameras, NVR Setup, Cabling"
                         className={cn(isGenerating && "opacity-50")}
                         {...field}
-                        />
+                      />
                     </FormControl>
                     <FormDescription>
-                        Enter a comma-separated list of skills.
+                      Enter a comma-separated list of skills.
                     </FormDescription>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
-                <FormField
+              />
+              <FormField
                 control={form.control}
                 name="isGstInvoiceRequired"
                 render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                        <Checkbox
+                      <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        />
+                      />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                        <FormLabel>
+                      <FormLabel>
                         GST Invoice Required
-                        </FormLabel>
-                        <FormDescription>
+                      </FormLabel>
+                      <FormDescription>
                         Select this if you are a business and require a GST invoice for this job.
-                        </FormDescription>
+                      </FormDescription>
                     </div>
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
-                {!isEditMode && (
+              />
+              {!isEditMode && (
                 <FormField
-                    control={form.control}
-                    name="attachments"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Attachments</FormLabel>
-                        <FormControl>
-                            <FileUpload 
-                                onFilesChange={(files) => field.onChange(files)} 
-                                maxFiles={5}
-                            />
-                        </FormControl>
-                        <FormDescription>Upload site photos, floor plans, or other relevant documents (max 5 files).</FormDescription>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                )}
-                <Separator />
-                <AddressForm
-                    control={form.control}
-                    pincodeName="address.cityPincode"
-                    houseName="address.house"
-                    streetName="address.street"
-                    landmarkName="address.landmark"
-                    fullAddressName="address.fullAddress"
-                    onLocationGeocoded={setMapCenter}
-                    mapCenter={mapCenter}
-                    isMapLoaded={isMapLoaded}
-                />
-                <Separator />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                    control={form.control}
-                    name="deadline"
-                    render={({ field }) => (
+                  control={form.control}
+                  name="attachments"
+                  render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Bidding Deadline</FormLabel>
-                        <FormControl>
-                        <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardInstallerId} />
-                        </FormControl>
-                        <FormDescription>Not applicable for direct awards.</FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="jobStartDate"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Job Work Start Date</FormLabel>
-                        <FormControl>
-                        <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                        control={form.control}
-                        name="travelTip"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Travel Tip (₹, Optional)</FormLabel>
-                            <FormControl>
-                            <Input type="number" placeholder="e.g., 500" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                            Attract more bids by offering a commission-free travel tip.
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                </div>
-            </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle>Budget</CardTitle>
-                            <CardDescription>
-                                {directAwardInstallerId ? "Set the budget you are offering for this private job." : "Provide an estimated budget range to attract relevant bids."}
-                            </CardDescription>
-                        </div>
-                        <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={handleEstimatePrice}
-                            disabled={isEstimating || !canEstimatePrice}
-                        >
-                            {isEstimating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4 text-amber-500" />}
-                            AI Suggest Budget
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <FormField
-                        control={form.control}
-                        name="priceEstimate.min"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{directAwardInstallerId ? 'Offered Budget (₹)' : 'Minimum Budget (₹)'}</FormLabel>
-                                <FormControl>
-                                    <Input type="number" placeholder="e.g. 8000" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    {!directAwardInstallerId && (
-                        <FormField
-                            control={form.control}
-                            name="priceEstimate.max"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Maximum Budget (₹, Optional)</FormLabel>
-                                    <FormControl>
-                                        <Input type="number" placeholder="e.g. 12000" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
+                      <FormLabel>Attachments</FormLabel>
+                      <FormControl>
+                        <FileUpload
+                          onFilesChange={(files) => field.onChange(files)}
+                          maxFiles={5}
                         />
-                    )}
-                </CardContent>
+                      </FormControl>
+                      <FormDescription>Upload site photos, floor plans, or other relevant documents (max 5 files).</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              <Separator />
+              <AddressForm
+                pincodeName="address.cityPincode"
+                houseName="address.house"
+                streetName="address.street"
+                landmarkName="address.landmark"
+                fullAddressName="address.fullAddress"
+                onLocationGeocoded={setMapCenter}
+                mapCenter={mapCenter}
+                isMapLoaded={isMapLoaded}
+              />
+              <Separator />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="deadline"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bidding Deadline</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardInstallerId} />
+                      </FormControl>
+                      <FormDescription>Not applicable for direct awards.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="jobStartDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Job Work Start Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="travelTip"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Travel Tip (₹, Optional)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="e.g., 500" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Attract more bids by offering a commission-free travel tip.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Budget</CardTitle>
+                  <CardDescription>
+                    {directAwardInstallerId ? "Set the budget you are offering for this private job." : "Provide an estimated budget range to attract relevant bids."}
+                  </CardDescription>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEstimatePrice}
+                  disabled={isEstimating || !canEstimatePrice}
+                >
+                  {isEstimating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4 text-amber-500" />}
+                  AI Suggest Budget
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="priceEstimate.min"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{directAwardInstallerId ? 'Offered Budget (₹)' : 'Minimum Budget (₹)'}</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g. 8000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {!directAwardInstallerId && (
+                <FormField
+                  control={form.control}
+                  name="priceEstimate.max"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Maximum Budget (₹, Optional)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="e.g. 12000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </CardContent>
+          </Card>
+          {!isEditMode && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserPlus className="h-5 w-5" />
+                  Direct Request (Optional)
+                </CardTitle>
+                <CardDescription>
+                  Know an installer you trust? Send a private request for them to bid on this job.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <DirectAwardInput control={form.control} />
+              </CardContent>
             </Card>
-            {!isEditMode && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <UserPlus className="h-5 w-5" />
-                            Direct Request (Optional)
-                        </CardTitle>
-                        <CardDescription>
-                            Know an installer you trust? Send a private request for them to bid on this job.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <DirectAwardInput control={form.control} />
-                    </CardContent>
-                </Card>
-            )}
-            <div className="flex items-center justify-end gap-2">
+          )}
+          <div className="flex items-center justify-end gap-2">
             <Button variant="outline" type="button" onClick={() => router.back()}>
-                Cancel
+              Cancel
             </Button>
             <SubmitButton />
-            </div>
+          </div>
         </form>
       </Form>
     </div>

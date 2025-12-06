@@ -9,10 +9,10 @@
  * - FindMatchingInstallersOutput - The return type for the findMatchingInstallers function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 import { User } from '@/lib/types';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+
 import { db } from '@/lib/firebase/server-init';
 
 const FindMatchingInstallersInputSchema = z.object({
@@ -42,30 +42,27 @@ const findMatchingInstallersFlow = ai.defineFlow(
     // For this implementation, we will fetch installers with relevant skills and in the same location
     // and then use an LLM to rank them based on the job description.
 
-    const installersRef = collection(db, 'users');
-    const q = query(
-        installersRef, 
-        where('roles', 'array-contains', 'Installer'),
-        where('installerProfile.verified', '==', true),
-        where('status', '==', 'active')
-    );
-    
-    const snapshot = await getDocs(q);
-    const allInstallers = snapshot.docs.map(doc => doc.data() as User);
+    const snapshot = await db.collection('users')
+      .where('roles', 'array-contains', 'Installer')
+      .where('installerProfile.verified', '==', true)
+      .where('status', '==', 'active')
+      .get();
+
+    const allInstallers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
 
     // Basic pre-filtering based on location (pincode) and skills
-    const locationFilteredInstallers = allInstallers.filter(installer => 
-        installer.pincodes.residential === location || installer.pincodes.office === location
+    const locationFilteredInstallers = allInstallers.filter(installer =>
+      installer.pincodes.residential === location || installer.pincodes.office === location
     );
-    
-    const candidates = locationFilteredInstallers.filter(installer => 
-        skillsRequired.every(skill => installer.installerProfile?.skills.includes(skill))
+
+    const candidates = locationFilteredInstallers.filter(installer =>
+      skillsRequired.every(skill => installer.installerProfile?.skills.includes(skill))
     );
 
     if (candidates.length === 0) {
       return { installerMatches: [] };
     }
-    
+
     // Use LLM to rank the candidates
     const prompt = `You are a hiring manager for CCTV installers. Given a job description and a list of pre-filtered candidates, rank the top 5 candidates who are the best fit for the job. Consider their skills, tier, and rating. Respond ONLY with a JSON array of the user IDs of the top 5 candidates, in order from best to worst match.
 
@@ -73,31 +70,31 @@ const findMatchingInstallersFlow = ai.defineFlow(
     
     Candidates:
     ${candidates.map(c => JSON.stringify({
-        id: c.id,
-        name: c.name,
-        skills: c.installerProfile?.skills,
-        tier: c.installerProfile?.tier,
-        rating: c.installerProfile?.rating,
-        points: c.installerProfile?.points,
+      id: c.id,
+      name: c.name,
+      skills: c.installerProfile?.skills,
+      tier: c.installerProfile?.tier,
+      rating: c.installerProfile?.rating,
+      points: c.installerProfile?.points,
     })).join('\n')}
     
     Your response must be a valid JSON array of strings, like ["user-id-1", "user-id-2"].
     `;
 
     const llmResponse = await ai.generate({
-        prompt: prompt,
-        model: 'gemini-1.5-flash',
-        output: {
-            format: 'json',
-            schema: z.array(z.string()),
-        },
+      prompt: prompt,
+      model: 'gemini-1.5-flash',
+      output: {
+        format: 'json',
+        schema: z.array(z.string()),
+      },
     });
 
-    const rankedIds = llmResponse.output() || [];
+    const rankedIds = llmResponse.output || [];
 
     const rankedInstallers = rankedIds
-        .map(id => candidates.find(c => c.id === id))
-        .filter((c): c is User => c !== undefined);
+      .map(id => candidates.find(c => c.id === id))
+      .filter((c): c is User => c !== undefined);
 
     return { installerMatches: rankedInstallers };
   }

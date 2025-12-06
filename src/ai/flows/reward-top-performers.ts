@@ -11,7 +11,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+
 import { db } from '@/lib/firebase/server-init';
 import { grantProPlan } from '@/ai/flows/grant-pro-plan';
 import type { User } from '@/lib/types';
@@ -37,21 +37,19 @@ export const rewardTopPerformers = ai.defineFlow(
   async () => {
     try {
       console.log("[Automation] Starting: Reward Top Performers");
-      
+
       // Note: Ideally, check for Admin privileges here.
       // Since `grantProPlan` performs checks or is admin-only logic, and this flow 
       // is exposed as a server action to be called by the admin dashboard,
       // we rely on the implementation of `grantProPlan` and the caller's context 
       // in the frontend to be an admin (which is checked in ReportsPage).
-      
+
       // 1. Fetch all active installers
-      const installersQuery = query(
-        collection(db, 'users'),
-        where('roles', 'array-contains', 'Installer'),
-        where('status', '==', 'active')
-      );
-      const snapshot = await getDocs(installersQuery);
-      const installers = snapshot.docs.map(doc => doc.data() as User);
+      const snapshot = await db.collection('users')
+        .where('roles', 'array-contains', 'Installer')
+        .where('status', '==', 'active')
+        .get();
+      const installers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
 
       // 2. Calculate monthly performance and rank them using shared logic
       const rankedInstallers = calculateMonthlyPerformance(installers);
@@ -73,10 +71,10 @@ export const rewardTopPerformers = ai.defineFlow(
         if (result.success) {
           rewardedUsers.push({ id: top3[index].id, name: top3[index].name });
         } else {
-            console.error(`[Automation] Failed to reward ${top3[index].name}: ${result.message}`);
+          console.error(`[Automation] Failed to reward ${top3[index].name}: ${result.message}`);
         }
       });
-      
+
       console.log(`[Automation] Successfully rewarded ${rewardedUsers.length} users.`);
 
       return {
