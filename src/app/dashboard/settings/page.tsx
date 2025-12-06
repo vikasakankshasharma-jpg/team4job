@@ -4,44 +4,44 @@
 
 import * as React from "react"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+    CardFooter,
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select"
 import { useTheme } from "next-themes"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/hooks/use-user"
 import { Input } from "@/components/ui/input"
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
 } from "@/components/ui/tabs"
 import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift, Loader2, Ticket, Package, Ban, Settings as SettingsIcon, Bell } from "lucide-react"
 import { useHelp } from "@/hooks/use-help"
@@ -93,7 +93,7 @@ function PersonalSettingsCard() {
     const [deleteConfirmation, setDeleteConfirmation] = React.useState("")
     const isDeleteDisabled = deleteConfirmation !== "Delete"
     const isTeamMember = role === 'Admin' || role === 'Support Team';
-    
+
     return (
         <div className="space-y-6">
             <Card>
@@ -107,7 +107,7 @@ function PersonalSettingsCard() {
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5"/> Notifications</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" /> Notifications</CardTitle>
                     <CardDescription>Manage how you receive notifications from the platform.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -115,46 +115,46 @@ function PersonalSettingsCard() {
                         <div className="space-y-0.5">
                             <Label>Push Notifications</Label>
                             <p className="text-xs text-muted-foreground">
-                               Receive real-time alerts on your device.
+                                Receive real-time alerts on your device.
                             </p>
                         </div>
                         <Switch defaultChecked />
                     </div>
-                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div className="space-y-0.5">
                             <Label>New Bids</Label>
                             <p className="text-xs text-muted-foreground">
-                               Get notified when an installer bids on your job.
+                                Get notified when an installer bids on your job.
                             </p>
                         </div>
-                        <Switch defaultChecked disabled={role !== 'Job Giver'}/>
+                        <Switch defaultChecked disabled={role !== 'Job Giver'} />
                     </div>
-                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div className="space-y-0.5">
                             <Label>Job Awarded</Label>
                             <p className="text-xs text-muted-foreground">
-                               Get notified when you are awarded a job.
+                                Get notified when you are awarded a job.
                             </p>
                         </div>
-                        <Switch defaultChecked disabled={role !== 'Installer'}/>
+                        <Switch defaultChecked disabled={role !== 'Installer'} />
                     </div>
-                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div className="space-y-0.5">
                             <Label>Dispute Updates</Label>
                             <p className="text-xs text-muted-foreground">
-                               Stay informed about your support tickets.
+                                Stay informed about your support tickets.
                             </p>
                         </div>
                         <Switch defaultChecked />
                     </div>
                 </CardContent>
-                 <CardFooter>
+                <CardFooter>
                     <p className="text-xs text-muted-foreground">
                         More granular notification controls will be available soon.
                     </p>
                 </CardFooter>
             </Card>
-             <Card>
+            <Card>
                 <CardHeader>
                     <CardTitle>Account Management</CardTitle>
                     <CardDescription>
@@ -185,14 +185,14 @@ function PersonalSettingsCard() {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. To confirm, please type{" "}
-                                        <span className="font-semibold text-foreground">Delete</span> in the box below.
-                                    </AlertDialogDescription>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. To confirm, please type{" "}
+                                            <span className="font-semibold text-foreground">Delete</span> in the box below.
+                                        </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <div className="py-2">
-                                        <Input 
+                                        <Input
                                             id="delete-confirm"
                                             placeholder="Type 'Delete' to confirm"
                                             value={deleteConfirmation}
@@ -200,20 +200,20 @@ function PersonalSettingsCard() {
                                         />
                                     </div>
                                     <AlertDialogFooter>
-                                    <AlertDialogCancel onClick={() => setDeleteConfirmation("")}>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                        disabled={isDeleteDisabled}
-                                        onClick={() => {
-                                            if (isDeleteDisabled) return;
-                                            toast({
-                                                title: "Account Deletion Requested",
-                                                description: "Your account is scheduled for deletion. This is a simulated action.",
-                                                variant: "destructive"
-                                            })
-                                        }}
-                                    >
-                                        Continue
-                                    </AlertDialogAction>
+                                        <AlertDialogCancel onClick={() => setDeleteConfirmation("")}>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            disabled={isDeleteDisabled}
+                                            onClick={() => {
+                                                if (isDeleteDisabled) return;
+                                                toast({
+                                                    title: "Account Deletion Requested",
+                                                    description: "Your account is scheduled for deletion. This is a simulated action.",
+                                                    variant: "destructive"
+                                                })
+                                            }}
+                                        >
+                                            Continue
+                                        </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
@@ -249,7 +249,7 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
     const [settings, setSettings] = React.useState<Partial<PlatformSettings>>({});
-    
+
     React.useEffect(() => {
         if (!db) return;
         const fetchSettings = async () => {
@@ -271,7 +271,7 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
             toast({
                 title: "Settings Saved",
                 description: `Monetization settings have been updated.`,
-                variant: "success",
+                variant: "default",
             });
         } catch (error) {
             console.error("Error saving settings:", error);
@@ -301,17 +301,17 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="installerCommissionRate">Installer Commission Rate (%)</Label>
-                            <Input id="installerCommissionRate" type="number" value={settings.installerCommissionRate ?? ''} onChange={handleInputChange} min="0" max="100"/>
+                            <Input id="installerCommissionRate" type="number" value={settings.installerCommissionRate ?? ''} onChange={handleInputChange} min="0" max="100" />
                             <p className="text-xs text-muted-foreground">The percentage taken from the installer's earnings for a job.</p>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="jobGiverFeeRate">Job Giver Fee Rate (%)</Label>
-                            <Input id="jobGiverFeeRate" type="number" value={settings.jobGiverFeeRate ?? ''} onChange={handleInputChange} min="0" max="100"/>
+                            <Input id="jobGiverFeeRate" type="number" value={settings.jobGiverFeeRate ?? ''} onChange={handleInputChange} min="0" max="100" />
                             <p className="text-xs text-muted-foreground">A percentage of the job amount charged to the job giver as a convenience fee.</p>
                         </div>
                     </div>
                 </CardContent>
-                 <CardFooter>
+                <CardFooter>
                     <Button onClick={handleSave} disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save Fees & Commissions
@@ -353,7 +353,7 @@ function UserReputationSettings() {
             toast({
                 title: "Settings Saved",
                 description: "Reputation settings have been updated.",
-                variant: "success",
+                variant: "default",
             });
         } catch (error) {
             console.error("Error saving settings:", error);
@@ -383,24 +383,24 @@ function UserReputationSettings() {
                     <h3 className="mb-4 text-lg font-medium">Growth &amp; Onboarding Strategy</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-lg border p-4">
                         <div className="space-y-2">
-                             <Label htmlFor="defaultTrialPeriodDays">Default Trial Period (days)</Label>
-                             <Input id="defaultTrialPeriodDays" type="number" value={settings.defaultTrialPeriodDays} onChange={handleInputChange} min="0" />
-                             <p className="text-xs text-muted-foreground">
-                               Free trial for premium plans.
+                            <Label htmlFor="defaultTrialPeriodDays">Default Trial Period (days)</Label>
+                            <Input id="defaultTrialPeriodDays" type="number" value={settings.defaultTrialPeriodDays} onChange={handleInputChange} min="0" />
+                            <p className="text-xs text-muted-foreground">
+                                Free trial for premium plans.
                             </p>
                         </div>
-                         <div className="space-y-2">
-                             <Label htmlFor="freeBidsForNewInstallers">Free Bids for New Installers</Label>
-                             <Input id="freeBidsForNewInstallers" type="number" value={settings.freeBidsForNewInstallers} onChange={handleInputChange} min="0" />
-                              <p className="text-xs text-muted-foreground">
-                               Number of free bids a new installer gets.
+                        <div className="space-y-2">
+                            <Label htmlFor="freeBidsForNewInstallers">Free Bids for New Installers</Label>
+                            <Input id="freeBidsForNewInstallers" type="number" value={settings.freeBidsForNewInstallers} onChange={handleInputChange} min="0" />
+                            <p className="text-xs text-muted-foreground">
+                                Number of free bids a new installer gets.
                             </p>
                         </div>
-                         <div className="space-y-2">
-                             <Label htmlFor="freePostsForNewJobGivers">Free Posts for New Job Givers</Label>
-                             <Input id="freePostsForNewJobGivers" type="number" value={settings.freePostsForNewJobGivers} onChange={handleInputChange} min="0" />
-                              <p className="text-xs text-muted-foreground">
-                               Number of free job posts a new job giver gets.
+                        <div className="space-y-2">
+                            <Label htmlFor="freePostsForNewJobGivers">Free Posts for New Job Givers</Label>
+                            <Input id="freePostsForNewJobGivers" type="number" value={settings.freePostsForNewJobGivers} onChange={handleInputChange} min="0" />
+                            <p className="text-xs text-muted-foreground">
+                                Number of free job posts a new job giver gets.
                             </p>
                         </div>
                     </div>
@@ -411,66 +411,66 @@ function UserReputationSettings() {
                 <div>
                     <h3 className="mb-4 text-lg font-medium">Reputation Point System</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-lg border p-4">
-                       <div className="space-y-2">
-                         <Label htmlFor="pointsForJobCompletion">Points for Job Completion</Label>
-                         <Input id="pointsForJobCompletion" type="number" value={settings.pointsForJobCompletion} onChange={handleInputChange} />
-                       </div>
-                       <div className="space-y-2">
-                         <Label htmlFor="pointsFor5StarRating">Points for 5-Star Rating</Label>
-                         <Input id="pointsFor5StarRating" type="number" value={settings.pointsFor5StarRating} onChange={handleInputChange} />
-                       </div>
                         <div className="space-y-2">
-                         <Label htmlFor="pointsFor4StarRating">Points for 4-Star Rating</Label>
-                         <Input id="pointsFor4StarRating" type="number" value={settings.pointsFor4StarRating} onChange={handleInputChange} />
-                       </div>
-                         <div className="space-y-2">
-                         <Label htmlFor="penaltyFor1StarRating">Penalty for 1-Star Rating</Label>
-                         <Input id="penaltyFor1StarRating" type="number" value={settings.penaltyFor1StarRating} onChange={handleInputChange} />
-                       </div>
-                       <div className="space-y-2">
-                         <Label htmlFor="penaltyForDeclinedJob">Penalty for Declined Job</Label>
-                         <Input id="penaltyForDeclinedJob" type="number" value={settings.penaltyForDeclinedJob} onChange={handleInputChange} />
-                       </div>
+                            <Label htmlFor="pointsForJobCompletion">Points for Job Completion</Label>
+                            <Input id="pointsForJobCompletion" type="number" value={settings.pointsForJobCompletion} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="pointsFor5StarRating">Points for 5-Star Rating</Label>
+                            <Input id="pointsFor5StarRating" type="number" value={settings.pointsFor5StarRating} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="pointsFor4StarRating">Points for 4-Star Rating</Label>
+                            <Input id="pointsFor4StarRating" type="number" value={settings.pointsFor4StarRating} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="penaltyFor1StarRating">Penalty for 1-Star Rating</Label>
+                            <Input id="penaltyFor1StarRating" type="number" value={settings.penaltyFor1StarRating} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="penaltyForDeclinedJob">Penalty for Declined Job</Label>
+                            <Input id="penaltyForDeclinedJob" type="number" value={settings.penaltyForDeclinedJob} onChange={handleInputChange} />
+                        </div>
                     </div>
                 </div>
 
                 <Separator />
-                
+
                 <div>
-                     <h3 className="mb-4 text-lg font-medium">Reputation Tier Thresholds (Points Required)</h3>
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-lg border p-4">
-                       <div className="space-y-2">
-                         <Label htmlFor="silverTierPoints" className="flex items-center gap-2"><Medal className="h-4 w-4 text-gray-400" /> Silver</Label>
-                         <Input id="silverTierPoints" type="number" value={settings.silverTierPoints} onChange={handleInputChange} />
-                       </div>
+                    <h3 className="mb-4 text-lg font-medium">Reputation Tier Thresholds (Points Required)</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-lg border p-4">
                         <div className="space-y-2">
-                         <Label htmlFor="goldTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-amber-500" /> Gold</Label>
-                         <Input id="goldTierPoints" type="number" value={settings.goldTierPoints} onChange={handleInputChange} />
-                       </div>
-                         <div className="space-y-2">
-                         <Label htmlFor="platinumTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-cyan-400" /> Platinum</Label>
-                         <Input id="platinumTierPoints" type="number" value={settings.platinumTierPoints} onChange={handleInputChange} />
-                       </div>
+                            <Label htmlFor="silverTierPoints" className="flex items-center gap-2"><Medal className="h-4 w-4 text-gray-400" /> Silver</Label>
+                            <Input id="silverTierPoints" type="number" value={settings.silverTierPoints} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="goldTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-amber-500" /> Gold</Label>
+                            <Input id="goldTierPoints" type="number" value={settings.goldTierPoints} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="platinumTierPoints" className="flex items-center gap-2"><Gem className="h-4 w-4 text-cyan-400" /> Platinum</Label>
+                            <Input id="platinumTierPoints" type="number" value={settings.platinumTierPoints} onChange={handleInputChange} />
+                        </div>
                     </div>
                 </div>
             </CardContent>
             <CardFooter>
-                 <Button onClick={handleSave} disabled={isSaving}>
-                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                     Save Reputation Settings
-                 </Button>
+                <Button onClick={handleSave} disabled={isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Reputation Settings
+                </Button>
             </CardFooter>
         </Card>
     );
 }
 
-function PlatformRulesSettings({ blacklist, onDataChange } : { blacklist: BlacklistEntry[], onDataChange: () => void }) {
+function PlatformRulesSettings({ blacklist, onDataChange }: { blacklist: BlacklistEntry[], onDataChange: () => void }) {
     const { db } = useFirebase();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
     const [settings, setSettings] = React.useState<Partial<PlatformSettings>>(initialSettings);
-    
+
     React.useEffect(() => {
         if (!db) return;
         const fetchSettings = async () => {
@@ -483,7 +483,7 @@ function PlatformRulesSettings({ blacklist, onDataChange } : { blacklist: Blackl
         };
         fetchSettings();
     }, [db]);
-    
+
     const handleSave = async () => {
         if (!db) return;
         setIsSaving(true);
@@ -492,7 +492,7 @@ function PlatformRulesSettings({ blacklist, onDataChange } : { blacklist: Blackl
             toast({
                 title: "Settings Saved",
                 description: "Platform rules have been updated.",
-                variant: "success",
+                variant: "default",
             });
         } catch (error) {
             console.error("Error saving settings:", error);
@@ -501,14 +501,14 @@ function PlatformRulesSettings({ blacklist, onDataChange } : { blacklist: Blackl
             setIsSaving(false);
         }
     };
-    
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
         setSettings(prev => ({ ...prev, [id]: Number(value) }));
     };
 
     const handleSwitchChange = (checked: boolean) => {
-        setSettings(prev => ({...prev, autoVerifyInstallers: checked }));
+        setSettings(prev => ({ ...prev, autoVerifyInstallers: checked }));
     }
 
     if (isLoading) {
@@ -516,51 +516,51 @@ function PlatformRulesSettings({ blacklist, onDataChange } : { blacklist: Blackl
     }
 
     return (
-      <div className="grid gap-6">
-        <Card>
-            <CardHeader>
-                <CardTitle>Job &amp; Content Rules</CardTitle>
-                <CardDescription>Set global rules for job postings and content on the platform.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="space-y-2">
-                    <Label htmlFor="minJobBudget" className="flex items-center gap-2"><IndianRupee className="h-4 w-4" /> Minimum Job Budget</Label>
-                     <div className="flex items-center gap-2">
-                        <Input
-                            id="minJobBudget"
-                            type="number"
-                            value={settings.minJobBudget}
-                            onChange={handleInputChange}
-                            min="0"
-                            className="max-w-[120px]"
-                        />
-                         <span className="text-muted-foreground">₹</span>
+        <div className="grid gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Job &amp; Content Rules</CardTitle>
+                    <CardDescription>Set global rules for job postings and content on the platform.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="minJobBudget" className="flex items-center gap-2"><IndianRupee className="h-4 w-4" /> Minimum Job Budget</Label>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                id="minJobBudget"
+                                type="number"
+                                value={settings.minJobBudget}
+                                onChange={handleInputChange}
+                                min="0"
+                                className="max-w-[120px]"
+                            />
+                            <span className="text-muted-foreground">₹</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            The minimum budget required for any new job posting.
+                        </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                        The minimum budget required for any new job posting.
-                    </p>
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="autoVerifyInstallers" className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Automatic Installer Verification</Label>
-                    <div className="flex items-center space-x-2">
-                        <Switch 
-                            id="autoVerifyInstallers" 
-                            checked={settings.autoVerifyInstallers}
-                            onCheckedChange={handleSwitchChange}
-                        />
-                        <Label htmlFor="autoVerifyInstallers" className="text-sm font-normal">Enable automatic Aadhar verification for new installers.</Label>
+                    <div className="space-y-2">
+                        <Label htmlFor="autoVerifyInstallers" className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Automatic Installer Verification</Label>
+                        <div className="flex items-center space-x-2">
+                            <Switch
+                                id="autoVerifyInstallers"
+                                checked={settings.autoVerifyInstallers}
+                                onCheckedChange={handleSwitchChange}
+                            />
+                            <Label htmlFor="autoVerifyInstallers" className="text-sm font-normal">Enable automatic Aadhar verification for new installers.</Label>
+                        </div>
                     </div>
-                 </div>
-            </CardContent>
-            <CardFooter>
-                 <Button onClick={handleSave} disabled={isSaving}>
-                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                     Save Job Rules
-                 </Button>
-            </CardFooter>
-        </Card>
-        <BlacklistSettings blacklist={blacklist} onDataChange={onDataChange} />
-      </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Job Rules
+                    </Button>
+                </CardFooter>
+            </Card>
+            <BlacklistSettings blacklist={blacklist} onDataChange={onDataChange} />
+        </div>
     );
 }
 
@@ -569,7 +569,7 @@ export default function SettingsPage() {
     const { isAdmin, loading: userLoading } = useUser();
     const { setHelp } = useHelp();
     const { db } = useFirebase();
-    
+
     const [plans, setPlans] = React.useState<SubscriptionPlan[]>([]);
     const [coupons, setCoupons] = React.useState<Coupon[]>([]);
     const [blacklist, setBlacklist] = React.useState<BlacklistEntry[]>([]);
@@ -595,30 +595,30 @@ export default function SettingsPage() {
 
 
     React.useEffect(() => {
-    setHelp({
-        title: "Platform Settings",
-        content: (
-            <div className="space-y-4 text-sm">
-                <p>This is the central control panel for your entire platform. As an admin, you can configure every aspect of the user experience and business logic here.</p>
-                {isAdmin ? (
-                    <ul className="list-disc space-y-2 pl-5">
-                        <li><span className="font-semibold">Monetization:</span> Manage subscription plans, create promotional coupons, and set your platform's commission rates. This is where you control how your platform makes money.</li>
-                        <li><span className="font-semibold">User &amp; Reputation:</span> Define the "welcome kit" for new users (like free trials) and configure the entire reputation system for installers, including points and tier levels.</li>
-                        <li><span className="font-semibold">Platform Rules:</span> Set global rules like the minimum job budget and manage the blacklist for users and pincodes.</li>
-                        <li><span className="font-semibold">Growth Strategy:</span> Use the coupon system to execute your growth strategy. For example, create a coupon for a "120-day Pro Installer Plan" and manually send it to the first few high-quality installers who sign up in a new city to bootstrap that local market.</li>
-                        <li><span className="font-semibold">General:</span> Change your personal settings like theme and notifications.</li>
-                    </ul>
-                ) : (
-                     <ul className="list-disc space-y-2 pl-5">
-                        <li><span className="font-semibold">Appearance:</span> Switch between light, dark, and system themes.</li>
-                        <li><span className="font-semibold">Notifications:</span> Manage your email and push notification preferences.</li>
-                        <li><span className="font-semibold">Account Management:</span> Change your password or delete your account.</li>
-                    </ul>
-                )}
-            </div>
-        )
-    })
-  }, [setHelp, isAdmin]);
+        setHelp({
+            title: "Platform Settings",
+            content: (
+                <div className="space-y-4 text-sm">
+                    <p>This is the central control panel for your entire platform. As an admin, you can configure every aspect of the user experience and business logic here.</p>
+                    {isAdmin ? (
+                        <ul className="list-disc space-y-2 pl-5">
+                            <li><span className="font-semibold">Monetization:</span> Manage subscription plans, create promotional coupons, and set your platform's commission rates. This is where you control how your platform makes money.</li>
+                            <li><span className="font-semibold">User &amp; Reputation:</span> Define the "welcome kit" for new users (like free trials) and configure the entire reputation system for installers, including points and tier levels.</li>
+                            <li><span className="font-semibold">Platform Rules:</span> Set global rules like the minimum job budget and manage the blacklist for users and pincodes.</li>
+                            <li><span className="font-semibold">Growth Strategy:</span> Use the coupon system to execute your growth strategy. For example, create a coupon for a "120-day Pro Installer Plan" and manually send it to the first few high-quality installers who sign up in a new city to bootstrap that local market.</li>
+                            <li><span className="font-semibold">General:</span> Change your personal settings like theme and notifications.</li>
+                        </ul>
+                    ) : (
+                        <ul className="list-disc space-y-2 pl-5">
+                            <li><span className="font-semibold">Appearance:</span> Switch between light, dark, and system themes.</li>
+                            <li><span className="font-semibold">Notifications:</span> Manage your email and push notification preferences.</li>
+                            <li><span className="font-semibold">Account Management:</span> Change your password or delete your account.</li>
+                        </ul>
+                    )}
+                </div>
+            )
+        })
+    }, [setHelp, isAdmin]);
 
     if (userLoading || loadingData && isAdmin) {
         return (
@@ -650,11 +650,11 @@ export default function SettingsPage() {
                         <span className="hidden sm:inline">Monetization</span>
                     </TabsTrigger>
                     <TabsTrigger value="reputation">
-                         <Gem className="mr-2 h-4 w-4 sm:hidden" />
+                        <Gem className="mr-2 h-4 w-4 sm:hidden" />
                         <span className="hidden sm:inline">User &amp; Reputation</span>
                     </TabsTrigger>
                     <TabsTrigger value="platform">
-                         <Ban className="mr-2 h-4 w-4 sm:hidden" />
+                        <Ban className="mr-2 h-4 w-4 sm:hidden" />
                         <span className="hidden sm:inline">Platform Rules</span>
                     </TabsTrigger>
                     <TabsTrigger value="general">

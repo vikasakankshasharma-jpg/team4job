@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   try {
     // In a real app, you MUST add authentication here to ensure only an admin can call this endpoint.
     // For now, we'll proceed assuming the caller is authorized.
-    
+
     const { name, email, password, role } = await req.json();
 
     if (!name || !email || !password || !role) {
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       email,
       mobile: '0000000000', // Placeholder
       roles: [role],
-      memberSince: Timestamp.now(),
+      memberSince: Timestamp.now() as any,
       status: 'active',
       avatarUrl: PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)].imageUrl,
       realAvatarUrl: 'https://picsum.photos/seed/teammember/200/200', // Placeholder
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         street: "N/A"
       }
     };
-    
+
     await userRef.set(newUserProfile);
 
     return NextResponse.json({ success: true, uid: userRecord.uid });

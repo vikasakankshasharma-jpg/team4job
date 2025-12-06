@@ -13,13 +13,13 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
 const BidderProfileSchema = z.object({
-    anonymousId: z.string().describe("The anonymous ID of the bidder (e.g., 'Bidder-1')."),
-    bidAmount: z.number().describe('The amount the installer has bid for the job in INR.'),
-    tier: z.string().describe("The installer's reputation tier (e.g., Bronze, Silver, Gold, Platinum)."),
-    rating: z.number().describe('The installer\'s average star rating (0-5).'),
-    reviewCount: z.number().describe('The total number of reviews the installer has received.'),
-    isFavorite: z.boolean().optional().describe('Whether the job giver has marked this installer as a favorite in the past.'),
-    isBlocked: z.boolean().optional().describe('Whether the job giver has blocked this installer.'),
+  anonymousId: z.string().describe("The anonymous ID of the bidder (e.g., 'Bidder-1')."),
+  bidAmount: z.number().describe('The amount the installer has bid for the job in INR.'),
+  tier: z.string().describe("The installer's reputation tier (e.g., Bronze, Silver, Gold, Platinum)."),
+  rating: z.number().describe('The installer\'s average star rating (0-5).'),
+  reviewCount: z.number().describe('The total number of reviews the installer has received.'),
+  isFavorite: z.boolean().optional().describe('Whether the job giver has marked this installer as a favorite in the past.'),
+  isBlocked: z.boolean().optional().describe('Whether the job giver has blocked this installer.'),
 });
 
 export const AnalyzeBidsInputSchema = z.object({
@@ -84,12 +84,12 @@ export const analyzeBidsFlow = ai.defineFlow(
       },
     });
 
-    const analysis = llmResponse.output();
+    const analysis = llmResponse.output;
 
     if (!analysis) {
-        throw new Error("Failed to get a valid analysis from the AI model.");
+      throw new Error("Failed to get a valid analysis from the AI model.");
     }
-    
+
     return analysis;
   }
 );

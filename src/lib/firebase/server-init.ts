@@ -17,32 +17,41 @@ function initializeAdminApp() {
   try {
     const serviceAccount = require('./service-account.json');
     return initializeApp({
-        credential: cert(serviceAccount)
+      credential: cert(serviceAccount)
     });
   } catch (error: any) {
     if (error.code !== 'MODULE_NOT_FOUND') {
-        console.error("Error reading or parsing service-account.json:", error);
-        throw new Error("Could not initialize Firebase Admin SDK. The service-account.json file may be corrupted.");
+      console.error("Error reading or parsing service-account.json:", error);
+      throw new Error("Could not initialize Firebase Admin SDK. The service-account.json file may be corrupted.");
     }
     // If the file is not found, proceed to check environment variable.
   }
 
-  // 2. Fallback to environment variable for production/deployment
+  // 2. Fallback to FIREBASE_SERVICE_ACCOUNT_KEY (JSON string) for production
   const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-
-  if (!serviceAccountEnv) {
-    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set, and service-account.json was not found. This is required for server-side Firebase operations.');
+  if (serviceAccountEnv) {
+    try {
+      return initializeApp({
+        credential: cert(JSON.parse(serviceAccountEnv)),
+      });
+    } catch (error) {
+      console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY.", error);
+    }
   }
 
-  try {
-    const serviceAccount = JSON.parse(serviceAccountEnv);
+  // 3. Fallback to Individual Environment Variables (Better for Vercel/hosting dashboards)
+  if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'); // Fix escaped newlines
     return initializeApp({
-      credential: cert(serviceAccount),
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: privateKey,
+      })
     });
-  } catch (error) {
-    console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY. Make sure it's a valid JSON string.", error);
-    throw new Error("Firebase Admin SDK initialization failed.");
   }
+
+  throw new Error('Failed to initialize Firebase Admin SDK. Missing credentials (FIREBASE_SERVICE_ACCOUNT_KEY or individual vars).');
 }
 
 app = initializeAdminApp();

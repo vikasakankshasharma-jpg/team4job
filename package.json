@@ -44,6 +44,7 @@
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-autoplay": "^8.1.7",
     "embla-carousel-react": "^8.6.0",
@@ -53,12 +54,13 @@
     "genkit": "1.14.1",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.475.0",
-    "next": "14.2.5",
+    "mitt": "^3.0.1",
+    "next": "^16.0.7",
     "next-themes": "^0.3.0",
     "patch-package": "^8.0.0",
-    "react": "^18.3.1",
+    "react": "^19.2.1",
     "react-day-picker": "^8.10.1",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.2.1",
     "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.54.2",
     "react-joyride": "^2.9.3",
@@ -70,8 +72,8 @@
   "devDependencies": {
     "@types/lodash.debounce": "^4.0.9",
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "dotenv": "^16.4.5",
     "genkit-cli": "1.14.1",
     "postcss": "^8",
@@ -83,7 +85,6 @@
     "genkit": "1.14.1",
     "@genkit-ai/core": {
       "genkit": "1.14.1"
-    },
-    "next": "14.2.5"
+    }
   }
 }

@@ -75,67 +75,69 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!auth || !db) return;
     setLoading(true);
 
-    errorEmitter.on('permission-error', (error: FirestorePermissionError) => {
+    const handlePermissionError = (error: FirestorePermissionError) => {
       console.error("Intercepted Firestore Permission Error:", error);
       toast({
         title: "Permission Denied",
         description: `You do not have permission to perform this action. The operation for path '${error.context.path}' was denied.`,
         variant: "destructive"
       });
-    });
+    };
+
+    errorEmitter.on('permission-error', handlePermissionError);
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
-        
+
         // --- Immediate check on auth change ---
         try {
-            const initialUserDoc = await getDoc(userDocRef);
-            if (!initialUserDoc.exists()) {
-                toast({ title: 'Login Error', description: 'Could not find your user profile. Please contact support.', variant: 'destructive' });
-                signOut(auth);
-                return;
-            }
-
-            const userData = { id: initialUserDoc.id, ...initialUserDoc.data() } as User;
-
-            if (userData.status === 'deactivated' || userData.status === 'suspended') {
-                 toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
-                 signOut(auth);
-                 return;
-            }
-        } catch (e) {
-            console.error("Initial user fetch failed:", e);
+          const initialUserDoc = await getDoc(userDocRef);
+          if (!initialUserDoc.exists()) {
+            toast({ title: 'Login Error', description: 'Could not find your user profile. Please contact support.', variant: 'destructive' });
             signOut(auth);
             return;
+          }
+
+          const userData = { id: initialUserDoc.id, ...initialUserDoc.data() } as User;
+
+          if (userData.status === 'deactivated' || userData.status === 'suspended') {
+            toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
+            signOut(auth);
+            return;
+          }
+        } catch (e) {
+          console.error("Initial user fetch failed:", e);
+          signOut(auth);
+          return;
         }
         // --- End immediate check ---
 
         const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
-           if (userDoc.exists()) {
-             const userData = { id: userDoc.id, ...userDoc.data() } as User;
-             
-             if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && toDate(userData.suspensionEndDate) > new Date())) {
-                toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
-                signOut(auth); // The snapshot listener will handle state cleanup
-             } else {
-                updateUserState(userData);
-                // Update last login timestamp without triggering a full re-render cycle
-                if (userDoc.data().lastLoginAt === undefined || (Date.now() - toDate(userDoc.data().lastLoginAt).getTime()) > 5 * 60 * 1000) {
-                  updateDoc(userDocRef, { lastLoginAt: serverTimestamp() });
-                }
-             }
-           } else {
-             // This case should be rare now due to the initial getDoc, but kept as a fallback.
-             console.error("User document not found for authenticated user in snapshot listener:", firebaseUser.uid);
-             toast({ title: 'Login Error', description: 'Your user profile disappeared. Please contact support.', variant: 'destructive' });
-             signOut(auth);
-           }
-           setLoading(false);
-        }, (error) => {
-            console.error("Error listening to user document:", error);
+          if (userDoc.exists()) {
+            const userData = { id: userDoc.id, ...userDoc.data() } as User;
+
+            if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && toDate(userData.suspensionEndDate) > new Date())) {
+              toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
+              signOut(auth); // The snapshot listener will handle state cleanup
+            } else {
+              updateUserState(userData);
+              // Update last login timestamp without triggering a full re-render cycle
+              if (userDoc.data().lastLoginAt === undefined || (Date.now() - toDate(userDoc.data().lastLoginAt).getTime()) > 5 * 60 * 1000) {
+                updateDoc(userDocRef, { lastLoginAt: serverTimestamp() });
+              }
+            }
+          } else {
+            // This case should be rare now due to the initial getDoc, but kept as a fallback.
+            console.error("User document not found for authenticated user in snapshot listener:", firebaseUser.uid);
+            toast({ title: 'Login Error', description: 'Your user profile disappeared. Please contact support.', variant: 'destructive' });
             signOut(auth);
-            setLoading(false);
+          }
+          setLoading(false);
+        }, (error) => {
+          console.error("Error listening to user document:", error);
+          signOut(auth);
+          setLoading(false);
         });
 
         return () => unsubscribeDoc();
@@ -146,27 +148,27 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => {
-        unsubscribeAuth();
-        errorEmitter.removeAllListeners('permission-error');
+      unsubscribeAuth();
+      errorEmitter.off('permission-error', handlePermissionError);
     }
   }, [auth, db, toast, updateUserState]);
 
   useEffect(() => {
     if (loading) return;
-    
+
     const publicPaths = ['/login', '/'];
     const isPublicPage = publicPaths.some(p => pathname === p) || pathname.startsWith('/login');
 
     if (isPublicPage) {
-        if (user) {
-            router.push('/dashboard');
-        }
-        return;
+      if (user) {
+        router.push('/dashboard');
+      }
+      return;
     }
 
     if (!user) {
-        router.push('/login');
-        return;
+      router.push('/login');
+      return;
     }
 
     // Role-based route protection
@@ -174,7 +176,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs', '/dashboard/my-installers', '/dashboard/installers'];
     const adminOnlyPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/settings', '/dashboard/subscription-plans', '/dashboard/coupons', '/dashboard/blacklist'];
     const supportOnlyPaths = ['/dashboard/disputes'];
-    
+
     const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
     const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
     const isAdminPage = adminOnlyPaths.some(p => pathname.startsWith(p));
@@ -183,15 +185,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userIsAdmin = user.roles.includes("Admin");
 
     if (role === 'Job Giver' && isInstallerPage) {
-        router.push('/dashboard');
+      router.push('/dashboard');
     } else if (role === 'Installer' && isJobGiverPage) {
-        router.push('/dashboard');
+      router.push('/dashboard');
     } else if (role === 'Support Team' && !(isSupportPage || pathname === '/dashboard' || pathname.startsWith('/dashboard/profile'))) {
-        router.push('/dashboard/disputes');
+      router.push('/dashboard/disputes');
     } else if (userIsAdmin && (isInstallerPage || isJobGiverPage)) {
-        // Admins can access most pages, but we could redirect them if needed
+      // Admins can access most pages, but we could redirect them if needed
     } else if (!userIsAdmin && isAdminPage) {
-        router.push('/dashboard');
+      router.push('/dashboard');
     }
 
   }, [role, pathname, user, router, loading]);
@@ -205,25 +207,25 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const handleLogout = () => {
-      signOut(auth).then(() => {
-          updateUserState(null);
-          router.push('/login');
-      });
+    signOut(auth).then(() => {
+      updateUserState(null);
+      router.push('/login');
+    });
   }
 
   const handleLogin = async (email: string, password?: string): Promise<boolean> => {
     if (!password) {
-        console.error("Password missing.");
-        return false;
+      console.error("Password missing.");
+      return false;
     }
     try {
-        await signInWithEmailAndPassword(auth, email, password);
-        return true;
+      await signInWithEmailAndPassword(auth, email, password);
+      return true;
     } catch (error: any) {
-        if (error.code !== 'auth/invalid-credential') {
-            console.error("Login failed:", error);
-        }
-        return false;
+      if (error.code !== 'auth/invalid-credential') {
+        console.error("Login failed:", error);
+      }
+      return false;
     }
   };
 
@@ -238,24 +240,24 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout: handleLogout,
     login: handleLogin,
   }), [user, role, isAdmin, loading, handleSetRole, handleLogout, handleLogin]);
-  
+
   const publicPaths = ['/login', '/'];
   const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
 
   if (loading && !isPublicPage) {
-      return (
-         <div className="flex h-screen items-center justify-center">
-            <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Loading user...</span>
-            </div>
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Loading user...</span>
         </div>
-      );
+      </div>
+    );
   }
 
   return (
     <UserContext.Provider value={value}>
-        {children}
+      {children}
     </UserContext.Provider>
   );
 };
@@ -271,4 +273,3 @@ export function useUser() {
 // This is kept for non-hook usage, but useAuth and useFirestore are preferred.
 export { useFirebase, useAuth, useFirestore };
 
-    

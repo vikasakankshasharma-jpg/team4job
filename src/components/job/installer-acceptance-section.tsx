@@ -19,7 +19,8 @@ export const tierIcons = {
 };
 
 export function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
-    const { user, db } = useUser();
+    const { user } = useUser();
+    const { db } = useFirebase();
     const [isLoading, setIsLoading] = React.useState(false);
 
     if (!user || !db) return null;
@@ -29,7 +30,7 @@ export function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJ
         const fundingDeadline = new Date();
         fundingDeadline.setHours(fundingDeadline.getHours() + 48); // 48 hours for job giver to fund
 
-        const update = { 
+        const update = {
             awardedInstaller: doc(db, 'users', user.id),
             status: "Pending Funding" as const,
             selectedInstallers: [], // Clear the selections, as this installer won
@@ -39,7 +40,7 @@ export function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJ
         await onJobUpdate(update);
         setIsLoading(false);
     };
-    
+
     const handleDecline = async () => {
         setIsLoading(true);
         const remainingOffers = (job.selectedInstallers || []).filter(s => s.installerId !== user.id);
@@ -48,7 +49,7 @@ export function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJ
             disqualifiedInstallerIds: arrayUnion(user.id) as any,
             selectedInstallers: remainingOffers,
         };
-        
+
         // If this was the last pending offer, revert the job status immediately
         if (remainingOffers.length === 0) {
             update.status = "Bidding Closed";

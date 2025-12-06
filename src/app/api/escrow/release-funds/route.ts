@@ -1,7 +1,7 @@
 
 
 import { NextRequest, NextResponse } from 'next/server';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+
 import { db } from '@/lib/firebase/server-init';
 import { User, Transaction, PlatformSettings } from '@/lib/types';
 import axios from 'axios';
@@ -10,21 +10,21 @@ import axios from 'axios';
 const CASHFREE_API_BASE = 'https://payout-api.cashfree.com/payouts';
 
 async function getCashfreeBearerToken(): Promise<string> {
-    const response = await axios.post(
-        `${CASHFREE_API_BASE}/auth`,
-        {},
-        {
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Client-Id': process.env.CASHFREE_PAYOUTS_CLIENT_ID,
-                'X-Client-Secret': process.env.CASHFREE_PAYOUTS_CLIENT_SECRET,
-            },
-        }
-    );
-    if (response.data?.data?.token) {
-        return response.data.data.token;
+  const response = await axios.post(
+    `${CASHFREE_API_BASE}/auth`,
+    {},
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Client-Id': process.env.CASHFREE_PAYOUTS_CLIENT_ID,
+        'X-Client-Secret': process.env.CASHFREE_PAYOUTS_CLIENT_SECRET,
+      },
     }
-    throw new Error('Failed to authenticate with Cashfree Payouts.');
+  );
+  if (response.data?.data?.token) {
+    return response.data.data.token;
+  }
+  throw new Error('Failed to authenticate with Cashfree Payouts.');
 }
 
 export async function POST(req: NextRequest) {
@@ -34,22 +34,22 @@ export async function POST(req: NextRequest) {
     if (!transactionId) {
       return NextResponse.json({ error: 'Missing transactionId' }, { status: 400 });
     }
-    
-    const transactionRef = doc(db, 'transactions', transactionId);
-    const transactionSnap = await getDoc(transactionRef);
 
-    if (!transactionSnap.exists()) {
+    const transactionRef = db.collection('transactions').doc(transactionId);
+    const transactionSnap = await transactionRef.get();
+
+    if (!transactionSnap.exists) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
     const transaction = transactionSnap.data() as Transaction;
-    
+
     if (transaction.status !== 'Funded') {
-        return NextResponse.json({ error: `Transaction is not in a payable state. Current status: ${transaction.status}` }, { status: 400 });
+      return NextResponse.json({ error: `Transaction is not in a payable state. Current status: ${transaction.status}` }, { status: 400 });
     }
-    
-    const installerSnap = await getDoc(doc(db, 'users', transaction.payeeId));
-    if (!installerSnap.exists() || !installerSnap.data()?.payouts?.beneficiaryId) {
-        return NextResponse.json({ error: 'Installer payout details (beneficiary ID) not configured.' }, { status: 400 });
+
+    const installerSnap = await db.collection('users').doc(transaction.payeeId).get();
+    if (!installerSnap.exists || !installerSnap.data()?.payouts?.beneficiaryId) {
+      return NextResponse.json({ error: 'Installer payout details (beneficiary ID) not configured.' }, { status: 400 });
     }
     const installer = installerSnap.data() as User;
     const beneficiaryId = installer.payouts!.beneficiaryId!;
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       amount: payoutAmount.toFixed(2),
       transferId: transferId,
     };
-    
+
     await axios.post(
       `${CASHFREE_API_BASE}/payouts/standard`,
       transferPayload,
@@ -80,15 +80,15 @@ export async function POST(req: NextRequest) {
     );
 
     // Optimistically update the status. The webhook will be the final confirmation.
-    await updateDoc(transactionRef, {
-        payoutTransferId: transferId,
-        status: 'Released'
+    await transactionRef.update({
+      payoutTransferId: transferId,
+      status: 'Released'
     });
-    
+
     // In a production system, you would also trigger a transfer for your commission here
     // to your own pre-registered beneficiary account. For this demo, we assume the 
     // commission is reconciled by Cashfree's reports.
-    
+
     return NextResponse.json({ success: true, transferId });
 
   } catch (error: any) {

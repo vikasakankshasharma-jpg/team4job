@@ -68,102 +68,102 @@ const tierIcons: Record<string, React.ReactNode> = {
 };
 
 const initialFilters = {
-    search: "",
-    role: "all",
-    tier: "all",
-    verified: "all",
-    rating: "all",
-    status: "all",
+  search: "",
+  role: "all",
+  tier: "all",
+  verified: "all",
+  rating: "all",
+  status: "all",
 };
 
 type SortableKeys = 'name' | 'memberSince' | 'tier' | 'rating' | 'points' | 'status';
 
 function UserCard({ u, user, actionLoading, handleUserAction, setDeleteUser }: { u: User, user: User, actionLoading: string | null, handleUserAction: (user: User, status: User['status'], days?: number) => void, setDeleteUser: (user: User) => void }) {
-    const getUserStatusBadge = (status?: User['status']) => {
-        switch (status) {
-            case 'suspended': return <Badge variant="warning">Suspended</Badge>;
-            case 'deactivated': return <Badge variant="destructive">Deactivated</Badge>;
-            default: return <Badge variant="success">Active</Badge>;
-        }
-    };
-    
-    return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                            <AnimatedAvatar svg={u.avatarUrl} />
-                            <AvatarFallback>{u.name.substring(0, 2)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <CardTitle className="text-base"><Link href={`/dashboard/users/${u.id}`} className="hover:underline">{u.name}</Link></CardTitle>
-                            <CardDescription className="font-mono text-xs">{u.id}</CardDescription>
-                        </div>
-                    </div>
-                    {getUserStatusBadge(u.status)}
-                </div>
-            </CardHeader>
-            <CardContent className="text-sm space-y-3">
-                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">Roles</span>
-                    <div className="flex flex-wrap gap-1 justify-end">
-                       {u.roles.map(r => <Badge key={r} variant="outline" className="font-normal">{r}</Badge>)}
-                       {u.installerProfile?.verified && <Badge variant="secondary" className="gap-1 pl-1.5 font-normal"><ShieldCheck className="h-3.5 w-3.5 text-green-600"/> Verified</Badge>}
-                    </div>
-                </div>
-                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">Member Since</span>
-                    <span className="font-medium">{format(toDate(u.memberSince), 'MMM, yyyy')}</span>
-                </div>
-                 {u.installerProfile && (
-                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">Tier</span>
-                        <div className="flex items-center gap-2 font-medium">
-                            {tierIcons[u.installerProfile.tier]}
-                            {u.installerProfile.tier}
-                        </div>
-                    </div>
-                 )}
-            </CardContent>
-            <CardFooter>
-                 {actionLoading === u.id ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                    user.id !== u.id && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" variant="outline" className="w-full"><MoreHorizontal className="mr-2 h-4 w-4" />Actions</Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem asChild><Link href={`/dashboard/users/${u.id}`}>View Profile</Link></DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                             {(u.status === 'active' || u.status === undefined) && (
-                              <DropdownMenuItem onClick={() => handleUserAction(u, 'deactivated')}>
-                                <UserX className="mr-2 h-4 w-4" />
-                                Deactivate
-                              </DropdownMenuItem>
-                            )}
-                             {u.status !== 'suspended' && (
-                               <DropdownMenuItem onClick={() => handleUserAction(u, 'suspended', 7)}>
-                                <Ban className="mr-2 h-4 w-4" />
-                                Suspend (7 Days)
-                              </DropdownMenuItem>
-                            )}
-                             {(u.status === 'deactivated' || u.status === 'suspended') && (
-                                <DropdownMenuItem onClick={() => handleUserAction(u, 'active')}>
-                                <UserCheck className="mr-2 h-4 w-4" />
-                                Re-activate
-                              </DropdownMenuItem>
-                            )}
-                             <DropdownMenuSeparator />
-                             <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4"/>Delete Permanently</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                    )
+  const getUserStatusBadge = (status?: User['status']) => {
+    switch (status) {
+      case 'suspended': return <Badge variant="warning">Suspended</Badge>;
+      case 'deactivated': return <Badge variant="destructive">Deactivated</Badge>;
+      default: return <Badge variant="success">Active</Badge>;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AnimatedAvatar svg={u.avatarUrl} />
+              <AvatarFallback>{u.name.substring(0, 2)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <CardTitle className="text-base"><Link href={`/dashboard/users/${u.id}`} className="hover:underline">{u.name}</Link></CardTitle>
+              <CardDescription className="font-mono text-xs">{u.id}</CardDescription>
+            </div>
+          </div>
+          {getUserStatusBadge(u.status)}
+        </div>
+      </CardHeader>
+      <CardContent className="text-sm space-y-3">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Roles</span>
+          <div className="flex flex-wrap gap-1 justify-end">
+            {u.roles.map(r => <Badge key={r} variant="outline" className="font-normal">{r}</Badge>)}
+            {u.installerProfile?.verified && <Badge variant="secondary" className="gap-1 pl-1.5 font-normal"><ShieldCheck className="h-3.5 w-3.5 text-green-600" /> Verified</Badge>}
+          </div>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Member Since</span>
+          <span className="font-medium">{format(toDate(u.memberSince), 'MMM, yyyy')}</span>
+        </div>
+        {u.installerProfile && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Tier</span>
+            <div className="flex items-center gap-2 font-medium">
+              {tierIcons[u.installerProfile.tier]}
+              {u.installerProfile.tier}
+            </div>
+          </div>
+        )}
+      </CardContent>
+      <CardFooter>
+        {actionLoading === u.id ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+          user.id !== u.id && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button aria-haspopup="true" variant="outline" className="w-full"><MoreHorizontal className="mr-2 h-4 w-4" />Actions</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem asChild><Link href={`/dashboard/users/${u.id}`}>View Profile</Link></DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {(u.status === 'active' || u.status === undefined) && (
+                  <DropdownMenuItem onClick={() => handleUserAction(u, 'deactivated')}>
+                    <UserX className="mr-2 h-4 w-4" />
+                    Deactivate
+                  </DropdownMenuItem>
                 )}
-            </CardFooter>
-        </Card>
-    );
+                {u.status !== 'suspended' && (
+                  <DropdownMenuItem onClick={() => handleUserAction(u, 'suspended', 7)}>
+                    <Ban className="mr-2 h-4 w-4" />
+                    Suspend (7 Days)
+                  </DropdownMenuItem>
+                )}
+                {(u.status === 'deactivated' || u.status === 'suspended') && (
+                  <DropdownMenuItem onClick={() => handleUserAction(u, 'active')}>
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Re-activate
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4" />Delete Permanently</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        )}
+      </CardFooter>
+    </Card>
+  );
 }
 
 export default function UsersPage() {
@@ -183,25 +183,25 @@ export default function UsersPage() {
 
   React.useEffect(() => {
     setHelp({
-        title: "User Directory",
-        content: (
-            <div className="space-y-4 text-sm">
-                <p>This page provides a complete directory of all registered users on the platform. As an admin, you have full control to manage these accounts.</p>
-                <ul className="list-disc space-y-2 pl-5">
-                    <li><span className="font-semibold">Filtering & Sorting:</span> Use the various filter controls to narrow down the user list. You can search by name/email/ID, or filter by role, tier, and status. Click on table headers to sort the data.</li>
-                    <li><span className="font-semibold">Export Data:</span> Click the "Export to CSV" button to download the currently filtered list of users for offline analysis or record-keeping.</li>
-                    <li><span className="font-semibold">User Status:</span>
-                        <ul className="list-disc space-y-1 pl-5 mt-1">
-                             <li><span className="font-semibold text-green-500">Active:</span> The user can access the platform normally.</li>
-                            <li><span className="font-semibold text-yellow-500">Suspended:</span> The user's account is temporarily disabled.</li>
-                            <li><span className="font-semibold text-red-500">Deactivated:</span> The user's account is disabled and can be re-activated or permanently deleted.</li>
-                        </ul>
-                    </li>
-                     <li><span className="font-semibold">Actions Menu:</span> The actions menu on each row allows you to suspend, deactivate, re-activate, or permanently delete a user account.</li>
-                     <li><span className="font-semibold">View Profile:</span> Click on a user's name or use the actions menu to go to their detailed profile page.</li>
-                </ul>
-            </div>
-        )
+      title: "User Directory",
+      content: (
+        <div className="space-y-4 text-sm">
+          <p>This page provides a complete directory of all registered users on the platform. As an admin, you have full control to manage these accounts.</p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li><span className="font-semibold">Filtering & Sorting:</span> Use the various filter controls to narrow down the user list. You can search by name/email/ID, or filter by role, tier, and status. Click on table headers to sort the data.</li>
+            <li><span className="font-semibold">Export Data:</span> Click the "Export to CSV" button to download the currently filtered list of users for offline analysis or record-keeping.</li>
+            <li><span className="font-semibold">User Status:</span>
+              <ul className="list-disc space-y-1 pl-5 mt-1">
+                <li><span className="font-semibold text-green-500">Active:</span> The user can access the platform normally.</li>
+                <li><span className="font-semibold text-yellow-500">Suspended:</span> The user's account is temporarily disabled.</li>
+                <li><span className="font-semibold text-red-500">Deactivated:</span> The user's account is disabled and can be re-activated or permanently deleted.</li>
+              </ul>
+            </li>
+            <li><span className="font-semibold">Actions Menu:</span> The actions menu on each row allows you to suspend, deactivate, re-activate, or permanently delete a user account.</li>
+            <li><span className="font-semibold">View Profile:</span> Click on a user's name or use the actions menu to go to their detailed profile page.</li>
+          </ul>
+        </div>
+      )
     })
   }, [setHelp]);
 
@@ -210,7 +210,7 @@ export default function UsersPage() {
     setLoading(true);
     const usersCollection = collection(db, 'users');
     const userSnapshot = await getDocs(query(usersCollection));
-    const userList = userSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as User);
+    const userList = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as User);
     setUsers(userList);
     setLoading(false);
   }, [db, user, isAdmin]);
@@ -260,14 +260,14 @@ export default function UsersPage() {
   };
 
   const handleDeleteConfirm = async () => {
-      if (!deleteUser) return;
-      setActionLoading(deleteUser.id);
-      await deleteFirestoreDoc(doc(db, 'users', deleteUser.id));
-      setUsers(currentUsers => currentUsers.filter(u => u.id !== deleteUser.id));
-      toast({ title: 'User Deleted', description: `${deleteUser.name} has been permanently deleted.`, variant: 'destructive' });
-      setDeleteUser(null);
-      setDeleteConfirmation("");
-      setActionLoading(null);
+    if (!deleteUser) return;
+    setActionLoading(deleteUser.id);
+    await deleteFirestoreDoc(doc(db, 'users', deleteUser.id));
+    setUsers(currentUsers => currentUsers.filter(u => u.id !== deleteUser.id));
+    toast({ title: 'User Deleted', description: `${deleteUser.name} has been permanently deleted.`, variant: 'destructive' });
+    setDeleteUser(null);
+    setDeleteConfirmation("");
+    setActionLoading(null);
   };
 
 
@@ -278,7 +278,7 @@ export default function UsersPage() {
   const requestSort = (key: SortableKeys) => {
     let direction: 'ascending' | 'descending' = 'ascending';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-        direction = 'descending';
+      direction = 'descending';
     }
     setSortConfig({ key, direction });
   };
@@ -287,36 +287,36 @@ export default function UsersPage() {
     let filtered = users;
 
     if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        filtered = filtered.filter(user =>
-            user.name.toLowerCase().includes(searchTerm) ||
-            user.email.toLowerCase().includes(searchTerm) ||
-            user.id.toLowerCase().includes(searchTerm) ||
-            (user.mobile && user.mobile.includes(searchTerm))
-        );
+      const searchTerm = filters.search.toLowerCase();
+      filtered = filtered.filter(user =>
+        user.name.toLowerCase().includes(searchTerm) ||
+        user.email.toLowerCase().includes(searchTerm) ||
+        user.id.toLowerCase().includes(searchTerm) ||
+        (user.mobile && user.mobile.includes(searchTerm))
+      );
     }
     if (filters.role !== 'all') {
-        filtered = filtered.filter(user => user.roles.includes(filters.role as any));
+      filtered = filtered.filter(user => user.roles.includes(filters.role as any));
     }
-     if (filters.status !== 'all') {
-        filtered = filtered.filter(user => (user.status || 'active') === filters.status);
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(user => (user.status || 'active') === filters.status);
     }
     if (filters.tier !== 'all') {
-        filtered = filtered.filter(user => user.installerProfile?.tier === filters.tier);
+      filtered = filtered.filter(user => user.installerProfile?.tier === filters.tier);
     }
     if (filters.verified !== 'all') {
-        const isVerified = filters.verified === 'true';
-        filtered = filtered.filter(user => !!user.installerProfile?.verified === isVerified);
+      const isVerified = filters.verified === 'true';
+      filtered = filtered.filter(user => !!user.installerProfile?.verified === isVerified);
     }
     if (filters.rating !== 'all') {
-        filtered = filtered.filter(user => {
-            const rating = user.installerProfile?.rating || 0;
-            if (filters.rating === '5') return rating === 5;
-            if (filters.rating === '4+') return rating >= 4;
-            if (filters.rating === '3+') return rating >= 3;
-            if (filters.rating === 'unrated') return rating === 0;
-            return true;
-        });
+      filtered = filtered.filter(user => {
+        const rating = user.installerProfile?.rating || 0;
+        if (filters.rating === '5') return rating === 5;
+        if (filters.rating === '4+') return rating >= 4;
+        if (filters.rating === '3+') return rating >= 3;
+        if (filters.rating === 'unrated') return rating === 0;
+        return true;
+      });
     }
 
     // Exclude the current admin user from the list
@@ -329,22 +329,22 @@ export default function UsersPage() {
         const aVal = a.installerProfile;
         const bVal = b.installerProfile;
         let valA: any, valB: any;
-        
+
         switch (sortConfig.key) {
-            case 'name':
-                valA = a.name; valB = b.name; break;
-            case 'memberSince':
-                valA = toDate(a.memberSince).getTime(); valB = toDate(b.memberSince).getTime(); break;
-            case 'tier':
-                valA = aVal?.tier || ''; valB = bVal?.tier || ''; break;
-            case 'rating':
-                valA = aVal?.rating || 0; valB = bVal?.rating || 0; break;
-            case 'points':
-                valA = aVal?.points || 0; valB = bVal?.points || 0; break;
-            case 'status':
-                valA = a.status || 'active'; valB = b.status || 'active'; break;
-            default:
-                return 0;
+          case 'name':
+            valA = a.name; valB = b.name; break;
+          case 'memberSince':
+            valA = toDate(a.memberSince).getTime(); valB = toDate(b.memberSince).getTime(); break;
+          case 'tier':
+            valA = aVal?.tier || ''; valB = bVal?.tier || ''; break;
+          case 'rating':
+            valA = aVal?.rating || 0; valB = bVal?.rating || 0; break;
+          case 'points':
+            valA = aVal?.points || 0; valB = bVal?.points || 0; break;
+          case 'status':
+            valA = a.status || 'active'; valB = b.status || 'active'; break;
+          default:
+            return 0;
         }
 
         if (valA < valB) return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -357,12 +357,12 @@ export default function UsersPage() {
 
   if (!user || !isAdmin) {
     return (
-        <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground">Redirecting...</p>
-        </div>
+      <div className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground">Redirecting...</p>
+      </div>
     );
   }
-  
+
   const clearFilters = () => setFilters(initialFilters);
 
   const activeFiltersCount = Object.values(filters).filter(value =>
@@ -376,7 +376,7 @@ export default function UsersPage() {
     { value: 'true', label: 'Verified' },
     { value: 'false', label: 'Not Verified' },
   ];
-    const statusFilters = [
+  const statusFilters = [
     { value: 'all', label: 'All Statuses' },
     { value: 'active', label: 'Active' },
     { value: 'suspended', label: 'Suspended' },
@@ -392,7 +392,7 @@ export default function UsersPage() {
 
   const getSortIcon = (key: SortableKeys) => {
     if (!sortConfig || sortConfig.key !== key) {
-        return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />;
+      return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />;
     }
     return sortConfig.direction === 'ascending' ? '▲' : '▼';
   };
@@ -404,8 +404,8 @@ export default function UsersPage() {
       default: return <Badge variant="success">Active</Badge>;
     }
   };
-  
-    const handleExport = () => {
+
+  const handleExport = () => {
     const dataToExport = sortedAndFilteredUsers.map(u => ({
       ID: u.id,
       Name: u.name,
@@ -423,181 +423,181 @@ export default function UsersPage() {
 
   return (
     <>
-    <Card>
-      <CardHeader className="sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <Card>
+        <CardHeader className="sm:flex-row sm:items-center sm:justify-between">
+          <div>
             <CardTitle>User Directory</CardTitle>
             <CardDescription>A list of all registered users in the system. Use actions to manage users.</CardDescription>
-        </div>
-        <div className="flex items-center gap-2">
+          </div>
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
-                <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
-                    <List className="h-4 w-4" />
-                </Button>
-                <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
-                    <Grid className="h-4 w-4" />
-                </Button>
+              <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
+                <List className="h-4 w-4" />
+              </Button>
+              <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
+                <Grid className="h-4 w-4" />
+              </Button>
             </div>
-             <Button onClick={handleExport} variant="outline" size="sm">
-                <Download className="mr-2 h-4 w-4" />
-                Export to CSV
+            <Button onClick={handleExport} variant="outline" size="sm">
+              <Download className="mr-2 h-4 w-4" />
+              Export to CSV
             </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col gap-2 mb-4">
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-2 mb-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
-                <Input 
-                    placeholder="Filter by name, email, ID..." 
-                    value={filters.search} 
-                    onChange={e => handleFilterChange('search', e.target.value)} 
-                    className="h-8 lg:col-span-2" 
-                />
-                 <Select value={filters.role} onValueChange={value => handleFilterChange('role', value)}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Role" /></SelectTrigger>
-                    <SelectContent>{roles.map(r => <SelectItem key={r} value={r === 'All' ? 'all' : r}>{r}</SelectItem>)}</SelectContent>
-                </Select>
-                 <Select value={filters.tier} onValueChange={value => handleFilterChange('tier', value)}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Tier" /></SelectTrigger>
-                    <SelectContent>{tiers.map(t => <SelectItem key={t} value={t === 'All' ? 'all' : t}>{t}</SelectItem>)}</SelectContent>
-                </Select>
-                 <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
-                    <SelectContent>{statusFilters.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-                </Select>
-                {activeFiltersCount > 0 && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs">
-                    <X className="h-3 w-3 mr-1" />
-                    Clear Filters
-                  </Button>
-                )}
+              <Input
+                placeholder="Filter by name, email, ID..."
+                value={filters.search}
+                onChange={e => handleFilterChange('search', e.target.value)}
+                className="h-8 lg:col-span-2"
+              />
+              <Select value={filters.role} onValueChange={value => handleFilterChange('role', value)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Role" /></SelectTrigger>
+                <SelectContent>{roles.map(r => <SelectItem key={r} value={r === 'All' ? 'all' : r}>{r}</SelectItem>)}</SelectContent>
+              </Select>
+              <Select value={filters.tier} onValueChange={value => handleFilterChange('tier', value)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Tier" /></SelectTrigger>
+                <SelectContent>{tiers.map(t => <SelectItem key={t} value={t === 'All' ? 'all' : t}>{t}</SelectItem>)}</SelectContent>
+              </Select>
+              <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent>{statusFilters.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+              </Select>
+              {activeFiltersCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs">
+                  <X className="h-3 w-3 mr-1" />
+                  Clear Filters
+                </Button>
+              )}
             </div>
-        </div>
+          </div>
 
-        {view === 'list' && (
+          {view === 'list' && (
             <Table>
-            <TableHeader>
+              <TableHeader>
                 <TableRow>
-                <TableHead><Button variant="ghost" onClick={() => requestSort('name')}>User {getSortIcon('name')}</Button></TableHead>
-                <TableHead><Button variant="ghost" onClick={() => requestSort('status')}>Status {getSortIcon('status')}</Button></TableHead>
-                <TableHead className="hidden sm:table-cell"><Button variant="ghost" onClick={() => requestSort('memberSince')}>Member Since {getSortIcon('memberSince')}</Button></TableHead>
-                <TableHead className="hidden sm:table-cell"><Button variant="ghost" onClick={() => requestSort('tier')}>Tier {getSortIcon('tier')}</Button></TableHead>
-                <TableHead><span className="sr-only">Actions</span></TableHead>
+                  <TableHead><Button variant="ghost" onClick={() => requestSort('name')}>User {getSortIcon('name')}</Button></TableHead>
+                  <TableHead><Button variant="ghost" onClick={() => requestSort('status')}>Status {getSortIcon('status')}</Button></TableHead>
+                  <TableHead className="hidden sm:table-cell"><Button variant="ghost" onClick={() => requestSort('memberSince')}>Member Since {getSortIcon('memberSince')}</Button></TableHead>
+                  <TableHead className="hidden sm:table-cell"><Button variant="ghost" onClick={() => requestSort('tier')}>Tier {getSortIcon('tier')}</Button></TableHead>
+                  <TableHead><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
-            </TableHeader>
-            <TableBody>
+              </TableHeader>
+              <TableBody>
                 {loading ? (
-                <TableRow><TableCell colSpan={5} className="h-24 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="h-24 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></TableCell></TableRow>
                 ) : sortedAndFilteredUsers.length > 0 ? (
-                sortedAndFilteredUsers.map((u) => (
+                  sortedAndFilteredUsers.map((u) => (
                     <TableRow key={u.id}>
-                    <TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
+                          <Avatar className="h-9 w-9">
                             <AnimatedAvatar svg={u.avatarUrl} />
                             <AvatarFallback>{u.name.substring(0, 2)}</AvatarFallback>
-                        </Avatar>
-                        <div>
+                          </Avatar>
+                          <div>
                             <Link href={`/dashboard/users/${u.id}`} className="font-medium hover:underline">{u.name}</Link>
                             <p className="text-sm text-muted-foreground font-mono truncate max-w-[150px]">{u.id}</p>
+                          </div>
                         </div>
-                        </div>
-                    </TableCell>
-                    <TableCell>{getUserStatusBadge(u.status)}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{format(toDate(u.memberSince), 'MMM, yyyy')}</TableCell>
-                    <TableCell className="hidden sm:table-cell">
+                      </TableCell>
+                      <TableCell>{getUserStatusBadge(u.status)}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{format(toDate(u.memberSince), 'MMM, yyyy')}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         {u.installerProfile ? (
-                            <div className="flex items-center gap-2">
-                                {tierIcons[u.installerProfile.tier]}
-                                {u.installerProfile.tier}
-                                {u.installerProfile.verified && <ShieldCheck className="h-4 w-4 text-green-600" title="Verified"/>}
-                            </div>
+                          <div className="flex items-center gap-2">
+                            {tierIcons[u.installerProfile.tier]}
+                            {u.installerProfile.tier}
+                            {u.installerProfile.verified && <ShieldCheck className="h-4 w-4 text-green-600" />}
+                          </div>
                         ) : <span className="text-muted-foreground">—</span>}
-                    </TableCell>
-                    <TableCell>
+                      </TableCell>
+                      <TableCell>
                         {actionLoading === u.id ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                        user.id !== u.id && (
+                          user.id !== u.id && (
                             <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
+                              <DropdownMenuTrigger asChild>
                                 <Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Actions for {u.name}</span></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 <DropdownMenuItem asChild><Link href={`/dashboard/users/${u.id}`}>View Profile</Link></DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 {(u.status === 'active' || u.status === undefined) && (
-                                <DropdownMenuItem onClick={() => handleUserAction(u, 'deactivated')}>
+                                  <DropdownMenuItem onClick={() => handleUserAction(u, 'deactivated')}>
                                     <UserX className="mr-2 h-4 w-4" />
                                     Deactivate
-                                </DropdownMenuItem>
+                                  </DropdownMenuItem>
                                 )}
                                 {u.status !== 'suspended' && (
-                                <DropdownMenuItem onClick={() => handleUserAction(u, 'suspended', 7)}>
+                                  <DropdownMenuItem onClick={() => handleUserAction(u, 'suspended', 7)}>
                                     <Ban className="mr-2 h-4 w-4" />
                                     Suspend (7 Days)
-                                </DropdownMenuItem>
+                                  </DropdownMenuItem>
                                 )}
                                 {(u.status === 'deactivated' || u.status === 'suspended') && (
-                                    <DropdownMenuItem onClick={() => handleUserAction(u, 'active')}>
+                                  <DropdownMenuItem onClick={() => handleUserAction(u, 'active')}>
                                     <UserCheck className="mr-2 h-4 w-4" />
                                     Re-activate
-                                </DropdownMenuItem>
+                                  </DropdownMenuItem>
                                 )}
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4"/>Delete Permanently</DropdownMenuItem>
-                            </DropdownMenuContent>
+                                <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4" />Delete Permanently</DropdownMenuItem>
+                              </DropdownMenuContent>
                             </DropdownMenu>
-                        )
+                          )
                         )}
-                    </TableCell>
+                      </TableCell>
                     </TableRow>
-                ))
+                  ))
                 ) : (
-                <TableRow><TableCell colSpan={5} className="h-24 text-center">No users found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="h-24 text-center">No users found.</TableCell></TableRow>
                 )}
-            </TableBody>
+              </TableBody>
             </Table>
-        )}
+          )}
 
-        {view === 'grid' && (
-             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {loading ? (
-                    <div className="col-span-full text-center py-10 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin" /></div>
-                ) : sortedAndFilteredUsers.length > 0 ? (
-                    sortedAndFilteredUsers.map(u => (
-                        <UserCard 
-                            key={u.id}
-                            u={u} 
-                            user={user}
-                            actionLoading={actionLoading}
-                            handleUserAction={handleUserAction}
-                            setDeleteUser={setDeleteUser}
-                        />
-                    ))
-                ) : (
-                    <div className="col-span-full text-center py-10 text-muted-foreground">No users found.</div>
-                )}
+          {view === 'grid' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {loading ? (
+                <div className="col-span-full text-center py-10 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin" /></div>
+              ) : sortedAndFilteredUsers.length > 0 ? (
+                sortedAndFilteredUsers.map(u => (
+                  <UserCard
+                    key={u.id}
+                    u={u}
+                    user={user}
+                    actionLoading={actionLoading}
+                    handleUserAction={handleUserAction}
+                    setDeleteUser={setDeleteUser}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-10 text-muted-foreground">No users found.</div>
+              )}
             </div>
-        )}
-      </CardContent>
-    </Card>
-    {deleteUser && (
-      <AlertDialog open={!!deleteUser} onOpenChange={(open) => !open && setDeleteUser(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the user <span className="font-bold">{deleteUser.name}</span>. This action is irreversible. Please type <span className="font-bold text-foreground">DELETE</span> to confirm.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Input placeholder="Type DELETE to confirm" value={deleteConfirmation} onChange={(e) => setDeleteConfirmation(e.target.value)} />
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => { setDeleteUser(null); setDeleteConfirmation(""); }}>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={handleDeleteConfirm} disabled={deleteConfirmation !== 'DELETE'}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    )}
+          )}
+        </CardContent>
+      </Card>
+      {deleteUser && (
+        <AlertDialog open={!!deleteUser} onOpenChange={(open) => !open && setDeleteUser(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the user <span className="font-bold">{deleteUser.name}</span>. This action is irreversible. Please type <span className="font-bold text-foreground">DELETE</span> to confirm.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <Input placeholder="Type DELETE to confirm" value={deleteConfirmation} onChange={(e) => setDeleteConfirmation(e.target.value)} />
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => { setDeleteUser(null); setDeleteConfirmation(""); }}>Cancel</AlertDialogCancel>
+              <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={handleDeleteConfirm} disabled={deleteConfirmation !== 'DELETE'}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </>
   );
 }

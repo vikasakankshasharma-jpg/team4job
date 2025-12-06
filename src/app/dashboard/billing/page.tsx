@@ -29,92 +29,92 @@ import { useSearchParams, useRouter } from "next/navigation";
 declare const cashfree: any;
 
 function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () => void }) {
-    const { user } = useUser();
-    const { db } = useFirebase();
-    const { toast } = useToast();
-    const [couponCode, setCouponCode] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    
-    const handleRedeem = async () => {
-        if (!couponCode.trim()) {
-            toast({ title: "Please enter a coupon code.", variant: "destructive" });
-            return;
-        }
-        if (!db || !user) return;
-        setIsLoading(true);
+  const { user } = useUser();
+  const { db } = useFirebase();
+  const { toast } = useToast();
+  const [couponCode, setCouponCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-        const couponRef = doc(db, "coupons", couponCode.toUpperCase());
-        const couponSnap = await getDoc(couponRef);
+  const handleRedeem = async () => {
+    if (!couponCode.trim()) {
+      toast({ title: "Please enter a coupon code.", variant: "destructive" });
+      return;
+    }
+    if (!db || !user) return;
+    setIsLoading(true);
 
-        if (!couponSnap.exists()) {
-            toast({ title: "Invalid Coupon Code", description: "The code you entered does not exist.", variant: "destructive" });
-            setIsLoading(false);
-            return;
-        }
+    const couponRef = doc(db, "coupons", couponCode.toUpperCase());
+    const couponSnap = await getDoc(couponRef);
 
-        const coupon = couponSnap.data() as any;
-        const now = new Date();
+    if (!couponSnap.exists()) {
+      toast({ title: "Invalid Coupon Code", description: "The code you entered does not exist.", variant: "destructive" });
+      setIsLoading(false);
+      return;
+    }
 
-        if (!coupon.isActive || toDate(coupon.validUntil) < now || toDate(coupon.validFrom) > now) {
-            toast({ title: "Coupon Not Valid", description: "This coupon is either inactive or expired.", variant: "destructive" });
-            setIsLoading(false);
-            return;
-        }
-        
-        const userDoc = await getDoc(doc(db, 'users', user.id));
-        const userData = userDoc.data();
-        const userRoles = userData?.roles || [];
-        const userRole = userRoles.includes('Installer') ? 'Installer' : 'Job Giver';
-        
-        if (coupon.applicableToRole !== 'Any' && coupon.applicableToRole !== userRole) {
-            toast({ title: "Coupon Not Applicable", description: `This coupon is only valid for ${coupon.applicableToRole}s.`, variant: "destructive" });
-            setIsLoading(false);
-            return;
-        }
-        
-        const userRef = doc(db, 'users', user.id);
-        const currentExpiry = userData?.subscription && toDate(userData.subscription.expiresAt) > now ? toDate(userData.subscription.expiresAt) : now;
-        const newExpiryDate = new Date(currentExpiry);
-        newExpiryDate.setDate(newExpiryDate.getDate() + coupon.durationDays);
+    const coupon = couponSnap.data() as any;
+    const now = new Date();
 
-        await updateDoc(userRef, {
-            'subscription.planId': coupon.planId,
-            'subscription.planName': coupon.description,
-            'subscription.expiresAt': newExpiryDate
-        });
-        
-        onSubscriptionUpdate();
-        toast({
-            title: "Coupon Redeemed!",
-            description: `Your subscription has been extended by ${coupon.durationDays} days.`,
-            variant: "success"
-        });
-        setCouponCode('');
-        setIsLoading(false);
-    };
+    if (!coupon.isActive || toDate(coupon.validUntil) < now || toDate(coupon.validFrom) > now) {
+      toast({ title: "Coupon Not Valid", description: "This coupon is either inactive or expired.", variant: "destructive" });
+      setIsLoading(false);
+      return;
+    }
 
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Ticket className="h-5 w-5" /> Redeem a Coupon</CardTitle>
-                <CardDescription>Have a coupon code? Enter it here to extend your subscription or get premium features.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex space-x-2">
-                    <Input
-                        placeholder="Enter Coupon Code"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        disabled={isLoading}
-                    />
-                    <Button onClick={handleRedeem} disabled={isLoading}>
-                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Redeem
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
-    );
+    const userDoc = await getDoc(doc(db, 'users', user.id));
+    const userData = userDoc.data();
+    const userRoles = userData?.roles || [];
+    const userRole = userRoles.includes('Installer') ? 'Installer' : 'Job Giver';
+
+    if (coupon.applicableToRole !== 'Any' && coupon.applicableToRole !== userRole) {
+      toast({ title: "Coupon Not Applicable", description: `This coupon is only valid for ${coupon.applicableToRole}s.`, variant: "destructive" });
+      setIsLoading(false);
+      return;
+    }
+
+    const userRef = doc(db, 'users', user.id);
+    const currentExpiry = userData?.subscription && toDate(userData.subscription.expiresAt) > now ? toDate(userData.subscription.expiresAt) : now;
+    const newExpiryDate = new Date(currentExpiry);
+    newExpiryDate.setDate(newExpiryDate.getDate() + coupon.durationDays);
+
+    await updateDoc(userRef, {
+      'subscription.planId': coupon.planId,
+      'subscription.planName': coupon.description,
+      'subscription.expiresAt': newExpiryDate
+    });
+
+    onSubscriptionUpdate();
+    toast({
+      title: "Coupon Redeemed!",
+      description: `Your subscription has been extended by ${coupon.durationDays} days.`,
+      variant: "default"
+    });
+    setCouponCode('');
+    setIsLoading(false);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Ticket className="h-5 w-5" /> Redeem a Coupon</CardTitle>
+        <CardDescription>Have a coupon code? Enter it here to extend your subscription or get premium features.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex space-x-2">
+          <Input
+            placeholder="Enter Coupon Code"
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value)}
+            disabled={isLoading}
+          />
+          <Button onClick={handleRedeem} disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Redeem
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function BillingPage() {
@@ -157,13 +157,13 @@ export default function BillingPage() {
   useEffect(() => {
     const paymentStatus = searchParams.get('payment_status');
     if (paymentStatus === 'success') {
-        const interval = setInterval(fetchUser, 2000); // Poll every 2 seconds
-        // Stop polling after 10 seconds or when subscription is active
-        const timeout = setTimeout(() => clearInterval(interval), 10000);
-        return () => {
-            clearInterval(interval);
-            clearTimeout(timeout);
-        };
+      const interval = setInterval(fetchUser, 2000); // Poll every 2 seconds
+      // Stop polling after 10 seconds or when subscription is active
+      const timeout = setTimeout(() => clearInterval(interval), 10000);
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
     }
   }, [searchParams, fetchUser]);
 
@@ -202,7 +202,7 @@ export default function BillingPage() {
       if (!response.data.payment_session_id) {
         throw new Error("Could not retrieve payment session ID.");
       }
-      
+
       const redirectUrl = searchParams.get('redirectUrl');
 
       const cashfree = new (window as any).Cashfree(response.data.payment_session_id);
@@ -213,21 +213,21 @@ export default function BillingPage() {
             toast({
               title: "Payment Successful",
               description: "Your subscription is being activated. Please wait...",
-              variant: "success",
+              variant: "default",
             });
             // We do NOT update the DB here. We wait for the webhook.
             // But we can trigger a re-fetch or show a pending state.
-            
+
             // Wait a moment for webhook to process
             setTimeout(() => {
-                fetchUser();
-                if (redirectUrl) {
-                    router.push(redirectUrl);
-                }
+              fetchUser();
+              if (redirectUrl) {
+                router.push(redirectUrl);
+              }
             }, 3000);
 
           } else {
-              throw new Error("Payment was not successful.");
+            throw new Error("Payment was not successful.");
           }
         },
         onError: (errorData: any) => {
@@ -278,35 +278,35 @@ export default function BillingPage() {
           )}
         </CardContent>
       </Card>
-      
+
       <div className="grid gap-6 lg:grid-cols-2">
-         <Card>
-            <CardHeader>
-                <CardTitle>Available Plans</CardTitle>
-                <CardDescription>Upgrade your account to unlock more features.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {loading ? <Skeleton className="h-32 w-full" /> : (
-                    plans.map(plan => (
-                        <Card key={plan.id} className="p-4">
-                             <CardTitle className="text-lg mb-2">{plan.name}</CardTitle>
-                             <p className="text-2xl font-bold mb-2">₹{plan.price.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">/ year</span></p>
-                             <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside mb-4">
-                                {plan.features.map(f => <li key={f}>{f}</li>)}
-                             </ul>
-                             <Button className="w-full" onClick={() => handlePurchase(plan)} disabled={isPurchasing === plan.id}>
-                                {isPurchasing === plan.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Subscribe
-                             </Button>
-                        </Card>
-                    ))
-                )}
-                 {plans.length === 0 && !loading && (
-                    <p className="text-muted-foreground text-center py-8">No subscription plans are currently available for your role.</p>
-                )}
-            </CardContent>
-         </Card>
-         <RedeemCouponCard onSubscriptionUpdate={fetchUser} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Available Plans</CardTitle>
+            <CardDescription>Upgrade your account to unlock more features.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loading ? <Skeleton className="h-32 w-full" /> : (
+              plans.map(plan => (
+                <Card key={plan.id} className="p-4">
+                  <CardTitle className="text-lg mb-2">{plan.name}</CardTitle>
+                  <p className="text-2xl font-bold mb-2">₹{plan.price.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">/ year</span></p>
+                  <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside mb-4">
+                    {plan.features.map(f => <li key={f}>{f}</li>)}
+                  </ul>
+                  <Button className="w-full" onClick={() => handlePurchase(plan)} disabled={isPurchasing === plan.id}>
+                    {isPurchasing === plan.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Subscribe
+                  </Button>
+                </Card>
+              ))
+            )}
+            {plans.length === 0 && !loading && (
+              <p className="text-muted-foreground text-center py-8">No subscription plans are currently available for your role.</p>
+            )}
+          </CardContent>
+        </Card>
+        <RedeemCouponCard onSubscriptionUpdate={fetchUser} />
       </div>
     </div>
   );

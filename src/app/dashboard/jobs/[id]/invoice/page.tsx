@@ -31,7 +31,7 @@ export default function InvoicePage() {
 
     useEffect(() => {
         if (!id || !db) return;
-        
+
         const fetchJob = async () => {
             setLoading(true);
             const jobRef = doc(db, 'jobs', id);
@@ -42,15 +42,15 @@ export default function InvoicePage() {
                 setLoading(false);
                 return;
             }
-            
+
             const jobData = jobSnap.data() as Job;
             const jobGiverSnap = await getDoc(jobData.jobGiver as any);
             const awardedInstallerSnap = jobData.awardedInstaller ? await getDoc(jobData.awardedInstaller as any) : null;
-            
+
             setJob({
                 ...jobData,
-                jobGiver: { id: jobGiverSnap.id, ...jobGiverSnap.data() } as User,
-                awardedInstaller: awardedInstallerSnap ? { id: awardedInstallerSnap.id, ...awardedInstallerSnap.data() } as User : undefined,
+                jobGiver: { id: jobGiverSnap.id, ...(jobGiverSnap.data() || {}) } as User,
+                awardedInstaller: awardedInstallerSnap ? { id: awardedInstallerSnap.id, ...(awardedInstallerSnap.data() || {}) } as User : undefined,
             });
 
             setLoading(false);
@@ -66,7 +66,7 @@ export default function InvoicePage() {
     if (!job || !job.invoice) {
         notFound();
     }
-    
+
     const jobGiver = job.jobGiver as User;
     const installer = job.awardedInstaller as User;
 
@@ -110,12 +110,12 @@ export default function InvoicePage() {
                 </div>
             </div>
 
-             <div className="grid sm:grid-cols-3 gap-8 mb-8 text-sm">
+            <div className="grid sm:grid-cols-3 gap-8 mb-8 text-sm">
                 <div>
                     <h3 className="font-semibold mb-2">Invoice Date</h3>
                     <p>{format(toDate(job.invoice.date), 'MMMM d, yyyy')}</p>
                 </div>
-                 <div>
+                <div>
                     <h3 className="font-semibold mb-2">Job Completion Date</h3>
                     <p>{format(toDate(job.invoice.date), 'MMMM d, yyyy')}</p>
                 </div>
@@ -143,7 +143,7 @@ export default function InvoicePage() {
                             <td className="p-2 text-center font-mono">{sacCode}</td>
                             <td className="p-2 text-right font-mono">₹{subtotal.toLocaleString('en-IN')}</td>
                         </tr>
-                         {travelTip > 0 && (
+                        {travelTip > 0 && (
                             <tr className="border-b">
                                 <td className="p-2">
                                     <p className="font-medium">Travel & Convenience Allowance</p>
@@ -169,13 +169,13 @@ export default function InvoicePage() {
                     </div>
                 </div>
             </div>
-            
-             <Separator className="my-8" />
-             
-             <div className="space-y-4 text-xs text-muted-foreground">
+
+            <Separator className="my-8" />
+
+            <div className="space-y-4 text-xs text-muted-foreground">
                 <p><strong className="font-semibold">Note:</strong> This is a digitally generated invoice and does not require a physical signature. The total amount is inclusive of all applicable taxes.</p>
                 <p><strong className="font-semibold">Disclaimer:</strong> CCTV Job Connect acts as a marketplace facilitator. The responsibility for GST compliance, including charging the correct tax rate (CGST, SGST, or IGST) and remitting the tax to the government, lies solely with the service provider (Installer). The service recipient (Job Giver) is responsible for verifying the GST details for input tax credit purposes.</p>
-             </div>
+            </div>
 
             <div className="mt-8 text-center print:hidden">
                 <Button onClick={() => window.print()}>

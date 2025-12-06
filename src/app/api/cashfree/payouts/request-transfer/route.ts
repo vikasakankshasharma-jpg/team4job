@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 import { db } from '@/lib/firebase/server-init';
 import { User, Transaction, PlatformSettings } from '@/lib/types';
 import axios from 'axios';
@@ -9,21 +9,21 @@ import axios from 'axios';
 const CASHFREE_API_BASE = 'https://payout-api.cashfree.com/payouts';
 
 async function getCashfreeBearerToken(): Promise<string> {
-    const response = await axios.post(
-        `${CASHFREE_API_BASE}/auth`,
-        {},
-        {
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Client-Id': process.env.CASHFREE_PAYOUTS_CLIENT_ID,
-                'X-Client-Secret': process.env.CASHFREE_PAYOUTS_CLIENT_SECRET,
-            },
-        }
-    );
-    if (response.data?.data?.token) {
-        return response.data.data.token;
+  const response = await axios.post(
+    `${CASHFREE_API_BASE}/auth`,
+    {},
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Client-Id': process.env.CASHFREE_PAYOUTS_CLIENT_ID,
+        'X-Client-Secret': process.env.CASHFREE_PAYOUTS_CLIENT_SECRET,
+      },
     }
-    throw new Error('Failed to authenticate with Cashfree Payouts.');
+  );
+  if (response.data?.data?.token) {
+    return response.data.data.token;
+  }
+  throw new Error('Failed to authenticate with Cashfree Payouts.');
 }
 
 /**
@@ -38,36 +38,36 @@ export async function POST(req: NextRequest) {
     if (!transactionId || !transferType || !userId) {
       return NextResponse.json({ error: 'Missing required parameters (transactionId, transferType, userId)' }, { status: 400 });
     }
-    
+
     if (transferType !== 'refund') {
-        return NextResponse.json({ error: 'Only refund transfers are supported at this time.' }, { status: 400 });
+      return NextResponse.json({ error: 'Only refund transfers are supported at this time.' }, { status: 400 });
     }
 
-    const transactionRef = doc(db, 'transactions', transactionId);
-    const transactionSnap = await getDoc(transactionRef);
+    const transactionRef = db.collection('transactions').doc(transactionId);
+    const transactionSnap = await transactionRef.get();
 
-    if (!transactionSnap.exists()) {
+    if (!transactionSnap.exists) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
     const transaction = transactionSnap.data() as Transaction;
-    
+
     // For a refund, the user receiving money should be the original payer (Job Giver).
     if (userId !== transaction.payerId) {
-        return NextResponse.json({ error: 'User ID does not match the original payer for this transaction.'}, { status: 403 });
+      return NextResponse.json({ error: 'User ID does not match the original payer for this transaction.' }, { status: 403 });
     }
-    
+
     if (transaction.status !== 'Funded' && transaction.status !== 'Disputed') {
-        return NextResponse.json({ error: `Cannot refund a transaction with status: ${transaction.status}` }, { status: 400 });
+      return NextResponse.json({ error: `Cannot refund a transaction with status: ${transaction.status}` }, { status: 400 });
     }
-    
-    const userSnap = await getDoc(doc(db, 'users', userId));
-    if (!userSnap.exists() || !userSnap.data()?.payouts?.beneficiaryId) {
-        // NOTE: For refunds, Cashfree doesn't require the Job Giver to be a 'beneficiary'.
-        // It can refund to the original payment source. However, if we wanted to refund to a *different*
-        // bank account, they would need to be added as a beneficiary.
-        // For this implementation, we assume refund to source is sufficient.
+
+    const userSnap = await db.collection('users').doc(userId).get();
+    if (!userSnap.exists || !userSnap.data()?.payouts?.beneficiaryId) {
+      // NOTE: For refunds, Cashfree doesn't require the Job Giver to be a 'beneficiary'.
+      // It can refund to the original payment source. However, if we wanted to refund to a *different*
+      // bank account, they would need to be added as a beneficiary.
+      // For this implementation, we assume refund to source is sufficient.
     }
-    
+
     const token = await getCashfreeBearerToken();
 
     const refundAmount = transaction.amount; // Full refund
@@ -77,10 +77,10 @@ export async function POST(req: NextRequest) {
     // In a real scenario, you'd likely use a specific "refund" API if available
     // or ensure the Job Giver is a beneficiary to receive funds.
     // For this marketplace model, a standard transfer to the Job Giver's registered beneficiary account works.
-    
+
     const jobGiverAsBeneficiary = userSnap.data() as User;
-     if (!jobGiverAsBeneficiary.payouts?.beneficiaryId) {
-        return NextResponse.json({ error: 'Job Giver does not have a beneficiary account set up for refunds.' }, { status: 400 });
+    if (!jobGiverAsBeneficiary.payouts?.beneficiaryId) {
+      return NextResponse.json({ error: 'Job Giver does not have a beneficiary account set up for refunds.' }, { status: 400 });
     }
 
     const transferPayload = {
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       amount: refundAmount.toFixed(2),
       transferId: transferId,
     };
-    
+
     await axios.post(
       `${CASHFREE_API_BASE}/payouts/standard`,
       transferPayload,
@@ -100,12 +100,12 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    await updateDoc(transactionRef, {
-        refundTransferId: transferId,
-        status: 'Refunded', // Optimistically update, will be confirmed by webhook
-        refundedAt: new Date(),
+    await transactionRef.update({
+      refundTransferId: transferId,
+      status: 'Refunded', // Optimistically update, will be confirmed by webhook
+      refundedAt: Timestamp.now() as any,
     });
-    
+
     return NextResponse.json({ success: true, transferId });
 
   } catch (error: any) {
