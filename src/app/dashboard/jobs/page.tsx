@@ -179,7 +179,7 @@ export default function BrowseJobsPage() {
       }
       
       // Budget filter
-      if (job.budget && (job.budget.max < budget[0] || job.budget.min > budget[1])) {
+      if (job.priceEstimate && (job.priceEstimate.max < budget[0] || job.priceEstimate.min > budget[1])) {
         return false;
       }
       

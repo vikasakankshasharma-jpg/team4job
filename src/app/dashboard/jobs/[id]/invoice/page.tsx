@@ -5,7 +5,7 @@ import { useFirebase, useUser } from "@/hooks/use-user";
 import { notFound, useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Job, User } from "@/lib/types";
-import { getDoc, doc } from "firebase/firestore";
+import { getDoc, doc, DocumentReference } from "firebase/firestore";
 import { Loader2, Printer } from "lucide-react";
 import { toDate } from "@/lib/utils";
 import { format } from "date-fns";
@@ -31,26 +31,44 @@ export default function InvoicePage() {
 
     useEffect(() => {
         if (!id || !db) return;
-        
+
         const fetchJob = async () => {
             setLoading(true);
             const jobRef = doc(db, 'jobs', id);
             const jobSnap = await getDoc(jobRef);
+            const jobData = jobSnap.data();
 
-            if (!jobSnap.exists() || !jobSnap.data().invoice) {
+            if (!jobSnap.exists() || !jobData || !jobData.invoice) {
                 setJob(null);
                 setLoading(false);
                 return;
             }
-            
-            const jobData = jobSnap.data() as Job;
-            const jobGiverSnap = await getDoc(jobData.jobGiver as any);
-            const awardedInstallerSnap = jobData.awardedInstaller ? await getDoc(jobData.awardedInstaller as any) : null;
-            
+
+            const jobGiverRef = jobData.jobGiver as DocumentReference;
+            const jobGiverSnap = await getDoc(jobGiverRef);
+            const jobGiverData = jobGiverSnap.data();
+
+            if (!jobGiverData) {
+                setJob(null);
+                setLoading(false);
+                return;
+            }
+
+            let awardedInstaller: User | undefined = undefined;
+            if (jobData.awardedInstaller) {
+                const awardedInstallerRef = jobData.awardedInstaller as DocumentReference;
+                const awardedInstallerSnap = await getDoc(awardedInstallerRef);
+                const awardedInstallerData = awardedInstallerSnap.data();
+
+                if (awardedInstallerSnap.exists() && awardedInstallerData) {
+                    awardedInstaller = { id: awardedInstallerSnap.id, ...awardedInstallerData } as User;
+                }
+            }
+
             setJob({
-                ...jobData,
-                jobGiver: { id: jobGiverSnap.id, ...jobGiverSnap.data() } as User,
-                awardedInstaller: awardedInstallerSnap ? { id: awardedInstallerSnap.id, ...awardedInstallerSnap.data() } as User : undefined,
+                ...(jobData as Job),
+                jobGiver: { id: jobGiverSnap.id, ...jobGiverData } as User,
+                awardedInstaller: awardedInstaller,
             });
 
             setLoading(false);
@@ -66,23 +84,21 @@ export default function InvoicePage() {
     if (!job || !job.invoice) {
         notFound();
     }
-    
+
     const jobGiver = job.jobGiver as User;
     const installer = job.awardedInstaller as User;
 
-    // Security check: Only involved parties or admin can view
     if (!user || (!isAdmin && user.id !== jobGiver.id && user.id !== installer.id)) {
         notFound();
     }
 
     const { subtotal, travelTip } = job.invoice;
-    const sacCode = "9954"; // SAC for Repair, maintenance and installation services
-    const gstRate = 0.18; // 18% GST
+    const sacCode = "9954";
+    const gstRate = 0.18;
 
     const taxableValue = subtotal + travelTip;
     const gstAmount = taxableValue * gstRate;
     const grandTotal = taxableValue + gstAmount;
-
 
     return (
         <div className="max-w-4xl mx-auto p-4 sm:p-8 bg-background">
@@ -91,9 +107,7 @@ export default function InvoicePage() {
                     <h1 className="text-3xl font-bold">Invoice</h1>
                     <p className="text-muted-foreground">#{job.invoice.id}</p>
                 </div>
-                <div className="text-right">
-                    {/* The invoice is from the Installer, not the platform */}
-                </div>
+                <div className="text-right"></div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-8 mb-8">
@@ -115,12 +129,12 @@ export default function InvoicePage() {
                 </div>
             </div>
 
-             <div className="grid sm:grid-cols-3 gap-8 mb-8 text-sm">
+            <div className="grid sm:grid-cols-3 gap-8 mb-8 text-sm">
                 <div>
                     <h3 className="font-semibold mb-2">Invoice Date</h3>
                     <p>{format(toDate(job.invoice.date), 'MMMM d, yyyy')}</p>
                 </div>
-                 <div>
+                <div>
                     <h3 className="font-semibold mb-2">Job Completion Date</h3>
                     <p>{format(toDate(job.invoice.date), 'MMMM d, yyyy')}</p>
                 </div>
@@ -148,7 +162,7 @@ export default function InvoicePage() {
                             <td className="p-2 text-center font-mono">{sacCode}</td>
                             <td className="p-2 text-right font-mono">₹{subtotal.toLocaleString('en-IN')}</td>
                         </tr>
-                         {travelTip > 0 && (
+                        {travelTip > 0 && (
                             <tr className="border-b">
                                 <td className="p-2">
                                     <p className="font-medium">Travel & Convenience Allowance</p>
@@ -178,13 +192,13 @@ export default function InvoicePage() {
                     </div>
                 </div>
             </div>
-            
-             <Separator className="my-8" />
-             
-             <div className="space-y-4 text-xs text-muted-foreground">
+
+            <Separator className="my-8" />
+
+            <div className="space-y-4 text-xs text-muted-foreground">
                 <p><strong className="font-semibold">Note:</strong> This is a digitally generated invoice on behalf of the service provider by CCTV Job Connect.</p>
                 <p><strong className="font-semibold">Disclaimer:</strong> CCTV Job Connect acts as a marketplace facilitator. The responsibility for GST compliance, including charging the correct tax rate (CGST, SGST, or IGST) and remitting the tax to the government, lies solely with the service provider (Installer). The service recipient (Job Giver) is responsible for verifying the GST details for input tax credit purposes.</p>
-             </div>
+            </div>
 
             <div className="mt-8 text-center print:hidden">
                 <Button onClick={() => window.print()}>
