@@ -17,7 +17,7 @@ async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
     // Return default values if no settings are configured
     return {
         installerCommissionRate: 5,
-        jobGiverFeeRate: 2,
+        jobGiverFeeRate: 5,
     };
 }
 
