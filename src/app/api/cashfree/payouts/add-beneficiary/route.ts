@@ -5,8 +5,9 @@ import { db } from '@/lib/firebase/server-init';
 import { User } from '@/lib/types';
 import axios from 'axios';
 
-// This would be 'https://payout-api.cashfree.com' for production
-const CASHFREE_API_BASE = 'https://payout-api.cashfree.com/payouts';
+// Switch to sandbox for beta testing (zero cost)
+// Production: 'https://payout-api.cashfree.com/payouts'
+const CASHFREE_API_BASE = 'https://payout-gamma.cashfree.com/payouts';
 
 // Function to get the bearer token from Cashfree
 async function getCashfreeBearerToken(): Promise<string> {
