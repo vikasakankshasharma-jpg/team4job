@@ -37,6 +37,7 @@ export default function RootLayout({
           "min-h-screen bg-background font-body antialiased",
           inter.variable
         )}
+        suppressHydrationWarning
       >
         <ThemeProvider
           attribute="class"
@@ -46,16 +47,16 @@ export default function RootLayout({
         >
           <FirebaseClientProvider>
             <UserProvider>
-                <Providers>
-                    {children}
-                </Providers>
+              <Providers>
+                {children}
+              </Providers>
             </UserProvider>
           </FirebaseClientProvider>
           <Toaster />
         </ThemeProvider>
-         <Script 
-          src="https://sdk.cashfree.com/js/v3/cashfree.js" 
-          strategy="beforeInteractive" 
+        <Script
+          src="https://sdk.cashfree.com/js/v3/cashfree.js"
+          strategy="beforeInteractive"
         />
       </body>
     </html>

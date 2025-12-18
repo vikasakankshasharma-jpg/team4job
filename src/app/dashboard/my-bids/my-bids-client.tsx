@@ -196,14 +196,6 @@ export default function MyBidsClient() {
     });
   }, [setHelp]);
 
-  if (userLoading || loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   const handleFilterChange = (newStatus: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (newStatus && newStatus !== 'All') {
@@ -235,6 +227,14 @@ export default function MyBidsClient() {
       return getMyBidStatusText(job, user) === statusFilter;
     });
   }, [sortedBids, jobsById, user, statusFilter]);
+
+  if (userLoading || loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   const pageTitle = statusFilter === 'All' ? 'My Bids' : `${statusFilter} Bids`;
   const pageDescription = statusFilter === 'All' ? 'A history of all bids you have placed.' : `A list of your bids that are ${statusFilter.toLowerCase()}.`;

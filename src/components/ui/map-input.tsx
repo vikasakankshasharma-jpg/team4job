@@ -105,10 +105,14 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
     return (
       <FormItem>
         <FormLabel>{label}</FormLabel>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Loading Map...</span>
-        </div>
+        <Input
+          placeholder="Enter full address manually (Map unavailable)"
+          {...addressField}
+        />
+        <FormDescription className="text-yellow-600 dark:text-yellow-500">
+          Map features are currently unavailable. Please enter your address manually.
+        </FormDescription>
+        <FormMessage>{addressFieldState.error?.message}</FormMessage>
       </FormItem>
     );
   }

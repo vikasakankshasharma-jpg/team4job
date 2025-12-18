@@ -51,7 +51,7 @@ export default function LoginClient() {
 
 
   const { isLoaded: isMapLoaded } = useJsApiLoader({
-    id: 'google-map-script-login',
+    id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries: GOOGLE_MAPS_LIBRARIES,
   });

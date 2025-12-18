@@ -283,6 +283,8 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
     const { storage } = useFirebase();
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [completionFiles, setCompletionFiles] = React.useState<File[]>([]);
+    const [otp, setOtp] = React.useState("");
+    const [isVerifyingOtp, setIsVerifyingOtp] = React.useState(false);
 
     const handleCompleteJob = async () => {
         if (completionFiles.length === 0) {
@@ -314,17 +316,46 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
             });
             const uploadedAttachments = await Promise.all(uploadPromises);
 
-            const updatedJobData: Partial<Job> = {
-                status: 'Pending Confirmation',
-                attachments: arrayUnion(...uploadedAttachments) as any,
-            };
-            onJobUpdate(updatedJobData);
+            if (otp && otp.length === 6) {
+                // Instant Completion via OTP
+                setIsVerifyingOtp(true);
+                try {
+                    await axios.post('/api/escrow/verify-otp-complete', {
+                        jobId: job.id,
+                        otp: otp,
+                        completionAttachments: uploadedAttachments
+                    });
+                    toast({
+                        title: "Job Completed Successfully!",
+                        description: "OTP Verified. Payment has been released.",
+                        variant: 'success' as any
+                    });
+                    // Let the real-time listener update the UI
+                } catch (error: any) {
+                    console.error("OTP Verification failed:", error);
+                    toast({
+                        title: "OTP Verification Failed",
+                        description: error.response?.data?.error || "Invalid OTP or system error.",
+                        variant: "destructive"
+                    });
+                    setIsSubmitting(false); // Stop here if OTP failed
+                    setIsVerifyingOtp(false);
+                    return;
+                }
+            } else {
+                // Standard Flow: Submit for Confirmation
+                const updatedJobData: Partial<Job> = {
+                    status: 'Pending Confirmation',
+                    attachments: arrayUnion(...uploadedAttachments) as any,
+                };
+                onJobUpdate(updatedJobData);
 
-            toast({
-                title: "Submitted for Confirmation",
-                description: "Your proof of work has been sent to the Job Giver for approval.",
-                variant: 'default'
-            });
+                toast({
+                    title: "Submitted for Confirmation",
+                    description: "Your proof of work has been sent to the Job Giver for approval.",
+                    variant: 'default'
+                });
+            }
 
         } catch (error: any) {
             console.error("Error submitting for completion:", error);
@@ -335,6 +366,7 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
             });
         } finally {
             setIsSubmitting(false);
+            setIsVerifyingOtp(false);
         }
     };
 
@@ -343,7 +375,7 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
             <CardHeader>
                 <CardTitle>Submit for Completion</CardTitle>
                 <CardDescription>
-                    Upload proof of completion (photos/videos) to send to the Job Giver for approval. Once they approve, the payment will be released.
+                    Upload proof of completion. If the Job Giver provided a Completion OTP, enter it below for instant payment release. Otherwise, submit for manual approval.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -351,14 +383,66 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
                     <Label>Proof of Completion</Label>
                     <FileUpload onFilesChange={setCompletionFiles} maxFiles={5} />
                 </div>
+                <div className="space-y-2">
+                    <Label htmlFor="otp-input">Completion OTP (Optional)</Label>
+                    <Input
+                        id="otp-input"
+                        placeholder="Enter 6-digit OTP provided by Job Giver"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        maxLength={6}
+                    />
+                    <p className="text-xs text-muted-foreground">Entering the correct OTP will instantly release your payment.</p>
+                </div>
             </CardContent>
             <CardFooter>
                 <Button onClick={handleCompleteJob} disabled={completionFiles.length === 0 || isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <Send className="mr-2 h-4 w-4" />
-                    Submit for Approval
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
+                        otp ? <Zap className="mr-2 h-4 w-4 text-amber-500 fill-amber-500" /> : <Send className="mr-2 h-4 w-4" />
+                    )}
+                    {otp ? (isVerifyingOtp ? "Verifying..." : "Verify OTP & Complete Job") : "Submit for Approval"}
                 </Button>
             </CardFooter>
+        </Card>
+    );
+}
+
+function PendingConfirmationSection({ job }: { job: Job }) {
+    const { toast } = useToast();
+    const canDispute = job.completionTimestamp &&
+        (new Date().getTime() - toDate(job.completionTimestamp).getTime() > 72 * 60 * 60 * 1000);
+
+    const handleReport = () => {
+        // Here we would trigger a dispute or admin alert
+        // For now, simulate it or use a placeholder API
+        toast({
+            title: "Report Submitted",
+            description: "Support has been notified about the unresponsive client. We will review the case.",
+        });
+    };
+
+    return (
+        <Card className="bg-amber-50/50 border-amber-200">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Hourglass className="h-5 w-5 text-amber-600" />
+                    Waiting for Confirmation
+                </CardTitle>
+                <CardDescription>
+                    You have submitted the work. The Job Giver needs to approve it to release the funds.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm mb-4">
+                    Most approvals happen within 24 hours. If the Job Giver is unresponsive for more than 3 days, you can report it.
+                </p>
+                {canDispute && (
+                    <Button variant="destructive" onClick={handleReport}>
+                        <AlertOctagon className="mr-2 h-4 w-4" />
+                        Report Unresponsive Client
+                    </Button>
+                )}
+            </CardContent>
         </Card>
     );
 }
@@ -428,6 +512,11 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
             toast({ title: "Missing Information", description: "Please provide both a bid amount and a proposal.", variant: "destructive" });
             return;
         }
+
+        if (job.jobGiver.id === user.id) {
+            toast({ title: "Action Not Allowed", description: "You cannot bid on your own job.", variant: "destructive" });
+            return;
+        }
         const newBid: Omit<Bid, 'id'> = {
             amount: Number(bidAmount),
             timestamp: new Date(),
@@ -476,7 +565,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
         }
     };
 
-    const commissionRate = platformSettings?.installerCommissionRate || 0;
+    const commissionRate = platformSettings?.installerCommissionRate ?? 10; // Default to 10% if loading
     const earnings = Number(bidAmount) * (1 - commissionRate / 100) + (job.travelTip || 0);
 
     return (
@@ -553,7 +642,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
     );
 }
 
-function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequentiallySelected, isTopRec, isBestValue, redFlag, isFavorite, isBlocked }: { bid: Bid, job: Job, anonymousId: string, selected: boolean, onSelect: (id: string) => void, rank?: number, isSequentiallySelected?: boolean, isTopRec?: boolean, isBestValue?: boolean, redFlag?: { concern: string } | null, isFavorite?: boolean, isBlocked?: boolean }) {
+function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequentiallySelected, isTopRec, isBestValue, redFlag, isFavorite, isBlocked, isPreviouslyHired }: { bid: Bid, job: Job, anonymousId: string, selected: boolean, onSelect: (id: string) => void, rank?: number, isSequentiallySelected?: boolean, isTopRec?: boolean, isBestValue?: boolean, redFlag?: { concern: string } | null, isFavorite?: boolean, isBlocked?: boolean, isPreviouslyHired?: boolean }) {
     const { role, isAdmin } = useUser();
     const [timeAgo, setTimeAgo] = React.useState('');
     const installer = bid.installer as User;
@@ -615,6 +704,7 @@ function JobGiverBid({ bid, job, anonymousId, selected, onSelect, rank, isSequen
                 </div>
 
                 <div className="flex flex-wrap gap-2 my-2">
+                    {isPreviouslyHired && <Badge variant="secondary" className="gap-1.5 pl-2 border-primary/50 text-primary bg-primary/10"><CheckCircle2 className="h-3.5 w-3.5" />Previously Hired</Badge>}
                     {isFavorite && <Badge variant="default" className="gap-1.5 pl-2"><Heart className="h-3.5 w-3.5" />Your Favorite</Badge>}
                     {isBlocked && <Badge variant="destructive" className="gap-1.5 pl-2"><UserX className="h-3.5 w-3.5" />You Blocked</Badge>}
                     {isTopRec && <Badge variant="outline"><Trophy className="h-4 w-4 mr-2" /> Top Recommendation</Badge>}
@@ -651,8 +741,30 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
     const [isSendingOffers, setIsSendingOffers] = React.useState(false);
     const [isAnalyzing, setIsAnalyzing] = React.useState(false);
     const [analysisResult, setAnalysisResult] = React.useState<AnalyzeBidsOutput | null>(null);
+    const [previouslyHiredIds, setPreviouslyHiredIds] = React.useState<Set<string>>(new Set());
 
     const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
+
+    React.useEffect(() => {
+        const fetchHistory = async () => {
+            if (!user || role !== 'Job Giver' || !db) return;
+            // Fetch past jobs where this user was the job giver and the job is completed
+            const q = query(
+                collection(db, 'jobs'),
+                where('jobGiverId', '==', user.id),
+                where('status', '==', 'Completed')
+            );
+            const snaps = await getDocs(q);
+            const hires = new Set<string>();
+            snaps.forEach(doc => {
+                const data = doc.data();
+                const installerId = getRefId(data.awardedInstaller);
+                if (installerId) hires.add(installerId);
+            });
+            setPreviouslyHiredIds(hires);
+        };
+        fetchHistory();
+    }, [user, role, db]);
 
     React.useEffect(() => {
         setSelectedInstallers([]);
@@ -958,6 +1070,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
                                 rank={rank && rank > 0 ? rank : undefined}
                                 isFavorite={user?.favoriteInstallerIds?.includes(installerId)}
                                 isBlocked={user?.blockedInstallerIds?.includes(installerId)}
+                                isPreviouslyHired={previouslyHiredIds.has(installerId)}
                                 {...recommendationProps}
                             />
                         </div>
@@ -1318,18 +1431,36 @@ function AdditionalTasksSection({ job, user, onJobUpdate }: { job: Job, user: Us
         setOpenQuoteDialog(null);
     };
 
-    const handleApproveQuote = (taskId: string) => {
-        // In a real implementation, this would trigger a payment flow.
-        // For now, we'll just update the status.
-        toast({
-            title: "Quote Approved (Simulation)",
-            description: "In a real app, you would now be redirected to payment.",
-        });
+    const handleApproveQuote = async (taskId: string) => {
+        setIsSubmitting(true);
+        try {
+            // 1. Initiate Payment Session for Additional Task
+            const response = await axios.post('/api/escrow/initiate-payment', {
+                jobId: job.id,
+                jobGiverId: user.id,
+                taskId: taskId
+            });
 
-        const updatedTasks = (job.additionalTasks || []).map(task =>
-            task.id === taskId ? { ...task, status: 'approved' as const } : task
-        );
-        onJobUpdate({ additionalTasks: updatedTasks });
+            const { payment_session_id } = response.data;
+
+            if (!payment_session_id) throw new Error("Failed to create payment session.");
+
+            // 2. Checkout using global cashfree object
+            const cf = new cashfree(payment_session_id);
+            cf.checkout({
+                redirectTarget: "_self",
+            });
+
+        } catch (error: any) {
+            console.error("Error initiating task payment:", error);
+            toast({
+                title: "Payment Initialization Failed",
+                description: error.response?.data?.error || "Could not start payment session.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleDeclineQuote = (taskId: string) => {
@@ -1602,8 +1733,56 @@ export default function JobDetailClient() {
         if (job) {
             setDeadlineRelative(formatDistanceToNow(toDate(job.deadline), { addSuffix: true }));
             setDeadlineAbsolute(format(toDate(job.deadline), "MMM d, yyyy"));
+
+            // Sequential Award Escalation Logic
+            const checkEscalation = async () => {
+                if (
+                    job.status === 'Awarded' &&
+                    job.acceptanceDeadline &&
+                    job.selectedInstallers &&
+                    job.selectedInstallers.length > 0 &&
+                    user &&
+                    getRefId(job.jobGiver) === user.id
+                ) {
+                    const now = new Date();
+                    const deadline = toDate(job.acceptanceDeadline);
+
+                    if (now > deadline) {
+                        const currentInstallerId = getRefId(job.awardedInstaller);
+                        const currentSelection = job.selectedInstallers.find(s => s.installerId === currentInstallerId);
+
+                        // Only proceed if we are in a sequential flow (ranks exist)
+                        if (currentSelection && currentSelection.rank > 0) {
+                            const nextRank = currentSelection.rank + 1;
+                            const nextInstaller = job.selectedInstallers.find(s => s.rank === nextRank);
+
+                            if (nextInstaller) {
+                                console.log("Escalating to next ranked installer:", nextInstaller.installerId);
+                                const nextDeadline = new Date();
+                                nextDeadline.setHours(nextDeadline.getHours() + 24); // Give 24 hours to next
+
+                                const jobRef = doc(db, 'jobs', job.id);
+                                await updateDoc(jobRef, {
+                                    awardedInstaller: doc(db, 'users', nextInstaller.installerId),
+                                    acceptanceDeadline: nextDeadline
+                                });
+
+                                toast({
+                                    title: "Award Escalated",
+                                    description: "Previous installer missed the deadline. Offer sent to the next ranked installer.",
+                                });
+                                fetchJob();
+                            } else {
+                                // No more installers. 
+                                // Optionally close job? For now, do nothing or notify.
+                            }
+                        }
+                    }
+                }
+            };
+            checkEscalation();
         }
-    }, [job]);
+    }, [job, user, db, toast, fetchJob]);
 
     const handleJobUpdate = React.useCallback(async (updatedPart: Partial<Job>) => {
         if (job) {
@@ -1685,12 +1864,30 @@ export default function JobDetailClient() {
     };
 
     const handleCancelJob = async () => {
-        await handleJobUpdate({ status: 'Cancelled' });
-        toast({
-            title: "Job Cancelled",
-            description: "This job has been cancelled and is no longer active.",
-            variant: "destructive"
-        });
+        setIsSubmitting(true);
+        try {
+            const { data } = await axios.post('/api/escrow/refund', {
+                jobId: job.id,
+                userId: user.id
+            });
+
+            if (data.success) {
+                toast({
+                    title: "Job Cancelled",
+                    description: data.message || "Job cancelled and refund initiated.",
+                });
+                // Real-time listener will update status
+            }
+        } catch (error: any) {
+            console.error("Cancellation failed:", error);
+            toast({
+                title: "Cancellation Failed",
+                description: error.response?.data?.error || "Could not cancel job.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
     const handleFundJob = async () => {
@@ -1713,7 +1910,17 @@ export default function JobDetailClient() {
             cashfreeInstance.checkout({
                 payment_method: "upi",
                 onComplete: async () => {
-                    await handleJobUpdate({ status: 'In Progress' });
+                    const installer = job.awardedInstaller as User;
+                    const billingSnapshot = {
+                        installerName: installer.name,
+                        installerAddress: installer.address,
+                        gstin: installer.gstin,
+                        pan: installer.panNumber // Use panNumber from User type
+                    };
+                    await handleJobUpdate({
+                        status: 'In Progress',
+                        billingSnapshot
+                    });
                 }
             });
 

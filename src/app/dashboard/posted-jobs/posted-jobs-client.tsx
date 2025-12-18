@@ -304,7 +304,7 @@ export default function PostedJobsClient() {
     };
 
     setLoading(true);
-    const userJobsQuery = query(collection(db, 'jobs'), where('jobGiver', '==', doc(db, 'users', user.id)));
+    const userJobsQuery = query(collection(db, 'jobs'), where('jobGiverId', '==', user.id));
     const jobSnapshot = await getDocs(userJobsQuery);
 
     const jobsData = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));

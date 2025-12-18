@@ -252,6 +252,16 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         const jobSnap = await getDoc(jobRef);
         if (jobSnap.exists()) {
           const jobData = jobSnap.data() as Job;
+
+          if (isEditMode && jobData.status !== 'Open for Bidding') {
+            toast({
+              title: "Modification Restricted",
+              description: "This job cannot be edited because it is already processed or awarded. Modifications are only allowed when the job is open for bidding.",
+              variant: "destructive",
+            });
+            router.push(`/dashboard/jobs/${jobId}`);
+            return;
+          }
           form.reset({
             jobTitle: jobData.title,
             jobDescription: jobData.description,
@@ -393,6 +403,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   };
 
   async function onSubmit(values: z.infer<typeof jobSchema>) {
+    console.log("Form submission started with values:", values);
+
     if (!user || !db || !storage) {
       toast({ title: "Error", description: "You must be logged in to post a job.", variant: "destructive" });
       return;
@@ -439,8 +451,11 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
         const newJobId = `JOB-${datePart}-${randomPart}`;
 
+        console.log("Creating new job with ID:", newJobId);
+
         const attachmentUrls: JobAttachment[] = [];
         if (values.attachments && values.attachments.length > 0) {
+          console.log(`Uploading ${values.attachments.length} attachments...`);
           for (const file of values.attachments) {
             const fileRef = ref(storage, `jobs/${newJobId}/${file.name}`);
             await uploadBytes(fileRef, file);
@@ -451,10 +466,12 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
               fileType: file.type,
             });
           }
+          console.log("Attachments uploaded successfully");
         }
 
         jobData.id = newJobId;
         jobData.jobGiver = doc(db, 'users', user.id);
+        jobData.jobGiverId = user.id; // Add string ID for Firestore security rules
         jobData.status = "Open for Bidding";
         jobData.bids = [];
         jobData.comments = [];
@@ -468,7 +485,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
           jobData.deadline = new Date(values.deadline);
         }
 
+        console.log("Saving job to Firestore:", jobData);
         await setDoc(doc(db, "jobs", newJobId), jobData);
+        console.log("Job saved successfully!");
+
         toast({
           title: repostJobId ? "Job Re-posted Successfully!" : "Job Posted Successfully!",
           description: `Your job is now ${jobData.directAwardInstallerId ? 'sent privately to the installer' : 'live and open for bidding'}.`,
@@ -478,13 +498,22 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       }
     } catch (error) {
       console.error("Error processing job:", error);
+
+      // More detailed error message
+      let errorDescription = "An error occurred while saving your job. Please try again.";
+      if (error instanceof Error) {
+        errorDescription = `Error: ${error.message}`;
+        console.error("Error stack:", error.stack);
+      }
+
       toast({
         title: "Failed to post job",
-        description: "An error occurred while saving your job. Please try again.",
+        description: errorDescription,
         variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
+      console.log("Form submission completed");
     }
   }
 
@@ -502,6 +531,41 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
 
   const SubmitButton = () => {
     const buttonText = isEditMode ? 'Save Changes' : (repostJobId ? 'Re-post Job' : 'Post Job');
+
+    const handleSubmitClick = async () => {
+      // Check form validity before submission
+      const isValid = await form.trigger();
+
+      if (!isValid) {
+        const errors = form.formState.errors;
+        console.error("Form validation errors:", errors);
+
+        // Find the first error and show it to the user
+        const firstErrorField = Object.keys(errors)[0];
+        const firstError = errors[firstErrorField as keyof typeof errors];
+
+        let errorMessage = "Please fix the validation errors before submitting.";
+        if (firstError && 'message' in firstError) {
+          errorMessage = `${firstErrorField}: ${firstError.message}`;
+        }
+
+        toast({
+          title: "Form Validation Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+
+        // Scroll to the first error field
+        const errorElement = document.querySelector('[data-invalid="true"]');
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+
+      // If valid, submit the form
+      form.handleSubmit(onSubmit)();
+    };
 
     if (isEditMode) {
       return (
@@ -521,7 +585,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={form.handleSubmit(onSubmit)}>
+              <AlertDialogAction onClick={handleSubmitClick}>
                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirm & Save"}
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -531,7 +595,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     }
 
     return (
-      <Button type="submit" disabled={isProcessing || isGenerating} onClick={form.handleSubmit(onSubmit)}>
+      <Button type="button" disabled={isProcessing || isGenerating} onClick={handleSubmitClick}>
         {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {buttonText}
       </Button>

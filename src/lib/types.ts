@@ -34,7 +34,9 @@ export type User = {
     planName: string;
     expiresAt: Date | Timestamp;
   };
-  aadharNumber?: string;
+  aadharLast4?: string;
+  panNumber?: string;
+  isPanVerified?: boolean;
   kycAddress?: string;
   gstin?: string;
   payouts?: {
@@ -124,6 +126,7 @@ export type Job = {
   skills?: string[];
   jobCategory: string;
   jobGiver: User | DocumentReference;
+  jobGiverId?: string;
   location: string;
   fullAddress: string;
   address: Address;
@@ -154,6 +157,12 @@ export type Job = {
   attachments?: JobAttachment[];
   invoice?: Invoice;
   additionalTasks?: AdditionalTask[];
+  billingSnapshot?: {
+    installerName: string;
+    installerAddress: Address; // or string? strict Address type preferred
+    gstin?: string;
+    pan?: string;
+  };
   comments: Comment[];
   privateMessages?: PrivateMessage[];
   cancellationProposer?: 'Job Giver' | 'Installer';
