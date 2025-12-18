@@ -137,11 +137,6 @@ export default function InstallersClient() {
 
   useEffect(() => {
     if (userLoading) return;
-    if (!isSubscribed) {
-      setLoading(false);
-      router.push('/dashboard/billing?redirectUrl=/dashboard/installers');
-      return;
-    }
     const fetchInstallers = async () => {
       if (!db) return;
       setLoading(true);

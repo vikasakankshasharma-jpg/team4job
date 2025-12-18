@@ -1,9 +1,78 @@
+# CCTV Job Connect
 
-# MASTER PROMPT: CCTV Job Connect PWA (v2.0)
+## 1. Getting Started
 
-This document serves as the master prompt and detailed specification for building and extending the "CCTV Job Connect" Progressive Web App (PWA). This is a living document reflecting the platform's complete architecture as of the latest update.
+### Prerequisites
+*   Node.js v20+
+*   npm
 
-## 1. High-Level App Concept
+### Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone <repository-url>
+    cd DoDo
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+3.  **Environment Setup:**
+    Duplicate `.env` to `.env.local` and fill in the required values (see [Environment Configuration](#environment-configuration) below).
+
+4.  **Seed the Database (Optional):**
+    Populate Firestore with initial test data.
+    ```bash
+    npm run db:seed
+    ```
+
+5.  **Run Development Server:**
+    ```bash
+    npm run dev
+    ```
+    Open [http://localhost:3000](http://localhost:3000) to view the app.
+
+---
+
+## 2. Environment Configuration
+
+Create a `.env.local` file in the root directory. You will need keys from Firebase, Google Cloud, and Cashfree.
+
+### Required Variables
+
+| Variable | Description | Source |
+| :--- | :--- | :--- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase API Key | Firebase Console > Project Settings |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Auth Domain | Firebase Console |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Project ID | Firebase Console |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Storage Bucket | Firebase Console |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Sender ID | Firebase Console |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | App ID | Firebase Console |
+| `FIREBASE_PROJECT_ID` | Admin SDK Project ID | Service Account |
+| `FIREBASE_CLIENT_EMAIL` | Admin SDK Client Email | Service Account |
+| `FIREBASE_PRIVATE_KEY` | Admin SDK Private Key | Service Account (Handle newlines with `\n`) |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps API | Google Cloud Console |
+| `CASHFREE_APP_ID` | Cashfree App ID | Cashfree Dashboard |
+| `CASHFREE_SECRET_KEY` | Cashfree Secret | Cashfree Dashboard |
+| `CASHFREE_WEBHOOK_SECRET` | Webhook Secret | Cashfree Dashboard |
+| `GEMINI_API_KEY` | AI Model Key | Google AI Studio |
+
+**Note:** For the `FIREBASE_PRIVATE_KEY`, ensure you wrap the key in quotes if it contains newlines, or replace real newlines with `\n`.
+
+---
+
+## 3. Known Issues & Workarounds
+
+> [!WARNING]
+> **Google Maps API Billing Issue (Current)**
+> The Google Maps API is currently paused due to pending billing verification.
+> **Workaround:** The application has been patched to support **Manual Address Entry**. The signup form's map component is disabled, allowing you to type addresses manually.
+
+---
+
+## 4. High-Level App Concept
 
 **App Name:** CCTV Job Connect
 
@@ -15,7 +84,7 @@ This document serves as the master prompt and detailed specification for buildin
 
 ---
 
-## 2. Core Features & Business Logic
+## 5. Core Features & Business Logic
 
 ### User & Subscription System
 *   **Dual Roles & Role Switching:** Users can sign up as a "Job Giver" or "Installer". A user can hold both roles and instantly switch between modes from their profile menu without logging out.
@@ -87,24 +156,30 @@ This document serves as the master prompt and detailed specification for buildin
 
 ---
 
-## 3. Demo Accounts for Testing
+## 6. Demo Accounts for Testing
 
-To test the platform's features, use the following credentials. All accounts are pre-seeded when you run `npm run db:seed`.
+To test the platform's features, you can use the pre-seeded accounts or generate a new verified installer.
 
-*   **Default Password for all users:** `Vikas@129229`
+*   **Default Password:** `Vikas@129229` (for seeded accounts) / `password123` (for manually created accounts)
 
-| Role                | Email                             | Description                                                               |
-| ------------------- | --------------------------------- | ------------------------------------------------------------------------- |
-| **Admin**           | `vikasakankshasharma@gmail.com`   | Full access to all platform features, settings, and user management.      |
-| **Job Giver**       | `jobgiver@example.com`            | Can post jobs, award projects, and manage hired installers.               |
-| **Installer (Dual)**| `installer@example.com`           | A verified, Gold-tier installer who can also post jobs (switchable role). |
-| **Support Team**    | `support@example.com`             | Limited access, primarily for resolving user disputes.                    |
+| Role | Email | Description |
+| :--- | :--- | :--- |
+| **Admin** | `vikasakankshasharma@gmail.com` | Full access to platform settings. |
+| **Job Giver** | `jobgiver@example.com` | Can post jobs and hire. |
+| **Installer** | `installer@example.com` | Verified, Gold-tier installer. |
+| **New Installer** | `installer_final@test.com` | Pass: `password123` (Use `create_test_installer.ts` to reset). |
+
+**Creating a Fresh Test User:**
+If you need a pristine Installer account:
+```bash
+npx tsx src/lib/firebase/create_test_installer.ts
+```
 
 ---
 
-## 4. Technical Stack & Architecture
+## 7. Technical Stack & Architecture
 
-*   **Framework:** Next.js 14+ with App Router.
+*   **Framework:** Next.js 16+ (Turbopack) with App Router.
 *   **Language:** TypeScript.
 *   **UI Components:** ShadCN/UI, built on Radix UI and Tailwind CSS.
 *   **Styling:** Tailwind CSS. Use `globals.css` for theme variables.
@@ -195,6 +270,3 @@ All data models are defined in `src/lib/types.ts` and reflected in `docs/backend
     *   `subscriptionPlans`: Stores all `SubscriptionPlan` objects.
     *   `coupons`: Stores all `Coupon` objects.
     *   `blacklist`: Stores `BlacklistEntry` objects for users and pincodes.
----
-
-This detailed prompt provides a clear and comprehensive guide for any developer to understand, maintain, and extend the "CCTV Job Connect" application correctly and efficiently.

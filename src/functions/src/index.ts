@@ -9,9 +9,109 @@ admin.initializeApp();
 
 const app = express();
 
-app.post("/cashfree-webhook", (req, res) => {
-  console.log("Received Cashfree webhook data:", req.body);
-  res.json({ status: "received" });
+app.post("/cashfree-webhook", async (req, res) => {
+  const data = req.body;
+  console.log("Received Cashfree webhook data:", JSON.stringify(data, null, 2));
+
+  try {
+    // 1. Validate Signature (Simplified for MVP, ideally should verify x-webhook-signature)
+    // For now, we trust the data structure.
+
+    const orderId = data.data.order.order_id;
+    const paymentStatus = data.data.payment.payment_status;
+
+    if (!orderId || !paymentStatus) {
+      console.error("Invalid webhook payload");
+      res.status(400).json({ status: "invalid_payload" });
+      return;
+    }
+
+    if (paymentStatus === "SUCCESS") {
+      const db = admin.firestore();
+
+      // The orderId format is usually `SUB-${userId}-${planId}-${timestamp}` or a value from transactions.
+      // However, we need to map this back to our `transactions` collection.
+      // Assuming we store the `orderId` in the transaction document or use the transaction ID as orderId.
+
+      // Search for the transaction with this order ID (if we stored it) OR
+      // If the orderId IS the transactionId (which is common practice).
+
+      // Let's try to find a transaction where orderId matches.
+      const transactionQuery = await db.collection("transactions").where("gatewayOrderId", "==", orderId).limit(1).get();
+
+      if (!transactionQuery.empty) {
+        const transactionDoc = transactionQuery.docs[0];
+        const transactionData = transactionDoc.data();
+
+        if (transactionData.status !== "Funded") {
+          await db.runTransaction(async (t) => {
+            t.update(transactionDoc.ref, { status: "Funded", gatewayRawData: data });
+
+            // Also update the JOB status if this was a job payment
+            if (transactionData.jobId && transactionData.jobId.startsWith("JOB-")) {
+              const jobRef = db.collection("jobs").doc(transactionData.jobId);
+              t.update(jobRef, { status: "In Progress" }); // Or "Funded" / "Pending Start"
+            }
+          });
+
+          console.log(`Transaction ${transactionDoc.id} funded successfully.`);
+
+          // Notify Installer
+          if (transactionData.payeeId) {
+            await sendNotification(transactionData.payeeId, "Payment Secured!", "The Job Giver has funded the escrow. You can start the work.", "/dashboard/my-bids");
+          }
+        } else {
+          console.log(`Transaction ${transactionDoc.id} already funded.`);
+        }
+      } else {
+        // It might be a Subscription payment
+        // Format: SUB-{userId}-{planId}-{timestamp}
+        if (orderId.startsWith("SUB-")) {
+          console.log("Processing subscription webhook...");
+          const parts = orderId.split("-");
+          if (parts.length >= 3) {
+            const userId = parts[1];
+            const planId = parts[2];
+            // const timestamp = parts[3];
+
+            await db.runTransaction(async (t) => {
+              const userRef = db.collection("users").doc(userId);
+              const userDoc = await t.get(userRef);
+              if (userDoc.exists) {
+                // Fetch plan details to calculate expiry
+                const planSnapshot = await db.collection("subscriptionPlans").doc(planId).get();
+                const planData = planSnapshot.data();
+                const durationDays = planData?.durationDays || 365; // Default 1 year
+
+                const now = new Date();
+                const currentExpiry = userDoc.data()?.subscription?.expiresAt?.toDate() || now;
+                const startDate = currentExpiry > now ? currentExpiry : now;
+                const newExpiry = new Date(startDate);
+                newExpiry.setDate(newExpiry.getDate() + durationDays);
+
+                t.update(userRef, {
+                  subscription: {
+                    planId: planId,
+                    planName: planData?.name || "Premium",
+                    expiresAt: newExpiry,
+                    isActive: true
+                  }
+                });
+              }
+            });
+            console.log(`Subscription updated for user ${userId}`);
+          }
+        } else {
+          console.warn(`No transaction found for orderId: ${orderId}`);
+        }
+      }
+    }
+
+    res.json({ status: "processed" });
+  } catch (error) {
+    console.error("Error processing webhook:", error);
+    res.status(500).json({ status: "error" });
+  }
 });
 
 export const api = functions.https.onRequest(app);

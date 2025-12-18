@@ -24,7 +24,7 @@ async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
 
 export async function POST(req: NextRequest) {
     try {
-        const { jobId, jobGiverId, planId } = await req.json();
+        const { jobId, jobGiverId, planId, taskId } = await req.json();
 
         if (!jobId || !jobGiverId) {
             return NextResponse.json({ error: 'Missing required payment details' }, { status: 400 });
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
             jobTitle = `Subscription: ${plan.name}`;
 
         } else {
-            // Handle Standard Job Payment
+            // Handle Standard Job Payment or Additional Task Payment
             const jobRef = db.collection('jobs').doc(jobId);
             const [jobSnap, jobGiverSnap] = await Promise.all([
                 jobRef.get(),
@@ -74,18 +74,24 @@ export async function POST(req: NextRequest) {
 
             if (!job.awardedInstaller) return NextResponse.json({ error: 'Job has no awarded installer' }, { status: 400 });
 
-            installerId = job.awardedInstaller.id;
-            const installerSnap = await db.collection('users').doc(installerId).get();
-            if (!installerSnap.exists) return NextResponse.json({ error: 'Installer not found' }, { status: 404 });
-
-            // Determine the amount from the winning bid for regular jobs
-            if (job.bids && job.bids.length > 0) {
-                const winningBid = job.bids.find(b => (b.installer as any).id === installerId);
-                if (winningBid) {
-                    amount = winningBid.amount;
+            // Handle Additional Task or Standard Job Amount
+            if (taskId) {
+                const task = job.additionalTasks?.find(t => t.id === taskId);
+                if (!task || !task.quoteAmount) {
+                    return NextResponse.json({ error: 'Additional task not found or quote missing.' }, { status: 404 });
                 }
-            } else if (job.directAwardInstallerId && (job as any).budget) {
-                amount = (job as any).budget.min;
+                amount = task.quoteAmount;
+                jobTitle = `Additional Task: ${task.description.substring(0, 30)}...`;
+            } else {
+                // Determine the amount from the winning bid for regular jobs
+                if (job.bids && job.bids.length > 0) {
+                    const winningBid = job.bids.find(b => (b.installer as any).id === installerId);
+                    if (winningBid) {
+                        amount = winningBid.amount;
+                    }
+                } else if (job.directAwardInstallerId && (job as any).budget) {
+                    amount = (job as any).budget.min;
+                }
             }
         }
 

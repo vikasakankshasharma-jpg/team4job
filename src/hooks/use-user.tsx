@@ -45,6 +45,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const pathname = usePathname();
   const { toast } = useToast();
 
+  // Refs to prevent race conditions
+  const manualRoleSet = useRef(false);
+  const isLoggingOut = useRef(false);
+  const lastRedirect = useRef<{ path: string; timestamp: number } | null>(null);
+
   const updateUserState = useCallback((userData: User | null) => {
     setUser(userData);
     if (userData) {
@@ -52,14 +57,27 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isAdminUser = userData.roles.includes("Admin");
       setIsAdmin(isAdminUser);
 
-      if (isAdminUser) {
+      // If role was manually set and user hasn't changed, preserve it
+      if (manualRoleSet.current && storedRole && userData.roles.includes(storedRole)) {
+        setRoleState(storedRole);
+        return;
+      }
+
+      // Reset manual flag if this is a different user
+      manualRoleSet.current = false;
+
+      // Check if we can use the stored role (if it exists and user still has it)
+      const canUseStoredRole = storedRole && userData.roles.includes(storedRole);
+
+      if (canUseStoredRole) {
+        setRoleState(storedRole);
+        // If stored role is Admin, ensure localStorage matches (it should already)
+      } else if (isAdminUser) {
         setRoleState("Admin");
         localStorage.setItem('userRole', "Admin");
       } else if (userData.roles.includes("Support Team")) {
         setRoleState("Support Team");
         localStorage.setItem('userRole', "Support Team");
-      } else if (storedRole && userData.roles.includes(storedRole)) {
-        setRoleState(storedRole);
       } else {
         const initialRole = userData.roles.includes("Installer") ? "Installer" : "Job Giver";
         setRoleState(initialRole);
@@ -67,6 +85,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } else {
       setIsAdmin(false);
+      manualRoleSet.current = false;
       localStorage.removeItem('userRole');
     }
   }, []);
@@ -87,13 +106,28 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     errorEmitter.on('permission-error', handlePermissionError);
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      // Prevent re-initialization during logout
+      if (isLoggingOut.current) {
+        return;
+      }
+
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
 
         // --- Immediate check on auth change ---
         try {
-          const initialUserDoc = await getDoc(userDocRef);
+          let initialUserDoc = await getDoc(userDocRef);
+
+          // Retry fetching user doc if it doesn't exist immediately (handles signup race condition)
+          let retries = 0;
+          while (!initialUserDoc.exists() && retries < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            initialUserDoc = await getDoc(userDocRef);
+            retries++;
+          }
+
           if (!initialUserDoc.exists()) {
+            console.error("User profile not found after retries.");
             toast({ title: 'Login Error', description: 'Could not find your user profile. Please contact support.', variant: 'destructive' });
             signOut(auth);
             return;
@@ -172,28 +206,40 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // Role-based route protection
-    const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids', '/dashboard/verify-installer'];
+    const installerPaths = ['/dashboard/my-bids', '/dashboard/verify-installer'];
     const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs', '/dashboard/my-installers', '/dashboard/installers'];
     const adminOnlyPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/settings', '/dashboard/subscription-plans', '/dashboard/coupons', '/dashboard/blacklist'];
     const supportOnlyPaths = ['/dashboard/disputes'];
 
-    const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
+    const isInstallerPage = installerPaths.some(p => pathname.startsWith(p)) || pathname === '/dashboard/jobs'; // Browse jobs page only
     const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
     const isAdminPage = adminOnlyPaths.some(p => pathname.startsWith(p));
     const isSupportPage = supportOnlyPaths.some(p => pathname.startsWith(p));
 
     const userIsAdmin = user.roles.includes("Admin");
 
+    // Helper function to debounce redirects
+    const shouldRedirect = (targetPath: string): boolean => {
+      const now = Date.now();
+      if (lastRedirect.current &&
+        lastRedirect.current.path === targetPath &&
+        now - lastRedirect.current.timestamp < 500) {
+        return false; // Prevent rapid successive redirects
+      }
+      lastRedirect.current = { path: targetPath, timestamp: now };
+      return true;
+    };
+
     if (role === 'Job Giver' && isInstallerPage) {
-      router.push('/dashboard');
+      if (shouldRedirect('/dashboard')) router.push('/dashboard');
     } else if (role === 'Installer' && isJobGiverPage) {
-      router.push('/dashboard');
+      if (shouldRedirect('/dashboard')) router.push('/dashboard');
     } else if (role === 'Support Team' && !(isSupportPage || pathname === '/dashboard' || pathname.startsWith('/dashboard/profile'))) {
-      router.push('/dashboard/disputes');
+      if (shouldRedirect('/dashboard/disputes')) router.push('/dashboard/disputes');
     } else if (userIsAdmin && (isInstallerPage || isJobGiverPage)) {
       // Admins can access most pages, but we could redirect them if needed
     } else if (!userIsAdmin && isAdminPage) {
-      router.push('/dashboard');
+      if (shouldRedirect('/dashboard')) router.push('/dashboard');
     }
 
   }, [role, pathname, user, router, loading]);
@@ -203,13 +249,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user && user.roles.includes(newRole)) {
       setRoleState(newRole);
       localStorage.setItem('userRole', newRole);
+      manualRoleSet.current = true; // Mark as manually set
     }
   };
 
   const handleLogout = () => {
+    isLoggingOut.current = true;
+    manualRoleSet.current = false;
+    localStorage.removeItem('userRole');
+
     signOut(auth).then(() => {
       updateUserState(null);
-      router.push('/login');
+      isLoggingOut.current = false;
+      router.replace('/login'); // Use replace to prevent back navigation
+    }).catch((error) => {
+      console.error("Logout error:", error);
+      isLoggingOut.current = false;
     });
   }
 

@@ -10,6 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import { arrayUnion, doc } from "firebase/firestore";
 import React from "react";
 import { useUser, useFirebase } from "@/hooks/use-user";
+import { useToast } from "@/hooks/use-toast";
 
 export const tierIcons = {
     Bronze: <Award className="h-4 w-4 text-yellow-700" />,
@@ -25,7 +26,16 @@ export function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJ
 
     if (!user || !db) return null;
 
+    const { toast } = useToast();
+
     const handleAccept = async () => {
+        if (!user.payouts?.beneficiaryId) {
+            toast({
+                title: "Action Required: Setup Payouts",
+                description: "Please set up your bank account in your profile to ensure timely payments.",
+                variant: "default",
+            });
+        }
         setIsLoading(true);
         const fundingDeadline = new Date();
         fundingDeadline.setHours(fundingDeadline.getHours() + 48); // 48 hours for job giver to fund
@@ -43,18 +53,39 @@ export function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJ
 
     const handleDecline = async () => {
         setIsLoading(true);
-        const remainingOffers = (job.selectedInstallers || []).filter(s => s.installerId !== user.id);
+        // Remove current user from selected installers
+        const remainingOffers = (job.selectedInstallers || [])
+            .filter(s => s.installerId !== user.id)
+            .sort((a, b) => (a.rank || 0) - (b.rank || 0)); // Ensure sorted by rank
 
         let update: Partial<Job> = {
             disqualifiedInstallerIds: arrayUnion(user.id) as any,
             selectedInstallers: remainingOffers,
         };
 
-        // If this was the last pending offer, revert the job status immediately
         if (remainingOffers.length === 0) {
+            // No one left
             update.status = "Bidding Closed";
-            update.awardedInstaller = undefined;
+            update.awardedInstaller = undefined; // Clear award
             update.acceptanceDeadline = undefined;
+        } else {
+            // Escalate to next candidate immediately if Awarded
+            // Assuming this component is only shown when 'Awarded' and user is the awarded installer?
+            // Actually, 'Awarded' status usually means `job.awardedInstaller` is set to THIS user.
+            // So if I decline, I must pass the baton.
+
+            const nextCandidate = remainingOffers[0];
+            const acceptanceDeadline = new Date();
+            acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24); // Reset 24h timer for next person
+
+            update.awardedInstaller = doc(db, 'users', nextCandidate.installerId);
+            update.acceptanceDeadline = acceptanceDeadline;
+            // Status stays "Awarded"
+
+            toast({
+                title: "Offer Declined",
+                description: "The offer has been passed to the next installer.",
+            });
         }
 
         await onJobUpdate(update);

@@ -2,18 +2,27 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Allow authenticated users to read/write their own data
+    function isAdmin() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        "Admin" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles;
+    }
+
+    // Allow authenticated users to read all user profiles (for displaying installer info, etc.)
+    // Only allow users to write their own data, or admins to write any
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null;
+      allow write: if (request.auth != null && request.auth.uid == userId) || isAdmin();
     }
     
     // Jobs - authenticated users can read all, write their own
+    // Admin can update/delete any
     match /jobs/{jobId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
       allow update, delete: if request.auth != null && 
         (resource.data.jobGiverId == request.auth.uid || 
-         resource.data.installerId == request.auth.uid);
+         resource.data.installerId == request.auth.uid || isAdmin());
     }
     
     // Bids
@@ -21,20 +30,36 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
       allow update, delete: if request.auth != null && 
-        resource.data.installerId == request.auth.uid;
+        (resource.data.installerId == request.auth.uid || isAdmin());
     }
     
     // Transactions
     match /transactions/{transactionId} {
-      allow read: if request.auth != null && 
-        (resource.data.jobGiverId == request.auth.uid || 
-         resource.data.installerId == request.auth.uid);
-      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow create: if request.auth != null; // Usually only backend or specific flows create these
     }
     
     // Settings (read-only for users)
     match /settings/{document=**} {
       allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Disputes
+    match /disputes/{disputeId} {
+      allow read: if request.auth != null && 
+        (resource.data.requesterId == request.auth.uid ||
+         resource.data.parties.jobGiverId == request.auth.uid || 
+         resource.data.parties.installerId == request.auth.uid || 
+         isAdmin());
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (resource.data.requesterId == request.auth.uid || isAdmin());
+    }
+
+    // Blacklist
+    match /blacklist/{entry} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
     }
   }
 }

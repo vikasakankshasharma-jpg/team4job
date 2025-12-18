@@ -221,7 +221,9 @@ export default function VerifyInstallerClient() {
                       <FormControl>
                         <Input placeholder="Enter your 12-digit Aadhar number" {...field} />
                       </FormControl>
-                      <FormDescription>For testing, use Aadhar: <strong>999999990019</strong></FormDescription>
+                      {process.env.NODE_ENV === 'development' && (
+                        <FormDescription>For testing, use Aadhar: <strong>999999990019</strong></FormDescription>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -245,7 +247,9 @@ export default function VerifyInstallerClient() {
                       <FormControl>
                         <Input placeholder="Enter the 6-digit OTP" {...field} />
                       </FormControl>
-                      <FormDescription>For testing, use OTP: <strong>123456</strong></FormDescription>
+                      {process.env.NODE_ENV === 'development' && (
+                        <FormDescription>For testing, use OTP: <strong>123456</strong></FormDescription>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}

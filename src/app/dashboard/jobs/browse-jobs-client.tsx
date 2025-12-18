@@ -42,7 +42,7 @@ import { useHelp } from "@/hooks/use-help";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { allSkills } from "@/lib/data";
 import type { Job, User } from "@/lib/types";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
 import { useSearch } from "@/hooks/use-search";
@@ -77,10 +77,11 @@ export default function BrowseJobsClient() {
   const { setHelp } = useHelp();
 
   React.useEffect(() => {
+    if (loading) return;
     if (role === 'Admin' || role === 'Job Giver') {
       router.push('/dashboard');
     }
-  }, [role, router]);
+  }, [role, router, loading]);
 
   const fetchJobs = React.useCallback(async () => {
     if (!db) return;
@@ -195,9 +196,18 @@ export default function BrowseJobsClient() {
     });
   };
 
-  // "All" tab should only show currently open jobs.
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'recommended';
+
+  const handleTabChange = (value: string) => {
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    newSearchParams.set("tab", value);
+    router.replace(`?${newSearchParams.toString()}`, { scroll: false });
+  };
+
+  // "All" tab should show currently open and unbid jobs.
   const openForBiddingJobs = React.useMemo(
-    () => jobs.filter(job => job.status === 'Open for Bidding'),
+    () => jobs.filter(job => job.status === 'Open for Bidding' || job.status === 'Unbid'),
     [jobs]
   );
 
@@ -315,7 +325,7 @@ export default function BrowseJobsClient() {
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <Tabs defaultValue="recommended">
+      <Tabs value={currentTab} onValueChange={handleTabChange}>
         <div className="flex items-center">
           <TabsList>
             <TabsTrigger value="all">All Jobs</TabsTrigger>

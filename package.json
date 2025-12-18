@@ -11,7 +11,15 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "db:seed": "tsx src/lib/firebase/seed.ts",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:smoke": "playwright test tests/e2e/smoke.spec.ts",
+    "test:full": "playwright test tests/e2e/complete-transaction-cycle.spec.ts",
+    "test:edge-cases": "playwright test tests/e2e/edge-cases.spec.ts",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.25.0",
@@ -70,8 +78,9 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@types/lodash.debounce": "^4.0.9",
-    "@types/node": "^20",
+    "@types/node": "^20.19.27",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "dotenv": "^16.4.5",

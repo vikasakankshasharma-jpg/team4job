@@ -33,6 +33,7 @@ import {
   confirmAadharVerification,
   ConfirmAadharOutput,
 } from "@/ai/flows/aadhar-verification";
+import { verifyPan } from "@/ai/flows/pan-verification";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AddressForm } from "@/components/ui/address-form";
@@ -47,7 +48,7 @@ const addressSchema = z.object({
   house: z.string().min(1, "House/Flat No. is required."),
   street: z.string().min(3, "Street/Area is required."),
   landmark: z.string().optional(),
-  cityPincode: z.string().min(8, "Please select a pincode and post office."),
+  cityPincode: z.string().optional(),
   fullAddress: z.string().optional(),
 });
 
@@ -62,6 +63,7 @@ const formSchema = z.object({
   mobile: z.string().regex(/^\d{10}$/, { message: "Must be a 10-digit mobile number." }),
   address: addressSchema,
   aadhar: z.string().optional(),
+  pan: z.string().optional(),
   otp: z.string().optional(),
   realAvatarUrl: z.string().optional(),
   kycAddress: z.string().optional(),
@@ -78,7 +80,7 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
   const { setHelp } = useHelp();
 
   const [currentStep, setCurrentStep] = useState<"role" | "details" | "photo" | "verification" | "skills">("role");
-  const [verificationSubStep, setVerificationSubStep] = useState<"enterAadhar" | "enterOtp" | "verified">("enterAadhar");
+  const [verificationSubStep, setVerificationSubStep] = useState<"enterAadhar" | "enterOtp" | "enterPan" | "verified">("enterAadhar");
   const [verificationId, setVerificationId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,21 +118,22 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
             <ul className="list-disc space-y-2 pl-5">
               <li><span className="font-semibold">Enter Aadhar:</span> Provide your 12-digit Aadhar number. For testing in sandbox, use <strong className="text-primary">999999990019</strong>.</li>
               <li><span className="font-semibold">Enter OTP:</span> An OTP will be sent to the mobile number linked with your Aadhar. For testing, any 6-digit OTP (e.g., <strong className="text-primary">123456</strong>) will work.</li>
+              <li><span className="font-semibold">Verify PAN:</span> After Aadhar, please provide your 10-character PAN number for tax and identity verification.</li>
               <li><span className="font-semibold">Secure Process:</span> This verification is powered by Cashfree's Secure ID product.</li>
             </ul>
           </div>
         );
         break;
       case "photo":
-        helpTitle = "Profile Photo";
+        helpTitle = "Profile Photo & Virtual ID";
         helpContent = (
           <div className="space-y-4 text-sm">
-            <p>A clear, live profile picture helps build trust between Job Givers and Installers.</p>
+            <p>Your profile photo will be used for your <strong>Virtual ID Card</strong>.</p>
             <ul className="list-disc space-y-2 pl-5">
               <li><span className="font-semibold">Enable Camera:</span> Please allow camera access when prompted by your browser.</li>
-              <li><span className="font-semibold">Capture Photo:</span> Use your device's camera to take a clear, well-lit photo of yourself.</li>
+              <li><span className="font-semibold">Capture Photo:</span> Use your device's camera to take a clear, well-lit photo of yourself (Selfie). Ensure a plain background if possible.</li>
             </ul>
-            <p>This photo will be visible on your public profile and is a required step for creating a secure account.</p>
+            <p>This helps in Video KYC and builds trust with Job Givers.</p>
           </div>
         );
         break;
@@ -200,6 +203,7 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
         fullAddress: "",
       },
       aadhar: "",
+      pan: "",
       otp: "",
       realAvatarUrl: "",
       kycAddress: "",
@@ -209,6 +213,7 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
 
   const role = form.watch("role");
   const aadharValue = form.watch("aadhar");
+  const panValue = form.watch("pan");
 
   const startCamera = async () => {
     try {
@@ -288,34 +293,48 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
     try {
       const result = await confirmAadharVerification({ verificationId, otp: otp || "" });
       if (result.isVerified && result.kycData) {
-        setVerificationSubStep("verified");
+        // Instead of finishing here, move to PAN step
+        setVerificationSubStep("enterPan");
         toast({
-          title: "Verification Successful!",
-          description: result.message,
-          variant: "default",
+          title: "Aadhar Verified!",
+          description: "Please enter your PAN details to complete verification.",
         });
-        form.clearErrors("aadhar");
-
-        setKycData(result.kycData);
-        form.setValue("name", result.kycData.name, { shouldValidate: true });
-        form.setValue("mobile", result.kycData.mobile, { shouldValidate: true });
-
-        // This is a mock address from Aadhar
-        const kycAddr = `Pincode: ${result.kycData.pincode}`;
-        form.setValue("kycAddress", kycAddr, { shouldValidate: true });
-
-        // Pre-fill the current address form with Aadhar pincode to start
-        // We assume the post office name might not come from Aadhar, so we let user select it.
-        const pincode = result.kycData.pincode;
-        form.setValue("address.cityPincode", `${pincode}, `); // Set pincode, leave post office blank
-
-        setCurrentStep("photo");
       } else {
         setError(result.message);
       }
     } catch (e: any) {
       setError(e.message || "An unexpected error occurred. Please try again.");
       console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  const handleVerifyPan = async () => {
+    setError(null);
+    setIsLoading(true);
+    const pan = form.getValues("pan");
+    if (!pan || pan.length !== 10) {
+      setError("Please enter a valid 10-character PAN.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const result = await verifyPan({ panNumber: pan });
+      if (result.valid) {
+        setVerificationSubStep("verified");
+        toast({
+          title: "PAN Verified!",
+          description: result.message,
+        });
+        setCurrentStep("photo");
+      } else {
+        setError(result.message);
+      }
+    } catch (e: any) {
+      setError(e.message || "PAN verification failed.");
     } finally {
       setIsLoading(false);
     }
@@ -364,8 +383,11 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
         status: 'active',
         avatarUrl: PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)].imageUrl,
         realAvatarUrl: values.realAvatarUrl,
-        pincodes: { residential: values.address.cityPincode.split(',')[0].trim() },
-        address: values.address,
+        pincodes: { residential: values.address.cityPincode?.split(',')[0].trim() || '' },
+        address: {
+          ...values.address,
+          cityPincode: values.address.cityPincode || '',
+        },
         subscription: {
           planId: 'trial',
           planName: 'Free Trial',
@@ -374,8 +396,12 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
       };
 
       if (values.role === 'Installer') {
-        newUser.aadharNumber = values.aadhar;
+        if (values.aadhar) {
+          newUser.aadharLast4 = values.aadhar.slice(-4);
+        }
+        newUser.panNumber = values.pan;
         newUser.kycAddress = values.kycAddress;
+        newUser.isPanVerified = true;
         newUser.installerProfile = {
           tier: 'Bronze',
           points: 0,
@@ -413,6 +439,7 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
   }
 
   const isAadharValid = aadharValue && /^\d{12}$/.test(aadharValue) && form.getFieldState('aadhar').isDirty && !form.getFieldState('aadhar').invalid;
+  const isPanValid = panValue && /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panValue);
   const isOtpValid = form.watch('otp') && /^\d{6}$/.test(form.watch('otp')!);
 
   const renderRoleStep = () => (
@@ -518,6 +545,40 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
               )}
             />
           )}
+
+          {verificationSubStep === "enterPan" && (
+            <FormField
+              control={form.control}
+              name="pan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>PAN Number</FormLabel>
+                  <div className="flex gap-2">
+                    <FormControl>
+                      <Input
+                        placeholder="ABCDE1234F"
+                        {...field}
+                        maxLength={10}
+                        className="uppercase"
+                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      />
+                    </FormControl>
+                    <Button
+                      type="button"
+                      onClick={handleVerifyPan}
+                      disabled={isLoading || !isPanValid}
+                    >
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Verify PAN
+                    </Button>
+                  </div>
+                  <FormDescription>For testing, use any valid PAN format e.g., <strong>ABCDE1234F</strong>.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           <Button variant="outline" onClick={() => setCurrentStep('role')} className="w-full">Back</Button>
         </div>
       )
@@ -527,8 +588,8 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
 
   const renderPhotoStep = () => (
     <div className="space-y-4">
-      <h3 className="font-semibold">{role === 'Job Giver' ? 'Step 2: Add a Profile Photo' : 'Step 2: Add a Profile Photo'}</h3>
-      <p className="text-sm text-muted-foreground">A real photo increases trust and helps you get hired.</p>
+      <h3 className="font-semibold">{role === 'Job Giver' ? 'Step 2: Add a Profile Photo' : 'Step 3: Profile Photo & Video KYC'}</h3>
+      <p className="text-sm text-muted-foreground">{role === 'Job Giver' ? 'A real photo increases trust.' : 'This photo will be used for your Virtual ID Card. Please ensure good lighting and a plain background.'}</p>
 
       <div className="mx-auto w-64 h-64 bg-muted rounded-full overflow-hidden relative flex items-center justify-center">
         {photo ? (
@@ -544,6 +605,17 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
                     Please allow camera access to use this feature.
                   </AlertDescription>
                 </Alert>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="mt-4"
+                  onClick={() => {
+                    setPhoto(PlaceHolderImages[0].imageUrl);
+                    form.setValue('realAvatarUrl', PlaceHolderImages[0].imageUrl);
+                  }}
+                >
+                  Use Test Photo
+                </Button>
               </div>
             )}
           </>
@@ -632,8 +704,8 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
       {verificationSubStep === 'verified' && (
         <Alert variant="success">
           <ShieldCheck className="h-4 w-4" />
-          <AlertTitle>Aadhar Verified!</AlertTitle>
-          <AlertDescription>Your Name and Mobile have been pre-filled. Please confirm your address.</AlertDescription>
+          <AlertTitle>AadharVerified!</AlertTitle>
+          <AlertDescription>Your Name, Mobile, and PAN have been verified. Please confirm your address.</AlertDescription>
         </Alert>
       )}
       <FormField
@@ -713,7 +785,7 @@ export function SignUpForm({ isMapLoaded }: { isMapLoaded: boolean }) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         {currentStep === "role" && renderRoleStep()}
-        {currentStep === "verification" && renderVerificationStep()}
+        {(currentStep === "verification" || verificationSubStep === 'enterPan') && renderVerificationStep()}
         {currentStep === "photo" && renderPhotoStep()}
         {currentStep === 'skills' && renderSkillsStep()}
         {currentStep === "details" && renderDetailsStep()}
