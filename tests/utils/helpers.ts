@@ -23,6 +23,15 @@ export class AuthHelper {
         await this.page.goto(ROUTES.login);
 
         // Wait for page to load
+        await this.page.waitForLoadState('domcontentloaded');
+
+        // Check if we were redirected to dashboard (already logged in)
+        if (this.page.url().includes('dashboard')) {
+            console.log(`[AuthHelper] Already logged in (redirected to dashboard). Skipping login form.`);
+            return;
+        }
+
+        // Wait for network idle to ensure hydration
         await this.page.waitForLoadState('networkidle');
 
         // Fill email

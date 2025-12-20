@@ -219,8 +219,12 @@ function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJo
 
 function JobGiverConfirmationSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
     const { toast } = useToast();
-    const { db } = useFirebase();
+    const { db, storage } = useFirebase();
+    const { user } = useUser();
+    const router = useRouter();
     const [isLoading, setIsLoading] = React.useState(false);
+    const [disputeReason, setDisputeReason] = React.useState("");
+    const [disputeFiles, setDisputeFiles] = React.useState<File[]>([]);
 
     const handleApproveAndPay = async () => {
         setIsLoading(true);
@@ -255,6 +259,64 @@ function JobGiverConfirmationSection({ job, onJobUpdate }: { job: Job, onJobUpda
         }
     };
 
+    const handleRaiseDispute = async () => {
+        if (!disputeReason.trim() || disputeFiles.length === 0) {
+            toast({ title: "Evidence Required", description: "Please provide a reason and upload evidence.", variant: "destructive" });
+            return;
+        }
+        if (!user || !storage) return;
+
+        setIsLoading(true);
+        try {
+            // Upload evidence
+            const uploadPromises = disputeFiles.map(async (file) => {
+                const storageRef = ref(storage, `disputes/${job.id}/${Date.now()}_${file.name}`);
+                await uploadBytes(storageRef, file);
+                const downloadURL = await getDownloadURL(storageRef);
+                return { fileName: file.name, fileUrl: downloadURL, fileType: file.type };
+            });
+            const uploadedAttachments = await Promise.all(uploadPromises);
+
+            const newDisputeId = `DISPUTE-${Date.now()}`;
+            const awardedInstaller = job.awardedInstaller as User;
+            const jobGiver = job.jobGiver as User;
+
+            const disputeData: Omit<Dispute, 'id'> = {
+                requesterId: user.id,
+                category: "Job Dispute",
+                title: `Dispute for Job: ${job.title}`,
+                jobId: job.id,
+                jobTitle: job.title,
+                status: 'Open',
+                reason: disputeReason,
+                parties: {
+                    jobGiverId: jobGiver.id || (job.jobGiver as any).id,
+                    installerId: awardedInstaller.id || (job.awardedInstaller as any).id,
+                },
+                messages: [{
+                    authorId: user.id,
+                    authorRole: "Job Giver",
+                    content: disputeReason,
+                    timestamp: new Date(),
+                    attachments: uploadedAttachments
+                }],
+                createdAt: new Date(),
+            };
+
+            await setDoc(doc(db, "disputes", newDisputeId), { ...disputeData, id: newDisputeId });
+            await onJobUpdate({ status: 'Disputed', disputeId: newDisputeId });
+
+            toast({ title: "Dispute Raised", description: "The dispute has been submitted for admin review." });
+            router.push(`/dashboard/disputes/${newDisputeId}`);
+
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Error", description: "Failed to raise dispute.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
             <CardHeader>
@@ -268,10 +330,36 @@ function JobGiverConfirmationSection({ job, onJobUpdate }: { job: Job, onJobUpda
                         <CheckCircle2 className="mr-2 h-4 w-4" />
                         Approve & Release Payment
                     </Button>
-                    <Button variant="destructive" className="flex-1">
-                        <AlertOctagon className="mr-2 h-4 w-4" />
-                        Raise a Dispute
-                    </Button>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="destructive" className="flex-1">
+                                <AlertOctagon className="mr-2 h-4 w-4" />
+                                Raise a Dispute
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Raise a Dispute</DialogTitle>
+                                <DialogDescription>If the work is incomplete or unsatisfactory, provide details and evidence below.</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Reason</Label>
+                                    <Textarea value={disputeReason} onChange={e => setDisputeReason(e.target.value)} placeholder="Explain the issue..." />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Evidence (Required)</Label>
+                                    <FileUpload onFilesChange={setDisputeFiles} maxFiles={5} />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button onClick={handleRaiseDispute} disabled={isLoading} variant="destructive">
+                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Submit Dispute
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </CardContent>
         </Card>
@@ -1587,6 +1675,7 @@ export default function JobDetailClient() {
     const [loading, setLoading] = React.useState(true);
     const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
     const [isFunding, setIsFunding] = React.useState(false);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [isFunded, setIsFunded] = React.useState(false);
 
     const [newComment, setNewComment] = React.useState("");
@@ -1864,6 +1953,7 @@ export default function JobDetailClient() {
     };
 
     const handleCancelJob = async () => {
+        if (!job || !user) return;
         setIsSubmitting(true);
         try {
             const { data } = await axios.post('/api/escrow/refund', {
@@ -1969,8 +2059,17 @@ export default function JobDetailClient() {
         }
     };
 
-    const handleReportAbandonment = async () => {
-        if (!user || !job || !job.awardedInstaller) return;
+    const handleReportAbandonment = async (reason: string, files: File[]) => {
+        if (!user || !job || !job.awardedInstaller || !storage) return;
+
+        // Upload evidence
+        const uploadPromises = files.map(async (file) => {
+            const storageRef = ref(storage, `disputes/${job.id}/${Date.now()}_${file.name}`);
+            await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(storageRef);
+            return { fileName: file.name, fileUrl: downloadURL, fileType: file.type };
+        });
+        const uploadedAttachments = await Promise.all(uploadPromises);
 
         const newDisputeId = `DISPUTE-ABANDON-${Date.now()}`;
         const awardedInstaller = job.awardedInstaller as User;
@@ -1983,7 +2082,7 @@ export default function JobDetailClient() {
             jobId: job.id,
             jobTitle: job.title,
             status: 'Open',
-            reason: "The job has been funded, but the awarded installer has become unresponsive. I am reporting this to request mediation.",
+            reason: reason,
             parties: {
                 jobGiverId: jobGiver.id,
                 installerId: awardedInstaller.id,
@@ -1991,8 +2090,9 @@ export default function JobDetailClient() {
             messages: [{
                 authorId: user.id,
                 authorRole: "Job Giver",
-                content: "The job has been funded, but the awarded installer has become unresponsive. I am reporting this to request mediation.",
-                timestamp: new Date()
+                content: reason,
+                timestamp: new Date(),
+                attachments: uploadedAttachments
             }],
             createdAt: new Date(),
         };
@@ -2069,7 +2169,16 @@ export default function JobDetailClient() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-foreground">{job.description}</p>
+                        {(isJobGiver || role === 'Admin') && job.priceEstimate && (
+                            <div className="mb-6 p-4 rounded-lg bg-muted/50 border border-muted flex items-center gap-3">
+                                <TrendingUp className="h-5 w-5 text-green-600" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground font-medium">AI Price Estimate (Private)</p>
+                                    <p className="font-semibold text-lg">₹{job.priceEstimate.min.toLocaleString()} - ₹{job.priceEstimate.max.toLocaleString()}</p>
+                                </div>
+                            </div>
+                        )}
+                        <p className="text-foreground whitespace-pre-wrap">{job.description}</p>
 
                         {job.status === 'Pending Funding' && isJobGiver && (
                             <>
@@ -2418,6 +2527,15 @@ export default function JobDetailClient() {
                                 </div>
                             </div>
                         )}
+                        {(isJobGiver || role === 'Admin') && job.priceEstimate && (
+                            <div className="flex items-center gap-3">
+                                <TrendingUp className="h-5 w-5 text-green-600" />
+                                <div>
+                                    <p className="text-muted-foreground">AI Price Estimate (Private)</p>
+                                    <p className="font-semibold">₹{job.priceEstimate.min.toLocaleString()} - ₹{job.priceEstimate.max.toLocaleString()}</p>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                     <CardContent className="pt-6 border-t">
                         <div className="space-y-2">
@@ -2438,26 +2556,47 @@ export default function JobDetailClient() {
                                 </Button>
                             )}
                             {canReportAbandonment && (
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
+                                <Dialog>
+                                    <DialogTrigger asChild>
                                         <Button variant="destructive" className="w-full">
                                             <AlertOctagon className="mr-2 h-4 w-4" />
                                             Report: Installer Not Responding
                                         </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Report Installer Not Responding?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                This will immediately pause the project and create a dispute ticket for admin review. Use this if the installer is unresponsive after you have funded the job.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleReportAbandonment} className={cn(buttonVariants({ variant: "destructive" }))}>Confirm & Create Dispute</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Report Installer Not Responding</DialogTitle>
+                                            <DialogDescription>
+                                                This will immediately pause the project and create a dispute ticket for admin review. You must provide evidence of your attempts to contact them.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4 py-4">
+                                            <div className="space-y-2">
+                                                <Label>Reason / Details</Label>
+                                                <Textarea
+                                                    placeholder="Describe your attempts to contact the installer..."
+                                                    id="abandonment-reason"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Evidence (Screenshots/Logs)</Label>
+                                                <FileUpload onFilesChange={(files) => (window as any).tempAbandonmentFiles = files} maxFiles={3} />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
+                                            <Button variant="destructive" onClick={() => {
+                                                const reason = (document.getElementById('abandonment-reason') as HTMLTextAreaElement).value;
+                                                const files = (window as any).tempAbandonmentFiles || [];
+                                                if (!reason || files.length === 0) {
+                                                    toast({ title: "Evidence Required", description: "Please provide a reason and upload evidence.", variant: "destructive" });
+                                                    return;
+                                                }
+                                                handleReportAbandonment(reason, files);
+                                            }}>Confirm & Create Dispute</Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
                             )}
                             {canCancelJob && (
                                 <AlertDialog>
