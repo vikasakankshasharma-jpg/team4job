@@ -101,7 +101,7 @@ export default function InvoicePage() {
         installerName: installer.name,
         installerAddress: installer.address,
         gstin: installer.gstin || '',
-        pan: installer.pan || ''
+        pan: installer.panNumber || ''
     };
 
     // Check if installer is GST registered (from snapshot)

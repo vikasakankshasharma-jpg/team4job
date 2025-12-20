@@ -145,6 +145,7 @@ export type Job = {
   postedAt: Date | Timestamp;
   acceptanceDeadline?: Date | Timestamp;
   fundingDeadline?: Date | Timestamp;
+  completionTimestamp?: Date | Timestamp;
   bids: Bid[];
   bidderIds?: string[];
   disqualifiedInstallerIds?: string[];
