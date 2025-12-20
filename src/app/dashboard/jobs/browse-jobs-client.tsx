@@ -174,9 +174,14 @@ export default function BrowseJobsClient() {
 
   const filterJobs = (jobsToFilter: Job[]) => {
     return jobsToFilter.filter((job) => {
-      // Pincode filter from global search
-      if (searchQuery !== "" && !job.location.includes(searchQuery)) {
-        return false;
+      // Search filter (Pincode or Title)
+      if (searchQuery !== "") {
+        const query = searchQuery.toLowerCase();
+        const matchesPincode = job.location.toLowerCase().includes(query);
+        const matchesTitle = job.title.toLowerCase().includes(query);
+        if (!matchesPincode && !matchesTitle) {
+          return false;
+        }
       }
 
       // Budget filter

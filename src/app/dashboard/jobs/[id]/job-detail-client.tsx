@@ -16,6 +16,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+// Removed duplicate import
+import { moderateMessage } from "@/ai/flows/moderate-message";
+import { analyzePhoto } from "@/ai/flows/analyze-photo";
+import { ShieldAlert, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -113,12 +117,31 @@ function ReapplyCard({ job, user, onJobUpdate }: { job: Job, user: User, onJobUp
 
     const handleReapply = async () => {
         setIsLoading(true);
-        await onJobUpdate({ disqualifiedInstallerIds: arrayRemove(user.id) as any });
-        toast({
-            title: "Re-application Request Sent",
-            description: "The Job Giver has been notified. You are now eligible to be selected again.",
-        });
-        setIsLoading(false);
+        try {
+            await axios.post('/api/reputation/deduct', {
+                userId: user.id,
+                points: 15,
+                reason: `Re-application for Job ${job.id}`,
+                jobId: job.id // This API will also handle the arrayRemove for 'disqualifiedInstallerIds'
+            });
+
+            // Client-side optimisic update for UI responsiveness
+            await onJobUpdate({ disqualifiedInstallerIds: arrayRemove(user.id) as any });
+
+            toast({
+                title: "Re-application Request Sent",
+                description: "15 points deducted. You are now eligible to be selected again.",
+            });
+        } catch (error) {
+            console.error("Re-apply failed:", error);
+            toast({
+                title: "Error",
+                description: "Failed to process re-application penalty.",
+                variant: 'destructive'
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -136,6 +159,7 @@ function ReapplyCard({ job, user, onJobUpdate }: { job: Job, user: User, onJobUp
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button variant="warning" disabled={isLoading}>
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             <RefreshCcw className="mr-2 h-4 w-4" />
                             Request to Re-apply (-15 Points)
                         </Button>
@@ -157,6 +181,57 @@ function ReapplyCard({ job, user, onJobUpdate }: { job: Job, user: User, onJobUp
                 </AlertDialog>
             </CardFooter>
         </Card>
+    );
+}
+
+function FundingBreakdownDialog({ job, onConfirm, open, onOpenChange }: { job: Job, onConfirm: () => void, open: boolean, onOpenChange: (open: boolean) => void }) {
+    if (!job.awardedInstaller) return null;
+
+    // Calculate Breakdown
+    const bidAmount = (job.bids.find(b => getRefId(b.installer) === getRefId(job.awardedInstaller))?.amount || 0);
+
+    // In this model, Job Giver pays Bid Amount + Travel Tip. Platform fee is deducted from Installer.
+    const subtotal = bidAmount;
+    const travelTip = job.travelTip || 0;
+    const total = subtotal + travelTip;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Payment Breakdown</DialogTitle>
+                    <DialogDescription>Review the total amount before proceeding to payment.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Agreed Bid Amount</span>
+                        <span>₹{bidAmount.toLocaleString()}</span>
+                    </div>
+                    {travelTip > 0 && (
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Travel Tip</span>
+                            <span>₹{travelTip.toLocaleString()}</span>
+                        </div>
+                    )}
+                    <Separator />
+                    <div className="flex justify-between font-bold text-lg">
+                        <span>Total Payable</span>
+                        <span>₹{total.toLocaleString()}</span>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-md text-xs text-blue-700 dark:text-blue-300">
+                        <ShieldCheck className="h-3 w-3 inline mr-1" />
+                        Funds are held securely in escrow until you approve the work.
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={onConfirm} className="w-full sm:w-auto">
+                        <Wallet className="mr-2 h-4 w-4" />
+                        Confirm & Pay
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -325,7 +400,7 @@ function JobGiverConfirmationSection({ job, onJobUpdate }: { job: Job, onJobUpda
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col sm:flex-row gap-4">
-                    <Button onClick={handleApproveAndPay} disabled={isLoading} className="flex-1">
+                    <Button onClick={handleApproveAndPay} disabled={isLoading} className="flex-1" data-testid="approve-release-button">
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         <CheckCircle2 className="mr-2 h-4 w-4" />
                         Approve & Release Payment
@@ -394,14 +469,37 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
         }
 
         setIsSubmitting(true);
-
         try {
-            const uploadPromises = completionFiles.map(async (file) => {
-                const storageRef = ref(storage, `jobs/${job.id}/completion_proof/${Date.now()}_${file.name}`);
-                await uploadBytes(storageRef, file);
-                const downloadURL = await getDownloadURL(storageRef);
-                return { fileName: file.name, fileUrl: downloadURL, fileType: file.type };
+            // AI Foreman: Analyze photos before saving
+            // We do this in parallel with upload for efficiency, but we need the URL for Vision API
+            // So we upload first.
+
+            const uploadPromises = completionFiles.map(async file => {
+                const fileRef = ref(storage, `jobs/${job.id}/completion/${Date.now()}_${file.name}`);
+                await uploadBytes(fileRef, file);
+                const fileUrl = await getDownloadURL(fileRef);
+
+                let isAiVerified = false;
+
+                // AI Foreman Check (Freemium Logic)
+                // Only run if image (simple check)
+                if (file.type.startsWith('image/')) {
+                    try {
+                        const analysis = await analyzePhoto({ imageUrl: fileUrl, jobCategory: job.jobCategory });
+                        // Freemium: Only mark verified if score is high AND installer is Gold/Platinum
+                        // For now, we simulate the logic: Verified if score >= 4
+                        // In real logic: if (user.installerProfile?.tier === 'Gold' && analysis.score >= 4)
+                        if (analysis.score >= 4) {
+                            isAiVerified = true;
+                        }
+                    } catch (e) {
+                        console.error("AI Analysis skipped", e);
+                    }
+                }
+
+                return { fileName: file.name, fileUrl, fileType: file.type, isAiVerified };
             });
+
             const uploadedAttachments = await Promise.all(uploadPromises);
 
             if (otp && otp.length === 6) {
@@ -459,39 +557,31 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Submit for Completion</CardTitle>
-                <CardDescription>
-                    Upload proof of completion. If the Job Giver provided a Completion OTP, enter it below for instant payment release. Otherwise, submit for manual approval.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label>Proof of Completion</Label>
-                    <FileUpload onFilesChange={setCompletionFiles} maxFiles={5} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="otp-input">Completion OTP (Optional)</Label>
-                    <Input
-                        id="otp-input"
-                        placeholder="Enter 6-digit OTP provided by Job Giver"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        maxLength={6}
-                    />
-                    <p className="text-xs text-muted-foreground">Entering the correct OTP will instantly release your payment.</p>
-                </div>
-            </CardContent>
-            <CardFooter>
-                <Button onClick={handleCompleteJob} disabled={completionFiles.length === 0 || isSubmitting}>
+        <div className="space-y-4">
+            <div className="space-y-2">
+                <Label>Proof of Completion</Label>
+                <FileUpload onFilesChange={setCompletionFiles} maxFiles={5} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="otp-input">Completion OTP (Optional)</Label>
+                <Input
+                    id="otp-input"
+                    placeholder="Enter 6-digit OTP provided by Job Giver"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    maxLength={6}
+                />
+                <p className="text-xs text-muted-foreground">Entering the correct OTP will instantly release your payment.</p>
+            </div>
+            <div className="flex justify-end pt-4">
+                <Button onClick={handleCompleteJob} disabled={completionFiles.length === 0 || isSubmitting} data-test-id="submit-for-review-button" className="w-full">
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
                         otp ? <Zap className="mr-2 h-4 w-4 text-amber-500 fill-amber-500" /> : <Send className="mr-2 h-4 w-4" />
                     )}
-                    {otp ? (isVerifyingOtp ? "Verifying..." : "Verify OTP & Complete Job") : "Submit for Approval"}
+                    {otp ? (isVerifyingOtp ? "Verifying..." : "Verify OTP & Complete Job") : "Submit for Review"}
                 </Button>
-            </CardFooter>
-        </Card>
+            </div>
+        </div>
     );
 }
 
@@ -596,6 +686,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
     if (!installer) return null;
 
     const handlePlaceBid = async () => {
+        console.log('JobDetailClient: handlePlaceBid called', { bidAmount, bidProposal });
         if (!bidAmount || !bidProposal) {
             toast({ title: "Missing Information", description: "Please provide both a bid amount and a proposal.", variant: "destructive" });
             return;
@@ -621,9 +712,15 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
             updatePayload.status = 'Bidding Closed';
         }
 
-        onJobUpdate(updatePayload);
-
-        toast({ title: "Bid Placed!", description: "Your bid has been submitted successfully." });
+        try {
+            console.log("Placing bid with payload:", updatePayload);
+            await onJobUpdate(updatePayload);
+            console.log("Bid updated in Firestore");
+            toast({ title: "Bid Placed!", description: "Your bid has been submitted successfully." });
+        } catch (error) {
+            console.error("Error placing bid:", error);
+            toast({ title: "Submission Failed", description: "There was an error submitting your bid. Please try again.", variant: "destructive" });
+        }
     };
 
     const handleGenerateBid = async () => {
@@ -670,6 +767,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
                         <Label htmlFor="bid-amount">Your Bid Amount (₹)</Label>
                         <Input
                             id="bid-amount"
+                            name="bidAmount"
                             type="number"
                             placeholder="e.g. 15000"
                             value={bidAmount}
@@ -716,6 +814,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
                         </Button>
                     </div>
                     <Textarea
+                        name="coverLetter"
                         placeholder="Explain why you're the best fit for this job..."
                         className="min-h-32"
                         value={bidProposal}
@@ -724,7 +823,7 @@ function InstallerBidSection({ job, user, onJobUpdate }: { job: Job, user: User,
                 </div>
             </CardContent>
             <CardFooter>
-                <Button onClick={handlePlaceBid} className="w-full md:w-auto">Place Bid</Button>
+                <Button onClick={handlePlaceBid} className="w-full md:w-auto">Submit Bid</Button>
             </CardFooter>
         </Card>
     );
@@ -929,6 +1028,26 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
         }
     };
 
+    const handleCloseBidding = async () => {
+        setIsSendingOffers(true);
+        try {
+            await onJobUpdate({ status: "Bidding Closed" });
+            toast({
+                title: "Bidding Closed",
+                description: "No more bids can be placed. You can now select and award an installer.",
+            });
+        } catch (error) {
+            console.error("Error closing bidding:", error);
+            toast({
+                title: "Error",
+                description: "Failed to close bidding. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSendingOffers(false);
+        }
+    };
+
     const handleSendOffers = async () => {
         if (selectedInstallers.length === 0) {
             toast({ title: "No Installers Selected", description: "Please select at least one installer to send an offer." });
@@ -1075,6 +1194,32 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
                         {job.bids && job.bids.length > 1 && job.status === 'Bidding Closed' && (
                             <AnalyzeButton />
                         )}
+                        {job.status === 'Open for Bidding' && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="default" disabled={job.bids.length === 0}>
+                                        <Clock className="mr-2 h-4 w-4" />
+                                        Close Bidding
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Close Bidding Early?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            You have received {job.bids.length} bid(s). Once you close bidding, no more installers can place bids. You'll then be able to select and award the job.
+                                            <br /><br />
+                                            This action cannot be undone.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleCloseBidding}>
+                                            Close Bidding
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
                         {job.status === 'Bidding Closed' && (
                             <Button onClick={handleSendOffers} disabled={isSendingOffers || selectedInstallers.length === 0}>
                                 {isSendingOffers && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -1083,7 +1228,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
                         )}
                     </div>
                 </div>
-                {job.status === 'Bidding Closed' && (
+                {(job.status === 'Open for Bidding' || job.status === 'Bidding Closed') && (
                     <div className="pt-4 space-y-4">
                         <div>
                             <Label>Award Strategy</Label>
@@ -1147,7 +1292,7 @@ function BidsSection({ job, onJobUpdate, anonymousIdMap }: { job: Job, onJobUpda
                     }
 
                     return (
-                        <div key={installerId} onClick={() => job.status === 'Bidding Closed' && handleSelectInstaller(installerId)} className={cn(job.status === 'Bidding Closed' && "cursor-pointer")}>
+                        <div key={installerId} onClick={() => (job.status === 'Open for Bidding' || job.status === 'Bidding Closed') && handleSelectInstaller(installerId)} className={cn((job.status === 'Open for Bidding' || job.status === 'Bidding Closed') && "cursor-pointer")}>
                             <JobGiverBid
                                 bid={bid}
                                 job={job}
@@ -1675,6 +1820,7 @@ export default function JobDetailClient() {
     const [loading, setLoading] = React.useState(true);
     const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
     const [isFunding, setIsFunding] = React.useState(false);
+    const [showFundingDialog, setShowFundingDialog] = React.useState(false);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [isFunded, setIsFunded] = React.useState(false);
 
@@ -1703,16 +1849,16 @@ export default function JobDetailClient() {
             setTransaction(transSnap.docs[0].data() as Transaction);
         }
 
-        const jobRef = doc(db, 'jobs', id);
-        const jobSnap = await getDoc(jobRef);
-
-        if (!jobSnap.exists()) {
+        let jobData: Job;
+        try {
+            const { data } = await axios.post('/api/jobs/public', { jobId: id, userId: user?.id });
+            jobData = data.job;
+        } catch (error) {
+            console.error("Failed to fetch job", error);
             setJob(null);
             setLoading(false);
             return;
         }
-
-        let jobData = jobSnap.data() as Job;
 
         const userIds = new Set<string>();
         const jobGiverId = getRefId(jobData.jobGiver);
@@ -1751,16 +1897,28 @@ export default function JobDetailClient() {
 
         const populatedJob: Job = {
             ...jobData,
-            jobGiver: usersMap.get(jobGiverId!) || jobData.jobGiver,
+            jobGiver: (jobGiverId ? usersMap.get(jobGiverId) : null) || jobData.jobGiver,
             awardedInstaller: awardedInstallerId ? (usersMap.get(awardedInstallerId) || jobData.awardedInstaller) : undefined,
-            bids: (jobData.bids || []).map(bid => ({ ...bid, installer: usersMap.get(getRefId(bid.installer)!)! })),
-            comments: (jobData.comments || []).map(comment => ({ ...comment, author: usersMap.get(getRefId(comment.author)!)! })),
-            privateMessages: (jobData.privateMessages || []).map(msg => ({ ...msg, author: usersMap.get(getRefId(msg.author)!)! })),
+            bids: (jobData.bids || []).map(bid => {
+                const installerId = getRefId(bid.installer);
+                const installer = installerId ? usersMap.get(installerId) : null;
+                return { ...bid, installer: installer || bid.installer };
+            }) as Bid[],
+            comments: (jobData.comments || []).map(comment => {
+                const authorId = getRefId(comment.author);
+                const author = authorId ? usersMap.get(authorId) : null;
+                return { ...comment, author: author || comment.author };
+            }) as Comment[],
+            privateMessages: (jobData.privateMessages || []).map(msg => {
+                const authorId = getRefId(msg.author);
+                const author = authorId ? usersMap.get(authorId) : null;
+                return { ...msg, author: author || msg.author };
+            }) as PrivateMessage[],
         };
 
         setJob(populatedJob);
         setLoading(false);
-    }, [id, db]);
+    }, [id, db, user?.id]);
 
     React.useEffect(() => {
         fetchJob();
@@ -1874,10 +2032,15 @@ export default function JobDetailClient() {
     }, [job, user, db, toast, fetchJob]);
 
     const handleJobUpdate = React.useCallback(async (updatedPart: Partial<Job>) => {
-        if (job) {
+        if (!job || !db) return;
+
+        try {
             const jobRef = doc(db, 'jobs', job.id);
             await updateDoc(jobRef, updatedPart);
-            fetchJob();
+            await fetchJob();
+        } catch (error) {
+            console.error("Error updating job:", error);
+            throw error; // Re-throw so callers can handle it
         }
     }, [job, db, fetchJob]);
 
@@ -1922,6 +2085,26 @@ export default function JobDetailClient() {
         }
 
         setIsSendingMessage(true);
+        let isFlagged = false;
+        let flagReason = "";
+
+        // AI Moderation (Sentinel)
+        if (newPrivateMessage.length > 5) {
+            try {
+                const moderation = await moderateMessage({ message: newPrivateMessage });
+                if (moderation.isFlagged) {
+                    isFlagged = true;
+                    flagReason = moderation.reason || "Safety Violation";
+                    toast({
+                        title: "Safety Warning",
+                        description: "Your message was flagged by our safety AI. It has been sent but marked for review.",
+                        variant: "destructive",
+                    });
+                }
+            } catch (err) {
+                console.error("Moderation failed", err);
+            }
+        }
 
         const uploadPromises = newPrivateMessageAttachments.map(async file => {
             const fileRef = ref(storage, `jobs/${job.id}/private_messages/${Date.now()}_${file.name}`);
@@ -1932,12 +2115,14 @@ export default function JobDetailClient() {
 
         const uploadedAttachments = await Promise.all(uploadPromises);
 
-        const newMessageObject: PrivateMessage = {
+        const newMessageObject: PrivateMessage & { isFlagged?: boolean; flagReason?: string } = {
             id: `MSG-${Date.now()}`,
             author: doc(db, 'users', user.id),
             timestamp: new Date(),
             content: newPrivateMessage,
             attachments: uploadedAttachments,
+            isFlagged,
+            flagReason
         };
 
         await handleJobUpdate({
@@ -1947,9 +2132,11 @@ export default function JobDetailClient() {
         setNewPrivateMessage("");
         setNewPrivateMessageAttachments([]);
         setIsSendingMessage(false);
-        toast({
-            title: "Message Sent!",
-        });
+        if (!isFlagged) {
+            toast({
+                title: "Message Sent!",
+            });
+        }
     };
 
     const handleCancelJob = async () => {
@@ -1980,7 +2167,12 @@ export default function JobDetailClient() {
         }
     }
 
-    const handleFundJob = async () => {
+    const handleFundJobClick = () => {
+        setShowFundingDialog(true);
+    };
+
+    const handleConfirmFunding = async () => {
+        setShowFundingDialog(false);
         if (!db || !user || !job || !job.awardedInstaller) return;
         setIsFunding(true);
 
@@ -2114,8 +2306,10 @@ export default function JobDetailClient() {
     }
 
     if (!job || !user || !storage) {
+        console.log('JobDetailClient: Missing job/user/storage', { job: !!job, user: !!user, storage: !!storage });
         notFound();
     }
+
 
     const awardedInstallerId = getRefId(job.awardedInstaller);
     const isSelectedInstaller = role === "Installer" && (job.selectedInstallers || []).some(s => s.installerId === user.id);
@@ -2124,7 +2318,7 @@ export default function JobDetailClient() {
     const canReapply = isDisqualified && job.status === "Bidding Closed";
     const isPrivateBidder = role === "Installer" && user.id === job.directAwardInstallerId && job.bids.length === 0;
     const jobGiver = job.jobGiver as User;
-    const isJobGiver = role === "Job Giver" && user.id === jobGiver.id;
+    const isJobGiver = role === "Job Giver" && user.id === job.jobGiverId;
 
     const canEditJob = isJobGiver && job.status === 'Open for Bidding';
     const canCancelJob = isJobGiver && (job.status === 'In Progress' || job.status === 'Open for Bidding' || job.status === 'Bidding Closed');
@@ -2152,18 +2346,26 @@ export default function JobDetailClient() {
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div>
-                                <Badge variant={getStatusVariant(job.status)} className="mb-2">{job.status}</Badge>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
+                                    {role === 'Installer' && job.status === 'Open for Bidding' && !isJobGiver && !(job.bidderIds || []).includes(user.id) && (
+                                        <Button variant="outline" size="sm" className="h-7" onClick={() => document.getElementById('bid-section')?.scrollIntoView({ behavior: 'smooth' })}>
+                                            <Zap className="mr-1 h-3 w-3" />
+                                            Place Bid
+                                        </Button>
+                                    )}
+                                </div>
                                 <CardTitle className="text-2xl">{job.title}</CardTitle>
                                 <CardDescription className="font-mono text-sm pt-1">{job.id}</CardDescription>
                             </div>
                             <div className="flex items-center gap-3">
                                 <Avatar>
-                                    {showJobGiverRealIdentity ? <AvatarImage src={jobGiver.realAvatarUrl} /> : <AnimatedAvatar svg={jobGiver.avatarUrl} />}
-                                    <AvatarFallback>{jobGiver.name.substring(0, 2)}</AvatarFallback>
+                                    {showJobGiverRealIdentity ? <AvatarImage src={(jobGiver as User)?.realAvatarUrl} /> : <AnimatedAvatar svg={(jobGiver as User)?.avatarUrl} />}
+                                    <AvatarFallback>{(jobGiver?.name || 'JG').substring(0, 2)}</AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <p className="text-sm font-semibold">{showJobGiverRealIdentity ? jobGiver.name : 'Job Giver'}</p>
-                                    {showJobGiverRealIdentity && <p className="text-xs text-muted-foreground font-mono">{jobGiver.id}</p>}
+                                    <p className="text-sm font-semibold">{showJobGiverRealIdentity ? (jobGiver?.name || 'Job Giver') : 'Job Giver'}</p>
+                                    {showJobGiverRealIdentity && <p className="text-xs text-muted-foreground font-mono">{jobGiver.id || (jobGiver as any)?.id}</p>}
                                 </div>
                             </div>
                         </div>
@@ -2189,12 +2391,18 @@ export default function JobDetailClient() {
                                         <CardDescription>The installer has accepted your offer. Please complete the payment to secure the service and start the work.</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <Button onClick={handleFundJob} disabled={isFunding}>
+                                        <Button onClick={handleFundJobClick} disabled={isFunding}>
                                             {isFunding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             <Wallet className="mr-2 h-4 w-4" />
                                             Proceed to Payment
                                         </Button>
                                     </CardContent>
+                                    <FundingBreakdownDialog
+                                        job={job}
+                                        open={showFundingDialog}
+                                        onOpenChange={setShowFundingDialog}
+                                        onConfirm={handleConfirmFunding}
+                                    />
                                 </Card>
                             </>
                         )}
@@ -2220,16 +2428,24 @@ export default function JobDetailClient() {
                                     <h3 className="font-semibold mb-4">Attachments</h3>
                                     <div className="space-y-2">
                                         {job.attachments.map((file, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-2 rounded-md bg-secondary/50">
-                                                <a
-                                                    href={file.fileUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center gap-2 text-primary hover:underline"
-                                                >
-                                                    <FileIcon className="h-4 w-4" />
-                                                    <span className="text-sm">{file.fileName}</span>
-                                                </a>
+                                            <div key={idx} className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <a
+                                                        href={file.fileUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-2 text-primary hover:underline bg-primary/10 p-2 rounded-md transition-colors hover:bg-primary/20"
+                                                    >
+                                                        <FileIcon className="h-4 w-4" />
+                                                        <span className="text-sm font-medium">{file.fileName}</span>
+                                                    </a>
+                                                    {(file as any).isAiVerified && (
+                                                        <div className="flex items-center gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full text-xs font-semibold border border-green-200 dark:border-green-800">
+                                                            <Sparkles className="h-3 w-3" />
+                                                            AI Verified
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 {canEditJob && (
                                                     <AlertDialog>
                                                         <AlertDialogTrigger asChild>
@@ -2323,6 +2539,12 @@ export default function JobDetailClient() {
                                                     </div>
                                                     <div className="text-sm mt-1 text-foreground bg-accent/30 p-3 rounded-lg space-y-3">
                                                         {message.content && <p>{message.content}</p>}
+                                                        {(message as any).isFlagged && (
+                                                            <div className="mt-2 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-2 rounded flex items-center gap-2">
+                                                                <ShieldAlert className="h-4 w-4" />
+                                                                <span>Warning: This message was flagged by AI as potentially unsafe ({(message as any).flagReason || 'Suspicious Content'}). Be cautious.</span>
+                                                            </div>
+                                                        )}
                                                         {message.attachments && message.attachments.length > 0 && (
                                                             <div>
                                                                 <p className="font-semibold text-xs mb-2">Attachments:</p>
@@ -2418,7 +2640,23 @@ export default function JobDetailClient() {
                         {(job.status === 'In Progress') && isAwardedInstaller && (
                             <>
                                 <Separator className="my-6" />
-                                <InstallerCompletionSection job={job} user={user} onJobUpdate={handleJobUpdate} />
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button className="w-full" size="lg">
+                                            <CheckCircle2 className="mr-2 h-5 w-5" />
+                                            Submit Work for Completion
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-2xl">
+                                        <DialogHeader>
+                                            <DialogTitle>Submit Work for Completion</DialogTitle>
+                                            <DialogDescription>
+                                                Upload proof of completion. If the Job Giver provided a Completion OTP, enter it below for instant payment release. Otherwise, submit for manual review.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <InstallerCompletionSection job={job} user={user} onJobUpdate={handleJobUpdate} />
+                                    </DialogContent>
+                                </Dialog>
                             </>
                         )}
 
@@ -2435,8 +2673,13 @@ export default function JobDetailClient() {
                     </CardContent>
                 </Card>
 
-                {(isAdmin || role === 'Support Team' || (isJobGiver && (job.status === 'Bidding Closed' || (job.status === 'Awarded' && !isSelectedInstaller)))) && job.bids && job.bids.length > 0 && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
-                {isPrivateBidder && <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />}
+                {(isAdmin || role === 'Support Team' || (isJobGiver && (['Open for Bidding', 'Bidding Closed'].includes(job.status) || (job.status === 'Awarded' && !isSelectedInstaller)))) && (job.bids || []).length > 0 && <BidsSection job={job} onJobUpdate={handleJobUpdate} anonymousIdMap={anonymousIdMap} />}
+
+                {(isPrivateBidder || (role === "Installer" && job.status === "Open for Bidding" && !isJobGiver && !(job.bidderIds || []).includes(user.id))) && (
+                    <div id="bid-section">
+                        <InstallerBidSection job={job} user={user} onJobUpdate={handleJobUpdate} />
+                    </div>
+                )}
 
                 {job.status === 'In Progress' && (isJobGiver || isAwardedInstaller) && (
                     <AdditionalTasksSection job={job} user={user} onJobUpdate={handleJobUpdate} />
@@ -2628,6 +2871,6 @@ export default function JobDetailClient() {
                 </Card>
 
             </div>
-        </div>
+        </div >
     );
 }

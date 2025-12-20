@@ -24,9 +24,9 @@ export function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJ
     const { db } = useFirebase();
     const [isLoading, setIsLoading] = React.useState(false);
 
-    if (!user || !db) return null;
-
     const { toast } = useToast();
+
+    if (!user || !db) return null;
 
     const handleAccept = async () => {
         if (!user.payouts?.beneficiaryId) {
@@ -97,7 +97,7 @@ export function InstallerAcceptanceSection({ job, onJobUpdate }: { job: Job, onJ
     return (
         <Card className="bg-primary/5 border-primary/20">
             <CardHeader>
-                <CardTitle>You've Been Selected!</CardTitle>
+                <CardTitle>You&apos;ve Been Selected!</CardTitle>
                 <CardDescription>
                     The Job Giver has sent you an offer for this project. Please respond before the offer expires.
                 </CardDescription>
