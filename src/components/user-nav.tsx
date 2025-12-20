@@ -42,7 +42,7 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="overflow-hidden rounded-full" suppressHydrationWarning>
+        <Button variant="outline" size="icon" className="overflow-hidden rounded-full" suppressHydrationWarning data-testid="user-menu-trigger">
           <Avatar className="h-9 w-9">
             <AvatarImage src={user.realAvatarUrl} alt={user.name} />
             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>

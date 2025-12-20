@@ -116,11 +116,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // --- Immediate check on auth change ---
         try {
+          console.log("[UserProvider] Checking user doc for", firebaseUser.uid);
           let initialUserDoc = await getDoc(userDocRef);
+          console.log("[UserProvider] Initial getDoc result exists:", initialUserDoc.exists());
 
           // Retry fetching user doc if it doesn't exist immediately (handles signup race condition)
           let retries = 0;
           while (!initialUserDoc.exists() && retries < 3) {
+            console.log("[UserProvider] User doc not found, retrying...", retries);
             await new Promise(resolve => setTimeout(resolve, 1000));
             initialUserDoc = await getDoc(userDocRef);
             retries++;
@@ -140,6 +143,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             signOut(auth);
             return;
           }
+
+          // Set user state immediately from the initial fetch
+          updateUserState(userData);
+          setLoading(false);
         } catch (e) {
           console.error("Initial user fetch failed:", e);
           signOut(auth);
@@ -170,7 +177,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(false);
         }, (error) => {
           console.error("Error listening to user document:", error);
-          signOut(auth);
+          // Don't sign out on listen error if we have initial data
+          // signOut(auth); 
           setLoading(false);
         });
 

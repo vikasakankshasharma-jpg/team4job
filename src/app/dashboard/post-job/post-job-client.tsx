@@ -56,6 +56,7 @@ import {
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { jobCategoryTemplates } from "@/lib/job-category-templates";
+import { VoiceInput } from "@/components/ui/voice-input";
 
 const addressSchema = z.object({
   house: z.string().min(3, "Please enter a valid house/building detail."),
@@ -326,8 +327,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   // Validation for price estimate
   const canEstimatePrice = jobTitle && jobDescription && jobCategory && jobDescription.length >= 50;
 
-  const handleGenerateDetails = async () => {
-    if (!isJobTitleValid) {
+  const handleGenerateDetails = async (overrideTitle?: string) => {
+    const titleToUse = overrideTitle || jobTitle;
+
+    if (!titleToUse || titleToUse.length < 10) {
       toast({
         title: "Invalid Job Title",
         description: "Please enter a job title (at least 10 characters) first.",
@@ -338,7 +341,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
 
     setIsGenerating(true);
     try {
-      const result = await generateJobDetails({ jobTitle });
+      const result = await generateJobDetails({ jobTitle: titleToUse });
       if (result) {
         form.setValue("jobDescription", result.jobDescription, { shouldValidate: true });
         form.setValue("skills", result.suggestedSkills.join(', '), { shouldValidate: true });
@@ -358,6 +361,15 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleVoiceTranscript = async (transcript: string) => {
+    form.setValue("jobTitle", transcript, { shouldValidate: true });
+
+    // Slight delay to ensure state updates before triggering generation
+    setTimeout(() => {
+      handleGenerateDetails(transcript);
+    }, 100);
   };
 
   const handleEstimatePrice = async () => {
@@ -494,7 +506,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
           description: `Your job is now ${jobData.directAwardInstallerId ? 'sent privately to the installer' : 'live and open for bidding'}.`,
         });
         form.reset();
-        router.push(`/dashboard/posted-jobs`);
+        console.log(`Redirecting to job detail page /dashboard/jobs/${newJobId} via location.assign...`);
+        window.location.assign(`/dashboard/jobs/${newJobId}`);
       }
     } catch (error) {
       console.error("Error processing job:", error);
@@ -529,78 +542,46 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     return null;
   }
 
-  const SubmitButton = () => {
-    const buttonText = isEditMode ? 'Save Changes' : (repostJobId ? 'Re-post Job' : 'Post Job');
+  const buttonText = isEditMode ? 'Save Changes' : (repostJobId ? 'Re-post Job' : 'Post Job');
 
-    const handleSubmitClick = async () => {
-      // Check form validity before submission
-      const isValid = await form.trigger();
+  const handleSubmitClick = async () => {
+    console.log("HandleSubmitClick triggered");
+    // Check form validity before submission
+    const isValid = await form.trigger();
 
-      if (!isValid) {
-        const errors = form.formState.errors;
-        console.error("Form validation errors:", errors);
+    if (!isValid) {
+      const errors = form.formState.errors;
+      console.error("Form validation errors:", errors);
 
-        // Find the first error and show it to the user
-        const firstErrorField = Object.keys(errors)[0];
-        const firstError = errors[firstErrorField as keyof typeof errors];
+      // Log all values to see what's missing
+      console.log("Current form values:", form.getValues());
 
-        let errorMessage = "Please fix the validation errors before submitting.";
-        if (firstError && 'message' in firstError) {
-          errorMessage = `${firstErrorField}: ${firstError.message}`;
-        }
+      // Find the first error and show it to the user
+      const firstErrorField = Object.keys(errors)[0];
+      const firstError = errors[firstErrorField as keyof typeof errors];
 
-        toast({
-          title: "Form Validation Failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
-
-        // Scroll to the first error field
-        const errorElement = document.querySelector('[data-invalid="true"]');
-        if (errorElement) {
-          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        return;
+      let errorMessage = "Please fix the validation errors before submitting.";
+      if (firstError && 'message' in firstError) {
+        errorMessage = `${firstErrorField}: ${firstError.message}`;
       }
 
-      // If valid, submit the form
-      form.handleSubmit(onSubmit)();
-    };
+      toast({
+        title: "Form Validation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
 
-    if (isEditMode) {
-      return (
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button type="button" disabled={isProcessing || isGenerating}>
-              {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {buttonText}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure you want to save changes?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Editing a live job will remove all existing bids to ensure fairness. Previous bidders will be notified and will need to bid again on the updated job details. This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSubmitClick}>
-                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirm & Save"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )
+      // Scroll to the first error field
+      const errorElement = document.querySelector('[data-invalid="true"]');
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
     }
 
-    return (
-      <Button type="button" disabled={isProcessing || isGenerating} onClick={handleSubmitClick}>
-        {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {buttonText}
-      </Button>
-    )
-  }
+    // If valid, submit the form
+    form.handleSubmit(onSubmit)();
+  };
 
   return (
     <div className="mx-auto grid max-w-4xl flex-1 auto-rows-max gap-4">
@@ -633,7 +614,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     <FormLabel>Job Category</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger data-testid="job-category-select">
                           <SelectValue placeholder="Select a category for your job" />
                         </SelectTrigger>
                       </FormControl>
@@ -658,12 +639,15 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Job Title</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., Install 8 IP Cameras for an Office"
-                        {...field}
-                      />
-                    </FormControl>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., Install 8 IP Cameras for an Office"
+                          {...field}
+                        />
+                      </FormControl>
+                      <VoiceInput onTranscript={handleVoiceTranscript} isProcessing={isGenerating} />
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -678,8 +662,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
-                        onClick={handleGenerateDetails}
+                        onClick={() => handleGenerateDetails()}
                         disabled={isGenerating || !isJobTitleValid}
                       >
                         {isGenerating ? (
@@ -695,6 +678,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                         placeholder="Describe the project requirements, scope, and any important details..."
                         className={cn("min-h-32", isGenerating && "opacity-50")}
                         {...field}
+                        data-testid="job-description-input"
                       />
                     </FormControl>
                     <FormMessage />
@@ -855,7 +839,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   <FormItem>
                     <FormLabel>{directAwardInstallerId ? 'Offered Budget (₹)' : 'Minimum Budget (₹)'}</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g. 8000" {...field} />
+                      <Input type="number" placeholder="e.g. 8000" {...field} data-testid="min-budget-input" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -869,7 +853,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     <FormItem>
                       <FormLabel>Maximum Budget (₹, Optional)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g. 12000" {...field} />
+                        <Input type="number" placeholder="e.g. 12000" {...field} data-testid="max-budget-input" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -898,7 +882,40 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
             <Button variant="outline" type="button" onClick={() => router.back()}>
               Cancel
             </Button>
-            <SubmitButton />
+            {isEditMode ? (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button type="button" disabled={isProcessing || isGenerating}>
+                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Changes
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to save changes?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Editing a live job will remove all existing bids to ensure fairness. Previous bidders will be notified and will need to bid again on the updated job details. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleSubmitClick}>
+                      {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirm & Save"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : (
+              <Button
+                type="button"
+                disabled={isProcessing || isGenerating}
+                onClick={handleSubmitClick}
+                data-testid="post-job-button"
+              >
+                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {repostJobId ? 'Re-post Job' : 'Post Job'}
+              </Button>
+            )}
           </div>
         </form>
       </Form>

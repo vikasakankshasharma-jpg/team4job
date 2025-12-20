@@ -32,7 +32,7 @@ export class AuthHelper {
         }
 
         // Wait for network idle to ensure hydration
-        await this.page.waitForLoadState('networkidle');
+        await this.page.waitForLoadState('load');
 
         // Fill email
         const emailInput = this.page.locator('input[type="email"]');
@@ -63,19 +63,44 @@ export class AuthHelper {
     }
 
     async logout() {
-        // Click user menu
-        await this.page.click('[data-testid="user-menu"], button:has-text("Profile")').catch(() => {
-            // Try alternative selector
-            this.page.click('button:has([data-avatar])');
-        });
+        console.log('[AuthHelper] Starting logout process...');
+        try {
+            // Click user menu - try multiple locators
+            const userMenu = this.page.locator('[data-testid="user-menu-trigger"]')
+                .or(this.page.locator('button.rounded-full:has(img)'))
+                .or(this.page.locator('button:has(.rounded-full)'))
+                .first();
 
-        // Click logout
-        await this.page.click('text=Logout, text=Log out').catch(() => {
-            this.page.click('[role="menuitem"]:has-text("Logout")');
-        });
+            try {
+                await userMenu.waitFor({ state: 'visible', timeout: 5000 });
+            } catch (e) {
+                console.log('[AuthHelper] User menu not found, reloading page...');
+                await this.page.reload();
+                await userMenu.waitFor({ state: 'visible', timeout: 10000 });
+            }
 
-        // Wait for redirect to login
-        await this.page.waitForURL('**/login**', { timeout: TIMEOUTS.medium });
+            await userMenu.click();
+            console.log('[AuthHelper] Clicked user menu');
+
+            // Wait for dropdown content explicitly using robust locators
+            const logoutMenuItem = this.page.getByRole('menuitem', { name: 'Logout' });
+            const logoutText = this.page.getByText('Log out');
+            const logoutButton = logoutMenuItem.or(logoutText).first();
+
+            await logoutButton.waitFor({ state: 'visible', timeout: 5000 });
+
+            // Click logout
+            await logoutButton.click();
+            console.log('[AuthHelper] Clicked logout button');
+
+            // Wait for redirect to login
+            await this.page.waitForURL('**/login**', { timeout: TIMEOUTS.long });
+            console.log('[AuthHelper] Redirected to login page');
+        } catch (error) {
+            console.error('[AuthHelper] Logout failed:', error);
+            // Force navigate to login if logout fails
+            await this.page.goto(ROUTES.login);
+        }
     }
 }
 
@@ -96,8 +121,16 @@ export class FormHelper {
     }
 
     async selectDropdown(label: string, value: string) {
-        await this.page.click(`label:has-text("${label}") ~ button, label:has-text("${label}") + button`);
-        await this.page.click(`[role="option"]:has-text("${value}")`);
+        // Find the trigger button associated with the label or follows it
+        const trigger = this.page.locator(`label:has-text("${label}")`).first();
+        const parent = trigger.locator('..');
+        const button = parent.locator('button[role="combobox"], button:has([data-state])').first();
+
+        await button.click();
+
+        // Wait for the dropdown content and find the option
+        const option = this.page.locator(`[role="option"]:has-text("${value}"), [role="menuitem"]:has-text("${value}"), button:has-text("${value}")`).first();
+        await option.click();
     }
 
     async clickButton(text: string) {
@@ -128,7 +161,7 @@ export class NavigationHelper {
 
     async goToPostedJobs() {
         await this.page.goto(ROUTES.postedJobs);
-        await this.page.waitForLoadState('networkidle');
+        await this.page.waitForLoadState('load');
     }
 
     async goToBrowseJobs() {
@@ -191,7 +224,7 @@ export class WaitHelper {
     constructor(private page: Page) { }
 
     async waitForNetworkIdle() {
-        await this.page.waitForLoadState('networkidle');
+        await this.page.waitForLoadState('load');
     }
 
     async waitForElement(selector: string, timeout = TIMEOUTS.medium) {

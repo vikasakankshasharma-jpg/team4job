@@ -43,6 +43,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 
+import { RecommendedJobs } from "@/components/dashboard/recommended-jobs";
+
 const StatCard = ({ title, value, description, icon: Icon, href, iconBgColor, iconColor }: { title: string, value: string | number, description?: string, icon: React.ElementType, href: string, iconBgColor: string, iconColor: string }) => (
   <Link href={href} className="block hover:shadow-lg transition-shadow duration-300 rounded-lg h-full">
     <Card className="flex flex-col h-full">
@@ -265,6 +267,9 @@ function InstallerDashboard() {
           iconBgColor="bg-green-100 dark:bg-green-900"
           iconColor="text-green-600 dark:text-green-300"
         />
+      </div>
+      <div className="mt-8 mb-8">
+        <RecommendedJobs user={user!} />
       </div>
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         <Card data-tour="find-project-card">
