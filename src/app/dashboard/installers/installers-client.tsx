@@ -51,8 +51,12 @@ const InstallerCard = ({ installer, currentUser, onUpdate }: { installer: User, 
   const isFavorite = currentUser.favoriteInstallerIds?.includes(installer.id);
   const isBlocked = currentUser.blockedInstallerIds?.includes(installer.id);
 
+  const lastActive = installer.lastActiveAt || installer.lastLoginAt || installer.memberSince;
+  const daysSinceActive = (new Date().getTime() - toDate(lastActive).getTime()) / (1000 * 3600 * 24);
+  const isGhost = daysSinceActive > 30;
+
   return (
-    <Card>
+    <Card className={isGhost ? "border-amber-200 bg-amber-50/30 dark:border-amber-900/50 dark:bg-amber-950/20" : ""}>
       <CardHeader>
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
@@ -60,7 +64,22 @@ const InstallerCard = ({ installer, currentUser, onUpdate }: { installer: User, 
             <AvatarFallback>{installer.name.substring(0, 2)}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <CardTitle className="text-lg"><Link href={`/dashboard/users/${installer.id}`} className="hover:underline">{installer.name}</Link></CardTitle>
+            <CardTitle className="text-lg flex justify-between">
+              <Link href={`/dashboard/users/${installer.id}`} className="hover:underline">{installer.name}</Link>
+              {isGhost && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span className="flex items-center text-xs font-normal text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
+                      <Zap className="h-3 w-3 mr-1" />
+                      Inactive
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    This installer hasn't been online for {Math.floor(daysSinceActive)} days. Response may be slow.
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </CardTitle>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {installer.installerProfile && tierIcons[installer.installerProfile.tier]}
               <span>{installer.installerProfile?.tier} Tier</span>
@@ -127,8 +146,8 @@ export default function InstallersClient() {
           <ul className="list-disc space-y-2 pl-5">
             <li><span className="font-semibold">Premium Feature:</span> Access to this directory requires an active subscription.</li>
             <li><span className="font-semibold">Search & Filter:</span> Use the filters to find installers by name, location (pincode), skill set, or reputation tier.</li>
-            <li><span className="font-semibold">Review Profiles:</span> Click on any installer's name to view their detailed profile, including their full work history and reviews.</li>
-            <li><span className="font-semibold">Favorite & Block:</span> Use the action buttons to add installers to your personal "Favorite" list for future Direct Awards, or "Block" them to prevent them from bidding on your jobs.</li>
+            <li><span className="font-semibold">Review Profiles:</span> Click on any installer&apos;s name to view their detailed profile, including their full work history and reviews.</li>
+            <li><span className="font-semibold">Favorite & Block:</span> Use the action buttons to add installers to your personal &quot;Favorite&quot; list for future Direct Awards, or &quot;Block&quot; them to prevent them from bidding on your jobs.</li>
           </ul>
         </div>
       ),
@@ -141,7 +160,7 @@ export default function InstallersClient() {
       if (!db) return;
       setLoading(true);
       const q = query(
-        collection(db, 'users'),
+        collection(db, 'public_profiles'),
         where('roles', 'array-contains', 'Installer'),
         where('installerProfile.verified', '==', true)
       );

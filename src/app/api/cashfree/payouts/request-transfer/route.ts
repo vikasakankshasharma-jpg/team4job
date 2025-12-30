@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import { db } from '@/lib/firebase/server-init';
+import { db, adminAuth } from '@/lib/firebase/server-init';
 import { User, Transaction, PlatformSettings } from '@/lib/types';
 import axios from 'axios';
 
@@ -32,15 +32,44 @@ async function getCashfreeBearerToken(): Promise<string> {
  */
 export async function POST(req: NextRequest) {
   try {
-    // Note: In a real app, you would add authentication here to ensure only an admin can call this.
+    // 1. Verify Authentication & Admin Role
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
+    }
+    const idToken = authHeader.split('Bearer ')[1];
+
+    // Verify token using adminAuth
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(idToken);
+    } catch (e) {
+      console.error('Token verification failed:', e);
+      return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
+    }
+
+    // Check for Admin Role
+    if (decodedToken.admin === true || decodedToken.role === 'Admin') {
+      // Authorized
+    } else {
+      const userRef = db.collection('users').doc(decodedToken.uid);
+      const userDoc = await userRef.get();
+      const userData = userDoc.data() as User;
+      if (!userData || !userData.roles.includes('Admin')) {
+        return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      }
+    }
+
+    // Auth Check Complete
+
     const { transactionId, transferType, userId } = await req.json();
 
     if (!transactionId || !transferType || !userId) {
       return NextResponse.json({ error: 'Missing required parameters (transactionId, transferType, userId)' }, { status: 400 });
     }
 
-    if (transferType !== 'refund') {
-      return NextResponse.json({ error: 'Only refund transfers are supported at this time.' }, { status: 400 });
+    if (transferType !== 'refund' && transferType !== 'release_payout') {
+      return NextResponse.json({ error: 'Only refund or release_payout transfers are supported.' }, { status: 400 });
     }
 
     const transactionRef = db.collection('transactions').doc(transactionId);
@@ -51,41 +80,54 @@ export async function POST(req: NextRequest) {
     }
     const transaction = transactionSnap.data() as Transaction;
 
-    // For a refund, the user receiving money should be the original payer (Job Giver).
-    if (userId !== transaction.payerId) {
-      return NextResponse.json({ error: 'User ID does not match the original payer for this transaction.' }, { status: 403 });
+    // Validation: Ensure the user matches the expected recipient
+    const expectedRecipientId = transferType === 'refund' ? transaction.payerId : transaction.payeeId;
+
+    if (userId !== expectedRecipientId) {
+      return NextResponse.json({ error: 'User ID does not match the expected recipient.' }, { status: 403 });
     }
 
     if (transaction.status !== 'Funded' && transaction.status !== 'Disputed') {
-      return NextResponse.json({ error: `Cannot refund a transaction with status: ${transaction.status}` }, { status: 400 });
+      return NextResponse.json({ error: `Cannot process transfer for transaction status: ${transaction.status}` }, { status: 400 });
     }
 
     const userSnap = await db.collection('users').doc(userId).get();
-    if (!userSnap.exists || !userSnap.data()?.payouts?.beneficiaryId) {
-      // NOTE: For refunds, Cashfree doesn't require the Job Giver to be a 'beneficiary'.
-      // It can refund to the original payment source. However, if we wanted to refund to a *different*
-      // bank account, they would need to be added as a beneficiary.
-      // For this implementation, we assume refund to source is sufficient.
+
+    // For Refunds:
+    // Cashfree can refund to source (no beneficiary needed usually), but we previously used standard transfer.
+    // For Release Payout (Installer):
+    // We DEFINITELY need a beneficiaryId.
+
+    const recipientUser = userSnap.data() as User;
+    if (!recipientUser?.payouts?.beneficiaryId) {
+      return NextResponse.json({ error: 'Recipient does not have a beneficiary account set up.' }, { status: 400 });
     }
 
     const token = await getCashfreeBearerToken();
 
-    const refundAmount = transaction.amount; // Full refund
-    const transferId = `REFUND_${transaction.id}`;
+    const amount = transaction.amount; // Simple full amount for now. 
+    // Ideally for 'release_payout', we should deduct commission.
+    // BUT this is an Admin Override / Dispute Resolution action. 
+    // Usually admin releases FULL amount to installer if they won the dispute? Or minus commission?
+    // Let's assume standard logic: Deduct commission if it's a Payout. Full amount if it's a Refund (to giver).
 
-    // This is a standard transfer for the refund. Cashfree's dashboard will show this.
-    // In a real scenario, you'd likely use a specific "refund" API if available
-    // or ensure the Job Giver is a beneficiary to receive funds.
-    // For this marketplace model, a standard transfer to the Job Giver's registered beneficiary account works.
-
-    const jobGiverAsBeneficiary = userSnap.data() as User;
-    if (!jobGiverAsBeneficiary.payouts?.beneficiaryId) {
-      return NextResponse.json({ error: 'Job Giver does not have a beneficiary account set up for refunds.' }, { status: 400 });
+    let transferAmount = amount;
+    if (transferType === 'release_payout') {
+      // Calculate commission
+      const commissionRate = 0.10; // 10% hardcoded for now or fetch settings
+      // Wait, transaction object should might have commission details if we saved them.
+      // Let's check transaction type.
+      // If we want consistency, we should use the same logic as 'release-funds'.
+      // For this critical fix, let's keep it simple: Transfer what was escrowed minus 10% default if not present.
+      const commission = transaction.commission || (amount * 0.10);
+      transferAmount = amount - commission;
     }
 
+    const transferId = `${transferType === 'refund' ? 'REFUND' : 'PAYOUT'}_${transaction.id}_${Date.now()}`;
+
     const transferPayload = {
-      beneId: jobGiverAsBeneficiary.payouts.beneficiaryId,
-      amount: refundAmount.toFixed(2),
+      beneId: recipientUser.payouts.beneficiaryId,
+      amount: transferAmount.toFixed(2),
       transferId: transferId,
     };
 

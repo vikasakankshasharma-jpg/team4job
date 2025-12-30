@@ -78,7 +78,7 @@ const initialFilters = {
 
 type SortableKeys = 'name' | 'memberSince' | 'tier' | 'rating' | 'points' | 'status';
 
-function UserCard({ u, user, actionLoading, handleUserAction, setDeleteUser }: { u: User, user: User, actionLoading: string | null, handleUserAction: (user: User, status: User['status'], days?: number) => void, setDeleteUser: (user: User) => void }) {
+function UserCard({ u, user, actionLoading, handleUserAction, setDeleteUser }: { u: User, user: User, actionLoading: string | null, handleUserAction: (user: User, status: User['status'] | Partial<User>, days?: number) => void, setDeleteUser: (user: User) => void }) {
   const getUserStatusBadge = (status?: User['status']) => {
     switch (status) {
       case 'suspended': return <Badge variant="warning">Suspended</Badge>;
@@ -137,6 +137,23 @@ function UserCard({ u, user, actionLoading, handleUserAction, setDeleteUser }: {
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem asChild><Link href={`/dashboard/users/${u.id}`}>View Profile</Link></DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuSeparator />
+                {u.roles.includes('Installer') && !u.installerProfile?.verified && (
+                  <DropdownMenuItem onClick={() => {
+                    handleUserAction(u, {
+                      installerProfile: {
+                        ...u.installerProfile!,
+                        verified: true,
+                        adminNotes: `Manually verified by admin on ${new Date().toISOString()}`
+                      }
+                    });
+                    // Reload is a bit harsh, but simple for this Admin action to reflect immediately without complex state mgmt
+                    setTimeout(() => window.location.reload(), 1000);
+                  }}>
+                    <ShieldCheck className="mr-2 h-4 w-4 text-green-600" />
+                    Mark as Verified
+                  </DropdownMenuItem>
+                )}
                 {(u.status === 'active' || u.status === undefined) && (
                   <DropdownMenuItem onClick={() => handleUserAction(u, 'deactivated')}>
                     <UserX className="mr-2 h-4 w-4" />
@@ -189,16 +206,16 @@ export default function UsersClient() {
           <p>This page provides a complete directory of all registered users on the platform. As an admin, you have full control to manage these accounts.</p>
           <ul className="list-disc space-y-2 pl-5">
             <li><span className="font-semibold">Filtering & Sorting:</span> Use the various filter controls to narrow down the user list. You can search by name/email/ID, or filter by role, tier, and status. Click on table headers to sort the data.</li>
-            <li><span className="font-semibold">Export Data:</span> Click the "Export to CSV" button to download the currently filtered list of users for offline analysis or record-keeping.</li>
+            <li><span className="font-semibold">Export Data:</span> Click the &quot;Export to CSV&quot; button to download the currently filtered list of users for offline analysis or record-keeping.</li>
             <li><span className="font-semibold">User Status:</span>
               <ul className="list-disc space-y-1 pl-5 mt-1">
                 <li><span className="font-semibold text-green-500">Active:</span> The user can access the platform normally.</li>
-                <li><span className="font-semibold text-yellow-500">Suspended:</span> The user's account is temporarily disabled.</li>
-                <li><span className="font-semibold text-red-500">Deactivated:</span> The user's account is disabled and can be re-activated or permanently deleted.</li>
+                <li><span className="font-semibold text-yellow-500">Suspended:</span> The user&apos;s account is temporarily disabled.</li>
+                <li><span className="font-semibold text-red-500">Deactivated:</span> The user&apos;s account is disabled and can be re-activated or permanently deleted.</li>
               </ul>
             </li>
             <li><span className="font-semibold">Actions Menu:</span> The actions menu on each row allows you to suspend, deactivate, re-activate, or permanently delete a user account.</li>
-            <li><span className="font-semibold">View Profile:</span> Click on a user's name or use the actions menu to go to their detailed profile page.</li>
+            <li><span className="font-semibold">View Profile:</span> Click on a user&apos;s name or use the actions menu to go to their detailed profile page.</li>
           </ul>
         </div>
       )
@@ -227,24 +244,33 @@ export default function UsersClient() {
     setUsers(currentUsers => currentUsers.map(u => u.id === userId ? { ...u, ...data } : u));
   };
 
-  const handleUserAction = async (targetUser: User, newStatus: User['status'], days?: number) => {
+  const handleUserAction = async (targetUser: User, newStatusOrUpdate: User['status'] | Partial<User>, days?: number) => {
     setActionLoading(targetUser.id);
-    let updateData: Partial<User> = { status: newStatus };
+    let updateData: Partial<User> = {};
     let toastTitle = '';
     let toastDescription = '';
 
-    if (newStatus === 'suspended' && days) {
-      const suspensionEndDate = new Date();
-      suspensionEndDate.setDate(suspensionEndDate.getDate() + days);
-      updateData.suspensionEndDate = suspensionEndDate;
-      toastTitle = 'User Suspended';
-      toastDescription = `${targetUser.name} has been suspended for ${days} days.`;
-    } else if (newStatus === 'active') {
-      toastTitle = 'User Reactivated';
-      toastDescription = `${targetUser.name}'s account is now active.`;
-    } else if (newStatus === 'deactivated') {
-      toastTitle = 'User Deactivated';
-      toastDescription = `${targetUser.name}'s account has been deactivated.`;
+    if (typeof newStatusOrUpdate === 'string') {
+      // Legacy status update
+      updateData = { status: newStatusOrUpdate };
+      if (newStatusOrUpdate === 'suspended' && days) {
+        const suspensionEndDate = new Date();
+        suspensionEndDate.setDate(suspensionEndDate.getDate() + days);
+        updateData.suspensionEndDate = suspensionEndDate;
+        toastTitle = 'User Suspended';
+        toastDescription = `${targetUser.name} has been suspended for ${days} days.`;
+      } else if (newStatusOrUpdate === 'active') {
+        toastTitle = 'User Reactivated';
+        toastDescription = `${targetUser.name}'s account is now active.`;
+      } else if (newStatusOrUpdate === 'deactivated') {
+        toastTitle = 'User Deactivated';
+        toastDescription = `${targetUser.name}'s account has been deactivated.`;
+      }
+    } else {
+      // Manual arbitrary update (like verification)
+      updateData = newStatusOrUpdate;
+      toastTitle = "User Updated";
+      toastDescription = "User profile has been updated successfully.";
     }
 
     try {

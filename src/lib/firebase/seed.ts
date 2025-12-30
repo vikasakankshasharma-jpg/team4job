@@ -387,9 +387,28 @@ async function seedUserProfiles(users: Omit<User, 'id'>[], uids: { [email: strin
         }
 
         batch.set(userRef, firestoreUserData);
+
+        // Seed Public Profile
+        const publicProfileRef = adminDb.collection('public_profiles').doc(uid);
+        const publicData = {
+            id: uid,
+            name: user.name,
+            avatarUrl: user.avatarUrl,
+            realAvatarUrl: user.realAvatarUrl || user.avatarUrl,
+            roles: user.roles,
+            memberSince: Timestamp.fromDate(new Date(user.memberSince as Date)),
+            status: user.status,
+            pincodes: user.pincodes || {},
+            address: {
+                cityPincode: user.address?.cityPincode || '',
+            },
+            installerProfile: user.installerProfile || null,
+            district: user.district || null,
+        };
+        batch.set(publicProfileRef, publicData);
     });
     await batch.commit();
-    console.log(`- Committed ${users.length} user profiles.`);
+    console.log(`- Committed ${users.length} user profiles and public profiles.`);
 }
 
 async function seedJobsAndSubcollections(uids: { [email: string]: string }) {

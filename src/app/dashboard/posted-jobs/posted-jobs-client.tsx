@@ -265,7 +265,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">You haven't posted any jobs in this category.</TableCell>
+                  <TableCell colSpan={6} className="text-center h-24">You haven&apos;t posted any jobs in this category.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -367,10 +367,10 @@ export default function PostedJobsClient() {
       title: 'My Posted Jobs Guide',
       content: (
         <div className="space-y-4 text-sm">
-          <p>This page lists all the jobs you have created. It's split into three tabs:</p>
+          <p>This page lists all the jobs you have created. It&apos;s split into three tabs:</p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <span className="font-semibold">Active:</span> Shows all jobs that are currently open for bidding, in progress, or waiting for your action. This is where you'll manage ongoing projects.
+              <span className="font-semibold">Active:</span> Shows all jobs that are currently open for bidding, in progress, or waiting for your action. This is where you&apos;ll manage ongoing projects.
             </li>
             <li>
               <span className="font-semibold">Unbid:</span> Jobs that received no bids. From here you can choose to repost the job as is, or promote it with a travel tip to attract more installers.
@@ -379,14 +379,14 @@ export default function PostedJobsClient() {
               <span className="font-semibold">Archived:</span> Shows all your jobs that have been completed or cancelled. This is your history of past jobs.
             </li>
             <li>
-              <span className="font-semibold">Job Type:</span> This column shows how a job was awarded. "Bidding" means you chose from bids, while "Direct" means you awarded it directly to an installer.
+              <span className="font-semibold">Job Type:</span> This column shows how a job was awarded. &quot;Bidding&quot; means you chose from bids, while &quot;Direct&quot; means you awarded it directly to an installer.
             </li>
             <li>
               <span className="font-semibold">Actions:</span> Use the actions menu (three dots) on each job row to view its details, re-post a cancelled/un-bid job, or promote an un-bid job to a wider audience.
             </li>
           </ul>
           <p>
-            Click on any job title to go to its detail page, where you can review bids from installers. You can also use the "Post New Job" button to quickly create a new listing.
+            Click on any job title to go to its detail page, where you can review bids from installers. You can also use the &quot;Post New Job&quot; button to quickly create a new listing.
           </p>
         </div>
       )

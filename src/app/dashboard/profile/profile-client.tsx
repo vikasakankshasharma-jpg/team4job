@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2, Banknote } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2, Banknote, Gift, Copy } from "lucide-react";
 import {
     Collapsible,
     CollapsibleContent,
@@ -101,8 +101,18 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
 
     async function onSubmit(values: z.infer<typeof editProfileSchema>) {
         if (!user || !db) return;
+
+        const isVerified = user.installerProfile?.verified;
+        const nameChanged = values.name !== user.name;
+        const gstinChanged = values.gstin !== (user.gstin || "");
+
+        let shouldUnverify = false;
+        if (isVerified && (nameChanged || gstinChanged)) {
+            shouldUnverify = true;
+        }
+
         const userRef = doc(db, 'users', user.id);
-        const updateData: Partial<User> = {
+        const updateData: any = {
             name: values.name,
             pincodes: {
                 residential: values.residentialPincode,
@@ -110,11 +120,21 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
             },
             gstin: values.gstin || '',
         };
+
+        if (shouldUnverify) {
+            updateData['installerProfile.verified'] = false;
+            updateData['installerProfile.adminNotes'] = `Auto-unverified due to identity change (Name or GSTIN changed) on ${new Date().toISOString()}`;
+        }
+
         await updateDoc(userRef, updateData);
         onSave(values);
+
         toast({
             title: "Profile Updated",
-            description: "Your profile details have been successfully updated.",
+            description: shouldUnverify
+                ? "Your profile was updated. Your verification status has been revoked due to identity changes."
+                : "Your profile details have been successfully updated.",
+            variant: shouldUnverify ? "destructive" : "default", // Using destructive for warning
         });
     }
 
@@ -123,7 +143,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
             <DialogHeader>
                 <DialogTitle>Edit Profile</DialogTitle>
                 <DialogDescription>
-                    Make changes to your profile here. Click save when you're done.
+                    Make changes to your profile here. Click save when you&apos;re done.
                 </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -282,7 +302,7 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
                             <Separator />
                             <div>
                                 <h4 className="font-medium leading-none mb-2">Request New Skill</h4>
-                                <p className="text-sm text-muted-foreground mb-2">Can't find your skill? Request it here.</p>
+                                <p className="text-sm text-muted-foreground mb-2">Can&apos;t find your skill? Request it here.</p>
                                 <div className="flex gap-2">
                                     <Input
                                         placeholder="e.g., AI Analytics"
@@ -457,6 +477,163 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
     )
 }
 
+function ReferralCard({ user }: { user: User }) {
+    const { toast } = useToast();
+    const [origin, setOrigin] = React.useState("");
+
+    React.useEffect(() => {
+        setOrigin(window.location.origin);
+    }, []);
+
+    const referralLink = `${origin}/login?tab=signup&ref=${user.id}`;
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(referralLink);
+        toast({
+            title: "Link Copied!",
+            description: "Share this link with your friends.",
+        });
+    };
+
+    return (
+        <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-indigo-900">
+                    <Gift className="h-5 w-5 text-indigo-600" />
+                    Invite & Earn
+                </CardTitle>
+                <CardDescription className="text-indigo-700">
+                    Invite friends to join DoDo. They get a warm welcome, and you help grow the community.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex gap-2">
+                    <Input value={referralLink} readOnly className="bg-white/50 border-indigo-200 text-indigo-900" />
+                    <Button variant="outline" size="icon" onClick={handleCopy} className="shrink-0 border-indigo-200 hover:bg-white hover:text-indigo-700">
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+
+    );
+}
+
+const emergencyContactSchema = z.object({
+    name: z.string().min(2, "Name is required"),
+    relation: z.string().min(2, "Relationship is required"),
+    mobile: z.string().regex(/^[0-9]{10}$/, "Must be a valid 10-digit mobile number"),
+});
+
+function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
+    const { toast } = useToast();
+    const { db } = useFirebase();
+    const [isAdding, setIsAdding] = React.useState(false);
+
+    const form = useForm<z.infer<typeof emergencyContactSchema>>({
+        resolver: zodResolver(emergencyContactSchema),
+        defaultValues: { name: "", relation: "", mobile: "" }
+    });
+
+    const handleAddContact = async (values: z.infer<typeof emergencyContactSchema>) => {
+        if (!db) return;
+        try {
+            const userRef = doc(db, 'users', user.id);
+            await updateDoc(userRef, {
+                emergencyContacts: arrayUnion(values)
+            });
+            toast({ title: "Contact Added", description: `${values.name} has been added to your emergency contacts.` });
+            setIsAdding(false);
+            form.reset();
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to add contact:", error);
+            toast({ title: "Error", description: "Could not add contact.", variant: "destructive" });
+        }
+    };
+
+    const handleRemoveContact = async (contact: any) => {
+        if (!db) return;
+        try {
+            // Firestore arrayRemove requires exact object match
+            const userRef = doc(db, 'users', user.id);
+            // We need to read current array first to filter (safer than arrayRemove with object)
+            // But arrayRemove works if object is identical. Let's try filter approach for safety if we had ID, but here we use value.
+            // Actually, for simplicity in this UI, let's just use arrayRemove
+            const { arrayRemove } = await import("firebase/firestore"); // Lazy load
+            await updateDoc(userRef, {
+                emergencyContacts: arrayRemove(contact)
+            });
+            toast({ title: "Contact Removed", description: "Emergency contact deleted." });
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to remove contact:", error);
+            toast({ title: "Error", description: "Could not remove contact.", variant: "destructive" });
+        }
+    }
+
+    return (
+        <Card className="border-red-100 bg-red-50/10">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-red-900">
+                    <ShieldCheck className="h-5 w-5 text-red-600" />
+                    Emergency Contacts
+                </CardTitle>
+                <CardDescription>
+                    Add at least 2 people we can contact if we can't reach you during an active job.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {user.emergencyContacts && user.emergencyContacts.length > 0 ? (
+                    <div className="grid gap-3">
+                        {user.emergencyContacts.map((contact, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-3 bg-white border rounded-md shadow-sm">
+                                <div>
+                                    <p className="font-medium text-sm">{contact.name} <span className="text-muted-foreground text-xs">({contact.relation})</span></p>
+                                    <p className="text-xs text-muted-foreground font-mono">{contact.mobile}</p>
+                                </div>
+                                <Button variant="ghost" size="sm" onClick={() => handleRemoveContact(contact)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                                    Remove
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground italic">No emergency contacts added yet.</p>
+                )}
+
+                {isAdding ? (
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(handleAddContact)} className="space-y-3 p-3 border rounded-md bg-white">
+                            <h4 className="text-sm font-semibold">New Contact</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <FormField name="name" control={form.control} render={({ field }) => (
+                                    <FormItem><FormControl><Input placeholder="Name" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                                <FormField name="relation" control={form.control} render={({ field }) => (
+                                    <FormItem><FormControl><Input placeholder="Relation (e.g. Spouse)" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                                <FormField name="mobile" control={form.control} render={({ field }) => (
+                                    <FormItem><FormControl><Input placeholder="Mobile (10 digits)" type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                            </div>
+                            <div className="flex gap-2 justify-end">
+                                <Button type="button" variant="ghost" size="sm" onClick={() => setIsAdding(false)}>Cancel</Button>
+                                <Button type="submit" size="sm">Save Contact</Button>
+                            </div>
+                        </form>
+                    </Form>
+                ) : (
+                    <Button variant="outline" size="sm" onClick={() => setIsAdding(true)} className="w-full border-dashed text-muted-foreground hover:text-foreground">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Emergency Contact
+                    </Button>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function ProfileClient() {
     const { user, role, setUser, setRole, loading: userLoading } = useUser();
     const { db } = useFirebase();
@@ -480,8 +657,8 @@ export default function ProfileClient() {
                 <div className="space-y-4 text-sm">
                     <p>This is your personal profile page. Here, you can view and manage your information.</p>
                     <ul className="list-disc space-y-2 pl-5">
-                        <li><span className="font-semibold">Your Details:</span> View your name, user ID, email, and location info. Click "Edit Profile" to update your name, pincodes, or GSTIN.</li>
-                        <li><span className="font-semibold">Role Switching:</span> If you have both "Job Giver" and "Installer" roles, you can switch between them in the user menu (top right).</li>
+                        <li><span className="font-semibold">Your Details:</span> View your name, user ID, email, and location info. Click &quot;Edit Profile&quot; to update your name, pincodes, or GSTIN.</li>
+                        <li><span className="font-semibold">Role Switching:</span> If you have both &quot;Job Giver&quot; and &quot;Installer&quot; roles, you can switch between them in the user menu (top right).</li>
                         {role === 'Installer' && (
                             <>
                                 <li><span className="font-semibold">Installer Reputation:</span> This section tracks your performance. Complete jobs and get good ratings to earn points and advance to higher tiers (Bronze, Silver, Gold, Platinum).</li>
@@ -489,7 +666,7 @@ export default function ProfileClient() {
                                 <li><span className="font-semibold">Payout Settings:</span> Add your bank account details here to receive payments for completed jobs.</li>
                             </>
                         )}
-                        <li><span className="font-semibold">Become an Installer/Job Giver:</span> If you only have one role, you'll see a prompt to activate the other, expanding your opportunities on the platform.</li>
+                        <li><span className="font-semibold">Become an Installer/Job Giver:</span> If you only have one role, you&apos;ll see a prompt to activate the other, expanding your opportunities on the platform.</li>
                     </ul>
                 </div>
             )
@@ -584,6 +761,9 @@ export default function ProfileClient() {
                             <div className="flex flex-col mt-1">
                                 <p className="text-muted-foreground">{user.email}</p>
                                 <p className="text-sm text-muted-foreground font-mono truncate max-w-sm">{user.id}</p>
+                                {(user as any).bio && (
+                                    <p className="mt-2 text-sm italic text-foreground/80 max-w-md">"{(user as any).bio}"</p>
+                                )}
                             </div>
 
                             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mt-2">
@@ -734,17 +914,40 @@ export default function ProfileClient() {
                                     <p className="text-sm text-muted-foreground">from {installerProfile.reviews} reviews</p>
                                 </div>
                                 <CompletedJobsStat />
-                            </div>
-
-                            <div>
-                                <h4 className="font-semibold mb-3">Skills</h4>
-                                <SkillsEditor initialSkills={installerProfile.skills} onSave={handleSkillsSave} userId={user.id} />
+                                <div className="p-4 rounded-lg border">
+                                    <ShieldCheck className="mx-auto h-6 w-6 mb-2 text-primary" />
+                                    <p className="text-lg font-bold">{installerProfile.verified ? "Verified" : "Pending"}</p>
+                                    <p className="text-sm text-muted-foreground">Status</p>
+                                </div>
+                                <div className="p-4 rounded-lg border">
+                                    <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary" />
+                                    <p className="text-lg font-bold">{installerProfile.skills.length}</p>
+                                    <p className="text-sm text-muted-foreground">Skills</p>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
-                    <PayoutsCard user={user} onUpdate={fetchUser} />
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>My Skills</CardTitle>
+                                <CardDescription>Manage the skills shown on your profile.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <SkillsEditor initialSkills={installerProfile.skills} onSave={handleSkillsSave} userId={user.id} />
+                            </CardContent>
+                        </Card>
+                        <PayoutsCard user={user} onUpdate={fetchUser} />
+                    </div>
+
+                    {/* Phase 21: Emergency Contacts */}
+                    <EmergencyContactsCard user={user} onUpdate={fetchUser} />
+
                 </div>
             )}
+
+            {user && <ReferralCard user={user} />}
 
             {isJobGiverOnly && (
                 <Card className="bg-accent/20 border-dashed">

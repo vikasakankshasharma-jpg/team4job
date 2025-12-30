@@ -106,7 +106,7 @@ export default function BrowseJobsClient() {
 
       if (userIds.size > 0) {
         const usersQuery = query(
-          collection(db, 'users'),
+          collection(db, 'public_profiles'),
           where('__name__', 'in', Array.from(userIds))
         );
         const usersSnapshot = await getDocs(usersQuery);
@@ -143,30 +143,30 @@ export default function BrowseJobsClient() {
       title: 'Browse Jobs Guide',
       content: (
         <div className="space-y-4 text-sm">
-          <p>This page is where you find new projects. Here's how to use the tools to your advantage:</p>
+          <p>This page is where you find new projects. Here&apos;s how to use the tools to your advantage:</p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
               <span className="font-semibold">Search by Pincode:</span> Use the search bar at the top right to find jobs in a specific area. This helps you find work close to home.
             </li>
             <li>
-              <span className="font-semibold">Filter Menu:</span> Click the "Filter" button to open a menu with more powerful options:
+              <span className="font-semibold">Filter Menu:</span> Click the &quot;Filter&quot; button to open a menu with more powerful options:
               <ul className="list-disc space-y-1 pl-5 mt-1">
                 <li>
                   <span className="font-semibold">Budget Range:</span> Drag the slider to only see jobs that match your expected pay.
                 </li>
                 <li>
-                  <span className="font-semibold">Skills:</span> Select one or more skills to narrow down jobs that match your expertise (e.g., "IP Cameras", "Access Control").
+                  <span className="font-semibold">Skills:</span> Select one or more skills to narrow down jobs that match your expertise (e.g., &quot;IP Cameras&quot;, &quot;Access Control&quot;).
                 </li>
               </ul>
             </li>
             <li>
-              <span className="font-semibold">Clear Filters:</span> If you have any filters active, a "Clear" button will appear. Click it to reset your search and see all available jobs again.
+              <span className="font-semibold">Clear Filters:</span> If you have any filters active, a &quot;Clear&quot; button will appear. Click it to reset your search and see all available jobs again.
             </li>
             <li>
-              <span className="font-semibold">Recommended Tab:</span> This tab includes "Unbid" jobs in your area, giving you a second chance at opportunities you may have missed.
+              <span className="font-semibold">Recommended Tab:</span> This tab includes &quot;Unbid&quot; jobs in your area, giving you a second chance at opportunities you may have missed.
             </li>
           </ul>
-          <p>Each job card gives you a quick summary. Click "View Job & Bid" to see the full details and place your offer.</p>
+          <p>Each job card gives you a quick summary. Click &quot;View Job &amp; Bid&quot; to see the full details and place your offer.</p>
         </div>
       )
     });
@@ -192,7 +192,8 @@ export default function BrowseJobsClient() {
       // Skills filter
       if (selectedSkills.length > 0) {
         const jobSkills = (job.skills || []).map(s => s.toLowerCase());
-        if (!selectedSkills.every(skill => jobSkills.includes(skill.toLowerCase()))) {
+        // Use 'some' for OR logic (matches ANY skill) instead of 'every' (matches ALL skills)
+        if (!selectedSkills.some(skill => jobSkills.includes(skill.toLowerCase()))) {
           return false;
         }
       }

@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import { db } from '@/lib/firebase/server-init';
+import { db, adminAuth } from '@/lib/firebase/server-init';
 import { Job, User, Transaction, PlatformSettings, SubscriptionPlan } from '@/lib/types';
 import axios from 'axios';
 
@@ -21,12 +21,28 @@ async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
     };
 }
 
-
 export async function POST(req: NextRequest) {
     try {
-        const { jobId, jobGiverId, planId, taskId } = await req.json();
+        // 1. Authorization & Security Check
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
+        }
 
-        if (!jobId || !jobGiverId) {
+        const idToken = authHeader.split('Bearer ')[1];
+        let decodedToken;
+        try {
+            decodedToken = await adminAuth.verifyIdToken(idToken);
+        } catch (error) {
+            console.error("Token verification failed:", error);
+            return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
+        }
+
+        const authenticatedUserId = decodedToken.uid;
+
+        const { jobId, planId, taskId } = await req.json(); // REMOVED: jobGiverId from body
+
+        if (!jobId) {
             return NextResponse.json({ error: 'Missing required payment details' }, { status: 400 });
         }
 
@@ -37,6 +53,9 @@ export async function POST(req: NextRequest) {
         let installerId = 'PLATFORM';
         let job: Job | null = null;
         let jobGiver: User | null = null;
+
+        // We use the authenticated user ID as the jobGiverId
+        const jobGiverId = authenticatedUserId;
 
         if (isSubscription) {
             if (!planId) {
@@ -72,6 +91,12 @@ export async function POST(req: NextRequest) {
             jobGiver = jobGiverSnap.data() as User;
             jobTitle = job.title;
 
+            // SECURITY CHECK: Ensure the authenticated user is actually the owner of this job
+            const jobOwnerId = (job.jobGiver as any).id || (job.jobGiver as any).path?.split('/').pop() || job.jobGiverId;
+            if (jobOwnerId !== jobGiverId) {
+                return NextResponse.json({ error: 'Forbidden: You are not the owner of this job.' }, { status: 403 });
+            }
+
             if (!job.awardedInstaller) return NextResponse.json({ error: 'Job has no awarded installer' }, { status: 400 });
 
             // Handle Additional Task or Standard Job Amount
@@ -85,12 +110,23 @@ export async function POST(req: NextRequest) {
             } else {
                 // Determine the amount from the winning bid for regular jobs
                 if (job.bids && job.bids.length > 0) {
-                    const winningBid = job.bids.find(b => (b.installer as any).id === installerId);
+                    // Logic for finding winning bid from array (Old Way)
+                    // If we have migrated to sub-collections, this part needs to change to fetch the specific bid doc.
+                    // IMPORTANT: Since we are in transition, let's look at 'awardedInstaller' ID and find the matching bid
+                    // OR rely on a stored 'agreedPrice' on the job if we had one.
+                    // The safer bet is trusting the bid amount that matched the installer.
+
+                    // Get 'awardedInstaller' ID
+                    const awardedId = (job.awardedInstaller as any).id || job.awardedInstaller;
+                    installerId = awardedId;
+
+                    const winningBid = job.bids.find(b => (b.installer as any).id === awardedId || b.installer === awardedId);
                     if (winningBid) {
                         amount = winningBid.amount;
                     }
                 } else if (job.directAwardInstallerId && (job as any).budget) {
                     amount = (job as any).budget.min;
+                    installerId = job.directAwardInstallerId;
                 }
             }
         }
@@ -102,8 +138,13 @@ export async function POST(req: NextRequest) {
         // 2. Calculate fees and final amounts based on platform settings
         const platformSettings = await getPlatformSettings();
 
+        let commissionRate = platformSettings.installerCommissionRate! / 100;
+        if (job && job.jobCategory && platformSettings.categoryCommissionRates?.[job.jobCategory]) {
+            commissionRate = platformSettings.categoryCommissionRates[job.jobCategory] / 100;
+        }
+
         const calculatedJobGiverFee = isSubscription ? 0 : (amount * (platformSettings.jobGiverFeeRate! / 100));
-        const calculatedCommission = isSubscription ? 0 : amount * (platformSettings.installerCommissionRate! / 100);
+        const calculatedCommission = isSubscription ? 0 : amount * commissionRate;
         const tipAmount = (job && job.travelTip) ? job.travelTip : 0;
 
         const totalPaidByGiver = amount + calculatedJobGiverFee + tipAmount;
@@ -131,6 +172,7 @@ export async function POST(req: NextRequest) {
             createdAt: Timestamp.now() as any,
         };
 
+        // Admin SDK can write freely, bypassing rules.
         await transactionRef.set(newTransaction);
 
         if (!jobGiver) return NextResponse.json({ error: 'Job Giver not found' }, { status: 404 });

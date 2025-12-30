@@ -154,6 +154,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         // --- End immediate check ---
 
+        // --- End immediate check ---
+
         const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
           if (userDoc.exists()) {
             const userData = { id: userDoc.id, ...userDoc.data() } as User;
@@ -163,16 +165,43 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
               signOut(auth); // The snapshot listener will handle state cleanup
             } else {
               updateUserState(userData);
-              // Update last login timestamp without triggering a full re-render cycle
-              if (userDoc.data().lastLoginAt === undefined || (Date.now() - toDate(userDoc.data().lastLoginAt).getTime()) > 5 * 60 * 1000) {
-                updateDoc(userDocRef, { lastLoginAt: serverTimestamp() });
+
+              const now = new Date();
+              const lastActive = toDate(userData.lastActiveAt || userData.lastLoginAt || userData.memberSince);
+              const daysInactive = (now.getTime() - lastActive.getTime()) / (1000 * 3600 * 24);
+
+              // Auto-Inactivate if > 90 days
+              if (daysInactive > 90 && userData.status === 'active' && userData.roles.includes('Installer')) {
+                // We don't sign them out immediately, but we update status to 'deactivated' so the next check catches it?
+                // Or we just update it and let them know.
+                // User request: "make inactive account... and need to raise request"
+                // I'll update status to 'deactivated'.
+                updateDoc(userDocRef, {
+                  status: 'deactivated',
+                  'installerProfile.adminNotes': `Auto-deactivated for inactivity (>90 days) on ${now.toISOString()}`
+                });
+                toast({
+                  title: "Account Deactivated",
+                  description: "Your account has been deactivated due to inactivity (>3 months). Please contact support/admin to reactivate.",
+                  variant: "destructive"
+                });
+                // We let the next snapshot update handle the signout/redirect
+              } else {
+                // Update last login/active timestamp without triggering a full re-render cycle
+                // Throttle updates to every 5 minutes
+                if (userDoc.data().lastLoginAt === undefined || (Date.now() - toDate(userDoc.data().lastLoginAt).getTime()) > 5 * 60 * 1000) {
+                  updateDoc(userDocRef, {
+                    lastLoginAt: serverTimestamp(),
+                    lastActiveAt: serverTimestamp()
+                  });
+                }
               }
             }
           } else {
             // This case should be rare now due to the initial getDoc, but kept as a fallback.
             console.error("User document not found for authenticated user in snapshot listener:", firebaseUser.uid);
-            toast({ title: 'Login Error', description: 'Your user profile disappeared. Please contact support.', variant: 'destructive' });
-            signOut(auth);
+            // toast({ title: 'Login Error', description: 'Your user profile disappeared. Please contact support.', variant: 'destructive' });
+            // signOut(auth);
           }
           setLoading(false);
         }, (error) => {
@@ -253,15 +282,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [role, pathname, user, router, loading]);
 
 
-  const handleSetRole = (newRole: Role) => {
+  const handleSetRole = useCallback((newRole: Role) => {
     if (user && user.roles.includes(newRole)) {
       setRoleState(newRole);
       localStorage.setItem('userRole', newRole);
       manualRoleSet.current = true; // Mark as manually set
     }
-  };
+  }, [user]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     isLoggingOut.current = true;
     manualRoleSet.current = false;
     localStorage.removeItem('userRole');
@@ -274,9 +303,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Logout error:", error);
       isLoggingOut.current = false;
     });
-  }
+  }, [auth, updateUserState, router]);
 
-  const handleLogin = async (email: string, password?: string): Promise<boolean> => {
+  const handleLogin = useCallback(async (email: string, password?: string): Promise<boolean> => {
     if (!password) {
       console.error("Password missing.");
       return false;
@@ -290,7 +319,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return false;
     }
-  };
+  }, [auth]);
 
 
   const value = useMemo(() => ({

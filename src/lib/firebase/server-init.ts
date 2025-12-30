@@ -57,5 +57,11 @@ function initializeAdminApp() {
 
 app = initializeAdminApp();
 
+import { getAuth } from 'firebase-admin/auth';
+// ... existing imports ...
+
+// ... existing code ...
+
 export const db = getFirestore(app);
+export const adminAuth = getAuth(app);
 export const adminApp = app;

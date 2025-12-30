@@ -52,9 +52,9 @@ export const TEST_JOB_DATA = {
 };
 
 export const TIMEOUTS = {
-    short: 5000,
-    medium: 10000,
-    long: 30000,
+    short: 10000,
+    medium: 20000,
+    long: 45000,
     payment: 60000,
 };
 

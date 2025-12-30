@@ -79,8 +79,8 @@ const jobSchema = z.object({
   isGstInvoiceRequired: z.boolean().default(false),
   address: addressSchema,
   priceEstimate: z.object({
-    min: z.coerce.number(),
-    max: z.coerce.number(),
+    min: z.coerce.number().min(1, "Budget must be positive"),
+    max: z.coerce.number().min(1, "Budget must be positive"),
   }).optional(),
   deadline: z.string().refine((val) => {
     if (!val) return true; // Allow empty if direct awarding
@@ -121,7 +121,7 @@ function DirectAwardInput({ control }: { control: Control<any> }) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedInstaller, setSelectedInstaller] = useState<User | null>(null);
 
-  const debouncedCheck = useCallback(
+  const debouncedCheck = React.useMemo(() =>
     debounce(async (id: string) => {
       if (!id) {
         setSelectedInstaller(null);
@@ -162,7 +162,7 @@ function DirectAwardInput({ control }: { control: Control<any> }) {
       name="directAwardInstallerId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Installer's Public ID (Optional)</FormLabel>
+          <FormLabel>Installer&apos;s Public ID (Optional)</FormLabel>
           <FormControl>
             <Input
               placeholder="Paste installer's public ID here..."
@@ -272,7 +272,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
             address: jobData.address,
             travelTip: jobData.travelTip || 0,
             deadline: isEditMode && jobData.deadline ? format(toDate(jobData.deadline), "yyyy-MM-dd") : "",
-            jobStartDate: jobData.jobStartDate ? format(toDate(jobData.jobStartDate), "yyyy-MM-dd") : "",
+            jobStartDate: isEditMode && jobData.jobStartDate ? format(toDate(jobData.jobStartDate), "yyyy-MM-dd") : "",
             directAwardInstallerId: "", // Never prefill direct award
             priceEstimate: jobData.priceEstimate
           });
@@ -290,7 +290,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       }
     }
     prefillForm();
-  }, [editJobId, repostJobId, db, form, toast, isEditMode]);
+  }, [editJobId, repostJobId, db, form, toast, isEditMode, router]);
 
   React.useEffect(() => {
     setHelp({
@@ -299,9 +299,9 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         <div className="space-y-4 text-sm">
           <p>Follow these steps to create a job listing and attract the best installers.</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Budget:</span> Provide a realistic budget range. Use the "AI Suggest" button to get a fair market estimate based on your job details.</li>
+            <li><span className="font-semibold">Budget:</span> Provide a realistic budget range. Use the &quot;AI Suggest&quot; button to get a fair market estimate based on your job details.</li>
             <li><span className="font-semibold">Job Category:</span> Selecting the right category is crucial. This determines the checklist installers must agree to when bidding.</li>
-            <li><span className="font-semibold">AI-Powered Fields:</span> Use the "AI Generate" button next to the description to get a head start based on your job title.</li>
+            <li><span className="font-semibold">AI-Powered Fields:</span> Use the &quot;AI Generate&quot; button next to the description to get a head start based on your job title.</li>
             <li><span className="font-semibold">Location & Address:</span> Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.</li>
             <li><span className="font-semibold">Attachments:</span> Upload site photos, floor plans, or any other relevant documents to give installers a better understanding of the job.</li>
             {!isEditMode && <li><span className="font-semibold">Direct Award (Optional):</span> If you already know an installer on our platform, you can enter their public ID here to send them a private request to bid on this job.</li>}
@@ -781,9 +781,19 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="jobStartDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Job Work Start Date</FormLabel>
+                      <FormLabel>Job Work Start Date & Time</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} />
+                        {/* Phase 12: Upgrade to datetime-local to capture hour precision */}
+                        <Input
+                          type="datetime-local"
+                          {...field}
+                          min={new Date().toISOString().slice(0, 16)}
+                          value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ''}
+                          onChange={(e) => {
+                            const date = new Date(e.target.value);
+                            field.onChange(date);
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

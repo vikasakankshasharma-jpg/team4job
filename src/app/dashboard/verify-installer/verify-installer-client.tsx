@@ -48,7 +48,12 @@ const skillsSchema = z.object({
   skills: z.array(z.string()).min(1, { message: "Please select at least one skill." }),
 });
 
-type VerificationStep = "enterAadhar" | "enterOtp" | "selectSkills" | "verified";
+const businessSchema = z.object({
+  shopPhotoUrl: z.string().optional(),
+  gstNumber: z.string().optional(),
+});
+
+type VerificationStep = "enterAadhar" | "enterOtp" | "selectSkills" | "enterBusinessProof" | "verified";
 
 export default function VerifyInstallerClient() {
   const { toast } = useToast();
@@ -66,12 +71,12 @@ export default function VerifyInstallerClient() {
       title: "Become a Verified Installer",
       content: (
         <div className="space-y-4 text-sm">
-          <p>This secure process verifies your identity and adds the "Installer" role to your profile.</p>
+          <p>This secure process verifies your identity and adds the &quot;Installer&quot; role to your profile.</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Aadhar OTP:</span> First, enter your 12-digit Aadhar number. You'll receive an OTP on your linked mobile. For testing purposes, use Aadhar number <strong className="text-primary">999999990019</strong> and OTP <strong className="text-primary">123456</strong>.</li>
+            <li><span className="font-semibold">Aadhar OTP:</span> First, enter your 12-digit Aadhar number. You&apos;ll receive an OTP on your linked mobile. For testing purposes, use Aadhar number <strong className="text-primary">999999990019</strong> and OTP <strong className="text-primary">123456</strong>.</li>
             <li><span className="font-semibold">Select Skills:</span> After successful verification, choose the skills you specialize in. This is crucial for getting matched with the right jobs.</li>
           </ul>
-          <p>Once completed, you'll be able to switch to your Installer role and start bidding on jobs.</p>
+          <p>Once completed, you&apos;ll be able to switch to your Installer role and start bidding on jobs.</p>
         </div>
       )
     });
@@ -141,19 +146,42 @@ export default function VerifyInstallerClient() {
   }
 
   async function onSkillsSubmit(values: z.infer<typeof skillsSchema>) {
+    setIsLoading(true);
+    try {
+      toast({ title: "Skills Saved!", description: "One last step: add business proof to get 'Pro' status (optional).", variant: "default" });
+      setStep("enterBusinessProof");
+    } catch (error) {
+      console.error("Error saving skills:", error);
+      toast({ title: "Error", description: "Failed to save skills. Please try again.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const businessForm = useForm<z.infer<typeof businessSchema>>({
+    resolver: zodResolver(businessSchema),
+    defaultValues: { shopPhotoUrl: "", gstNumber: "" },
+  });
+
+  async function onBusinessSubmit(values: z.infer<typeof businessSchema>) {
     if (!user || !db) return;
     setIsLoading(true);
     try {
       const userRef = doc(db, 'users', user.id);
+      const isPro = !!(values.shopPhotoUrl || values.gstNumber);
+
       const updateData = {
         roles: arrayUnion('Installer'),
         installerProfile: {
-          tier: 'Bronze' as const,
-          points: 0,
-          skills: values.skills,
+          tier: isPro ? ('Silver' as const) : ('Bronze' as const),
+          points: isPro ? 100 : 50, // Give 50 starting points to freelancers to help them get started
+          skills: skillsForm.getValues().skills,
           rating: 0,
           reviews: 0,
           verified: true,
+          verificationLevel: isPro ? ('Pro' as const) : ('Basic' as const),
+          shopPhotoUrl: values.shopPhotoUrl || null,
+          gstNumber: values.gstNumber || null,
           reputationHistory: [],
         }
       };
@@ -171,7 +199,7 @@ export default function VerifyInstallerClient() {
         setRole('Installer');
       }
 
-      toast({ title: "Installer Profile Activated!", description: "You can now find jobs and place bids.", variant: "default" });
+      toast({ title: "Installer Profile Activated!", description: isPro ? "Congrats! You are a Pro Installer." : "You can now find jobs and place bids.", variant: "default" });
       router.push('/dashboard/profile');
     } catch (error) {
       console.error("Error finalizing installer profile:", error);
@@ -199,6 +227,7 @@ export default function VerifyInstallerClient() {
             {step === 'enterAadhar' && "Verify your identity using Aadhar to create an installer profile."}
             {step === 'enterOtp' && "An OTP has been sent to your Aadhar-linked mobile number. Enter it below."}
             {step === 'selectSkills' && "Verification complete! Now, select your skills to finish setting up your installer profile."}
+            {step === 'enterBusinessProof' && "Optional: Add business details for 'Pro' status. Freelancers can also reach Pro status later by maintaining high ratings."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -313,8 +342,56 @@ export default function VerifyInstallerClient() {
                   )}
                 />
                 <Button type="submit" disabled={isLoading} className="w-full">
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Finish Setup
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Next: Business Proof
                 </Button>
+              </form>
+            </Form>
+          )}
+
+          {step === "enterBusinessProof" && (
+            <Form {...businessForm}>
+              <form onSubmit={businessForm.handleSubmit(onBusinessSubmit)} className="space-y-8">
+                <FormField
+                  control={businessForm.control}
+                  name="gstNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>GST Number (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your 15-digit GSTIN" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={businessForm.control}
+                  name="shopPhotoUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Shop/Business Photo URL (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter a URL to your shop photo" {...field} />
+                      </FormControl>
+                      <FormDescription>Proof of physical shop enhances trust with Job Givers.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex gap-4">
+                  <Button type="submit" disabled={isLoading} className="w-full">
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Finish & Get Pro
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => onBusinessSubmit({})}
+                    disabled={isLoading}
+                    className="w-full"
+                  >
+                    Skip & Start as Freelancer
+                  </Button>
+                </div>
               </form>
             </Form>
           )}

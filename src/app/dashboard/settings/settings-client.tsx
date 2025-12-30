@@ -302,7 +302,7 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
                         <div className="space-y-2">
                             <Label htmlFor="installerCommissionRate">Installer Commission Rate (%)</Label>
                             <Input id="installerCommissionRate" type="number" value={settings.installerCommissionRate ?? ''} onChange={handleInputChange} min="0" max="100" />
-                            <p className="text-xs text-muted-foreground">The percentage taken from the installer's earnings for a job.</p>
+                            <p className="text-xs text-muted-foreground">The percentage taken from the installer&apos;s earnings for a job.</p>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="jobGiverFeeRate">Job Giver Fee Rate (%)</Label>
@@ -602,10 +602,10 @@ export default function SettingsClient() {
                     <p>This is the central control panel for your entire platform. As an admin, you can configure every aspect of the user experience and business logic here.</p>
                     {isAdmin ? (
                         <ul className="list-disc space-y-2 pl-5">
-                            <li><span className="font-semibold">Monetization:</span> Manage subscription plans, create promotional coupons, and set your platform's commission rates. This is where you control how your platform makes money.</li>
-                            <li><span className="font-semibold">User &amp; Reputation:</span> Define the "welcome kit" for new users (like free trials) and configure the entire reputation system for installers, including points and tier levels.</li>
+                            <li><span className="font-semibold">Monetization:</span> Manage subscription plans, create promotional coupons, and set your platform&apos;s commission rates. This is where you control how your platform makes money.</li>
+                            <li><span className="font-semibold">User &amp; Reputation:</span> Define the &quot;welcome kit&quot; for new users (like free trials) and configure the entire reputation system for installers, including points and tier levels.</li>
                             <li><span className="font-semibold">Platform Rules:</span> Set global rules like the minimum job budget and manage the blacklist for users and pincodes.</li>
-                            <li><span className="font-semibold">Growth Strategy:</span> Use the coupon system to execute your growth strategy. For example, create a coupon for a "120-day Pro Installer Plan" and manually send it to the first few high-quality installers who sign up in a new city to bootstrap that local market.</li>
+                            <li><span className="font-semibold">Growth Strategy:</span> Use the coupon system to execute your growth strategy. For example, create a coupon for a &quot;120-day Pro Installer Plan&quot; and manually send it to the first few high-quality installers who sign up in a new city to bootstrap that local market.</li>
                             <li><span className="font-semibold">General:</span> Change your personal settings like theme and notifications.</li>
                         </ul>
                     ) : (
