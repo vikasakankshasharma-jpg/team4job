@@ -2,50 +2,115 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // --- HELPER FUNCTIONS ---
     function isAdmin() {
       return request.auth != null && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         "Admin" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles;
     }
 
-    // Allow authenticated users to read all user profiles (for displaying installer info, etc.)
-    // Only allow users to write their own data, or admins to write any
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null; // Relaxed for debugging
+    function isSupport() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        ("Support Team" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles || isAdmin());
     }
     
-    // Jobs - authenticated users can read all, write their own
-    // Admin can update/delete any
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // --- COLLECTION RULES ---
+
+
+    // Confidential User Data (PII)
+    match /users/{userId} {
+      // TEMPORARY: Allow authenticated read to unblock UI (Job Giver name, etc.)
+      // Ideal fix: Split into public_profiles (name, avatar, rating) and private users (email, phone, payouts).
+      // For now, we rely on client not displaying sensitive data, but this is a known privacy gap we can't fully close without data migration.
+      allow read: if request.auth != null;
+      
+      // Strict Update Policy: Prevent Privilege Escalation
+      // Users can ONLY update specific profile fields. 
+      // THEY CANNOT UPDATE: roles, status, subscription, kycStatus, installerProfile.verified, etc.
+      allow update: if isOwner(userId) && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+          ['name', 'avatarUrl', 'address', 'pincodes', 'about', 'portfolio', 'installerProfile', 'fcmTokens', 'lastLoginAt', 'lastActiveAt', 'emergencyContacts']
+        ) &&
+        // If updating installerProfile, ensure they aren't verifying themselves or changing ratings
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['installerProfile']) || 
+         (request.resource.data.installerProfile.diff(resource.data.installerProfile).affectedKeys().hasOnly(['skills', 'about']) || 
+          isAdmin())
+        );
+        
+      // Allow Admin to write anything
+      allow write: if isAdmin();
+    }
+
+    // Public Profiles - Visible to everyone
+    match /public_profiles/{userId} {
+      allow read: if true;
+      allow write: if false; // Only via Cloud Functions or Admin SDK
+    }
+    
+    // Jobs - Core Logic Security
     match /jobs/{jobId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && 
-        (resource.data.jobGiverId == request.auth.uid || 
-         resource.data.directAwardInstallerId == request.auth.uid ||
-         resource.data.status == 'Open for Bidding' ||
-         isAdmin());
+      allow create: if request.auth != null && request.resource.data.jobGiverId == request.auth.uid;
+      
+      allow update: if request.auth != null && (
+        // Job Giver can update specific fields
+        (resource.data.jobGiverId == request.auth.uid && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'description', 'status', 'deadline', 'jobStartDate', 'attachments', 'address', 'priceEstimate'])) ||
+         
+        // Admin Force Override
+        isAdmin() ||
+        
+        // System/Status Transitions (handled precisely)
+        // e.g., awarding a job - this might be better handled via API to ensure integrity, 
+        // but for now keeping limited update logic if strictly necessary.
+        // ACTUALLY: Awarding involves writing to 'awardedInstaller' which is sensitive.
+        // Let's restrict 'awardedInstaller' updates to Admin or very specific flows.
+        (resource.data.jobGiverId == request.auth.uid && 
+         resource.data.status == 'Open for Bidding' &&
+         request.resource.data.status == 'Awarded' &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'awardedInstaller', 'selectedInstallers'])
+        )
+      );
+      
       allow delete: if request.auth != null && 
         (resource.data.jobGiverId == request.auth.uid || isAdmin());
+
+      // --- BIDS SUB-COLLECTION (NEW STRUCTURE) ---
+      // Moving bids to a sub-collection for security and scalability
+      match /bids/{bidId} {
+        allow read: if request.auth != null;
+        
+        // CREATE: Only if you are the installer AND you carry the 'Installer' role (app check ideally)
+        // AND you are NOT the job giver (Anti-Shill Bidding)
+        allow create: if request.auth != null && 
+          request.resource.data.installer.id == request.auth.uid &&
+          get(/databases/$(database)/documents/jobs/$(jobId)).data.jobGiverId != request.auth.uid;
+          
+        allow update, delete: if isOwner(resource.data.installer.id) || isAdmin();
+      }
     }
     
-    // Bids
+    // Bids (Legacy Root Collection - deprecated but kept for transition if needed, or block it?)
+    // Blocking root-level bids to force migration
     match /bids/{bidId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && 
-        (resource.data.installerId == request.auth.uid || isAdmin());
+       allow read, write: if false; 
     }
     
-    // Transactions
+    // Transactions - STRICT LOCKDOWN
+    // Start with NO client creates. All transactions must go through API.
     match /transactions/{transactionId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null; // Usually only backend or specific flows create these
+      allow read: if request.auth != null && (resource.data.payerId == request.auth.uid || resource.data.payeeId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false; // Backend/Admin SDK only
     }
     
     // Settings (read-only for users)
     match /settings/{document=**} {
-      allow read: if request.auth != null;
+      allow read: if true;
       allow write: if isAdmin();
     }
 
@@ -55,15 +120,21 @@ service cloud.firestore {
         (resource.data.requesterId == request.auth.uid ||
          resource.data.parties.jobGiverId == request.auth.uid || 
          resource.data.parties.installerId == request.auth.uid || 
-         isAdmin());
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && (resource.data.requesterId == request.auth.uid || isAdmin());
+         isSupport());
+      allow create: if request.auth != null && request.resource.data.requesterId == request.auth.uid;
+      allow update: if request.auth != null && (resource.data.requesterId == request.auth.uid || isSupport());
     }
 
     // Blacklist
     match /blacklist/{entry} {
       allow read: if request.auth != null;
       allow write: if isAdmin();
+    }
+    
+    // Subscription Plans
+    match /subscriptionPlans/{planId} {
+        allow read: if true;
+        allow write: if isAdmin();
     }
   }
 }

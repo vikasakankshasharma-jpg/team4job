@@ -380,7 +380,7 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><HardDriveDownload /> Data Export</CardTitle>
-                <CardDescription>Download a full CSV backup of your platform's core data collections.</CardDescription>
+                <CardDescription>Download a full CSV backup of your platform&apos;s core data collections.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <ExportButton type="users" />

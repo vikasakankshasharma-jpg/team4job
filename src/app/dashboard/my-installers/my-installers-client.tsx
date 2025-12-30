@@ -117,11 +117,11 @@ export default function MyInstallersClient() {
       title: 'My Installers',
       content: (
         <div className="space-y-4 text-sm">
-          <p>This is your personal CRM for managing installers you've worked with on the platform.</p>
+          <p>This is your personal CRM for managing installers you&apos;ve worked with on the platform.</p>
           <ul className="list-disc space-y-2 pl-5">
             <li><span className="font-semibold">Previously Hired:</span> A list of all installers who have completed jobs for you. This is your primary network.</li>
-            <li><span className="font-semibold">Favorites:</span> From your "Previously Hired" list, you can add installers to this curated list for quick access when you want to use the "Direct Award" feature.</li>
-            <li><span className="font-semibold">Blocked:</span> Add installers from your "Previously Hired" list here to prevent them from seeing or bidding on your future public jobs.</li>
+            <li><span className="font-semibold">Favorites:</span> From your &quot;Previously Hired&quot; list, you can add installers to this curated list for quick access when you want to use the &quot;Direct Award&quot; feature.</li>
+            <li><span className="font-semibold">Blocked:</span> Add installers from your &quot;Previously Hired&quot; list here to prevent them from seeing or bidding on your future public jobs.</li>
           </ul>
         </div>
       ),

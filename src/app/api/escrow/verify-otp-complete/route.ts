@@ -43,6 +43,20 @@ export async function POST(req: NextRequest) {
 
         const job = jobSnap.data() as Job;
 
+        // Phase 19: Security - Brute Force Protection
+        // Lazy load rate limiter
+        const checkRateLimit = (await import('@/lib/services/rate-limit')).checkRateLimit;
+        // Check Limit for Installer (who is submitting OTP)
+        const installerId = typeof job.awardedInstaller === 'string'
+            ? job.awardedInstaller
+            : (job.awardedInstaller as any)?.id;
+
+        const limitCheck = await checkRateLimit(installerId, 'otp_verify');
+
+        if (!limitCheck.allowed) {
+            return NextResponse.json({ error: "Too many attempts. Please try again tomorrow or contact support." }, { status: 429 });
+        }
+
         // Verify OTP
         if (!job.completionOtp || job.completionOtp !== otp) {
             return NextResponse.json({ error: 'Invalid or missing OTP.' }, { status: 400 });

@@ -28,6 +28,14 @@ import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { doc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useHelp } from "@/hooks/use-help";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import axios from 'axios';
 import { FileUpload } from "@/components/ui/file-upload";
 
@@ -90,7 +98,7 @@ function PageSkeleton() {
 
 export default function DisputeDetailPage() {
   const { user, role, isAdmin, loading: userLoading } = useUser();
-  const { db, storage } = useFirebase();
+  const { db, storage, auth } = useFirebase();
   const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
@@ -237,10 +245,18 @@ export default function DisputeDetailPage() {
     if (!transaction) return toast({ title: "Transaction not found", variant: "destructive" });
     setIsRefunding(true);
     try {
+      // Get the current user's ID token to pass as Bearer token provided we are admin.
+      // But this is client-side code. 'axios' calls on client side send cookies usually if configured, 
+      // but here we need to send the Authorization header explicitly because our API route validates 'Bearer <token>'.
+
+      const token = await auth?.currentUser?.getIdToken();
+
       await axios.post('/api/cashfree/payouts/request-transfer', {
         transactionId: transaction.id,
         userId: transaction.payerId, // The user to refund is the payer (Job Giver)
         transferType: 'refund',
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       toast({ title: "Refund Initiated", description: "The refund to the Job Giver has been processed." });
       setTransaction(prev => prev ? { ...prev, status: 'Refunded' } : null);
@@ -251,12 +267,30 @@ export default function DisputeDetailPage() {
     }
   };
 
+
+
+  const handleWithdrawDispute = async () => {
+    if (!confirm("Are you sure you want to withdraw this dispute? This will close the ticket.")) return;
+    await handleUpdateDispute({
+      status: 'Resolved',
+      resolvedAt: new Date(),
+      resolution: 'Withdrawn by Requester'
+    });
+    toast({ title: "Dispute Withdrawn", description: "The ticket has been closed." });
+  };
+
   const handleReleaseFunds = async () => {
     if (!transaction) return toast({ title: "Transaction not found", variant: "destructive" });
     setIsReleasing(true);
     try {
-      await axios.post('/api/escrow/release-funds', {
-        transactionId: transaction.id,
+      // Admin Force Release
+      // We should use resolve-dispute for this, logic handles payouts.
+      // But if explicit release needed:
+      await axios.post('/api/escrow/resolve-dispute', {
+        disputeId: dispute.id,
+        resolutionType: 'Payout',
+        splitPercentage: 100, // Full Payout
+        adminNotes: 'Manual Admin Release'
       });
       toast({ title: "Funds Released", description: "The payment has been released to the installer.", variant: "default" });
       setTransaction(prev => prev ? { ...prev, status: 'Released' } : null);
@@ -266,6 +300,38 @@ export default function DisputeDetailPage() {
       setIsReleasing(false);
     }
   };
+
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const handleFreezePayment = async () => {
+    if (!transaction) return;
+    setIsUpdatingStatus(true);
+    try {
+      await updateDoc(doc(db, "transactions", transaction.id), { status: 'Disputed' });
+      setTransaction(prev => prev ? { ...prev, status: 'Disputed' } : null);
+      toast({ title: "Payment Frozen", description: "Escrow funds are now locked until dispute resolution." });
+    } catch (error) {
+      toast({ title: "Operation Failed", variant: "destructive" });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleUnfreezePayment = async () => {
+    if (!transaction) return;
+    setIsUpdatingStatus(true);
+    try {
+      await updateDoc(doc(db, "transactions", transaction.id), { status: 'Funded' });
+      setTransaction(prev => prev ? { ...prev, status: 'Funded' } : null);
+      toast({ title: "Payment Unfrozen", description: "Funds returned to active Escrow state." });
+    } catch (error) {
+      toast({ title: "Operation Failed", variant: "destructive" });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+
 
   const isTeamMember = isAdmin || role === 'Support Team';
 
@@ -452,18 +518,83 @@ export default function DisputeDetailPage() {
                     <Button onClick={handleReviewDispute} className="w-full">Mark as Under Review</Button>
                   )}
                   {dispute.status === 'Under Review' && (
-                    <Button onClick={handleResolveDispute} variant="success" className="w-full">
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Resolve Dispute
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="success" className="w-full">
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Resolve Dispute
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Resolve Dispute & Close Job</DialogTitle>
+                          <DialogDescription>
+                            Decide the final outcome for this job. This action is irreversible.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <Button variant="destructive" onClick={async () => {
+                            // Option A: Cancel Job (Refund Giver)
+                            // Logic: 1. Refund logic (if funded). 2. Job status -> Cancelled. 3. Dispute -> Resolved.
+                            if (transaction?.status === 'Funded') {
+                              await handleRefund();
+                            }
+                            await handleUpdateDispute({ status: 'Resolved', resolvedAt: new Date(), resolution: 'Job Cancelled & Refunded' });
+                            // We also need to update the Job Status here ideally, but we don't have direct handleJobUpdate prop here.
+                            // We can assume the API/Backend flows or we do a direct db update if permission allows.
+                            // For this MVP, we will rely on the Refunds triggering job updates or manual cleanup, 
+                            // BUT the plan said to update Job Status. 
+                            // Let's at least mark the dispute clearly.
+                            // NOTE: Ideally we should update the Job doc too.
+                            if (dispute.jobId) {
+                              await updateDoc(doc(db, "jobs", dispute.jobId), { status: 'Cancelled' });
+                            }
+                            toast({ title: "Resolved", description: "Job Cancelled and Dispute Resolved." });
+                          }}>
+                            Option A: Cancel Job & Refund Giver
+                          </Button>
+                          <Button className="bg-green-600 hover:bg-green-700" onClick={async () => {
+                            // Option B: Complete Job (Pay Installer)
+                            if (transaction?.status === 'Funded') {
+                              await handleReleaseFunds();
+                            }
+                            await handleUpdateDispute({ status: 'Resolved', resolvedAt: new Date(), resolution: 'Job Completed & Funds Released' });
+                            if (dispute.jobId) {
+                              await updateDoc(doc(db, "jobs", dispute.jobId), { status: 'Completed' });
+                            }
+                            toast({ title: "Resolved", description: "Job Completed and Funds Released." });
+                          }}>
+                            Option B: Complete Job & Pay Installer
+                          </Button>
+                          <Button variant="secondary" onClick={async () => {
+                            // Option C: Just Close Ticket
+                            await handleResolveDispute();
+                          }}>
+                            Option C: Just Close Ticket (No Job Action)
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   )}
-                  {isAdmin && transaction?.status === 'Funded' && (
+                  {isAdmin && (transaction?.status === 'Funded' || transaction?.status === 'Disputed') && (
                     <>
-                      <Button variant="destructive" className="w-full" onClick={handleRefund} disabled={isRefunding || isReleasing}>
+                      {transaction.status === 'Funded' ? (
+                        <Button variant="outline" className="w-full text-orange-600 border-orange-600" onClick={handleFreezePayment} disabled={isUpdatingStatus}>
+                          <Shield className="mr-2 h-4 w-4" />
+                          Freeze Payment (Lock Escrow)
+                        </Button>
+                      ) : (
+                        <Button variant="outline" className="w-full text-blue-600 border-blue-600" onClick={handleUnfreezePayment} disabled={isUpdatingStatus}>
+                          <Shield className="mr-2 h-4 w-4" />
+                          Unfreeze Payment
+                        </Button>
+                      )}
+
+                      <Button variant="destructive" className="w-full" onClick={handleRefund} disabled={isRefunding || isReleasing || transaction.status === 'Disputed'}>
                         {isRefunding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
                         Refund to Job Giver
                       </Button>
-                      <Button variant="success" className="w-full" onClick={handleReleaseFunds} disabled={isReleasing || isRefunding}>
+                      <Button variant="success" className="w-full" onClick={handleReleaseFunds} disabled={isReleasing || isRefunding || transaction.status === 'Disputed'}>
                         {isReleasing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Award className="mr-2 h-4 w-4" />}
                         Release Funds to Installer
                       </Button>

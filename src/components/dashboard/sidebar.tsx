@@ -162,6 +162,18 @@ export function DashboardSidebar() {
             </TooltipTrigger>
             <TooltipContent side="right">Settings</TooltipContent>
           </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href="mailto:support@cctvjobconnect.com"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+              >
+                <Heart className="h-5 w-5" />
+                <span className="sr-only">Support</span>
+              </a>
+            </TooltipTrigger>
+            <TooltipContent side="right">Contact Support</TooltipContent>
+          </Tooltip>
         </nav>
       </TooltipProvider>
     </aside>

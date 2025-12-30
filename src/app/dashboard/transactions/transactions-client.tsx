@@ -66,9 +66,9 @@ export default function TransactionsClient() {
             title: "Transactions",
             content: (
                 <div className="space-y-4 text-sm">
-                    <p>This page provides a detailed audit trail of every financial transaction that occurs on the platform. It's an essential tool for accounting and tracking revenue.</p>
+                    <p>This page provides a detailed audit trail of every financial transaction that occurs on the platform. It&apos;s an essential tool for accounting and tracking revenue.</p>
                     <ul className="list-disc space-y-2 pl-5">
-                        <li><span className="font-semibold">KPI Cards & Date Filters:</span> At the top, you'll find key performance indicators. Use the date filter to see the total value of funds released to installers over specific periods. "Currently Held" always shows the real-time balance.</li>
+                        <li><span className="font-semibold">KPI Cards & Date Filters:</span> At the top, you&apos;ll find key performance indicators. Use the date filter to see the total value of funds released to installers over specific periods. &quot;Currently Held&quot; always shows the real-time balance.</li>
                         <li><span className="font-semibold">Transaction Log:</span> The main table shows a chronological list of all transactions, including payments from Job Givers, payouts to Installers, and any refunds.</li>
                         <li><span className="font-semibold">Search & Filter:</span> Use the controls to quickly find specific transactions. You can search by Transaction ID, Job ID, or user name, and filter by the transaction status.</li>
                     </ul>

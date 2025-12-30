@@ -6,7 +6,13 @@ import { z } from 'genkit';
 
 const ModerateMessageInputSchema = z.object({
     message: z.string().describe('The message content to moderate.'),
+    userId: z.string().optional().describe('The ID of the user sending the message (for rate limiting).'),
+    limitType: z.enum(['ai_chat', 'ai_bio']).optional().default('ai_chat'),
 });
+
+// Fallback Regex Patterns
+const PHONE_REGEX = /(\+\d{1,3}[- ]?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}|\d{10}/;
+const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
 export type ModerateMessageInput = z.infer<typeof ModerateMessageInputSchema>;
 
 export const ModerateMessageOutputSchema = z.object({
@@ -39,6 +45,9 @@ const moderateMessagePrompt = ai.definePrompt({
   `,
 });
 
+// Lazy import to avoid circular dependencies or server-init issues if not needed
+const getRateLimit = async () => (await import('@/lib/services/rate-limit')).checkRateLimit;
+
 const moderateMessageFlow = ai.defineFlow(
     {
         name: 'moderateMessageFlow',
@@ -51,9 +60,36 @@ const moderateMessageFlow = ai.defineFlow(
             return { isFlagged: false };
         }
 
+        // Rate Limiting (Server-Side Enforcement)
+        if (input.userId) {
+            const checkRateLimit = await getRateLimit();
+            const limitCheck = await checkRateLimit(input.userId, input.limitType as any || 'ai_chat');
+            if (!limitCheck.allowed) {
+                return {
+                    isFlagged: true,
+                    reason: limitCheck.reason || "Daily AI limit reached. Please try again tomorrow."
+                };
+            }
+        }
+
         const { output } = await moderateMessagePrompt(input);
+
+        // Phase 13: Hybrid Fallback
+        // If AI says "Safe" (isFlagged: false) OR AI fails (returns null), we run Regex Check.
+        if (!output || !output.isFlagged) {
+            const hasPhone = PHONE_REGEX.test(input.message);
+            const hasEmail = EMAIL_REGEX.test(input.message);
+
+            if (hasPhone || hasEmail) {
+                return {
+                    isFlagged: true,
+                    reason: "Potential PII sharing detected (Phone/Email Protection - FailSafe)."
+                };
+            }
+        }
+
         if (!output) {
-            // Fail safe: If AI fails, assume safe but log error (in real prod maybe flag for review)
+            // Fail safe: If AI fails and Regex passed, assume safe but log warning.
             return { isFlagged: false };
         }
         return output;

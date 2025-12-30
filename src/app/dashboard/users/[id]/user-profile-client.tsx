@@ -124,7 +124,7 @@ function ManageSubscriptionDialog({ user, onSubscriptionUpdate }: { user: User, 
         <DialogHeader>
           <DialogTitle>Manage Subscription for {user.name}</DialogTitle>
           <DialogDescription>
-            Grant or extend a user's subscription for free. The user will be notified.
+            Grant or extend a user&apos;s subscription for free. The user will be notified.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -160,6 +160,7 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
   const handleDeactivate = async () => {
     setIsLoading(true);
     await updateDoc(doc(db, 'users', user.id), { status: 'deactivated' });
+    await updateDoc(doc(db, 'public_profiles', user.id), { status: 'deactivated' }).catch(e => console.error("Failed to sync public profile", e));
     onUserUpdate({ status: 'deactivated' });
     toast({ title: 'User Deactivated', description: `${user.name}'s account has been deactivated.`, variant: 'destructive' });
     setIsLoading(false);
@@ -168,6 +169,7 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
   const handleReactivate = async () => {
     setIsLoading(true);
     await updateDoc(doc(db, 'users', user.id), { status: 'active' });
+    await updateDoc(doc(db, 'public_profiles', user.id), { status: 'active' }).catch(e => console.error("Failed to sync public profile", e));
     onUserUpdate({ status: 'active' });
     toast({ title: 'User Reactivated', description: `${user.name}'s account is now active.`, variant: 'default' });
     setIsLoading(false);
@@ -178,6 +180,7 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
     const suspensionEndDate = new Date();
     suspensionEndDate.setDate(suspensionEndDate.getDate() + suspensionDays);
     await updateDoc(doc(db, 'users', user.id), { status: 'suspended', suspensionEndDate });
+    await updateDoc(doc(db, 'public_profiles', user.id), { status: 'suspended' }).catch(e => console.error("Failed to sync public profile", e));
     onUserUpdate({ status: 'suspended', suspensionEndDate });
     toast({ title: 'User Suspended', description: `${user.name} has been suspended for ${suspensionDays} days.` });
     setIsLoading(false);
@@ -201,7 +204,7 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
     <Card>
       <CardHeader>
         <CardTitle>Admin Actions</CardTitle>
-        <CardDescription>Manage this user's account status and permissions.</CardDescription>
+        <CardDescription>Manage this user&apos;s account status and permissions.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {user.status === 'active' && (
@@ -354,7 +357,7 @@ function DisputePerformanceCard({ disputes }: { disputes: Dispute[] }) {
     <Card>
       <CardHeader>
         <CardTitle>Dispute Performance</CardTitle>
-        <CardDescription>Metrics based on this team member's involvement in disputes.</CardDescription>
+        <CardDescription>Metrics based on this team member&apos;s involvement in disputes.</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6 md:grid-cols-2">
         <Card className="flex flex-col items-center justify-center p-6">
@@ -448,7 +451,12 @@ export default function UserProfileClient() {
 
       setLoading(true);
 
-      const userDocRef = doc(db, "users", id);
+      const isOwner = authUser?.id === id;
+      // Admins and Owners can access the full 'users' doc.
+      // Everyone else sees the 'public_profiles' doc.
+      const collectionName = (isAdmin || isOwner) ? 'users' : 'public_profiles';
+
+      const userDocRef = doc(db, collectionName, id);
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
@@ -651,7 +659,7 @@ export default function UserProfileClient() {
         <Card>
           <CardHeader>
             <CardTitle>Installer Reputation</CardTitle>
-            <CardDescription>This user's performance and trust score on the platform.</CardDescription>
+            <CardDescription>This user&apos;s performance and trust score on the platform.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">
             {!installerProfile ? (

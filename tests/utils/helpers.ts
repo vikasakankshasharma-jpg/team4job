@@ -20,46 +20,88 @@ export class AuthHelper {
     }
 
     async login(email: string, password: string) {
-        await this.page.goto(ROUTES.login);
+        let attempts = 0;
+        const maxRetries = 3;
 
-        // Wait for page to load
+        while (attempts < maxRetries) {
+            attempts++;
+            try {
+                console.log(`[AuthHelper] Login attempt ${attempts}/${maxRetries} for ${email}`);
+                await this.page.goto(ROUTES.login);
+
+                // Wait for page to load
+                await this.page.waitForLoadState('domcontentloaded');
+
+                // Check if we were redirected to dashboard (already logged in)
+                if (this.page.url().includes('dashboard')) {
+                    console.log(`[AuthHelper] Already logged in (redirected to dashboard). Skipping login form.`);
+                    return;
+                }
+
+                // Wait for network idle to ensure hydration
+                await this.page.waitForLoadState('load');
+
+                // Fill email
+                const emailInput = this.page.locator('input[type="email"]');
+                await emailInput.waitFor({ state: 'visible', timeout: TIMEOUTS.short });
+                await emailInput.fill(email);
+
+                // Fill password
+                const passwordInput = this.page.locator('input[type="password"]');
+                await passwordInput.waitFor({ state: 'visible', timeout: TIMEOUTS.short });
+                await passwordInput.fill(password);
+
+                // Click submit button - try multiple selectors
+                const submitButton = this.page.locator('button[type="submit"]').first();
+                await submitButton.waitFor({ state: 'visible', timeout: TIMEOUTS.short });
+                await submitButton.click();
+
+                // Wait for redirect to dashboard
+                await this.page.waitForURL('**/dashboard**', { timeout: TIMEOUTS.medium });
+                await expect(this.page).toHaveURL(/\/dashboard/);
+
+                // Robustness: Wait for Auth state to settle and persist
+                console.log(`[AuthHelper] Waiting for Auth state to settle...`);
+                await this.page.waitForTimeout(3000);
+
+                // Optional: Reload to force hydration from persistence (fixes some client SDK race conditions)
+                // await this.page.reload(); 
+                // await this.page.waitForLoadState('domcontentloaded');
+
+                console.log(`[AuthHelper] Login successful for ${email}`);
+                return; // Success, exit loop
+            } catch (error) {
+                console.error(`[AuthHelper] Login attempt ${attempts} failed:`, error);
+                if (attempts === maxRetries) {
+                    // If last attempt failed, capture debug info and throw
+                    const currentUrl = this.page.url();
+                    const pageText = await this.page.textContent('body');
+                    throw new Error(`Login failed after ${maxRetries} attempts. Current URL: ${currentUrl}. Page content preview: ${pageText?.substring(0, 200)}`);
+                }
+                // Wait briefly before retrying
+                await this.page.waitForTimeout(2000);
+            }
+        }
+    }
+
+    async clearAuthPersistence() {
+        console.log('[AuthHelper] Clearing auth persistence...');
+        await this.page.evaluate(async () => {
+            try {
+                const databases = await window.indexedDB.databases();
+                for (const db of databases) {
+                    if (db.name?.includes('firebase')) {
+                        window.indexedDB.deleteDatabase(db.name);
+                    }
+                }
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (e) {
+                console.error('Error clearing auth persistence:', e);
+            }
+        });
+        await this.page.reload();
         await this.page.waitForLoadState('domcontentloaded');
-
-        // Check if we were redirected to dashboard (already logged in)
-        if (this.page.url().includes('dashboard')) {
-            console.log(`[AuthHelper] Already logged in (redirected to dashboard). Skipping login form.`);
-            return;
-        }
-
-        // Wait for network idle to ensure hydration
-        await this.page.waitForLoadState('load');
-
-        // Fill email
-        const emailInput = this.page.locator('input[type="email"]');
-        await emailInput.waitFor({ state: 'visible', timeout: TIMEOUTS.short });
-        await emailInput.fill(email);
-
-        // Fill password
-        const passwordInput = this.page.locator('input[type="password"]');
-        await passwordInput.waitFor({ state: 'visible', timeout: TIMEOUTS.short });
-        await passwordInput.fill(password);
-
-        // Click submit button - try multiple selectors
-        const submitButton = this.page.locator('button[type="submit"]').first();
-        await submitButton.waitFor({ state: 'visible', timeout: TIMEOUTS.short });
-        await submitButton.click();
-
-        // Wait for redirect to dashboard
-        try {
-            await this.page.waitForURL('**/dashboard**', { timeout: TIMEOUTS.medium });
-        } catch (error) {
-            // If redirect fails, capture current URL and page content for debugging
-            const currentUrl = this.page.url();
-            const pageText = await this.page.textContent('body');
-            throw new Error(`Login failed. Current URL: ${currentUrl}. Page contains: ${pageText?.substring(0, 200)}`);
-        }
-
-        await expect(this.page).toHaveURL(/\/dashboard/);
     }
 
     async logout() {
@@ -73,33 +115,34 @@ export class AuthHelper {
 
             try {
                 await userMenu.waitFor({ state: 'visible', timeout: 5000 });
+                await userMenu.click();
+                console.log('[AuthHelper] Clicked user menu');
+
+                // Wait for dropdown content explicitly using robust locators
+                const logoutMenuItem = this.page.getByRole('menuitem', { name: 'Logout' });
+                const logoutText = this.page.getByText('Log out');
+                const logoutButton = logoutMenuItem.or(logoutText).first();
+
+                await logoutButton.waitFor({ state: 'visible', timeout: 5000 });
+
+                // Click logout
+                await logoutButton.click();
+                console.log('[AuthHelper] Clicked logout button');
+
+                // Wait for redirect to login (shorter timeout, we have fallback)
+                await this.page.waitForURL('**/login**', { timeout: 10000 });
+                console.log('[AuthHelper] Redirected to login page');
             } catch (e) {
-                console.log('[AuthHelper] User menu not found, reloading page...');
-                await this.page.reload();
-                await userMenu.waitFor({ state: 'visible', timeout: 10000 });
+                console.log('[AuthHelper] Logout UI interaction failed, forcing navigation to login...');
+                throw e; // Re-throw to trigger catch block which forces navigation
             }
-
-            await userMenu.click();
-            console.log('[AuthHelper] Clicked user menu');
-
-            // Wait for dropdown content explicitly using robust locators
-            const logoutMenuItem = this.page.getByRole('menuitem', { name: 'Logout' });
-            const logoutText = this.page.getByText('Log out');
-            const logoutButton = logoutMenuItem.or(logoutText).first();
-
-            await logoutButton.waitFor({ state: 'visible', timeout: 5000 });
-
-            // Click logout
-            await logoutButton.click();
-            console.log('[AuthHelper] Clicked logout button');
-
-            // Wait for redirect to login
-            await this.page.waitForURL('**/login**', { timeout: TIMEOUTS.long });
-            console.log('[AuthHelper] Redirected to login page');
         } catch (error) {
             console.error('[AuthHelper] Logout failed:', error);
             // Force navigate to login if logout fails
             await this.page.goto(ROUTES.login);
+        } finally {
+            // ALWAYS clear persistence to prevent zombie sessions
+            await this.clearAuthPersistence();
         }
     }
 }
@@ -207,8 +250,19 @@ export class JobHelper {
     }
 
     async waitForJobStatus(status: string, timeout = TIMEOUTS.long) {
-        await expect(this.page.locator(`text=${status}, [data-status="${status}"]`).first())
-            .toBeVisible({ timeout });
+        try {
+            console.log(`Helper: Waiting for job status: ${status}`);
+            // Use the data-status attribute for reliable selection
+            await expect(this.page.locator(`[data-status="${status}"]`).first())
+                .toBeVisible({ timeout });
+            console.log(`Helper: Job status ${status} visible`);
+        } catch (error) {
+            console.error(`Helper: Failed to find job status '${status}'.`);
+            // Check if it exists in DOM at all via JS execution
+            const hasDataStatus = await this.page.evaluate((s) => !!document.querySelector(`[data-status="${s}"]`), status);
+            console.log(`Helper: Document already contains [data-status="${status}"]: ${hasDataStatus}`);
+            throw error;
+        }
     }
 
     async getJobStatus(): Promise<string> {

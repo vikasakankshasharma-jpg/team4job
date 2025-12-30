@@ -42,7 +42,7 @@ export default function LoginClient() {
           <p>Welcome to CCTV Job Connect! Here you can access your account or create a new one.</p>
           <ul className="list-disc space-y-2 pl-5">
             <li><span className="font-semibold">Log In:</span> If you already have an account, enter your email and password to access your dashboard.</li>
-            <li><span className="font-semibold">Sign Up:</span> New here? Click the "Sign Up" tab to begin. You'll choose whether you want to hire professionals or find work as an installer.</li>
+            <li><span className="font-semibold">Sign Up:</span> New here? Click the &quot;Sign Up&quot; tab to begin. You&apos;ll choose whether you want to hire professionals or find work as an installer.</li>
           </ul>
         </div>
       ),
@@ -117,7 +117,7 @@ export default function LoginClient() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <SignUpForm isMapLoaded={isMapLoaded} />
+                <SignUpForm isMapLoaded={isMapLoaded} referredBy={searchParams.get("ref") || undefined} />
               </CardContent>
             </Card>
           </TabsContent>

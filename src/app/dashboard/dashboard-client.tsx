@@ -38,16 +38,18 @@ import { DocumentReference } from "firebase/firestore";
 import { cn, toDate } from "@/lib/utils";
 import { differenceInMilliseconds, format, getMonth, getYear, startOfMonth, subMonths } from "date-fns";
 import { ChartContainer, ChartConfig } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, RadialBar, RadialBarChart, PolarGrid, PolarAngleAxis, CartesianGrid } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, RadialBar, RadialBarChart, PolarGrid, PolarAngleAxis, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 
 import { RecommendedJobs } from "@/components/dashboard/recommended-jobs";
 
-const StatCard = ({ title, value, description, icon: Icon, href, iconBgColor, iconColor }: { title: string, value: string | number, description?: string, icon: React.ElementType, href: string, iconBgColor: string, iconColor: string }) => (
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+const StatCard = ({ title, value, description, icon: Icon, href, iconBgColor, iconColor, trend }: { title: string, value: string | number, description?: string, icon: React.ElementType, href: string, iconBgColor: string, iconColor: string, trend?: string }) => (
   <Link href={href} className="block hover:shadow-lg transition-shadow duration-300 rounded-lg h-full">
-    <Card className="flex flex-col h-full">
+    <Card className="flex flex-col h-full relative overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <div className={cn("p-2 rounded-full", iconBgColor)}>
@@ -56,11 +58,30 @@ const StatCard = ({ title, value, description, icon: Icon, href, iconBgColor, ic
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="text-2xl font-bold">{value}</div>
-        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+        {trend && (
+          <div className="absolute bottom-4 right-4 text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-md">
+            {trend}
+          </div>
+        )}
       </CardContent>
     </Card>
   </Link>
 );
+
+function MetricChartCard({ title, description, children, className }: { title: string, description?: string, children: React.ReactNode, className?: string }) {
+  return (
+    <Card className={cn("flex flex-col", className)}>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        {description && <CardDescription>{description}</CardDescription>}
+      </CardHeader>
+      <CardContent className="flex-1 min-h-[300px]">
+        {children}
+      </CardContent>
+    </Card>
+  )
+}
 
 
 function DisputePerformanceCard({ disputes }: { disputes: Dispute[] }) {
@@ -141,6 +162,8 @@ function InstallerDashboard() {
 
   const isVerified = user?.installerProfile?.verified;
 
+  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+
   React.useEffect(() => {
     async function fetchData() {
       if (!user || !db) return;
@@ -150,13 +173,18 @@ function InstallerDashboard() {
       const openJobsQuery = query(jobsRef, where('status', '==', 'Open for Bidding'));
       const installerDocRef = doc(db, 'users', user.id);
 
+      // Fix: Queries for arrays or specific fields
       const myBidsQuery = query(jobsRef, where('bidderIds', 'array-contains', user.id));
       const myAwardedQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
 
-      const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot] = await Promise.all([
+      // Transactions for Earnings
+      const transactionsQuery = query(collection(db, "transactions"), where("payeeId", "==", user.id), where("status", "==", "Released"));
+
+      const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot, transactionsSnapshot] = await Promise.all([
         getDocs(openJobsQuery),
         getDocs(myBidsQuery),
-        getDocs(myAwardedQuery)
+        getDocs(myAwardedQuery),
+        getDocs(transactionsQuery)
       ]);
 
       const myJobsSet = new Set([...myBidsSnapshot.docs.map(d => d.id), ...myAwardedSnapshot.docs.map(d => d.id)]);
@@ -167,12 +195,41 @@ function InstallerDashboard() {
         jobsWon: myAwardedSnapshot.size
       });
 
+      setTransactions(transactionsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Transaction)));
+
       setLoading(false);
     }
 
     fetchData();
 
   }, [user, db]);
+
+  // Process Data for Earnings Chart (Last 6 Months)
+  const earningsData = React.useMemo(() => {
+    const months = Array.from({ length: 6 }).map((_, i) => {
+      const d = subMonths(new Date(), i);
+      return {
+        name: format(d, 'MMM'),
+        fullName: format(d, 'MMM yyyy'),
+        amount: 0,
+        date: d
+      };
+    }).reverse();
+
+    transactions.forEach(t => {
+      if (t.releasedAt) {
+        const date = toDate(t.releasedAt);
+        const monthStr = format(date, 'MMM yyyy');
+        const monthData = months.find(m => m.fullName === monthStr);
+        if (monthData) {
+          monthData.amount += t.payoutToInstaller || 0;
+        }
+      }
+    });
+    return months;
+  }, [transactions]);
+
+  const totalEarnings = transactions.reduce((acc, t) => acc + (t.payoutToInstaller || 0), 0);
 
 
   React.useEffect(() => {
@@ -186,10 +243,10 @@ function InstallerDashboard() {
               <span className="font-semibold">Open Jobs:</span> This shows the total number of jobs currently available for bidding. Click it to find your next opportunity.
             </li>
             <li>
-              <span className="font-semibold">My Bids:</span> Tracks all the jobs you've bid on and their current status (Bidded, Awarded, etc.). Click to see your bidding history.
+              <span className="font-semibold">My Bids:</span> Tracks all the jobs you&apos;ve bid on and their current status (Bidded, Awarded, etc.). Click to see your bidding history.
             </li>
             <li>
-              <span className="font-semibold">Jobs Won:</span> Displays the number of jobs you've won that are currently active or in progress.
+              <span className="font-semibold">Jobs Won:</span> Displays the number of jobs you&apos;ve won that are currently active or in progress.
             </li>
             {!isVerified && (
               <li>
@@ -268,240 +325,349 @@ function InstallerDashboard() {
           iconColor="text-green-600 dark:text-green-300"
         />
       </div>
-      <div className="mt-8 mb-8">
-        <RecommendedJobs user={user!} />
-      </div>
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
-        <Card data-tour="find-project-card">
-          <CardHeader>
-            <CardTitle>Find Your Next Project</CardTitle>
-            <CardDescription>
-              Browse hundreds of CCTV installation jobs and place your bid.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <Link href="/dashboard/jobs">
-                Browse Jobs <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-        <Card data-tour="manage-profile-card">
-          <CardHeader>
-            <CardTitle>Manage Your Profile</CardTitle>
-            <CardDescription>
-              Keep your skills and reputation up-to-date to attract more Job Givers.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="secondary">
-              <Link href="/dashboard/profile">
-                Go to Profile <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
+
+      {/* Earnings Chart Section */}
+      <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <MetricChartCard title="Earnings Overview" description="Your monthly earnings over last 6 months" className="md:col-span-2">
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={earningsData}>
+              <defs>
+                <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={(val) => `₹${val}`} />
+              <Tooltip formatter={(val) => `₹${Number(val).toLocaleString()}`} labelStyle={{ color: 'black' }} />
+              <Area type="monotone" dataKey="amount" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorEarnings)" name="Earnings" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </MetricChartCard>
+
+        <Card className="flex flex-col justify-center items-center text-center p-6 bg-green-50 dark:bg-green-950/20 border-green-100 dark:border-green-900">
+          <div className="p-4 rounded-full bg-green-200 dark:bg-green-900 mb-4">
+            <IndianRupee className="h-8 w-8 text-green-700 dark:text-green-400" />
+          </div>
+          <p className="text-sm font-medium text-green-600 dark:text-green-400">Total Earnings</p>
+          <h3 className="text-4xl font-bold mt-2 text-green-800 dark:text-green-300">₹{totalEarnings.toLocaleString()}</h3>
+          <p className="text-xs text-muted-foreground mt-2">Lifettime payout processed</p>
         </Card>
       </div>
-    </>
-  );
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+        <div className="mt-8 mb-8">
+          <RecommendedJobs user={user!} />
+        </div>
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          <Card data-tour="find-project-card">
+            <CardHeader>
+              <CardTitle>Find Your Next Project</CardTitle>
+              <CardDescription>
+                Browse hundreds of CCTV installation jobs and place your bid.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild>
+                <Link href="/dashboard/jobs">
+                  Browse Jobs <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+          <Card data-tour="manage-profile-card">
+            <CardHeader>
+              <CardTitle>Manage Your Profile</CardTitle>
+              <CardDescription>
+                Keep your skills and reputation up-to-date to attract more Job Givers.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="secondary">
+                <Link href="/dashboard/profile">
+                  Go to Profile <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
+      );
 }
 
-function JobGiverDashboard() {
-  const { user } = useUser();
-  const { db } = useFirebase();
-  const { setHelp } = useHelp();
-  const [stats, setStats] = React.useState({ activeJobs: 0, completedJobs: 0, totalBids: 0, openDisputes: 0 });
-  const [loading, setLoading] = React.useState(true);
+      function JobGiverDashboard() {
+  const {user} = useUser();
+      const {db} = useFirebase();
+      const {setHelp} = useHelp();
+      const [stats, setStats] = React.useState<{activeJobs: number, completedJobs: number, totalBids: number, openDisputes: number, cancelledJobs: number, transactions: Transaction[]}>({activeJobs: 0, completedJobs: 0, totalBids: 0, openDisputes: 0, cancelledJobs: 0, transactions: [] });
+      const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    async function fetchData() {
-      if (!user || !db) return;
-      setLoading(true);
+        async function fetchData() {
+          if (!user || !db) return;
+          setLoading(true);
 
-      const userDocRef = doc(db, 'users', user.id);
+          const userDocRef = doc(db, 'users', user.id);
 
-      const myJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
+          const myJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
 
-      const disputesQuery = query(
-        collection(db, "disputes"),
-        and(
-          where('status', '==', 'Open'),
-          or(
-            where('parties.jobGiverId', '==', user.id),
-            where('parties.installerId', '==', user.id)
-          )
-        )
-      );
+          const disputesQuery = query(
+            collection(db, "disputes"),
+            and(
+              where('status', '==', 'Open'),
+              or(
+                where('parties.jobGiverId', '==', user.id),
+                where('parties.installerId', '==', user.id)
+              )
+            )
+          );
 
-      const [myJobsSnapshot, disputesSnapshot] = await Promise.all([
-        getDocs(myJobsQuery),
-        getDocs(disputesQuery)
-      ]);
+          const transactionsQuery = query(collection(db, "transactions"), where("payerId", "==", user.id), where("status", "==", "Released"));
 
-      const myJobs = myJobsSnapshot.docs.map(doc => doc.data() as Job);
+          const [myJobsSnapshot, disputesSnapshot, transactionsSnapshot] = await Promise.all([
+            getDocs(myJobsQuery),
+            getDocs(disputesQuery),
+            getDocs(transactionsQuery)
+          ]);
 
-      let active = 0;
-      let completed = 0;
-      let bids = 0;
+          const myJobs = myJobsSnapshot.docs.map(doc => doc.data() as Job);
+          const myTransactions = transactionsSnapshot.docs.map(doc => doc.data() as Transaction);
 
-      myJobs.forEach(job => {
-        if (job.status !== 'Completed' && job.status !== 'Cancelled') {
-          active++;
+          let active = 0;
+          let completed = 0;
+          let bids = 0;
+          let cancelled = 0;
+
+          myJobs.forEach(job => {
+            if (job.status === 'Completed') completed++;
+            else if (job.status === 'Cancelled') cancelled++;
+            else active++;
+
+            bids += (job.bids || []).length;
+          });
+
+          setStats({
+            activeJobs: active,
+            completedJobs: completed,
+            totalBids: bids,
+            openDisputes: disputesSnapshot.size,
+            cancelledJobs: cancelled,
+            transactions: myTransactions
+          });
+
+          setLoading(false);
         }
-        if (job.status === 'Completed') {
-          completed++;
-        }
-        bids += (job.bids || []).length;
-      });
-
-      setStats({
-        activeJobs: active,
-        completedJobs: completed,
-        totalBids: bids,
-        openDisputes: disputesSnapshot.size
-      });
-
-      setLoading(false);
-    }
 
     fetchData();
 
   }, [user, db]);
 
+      // Process Data for Spending Chart (Fix)
+      const {spendingData, jobStatusData, totalSpent} = React.useMemo(() => {
+      const months = Array.from({length: 6 }).map((_, i) => {
+        const d = subMonths(new Date(), i);
+      return {
+        name: format(d, 'MMM'),
+      fullName: format(d, 'MMM yyyy'),
+      amount: 0
+        };
+      }).reverse();
+
+      const transactions = stats.transactions || [];
+      transactions.forEach(t => {
+           if (t.releasedAt) {
+            const date = toDate(t.releasedAt);
+      const monthStr = format(date, 'MMM yyyy');
+            const monthData = months.find(m => m.fullName === monthStr);
+      if (monthData) {
+        monthData.amount += t.totalPaidByGiver || 0;
+            }
+        }
+      });
+
+      const totalSpent = transactions.reduce((acc, t) => acc + (t.totalPaidByGiver || 0), 0);
+
+      const jobStatusData = [
+      {name: 'Active', value: stats.activeJobs, color: '#0088FE' }, // Blue
+      {name: 'Completed', value: stats.completedJobs, color: '#00C49F' }, // Green
+      {name: 'Cancelled', value: stats.cancelledJobs, color: '#FF8042' } // Orange
+      ].filter(d => d.value > 0);
+
+      return {spendingData: months, jobStatusData, totalSpent };
+  }, [stats]);
+
   React.useEffect(() => {
-    setHelp({
-      title: 'Job Giver Dashboard Guide',
-      content: (
-        <div className="space-y-4 text-sm">
-          <p>Welcome to your Dashboard! This is your control center for hiring and managing installers.</p>
-          <ul className="list-disc space-y-2 pl-5">
-            <li>
-              <span className="font-semibold">Active Jobs:</span> This shows the number of jobs you've posted that are currently open for bidding or in progress. Click to manage them.
-            </li>
-            <li>
-              <span className="font-semibold">Total Bids Received:</span> See the total number of bids submitted across all your job postings.
-            </li>
-            <li>
-              <span className="font-semibold">Completed Jobs:</span> View a history of all your successfully completed projects. Click to see your archived jobs.
-            </li>
-            <li>
-              <span className="font-semibold">Open Disputes:</span> Shows any active disputes on your jobs that require your attention.
-            </li>
-            <li>
-              <span className="font-semibold">Need an Installer?:</span> A shortcut to post a new job and start receiving bids from professionals.
-            </li>
-          </ul>
-          <p>Use the navigation on the left to access other sections, like "My Jobs" to review bids on your active postings.</p>
-        </div>
-      )
-    });
+        setHelp({
+          title: 'Job Giver Dashboard Guide',
+          content: (
+            <div className="space-y-4 text-sm">
+              <p>Welcome to your Dashboard! This is your control center for hiring and managing installers.</p>
+              <ul className="list-disc space-y-2 pl-5">
+                <li>
+                  <span className="font-semibold">Active Jobs:</span> This shows the number of jobs you&apos;ve posted that are currently open for bidding or in progress. Click to manage them.
+                </li>
+                <li>
+                  <span className="font-semibold">Total Bids Received:</span> See the total number of bids submitted across all your job postings.
+                </li>
+                <li>
+                  <span className="font-semibold">Completed Jobs:</span> View a history of all your successfully completed projects. Click to see your archived jobs.
+                </li>
+                <li>
+                  <span className="font-semibold">Open Disputes:</span> Shows any active disputes on your jobs that require your attention.
+                </li>
+                <li>
+                  <span className="font-semibold">Need an Installer?:</span> A shortcut to post a new job and start receiving bids from professionals.
+                </li>
+              </ul>
+              <p>Use the navigation on the left to access other sections, like &quot;My Jobs&quot; to review bids on your active postings.</p>
+            </div>
+          )
+        });
   }, [setHelp]);
 
-  if (loading) {
+      if (loading) {
     return (
       <div className="flex h-48 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
-    )
+      )
   }
 
-  return (
-    <>
-      <div className="flex items-center mb-8">
-        <h1 className="text-lg font-semibold md:text-2xl">Welcome, {user?.name}!</h1>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <StatCard
-          title="Active Jobs"
-          value={stats.activeJobs}
-          description="Jobs not yet completed"
-          icon={Briefcase}
-          href="/dashboard/posted-jobs"
-          iconBgColor="bg-blue-100 dark:bg-blue-900"
-          iconColor="text-blue-600 dark:text-blue-300"
-        />
-        <StatCard
-          title="Total Bids Received"
-          value={stats.totalBids}
-          description="Across all your job postings"
-          icon={FileText}
-          href="/dashboard/posted-jobs"
-          iconBgColor="bg-purple-100 dark:bg-purple-900"
-          iconColor="text-purple-600 dark:text-purple-300"
-        />
-        <StatCard
-          title="Completed Jobs"
-          value={stats.completedJobs}
-          description="Successfully finished projects"
-          icon={UserCheck}
-          href="/dashboard/posted-jobs?tab=archived"
-          iconBgColor="bg-green-100 dark:bg-green-900"
-          iconColor="text-green-600 dark:text-green-300"
-        />
-        <StatCard
-          title="Open Disputes"
-          value={stats.openDisputes}
-          description="Disputes needing resolution"
-          icon={AlertOctagon}
-          href="/dashboard/disputes"
-          iconBgColor="bg-red-100 dark:bg-red-900"
-          iconColor="text-red-600 dark:text-red-300"
-        />
-      </div>
-      <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Card data-tour="need-installer-card" className="col-span-1">
-          <CardHeader>
-            <CardTitle>Need an Installer?</CardTitle>
-            <CardDescription>
-              Post a job and get bids from verified CCTV professionals.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <Link href="/dashboard/post-job">
-                <PlusCircle className="mr-2 h-4 w-4" /> Post a New Job
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-        <Card data-tour="manage-jobs-card" className="col-span-1">
-          <CardHeader>
-            <CardTitle>Manage Your Jobs</CardTitle>
-            <CardDescription>
-              Review bids, award projects, and manage your active jobs all in one place.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="secondary">
-              <Link href="/dashboard/posted-jobs">
-                Go to My Jobs <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </>
-  );
+      return (
+      <>
+        <div className="flex items-center mb-8">
+          <h1 className="text-lg font-semibold md:text-2xl">Welcome, {user?.name}!</h1>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+          <StatCard
+            title="Active Jobs"
+            value={stats.activeJobs}
+            description="Jobs not yet completed"
+            icon={Briefcase}
+            href="/dashboard/posted-jobs"
+            iconBgColor="bg-blue-100 dark:bg-blue-900"
+            iconColor="text-blue-600 dark:text-blue-300"
+          />
+          <StatCard
+            title="Total Bids Received"
+            value={stats.totalBids}
+            description="Across all your job postings"
+            icon={FileText}
+            href="/dashboard/posted-jobs"
+            iconBgColor="bg-purple-100 dark:bg-purple-900"
+            iconColor="text-purple-600 dark:text-purple-300"
+          />
+          <StatCard
+            title="Completed Jobs"
+            value={stats.completedJobs}
+            description="Successfully finished projects"
+            icon={UserCheck}
+            href="/dashboard/posted-jobs?tab=archived"
+            iconBgColor="bg-green-100 dark:bg-green-900"
+            iconColor="text-green-600 dark:text-green-300"
+          />
+          <StatCard
+            title="Open Disputes"
+            value={stats.openDisputes}
+            description="Disputes needing resolution"
+            icon={AlertOctagon}
+            href="/dashboard/disputes"
+            iconBgColor="bg-red-100 dark:bg-red-900"
+            iconColor="text-red-600 dark:text-red-300"
+          />
+        </div>
+
+        {/* Job Giver Charts Section */}
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <MetricChartCard title="Spending History" description="Amount spent on completed jobs (last 6 months)" className="lg:col-span-2">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={spendingData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" />
+                <YAxis tickFormatter={(val) => `₹${val}`} />
+                <Tooltip formatter={(val) => `₹${Number(val).toLocaleString()}`} labelStyle={{ color: 'black' }} cursor={{ fill: 'transparent' }} />
+                <Bar dataKey="amount" fill="#8884d8" radius={[4, 4, 0, 0]} name="Spent" />
+              </BarChart>
+            </ResponsiveContainer>
+          </MetricChartCard>
+
+          <MetricChartCard title="Job Statuses" description="Distribution of your posted jobs">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={jobStatusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {jobStatusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend verticalAlign="bottom" height={36} />
+              </PieChart>
+            </ResponsiveContainer>
+          </MetricChartCard>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Card data-tour="need-installer-card" className="col-span-1">
+            <CardHeader>
+              <CardTitle>Need an Installer?</CardTitle>
+              <CardDescription>
+                Post a job and get bids from verified CCTV professionals.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild>
+                <Link href="/dashboard/post-job">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Post a New Job
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+          <Card data-tour="manage-jobs-card" className="col-span-1">
+            <CardHeader>
+              <CardTitle>Manage Your Jobs</CardTitle>
+              <CardDescription>
+                Review bids, award projects, and manage your active jobs all in one place.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="secondary">
+                <Link href="/dashboard/posted-jobs">
+                  Go to My Jobs <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
+      );
 }
 
-const tierIcons: Record<string, React.ReactNode> = {
-  Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
-  Silver: <Medal className="h-4 w-4 text-gray-400" />,
-  Gold: <Award className="h-4 w-4 text-amber-500" />,
-  Platinum: <Award className="h-4 w-4 text-cyan-400" />,
+      const tierIcons: Record<string, React.ReactNode> = {
+        Bronze: <Medal className="h-4 w-4 text-yellow-700" />,
+      Silver: <Medal className="h-4 w-4 text-gray-400" />,
+      Gold: <Award className="h-4 w-4 text-amber-500" />,
+      Platinum: <Award className="h-4 w-4 text-cyan-400" />,
 };
 
-function TopPerformersCard({ installers }: { installers: User[] }) {
+      function TopPerformersCard({installers}: {installers: User[] }) {
   const rankedInstallers = React.useMemo(() => {
     const now = new Date();
-    const lastMonthDate = subMonths(now, 1);
-    const lastMonthName = format(lastMonthDate, 'MMMM yyyy');
+      const lastMonthDate = subMonths(now, 1);
+      const lastMonthName = format(lastMonthDate, 'MMMM yyyy');
 
-    const twoMonthsAgoDate = subMonths(now, 2);
-    const twoMonthsAgoName = format(twoMonthsAgoDate, 'MMMM yyyy');
+      const twoMonthsAgoDate = subMonths(now, 2);
+      const twoMonthsAgoName = format(twoMonthsAgoDate, 'MMMM yyyy');
 
-    return installers
+      return installers
       .filter(i => i.installerProfile)
       .map(installer => {
         const history = installer.installerProfile?.reputationHistory || [];
@@ -509,72 +675,72 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
         const lastMonthEntry = history.find(h => h.month === lastMonthName);
         const twoMonthsAgoEntry = history.find(h => h.month === twoMonthsAgoName);
 
-        const lastMonthPoints = lastMonthEntry?.points || 0;
-        const twoMonthsAgoPoints = twoMonthsAgoEntry?.points || 0;
-        const monthlyPoints = Math.max(0, lastMonthPoints - twoMonthsAgoPoints);
+      const lastMonthPoints = lastMonthEntry?.points || 0;
+      const twoMonthsAgoPoints = twoMonthsAgoEntry?.points || 0;
+      const monthlyPoints = Math.max(0, lastMonthPoints - twoMonthsAgoPoints);
 
-        return { ...installer, monthlyPoints };
+      return {...installer, monthlyPoints};
       })
       .sort((a, b) => {
         if (b.monthlyPoints !== a.monthlyPoints) return b.monthlyPoints - a.monthlyPoints;
-        if ((b.installerProfile?.rating || 0) !== (a.installerProfile?.rating || 0)) return (b.installerProfile?.rating || 0) - (a.installerProfile?.rating || 0);
-        return toDate(a.memberSince).getTime() - toDate(b.memberSince).getTime();
+      if ((b.installerProfile?.rating || 0) !== (a.installerProfile?.rating || 0)) return (b.installerProfile?.rating || 0) - (a.installerProfile?.rating || 0);
+      return toDate(a.memberSince).getTime() - toDate(b.memberSince).getTime();
       });
   }, [installers]);
 
-  const lastMonthName = format(subMonths(new Date(), 1), 'MMMM yyyy');
+      const lastMonthName = format(subMonths(new Date(), 1), 'MMMM yyyy');
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Top Performers ({lastMonthName})</CardTitle>
-        <CardDescription>Installers with the highest reputation gain last month.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Installer</TableHead>
-              <TableHead className="text-right">Points Gained</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rankedInstallers.slice(0, 3).map((installer, index) => (
-              <TableRow key={installer.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-lg w-4">{index + 1}</span>
-                    <Avatar className="h-9 w-9 hidden sm:flex">
-                      <AnimatedAvatar svg={installer.avatarUrl} />
-                    </Avatar>
-                    <div>
-                      <Link href={`/dashboard/users/${installer.id}`} className="font-medium hover:underline">{installer.name}</Link>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {tierIcons[installer.installerProfile?.tier || 'Bronze']}
-                        <span>{installer.installerProfile?.tier} Tier</span>
+      return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Performers ({lastMonthName})</CardTitle>
+          <CardDescription>Installers with the highest reputation gain last month.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Installer</TableHead>
+                <TableHead className="text-right">Points Gained</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rankedInstallers.slice(0, 3).map((installer, index) => (
+                <TableRow key={installer.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-lg w-4">{index + 1}</span>
+                      <Avatar className="h-9 w-9 hidden sm:flex">
+                        <AnimatedAvatar svg={installer.avatarUrl} />
+                      </Avatar>
+                      <div>
+                        <Link href={`/dashboard/users/${installer.id}`} className="font-medium hover:underline">{installer.name}</Link>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {tierIcons[installer.installerProfile?.tier || 'Bronze']}
+                          <span>{installer.installerProfile?.tier} Tier</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right font-semibold text-green-600">+{installer.monthlyPoints} pts</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        {rankedInstallers.length === 0 && (
-          <p className="text-center py-4 text-muted-foreground">Not enough data to rank performers.</p>
-        )}
-      </CardContent>
-    </Card>
-  );
+                  </TableCell>
+                  <TableCell className="text-right font-semibold text-green-600">+{installer.monthlyPoints} pts</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {rankedInstallers.length === 0 && (
+            <p className="text-center py-4 text-muted-foreground">Not enough data to rank performers.</p>
+          )}
+        </CardContent>
+      </Card>
+      );
 }
 
-function FinancialSummaryCard({ transactions }: { transactions: Transaction[] }) {
+      function FinancialSummaryCard({transactions}: {transactions: Transaction[] }) {
   const summary = React.useMemo(() => {
     return transactions.reduce((acc, t) => {
       if (t.status === 'Released') {
         acc.totalReleased += t.payoutToInstaller;
-        acc.platformRevenue += t.commission + t.jobGiverFee;
+      acc.platformRevenue += t.commission + t.jobGiverFee;
       }
       if (t.status === 'Funded') {
         acc.fundsHeld += t.totalPaidByGiver;
@@ -584,131 +750,133 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
       }
       return acc;
     }, {
-      totalVolume: 0,
+        totalVolume: 0,
       totalReleased: 0,
       platformRevenue: 0,
       fundsHeld: 0,
     });
   }, [transactions]);
 
-  return (
-    <Card className="col-span-full">
-      <CardHeader>
-        <CardTitle>Financial Summary</CardTitle>
-        <CardDescription>A real-time overview of financial activities on the platform.</CardDescription>
-      </CardHeader>
-      <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <Card className="p-4">
-          <p className="text-sm font-medium">Total Volume</p>
-          <p className="text-2xl font-bold">₹{summary.totalVolume.toLocaleString()}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm font-medium">Platform Revenue</p>
-          <p className="text-2xl font-bold text-green-600">₹{summary.platformRevenue.toLocaleString()}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm font-medium">Funds Released</p>
-          <p className="text-2xl font-bold">₹{summary.totalReleased.toLocaleString()}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm font-medium">Funds Held</p>
-          <p className="text-2xl font-bold">₹{summary.fundsHeld.toLocaleString()}</p>
-        </Card>
-      </CardContent>
-    </Card>
-  )
+      return (
+      <Card className="col-span-full">
+        <CardHeader>
+          <CardTitle>Financial Summary</CardTitle>
+          <CardDescription>A real-time overview of financial activities on the platform.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <Card className="p-4">
+            <p className="text-sm font-medium">Total Volume</p>
+            <p className="text-2xl font-bold">₹{summary.totalVolume.toLocaleString()}</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-sm font-medium">Platform Revenue</p>
+            <p className="text-2xl font-bold text-green-600">₹{summary.platformRevenue.toLocaleString()}</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-sm font-medium">Funds Released</p>
+            <p className="text-2xl font-bold">₹{summary.totalReleased.toLocaleString()}</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-sm font-medium">Funds Held</p>
+            <p className="text-2xl font-bold">₹{summary.fundsHeld.toLocaleString()}</p>
+          </Card>
+        </CardContent>
+      </Card>
+      )
 }
 
 
-function AdminDashboard() {
-  const { user } = useUser();
-  const { db } = useFirebase();
-  const { setHelp } = useHelp();
-  const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, openDisputes: 0, totalValueReleased: 0 });
-  const [allUsers, setAllUsers] = React.useState<User[]>([]);
-  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
-  const [loading, setLoading] = React.useState(true);
+      function AdminDashboard() {
+  const {user} = useUser();
+      const {db} = useFirebase();
+      const {setHelp} = useHelp();
+      const [stats, setStats] = React.useState({totalUsers: 0, totalJobs: 0, openDisputes: 0, totalValueReleased: 0 });
+      const [allUsers, setAllUsers] = React.useState<User[]>([]);
+      const [allJobs, setAllJobs] = React.useState<Job[]>([]);
+      const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+      const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    async function fetchData() {
-      if (!user || !db) return;
-      setLoading(true);
+        async function fetchData() {
+          if (!user || !db) return;
+          setLoading(true);
 
-      const usersQuery = query(collection(db, "users"));
-      const jobsQuery = query(collection(db, "jobs"));
-      const disputesQuery = query(collection(db, "disputes"), where('status', '==', 'Open'));
-      const transactionsQuery = query(collection(db, "transactions"));
+          const usersQuery = query(collection(db, "users"));
+          const jobsQuery = query(collection(db, "jobs"));
+          const disputesQuery = query(collection(db, "disputes"), where('status', '==', 'Open'));
+          const transactionsQuery = query(collection(db, "transactions"));
 
-      const [usersSnapshot, jobsSnapshot, disputesSnapshot, transactionsSnapshot] = await Promise.all([
-        getDocs(usersQuery),
-        getDocs(jobsQuery),
-        getDocs(disputesQuery),
-        getDocs(transactionsQuery),
-      ]);
+          const [usersSnapshot, jobsSnapshot, disputesSnapshot, transactionsSnapshot] = await Promise.all([
+            getDocs(usersQuery),
+            getDocs(jobsQuery),
+            getDocs(disputesQuery),
+            getDocs(transactionsQuery),
+          ]);
 
-      setAllUsers(usersSnapshot.docs.map(d => d.data() as User));
-      setTransactions(transactionsSnapshot.docs.map(d => d.data() as Transaction));
+          setAllUsers(usersSnapshot.docs.map(d => d.data() as User));
+          setAllJobs(jobsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Job)));
+          setTransactions(transactionsSnapshot.docs.map(d => d.data() as Transaction));
 
-      const totalValueReleased = transactionsSnapshot.docs
-        .map(d => d.data() as Transaction)
-        .filter(t => t.status === 'Released')
-        .reduce((sum, t) => sum + t.payoutToInstaller, 0);
+          const totalValueReleased = transactionsSnapshot.docs
+            .map(d => d.data() as Transaction)
+            .filter(t => t.status === 'Released')
+            .reduce((sum, t) => sum + t.payoutToInstaller, 0);
 
-      setStats({
-        totalUsers: usersSnapshot.size,
-        totalJobs: jobsSnapshot.size,
-        openDisputes: disputesSnapshot.size,
-        totalValueReleased
-      });
+          setStats({
+            totalUsers: usersSnapshot.size,
+            totalJobs: jobsSnapshot.size,
+            openDisputes: disputesSnapshot.size,
+            totalValueReleased
+          });
 
-      setLoading(false);
-    }
+          setLoading(false);
+        }
 
     fetchData();
 
   }, [user, db]);
 
   React.useEffect(() => {
-    setHelp({
-      title: 'Admin Dashboard Guide',
-      content: (
-        <div className="space-y-4 text-sm">
-          <p>Welcome, Admin! This is your high-level overview of the entire platform.</p>
-          <ul className="list-disc space-y-2 pl-5">
-            <li>
-              <span className="font-semibold">Total Users:</span> The total number of registered users (Installers and Job Givers).
-            </li>
-            <li>
-              <span className="font-semibold">Total Jobs:</span> The total number of jobs ever created on the platform.
-            </li>
-            <li>
-              <span className="font-semibold">Open Disputes:</span> The number of active disputes requiring your attention.
-            </li>
-            <li>
-              <span className="font-semibold">Value Released:</span> The total monetary value released to installers for completed jobs.
-            </li>
-            <li>
-              <span className="font-semibold">Financial Summary:</span> A real-time breakdown of platform revenue and funds held in escrow.
-            </li>
-            <li>
-              <span className="font-semibold">Top Performers:</span> A leaderboard of the best-performing installers from the previous month.
-            </li>
-            <li>
-              <span className="font-semibold">User Growth:</span> A chart showing new user sign-ups over the last 6 months.
-            </li>
-          </ul>
-          <p>Use the navigation menu to access detailed views like the User Directory and All Jobs list.</p>
-        </div>
-      )
-    });
+        setHelp({
+          title: 'Admin Dashboard Guide',
+          content: (
+            <div className="space-y-4 text-sm">
+              <p>Welcome, Admin! This is your high-level overview of the entire platform.</p>
+              <ul className="list-disc space-y-2 pl-5">
+                <li>
+                  <span className="font-semibold">Total Users:</span> The total number of registered users (Installers and Job Givers).
+                </li>
+                <li>
+                  <span className="font-semibold">Total Jobs:</span> The total number of jobs ever created on the platform.
+                </li>
+                <li>
+                  <span className="font-semibold">Open Disputes:</span> The number of active disputes requiring your attention.
+                </li>
+                <li>
+                  <span className="font-semibold">Value Released:</span> The total monetary value released to installers for completed jobs.
+                </li>
+                <li>
+                  <span className="font-semibold">Financial Summary:</span> A real-time breakdown of platform revenue and funds held in escrow.
+                </li>
+                <li>
+                  <span className="font-semibold">Top Performers:</span> A leaderboard of the best-performing installers from the previous month.
+                </li>
+                <li>
+                  <span className="font-semibold">User Growth:</span> A chart showing new user sign-ups over the last 6 months.
+                </li>
+              </ul>
+              <p>Use the navigation menu to access detailed views like the User Directory and All Jobs list.</p>
+            </div>
+          )
+        });
   }, [setHelp]);
 
   const userGrowthData = React.useMemo(() => {
     const now = new Date();
-    const data = Array.from({ length: 6 }).map((_, i) => {
+      const data = Array.from({length: 6 }).map((_, i) => {
       const monthDate = subMonths(startOfMonth(now), i);
       const monthName = format(monthDate, 'MMM');
-      return { name: monthName, Installers: 0, "Job Givers": 0 };
+      return {name: monthName, Installers: 0, "Job Givers": 0 };
     }).reverse();
 
     allUsers.forEach(user => {
@@ -716,239 +884,401 @@ function AdminDashboard() {
       if (joinDate > subMonths(now, 6)) {
         const monthName = format(joinDate, 'MMM');
         const monthData = data.find(m => m.name === monthName);
-        if (monthData) {
+      if (monthData) {
           if (user.roles.includes('Installer')) monthData.Installers++;
-          if (user.roles.includes('Job Giver')) monthData["Job Givers"]++;
+      if (user.roles.includes('Job Giver')) monthData["Job Givers"]++;
         }
       }
     });
-    return data;
+      return data;
   }, [allUsers]);
 
-  if (loading) {
+      // Admin Charts Data
+      const {revenueData, jobHealthData, recentActivity} = React.useMemo(() => {
+     // 1. Revenue Trends (Net Revenue = Commission + Fees)
+     const months = Array.from({length: 6 }).map((_, i) => {
+        const d = subMonths(new Date(), i);
+      return {
+        name: format(d, 'MMM'),
+      fullName: format(d, 'MMM yyyy'),
+      revenue: 0
+        };
+      }).reverse();
+
+     transactions.forEach(t => {
+         if (t.status === 'Released' && t.releasedAt) {
+             const date = toDate(t.releasedAt);
+      const monthStr = format(date, 'MMM yyyy');
+             const monthData = months.find(m => m.fullName === monthStr);
+      if (monthData) {
+                 const commission = t.commission || 0;
+      const fee = t.jobGiverFee || 0;
+      monthData.revenue += (commission + fee);
+             }
+         }
+     });
+
+     // 2. System Health (Job Statuses)
+     const jobCounts = allJobs.reduce((acc, job) => {
+        acc[job.status] = (acc[job.status] || 0) + 1;
+      return acc;
+     }, { } as Record<string, number>);
+     
+     const jobHealthData = Object.entries(jobCounts).map(([status, count]) => ({
+        name: status,
+      value: count,
+      color: status === 'Completed' ? '#00C49F' : status === 'In Progress' ? '#0088FE' : status === 'Open for Bidding' ? '#FFBB28' : '#FF8042'
+     }));
+
+     // 3. Recent Activity (Newest 5 items mixed)
+     // Actually, let's just do two separate lists for cleanliness.
+     const recentUsers = [...allUsers].sort((a, b) => toDate(b.memberSince).getTime() - toDate(a.memberSince).getTime()).slice(0, 5);
+     const recentJobs = [...allJobs].sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime()).slice(0, 5);
+
+      return {revenueData: months, jobHealthData, recentActivity: {users: recentUsers, jobs: recentJobs } };
+  }, [allUsers, allJobs, transactions]);
+
+  const totalRevenue = revenueData.reduce((acc, m) => acc + m.revenue, 0);
+
+      if (loading) {
     return (
       <div className="flex h-48 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
-    )
+      )
   }
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Welcome, Admin!</h1>
+      return (
       <div className="space-y-6">
-        <FinancialSummaryCard transactions={transactions} />
+        <h1 className="text-2xl font-bold tracking-tight">Welcome, Admin!</h1>
+        <div className="space-y-6">
+          <FinancialSummaryCard transactions={transactions} />
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Total Users"
-            value={stats.totalUsers}
-            description={`${allUsers.filter(u => u.roles.includes('Installer')).length} Installers, ${allUsers.filter(u => u.roles.includes('Job Giver')).length} Job Givers`}
-            icon={Users}
-            href="/dashboard/users"
-            iconBgColor="bg-blue-500"
-            iconColor="text-white"
-          />
-          <StatCard
-            title="Total Jobs"
-            value={stats.totalJobs}
-            description="View every job in the platform"
-            icon={Briefcase}
-            href="/dashboard/all-jobs"
-            iconBgColor="bg-purple-500"
-            iconColor="text-white"
-          />
-          <StatCard
-            title="Open Disputes"
-            value={stats.openDisputes}
-            description="Cases requiring review"
-            icon={AlertOctagon}
-            href="/dashboard/disputes"
-            iconBgColor="bg-red-500"
-            iconColor="text-white"
-          />
-          <StatCard
-            title="Value Released"
-            value={`₹${stats.totalValueReleased.toLocaleString()}`}
-            description="Paid out to installers"
-            icon={IndianRupee}
-            href="/dashboard/transactions"
-            iconBgColor="bg-green-500"
-            iconColor="text-white"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <TopPerformersCard installers={allUsers.filter(u => u.installerProfile)} />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total Users"
+              value={stats.totalUsers}
+              description={`${allUsers.filter(u => u.roles.includes('Installer')).length} Installers, ${allUsers.filter(u => u.roles.includes('Job Giver')).length} Job Givers`}
+              icon={Users}
+              href="/dashboard/users"
+              iconBgColor="bg-blue-500"
+              iconColor="text-white"
+            />
+            <StatCard
+              title="Total Jobs"
+              value={stats.totalJobs}
+              description="View every job in the platform"
+              icon={Briefcase}
+              href="/dashboard/all-jobs"
+              iconBgColor="bg-purple-500"
+              iconColor="text-white"
+            />
+            <StatCard
+              title="Open Disputes"
+              value={stats.openDisputes}
+              description="Cases requiring review"
+              icon={AlertOctagon}
+              href="/dashboard/disputes"
+              iconBgColor="bg-red-500"
+              iconColor="text-white"
+            />
+            <StatCard
+              title="Value Released"
+              value={`₹${stats.totalValueReleased.toLocaleString()}`}
+              description="Paid out to installers"
+              icon={IndianRupee}
+              href="/dashboard/transactions"
+              iconBgColor="bg-green-500"
+              iconColor="text-white"
+            />
           </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>User Growth</CardTitle>
-              <CardDescription>New users in the last 6 months.</CardDescription>
-            </CardHeader>
-            <CardContent>
+
+          {/* Admin Charts Section */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <MetricChartCard title="Platform Net Revenue" description="Commissions + Fees (Last 6 Months)" className="lg:col-span-2">
+              <div className="flex flex-col h-full">
+                <div className="mb-4">
+                  <span className="text-3xl font-bold text-green-600">₹{totalRevenue.toLocaleString()}</span>
+                  <span className="text-sm text-muted-foreground ml-2">Total Net Revenue (Period)</span>
+                </div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={revenueData}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="name" />
+                    <YAxis tickFormatter={(val) => `₹${val}`} />
+                    <Tooltip formatter={(val) => `₹${Number(val).toLocaleString()}`} labelStyle={{ color: 'black' }} />
+                    <Area type="monotone" dataKey="revenue" stroke="#10b981" fillOpacity={1} fill="url(#colorRevenue)" name="Net Revenue" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </MetricChartCard>
+
+            <MetricChartCard title="System Health" description="All Jobs Status Distribution">
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={userGrowthData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                <PieChart>
+                  <Pie
+                    data={jobHealthData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {jobHealthData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
                   <Tooltip />
-                  <Legend />
-                  <Bar dataKey="Installers" stackId="a" fill="hsl(var(--primary))" />
-                  <Bar dataKey="Job Givers" stackId="a" fill="hsl(var(--secondary))" />
-                </BarChart>
+                  <Legend verticalAlign="bottom" height={36} />
+                </PieChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
+            </MetricChartCard>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Activity Feed */}
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Recent Signups</CardTitle>
+                <CardDescription>Latest users to join the platform</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentActivity.users.map(u => (
+                    <div key={u.id} className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarFallback>{u.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 overflow-hidden">
+                        <p className="text-sm font-medium truncate">{u.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                      </div>
+                      <div className="text-xs text-muted-foreground whitespace-nowrap">
+                        {format(toDate(u.memberSince), 'MMM d')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Top Performers ({lastMonthName})</CardTitle>
+                <CardDescription>Installers with the highest reputation gain last month.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Installer</TableHead>
+                      <TableHead className="text-right">Points Gained</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rankedInstallers.slice(0, 3).map((installer, index) => (
+                      <TableRow key={installer.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-lg w-4">{index + 1}</span>
+                            <Avatar className="h-9 w-9 hidden sm:flex">
+                              <AnimatedAvatar svg={installer.avatarUrl} />
+                            </Avatar>
+                            <div>
+                              <Link href={`/dashboard/users/${installer.id}`} className="font-medium hover:underline">{installer.name}</Link>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                {tierIcons[installer.installerProfile?.tier || 'Bronze']}
+                                <span>{installer.installerProfile?.tier} Tier</span>
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-green-600">+{installer.monthlyPoints} pts</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {rankedInstallers.length === 0 && (
+                  <p className="text-center py-4 text-muted-foreground">Not enough data to rank performers.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-3">
+              <CardHeader>
+                <CardTitle>User Growth</CardTitle>
+                <CardDescription>New users in the last 6 months.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={userGrowthData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="Installers" stackId="a" fill="hsl(var(--primary))" />
+                    <Bar dataKey="Job Givers" stackId="a" fill="hsl(var(--secondary))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
-    </div>
-  );
+        );
 }
 
-function SupportTeamDashboard() {
-  const { user } = useUser();
-  const { db } = useFirebase();
-  const { setHelp } = useHelp();
-  const [stats, setStats] = React.useState({ openDisputes: 0, underReviewDisputes: 0 });
-  const [disputes, setDisputes] = React.useState<Dispute[]>([]);
-  const [loading, setLoading] = React.useState(true);
+        function SupportTeamDashboard() {
+  const {user} = useUser();
+        const {db} = useFirebase();
+        const {setHelp} = useHelp();
+        const [stats, setStats] = React.useState({openDisputes: 0, underReviewDisputes: 0 });
+        const [disputes, setDisputes] = React.useState<Dispute[]>([]);
+        const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    async function fetchData() {
-      if (!user || !db) return;
-      setLoading(true);
+          async function fetchData() {
+            if (!user || !db) return;
+            setLoading(true);
 
-      const disputesRef = collection(db, "disputes");
+            const disputesRef = collection(db, "disputes");
 
-      const openQuery = query(disputesRef, where('status', '==', 'Open'));
-      const reviewQuery = query(disputesRef, where('status', '==', 'Under Review'));
+            const openQuery = query(disputesRef, where('status', '==', 'Open'));
+            const reviewQuery = query(disputesRef, where('status', '==', 'Under Review'));
 
-      const [openSnapshot, reviewSnapshot] = await Promise.all([
-        getDocs(openQuery),
-        getDocs(reviewQuery),
-      ]);
+            const [openSnapshot, reviewSnapshot] = await Promise.all([
+              getDocs(openQuery),
+              getDocs(reviewQuery),
+            ]);
 
-      const involvedDisputesQuery = query(disputesRef, where('handledBy', '==', user.id));
-      const involvedSnapshot = await getDocs(involvedDisputesQuery);
-      const handledDisputes = involvedSnapshot.docs.map(d => d.data() as Dispute);
+            const involvedDisputesQuery = query(disputesRef, where('handledBy', '==', user.id));
+            const involvedSnapshot = await getDocs(involvedDisputesQuery);
+            const handledDisputes = involvedSnapshot.docs.map(d => d.data() as Dispute);
 
-      setDisputes(handledDisputes);
+            setDisputes(handledDisputes);
 
-      setStats({
-        openDisputes: openSnapshot.size,
-        underReviewDisputes: reviewSnapshot.size,
-      });
+            setStats({
+              openDisputes: openSnapshot.size,
+              underReviewDisputes: reviewSnapshot.size,
+            });
 
-      setLoading(false);
-    }
+            setLoading(false);
+          }
     fetchData();
   }, [user, db]);
 
   React.useEffect(() => {
-    setHelp({
-      title: 'Support Dashboard Guide',
-      content: (
-        <div className="space-y-4 text-sm">
-          <p>Welcome to the Support Dashboard. Your primary focus is to manage and resolve user disputes.</p>
-          <ul className="list-disc space-y-2 pl-5">
-            <li>
-              <span className="font-semibold">Open Disputes:</span> These are new cases that require your immediate attention.
-            </li>
-            <li>
-              <span className="font-semibold">Under Review:</span> These are disputes you are actively investigating.
-            </li>
-            <li>
-              <span className="font-semibold">Performance:</span> This card shows your personal dispute resolution metrics, helping you track your progress.
-            </li>
-          </ul>
-          <p>Click on the stat cards to navigate to the Dispute Center and start resolving cases.</p>
-        </div>
-      )
-    });
+          setHelp({
+            title: 'Support Dashboard Guide',
+            content: (
+              <div className="space-y-4 text-sm">
+                <p>Welcome to the Support Dashboard. Your primary focus is to manage and resolve user disputes.</p>
+                <ul className="list-disc space-y-2 pl-5">
+                  <li>
+                    <span className="font-semibold">Open Disputes:</span> These are new cases that require your immediate attention.
+                  </li>
+                  <li>
+                    <span className="font-semibold">Under Review:</span> These are disputes you are actively investigating.
+                  </li>
+                  <li>
+                    <span className="font-semibold">Performance:</span> This card shows your personal dispute resolution metrics, helping you track your progress.
+                  </li>
+                </ul>
+                <p>Click on the stat cards to navigate to the Dispute Center and start resolving cases.</p>
+              </div>
+            )
+          });
   }, [setHelp]);
 
-  if (loading) {
+        if (loading) {
     return <div className="flex h-48 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
   }
 
-  return (
-    <>
-      <div className="flex items-center mb-8">
-        <h1 className="text-lg font-semibold md:text-2xl">Support Dashboard</h1>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <StatCard
-          title="Open Disputes"
-          value={stats.openDisputes}
-          description="New cases requiring attention"
-          icon={AlertOctagon}
-          href="/dashboard/disputes"
-          iconBgColor="bg-red-100 dark:bg-red-900"
-          iconColor="text-red-600 dark:text-red-300"
-        />
-        <StatCard
-          title="Under Review"
-          value={stats.underReviewDisputes}
-          description="Disputes you are investigating"
-          icon={MessageSquare}
-          href="/dashboard/disputes?status=Under+Review"
-          iconBgColor="bg-yellow-100 dark:bg-yellow-900"
-          iconColor="text-yellow-600 dark:text-yellow-300"
-        />
-      </div>
-      <div className="mt-8 grid gap-8">
-        {disputes.length > 0 && <DisputePerformanceCard disputes={disputes} />}
-        <Card>
-          <CardHeader>
-            <CardTitle>Dispute Center</CardTitle>
-            <CardDescription>
-              Review, manage, and resolve all user-submitted disputes.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <Link href="/dashboard/disputes">
-                Go to Disputes <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </>
-  );
+        return (
+        <>
+          <div className="flex items-center mb-8">
+            <h1 className="text-lg font-semibold md:text-2xl">Support Dashboard</h1>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <StatCard
+              title="Open Disputes"
+              value={stats.openDisputes}
+              description="New cases requiring attention"
+              icon={AlertOctagon}
+              href="/dashboard/disputes"
+              iconBgColor="bg-red-100 dark:bg-red-900"
+              iconColor="text-red-600 dark:text-red-300"
+            />
+            <StatCard
+              title="Under Review"
+              value={stats.underReviewDisputes}
+              description="Disputes you are investigating"
+              icon={MessageSquare}
+              href="/dashboard/disputes?status=Under+Review"
+              iconBgColor="bg-yellow-100 dark:bg-yellow-900"
+              iconColor="text-yellow-600 dark:text-yellow-300"
+            />
+          </div>
+          <div className="mt-8 grid gap-8">
+            {disputes.length > 0 && <DisputePerformanceCard disputes={disputes} />}
+            <Card>
+              <CardHeader>
+                <CardTitle>Dispute Center</CardTitle>
+                <CardDescription>
+                  Review, manage, and resolve all user-submitted disputes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild>
+                  <Link href="/dashboard/disputes">
+                    Go to Disputes <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+        );
 }
 
-function renderDashboard(role: Role) {
+        function renderDashboard(role: Role) {
   switch (role) {
     case "Admin":
-      return <AdminDashboard />;
-    case "Support Team":
-      return <SupportTeamDashboard />;
-    case "Installer":
-      return <InstallerDashboard />;
-    case "Job Giver":
-      return <JobGiverDashboard />;
-    default:
-      return <JobGiverDashboard />; // Default fallback
+        return <AdminDashboard />;
+        case "Support Team":
+        return <SupportTeamDashboard />;
+        case "Installer":
+        return <InstallerDashboard />;
+        case "Job Giver":
+        return <JobGiverDashboard />;
+        default:
+        return <JobGiverDashboard />; // Default fallback
   }
 }
 
-export default function DashboardClient() {
-  const { user, role, loading } = useUser();
+        export default function DashboardClient() {
+  const {user, role, loading} = useUser();
 
-  if (loading || !user) {
+        if (loading || !user) {
     return (
-      <div className="flex h-48 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+        <div className="flex h-48 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+        );
   }
 
-  return (
-    <>
-      {renderDashboard(role as Role)}
-    </>
-  );
+        return (
+        <>
+          {renderDashboard(role as Role)}
+        </>
+        );
 }

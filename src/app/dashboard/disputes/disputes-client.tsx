@@ -111,7 +111,7 @@ export default function DisputesClient() {
                     <p>The Dispute Center is where you can manage and track all support tickets and job-related disputes.</p>
                     <ul className="list-disc space-y-2 pl-5">
                         {isAdmin && (
-                            <li><span className="font-semibold">Admin View:</span> As an admin, you see all disputes on the platform. Use the filters to search by Ticket ID, status, or category to quickly find what you're looking for.</li>
+                            <li><span className="font-semibold">Admin View:</span> As an admin, you see all disputes on the platform. Use the filters to search by Ticket ID, status, or category to quickly find what you&apos;re looking for.</li>
                         )}
                         <li><span className="font-semibold">User View:</span> As a Job Giver or Installer, you will only see disputes that you are directly involved in.</li>
                         <li><span className="font-semibold">Ticket Status:</span>

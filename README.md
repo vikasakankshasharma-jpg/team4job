@@ -58,6 +58,7 @@ Create a `.env.local` file in the root directory. You will need keys from Fireba
 | `CASHFREE_SECRET_KEY` | Cashfree Secret | Cashfree Dashboard |
 | `CASHFREE_WEBHOOK_SECRET` | Webhook Secret | Cashfree Dashboard |
 | `GEMINI_API_KEY` | AI Model Key | Google AI Studio |
+| `BREVO_API_KEY` | Email API Key | Brevo Dashboard (for Notifications) |
 
 **Note:** For the `FIREBASE_PRIVATE_KEY`, ensure you wrap the key in quotes if it contains newlines, or replace real newlines with `\n`.
 
@@ -90,7 +91,9 @@ Create a `.env.local` file in the root directory. You will need keys from Fireba
 *   **Dual Roles & Role Switching:** Users can sign up as a "Job Giver" or "Installer". A user can hold both roles and instantly switch between modes from their profile menu without logging out.
 *   **Subscription Model:** The platform operates on a freemium model. New users receive a trial or a basic plan. Access to premium features (e.g., browsing the Installer Directory, AI Bid Analysis) requires an active paid subscription.
 *   **Billing Management:** A dedicated "Billing" page where users can view their current plan, upgrade their subscription via Cashfree, and redeem promotional coupon codes. The system supports context-aware redirects, returning users to the feature they were trying to access after a successful purchase.
-*   **Installer KYC Verification:** Installers MUST complete an Aadhar OTP verification process to become "verified." This is a mandatory prerequisite for bidding on jobs and receiving payouts, ensuring a trusted marketplace.
+*   **Tiered Installer Verification:**
+    *   **Freelancer (Basic):** Identity verification via Aadhar OTP. Grants "Welcome Points" (50) to help new installers get started.
+    *   **Pro (Silver):** Established businesses can provide Shop Photos & GSTIN to earn "Pro" status and higher reputation visibility.
 *   **Secure Authentication:** Email/password-based login via Firebase Authentication, protected by client-side login attempt throttling to mitigate brute-force attacks.
 
 ### The Complete Job Lifecycle
@@ -103,6 +106,7 @@ Create a `.env.local` file in the root directory. You will need keys from Fireba
 2.  **Bidding & Private Offers:**
     *   **Public Bidding (Installer):** Verified installers browse public jobs and place bids, specifying their price and a cover letter. An "AI Bid Assistant" helps installers craft a professional and persuasive cover letter.
     *   **Private Bidding (Installer):** An installer who receives a Direct Award request is prompted to submit their bid privately. This bid becomes the official price for the job.
+    *   **Blind Bidding (Fairness):** Bid amounts are masked (`₹ ••••`) from competing installers to prevent "race-to-the-bottom" pricing. Only the Job Giver and the bidder themselves can see the actual price.
     *   **Marketplace Integrity (Anti-Self-Bidding):** The system strictly prohibits a user from bidding on a job they themselves have posted, preventing reputation farming and price manipulation.
 
 3.  **Awarding & Bid Analysis (Job Giver):**
@@ -126,7 +130,8 @@ Create a `.env.local` file in the root directory. You will need keys from Fireba
 6.  **Dual-Confirmation Completion & Payout:**
     *   **Installer Submission:** The installer uploads "Proof of Work" (photos/videos) through the platform and submits the job for review, changing the status to `Pending Confirmation`.
     *   **Job Giver Approval:** The Job Giver receives a notification, reviews the proof, and must explicitly click "Approve & Release Payment."
-    *   **Automated Payout:** The Job Giver's approval is the final trigger. It changes the job status to "Completed" and initiates an API call to Cashfree's Payouts product, which automatically splits the payment from the settlement account: the installer receives their earnings, and the platform receives its commission.
+    *   **Automated Payout:** The Job Giver's approval is the final trigger. It changes the job status to "Completed" and initiates an API call to Cashfree's Payouts product.
+    *   **Auto-Settle Protection:** To protect installers from "ghosting," if a Job Giver fails to approve submitted work within **5 days**, the system automatically releases the funds to the installer.
 
 7.  **Feedback & Invoicing:**
     *   The Job Giver can rate the installer and leave a review, which impacts the installer's reputation points.
@@ -145,7 +150,8 @@ Create a `.env.local` file in the root directory. You will need keys from Fireba
 *   **Team Management:** A dedicated section for the primary Admin to create and manage other `Admin` and `Support Team` user accounts.
 *   **Monetization Settings:** Admins can configure platform-wide settings, including installer commission rates, job giver fees, and create/manage `SubscriptionPlan` and `Coupon` entities.
 *   **Global Blacklist:** A critical security feature allowing Admins to block specific User IDs or pincodes, preventing them from registering, logging in, or posting jobs.
-*   **Dispute Resolution:** A formal system for users to raise disputes, which are then managed by the `Admin` or `Support Team` roles. Admins can trigger refunds or payouts via the backend if necessary.
+*   **Dispute Resolution:** A formal system for users to raise disputes. Admins can **Freeze** transactions during investigation and forcefully **Release** or **Refund** payments if necessary.
+*   **Dynamic Commissions:** Platform fees can be configured per-category, allowing flexible monetization strategies for different job types.
 
 ### Job Giver & Installer Relationship Tools
 *   **Installer Directory (Premium Feature):** Subscribed Job Givers can access a searchable directory to proactively find, filter, and review profiles of all verified installers.
@@ -187,7 +193,9 @@ npx tsx src/lib/firebase/create_test_installer.ts
 *   **Forms:** React Hook Form with Zod for validation.
 *   **Database:** Firestore (Firebase).
 *   **Authentication:** Firebase Authentication (Email/Password).
-*   **Backend Functions:** Firebase Cloud Functions for scheduled tasks and notifications.
+*   **Backend Functions:** 
+    *   **Firebase Cloud Functions:** Scheduled tasks (e.g., job expiry).
+    *   **Vercel API Routes:** Real-time notifications (Email) via Zero-Cost proxy.
 *   **AI Functionality:** Genkit, configured to use Google's Gemini models.
 *   **Icons:** `lucide-react`.
 
@@ -196,6 +204,7 @@ npx tsx src/lib/firebase/create_test_installer.ts
 /src
 ├── app/
 │   ├── (main)/              # Main marketing/landing pages
+│   │   ├── api/             # Vercel API Routes (Notifications, Cashfree)
 │   │   ├── page.tsx         # Landing page
 │   │   └── layout.tsx
 │   ├── dashboard/           # Authenticated part of the app
@@ -270,3 +279,20 @@ All data models are defined in `src/lib/types.ts` and reflected in `docs/backend
     *   `subscriptionPlans`: Stores all `SubscriptionPlan` objects.
     *   `coupons`: Stores all `Coupon` objects.
     *   `blacklist`: Stores `BlacklistEntry` objects for users and pincodes.
+
+---
+
+## 7. Zero-Cost Infrastructure (Production)
+The platform is optimized to run on a **$0 budget** for the first 100-500 users by leveraging free tiers of robust service providers.
+
+### Architecture Shift: "Vercel Proxy"
+To bypass the credit-card requirement of Firebase Cloud Functions for external API calls, we route email logic through Vercel's API limits.
+
+| Feature | Provider | Plan | Limit | Method |
+| :--- | :--- | :--- | :--- | :--- |
+| **Hosting & API** | **Vercel** | Hobby | Unlimited (Fair Use) | `src/app/api/notifications/send` |
+| **Email Service** | **Brevo** | Free | 300 emails/day | SMTP/API via Vercel Route |
+| **Database/Auth** | **Firebase** | Spark | 50k reads/day | Client-Side SDK |
+| **Phone Auth** | **Firebase** | Spark | 10 SMS/day | `signInWithPhoneNumber` |
+
+*Note: The 10 SMS/day limit on Firebase Spark is the only tight bottleneck for high-volume signup days. Upgrading to Blaze (Pay-as-you-go) removes this.*

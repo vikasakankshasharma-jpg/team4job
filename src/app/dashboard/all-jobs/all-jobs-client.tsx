@@ -128,7 +128,7 @@ export default function AllJobsClient() {
           <ul className="list-disc space-y-2 pl-5">
             <li><span className="font-semibold">Comprehensive Filters:</span> Use the filters at the top to narrow down the list by job title, pincode, status, job giver, type (Bidding vs. Direct Award), or date range.</li>
             <li><span className="font-semibold">Sortable Columns:</span> Click on any column header in the table to sort the jobs. Click again to reverse the order.</li>
-            <li><span className="font-semibold">Export Data:</span> Use the "Export to CSV" button to download the currently filtered list for offline analysis.</li>
+            <li><span className="font-semibold">Export Data:</span> Use the &quot;Export to CSV&quot; button to download the currently filtered list for offline analysis.</li>
             <li><span className="font-semibold">View Details:</span> Click on any job row to navigate to its detailed view, where you can see all bids, comments, and job-specific information.</li>
           </ul>
         </div>
