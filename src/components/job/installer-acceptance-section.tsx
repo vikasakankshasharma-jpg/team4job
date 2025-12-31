@@ -286,10 +286,10 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
                 <CardContent>
                     <p className="text-sm text-primary font-semibold mb-4">Offer expires: {timeRemaining}</p>
                     <div className="flex gap-4">
-                        <Button onClick={handleAcceptClick} className="flex-1" disabled={isLoading}>
+                        <Button onClick={handleAcceptClick} className="flex-1" disabled={isLoading} data-testid="accept-job-button">
                             <Award className="mr-2 h-4 w-4" /> Accept Job
                         </Button>
-                        <Button onClick={handleDecline} variant="destructive" className="flex-1" disabled={isLoading}>
+                        <Button onClick={handleDecline} variant="destructive" className="flex-1" disabled={isLoading} data-testid="decline-job-button">
                             <ThumbsDown className="mr-2 h-4 w-4" /> Decline Offer
                         </Button>
                     </div>

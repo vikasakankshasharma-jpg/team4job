@@ -62,11 +62,10 @@ export class AuthHelper {
 
                 // Robustness: Wait for Auth state to settle and persist
                 console.log(`[AuthHelper] Waiting for Auth state to settle...`);
-                await this.page.waitForTimeout(3000);
+                await this.page.waitForTimeout(5000);
 
-                // Optional: Reload to force hydration from persistence (fixes some client SDK race conditions)
-                // await this.page.reload(); 
-                // await this.page.waitForLoadState('domcontentloaded');
+                // Wait for the badge to ensure hydration
+                await expect(this.page.getByText(/Mode/)).toBeVisible({ timeout: TIMEOUTS.medium });
 
                 console.log(`[AuthHelper] Login successful for ${email}`);
                 return; // Success, exit loop

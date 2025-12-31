@@ -113,7 +113,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
-
         const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
           if (userDoc.exists()) {
             const userData = { id: userDoc.id, ...userDoc.data() } as User;
@@ -161,7 +160,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(false);
         });
 
-        return () => unsubscribeDoc();
+        return () => {
+          unsubscribeDoc();
+        };
       } else {
         updateUserState(null);
         setLoading(false);
@@ -187,6 +188,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (!user) {
+      console.log(`useUser: No user found, redirecting to /login from ${pathname}`);
       router.push('/login');
       return;
     }
@@ -285,16 +287,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const publicPaths = ['/login', '/'];
   const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
 
-  if (loading && !isPublicPage) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span>Loading user...</span>
-        </div>
-      </div>
-    );
-  }
+  // We no longer block the entire app render with a loading screen here. 
+  // Individual pages/components should handle 'loading' from useUser() for better UX (skeletons, etc.)
 
   return (
     <UserContext.Provider value={value}>
