@@ -98,7 +98,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
-          path: .next
+          path: .
+
+      - name: Extract build artifacts
+        run: |
+          tar -xzf build-artifacts.tar.gz
+          echo "Listing root directory:"
+          ls -la
+          echo "Listing .next directory:"
+          ls -la .next || echo ".next not found"
 
       - name: Setup environment variables
         run: |
