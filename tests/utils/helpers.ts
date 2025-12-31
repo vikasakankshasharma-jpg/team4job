@@ -57,7 +57,7 @@ export class AuthHelper {
                 await submitButton.click();
 
                 // Wait for redirect to dashboard
-                await this.page.waitForURL('**/dashboard**', { timeout: TIMEOUTS.medium });
+                await this.page.waitForURL('**/dashboard**', { timeout: TIMEOUTS.long });
                 await expect(this.page).toHaveURL(/\/dashboard/);
 
                 // Robustness: Wait for Auth state to settle and persist
