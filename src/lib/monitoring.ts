@@ -3,7 +3,7 @@
  * Tracks Core Web Vitals and reports to analytics
  */
 
-import { getCLS, getFID, getFCP, getLCP, getTTFB, Metric } from 'web-vitals';
+import { onCLS, onFCP, onLCP, onTTFB, onINP, Metric } from 'web-vitals';
 import { event } from './analytics';
 
 function sendToAnalytics(metric: Metric) {
@@ -22,9 +22,9 @@ function sendToAnalytics(metric: Metric) {
 }
 
 export function reportWebVitals() {
-    getCLS(sendToAnalytics);
-    getFID(sendToAnalytics);
-    getFCP(sendToAnalytics);
-    getLCP(sendToAnalytics);
-    getTTFB(sendToAnalytics);
+    onCLS(sendToAnalytics);
+    onFCP(sendToAnalytics);
+    onLCP(sendToAnalytics);
+    onTTFB(sendToAnalytics);
+    onINP(sendToAnalytics);
 }
