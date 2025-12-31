@@ -13,6 +13,17 @@ import { sendNotification } from "@/lib/notifications";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirebase } from "@/hooks/use-user";
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 export const tierIcons: Record<string, React.ReactNode> = {
     Bronze: <Medal className="h-6 w-6 text-yellow-700" />,
     Silver: <Medal className="h-6 w-6 text-gray-400" />,
@@ -39,8 +50,8 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
         const start = toDate(jobInput.jobStartDate);
         const end = new Date(start);
 
-        const duration = jobInput.agreedDuration || jobInput.estimatedDuration || 1;
-        const unit = jobInput.agreedDurationUnit || jobInput.durationUnit || 'Days';
+        const duration = (jobInput as any).agreedDuration || (jobInput as any).estimatedDuration || 1;
+        const unit = (jobInput as any).agreedDurationUnit || (jobInput as any).durationUnit || 'Days';
 
         if (unit === 'Hours') {
             // Hourly: Exact time block
@@ -133,201 +144,193 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
                     description: "Your subscription has expired. You must renew to accept this job.",
                     variant: "destructive",
                 });
-                // Ideally redirect to billing or show a modal, for now a toast block is sufficient security.
                 return;
             }
 
-            setIsLoading(true);
+            const jobRef = doc(db, 'jobs', job.id);
+            const fundingDeadline = new Date();
+            fundingDeadline.setHours(fundingDeadline.getHours() + 48);
 
-            try {
-                if (!db) throw new Error("Database connection unavailable");
+            // Double Booking Check
+            const jobsRef = collection(db, 'jobs');
+            const q = query(
+                jobsRef,
+                where('awardedInstaller', '==', doc(db, 'users', user.id)),
+                where('status', 'in', ['In Progress', 'Pending Funding'])
+            );
+            const snapshot = await getDocs(q);
+            const newJobStart = toDate(job.jobStartDate);
 
-                const jobRef = doc(db, 'jobs', job.id);
-                const fundingDeadline = new Date();
-                fundingDeadline.setHours(fundingDeadline.getHours() + 48);
+            const conflictingJob = snapshot.docs.find(d => {
+                const activeJob = d.data() as Job;
+                if (!activeJob.jobStartDate) return false;
+                const activeStart = toDate(activeJob.jobStartDate);
+                return activeStart.toDateString() === newJobStart.toDateString();
+            });
 
-                // Double Booking Check
-                const jobsRef = collection(db, 'jobs');
-                const q = query(
-                    jobsRef,
-                    where('awardedInstaller', '==', doc(db, 'users', user.id)),
-                    where('status', 'in', ['In Progress', 'Pending Funding'])
-                );
-                const snapshot = await getDocs(q);
-                const newJobStart = toDate(job.jobStartDate);
+            if (conflictingJob) {
+                throw new Error("You already have an active job scheduled for this date. Please decline one to proceed.");
+            }
 
-                const conflictingJob = snapshot.docs.find(d => {
-                    const activeJob = d.data() as Job;
-                    if (!activeJob.jobStartDate) return false;
-                    const activeStart = toDate(activeJob.jobStartDate);
-                    // Simple Check: Same Day Conflict
-                    return activeStart.toDateString() === newJobStart.toDateString();
-                });
+            await runTransaction(db, async (transaction) => {
+                const jobDoc = await transaction.get(jobRef);
+                if (!jobDoc.exists()) {
+                    throw new Error("Job does not exist!");
+                }
+                const jobData = jobDoc.data() as Job;
 
-                if (conflictingJob) {
-                    throw new Error("You already have an active job scheduled for this date. Please decline one to proceed.");
+                if (jobData.awardedInstaller) {
+                    throw new Error("This job has already been accepted by another installer.");
                 }
 
-                await runTransaction(db, async (transaction) => {
-                    const jobDoc = await transaction.get(jobRef);
-                    if (!jobDoc.exists()) {
-                        throw new Error("Job does not exist!");
-                    }
-                    const jobData = jobDoc.data() as Job;
-
-                    if (jobData.awardedInstaller) {
-                        throw new Error("This job has already been accepted by another installer.");
-                    }
-
-                    // Accept Current Job
-                    transaction.update(jobRef, {
-                        awardedInstaller: doc(db, 'users', user.id),
-                        status: "Pending Funding",
-                        selectedInstallers: [],
-                        acceptanceDeadline: deleteField(),
-                        fundingDeadline: fundingDeadline,
-                    });
-
-                    // Auto-Decline Conflicting Jobs
-                    for (const conflict of conflictsToDecline) {
-                        const conflictRef = doc(db, 'jobs', conflict.id);
-                        // Safe logic: Remove installer, set to Bidding Closed (Job Giver will re-open or re-award)
-                        transaction.update(conflictRef, {
-                            awardedInstaller: deleteField(),
-                            status: 'Bidding Closed',
-                            disqualifiedInstallerIds: arrayUnion(user.id),
-                            acceptanceDeadline: deleteField()
-                        });
-                    }
-                });
-
-                const updateLocal = {
+                // Accept Current Job
+                transaction.update(jobRef, {
                     awardedInstaller: doc(db, 'users', user.id),
-                    status: "Pending Funding" as const,
+                    status: "Pending Funding",
                     selectedInstallers: [],
                     acceptanceDeadline: deleteField(),
                     fundingDeadline: fundingDeadline,
-                };
-                await onJobUpdate(updateLocal as any);
+                });
 
-                console.log("InstallerAcceptanceSection: Transaction completed");
-
-                if ((job.jobGiver as User)?.email) {
-                    await sendNotification(
-                        (job.jobGiver as User).email,
-                        "Job Accepted!",
-                        `Installer ${user.name} has accepted your job "${job.title}". Please proceed to funding to start the work.`
-                    );
+                // Auto-Decline Conflicting Jobs
+                for (const conflict of conflictsToDecline) {
+                    const conflictRef = doc(db, 'jobs', conflict.id);
+                    transaction.update(conflictRef, {
+                        awardedInstaller: deleteField(),
+                        status: 'Bidding Closed',
+                        disqualifiedInstallerIds: arrayUnion(user.id),
+                        acceptanceDeadline: deleteField()
+                    });
                 }
+            });
 
-                toast({ title: "Job Accepted!", description: "You have successfully accepted the job." });
-
-            } catch (e: any) {
-                console.error("InstallerAcceptanceSection: Transaction failed", e);
-                toast({
-                    title: "Acceptance Failed",
-                    description: e.message || "Could not accept job. It may have been taken.",
-                    variant: "destructive"
-                });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        const handleDecline = async () => {
-            if (!db) return;
-            setIsLoading(true);
-            // Remove current user from selected installers
-            const remainingOffers = (job.selectedInstallers || [])
-                .filter(s => s.installerId !== user.id)
-                .sort((a, b) => (a.rank || 0) - (b.rank || 0));
-
-            let update: Partial<Job> = {
-                disqualifiedInstallerIds: arrayUnion(user.id) as any,
-                selectedInstallers: remainingOffers,
+            const updateLocal = {
+                awardedInstaller: doc(db, 'users', user.id),
+                status: "Pending Funding" as const,
+                selectedInstallers: [],
+                acceptanceDeadline: deleteField(),
+                fundingDeadline: fundingDeadline,
             };
+            await onJobUpdate(updateLocal as any);
 
-            if (remainingOffers.length === 0) {
-                update.status = "Bidding Closed";
-                update.awardedInstaller = undefined;
-                update.acceptanceDeadline = undefined;
-            } else {
-                const nextCandidate = remainingOffers[0];
-                const acceptanceDeadline = new Date();
-                acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
+            console.log("InstallerAcceptanceSection: Transaction completed");
 
-                update.awardedInstaller = doc(db, 'users', nextCandidate.installerId);
-                update.acceptanceDeadline = acceptanceDeadline;
-
-                toast({
-                    title: "Offer Declined",
-                    description: "The offer has been passed to the next installer.",
-                });
+            if ((job.jobGiver as User)?.email) {
+                await sendNotification(
+                    (job.jobGiver as User).email,
+                    "Job Accepted!",
+                    `Installer ${user.name} has accepted your job "${job.title}". Please proceed to funding to start the work.`
+                );
             }
 
-            await onJobUpdate(update);
+            toast({ title: "Job Accepted!", description: "You have successfully accepted the job." });
+
+        } catch (e: any) {
+            console.error("InstallerAcceptanceSection: Transaction failed", e);
+            toast({
+                title: "Acceptance Failed",
+                description: e.message || "Could not accept job. It may have been taken.",
+                variant: "destructive"
+            });
+        } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleDecline = async () => {
+        if (!db) return;
+        setIsLoading(true);
+        // Remove current user from selected installers
+        const remainingOffers = (job.selectedInstallers || [])
+            .filter(s => s.installerId !== user.id)
+            .sort((a, b) => (a.rank || 0) - (b.rank || 0));
+
+        let update: Partial<Job> = {
+            disqualifiedInstallerIds: arrayUnion(user.id) as any,
+            selectedInstallers: remainingOffers,
         };
 
-        const timeRemaining = job.acceptanceDeadline ? formatDistanceToNow(toDate(job.acceptanceDeadline), { addSuffix: true }) : '';
+        if (remainingOffers.length === 0) {
+            update.status = "Bidding Closed";
+            update.awardedInstaller = undefined;
+            update.acceptanceDeadline = undefined;
+        } else {
+            const nextCandidate = remainingOffers[0];
+            const acceptanceDeadline = new Date();
+            acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
 
-        return (
-            <>
-                <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader>
-                        <CardTitle>You&apos;ve Been Selected!</CardTitle>
-                        <CardDescription>
-                            The Job Giver has sent you an offer for this project. Please respond before the offer expires.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-primary font-semibold mb-4">Offer expires: {timeRemaining}</p>
-                        <div className="flex gap-4">
-                            <Button onClick={handleAcceptClick} className="flex-1" disabled={isLoading}>
-                                <Award className="mr-2 h-4 w-4" /> Accept Job
-                            </Button>
-                            <Button onClick={handleDecline} variant="destructive" className="flex-1" disabled={isLoading}>
-                                <ThumbsDown className="mr-2 h-4 w-4" /> Decline Offer
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+            update.awardedInstaller = doc(db, 'users', nextCandidate.installerId);
+            update.acceptanceDeadline = acceptanceDeadline;
 
-                <AlertDialog open={isConflictDialogOpen} onOpenChange={setIsConflictDialogOpen}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Availability Conflict Detected</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                You have {conflictingJobs.length} other pending job awards for this same date.
-                                Accepting this job will <strong>automatically decline</strong> the other offers to prevent double-booking.
-                                <br /><br />
-                                <strong>Jobs to be declined:</strong>
-                                <ul className="list-disc pl-5 mt-2">
-                                    {conflictingJobs.map(j => {
-                                        const range = getJobRange(j);
-                                        const rangeText = range ? `${range.start.toLocaleDateString()} - ${range.end.toLocaleDateString()}` : 'Unknown Date';
-                                        return (
-                                            <li key={j.id}>
-                                                <span className="font-medium">{j.title}</span>
-                                                <span className="text-xs text-muted-foreground ml-2">({rangeText})</span>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => {
-                                setIsConflictDialogOpen(false);
-                                processAcceptance(conflictingJobs);
-                            }} className="bg-red-600 hover:bg-red-700">
-                                Confirm & Auto-Decline
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </>
-        );
-    }
+            toast({
+                title: "Offer Declined",
+                description: "The offer has been passed to the next installer.",
+            });
+        }
+
+        await onJobUpdate(update);
+        setIsLoading(false);
+    };
+
+    const timeRemaining = job.acceptanceDeadline ? formatDistanceToNow(toDate(job.acceptanceDeadline), { addSuffix: true }) : '';
+
+    return (
+        <>
+            <Card className="bg-primary/5 border-primary/20">
+                <CardHeader>
+                    <CardTitle>You&apos;ve Been Selected!</CardTitle>
+                    <CardDescription>
+                        The Job Giver has sent you an offer for this project. Please respond before the offer expires.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-primary font-semibold mb-4">Offer expires: {timeRemaining}</p>
+                    <div className="flex gap-4">
+                        <Button onClick={handleAcceptClick} className="flex-1" disabled={isLoading}>
+                            <Award className="mr-2 h-4 w-4" /> Accept Job
+                        </Button>
+                        <Button onClick={handleDecline} variant="destructive" className="flex-1" disabled={isLoading}>
+                            <ThumbsDown className="mr-2 h-4 w-4" /> Decline Offer
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <AlertDialog open={isConflictDialogOpen} onOpenChange={setIsConflictDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Availability Conflict Detected</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            You have {conflictingJobs.length} other pending job awards for this same date.
+                            Accepting this job will <strong>automatically decline</strong> the other offers to prevent double-booking.
+                            <br /><br />
+                            <strong>Jobs to be declined:</strong>
+                            <ul className="list-disc pl-5 mt-2">
+                                {conflictingJobs.map(j => {
+                                    const range = getJobRange(j);
+                                    const rangeText = range ? `${range.start.toLocaleDateString()} - ${range.end.toLocaleDateString()}` : 'Unknown Date';
+                                    return (
+                                        <li key={j.id}>
+                                            <span className="font-medium">{j.title}</span>
+                                            <span className="text-xs text-muted-foreground ml-2">({rangeText})</span>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                            setIsConflictDialogOpen(false);
+                            processAcceptance(conflictingJobs);
+                        }} className="bg-red-600 hover:bg-red-700">
+                            Confirm & Auto-Decline
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    );
+}
 

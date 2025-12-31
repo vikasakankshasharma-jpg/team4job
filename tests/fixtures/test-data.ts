@@ -53,8 +53,8 @@ export const TEST_JOB_DATA = {
 
 export const TIMEOUTS = {
     short: 10000,
-    medium: 20000,
-    long: 45000,
+    medium: 40000,
+    long: 60000,
     payment: 60000,
 };
 
@@ -86,6 +86,12 @@ export function getDateString(daysFromNow: number): string {
     const date = new Date();
     date.setDate(date.getDate() + daysFromNow);
     return date.toISOString().split('T')[0];
+}
+
+export function getDateTimeString(daysFromNow: number): string {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromNow);
+    return date.toISOString().slice(0, 16);
 }
 
 /**

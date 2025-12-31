@@ -5,7 +5,7 @@ import { User, BlacklistEntry } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
-import { getDoc, collection, getDocs, onSnapshot, query, where, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { getDoc, getDocFromServer, collection, getDocs, onSnapshot, query, where, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -114,55 +114,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
 
-        // --- Immediate check on auth change ---
-        try {
-          console.log("[UserProvider] Checking user doc for", firebaseUser.uid);
-          let initialUserDoc = await getDoc(userDocRef);
-          console.log("[UserProvider] Initial getDoc result exists:", initialUserDoc.exists());
-
-          // Retry fetching user doc if it doesn't exist immediately (handles signup race condition)
-          let retries = 0;
-          while (!initialUserDoc.exists() && retries < 3) {
-            console.log("[UserProvider] User doc not found, retrying...", retries);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            initialUserDoc = await getDoc(userDocRef);
-            retries++;
-          }
-
-          if (!initialUserDoc.exists()) {
-            console.error("User profile not found after retries.");
-            toast({ title: 'Login Error', description: 'Could not find your user profile. Please contact support.', variant: 'destructive' });
-            signOut(auth);
-            return;
-          }
-
-          const userData = { id: initialUserDoc.id, ...initialUserDoc.data() } as User;
-
-          if (userData.status === 'deactivated' || userData.status === 'suspended') {
-            toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
-            signOut(auth);
-            return;
-          }
-
-          // Set user state immediately from the initial fetch
-          updateUserState(userData);
-          setLoading(false);
-        } catch (e) {
-          console.error("Initial user fetch failed:", e);
-          signOut(auth);
-          return;
-        }
-        // --- End immediate check ---
-
-        // --- End immediate check ---
-
         const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
           if (userDoc.exists()) {
             const userData = { id: userDoc.id, ...userDoc.data() } as User;
 
             if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && toDate(userData.suspensionEndDate) > new Date())) {
               toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
-              signOut(auth); // The snapshot listener will handle state cleanup
+              signOut(auth);
             } else {
               updateUserState(userData);
 
@@ -172,10 +130,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
               // Auto-Inactivate if > 90 days
               if (daysInactive > 90 && userData.status === 'active' && userData.roles.includes('Installer')) {
-                // We don't sign them out immediately, but we update status to 'deactivated' so the next check catches it?
-                // Or we just update it and let them know.
-                // User request: "make inactive account... and need to raise request"
-                // I'll update status to 'deactivated'.
                 updateDoc(userDocRef, {
                   status: 'deactivated',
                   'installerProfile.adminNotes': `Auto-deactivated for inactivity (>90 days) on ${now.toISOString()}`
@@ -185,10 +139,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   description: "Your account has been deactivated due to inactivity (>3 months). Please contact support/admin to reactivate.",
                   variant: "destructive"
                 });
-                // We let the next snapshot update handle the signout/redirect
               } else {
-                // Update last login/active timestamp without triggering a full re-render cycle
-                // Throttle updates to every 5 minutes
                 if (userDoc.data().lastLoginAt === undefined || (Date.now() - toDate(userDoc.data().lastLoginAt).getTime()) > 5 * 60 * 1000) {
                   updateDoc(userDocRef, {
                     lastLoginAt: serverTimestamp(),
@@ -198,16 +149,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             }
           } else {
-            // This case should be rare now due to the initial getDoc, but kept as a fallback.
             console.error("User document not found for authenticated user in snapshot listener:", firebaseUser.uid);
-            // toast({ title: 'Login Error', description: 'Your user profile disappeared. Please contact support.', variant: 'destructive' });
-            // signOut(auth);
           }
           setLoading(false);
         }, (error) => {
           console.error("Error listening to user document:", error);
-          // Don't sign out on listen error if we have initial data
-          // signOut(auth); 
+          if (error.code === 'permission-denied') {
+            // Handle permission error gracefully?
+            console.error("Permission denied for user doc.");
+          }
           setLoading(false);
         });
 
@@ -217,7 +167,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
       }
     });
-
     return () => {
       unsubscribeAuth();
       errorEmitter.off('permission-error', handlePermissionError);

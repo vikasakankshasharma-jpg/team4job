@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
 
         // Save Review
         const targetUserId = role === 'Job Giver' ? installerId : jobGiverId;
+        if (!targetUserId) return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
 
         await db.collection('reviews').add({
             jobId,
