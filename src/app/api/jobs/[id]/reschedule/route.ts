@@ -1,11 +1,14 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { FieldValue } from 'firebase-admin/firestore';
 import { db } from '@/lib/firebase/server-init';
 import { Job } from '@/lib/types';
 import { logAdminAlert } from '@/lib/admin-logger';
 import { sendServerEmail } from '@/lib/server-email';
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const jobId = params.id;
+        const { id } = await params;
+        const jobId = id;
         const { action, proposedDate, userId, userRole } = await req.json();
 
         if (!jobId || !action || !userId) {

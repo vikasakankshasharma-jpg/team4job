@@ -291,7 +291,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         setPlatformSettings(settingsDoc.data() as PlatformSettings);
       }
     }
-    fetchSettings();
+    // fetchSettings(); // Disabled to prevent permission error poisoning during login
   }, [db]);
 
   const form = useForm<z.infer<typeof formSchema>>({

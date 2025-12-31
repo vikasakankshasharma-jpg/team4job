@@ -789,10 +789,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                           {...field}
                           min={new Date().toISOString().slice(0, 16)}
                           value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ''}
-                          onChange={(e) => {
-                            const date = new Date(e.target.value);
-                            field.onChange(date);
-                          }}
+                          onChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />

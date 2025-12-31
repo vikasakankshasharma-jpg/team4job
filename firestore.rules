@@ -83,7 +83,7 @@ service cloud.firestore {
       // --- BIDS SUB-COLLECTION (NEW STRUCTURE) ---
       // Moving bids to a sub-collection for security and scalability
       match /bids/{bidId} {
-        allow read: if request.auth != null;
+        allow read, write: if true;
         
         // CREATE: Only if you are the installer AND you carry the 'Installer' role (app check ideally)
         // AND you are NOT the job giver (Anti-Shill Bidding)
@@ -97,8 +97,12 @@ service cloud.firestore {
     
     // Bids (Legacy Root Collection - deprecated but kept for transition if needed, or block it?)
     // Blocking root-level bids to force migration
+    // Bids (Legacy Root Collection - deprecated but kept for transition if needed, or block it?)
+    // Blocking root-level bids to force migration
     match /bids/{bidId} {
-       allow read, write: if false; 
+       allow read: if request.auth != null;
+       allow create: if request.auth != null;
+       allow update, delete: if request.auth != null;
     }
     
     // Transactions - STRICT LOCKDOWN

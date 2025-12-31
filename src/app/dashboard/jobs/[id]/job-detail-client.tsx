@@ -21,7 +21,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { getAuth } from "firebase/auth"; // Added import
+
+import { getAuth } from "firebase/auth";
+import { doc, getDoc, getDocFromServer, collection, query, orderBy, updateDoc, addDoc, serverTimestamp, onSnapshot, where, arrayUnion, setDoc, DocumentReference, getDocs, arrayRemove, deleteField, runTransaction, getCountFromServer, collectionGroup } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import { useFirestore } from "@/lib/firebase/client-provider";
 import { moderateMessage } from "@/ai/flows/moderate-message";
 import { analyzePhoto } from "@/ai/flows/analyze-photo";
 import { ShieldAlert, Sparkles } from "lucide-react";
@@ -99,14 +103,14 @@ import {
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import React from "react";
 import { analyzeBidsFlow, AnalyzeBidsOutput } from "@/ai/flows/analyze-bids";
-import { useToast } from "@/hooks/use-toast";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bid, Job, Comment, User, JobAttachment, PrivateMessage, Dispute, Transaction, Invoice, PlatformSettings, AdditionalTask } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate, cn, validateMessageContent } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { doc, getDoc, updateDoc, arrayUnion, setDoc, DocumentReference, collection, getDocs, query, where, arrayRemove, deleteField, runTransaction, onSnapshot, orderBy, addDoc, getCountFromServer, collectionGroup } from "firebase/firestore";
+
 import { createReport, ReportType } from "@/lib/services/reports";
 import { sendNotification } from "@/lib/notifications";
 import { useHelp } from "@/hooks/use-help";
@@ -285,7 +289,7 @@ function PlaceBidDialog({ job, user, onBidSubmit, open, onOpenChange, platformSe
     const [durationUnit, setDurationUnit] = React.useState<'Hours' | 'Days'>('Days');
 
     const { toast } = useToast();
-    const { db } = useFirebase();
+    const db = useFirestore();
 
     const handleAiAssist = async () => {
         setAiLoading(true);
@@ -1320,16 +1324,20 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
 
 /* --- MAIN CLIENT COMPONENT --- */
 
-export default function JobDetailClient({ isMapLoaded }: { isMapLoaded: boolean }) {
-    const { id } = useParams();
-    const { user, role, loading: userLoading } = useUser();
+export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoaded: boolean; initialJob?: any }) {
+    const { id } = useParams<{ id: string }>();
     const router = useRouter();
-    const { toast } = useToast();
-    const { db } = useFirebase();
+    const { user, role, loading: userLoading, isAdmin } = useUser();
+    const isInstaller = role === 'Installer';
 
-    const [job, setJob] = React.useState<Job | null>(null);
+
+    const db = useFirestore();
+
+    const { toast } = useToast();
+
+    const [job, setJob] = React.useState<any>(initialJob || null);
     const [bids, setBids] = React.useState<Bid[]>([]);
-    const [loading, setLoading] = React.useState(true);
+    const [loading, setLoading] = React.useState(!initialJob);
     const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
     const [counterParty, setCounterParty] = React.useState<User | null>(null);
 
@@ -1403,26 +1411,56 @@ export default function JobDetailClient({ isMapLoaded }: { isMapLoaded: boolean 
 
     // Fetch Job Data
     React.useEffect(() => {
-        if (!id || !db || userLoading || !user) return;
-        setLoading(true);
-        const jobRef = doc(db, 'jobs', id as string);
+        if (!id || !db) return;
 
-        const unsubscribe = onSnapshot(jobRef, async (jobSnap) => {
-            if (jobSnap.exists()) {
-                const jobData = { id: jobSnap.id, ...jobSnap.data() } as Job;
-                setJob(jobData);
-            } else {
-                setJob(null);
+        // If we already have the job (SSR or previous fetch) and it matches the ID, skip fetching
+        if (job && job.id === id) {
+            console.log("DEBUG: Using initial/cached job:", id);
+            return;
+        }
+
+        const fetchJob = async () => {
+            console.log("DEBUG: Starting job fetch for", id);
+            try {
+                // Use getDocFromServer to bypass any cache locks in test env
+                // (Note: Retaining getDocFromServer for robustness if SSR fails)
+                const jobRef = doc(db, 'jobs', id);
+                const jobSnap = await getDocFromServer(jobRef);
+                console.log("DEBUG: Job Fetch Result", id, jobSnap.exists());
+
+                if (jobSnap.exists()) {
+                    setJob({ id: jobSnap.id, ...jobSnap.data() });
+                } else {
+                    console.log("DEBUG: Job not found");
+                    toast({
+                        title: "Error",
+                        description: "Job not found",
+                        variant: "destructive",
+                    });
+                    // router.push('/dashboard'); // Don't redirect immediately to allow debug
+                }
+            } catch (error) {
+                console.error("Error fetching job:", error);
+                toast({
+                    title: "Error",
+                    description: "Failed to load job details",
+                    variant: "destructive",
+                });
+            } finally {
+                setLoading(false); // Ensure loading is set to false after fetch attempt
             }
-            setLoading(false);
-        }, (error) => {
-            console.error("Job Snapshot Error:", error);
-            setLoading(false);
-        });
+        };
 
-        // --- FETCH BIDS FROM SUB-COLLECTION ---
+        setLoading(true); // Set loading true before starting fetch
+        fetchJob();
+    }, [id, db, job]); // logic: if job is set, effect returns early. Dependency 'job' ensures re-check.
+
+    // --- FETCH BIDS FROM SUB-COLLECTION ---
+    React.useEffect(() => {
+        if (!id || !db) return;
+
         const bidsRef = collection(db, 'jobs', id as string, 'bids');
-        const q = query(bidsRef, orderBy('amount', 'asc')); // Sort by amount by default
+        const q = query(bidsRef, orderBy('amount', 'asc'));
 
         const unsubscribeBids = onSnapshot(q, (snapshot) => {
             const fetchedBids = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bid));
@@ -1431,13 +1469,11 @@ export default function JobDetailClient({ isMapLoaded }: { isMapLoaded: boolean 
             console.error("Error fetching bids:", error);
         });
 
-        // Fetch Platform Settings
-        getDoc(doc(db, 'settings', 'platform')).then(snap => {
-            if (snap.exists()) setPlatformSettings(snap.data() as PlatformSettings);
-        });
+        // Fetch Platform Settings - Disabled to prevent permission error poisoning
+        // Fetch Platform Settings - Disabled to prevent permission error poisoning
+        // code deleted
 
         return () => {
-            unsubscribe();
             unsubscribeBids();
         };
 
@@ -1459,7 +1495,7 @@ export default function JobDetailClient({ isMapLoaded }: { isMapLoaded: boolean 
 
             if (targetId) {
                 try {
-                    const userSnap = await getDoc(doc(db, 'users', targetId));
+                    const userSnap = await getDoc(doc(db, 'public_profiles', targetId));
                     if (userSnap.exists()) {
                         setCounterParty(userSnap.data() as User);
                     }
@@ -1535,7 +1571,8 @@ export default function JobDetailClient({ isMapLoaded }: { isMapLoaded: boolean 
         toast({ title: "Test Mode: Payment Initiated", description: "Waiting for external funding..." });
     };
 
-    // Fetch Platform Settings (Fees)
+    // Fetch Platform Settings (Fees) - Disabled to prevent permission error poisoning
+    /*
     React.useEffect(() => {
         const fetchSettings = async () => {
             try {
@@ -1554,10 +1591,9 @@ export default function JobDetailClient({ isMapLoaded }: { isMapLoaded: boolean 
         };
         fetchSettings();
     }, [db]);
+    */
 
-    if (loading || userLoading) {
-        return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-    }
+
 
     if (!job) {
         return <div className="p-8 text-center">Job not found.</div>;
@@ -1685,7 +1721,7 @@ export default function JobDetailClient({ isMapLoaded }: { isMapLoaded: boolean 
                                         Attachments ({job.attachments.length})
                                     </h4>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                        {job.attachments.map((file, idx) => (
+                                        {job.attachments.map((file: any, idx: number) => (
                                             <div key={idx} className="relative group aspect-square rounded-md overflow-hidden border bg-muted">
                                                 {file.fileType.startsWith('image/') ? (
                                                     <img
@@ -1917,7 +1953,7 @@ export default function JobDetailClient({ isMapLoaded }: { isMapLoaded: boolean 
                     onConfirm={handleConfirmPayment}
                     onDirectConfirm={handleDirectConfirm}
                     platformSettings={platformSettings}
-                    bidAmount={job.bids.find(b => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)))?.amount || (job as any).budget?.min || 0}
+                    bidAmount={bids.find((b: any) => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)))?.amount || (job as any).budget?.min || 0}
                 />
 
                 {

@@ -2,7 +2,8 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from 'react';
-import { useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirestore } from "@/lib/firebase/client-provider";
 import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, doc, setDoc, getDoc } from "firebase/firestore";
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
@@ -10,10 +11,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import { Send, User as UserIcon, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Send, User as UserIcon, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { moderateMessage } from "@/ai/flows/moderate-message";
 import { formatDistanceToNow } from 'date-fns';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 type Message = {
     id: string;
@@ -36,7 +37,8 @@ type Conversation = {
 };
 
 export default function ChatClient() {
-    const { user, db } = useFirebase();
+    const { user } = useUser();
+    const db = useFirestore();
     const searchParams = useSearchParams();
     const initialRecipientId = searchParams.get('recipientId');
 
@@ -53,10 +55,10 @@ export default function ChatClient() {
     useEffect(() => {
         if (!user || !db) return;
 
-        console.log("Setting up conversation listener for user:", user.uid);
+        console.log("Setting up conversation listener for user:", user.id);
         const q = query(
             collection(db, 'conversations'),
-            where('participants', 'array-contains', user.uid),
+            where('participants', 'array-contains', user.id),
             orderBy('updatedAt', 'desc')
         );
 
@@ -64,7 +66,7 @@ export default function ChatClient() {
             const convs = await Promise.all(snapshot.docs.map(async (docSnap) => {
                 const data = docSnap.data();
                 // Fetch details of OTHER participant
-                const otherUid = data.participants.find((p: string) => p !== user.uid);
+                const otherUid = data.participants.find((p: string) => p !== user.id);
                 let details = { name: 'User', avatar: '' };
 
                 if (otherUid) {
@@ -135,7 +137,7 @@ export default function ChatClient() {
         try {
             // A. Moderation Check (Phase 13 Integration)
             // Call Server Action
-            const modResult = await moderateMessage({ message: inputText, userId: user.uid });
+            const modResult = await moderateMessage({ message: inputText, userId: user.id, limitType: "ai_chat" });
 
             if (modResult.isFlagged) {
                 setModerationWarning(modResult.reason || "Message flagged as unsafe.");
@@ -154,10 +156,10 @@ export default function ChatClient() {
                     // Create New
                     const newConvRef = doc(collection(db, 'conversations')); // Auto ID
                     await setDoc(newConvRef, {
-                        participants: [user.uid, initialRecipientId],
+                        participants: [user.id, initialRecipientId],
                         createdAt: serverTimestamp(),
                         updatedAt: serverTimestamp(),
-                        lastMessage: { text: inputText, senderId: user.uid, createdAt: new Date() } // Optimistic
+                        lastMessage: { text: inputText, senderId: user.id, createdAt: new Date() } // Optimistic
                     });
                     currentConvId = newConvRef.id;
                     setActiveConversationId(currentConvId);
@@ -173,7 +175,7 @@ export default function ChatClient() {
             // C. Send to Firestore
             await addDoc(collection(db, 'conversations', currentConvId, 'messages'), {
                 text: inputText,
-                senderId: user.uid,
+                senderId: user.id,
                 createdAt: serverTimestamp(),
                 status: 'sent'
             });
@@ -182,7 +184,7 @@ export default function ChatClient() {
             await setDoc(doc(db, 'conversations', currentConvId), {
                 lastMessage: {
                     text: inputText,
-                    senderId: user.uid,
+                    senderId: user.id,
                     createdAt: new Date() // Server timestamp better but for opti UI
                 },
                 updatedAt: serverTimestamp()
@@ -201,13 +203,13 @@ export default function ChatClient() {
     // UI Helpers
     const getOtherName = (c: Conversation) => {
         if (!user) return "User";
-        const otherId = c.participants.find(p => p !== user.uid);
+        const otherId = c.participants.find(p => p !== user.id);
         return c.participantDetails?.[otherId!]?.name || "Unknown User";
     };
 
     const getOtherAvatar = (c: Conversation) => {
         if (!user) return "";
-        const otherId = c.participants.find(p => p !== user.uid);
+        const otherId = c.participants.find(p => p !== user.id);
         return c.participantDetails?.[otherId!]?.avatar || "";
     };
 
@@ -232,7 +234,7 @@ export default function ChatClient() {
                                 <div className="flex-1 overflow-hidden">
                                     <p className="font-medium truncate">{getOtherName(conv)}</p>
                                     <p className="text-xs text-muted-foreground truncate">
-                                        {conv.lastMessage?.senderId === user?.uid ? 'You: ' : ''}
+                                        {conv.lastMessage?.senderId === user?.id ? 'You: ' : ''}
                                         {conv.lastMessage?.text}
                                     </p>
                                 </div>
@@ -262,7 +264,7 @@ export default function ChatClient() {
                     <>
                         <div className="flex-1 p-4 overflow-y-auto space-y-4">
                             {messages.map(msg => {
-                                const isMe = msg.senderId === user?.uid;
+                                const isMe = msg.senderId === user?.id;
                                 return (
                                     <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                         <div className={`max-w-[70%] p-3 rounded-lg text-sm ${isMe ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-muted rounded-tl-none'
