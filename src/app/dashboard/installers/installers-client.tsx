@@ -75,7 +75,7 @@ const InstallerCard = ({ installer, currentUser, onUpdate }: { installer: User, 
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    This installer hasn't been online for {Math.floor(daysSinceActive)} days. Response may be slow.
+                    This installer hasn&apos;t been online for {Math.floor(daysSinceActive)} days. Response may be slow.
                   </TooltipContent>
                 </Tooltip>
               )}

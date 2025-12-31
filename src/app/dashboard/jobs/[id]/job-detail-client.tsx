@@ -413,7 +413,7 @@ function PlaceBidDialog({ job, user, onBidSubmit, open, onOpenChange, platformSe
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Place a Bid</DialogTitle>
-                    <DialogDescription>Submit your offer for "{job.title}".</DialogDescription>
+                    <DialogDescription>Submit your offer for &quot;{job.title}&quot;.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
@@ -558,7 +558,7 @@ function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJo
                         <div className="flex text-yellow-500 mb-2">
                             {[...Array(5)].map((_, i) => <Star key={i} className={cn("h-5 w-5", i < myReview.rating ? "fill-current" : "text-gray-300")} />)}
                         </div>
-                        <p className="italic">"{myReview.review}"</p>
+                        <p className="italic">&quot;{myReview.review}&quot;</p>
                     </CardContent>
                 </Card>
                 <Card className="border-blue-200 bg-blue-50/50">
@@ -567,7 +567,7 @@ function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJo
                         <div className="flex text-yellow-500 mb-2">
                             {[...Array(5)].map((_, i) => <Star key={i} className={cn("h-5 w-5", i < theirReview.rating ? "fill-current" : "text-gray-300")} />)}
                         </div>
-                        <p className="italic">"{theirReview.review}"</p>
+                        <p className="italic">&quot;{theirReview.review}&quot;</p>
                     </CardContent>
                 </Card>
             </div>
@@ -1089,7 +1089,7 @@ function JobGiverConfirmationSection({ job, onJobUpdate, onCancel, onAddFunds }:
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Request Revision</DialogTitle>
-                                <DialogDescription>Ask the installer to make changes. This will set the job status back to "In Progress".</DialogDescription>
+                                <DialogDescription>Ask the installer to make changes. This will set the job status back to &quot;In Progress&quot;.</DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4 py-4">
                                 <div className="space-y-2">

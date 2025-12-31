@@ -113,6 +113,7 @@ export default function DisputeDetailPage() {
   const [newMessage, setNewMessage] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   React.useEffect(() => {
     setHelp({
@@ -301,7 +302,7 @@ export default function DisputeDetailPage() {
     }
   };
 
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
 
   const handleFreezePayment = async () => {
     if (!transaction) return;
