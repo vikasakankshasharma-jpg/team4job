@@ -31,7 +31,6 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
-        continue-on-error: true
 
       - name: Run TypeScript type check
         run: npm run typecheck
@@ -64,6 +63,7 @@ jobs:
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
+        if: success()  # Only upload if build succeeds
         with:
           name: build-artifacts
           path: .next
