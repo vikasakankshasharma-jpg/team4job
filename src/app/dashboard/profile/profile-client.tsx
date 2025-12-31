@@ -580,7 +580,7 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
                     Emergency Contacts
                 </CardTitle>
                 <CardDescription>
-                    Add at least 2 people we can contact if we can't reach you during an active job.
+                    Add at least 2 people we can contact if we can&apos;t reach you during an active job.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -762,7 +762,7 @@ export default function ProfileClient() {
                                 <p className="text-muted-foreground">{user.email}</p>
                                 <p className="text-sm text-muted-foreground font-mono truncate max-w-sm">{user.id}</p>
                                 {(user as any).bio && (
-                                    <p className="mt-2 text-sm italic text-foreground/80 max-w-md">"{(user as any).bio}"</p>
+                                    <p className="mt-2 text-sm italic text-foreground/80 max-w-md">&quot;{(user as any).bio}&quot;</p>
                                 )}
                             </div>
 

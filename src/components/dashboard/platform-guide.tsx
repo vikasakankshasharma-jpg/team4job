@@ -83,7 +83,7 @@ export function PlatformGuide() {
                                     </div>
                                     <div>
                                         <Badge>Pro (Silver)</Badge>
-                                        <p className="mt-1 text-muted-foreground">Requires Shop Photo & GSTIN. Unlocks "Pro" badge and higher search ranking.</p>
+                                        <p className="mt-1 text-muted-foreground">Requires Shop Photo & GSTIN. Unlocks &quot;Pro&quot; badge and higher search ranking.</p>
                                     </div>
                                 </div>
                             </AccordionContent>
@@ -93,7 +93,7 @@ export function PlatformGuide() {
                             <AccordionTrigger>Blind Bidding System</AccordionTrigger>
                             <AccordionContent>
                                 <p className="text-sm text-muted-foreground">
-                                    To ensure fair competition, <strong>you cannot see other installers' bid amounts</strong>, and they cannot see yours.
+                                    To ensure fair competition, <strong>you cannot see other installers&apos; bid amounts</strong>, and they cannot see yours.
                                     Focus on quoting a fair price for your quality of work rather than undercutting others.
                                 </p>
                             </AccordionContent>

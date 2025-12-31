@@ -1351,6 +1351,20 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     const [isCancelDialogOpen, setIsCancelDialogOpen] = React.useState(false);
     const [isAddFundsDialogOpen, setIsAddFundsDialogOpen] = React.useState(false);
 
+    // Reschedule Logic & Trust/Safety States (Moved up to pass Rules of Hooks)
+    const [isRescheduleDialogOpen, setIsRescheduleDialogOpen] = React.useState(false);
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [isReleaseDialogOpen, setIsReleaseDialogOpen] = React.useState(false);
+    const [isDisputeDialogOpen, setIsDisputeDialogOpen] = React.useState(false);
+    const [isReviewDialogOpen, setIsReviewDialogOpen] = React.useState(false);
+    const [disputeReason, setDisputeReason] = React.useState('');
+    const [disputeDesc, setDisputeDesc] = React.useState('');
+    const [reviewRating, setReviewRating] = React.useState(5);
+    const [reviewComment, setReviewComment] = React.useState('');
+    const [rescheduleDate, setRescheduleDate] = React.useState<Date | undefined>(undefined);
+
+
+
     // Fetch Job Data
     // Fetch Job Data
     const isJobGiver = !!(user && job && user.id === getRefId(job.jobGiver));
@@ -1380,25 +1394,25 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                         {isJobGiver ? (
                             <ul className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
                                 <li>
-                                    <strong>Review & Award:</strong> Check incoming bids in the 'Bids' section. Click 'Send Offer' to hire the best installer.
+                                    <strong>Review & Award:</strong> Check incoming bids in the &apos;Bids&apos; section. Click &apos;Send Offer&apos; to hire the best installer.
                                 </li>
                                 <li>
-                                    <strong>Secure Funding:</strong> Once they accept, click 'Pay & Start'. Funds are held safely in Escrow.
+                                    <strong>Secure Funding:</strong> Once they accept, click &apos;Pay & Start&apos;. Funds are held safely in Escrow.
                                 </li>
                                 <li>
-                                    <strong>Approve Work:</strong> When the job is done, review the photos. Click 'Approve' to release the payment.
+                                    <strong>Approve Work:</strong> When the job is done, review the photos. Click &apos;Approve&apos; to release the payment.
                                 </li>
                             </ul>
                         ) : (
                             <ul className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
                                 <li>
-                                    <strong>Place Bid:</strong> Submit your best quote. It's hidden from other installers (Blind Bidding).
+                                    <strong>Place Bid:</strong> Submit your best quote. It&apos;s hidden from other installers (Blind Bidding).
                                 </li>
                                 <li>
-                                    <strong>Wait for Award:</strong> If selected, you'll receive an offer to Accept.
+                                    <strong>Wait for Award:</strong> If selected, you&apos;ll receive an offer to Accept.
                                 </li>
                                 <li>
-                                    <strong>Submit Work:</strong> After finishing the job, upload proof in the 'Files' tab and click 'Submit for Review'.
+                                    <strong>Submit Work:</strong> After finishing the job, upload proof in the &apos;Files&apos; tab and click &apos;Submit for Review&apos;.
                                 </li>
                             </ul>
                         )}
@@ -1610,17 +1624,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
     // Reschedule Logic
     // Reschedule Dialog State
-    const [isRescheduleDialogOpen, setIsRescheduleDialogOpen] = React.useState(false);
-    const [isLoading, setIsLoading] = React.useState(false); // Action loading state
-    // Phase 14: Trust & Safety States
-    const [isReleaseDialogOpen, setIsReleaseDialogOpen] = React.useState(false);
-    const [isDisputeDialogOpen, setIsDisputeDialogOpen] = React.useState(false);
-    const [isReviewDialogOpen, setIsReviewDialogOpen] = React.useState(false);
-    const [disputeReason, setDisputeReason] = React.useState('');
-    const [disputeDesc, setDisputeDesc] = React.useState('');
-    const [reviewRating, setReviewRating] = React.useState(5);
-    const [reviewComment, setReviewComment] = React.useState('');
-    const [rescheduleDate, setRescheduleDate] = React.useState<Date | undefined>(undefined);
+
 
     const handleReschedule = async (action: 'propose' | 'accept' | 'reject' | 'dismiss') => {
         setIsLoading(true);
