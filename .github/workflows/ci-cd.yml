@@ -61,12 +61,21 @@ jobs:
           SKIP_ENV_VALIDATION: true
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
+      - name: Verify build output
+        run: |
+          ls -la
+          ls -la .next || echo ".next directory not found"
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
-        if: success()  # Only upload if build succeeds
+        if: success()
         with:
           name: build-artifacts
-          path: .next
+          path: |
+            .next/
+            package.json
+            next.config.ts
+          include-hidden-files: true
           retention-days: 1
 
   # Job 3: Smoke Tests
