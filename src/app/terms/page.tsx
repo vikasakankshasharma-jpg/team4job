@@ -10,7 +10,7 @@ export default function TermsPage() {
             <div className="prose dark:prose-invert max-w-none space-y-6">
                 <section>
                     <h2 className="text-xl font-semibold mb-2">1. Acceptance of Terms</h2>
-                    <p>By accessing and using CCTV Job Connect ("the Platform"), you accept and agree to be bound by the terms and provision of this agreement.</p>
+                    <p>By accessing and using CCTV Job Connect (&quot;the Platform&quot;), you accept and agree to be bound by the terms and provision of this agreement.</p>
                 </section>
 
                 <section>
@@ -30,12 +30,12 @@ export default function TermsPage() {
 
                 <section>
                     <h2 className="text-xl font-semibold mb-2">4. Payments and Escrow</h2>
-                    <p>All payments for jobs must be routed through the Platform's escrow system. Off-platform payments are a violation of these terms and may result in account suspension. Funds are released to the Installer only upon Job Giver approval or Dispute Resolution outcome.</p>
+                    <p>All payments for jobs must be routed through the Platform&apos;s escrow system. Off-platform payments are a violation of these terms and may result in account suspension. Funds are released to the Installer only upon Job Giver approval or Dispute Resolution outcome.</p>
                 </section>
 
                 <section>
                     <h2 className="text-xl font-semibold mb-2">5. Disputes</h2>
-                    <p>In the event of a disagreement, users agree to utilize the Platform's Dispute Resolution Center. The Platform's decision in disputes is final and binding regarding the release of escrowed funds.</p>
+                    <p>In the event of a disagreement, users agree to utilize the Platform&apos;s Dispute Resolution Center. The Platform&apos;s decision in disputes is final and binding regarding the release of escrowed funds.</p>
                 </section>
 
                 <section>
