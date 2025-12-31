@@ -1415,7 +1415,6 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
         // If we already have the job (SSR or previous fetch) and it matches the ID, skip fetching
         if (job && job.id === id) {
-            console.log("DEBUG: Using initial/cached job:", id);
             return;
         }
 
@@ -1426,12 +1425,9 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                 // (Note: Retaining getDocFromServer for robustness if SSR fails)
                 const jobRef = doc(db, 'jobs', id);
                 const jobSnap = await getDocFromServer(jobRef);
-                console.log("DEBUG: Job Fetch Result", id, jobSnap.exists());
-
                 if (jobSnap.exists()) {
                     setJob({ id: jobSnap.id, ...jobSnap.data() });
                 } else {
-                    console.log("DEBUG: Job not found");
                     toast({
                         title: "Error",
                         description: "Job not found",
@@ -1703,8 +1699,11 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                 </div>
             )}
 
+            {/* Debug Logs */}
+
+
             <h1 className="text-3xl font-bold" data-testid="job-title">{job.title}</h1>
-            <Badge variant="outline">{job.status}</Badge>
+            <Badge variant="outline" data-testid="job-status-badge" data-status={job.status}>{job.status}</Badge>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6">
@@ -1764,7 +1763,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                                                 </div>
                                                 {/* Award Action (Only for Job Giver) */}
                                                 {isJobGiver && job.status === 'Open for Bidding' && (
-                                                    <Button onClick={async () => {
+                                                    <Button data-testid="send-offer-button" onClick={async () => {
                                                         // Award Logic
                                                         // 1. Update Job Status to 'Pending Acceptance' (Phase 4 of checklist)
                                                         // Or directly Awarded?
@@ -1809,139 +1808,157 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
                 <div className="space-y-6">
                     {/* Actions Panel */}
-                    <Card>
+                    <Card data-testid="actions-panel">
                         <CardHeader><CardTitle>Actions</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
-                            {/* Job Giver Actions */}
-                            {isJobGiver && job.status === 'Open for Bidding' && (
-                                <Button variant="destructive" className="w-full" onClick={() => handleJobUpdate({ status: 'Bidding Closed' })}>Close Bidding</Button>
-                            )}
-
-                            {/* Reschedule Action (Both parties, if In Progress) */}
-                            {job.status === 'In Progress' && !job.workStartedAt && !job.dateChangeProposal?.status.includes('pending') && (
-                                <Button variant="outline" className="w-full" onClick={() => setIsRescheduleDialogOpen(true)}>
-                                    <Calendar className="mr-2 h-4 w-4" />
-                                    Request Reschedule
-                                </Button>
-                            )}
-
-                            {/* Retract Offer (Award Trap Fix) */}
-                            {isJobGiver && job.status === 'Awarded' && (
-                                <div className="space-y-4">
-                                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
-                                        You have sent an offer. Waiting for installer to accept.
+                            <div className={cn("space-y-4", userLoading && "opacity-50 pointer-events-none")}>
+                                {userLoading && (
+                                    <div className="flex items-center justify-center py-2 text-xs text-muted-foreground animate-pulse">
+                                        <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                                        Syncing permissions...
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        className="w-full text-amber-600 border-amber-200 hover:bg-amber-50"
-                                        onClick={async () => {
-                                            if (!window.confirm("Retract offer? This will allow other installers to bid again.")) return;
-                                            await handleJobUpdate({
-                                                status: 'Open for Bidding',
-                                                awardedInstaller: deleteField() as any,
-                                                selectedInstallers: deleteField() as any
-                                            });
-                                            toast({ title: "Offer Retracted", description: "Job is open for bidding again." });
-                                        }}
-                                    >
-                                        <UserX className="mr-2 h-4 w-4" />
-                                        Retract Offer
+                                )}
+
+                                {/* Job Giver Actions */}
+                                {isJobGiver && job.status === 'Open for Bidding' && (
+                                    <Button variant="destructive" className="w-full" onClick={() => handleJobUpdate({ status: 'Bidding Closed' })}>Close Bidding</Button>
+                                )}
+
+                                {/* Installer Actions: Place Bid */}
+                                {!isJobGiver && job.status === 'Open for Bidding' && (
+                                    <Button className="w-full" onClick={() => setIsBidDialogOpen(true)} disabled={userLoading || bids.some(b => getRefId(b.installer) === user?.id)} data-testid="place-bid-button">
+                                        {bids.some(b => getRefId(b.installer) === user?.id) ? "Bid Placed" : "Place Bid"}
                                     </Button>
-                                </div>
-                            )}
+                                )}
 
-                            {/* Funding Action */}
-                            {isJobGiver && job.status === 'Pending Funding' && (
-                                <Button className="w-full" onClick={handleStartCheckout}>Proceed to Payment</Button>
-                            )}
+                                {/* ... other actions truncated in this view but I will preserve them in real write ... */}
+                                {/* Wait, I have to provide the FULL content of the block I am replacing. */}
+                                {/* Let me rewrite the whole thing carefully. */}
 
-                            {/* Phase 14: Emergency Trust & Safety Actions */}
+                                {/* Reschedule Action */}
+                                {job.status === 'In Progress' && !job.workStartedAt && !job.dateChangeProposal?.status.includes('pending') && (
+                                    <Button variant="outline" className="w-full" onClick={() => setIsRescheduleDialogOpen(true)}>
+                                        <Calendar className="mr-2 h-4 w-4" />
+                                        Request Reschedule
+                                    </Button>
+                                )}
 
-                            {/* 1. Release Payment (The Exit Door) - Job Giver Only */}
-                            {isJobGiver && job.status === 'Pending Confirmation' && (
-                                <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => setIsReleaseDialogOpen(true)}>
-                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                    Approve Work & Release Payment
-                                </Button>
-                            )}
-
-                            {/* 2. Raise Dispute (The Safety Net) - Both Parties */}
-                            {(job.status === 'In Progress' || job.status === 'Pending Confirmation') && (
-                                <Button variant="destructive" className="w-full border-red-200 text-red-600 hover:bg-red-50" onClick={() => setIsDisputeDialogOpen(true)}>
-                                    <ShieldAlert className="mr-2 h-4 w-4" />
-                                    Report Issue / Raise Dispute
-                                </Button>
-                            )}
-
-                            {/* 3. Leave Review (The Reputation Engine) - Completed Only */}
-                            {job.status === 'Completed' && (
-                                <Button className="w-full" variant="outline" onClick={() => setIsReviewDialogOpen(true)}>
-                                    <Star className="mr-2 h-4 w-4" />
-                                    Leave Review
-                                </Button>
-                            )}
-
-                            {/* Secure Contact Reveal (Comms Patch) + Identity Card */}
-                            {counterParty && (
-                                <div className="space-y-4">
-                                    {/* Identity Card (Trust Gap) */}
-                                    <div className="border rounded-lg overflow-hidden">
-                                        <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-3 text-white">
-                                            <h4 className="font-bold text-sm flex items-center">
-                                                <ShieldCheck className="h-4 w-4 mr-2" />
-                                                Verified Identity
-                                            </h4>
+                                {/* Retract Offer */}
+                                {isJobGiver && job.status === 'Awarded' && (
+                                    <div className="space-y-4">
+                                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
+                                            You have sent an offer. Waiting for installer to accept.
                                         </div>
-                                        <div className="p-4 bg-background flex items-center gap-4">
-                                            <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
-                                                <AvatarImage src={counterParty.realAvatarUrl || counterParty.avatarUrl} />
-                                                <AvatarFallback>{counterParty.name.substring(0, 2)}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="font-bold text-lg leading-none">{counterParty.name}</p>
-                                                <p className="text-sm text-muted-foreground">{isJobGiver ? "Installer" : "Job Giver"}</p>
-                                                <div className="flex items-center gap-1 mt-1 text-xs text-green-600 font-medium">
-                                                    <CheckCircle2 className="h-3 w-3" />
-                                                    Background Checked
+                                        <Button
+                                            variant="outline"
+                                            className="w-full text-amber-600 border-amber-200 hover:bg-amber-50"
+                                            onClick={async () => {
+                                                if (!window.confirm("Retract offer? This will allow other installers to bid again.")) return;
+                                                await handleJobUpdate({
+                                                    status: 'Open for Bidding',
+                                                    awardedInstaller: deleteField() as any,
+                                                    selectedInstallers: deleteField() as any
+                                                });
+                                                toast({ title: "Offer Retracted", description: "Job is open for bidding again." });
+                                            }}
+                                        >
+                                            <UserX className="mr-2 h-4 w-4" />
+                                            Retract Offer
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {isJobGiver && job.status === 'Pending Funding' && (
+                                    <Button className="w-full" onClick={handleStartCheckout} data-testid="proceed-payment-button">Proceed to Payment</Button>
+                                )}
+
+                                {/* Release Payment */}
+                                {isJobGiver && job.status === 'Pending Confirmation' && (
+                                    <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
+                                        <CheckCircle className="mr-2 h-4 w-4" />
+                                        Approve Work & Release Payment
+                                    </Button>
+                                )}
+
+                                {/* Raise Dispute */}
+                                {(job.status === 'In Progress' || job.status === 'Pending Confirmation') && (
+                                    <Button variant="destructive" className="w-full border-red-200 text-red-600 hover:bg-red-50" onClick={() => setIsDisputeDialogOpen(true)}>
+                                        <ShieldAlert className="mr-2 h-4 w-4" />
+                                        Report Issue / Raise Dispute
+                                    </Button>
+                                )}
+
+                                {/* Leave Review */}
+                                {job.status === 'Completed' && (
+                                    <Button className="w-full" variant="outline" onClick={() => setIsReviewDialogOpen(true)}>
+                                        <Star className="mr-2 h-4 w-4" />
+                                        Leave Review
+                                    </Button>
+                                )}
+
+                                {/* Secure Contact Reveal */}
+                                {counterParty && (
+                                    <div className="space-y-4">
+                                        <div className="border rounded-lg overflow-hidden">
+                                            <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-3 text-white">
+                                                <h4 className="font-bold text-sm flex items-center">
+                                                    <ShieldCheck className="h-4 w-4 mr-2" />
+                                                    Verified Identity
+                                                </h4>
+                                            </div>
+                                            <div className="p-4 bg-background flex items-center gap-4">
+                                                <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
+                                                    <AvatarImage src={counterParty.realAvatarUrl || counterParty.avatarUrl} />
+                                                    <AvatarFallback>{counterParty.name.substring(0, 2)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-bold text-lg leading-none">{counterParty.name}</p>
+                                                    <p className="text-sm text-muted-foreground">{isJobGiver ? "Installer" : "Job Giver"}</p>
+                                                    <div className="flex items-center gap-1 mt-1 text-xs text-green-600 font-medium">
+                                                        <CheckCircle2 className="h-3 w-3" />
+                                                        Background Checked
+                                                    </div>
                                                 </div>
                                             </div>
+                                            {counterParty.mobile && (
+                                                <div className="bg-blue-50 p-3 border-t border-blue-100 flex items-center justify-between">
+                                                    <span className="text-xs text-blue-700 font-semibold">Mobile Contact</span>
+                                                    <a href={`tel:${counterParty.mobile}`} className="text-sm font-bold text-blue-900 flex items-center hover:underline">
+                                                        <Phone className="h-3 w-3 mr-1" />
+                                                        {counterParty.mobile}
+                                                    </a>
+                                                </div>
+                                            )}
                                         </div>
-                                        {counterParty.mobile && (
-                                            <div className="bg-blue-50 p-3 border-t border-blue-100 flex items-center justify-between">
-                                                <span className="text-xs text-blue-700 font-semibold">Mobile Contact</span>
-                                                <a href={`tel:${counterParty.mobile}`} className="text-sm font-bold text-blue-900 flex items-center hover:underline">
-                                                    <Phone className="h-3 w-3 mr-1" />
-                                                    {counterParty.mobile}
-                                                </a>
-                                            </div>
-                                        )}
                                     </div>
-                                </div>
-                            )}
+                                )}
 
+                                {/* Acceptance Section */}
+                                {
+                                    !isJobGiver && job.status === 'Awarded' && (
+                                        <InstallerAcceptanceSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
+                                    )
+                                }
 
+                                {/* Completion Sections */}
+                                {
+                                    !isJobGiver && job.status === 'In Progress' && (
+                                        <InstallerCompletionSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
+                                    )
+                                }
 
+                                {
+                                    isJobGiver && job.status === 'Pending Confirmation' && (
+                                        <JobGiverConfirmationSection job={job} onJobUpdate={handleJobUpdate} onCancel={() => setIsCancelDialogOpen(true)} onAddFunds={() => setIsAddFundsDialogOpen(true)} />
+                                    )
+                                }
 
-
-
-                            {/* Completion Sections */}
-                            {
-                                !isJobGiver && job.status === 'In Progress' && (
-                                    <InstallerCompletionSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
-                                )
-                            }
-
-                            {
-                                isJobGiver && job.status === 'Pending Confirmation' && (
-                                    <JobGiverConfirmationSection job={job} onJobUpdate={handleJobUpdate} onCancel={() => setIsCancelDialogOpen(true)} onAddFunds={() => setIsAddFundsDialogOpen(true)} />
-                                )
-                            }
-
-                            {
-                                job.status === 'Completed' && (
-                                    <RatingSection job={job} onJobUpdate={handleJobUpdate} />
-                                )
-                            }
+                                {
+                                    job.status === 'Completed' && (
+                                        <RatingSection job={job} onJobUpdate={handleJobUpdate} />
+                                    )
+                                }
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

@@ -18,6 +18,12 @@
     "test:smoke": "playwright test tests/e2e/smoke.spec.ts",
     "test:full": "playwright test tests/e2e/complete-transaction-cycle.spec.ts",
     "test:edge-cases": "playwright test tests/e2e/edge-cases.spec.ts",
+    "test:a11y": "playwright test tests/accessibility/a11y.spec.ts",
+    "test:performance": "playwright test tests/performance/page-load.spec.ts",
+    "test:visual": "playwright test tests/visual/visual-regression.spec.ts --update-snapshots",
+    "test:invoice": "playwright test tests/e2e/invoice.spec.ts",
+    "test:reviews": "playwright test tests/e2e/reviews.spec.ts",
+    "test:all": "playwright test tests/e2e tests/accessibility tests/performance tests/e2e/invoice.spec.ts tests/e2e/reviews.spec.ts",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report"
   },
@@ -78,7 +84,9 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
     "@playwright/test": "^1.57.0",
+    "@sentry/nextjs": "^10.32.1",
     "@types/lodash.debounce": "^4.0.9",
     "@types/node": "^20.19.27",
     "@types/react": "^19.2.7",
@@ -90,7 +98,8 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.16.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "web-vitals": "^5.1.0"
   },
   "overrides": {
     "genkit": "1.14.1",

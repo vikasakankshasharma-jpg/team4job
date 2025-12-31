@@ -72,7 +72,7 @@ const supportTeamNavItems = [
 
 export function Header() {
   const pathname = usePathname();
-  const { user, role, isAdmin } = useUser();
+  const { user, role, isAdmin, loading } = useUser();
   const { searchQuery, setSearchQuery } = useSearch();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
 
