@@ -45,7 +45,7 @@ export function UserNav() {
         <Button variant="outline" size="icon" className="overflow-hidden rounded-full" suppressHydrationWarning data-testid="user-menu-trigger">
           <Avatar className="h-9 w-9">
             <AvatarImage src={user.realAvatarUrl} alt={user.name} />
-            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{user.name?.charAt(0) || user.email?.charAt(0) || 'U'}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -54,7 +54,7 @@ export function UserNav() {
           <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9">
               <AvatarImage src={user.realAvatarUrl} alt={user.name} />
-              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback>{user.name?.charAt(0) || user.email?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col space-y-1">
               <div className="flex items-center gap-2">

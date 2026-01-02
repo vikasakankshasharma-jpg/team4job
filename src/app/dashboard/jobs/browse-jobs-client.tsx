@@ -235,9 +235,9 @@ export default function BrowseJobsClient() {
         let locationMatchType: 'pincode' | 'city' | 'state' | null = null;
 
         // --- Tier 1 Match: Pincode ---
-        const residentialMatch = user.pincodes.residential &&
+        const residentialMatch = user.pincodes?.residential &&
           job.location.includes(user.pincodes.residential);
-        const officeMatch = user.pincodes.office &&
+        const officeMatch = user.pincodes?.office &&
           job.location.includes(user.pincodes.office);
 
         if (
@@ -458,7 +458,7 @@ export default function BrowseJobsClient() {
                     opportunities in your city.
                   </CardDescription>
                 </div>
-                {user && user.pincodes.office && (
+                {user && user.pincodes?.office && (
                   <Select
                     value={recommendedPincodeFilter}
                     onValueChange={setRecommendedPincodeFilter}
@@ -469,10 +469,10 @@ export default function BrowseJobsClient() {
                     <SelectContent>
                       <SelectItem value="all">All My Pincodes</SelectItem>
                       <SelectItem value="residential">
-                        Residential: {user.pincodes.residential}
+                        Residential: {user.pincodes?.residential || 'N/A'}
                       </SelectItem>
                       <SelectItem value="office">
-                        Office: {user.pincodes.office}
+                        Office: {user.pincodes?.office || 'N/A'}
                       </SelectItem>
                     </SelectContent>
                   </Select>
