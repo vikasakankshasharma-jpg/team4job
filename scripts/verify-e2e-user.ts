@@ -4,12 +4,12 @@ import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDEYoBGZnewG0uorkXvCUOSHbtVDu9VPGc",
-    authDomain: "studio-1890574003-16f26.firebaseapp.com",
-    projectId: "studio-1890574003-16f26",
-    storageBucket: "studio-1890574003-16f26.firebasestorage.app",
-    messagingSenderId: "849721048101",
-    appId: "1:849721048101:web:1ac8f3551a09921cd7d3cc"
+    apiKey: "AIzaSyC0NaO2x65_mdXpe1S62l2bwoc3KZwjn3o",
+    authDomain: "dodo-beta.firebaseapp.com",
+    projectId: "dodo-beta",
+    storageBucket: "dodo-beta.firebasestorage.app",
+    messagingSenderId: "912974459558",
+    appId: "1:912974459558:web:0d04a5c2d3373c28547a67"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -17,7 +17,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const CREDENTIALS = {
-    email: 'jobgiver@example.com',
+    email: 'installer@example.com',
     password: 'Vikas@129229'
 };
 

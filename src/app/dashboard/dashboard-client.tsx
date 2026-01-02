@@ -865,14 +865,16 @@ function AdminDashboard() {
       return { name: monthName, Installers: 0, "Job Givers": 0 };
     }).reverse();
 
-    allUsers.forEach(user => {
+    (allUsers || []).forEach(user => {
+      if (!user.memberSince) return;
+
       const joinDate = toDate(user.memberSince);
       if (joinDate > subMonths(now, 6)) {
         const monthName = format(joinDate, 'MMM');
         const monthData = data.find(m => m.name === monthName);
         if (monthData) {
-          if (user.roles.includes('Installer')) monthData.Installers++;
-          if (user.roles.includes('Job Giver')) monthData["Job Givers"]++;
+          if (user.roles?.includes('Installer')) monthData.Installers++;
+          if (user.roles?.includes('Job Giver')) monthData["Job Givers"]++;
         }
       }
     });
@@ -889,7 +891,7 @@ function AdminDashboard() {
       };
     }).reverse();
 
-    transactions.forEach(t => {
+    (transactions || []).forEach(t => {
       if (t.status === 'Released' && t.releasedAt) {
         const date = toDate(t.releasedAt);
         const monthStr = format(date, 'MMM yyyy');
@@ -902,7 +904,7 @@ function AdminDashboard() {
       }
     });
 
-    const jobCounts = allJobs.reduce((acc, job) => {
+    const jobCounts = (allJobs || []).reduce((acc, job) => {
       acc[job.status] = (acc[job.status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -989,7 +991,7 @@ function AdminDashboard() {
                   {[...allUsers].sort((a, b) => toDate(b.memberSince).getTime() - toDate(a.memberSince).getTime()).slice(0, 5).map(u => (
                     <div key={u.id} className="flex items-center gap-4">
                       <Avatar className="h-8 w-8"><AnimatedAvatar svg={u.avatarUrl} /></Avatar>
-                      <div><p className="text-sm font-medium">{u.name}</p><p className="text-xs text-muted-foreground">{u.roles.join(', ')}</p></div>
+                      <div><p className="text-sm font-medium">{u.name}</p><p className="text-xs text-muted-foreground">{u.roles?.join(', ') || 'User'}</p></div>
                     </div>
                   ))}
                 </div>
@@ -997,7 +999,7 @@ function AdminDashboard() {
             </Card>
           </div>
           <div className="lg:col-span-2">
-            <TopPerformersCard installers={allUsers.filter(u => u.roles.includes('Installer'))} />
+            <TopPerformersCard installers={(allUsers || []).filter(u => Array.isArray(u.roles) && u.roles.includes('Installer'))} />
           </div>
         </div>
 

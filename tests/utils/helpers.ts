@@ -305,8 +305,13 @@ export class DebugHelper {
 
     async logConsoleErrors() {
         this.page.on('console', msg => {
-            if (msg.type() === 'error') {
-                console.error('Browser console error:', msg.text());
+            // Log ALL console messages to debug the login flow
+            const type = msg.type();
+            const text = msg.text();
+            if (type === 'error') {
+                console.error(`[Browser Error]: ${text}`);
+            } else {
+                console.log(`[Browser ${type.toUpperCase()}]: ${text}`);
             }
         });
     }
@@ -348,5 +353,7 @@ export class TestHelper {
         this.job = new JobHelper(page);
         this.wait = new WaitHelper(page);
         this.debug = new DebugHelper(page);
+        // Auto-enable console logging for debugging
+        this.debug.logConsoleErrors();
     }
 }
