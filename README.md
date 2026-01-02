@@ -62,6 +62,22 @@ Create a `.env.local` file in the root directory. You will need keys from Fireba
 
 **Note:** For the `FIREBASE_PRIVATE_KEY`, ensure you wrap the key in quotes if it contains newlines, or replace real newlines with `\n`.
 
+### Automated Secrets Setup (GitHub Actions)
+For CI/CD to work, you need to sync your local secrets to GitHub. We have a helper script for this:
+
+1.  **Install GitHub CLI:** [https://cli.github.com/](https://cli.github.com/)
+2.  **Authenticate:** `gh auth login`
+3.  **Run Sync Script:**
+    ```powershell
+    ./scripts/sync-secrets.ps1
+    ```
+    This automatically uploads required values from `.env.local` to your repository's secrets.
+
+### Monitoring (Sentry)
+The application is configured with Sentry for error tracking.
+- **DSN:** Configured in `sentry.client.config.ts` and `sentry.server.config.ts`.
+- **Auth Token:** `SENTRY_AUTH_TOKEN` required in GitHub Secrets for source map uploads during build.
+
 ---
 
 ## 3. Known Issues & Workarounds
@@ -252,9 +268,47 @@ npx tsx src/lib/firebase/create_test_installer.ts
 └── ...
 ```
 
+```
+
 ---
 
-## 5. UI/UX & Style Guidelines
+## 5. Testing & CI/CD
+
+This project uses a robust automated testing strategy to ensure reliability.
+
+### Local Testing
+
+*   **Smoke Tests:** Fast, critical path tests (Login, Navigation).
+    ```bash
+    npm run test:smoke
+    ```
+*   **Full E2E Tests:** Comprehensive user flows (Job Posting, Bidding, Hiring).
+    ```bash
+    npm run test:full
+    ```
+*   **Lint & Type Check:**
+    ```bash
+    npm run lint
+    npm run typecheck
+    ```
+
+### CI/CD Pipeline (GitHub Actions)
+The pipeline runs automatically on every push to `main`. It includes:
+1.  **Validation:** Linting and Type Checking.
+2.  **Build:** Verifies the app builds successfully (with Sentry source maps).
+3.  **Automated Testing:** Runs Smoke Tests in a headless browser against the production build.
+4.  **Deployment:** (configured) Deploys to production if all tests pass.
+
+**Triggering CI Manually:**
+You can trigger a run by pushing an empty commit:
+```bash
+git commit --allow-empty -m "chore: trigger CI"
+git push
+```
+
+---
+
+## 6. UI/UX & Style Guidelines
 
 *   **Primary Color:** `#B0B6C4` (Desaturated grayish-blue)
 *   **Background Color:** `#F0F2F5` (Very light grayish-blue)
@@ -265,7 +319,7 @@ npx tsx src/lib/firebase/create_test_installer.ts
 
 ---
 
-## 6. Data Models (Firestore)
+## 7. Data Models (Firestore)
 
 All data models are defined in `src/lib/types.ts` and reflected in `docs/backend.json`.
 
@@ -282,7 +336,7 @@ All data models are defined in `src/lib/types.ts` and reflected in `docs/backend
 
 ---
 
-## 7. Zero-Cost Infrastructure (Production)
+## 8. Zero-Cost Infrastructure (Production)
 The platform is optimized to run on a **$0 budget** for the first 100-500 users by leveraging free tiers of robust service providers.
 
 ### Architecture Shift: "Vercel Proxy"
