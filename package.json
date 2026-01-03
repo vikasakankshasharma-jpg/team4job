@@ -55,7 +55,7 @@
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.475.0",
     "mitt": "^3.0.1",
-    "next": "^16.0.7",
+    "next": "16.0.10",
     "next-themes": "^0.3.0",
     "patch-package": "^8.0.0",
     "react": "^19.2.1",
