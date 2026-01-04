@@ -69,7 +69,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://sdk.cashfree.com https://www.google-analytics.com https://*.sentry.io",
+              "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://sdk.cashfree.com https://www.google-analytics.com https://*.sentry.io https://api.postalpincode.in",
               "worker-src 'self' blob:",
               "frame-src 'self' https://sdk.cashfree.com https://maps.googleapis.com",
               "object-src 'none'",
