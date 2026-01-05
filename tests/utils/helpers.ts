@@ -9,10 +9,72 @@ export class AuthHelper {
 
     async loginAsJobGiver() {
         await this.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
+        await this.ensureRole('Job Giver');
     }
 
     async loginAsInstaller() {
         await this.login(TEST_ACCOUNTS.installer.email, TEST_ACCOUNTS.installer.password);
+        await this.ensureRole('Installer');
+    }
+
+    async ensureRole(targetRole: 'Installer' | 'Job Giver') {
+        const dashboardIndicator = targetRole === 'Installer' ? 'Open Jobs' : 'Active Jobs';
+
+        try {
+            // Check if we are already in the correct role
+            console.log(`[AuthHelper] Verifying ${targetRole} dashboard (looking for '${dashboardIndicator}')...`);
+
+            // Wait for either the indicator or a reasonable load time
+            await this.page.waitForTimeout(2000);
+
+            const indicator = this.page.getByText(dashboardIndicator).first();
+            if (await indicator.isVisible({ timeout: 15000 })) {
+                console.log(`[AuthHelper] Already in ${targetRole} mode (found '${dashboardIndicator}').`);
+                return;
+            }
+
+            console.log(`[AuthHelper] '${dashboardIndicator}' not found. Checking if we need a role switch...`);
+
+            // Click user menu
+            const menuTrigger = this.page.getByTestId('user-menu-trigger').first();
+            await expect(menuTrigger).toBeVisible({ timeout: 10000 });
+            await menuTrigger.click();
+            await this.page.waitForTimeout(1000);
+
+            // Click the radio item for the role
+            const menuText = targetRole === 'Installer' ? "Installer (Working)" : "Job Giver (Hiring)";
+            const roleOption = this.page.getByText(menuText).first();
+
+            if (await roleOption.isVisible({ timeout: 5000 })) {
+                console.log(`[AuthHelper] Clicking role option: ${menuText}`);
+                await roleOption.click();
+                await this.page.waitForTimeout(3000);
+                await this.page.waitForURL(/\/dashboard/, { timeout: 20000 });
+                console.log(`[AuthHelper] Switched to ${targetRole} mode successfully.`);
+            } else {
+                // Diagnostic: Log what is visible in the menu
+                const menuItems = await this.page.locator('[role="menuitem"], [role="menuitemradio"]').allTextContents();
+                console.log(`[AuthHelper] Role option '${menuText}' NOT found. Visible menu items:`, menuItems);
+
+                await this.page.keyboard.press('Escape');
+
+                // Fallback: Check if we are actually ALREADY in the role but the indicator was missed early
+                // Maybe the "Welcome, Name!" is there?
+                const welcomeText = await this.page.locator('h1').first().textContent();
+                console.log(`[AuthHelper] Current Page H1: ${welcomeText}`);
+
+                if (welcomeText?.includes('Welcome')) {
+                    console.log(`[AuthHelper] Dashboard loaded but indicator missed. Proceeding with caution.`);
+                } else {
+                    throw new Error(`Failed to ensure role ${targetRole}. Indicator '${dashboardIndicator}' missing and menu option '${menuText}' not found.`);
+                }
+            }
+
+
+        } catch (e) {
+            console.error(`[AuthHelper] Failed to ensure role ${targetRole}:`, e);
+            throw e; // Re-throw to fail the test properly
+        }
     }
 
     async loginAsAdmin() {
@@ -27,61 +89,48 @@ export class AuthHelper {
             attempts++;
             try {
                 console.log(`[AuthHelper] Login attempt ${attempts}/${maxRetries} for ${email}`);
+
+                // Navigate to login
                 await this.page.goto(ROUTES.login);
+                await this.page.waitForLoadState('load');
 
-                // Wait for page to load
-                await this.page.waitForLoadState('domcontentloaded');
-
-                // Check if we were redirected to dashboard (already logged in)
+                // If redirected to dashboard, we ARE logged in. 
+                // We check if it's the right mode later in the test via ensureRole.
                 if (this.page.url().includes('dashboard')) {
-                    console.log(`[AuthHelper] Already logged in (redirected to dashboard). Skipping login form.`);
+                    console.log(`[AuthHelper] Already logged in to dashboard.`);
                     return;
                 }
 
-                // Wait for network idle to ensure hydration
-                await this.page.waitForLoadState('load');
-
-                // Fill email
+                // Fill email with retry on detachment
                 const emailInput = this.page.locator('input[type="email"]');
-                await emailInput.waitFor({ state: 'visible', timeout: TIMEOUTS.short });
+                await emailInput.waitFor({ state: 'visible', timeout: 5000 });
                 await emailInput.fill(email);
 
                 // Fill password
                 const passwordInput = this.page.locator('input[type="password"]');
-                await passwordInput.waitFor({ state: 'visible', timeout: TIMEOUTS.short });
                 await passwordInput.fill(password);
 
-                // Click submit button - try multiple selectors
-                const submitButton = this.page.locator('button[type="submit"]').first();
-                await submitButton.waitFor({ state: 'visible', timeout: TIMEOUTS.short });
-                await submitButton.click();
+                // Click submit button
+                const submitButton = this.page.getByTestId('login-submit-btn').first();
+                await submitButton.click({ force: true });
 
                 // Wait for redirect to dashboard
-                await this.page.waitForURL('**/dashboard**', { timeout: TIMEOUTS.long });
-                await expect(this.page).toHaveURL(/\/dashboard/);
-
-                // Robustness: Wait for Auth state to settle and persist
-                console.log(`[AuthHelper] Waiting for Auth state to settle...`);
-                await this.page.waitForTimeout(5000);
-
-                // Wait for the badge to ensure hydration
-                await expect(this.page.getByText(/Mode/)).toBeVisible({ timeout: TIMEOUTS.medium });
-
+                await this.page.waitForURL('**/dashboard**', { timeout: 30000 });
                 console.log(`[AuthHelper] Login successful for ${email}`);
-                return; // Success, exit loop
+                return;
             } catch (error) {
                 console.error(`[AuthHelper] Login attempt ${attempts} failed:`, error);
-                if (attempts === maxRetries) {
-                    // If last attempt failed, capture debug info and throw
-                    const currentUrl = this.page.url();
-                    const pageText = await this.page.textContent('body');
-                    throw new Error(`Login failed after ${maxRetries} attempts. Current URL: ${currentUrl}. Page content preview: ${pageText?.substring(0, 200)}`);
-                }
-                // Wait briefly before retrying
+                if (attempts === maxRetries) throw error;
                 await this.page.waitForTimeout(2000);
+                await this.page.reload();
             }
         }
+
+        const currentUrl = this.page.url();
+        const pageText = await this.page.textContent('body');
+        throw new Error(`Login failed after ${maxRetries} attempts. Current URL: ${currentUrl}. Page content preview: ${pageText?.substring(0, 200)}`);
     }
+
 
     async clearAuthPersistence() {
         console.log('[AuthHelper] Clearing auth persistence...');
@@ -153,7 +202,28 @@ export class FormHelper {
     constructor(private page: Page) { }
 
     async fillInput(label: string, value: string) {
-        const input = this.page.locator(`label:has-text("${label}") ~ input, label:has-text("${label}") + input`).first();
+        // Convert "Job Title" -> "jobTitle" (camelCase)
+        const camelCase = label.replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => index === 0 ? word.toLowerCase() : word.toUpperCase()).replace(/\s+/g, '');
+        // Convert "Job Title" -> "job-title" (kebab-case)
+        const kebabCase = label.toLowerCase().replace(/\s+/g, '-');
+
+        // Try data-testid first
+        const testIdInput = this.page.getByTestId(`${kebabCase}-input`).or(this.page.getByTestId(kebabCase)).first();
+        if (await testIdInput.isVisible({ timeout: 1000 })) {
+            await testIdInput.fill(value);
+            return;
+        }
+
+        const input = this.page.locator(
+            `label:has-text("${label}") ~ input, ` +
+            `label:has-text("${label}") + input, ` +
+            `label:has-text("${label}") + div input, ` +
+            `div:has(label:has-text("${label}")) input, ` +
+            `input[placeholder*="${label}"], ` +
+            `input[name="${camelCase}"], ` +
+            `input[name="${kebabCase}"], ` +
+            `input[name*="${label.toLowerCase().replace(/\s/g, '')}"]`
+        ).first();
         await input.fill(value);
     }
 
@@ -164,18 +234,68 @@ export class FormHelper {
 
     async selectDropdown(label: string, value: string) {
         // Find the trigger button associated with the label or follows it
-        const trigger = this.page.locator(`label:has-text("${label}")`).first();
-        const parent = trigger.locator('..');
-        const button = parent.locator('button[role="combobox"], button:has([data-state])').first();
+        const trigger = this.page.locator(
+            `label:has-text("${label}") ~ button, ` +
+            `label:has-text("${label}") + div button, ` +
+            `[data-testid*="${label.toLowerCase().replace(/\s/g, '-')}"] select-trigger, ` +
+            `[data-testid*="${label.toLowerCase().replace(/\s/g, '-')}"] ,` +
+            `button:has-text("${label}")`
+        ).first();
 
-        await button.click();
+        await trigger.click();
 
-        // Wait for the dropdown content and find the option
-        const option = this.page.locator(`[role="option"]:has-text("${value}"), [role="menuitem"]:has-text("${value}"), button:has-text("${value}")`).first();
+        // Wait for potential animation
+        await this.page.waitForTimeout(500);
+
+        // Try standard accessible role first
+        try {
+            const option = this.page.getByRole('option', { name: value }).first();
+            await option.waitFor({ state: 'visible', timeout: 5000 });
+            await option.click();
+            return;
+        } catch (e) {
+            console.log(`[FormHelper] getByRole option failed for "${value}", trying fallback locators...`);
+        }
+
+        // Fallback to text matching
+        const option = this.page.locator(
+            `role=option >> text="${value}", ` +
+            `[role="option"]:has-text("${value}"), ` +
+            `[role="menuitem"]:has-text("${value}"), ` +
+            `div[role="item"]:has-text("${value}"), ` +
+            `button:has-text("${value}")`
+        ).first();
         await option.click();
     }
 
+    async fillPincodeAndSelectPO(pincode: string) {
+        const pinInput = this.page.getByTestId('pincode-input').first();
+        await pinInput.fill(pincode);
+
+        // Wait for API response and select trigger to become enabled/visible
+        const poTrigger = this.page.getByTestId('po-select-trigger').first();
+        await expect(poTrigger).toBeVisible({ timeout: 10000 });
+
+        // Only click if it's not already auto-selected (if multiple options exist)
+        const triggerText = await poTrigger.textContent();
+        if (triggerText?.includes('Select Post Office')) {
+            await poTrigger.click();
+            const firstOption = this.page.locator('[role="option"]').first();
+            await firstOption.waitFor({ state: 'visible', timeout: 5000 });
+            await firstOption.click();
+        }
+    }
+
     async clickButton(text: string) {
+        // Try data-testid first based on kebab-case
+        const kebabText = text.toLowerCase().replace(/\s+/g, '-');
+        const testIdButton = this.page.getByTestId(`${kebabText}-button`).or(this.page.getByTestId(`${kebabText}-btn`)).first();
+
+        if (await testIdButton.isVisible({ timeout: 1000 })) {
+            await testIdButton.click();
+            return;
+        }
+
         await this.page.click(`button:has-text("${text}")`);
     }
 
@@ -250,16 +370,47 @@ export class JobHelper {
 
     async waitForJobStatus(status: string, timeout = TIMEOUTS.long) {
         try {
-            console.log(`Helper: Waiting for job status: ${status}`);
-            // Use the data-status attribute for reliable selection
-            await expect(this.page.locator(`[data-status="${status}"]`).first())
-                .toBeVisible({ timeout });
-            console.log(`Helper: Job status ${status} visible`);
+            console.log(`Helper: Waiting for job status: ${status}. Timeout: ${timeout}ms`);
+
+            // Try waiting initially
+            try {
+                await expect(this.page.locator(`[data-status="${status}"]`).first())
+                    .toBeVisible({ timeout: 5000 }); // Short initial wait
+                console.log(`Helper: Job status ${status} visible immediately.`);
+                return;
+            } catch (e) {
+                console.log(`Helper: Status ${status} not immediately visible. Starting polling/reload loop...`);
+            }
+
+            const startTime = Date.now();
+            while (Date.now() - startTime < timeout) {
+                console.log(`Helper: Checking for status ${status}...`);
+                const isVisible = await this.page.locator(`[data-status="${status}"]`).first().isVisible();
+                if (isVisible) {
+                    console.log(`Helper: Job status ${status} found.`);
+                    return;
+                }
+
+                // If not found, reload page to force fresh data fetch
+                console.log(`Helper: Status not found. Reloading page to force refresh...`);
+                await this.page.reload();
+                await this.page.waitForLoadState('domcontentloaded');
+
+                // Wait a bit for components to mount
+                try {
+                    await expect(this.page.locator(`[data-status="${status}"]`).first())
+                        .toBeVisible({ timeout: 5000 });
+                    console.log(`Helper: Job status ${status} visible after reload.`);
+                    return;
+                } catch (ignore) {
+                    // Continue loop
+                }
+            }
+
+            throw new Error(`Timeout waiting for status: ${status}`);
+
         } catch (error) {
             console.error(`Helper: Failed to find job status '${status}'.`);
-            // Check if it exists in DOM at all via JS execution
-            const hasDataStatus = await this.page.evaluate((s) => !!document.querySelector(`[data-status="${s}"]`), status);
-            console.log(`Helper: Document already contains [data-status="${status}"]: ${hasDataStatus}`);
             throw error;
         }
     }

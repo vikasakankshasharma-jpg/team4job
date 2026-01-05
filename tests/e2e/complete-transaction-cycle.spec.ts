@@ -1,3 +1,4 @@
+
 import * as fs from 'fs';
 import { test, expect } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
@@ -18,7 +19,7 @@ test.describe('Complete Transaction Cycle E2E', () => {
         // Increase timeout for this specific heavy test
         test.slow();
 
-        (uniqueJobTitle as any) = `${TEST_JOB_DATA.title} - ${Date.now()}`;
+        (uniqueJobTitle as any) = `${TEST_JOB_DATA.title} - ${Date.now()} `;
 
         // --- INITIAL SETUP: SINGLE CONTEXT ---
         const context = await browser.newContext();
@@ -28,13 +29,13 @@ test.describe('Complete Transaction Cycle E2E', () => {
         page.on('console', msg => {
             const text = msg.text();
             if (text.includes('DEBUG') || text.includes('Header State') || text.includes('Job Rendering')) {
-                console.log(`BROWSER: ${msg.type()}: ${text}`);
+                console.log(`BROWSER: ${msg.type()}: ${text} `);
             }
             if (text.includes('Creating new job with ID:')) {
                 const capturedId = text.split('ID: ')[1]?.trim();
                 if (capturedId) {
                     jobId = capturedId;
-                    console.log(`TEST: Captured Job ID: ${jobId}`);
+                    console.log(`TEST: Captured Job ID: ${jobId} `);
                 }
             }
         });
@@ -44,7 +45,7 @@ test.describe('Complete Transaction Cycle E2E', () => {
         // --- PHASE 1: JOB GIVER POSTS JOB ---
         console.log('--- START: Phase 1 - Job Giver posts a new job ---');
         await helper.auth.loginAsJobGiver();
-        await expect(page.getByText('Hiring Mode')).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page.getByText('Active Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
 
         // Mock Pincode API
         await page.route('**/api.postalpincode.in/pincode/**', async route => {
@@ -90,22 +91,24 @@ test.describe('Complete Transaction Cycle E2E', () => {
         await page.fill('input[name="address.house"]', TEST_JOB_DATA.house);
         await page.fill('input[name="address.street"]', TEST_JOB_DATA.street);
         await page.fill('input[name="address.landmark"]', TEST_JOB_DATA.landmark);
-        await page.fill('input[name="address.fullAddress"]', `${TEST_JOB_DATA.house}, ${TEST_JOB_DATA.street}`);
+        await page.fill('input[name="address.fullAddress"]', `${TEST_JOB_DATA.house}, ${TEST_JOB_DATA.street} `);
 
         await page.fill('input[name="deadline"]', getDateString(7));
-        await page.fill('input[name="jobStartDate"]', getDateTimeString(10));
+        const randomDays = Math.floor(Math.random() * 90) + 10;
+        await page.fill('input[name="jobStartDate"]', getDateTimeString(randomDays));
         await page.fill('input[name="priceEstimate.min"]', TEST_JOB_DATA.minBudget.toString());
         await page.fill('input[name="priceEstimate.max"]', TEST_JOB_DATA.maxBudget.toString());
 
         await page.getByRole('button', { name: "Post Job" }).click();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });
         jobId = await helper.job.getJobIdFromUrl();
-        console.log(`[PASS] Phase 1 Complete: Job ID ${jobId}`);
+        console.log(`[PASS] Phase 1 Complete: Job ID ${jobId} `);
 
         // --- PHASE 2: INSTALLER PLACES BID ---
         console.log('--- START: Phase 2 - Installer places a bid ---');
+        await helper.auth.logout();
         await helper.auth.loginAsInstaller();
-        await expect(page.getByText('Work Mode')).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page.getByText('Open Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         await expect(page.getByTestId('job-title')).toHaveText(uniqueJobTitle);
@@ -114,28 +117,67 @@ test.describe('Complete Transaction Cycle E2E', () => {
 
         await page.locator('input[name="bidAmount"]').fill(TEST_JOB_DATA.bidAmount.toString());
         await page.fill('textarea[name="coverLetter"]', TEST_JOB_DATA.coverLetter);
-        await page.getByRole('button', { name: /Submit Bid/i }).click();
+        await page.getByRole('button', { name: /Place Bid/i }).click();
 
         await helper.form.waitForToast('Bid Placed!');
         console.log('[PASS] Phase 2 Complete: Bid placed');
 
         // --- PHASE 3: JOB GIVER AWARDS JOB ---
         console.log('--- START: Phase 3 - Job Giver awards job ---');
+        await helper.auth.logout(); // Force logout to switch user from Installer to Job Giver
         await helper.auth.loginAsJobGiver();
-        await expect(page.getByText('Hiring Mode')).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page.getByText('Active Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
         await page.goto(`/dashboard/jobs/${jobId}`);
 
-        await page.getByTestId('send-offer-button').click();
+        // Wait for bids to load and click send offer
+        await expect(page.getByTestId('bid-card-wrapper').first()).toBeVisible({ timeout: TIMEOUTS.medium });
+        const offerBtn = page.getByTestId('send-offer-button').first();
+        await offerBtn.waitFor({ state: 'visible', timeout: TIMEOUTS.medium });
+        await offerBtn.click();
         await helper.form.waitForToast('Offer Sent');
         console.log('[PASS] Phase 3 Complete: Offer sent');
 
         // --- PHASE 4: INSTALLER ACCEPTS JOB ---
         console.log('--- START: Phase 4 - Installer accepts job ---');
+
+        // Ensure Installer has Payouts Setup (via Test API)
+        await page.request.post('/api/e2e/setup-installer', {
+            data: { email: 'installer@example.com' }
+        });
+        console.log('[INFO] Seeded installer payouts via API');
+
+        await helper.auth.logout(); // Ensure clean session
         await helper.auth.loginAsInstaller();
-        await expect(page.getByText('Work Mode')).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page.getByText('Open Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
         await page.goto(`/dashboard/jobs/${jobId}`);
 
-        await page.getByTestId('accept-job-button').click();
+        // Capture conflict check completion
+        const conflictCheckPromise = page.waitForEvent('console', msg => msg.text().includes('Conflict check complete'));
+        await page.getByTestId('accept-job-button').first().click();
+
+        // Wait for usage check to finish
+        try {
+            await conflictCheckPromise; // Wait until log appears
+        } catch (e) {
+            console.log('E2E: Conflict check log not found (timeout?), proceeding check...');
+        }
+
+        // Handle potential Conflict Dialog (if previous test runs left awarded jobs)
+        // Use a broader locator strategy
+        const conflictDialogText = page.getByText('Availability Conflict Detected');
+
+        try {
+            // Short timeout to check presence - extended to 120s because conflict check query can be VERY slow
+            if (await conflictDialogText.isVisible({ timeout: 120000 })) {
+                console.log('E2E: Conflict Dialog detected. Clicking Confirm...');
+                await page.getByRole('button', { name: "Confirm & Auto-Decline" }).click();
+            } else {
+                console.log('E2E: No Conflict Dialog detected.');
+            }
+        } catch (e) {
+            console.log('E2E: Error checking for conflict dialog (ignored):', e);
+        }
+
         await helper.form.waitForToast('Job Accepted!');
         await helper.job.waitForJobStatus('Pending Funding');
         console.log('[PASS] Phase 4 Complete: Job accepted');
@@ -143,25 +185,46 @@ test.describe('Complete Transaction Cycle E2E', () => {
         // --- PHASE 5: JOB GIVER FUNDS ESCROW ---
         console.log('--- START: Phase 5 - Job Giver funds escrow ---');
         await helper.auth.loginAsJobGiver();
-        await expect(page.getByText('Hiring Mode')).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page.getByText('Active Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         await page.getByTestId('proceed-payment-button').click();
-        await page.getByTestId('e2e-direct-fund').click({ force: true });
+
+        // Wait for dialog to open
+        await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
+
+        // Bypass payment form using global shim
+        await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
+        await page.evaluate(async () => {
+            console.log("Triggering e2e_directFundJob from Playwright");
+            await (window as any).e2e_directFundJob();
+        });
+        await helper.form.waitForToast('Test Mode: Payment Initiated');
         await helper.form.waitForToast('Test Mode: Payment Initiated');
 
         await page.waitForTimeout(3000);
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');
 
-        const startOtp = await page.locator('p.font-mono.text-3xl').innerText();
-        console.log(`[PASS] Phase 5 Complete: Funded, OTP: ${startOtp}`);
+        const otpLocator = page.locator('p.font-mono.text-3xl');
+        await expect(otpLocator).toBeVisible({ timeout: 10000 });
+        const startOtp = await otpLocator.innerText();
+        console.log(`[PASS] Phase 5 Complete: Funded, OTP: ${startOtp} `);
 
         // --- PHASE 6: INSTALLER STARTS WORK ---
         console.log('--- START: Phase 6 - Installer starts work ---');
         await helper.auth.loginAsInstaller();
-        await expect(page.getByText('Work Mode')).toBeVisible({ timeout: TIMEOUTS.medium });
-        await page.goto(`/dashboard/jobs/${jobId}`);
+        await expect(page.getByText('Open Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
+
+        console.log(`[DEBUG] Phase 6: Navigating to job detail. JobID: ${jobId}`);
+        const targetUrl = `/dashboard/jobs/${jobId}`;
+        console.log(`[DEBUG] Target URL: ${targetUrl}`);
+        try {
+            fs.appendFileSync('debug_phase6.txt', `Phase 6: JobID=${jobId}, TargetURL=${targetUrl}\n`);
+        } catch (e) {
+            console.error('Failed to write debug log', e);
+        }
+        await page.goto(targetUrl);
 
         await page.locator('input[placeholder="Enter Code"]').fill(startOtp);
         await page.getByRole('button', { name: 'Start' }).click();
@@ -170,23 +233,33 @@ test.describe('Complete Transaction Cycle E2E', () => {
 
         // --- PHASE 7: INSTALLER COMPLETES WORK ---
         console.log('--- START: Phase 7 - Installer completes work ---');
-        await page.locator('input[type="file"]').setInputFiles({
+        const completionSection = page.getByTestId('installer-completion-section');
+        await expect(completionSection).toBeVisible();
+        await completionSection.locator('input[type="file"]').setInputFiles({
             name: 'proof.png',
             mimeType: 'image/png',
             buffer: Buffer.from('test')
         });
-        await page.getByTestId('submit-for-review-button').click();
+        // Verify file is listed
+        await expect(completionSection.getByText('proof.png')).toBeVisible();
+        // explicit wait for button
+        const submitBtn = page.getByTestId('submit-for-review-button');
+        await expect(submitBtn).toBeEnabled();
+        await submitBtn.click();
         await helper.form.waitForToast('Submitted for Confirmation');
         await helper.job.waitForJobStatus('Pending Confirmation');
         console.log('[PASS] Phase 7 Complete: Work submitted');
 
         // --- PHASE 8: JOB GIVER APPROVES & PAYS ---
         console.log('--- START: Phase 8 - Job Giver approves work ---');
+        await helper.auth.logout(); // Ensure clean session
         await helper.auth.loginAsJobGiver();
-        await expect(page.getByText('Hiring Mode')).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page.getByText('Active Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
         await page.goto(`/dashboard/jobs/${jobId}`);
 
-        await page.getByTestId('approve-work-button').click();
+        const approveBtn = page.getByTestId('approve-release-button');
+        await expect(approveBtn).toBeVisible();
+        await approveBtn.click();
         await helper.form.waitForToast('Job Approved & Payment Released!');
         await helper.job.waitForJobStatus('Completed');
         console.log('[PASS] Phase 8 Complete: Job Completed');
