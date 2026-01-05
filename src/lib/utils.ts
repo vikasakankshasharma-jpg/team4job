@@ -6,7 +6,7 @@ import { Timestamp } from "firebase/firestore";
 import { subMonths, format, parse } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+    return twMerge(clsx(inputs))
 }
 
 export const getStatusVariant = (status: Job['status']): "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined => {
@@ -33,51 +33,63 @@ export const getStatusVariant = (status: Job['status']): "default" | "secondary"
 }
 
 export const toDate = (timestamp: any): Date => {
-  if (!timestamp) return new Date();
-  if (timestamp instanceof Timestamp) {
-    return timestamp.toDate();
-  }
-  if (timestamp instanceof Date) {
-    return timestamp;
-  }
-  // Fallback for string or number representations
-  return new Date(timestamp);
+    if (!timestamp) return new Date();
+
+    let date: Date;
+    if (timestamp instanceof Timestamp) {
+        date = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+        date = timestamp;
+    } else if (timestamp && typeof timestamp === 'object' && '_seconds' in timestamp) {
+        // Handle plain object representation from server SDK or JSON
+        date = new Date(timestamp._seconds * 1000 + (timestamp._nanoseconds || 0) / 1000000);
+    } else {
+        date = new Date(timestamp);
+    }
+
+    // Check if valid date
+    if (isNaN(date.getTime())) {
+        console.warn("Invalid date encountered in toDate:", timestamp);
+        return new Date(); // Fallback to now
+    }
+
+    return date;
 };
 
 
 export function exportToCsv(filename: string, rows: object[]) {
-  if (!rows || rows.length === 0) {
-    return;
-  }
-  const separator = ',';
-  const keys = Object.keys(rows[0]);
-  const csvContent =
-    keys.join(separator) +
-    '\n' +
-    rows.map(row => {
-      return keys.map(k => {
-        let cell = (row as any)[k] === null || (row as any)[k] === undefined ? '' : (row as any)[k];
-        cell = cell instanceof Date
-          ? cell.toLocaleString()
-          : cell.toString().replace(/"/g, '""');
-        if (cell.search(/("|,|\n)/g) >= 0) {
-          cell = `"${cell}"`;
-        }
-        return cell;
-      }).join(separator);
-    }).join('\n');
+    if (!rows || rows.length === 0) {
+        return;
+    }
+    const separator = ',';
+    const keys = Object.keys(rows[0]);
+    const csvContent =
+        keys.join(separator) +
+        '\n' +
+        rows.map(row => {
+            return keys.map(k => {
+                let cell = (row as any)[k] === null || (row as any)[k] === undefined ? '' : (row as any)[k];
+                cell = cell instanceof Date
+                    ? cell.toLocaleString()
+                    : cell.toString().replace(/"/g, '""');
+                if (cell.search(/("|,|\n)/g) >= 0) {
+                    cell = `"${cell}"`;
+                }
+                return cell;
+            }).join(separator);
+        }).join('\n');
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 }
 
 /**
@@ -93,6 +105,7 @@ export function validateMessageContent(message: string): { isValid: boolean; rea
         { pattern: /\b(whatsapp|telegram|phone|contact|number|email|mail)\b/i, reason: 'contact information' },
         { pattern: /\b(direct|outside|personally|offline)\b/i, reason: 'off-platform communication' },
         { pattern: /\b(cash|gpay|paytm|bank transfer|advance)\b/i, reason: 'off-platform payments' },
+        { pattern: /\b(admin|support|dodo|verification|system|staff)\b/i, reason: 'impersonation keywords' },
     ];
 
     for (const { pattern, reason } of restrictedPatterns) {
@@ -108,9 +121,9 @@ export function validateMessageContent(message: string): { isValid: boolean; rea
 }
 
 const getRefId = (ref: any): string | null => {
-  if (!ref) return null;
-  if (typeof ref === 'string') return ref;
-  return ref.id || null;
+    if (!ref) return null;
+    if (typeof ref === 'string') return ref;
+    return ref.id || null;
 }
 
 export const getMyBidStatus = (job: Job, user: User): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
@@ -130,7 +143,7 @@ export const getMyBidStatus = (job: Job, user: User): { text: string; variant: "
     if ((job.status === 'Bidding Closed' || job.status === 'Awarded' || job.status === 'In Progress' || job.status === 'Completed') && !won) {
         return { text: 'Not Selected', variant: 'destructive' };
     }
-    
+
     return { text: job.status, variant: getStatusVariant(job.status) };
 }
 
@@ -151,16 +164,16 @@ export function calculateMonthlyPerformance(installers: User[], referenceDate: D
 
     const twoMonthsAgoDate = subMonths(referenceDate, 2);
     // We don't rely solely on exact name match for the baseline, but use it as a primary lookup
-    
+
     return installers
         .filter(i => i.roles.includes('Installer') && i.installerProfile)
         .map(installer => {
             const history = installer.installerProfile?.reputationHistory || [];
-            
+
             // 1. Find the cumulative points at the end of Last Month
             let lastMonthPoints = 0;
             const lastMonthEntry = history.find(h => h.month === lastMonthName);
-            
+
             if (lastMonthEntry) {
                 lastMonthPoints = lastMonthEntry.points;
             } else {
@@ -196,13 +209,13 @@ export function calculateMonthlyPerformance(installers: User[], referenceDate: D
                 });
                 baselinePoints = relevantEntry ? relevantEntry.points : 0;
             }
-            
+
             // If user has no history before the target month, baseline is 0.
             // If user has no history at all, both are 0.
-            
+
             // Calculate delta
             const monthlyPoints = Math.max(0, lastMonthPoints - baselinePoints);
-            
+
             return { ...installer, monthlyPoints };
         })
         .sort((a, b) => {

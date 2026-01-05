@@ -9,14 +9,15 @@
  * - AiAssistedBidCreationOutput - The return type for the aiAssistedBidCreation function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const AiAssistedBidCreationInputSchema = z.object({
   jobDescription: z.string().describe('The description of the job to bid on.'),
   installerSkills: z.string().describe('The skills of the installer.'),
   installerExperience: z.string().describe('The experience level of the installer.'),
   bidContext: z.string().optional().describe('Any existing bid context or previous attempts.'),
+  userId: z.string().describe('The ID of the user request (for rate limiting).'),
 });
 export type AiAssistedBidCreationInput = z.infer<typeof AiAssistedBidCreationInputSchema>;
 
@@ -32,8 +33,8 @@ export async function aiAssistedBidCreation(input: AiAssistedBidCreationInput): 
 
 const bidCreationPrompt = ai.definePrompt({
   name: 'bidCreationPrompt',
-  input: {schema: AiAssistedBidCreationInputSchema},
-  output: {schema: AiAssistedBidCreationOutputSchema},
+  input: { schema: AiAssistedBidCreationInputSchema },
+  output: { schema: AiAssistedBidCreationOutputSchema },
   prompt: `You are an AI assistant helping a skilled installer create a professional and effective bid for a job. The platform keeps bidders anonymous until a job is awarded.
 
   **Task**: Generate a compelling and well-organized bid proposal that highlights the installer's strengths and suitability for the job, while maintaining their anonymity.
@@ -60,11 +61,22 @@ const aiAssistedBidCreationFlow = ai.defineFlow(
     outputSchema: AiAssistedBidCreationOutputSchema,
   },
   async input => {
-    const {output} = await bidCreationPrompt(input);
+    // Lazy import to avoid circular dependencies
+    const checkRateLimit = (await import('@/lib/services/rate-limit')).checkRateLimit;
+
+    // Rate Limiting (Server-Side Enforcement)
+    if (input.userId) {
+      const limitCheck = await checkRateLimit(input.userId, 'ai_bio'); // Using 'ai_bio' quota for bid gen (closest match)
+      if (!limitCheck.allowed) {
+        throw new Error(limitCheck.reason || "Daily AI limit reached.");
+      }
+    }
+
+    const { output } = await bidCreationPrompt(input);
     if (!output) {
       throw new Error("Failed to generate bid proposal from AI.");
     }
-    
+
     return output;
   }
 );

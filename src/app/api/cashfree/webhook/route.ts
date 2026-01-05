@@ -53,11 +53,25 @@ export async function POST(req: NextRequest) {
       const transaction = transactionSnap.data() as Transaction;
 
       if (data.type === "PAYMENT_SUCCESS_WEBHOOK") {
+        const startOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
         await transactionRef.update({
           status: 'Funded',
           fundedAt: Timestamp.now() as any,
-          paymentGatewayOrderId: data.data.order.order_id, // Redundant but good for audit
+          paymentGatewayOrderId: data.data.order.order_id,
         });
+
+        // Sync Job Status & Generate OTP
+        if (transaction.jobId) {
+          await db.collection('jobs').doc(transaction.jobId).update({
+            status: 'In Progress',
+            startOtp: startOtp,
+            // Ensure we don't overwrite if already set?
+            // Actually, if funded, it should be in progress.
+          });
+          console.log(`[Webhook] Job ${transaction.jobId} updated to 'In Progress' with Start OTP.`);
+        }
+
         console.log(`[Webhook] Transaction ${orderId} successfully marked as 'Funded'.`);
 
         // Handle Subscription Activation

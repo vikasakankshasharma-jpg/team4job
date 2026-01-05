@@ -40,6 +40,8 @@ export const FirebaseClientProvider: React.FC<{ children: React.ReactNode }> = (
     const db = getFirestore(app);
     const storage = getStorage(app);
 
+    console.log('[FirebaseClientProvider] Initialized with Project ID:', firebaseConfig.projectId);
+
     return { app, auth, db, storage };
   }, []);
 
@@ -53,11 +55,11 @@ export const FirebaseClientProvider: React.FC<{ children: React.ReactNode }> = (
 
 // --- Hooks ---
 export const useFirebase = () => {
-    const context = useContext(FirebaseContext);
-    if (!context) {
-        throw new Error("useFirebase must be used within a FirebaseClientProvider");
-    }
-    return context;
+  const context = useContext(FirebaseContext);
+  if (!context) {
+    throw new Error("useFirebase must be used within a FirebaseClientProvider");
+  }
+  return context;
 }
 
 export const useAuth = () => {
@@ -69,17 +71,17 @@ export const useAuth = () => {
 }
 
 export const useFirestore = () => {
-    const context = useContext(FirebaseContext);
-    if (!context) {
-        throw new Error("useFirestore must be used within a FirebaseClientProvider");
-    }
-    return context.db;
+  const context = useContext(FirebaseContext);
+  if (!context) {
+    throw new Error("useFirestore must be used within a FirebaseClientProvider");
+  }
+  return context.db;
 }
 
 export const useStorage = () => {
-    const context = useContext(FirebaseContext);
-    if (!context) {
-        throw new Error("useStorage must be used within a FirebaseClientProvider");
-    }
-    return context.storage;
+  const context = useContext(FirebaseContext);
+  if (!context) {
+    throw new Error("useStorage must be used within a FirebaseClientProvider");
+  }
+  return context.storage;
 }

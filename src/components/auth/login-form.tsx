@@ -67,23 +67,28 @@ export function LoginForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log("LoginForm: onSubmit called", values.email);
     if (lockoutUntil) return;
 
     setIsLoading(true);
     const isDemoUser = values.email.endsWith("@example.com");
+    console.log("LoginForm: Calling login...");
     const success = await login(values.email, values.password);
-    
+    console.log("LoginForm: Login result:", success);
+
     if (success) {
-       // A small delay to allow user context to update before redirect
-       setTimeout(() => {
-         const isFirstLogin = !user?.lastLoginAt; // This is a simplified check
-         if (isDemoUser || isFirstLogin) {
-            router.push("/dashboard?tour=true");
-         } else {
-            router.push("/dashboard");
-         }
-       }, 500);
+      // A small delay to allow user context to update before redirect
+      setTimeout(() => {
+        console.log("LoginForm: Redirecting to dashboard...");
+        const isFirstLogin = !user?.lastLoginAt; // This is a simplified check
+        if (isDemoUser || isFirstLogin) {
+          router.push("/dashboard?tour=true");
+        } else {
+          router.push("/dashboard");
+        }
+      }, 500);
     } else {
+      console.log("LoginForm: Login failed");
       const newAttemptCount = loginAttempts + 1;
       setLoginAttempts(newAttemptCount);
 
@@ -96,7 +101,7 @@ export function LoginForm() {
           variant: "destructive",
         });
       } else {
-         toast({
+        toast({
           title: "Login Failed",
           description: `Invalid credentials. You have ${MAX_LOGIN_ATTEMPTS - newAttemptCount} attempts remaining.`,
           variant: "destructive",
@@ -123,9 +128,9 @@ export function LoginForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email Address</FormLabel>
-               <FormControl>
-                  <Input type="email" placeholder="name@example.com" {...field} disabled={!!lockoutUntil} />
-                </FormControl>
+              <FormControl>
+                <Input type="email" placeholder="name@example.com" {...field} disabled={!!lockoutUntil} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -136,9 +141,9 @@ export function LoginForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Password</FormLabel>
-               <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} disabled={!!lockoutUntil} />
-                </FormControl>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} disabled={!!lockoutUntil} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

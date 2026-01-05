@@ -18,6 +18,8 @@ export type User = {
   mobile: string;
   avatarUrl: string;
   realAvatarUrl?: string;
+  isMobileVerified?: boolean;
+  isEmailVerified?: boolean;
   pincodes: {
     residential: string;
     office?: string;
@@ -27,6 +29,7 @@ export type User = {
   roles: ('Job Giver' | 'Installer' | 'Admin' | 'Support Team')[];
   memberSince: Date | Timestamp;
   lastLoginAt?: Date | Timestamp;
+  lastActiveAt?: Date | Timestamp; // For tracking inactivity
   status: UserStatus;
   suspensionEndDate?: Date | Timestamp;
   subscription?: {
@@ -34,7 +37,9 @@ export type User = {
     planName: string;
     expiresAt: Date | Timestamp;
   };
-  aadharNumber?: string;
+  aadharLast4?: string;
+  panNumber?: string;
+  isPanVerified?: boolean;
   kycAddress?: string;
   gstin?: string;
   payouts?: {
@@ -54,8 +59,19 @@ export type User = {
     rating: number;
     reviews: number;
     verified: boolean;
+    verificationLevel?: 'Basic' | 'Pro';
+    shopPhotoUrl?: string | null;
+    gstNumber?: string | null;
+    adminNotes?: string;
     reputationHistory?: { month: string; points: number }[];
   };
+  emergencyContacts?: {
+    name: string;
+    relation: string;
+    mobile: string;
+  }[];
+  referredBy?: string;
+  platformDebt?: number; // Amount owed to platform (e.g. from No-Show penalties)
 };
 
 export type Comment = {
@@ -81,6 +97,9 @@ export type Bid = {
   coverLetter?: string;
   includedItems?: string[];
   warrantyDuration?: string;
+  estimatedDuration?: number; // Phase 10
+  durationUnit?: 'Hours' | 'Days'; // Phase 10
+  installerId?: string; // Added for Collection Group queries
 };
 
 export type JobAttachment = {
@@ -124,6 +143,7 @@ export type Job = {
   skills?: string[];
   jobCategory: string;
   jobGiver: User | DocumentReference;
+  jobGiverId?: string;
   location: string;
   fullAddress: string;
   address: Address;
@@ -142,6 +162,7 @@ export type Job = {
   postedAt: Date | Timestamp;
   acceptanceDeadline?: Date | Timestamp;
   fundingDeadline?: Date | Timestamp;
+  completionTimestamp?: Date | Timestamp;
   bids: Bid[];
   bidderIds?: string[];
   disqualifiedInstallerIds?: string[];
@@ -150,14 +171,40 @@ export type Job = {
   directAwardInstallerId?: string; // ID of the installer this job was directly sent to
   rating?: number;
   review?: string;
+  jobGiverReview?: {
+    rating: number;
+    review: string;
+    createdAt: Date | Timestamp;
+    authorId: string;
+    authorName: string;
+  };
+  installerReview?: {
+    rating: number;
+    review: string;
+    createdAt: Date | Timestamp;
+    authorId: string;
+    authorName: string;
+  };
+  workSubmittedAt?: Date | Timestamp; // For auto-release timer
   disputeId?: string;
   attachments?: JobAttachment[];
   invoice?: Invoice;
   additionalTasks?: AdditionalTask[];
+  billingSnapshot?: {
+    installerName: string;
+    installerAddress: Address; // or string? strict Address type preferred
+    gstin?: string;
+    pan?: string;
+  };
   comments: Comment[];
   privateMessages?: PrivateMessage[];
   cancellationProposer?: 'Job Giver' | 'Installer';
+  startOtp?: string; // Generated when funded, shared by Giver
+  workStartedAt?: Date | Timestamp; // Set when Installer verifies startOtp
   completionOtp?: string;
+  cancellationReason?: string;
+  archived?: boolean;
+  adminNotes?: string;
 };
 
 export type DisputeAttachment = {
@@ -254,6 +301,7 @@ export type Transaction = {
 
 export type PlatformSettings = {
   installerCommissionRate?: number;
+  categoryCommissionRates?: Record<string, number>;
   jobGiverFeeRate?: number;
   defaultTrialPeriodDays: number;
   freeBidsForNewInstallers: number;
