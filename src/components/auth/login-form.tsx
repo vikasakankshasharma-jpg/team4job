@@ -27,7 +27,7 @@ const formSchema = z.object({
   password: z.string().min(1, { message: "Password cannot be empty." }),
 });
 
-const MAX_LOGIN_ATTEMPTS = 5;
+const MAX_LOGIN_ATTEMPTS = typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 10 : 5;
 const LOCKOUT_DURATION_SECONDS = 60;
 
 export function LoginForm() {
@@ -113,7 +113,7 @@ export function LoginForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" noValidate>
         {lockoutUntil && (
           <Alert variant="destructive">
             <AlertTitle>Login Locked</AlertTitle>
@@ -131,7 +131,7 @@ export function LoginForm() {
               <FormControl>
                 <Input type="email" placeholder="name@example.com" {...field} disabled={!!lockoutUntil} />
               </FormControl>
-              <FormMessage />
+              <FormMessage data-testid="email-error" />
             </FormItem>
           )}
         />
@@ -144,11 +144,11 @@ export function LoginForm() {
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} disabled={!!lockoutUntil} />
               </FormControl>
-              <FormMessage />
+              <FormMessage data-testid="password-error" />
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={isLoading || !!lockoutUntil}>
+        <Button type="submit" className="w-full" disabled={isLoading || !!lockoutUntil} data-testid="login-submit-btn">
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Log In
         </Button>

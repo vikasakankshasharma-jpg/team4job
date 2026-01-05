@@ -106,7 +106,8 @@ const mockUsers: Omit<User, 'id'>[] = [
         realAvatarUrl: 'https://picsum.photos/seed/admin/200/200',
         address: { house: '1', street: 'Admin Lane', cityPincode: '110001, Connaught Place S.O', fullAddress: '1 Admin Lane, Connaught Place, New Delhi, 110001' },
         district: 'New Delhi',
-        pincodes: { residential: '110001' }
+        pincodes: { residential: '110001' },
+        isMobileVerified: true
     },
     { // 1: Job Giver
         name: 'Priya Singh',
@@ -119,7 +120,8 @@ const mockUsers: Omit<User, 'id'>[] = [
         realAvatarUrl: 'https://picsum.photos/seed/priya/200/200',
         address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O', fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001' },
         district: 'Bengaluru',
-        pincodes: { residential: '560001' }
+        pincodes: { residential: '560001' },
+        isMobileVerified: true
     },
     { // 2: Dual Role (Installer/Job Giver)
         name: 'Vikram Kumar',
@@ -127,7 +129,9 @@ const mockUsers: Omit<User, 'id'>[] = [
         mobile: '8765432109',
         roles: ['Installer', 'Job Giver'],
         status: 'active',
-        memberSince: new Date('2024-03-15'),
+        memberSince: new Date(), // Use current date to prevent auto-deactivation
+        lastLoginAt: new Date(),
+        lastActiveAt: new Date(),
         avatarUrl: PlaceHolderImages[2].imageUrl,
         realAvatarUrl: 'https://picsum.photos/seed/vikram/200/200',
         address: { house: '42/C', street: 'Link Road', cityPincode: '400053, Andheri West S.O', fullAddress: '42/C, Link Road, Andheri West, Mumbai, 400053' },
@@ -145,6 +149,15 @@ const mockUsers: Omit<User, 'id'>[] = [
                 { month: 'Apr', points: 800 }, { month: 'May', points: 1050 }, { month: 'Jun', points: 1250 },
             ]
         },
+        payouts: { beneficiaryId: 'test_beneficiary_id_123' },
+        isMobileVerified: true,
+        subscription: {
+            planId: 'pro',
+            status: 'active',
+            startDate: new Date(),
+            expiresAt: new Date('2030-12-31'), // Future date to prevent expiration
+            autoRenew: true
+        }
     },
     { // 3: Installer Only
         name: 'Ravi Kumar',
@@ -169,6 +182,7 @@ const mockUsers: Omit<User, 'id'>[] = [
                 { month: 'Apr', points: 50 }, { month: 'May', points: 100 }, { month: 'Jun', points: 150 },
             ]
         },
+        isMobileVerified: true
     },
     { // 4: New Job Giver
         name: 'Sunita Gupta',
@@ -182,6 +196,7 @@ const mockUsers: Omit<User, 'id'>[] = [
         address: { house: 'Flat 101', street: 'Koregaon Park', cityPincode: '411001, Pune S.O', fullAddress: 'Flat 101, Koregaon Park, Pune, 411001' },
         district: 'Pune',
         pincodes: { residential: '411001' },
+        isMobileVerified: true
     },
     { // 5: New Installer
         name: 'Arjun Singh',
@@ -204,6 +219,7 @@ const mockUsers: Omit<User, 'id'>[] = [
             verified: true,
             reputationHistory: [],
         },
+        isMobileVerified: true
     },
     { // 6: Unverified Installer
         name: 'Anil Kapoor',
@@ -226,6 +242,7 @@ const mockUsers: Omit<User, 'id'>[] = [
             verified: false,
             reputationHistory: [],
         },
+        isMobileVerified: false
     },
     { // 7: Suspended Installer
         name: 'Sanjay Verma',
@@ -249,6 +266,7 @@ const mockUsers: Omit<User, 'id'>[] = [
             verified: true,
             reputationHistory: [],
         },
+        isMobileVerified: true
     },
     { // 8: Platinum Installer
         name: 'Deepika Rao',
@@ -271,6 +289,7 @@ const mockUsers: Omit<User, 'id'>[] = [
             verified: true,
             reputationHistory: [],
         },
+        isMobileVerified: true
     },
     { // 9: Support Team member
         name: 'Amit Patel',
@@ -283,7 +302,8 @@ const mockUsers: Omit<User, 'id'>[] = [
         realAvatarUrl: 'https://picsum.photos/seed/amit/200/200',
         address: { house: '10B', street: 'Support Street', cityPincode: '110001, Connaught Place S.O', fullAddress: '10B, Support Street, Connaught Place, New Delhi, 110001' },
         district: 'New Delhi',
-        pincodes: { residential: '110001' }
+        pincodes: { residential: '110001' },
+        isMobileVerified: true
     },
 ];
 

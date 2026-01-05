@@ -264,10 +264,20 @@ function FundingBreakdownDialog({ job, onConfirm, onDirectConfirm, open, onOpenC
                         Confirm & Pay
                     </Button>
                     {/* E2E Bypass Button - accessible ONLY via test runner */}
+                    {/* E2E Bypass Button - accessible ONLY via test runner */}
                     <button
                         data-testid="e2e-direct-fund"
-                        onClick={onDirectConfirm}
-                        style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '1px', height: '1px', overflow: 'hidden' }}
+                        type="button"
+                        onClick={() => {
+                            console.error('[E2E Component] Button Clicked!');
+                            if (onDirectConfirm) {
+                                console.error('[E2E Component] Calling Handler...');
+                                onDirectConfirm();
+                            } else {
+                                console.error('[E2E Component] Handler is UNDEFINED');
+                            }
+                        }}
+                        style={{ position: 'absolute', top: 0, left: 0, width: '20px', height: '20px', background: 'red', zIndex: 9999, opacity: 0.5 }}
                         tabIndex={-1}
                     >
                         Direct
@@ -472,6 +482,7 @@ function PlaceBidDialog({ job, user, onBidSubmit, open, onOpenChange, platformSe
                         <Label>Cover Letter</Label>
                         <div className="relative">
                             <Textarea
+                                name="coverLetter"
                                 placeholder="I have the right tools and 5 years experience..."
                                 value={coverLetter}
                                 onChange={e => setCoverLetter(e.target.value)}
@@ -650,10 +661,14 @@ function StartWorkInput({ job, user, onJobUpdate }: { job: Job, user: User, onJo
         if (!otp || otp.length < 6) return;
         setIsLoading(true);
         try {
+            const auth = getAuth();
+            const token = await auth.currentUser?.getIdToken();
             await axios.post('/api/jobs/start-work', {
                 jobId: job.id,
                 userId: user.id,
                 otp: otp
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
             toast({ title: "Work Started", description: "You have officially started the job." });
             onJobUpdate({ workStartedAt: new Date() as any });
@@ -1073,106 +1088,108 @@ function JobGiverConfirmationSection({ job, onJobUpdate, onCancel, onAddFunds }:
                         }}>Submit Work for Completion</Button>
                     </div>
                 )}
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <Button onClick={handleApproveAndPay} disabled={isLoading} className="flex-1" data-testid="approve-release-button">
-                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Approve & Release Payment
-                    </Button>
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="warning" className="flex-1 bg-amber-500 hover:bg-amber-600 text-white">
-                                <RefreshCcw className="mr-2 h-4 w-4" />
-                                Request Revision
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Request Revision</DialogTitle>
-                                <DialogDescription>Ask the installer to make changes. This will set the job status back to &quot;In Progress&quot;.</DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label>Reason for Revision (Required)</Label>
-                                    <Textarea
-                                        value={disputeReason}
-                                        onChange={e => setDisputeReason(e.target.value)}
-                                        placeholder="e.g. The wiring is exposed, please fix it..."
-                                    />
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="outline" onClick={() => setDisputeReason("")}>Cancel</Button>
-                                </DialogClose>
-                                <Button onClick={async () => {
-                                    if (!user) return; // Guard against null user
-                                    if (!disputeReason.trim()) {
-                                        toast({ title: "Reason Required", description: "Please explain what needs to be revised.", variant: "destructive" });
-                                        return;
-                                    }
-                                    setIsLoading(true);
-                                    try {
-                                        // Create a system comment for the revision
-                                        const newComment: Comment = {
-                                            id: `COMMENT-${Date.now()}`,
-                                            author: doc(db, "users", user.id),
-                                            timestamp: new Date(),
-                                            content: `🔴 REVISION REQUESTED: ${disputeReason}`
-                                        };
-
-                                        await onJobUpdate({
-                                            status: 'In Progress',
-                                            comments: arrayUnion(newComment) as any
-                                        });
-
-                                        toast({ title: "Revision Requested", description: "Job status reverted to 'In Progress'." });
-                                        setDisputeReason(""); // Clear input
-                                    } catch (e) {
-                                        console.error(e);
-                                        toast({ title: "Error", description: "Failed to request revision.", variant: "destructive" });
-                                    } finally {
-                                        setIsLoading(false);
-                                    }
-                                }} disabled={isLoading} variant="warning" className="bg-amber-500 hover:bg-amber-600 text-white">
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {job.status === 'Pending Confirmation' && (
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <Button onClick={handleApproveAndPay} disabled={isLoading} className="flex-1" data-testid="approve-release-button">
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            Approve & Release Payment
+                        </Button>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="warning" className="flex-1 bg-amber-500 hover:bg-amber-600 text-white">
+                                    <RefreshCcw className="mr-2 h-4 w-4" />
                                     Request Revision
                                 </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Request Revision</DialogTitle>
+                                    <DialogDescription>Ask the installer to make changes. This will set the job status back to &quot;In Progress&quot;.</DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                        <Label>Reason for Revision (Required)</Label>
+                                        <Textarea
+                                            value={disputeReason}
+                                            onChange={e => setDisputeReason(e.target.value)}
+                                            placeholder="e.g. The wiring is exposed, please fix it..."
+                                        />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <DialogClose asChild>
+                                        <Button variant="outline" onClick={() => setDisputeReason("")}>Cancel</Button>
+                                    </DialogClose>
+                                    <Button onClick={async () => {
+                                        if (!user) return; // Guard against null user
+                                        if (!disputeReason.trim()) {
+                                            toast({ title: "Reason Required", description: "Please explain what needs to be revised.", variant: "destructive" });
+                                            return;
+                                        }
+                                        setIsLoading(true);
+                                        try {
+                                            // Create a system comment for the revision
+                                            const newComment: Comment = {
+                                                id: `COMMENT-${Date.now()}`,
+                                                author: doc(db, "users", user.id),
+                                                timestamp: new Date(),
+                                                content: `🔴 REVISION REQUESTED: ${disputeReason}`
+                                            };
 
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="destructive" className="flex-1">
-                                <AlertOctagon className="mr-2 h-4 w-4" />
-                                Raise a Dispute
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Raise a Dispute</DialogTitle>
-                                <DialogDescription>If the work is incomplete or unsatisfactory, provide details and evidence below.</DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label>Reason</Label>
-                                    <Textarea value={disputeReason} onChange={e => setDisputeReason(e.target.value)} placeholder="Explain the issue..." />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Evidence (Required)</Label>
-                                    <FileUpload onFilesChange={setDisputeFiles} maxFiles={5} />
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button onClick={handleRaiseDispute} disabled={isLoading} variant="destructive">
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Submit Dispute
+                                            await onJobUpdate({
+                                                status: 'In Progress',
+                                                comments: arrayUnion(newComment) as any
+                                            });
+
+                                            toast({ title: "Revision Requested", description: "Job status reverted to 'In Progress'." });
+                                            setDisputeReason(""); // Clear input
+                                        } catch (e) {
+                                            console.error(e);
+                                            toast({ title: "Error", description: "Failed to request revision.", variant: "destructive" });
+                                        } finally {
+                                            setIsLoading(false);
+                                        }
+                                    }} disabled={isLoading} variant="warning" className="bg-amber-500 hover:bg-amber-600 text-white">
+                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Request Revision
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="destructive" className="flex-1">
+                                    <AlertOctagon className="mr-2 h-4 w-4" />
+                                    Raise a Dispute
                                 </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                </div>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Raise a Dispute</DialogTitle>
+                                    <DialogDescription>If the work is incomplete or unsatisfactory, provide details and evidence below.</DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                        <Label>Reason</Label>
+                                        <Textarea value={disputeReason} onChange={e => setDisputeReason(e.target.value)} placeholder="Explain the issue..." />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Evidence (Required)</Label>
+                                        <FileUpload onFilesChange={setDisputeFiles} maxFiles={5} />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button onClick={handleRaiseDispute} disabled={isLoading} variant="destructive">
+                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Submit Dispute
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
@@ -1234,10 +1251,14 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
             if (otp && otp.length === 6) {
                 setIsVerifyingOtp(true);
                 try {
+                    const auth = getAuth();
+                    const token = await auth.currentUser?.getIdToken();
                     await axios.post('/api/escrow/verify-otp-complete', {
                         jobId: job.id,
                         otp: otp,
                         completionAttachments: uploadedAttachments
+                    }, {
+                        headers: { Authorization: `Bearer ${token}` }
                     });
                     toast({
                         title: "Job Completed Successfully!",
@@ -1310,7 +1331,7 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
                 <p className="text-xs text-muted-foreground">Entering the correct OTP will instantly release your payment.</p>
             </div>
             <div className="flex justify-end pt-4">
-                <Button onClick={handleCompleteJob} disabled={completionFiles.length === 0 || isSubmitting} data-test-id="submit-for-review-button" className="w-full">
+                <Button onClick={handleCompleteJob} disabled={completionFiles.length === 0 || isSubmitting} data-testid="submit-for-review-button" className="w-full">
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
                         otp ? <Zap className="mr-2 h-4 w-4 text-amber-500 fill-amber-500" /> : <Send className="mr-2 h-4 w-4" />
                     )}
@@ -1367,7 +1388,8 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
     // Fetch Job Data
     // Fetch Job Data
-    const isJobGiver = !!(user && job && user.id === getRefId(job.jobGiver));
+    const isJobGiver = !!(user && job && (user.id === getRefId(job.jobGiver) || user.id === job.jobGiverId));
+
     const { setHelp } = useHelp();
 
     React.useEffect(() => {
@@ -1423,51 +1445,38 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
         return () => setHelp({ title: null, content: null });
     }, [setHelp, job?.status, isJobGiver, job?.title]);
 
-    // Fetch Job Data
+    // Fetch Job Data & Listen for Changes
     React.useEffect(() => {
-        if (!id || !db) return;
+        if (!id || !db || !user) return;
 
-        // If we already have the job (SSR or previous fetch) and it matches the ID, skip fetching
-        if (job && job.id === id) {
-            return;
-        }
+        const jobRef = doc(db, 'jobs', id);
+        console.log("DEBUG: Starting job snapshot listener for", id);
 
-        const fetchJob = async () => {
-            console.log("DEBUG: Starting job fetch for", id);
-            try {
-                // Use getDocFromServer to bypass any cache locks in test env
-                // (Note: Retaining getDocFromServer for robustness if SSR fails)
-                const jobRef = doc(db, 'jobs', id);
-                const jobSnap = await getDocFromServer(jobRef);
-                if (jobSnap.exists()) {
-                    setJob({ id: jobSnap.id, ...jobSnap.data() });
-                } else {
-                    toast({
-                        title: "Error",
-                        description: "Job not found",
-                        variant: "destructive",
-                    });
-                    // router.push('/dashboard'); // Don't redirect immediately to allow debug
-                }
-            } catch (error) {
-                console.error("Error fetching job:", error);
+        const unsubscribe = onSnapshot(jobRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const jobData = { id: docSnap.id, ...docSnap.data() };
+                setJob(jobData);
+                setLoading(false);
+            } else {
                 toast({
                     title: "Error",
-                    description: "Failed to load job details",
+                    description: "Job not found",
                     variant: "destructive",
                 });
-            } finally {
-                setLoading(false); // Ensure loading is set to false after fetch attempt
+                setLoading(false);
             }
-        };
+        }, (error) => {
+            console.error("Error listening to job:", error);
+            setLoading(false);
+        });
 
-        setLoading(true); // Set loading true before starting fetch
-        fetchJob();
-    }, [id, db, job]); // logic: if job is set, effect returns early. Dependency 'job' ensures re-check.
+        return () => unsubscribe();
+    }, [id, db, user]); // Added user to dependency and guard
+
 
     // --- FETCH BIDS FROM SUB-COLLECTION ---
     React.useEffect(() => {
-        if (!id || !db) return;
+        if (!id || !db || !user) return;
 
         const bidsRef = collection(db, 'jobs', id as string, 'bids');
         const q = query(bidsRef, orderBy('amount', 'asc'));
@@ -1479,15 +1488,12 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
             console.error("Error fetching bids:", error);
         });
 
-        // Fetch Platform Settings - Disabled to prevent permission error poisoning
-        // Fetch Platform Settings - Disabled to prevent permission error poisoning
-        // code deleted
-
         return () => {
             unsubscribeBids();
         };
 
     }, [id, db, user, userLoading]);
+
 
     // Secure Contact Reveal Effect (The "Comms Patch")
     React.useEffect(() => {
@@ -1563,23 +1569,45 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     const handleDirectConfirm = async () => {
         const auth = getAuth();
         const token = await auth.currentUser?.getIdToken();
-        if (!token) return;
+        const runId = id; // use params id
+        console.log('[E2E Client] handleDirectConfirm calling with jobID:', runId, 'Token present:', !!token);
 
-        const res = await axios.post('/api/escrow/initiate-payment', {
-            jobId: job!.id,
-        }, {
-            headers: { Authorization: `Bearer ${token}` } // Send token
-        });
+        if (!token) {
+            console.log('[E2E Client] No token found!');
+            return;
+        }
 
-        // In test mode we just want to create the txn.
-        // Wait, the API returns session_id. 
-        // For E2E, we might need a special flag or just manually update the job to Funded via Admin SDK?
-        // Actually, the new secure API creates the transaction as 'Initiated'.
-        // We need a way to move it to 'Funded' in E2E without real payment.
-        // We can use a test-only API or just rely on the test helper doing it in Firestore.
-        // Let's assume the test helper handles the 'Funded' update.
-        toast({ title: "Test Mode: Payment Initiated", description: "Waiting for external funding..." });
+        try {
+            const res = await axios.post('/api/e2e/fund-job', {
+                jobId: runId,
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log('[E2E Client] Fund Success:', res.data);
+            toast({ title: "Test Mode: Payment Initiated", description: "Waiting for external funding..." });
+        } catch (e: any) {
+            console.log('[E2E Client] Fund Failed:', e.response?.data || e.message);
+            toast({ title: "Fund Failed", description: "Check logs", variant: "destructive" });
+        }
+
+        // Removed redundant post-try toast to avoid confusion.
     };
+
+    // E2E Shim: Expose function globally
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            console.log("Mounting e2e_directFundJob shim");
+            (window as any).e2e_directFundJob = handleDirectConfirm;
+        }
+        return () => {
+            if (typeof window !== 'undefined') {
+                delete (window as any).e2e_directFundJob;
+            }
+        };
+    }, [id]); // Depend on ID to ensure closure is fresh-ish, though handleDirectConfirm uses ref logic usually.
+    // handleDirectConfirm is stable? Not wrapped in callback.
+    // It uses 'id' from closure. 'id' comes from params.
+
 
     // Fetch Platform Settings (Fees) - Disabled to prevent permission error poisoning
     /*
@@ -1778,7 +1806,8 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                                                         // For simplicity, just logic here:
                                                         await handleJobUpdate({
                                                             status: 'Awarded', // Or 'Pending Acceptance' if we want that step
-                                                            awardedInstaller: bid.installer,
+                                                            awardedInstaller: doc(db, 'users', getRefId(bid.installer)),
+                                                            awardedInstallerId: getRefId(bid.installer), // Added for robust permission rules
                                                             selectedInstallers: [{ installerId: getRefId(bid.installer), rank: 1 }]
                                                         });
                                                         toast({ title: "Offer Sent", description: "Waiting for installer acceptance." });
@@ -1946,13 +1975,19 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
                                 {/* Completion Sections */}
                                 {
-                                    !isJobGiver && job.status === 'In Progress' && (
+                                    !isJobGiver && job.status === 'In Progress' && !job.workStartedAt && (
+                                        <StartWorkInput job={job} user={user!} onJobUpdate={handleJobUpdate} />
+                                    )
+                                }
+
+                                {
+                                    !isJobGiver && job.status === 'In Progress' && job.workStartedAt && (
                                         <InstallerCompletionSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
                                     )
                                 }
 
                                 {
-                                    isJobGiver && job.status === 'Pending Confirmation' && (
+                                    isJobGiver && (job.status === 'In Progress' || job.status === 'Pending Confirmation') && (
                                         <JobGiverConfirmationSection job={job} onJobUpdate={handleJobUpdate} onCancel={() => setIsCancelDialogOpen(true)} onAddFunds={() => setIsAddFundsDialogOpen(true)} />
                                     )
                                 }

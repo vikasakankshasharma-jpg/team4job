@@ -70,6 +70,7 @@ const TEST_USERS = [
             isVerified: true,
             skills: ['CCTV', 'Wiring'],
             createdAt: new Date().toISOString(),
+            payouts: { beneficiaryId: 'test_beneficiary_id_123' }
         }
     },
     {

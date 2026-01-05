@@ -169,35 +169,40 @@ function InstallerDashboard() {
       if (!user || !db) return;
 
       setLoading(true);
-      const jobsRef = collection(db, "jobs");
-      const openJobsQuery = query(jobsRef, where('status', '==', 'Open for Bidding'));
-      const installerDocRef = doc(db, 'users', user.id);
+      try {
+        const jobsRef = collection(db, "jobs");
+        const openJobsQuery = query(jobsRef, where('status', '==', 'Open for Bidding'));
+        const installerDocRef = doc(db, 'users', user.id);
 
-      // Fix: Queries for arrays or specific fields
-      const myBidsQuery = query(jobsRef, where('bidderIds', 'array-contains', user.id));
-      const myAwardedQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
+        // Fix: Queries for arrays or specific fields
+        const myBidsQuery = query(jobsRef, where('bidderIds', 'array-contains', user.id));
+        const myAwardedQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
 
-      // Transactions for Earnings
-      const transactionsQuery = query(collection(db, "transactions"), where("payeeId", "==", user.id), where("status", "==", "Released"));
+        // Transactions for Earnings
+        const transactionsQuery = query(collection(db, "transactions"), where("payeeId", "==", user.id), where("status", "==", "Released"));
 
-      const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot, transactionsSnapshot] = await Promise.all([
-        getDocs(openJobsQuery),
-        getDocs(myBidsQuery),
-        getDocs(myAwardedQuery),
-        getDocs(transactionsQuery)
-      ]);
+        const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot, transactionsSnapshot] = await Promise.all([
+          getDocs(openJobsQuery),
+          getDocs(myBidsQuery),
+          getDocs(myAwardedQuery),
+          getDocs(transactionsQuery)
+        ]);
 
-      const myJobsSet = new Set([...myBidsSnapshot.docs.map(d => d.id), ...myAwardedSnapshot.docs.map(d => d.id)]);
+        const myJobsSet = new Set([...myBidsSnapshot.docs.map(d => d.id), ...myAwardedSnapshot.docs.map(d => d.id)]);
 
-      setStats({
-        openJobs: openJobsSnapshot.size,
-        myBids: myJobsSet.size,
-        jobsWon: myAwardedSnapshot.size
-      });
+        setStats({
+          openJobs: openJobsSnapshot.size,
+          myBids: myJobsSet.size,
+          jobsWon: myAwardedSnapshot.size
+        });
 
-      setTransactions(transactionsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Transaction)));
+        setTransactions(transactionsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Transaction)));
 
-      setLoading(false);
+      } catch (error) {
+        console.error("Error fetching InstallerDashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchData();

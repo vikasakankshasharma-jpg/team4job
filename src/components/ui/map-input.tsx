@@ -124,6 +124,7 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
         placeholder="Type address or click on map"
         {...addressField}
         onChange={handleAddressChange}
+        data-testid="full-address-input"
       />
       <GoogleMap
         mapContainerStyle={containerStyle}

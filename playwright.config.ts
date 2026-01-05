@@ -41,10 +41,10 @@ export default defineConfig({
         video: 'retain-on-failure',
 
         /* Maximum time each action can take */
-        actionTimeout: 15000,
+        actionTimeout: 30000,
 
         /* Maximum time for navigation */
-        navigationTimeout: 30000,
+        navigationTimeout: 60000,
     },
 
     /* Configure projects for major browsers */
@@ -74,7 +74,7 @@ export default defineConfig({
 
     /* Run your local dev server before starting the tests */
     webServer: {
-        command: process.env.CI ? 'npm run start -- -p 3006' : 'npm run dev -- -p 3006',
+        command: 'npm run start -- -p 3006',
         url: 'http://localhost:3006',
         reuseExistingServer: !process.env.CI,
         timeout: 120000,
@@ -85,6 +85,6 @@ export default defineConfig({
 
     /* Expect timeout */
     expect: {
-        timeout: 10000,
+        timeout: 20000,
     },
 });

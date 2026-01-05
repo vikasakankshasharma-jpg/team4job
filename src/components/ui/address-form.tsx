@@ -19,18 +19,18 @@ interface AddressFormProps {
     isMapLoaded: boolean;
 }
 
-export function AddressForm({ 
-    pincodeName, 
-    houseName, 
-    streetName, 
-    landmarkName, 
+export function AddressForm({
+    pincodeName,
+    houseName,
+    streetName,
+    landmarkName,
     fullAddressName,
     onLocationGeocoded,
     mapCenter,
     isMapLoaded
 }: AddressFormProps) {
     const { control } = useFormContext();
-    
+
     return (
         <div className="space-y-6">
             <LocationInput
@@ -43,7 +43,7 @@ export function AddressForm({
             />
 
             <Separator />
-            
+
             <div className="space-y-2">
                 <FormLabel>Detailed Address</FormLabel>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -54,7 +54,7 @@ export function AddressForm({
                             <FormItem>
                                 <FormLabel className="text-xs">House / Flat No. & Building</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="e.g., Flat 4B, Sunshine Apartments" {...field} />
+                                    <Input placeholder="e.g., Flat 4B, Sunshine Apartments" {...field} data-testid="house-input" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -67,34 +67,34 @@ export function AddressForm({
                             <FormItem>
                                 <FormLabel className="text-xs">Street, Colony / Area</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="e.g., 12th Main Road, Indiranagar" {...field} />
+                                    <Input placeholder="e.g., 12th Main Road, Indiranagar" {...field} data-testid="street-input" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
                 </div>
-                 <FormField
+                <FormField
                     control={control}
                     name={landmarkName}
                     render={({ field }) => (
                         <FormItem>
-                             <FormLabel className="text-xs">Nearby Landmark (Optional)</FormLabel>
+                            <FormLabel className="text-xs">Nearby Landmark (Optional)</FormLabel>
                             <FormControl>
-                                <Input placeholder="e.g., Near City Hospital" {...field} />
+                                <Input placeholder="e.g., Near City Hospital" {...field} data-testid="landmark-input" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
             </div>
-             <MapInput 
+            <MapInput
                 name={fullAddressName}
                 label="Set Precise Location on Map"
                 control={control}
                 center={mapCenter}
                 isMapLoaded={isMapLoaded}
-             />
+            />
         </div>
     )
 }
