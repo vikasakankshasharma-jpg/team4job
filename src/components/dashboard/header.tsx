@@ -229,6 +229,7 @@ export function Header() {
               className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              data-testid="search-input"
             />
           </div>
         ) : <div className="hidden md:block md:flex-grow"></div>}

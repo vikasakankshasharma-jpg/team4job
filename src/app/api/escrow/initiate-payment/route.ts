@@ -108,23 +108,42 @@ export async function POST(req: NextRequest) {
                 amount = task.quoteAmount;
                 jobTitle = `Additional Task: ${task.description.substring(0, 30)}...`;
             } else {
-                // Determine the amount from the winning bid for regular jobs
+                // Determine the amount from the winning bid
+                // Get 'awardedInstaller' ID
+                const awardedId = (job.awardedInstaller as any).id || job.awardedInstaller;
+                // If it's a reference, we might need to be careful, but usually .id works on Firestore refs in Admin SDK if they are objects, 
+                // or if it's a string.
+                // Actually, job.awardedInstaller in Admin SDK is a Reference object usually.
+                // Let's safe cast.
+                let installerIdString = '';
+                if (typeof job.awardedInstaller === 'string') {
+                    installerIdString = job.awardedInstaller;
+                } else if (job.awardedInstaller && (job.awardedInstaller as any).id) {
+                    installerIdString = (job.awardedInstaller as any).id;
+                } else if (job.awardedInstallerId) {
+                    installerIdString = job.awardedInstallerId;
+                }
+
+                installerId = installerIdString;
+
                 if (job.bids && job.bids.length > 0) {
-                    // Logic for finding winning bid from array (Old Way)
-                    // If we have migrated to sub-collections, this part needs to change to fetch the specific bid doc.
-                    // IMPORTANT: Since we are in transition, let's look at 'awardedInstaller' ID and find the matching bid
-                    // OR rely on a stored 'agreedPrice' on the job if we had one.
-                    // The safer bet is trusting the bid amount that matched the installer.
-
-                    // Get 'awardedInstaller' ID
-                    const awardedId = (job.awardedInstaller as any).id || job.awardedInstaller;
-                    installerId = awardedId;
-
-                    const winningBid = job.bids.find(b => (b.installer as any).id === awardedId || b.installer === awardedId);
+                    // Legacy Array Logic
+                    const winningBid = job.bids.find(b => (b.installer as any).id === installerIdString || (b.installer as any) === installerIdString);
                     if (winningBid) {
                         amount = winningBid.amount;
                     }
-                } else if (job.directAwardInstallerId && (job as any).budget) {
+                }
+
+                // Fallback: Check Sub-collection if amount is still 0
+                if (amount === 0 && installerIdString) {
+                    const bidsSnap = await db.collection('jobs').doc(jobId).collection('bids')
+                        .where('installerId', '==', installerIdString).limit(1).get();
+                    if (!bidsSnap.empty) {
+                        amount = bidsSnap.docs[0].data().amount;
+                    }
+                }
+
+                if (amount === 0 && job.directAwardInstallerId && (job as any).budget) {
                     amount = (job as any).budget.min;
                     installerId = job.directAwardInstallerId;
                 }
@@ -168,7 +187,7 @@ export async function POST(req: NextRequest) {
             payoutToInstaller: payoutToInstaller,
             status: 'Initiated',
             transactionType: isSubscription ? 'SUBSCRIPTION' : 'JOB',
-            planId: isSubscription ? planId : undefined,
+            ...(isSubscription ? { planId } : {}),
             createdAt: Timestamp.now() as any,
         };
 

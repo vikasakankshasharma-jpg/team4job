@@ -73,8 +73,20 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
         return { start, end };
     };
 
+    const handleConfirmConflict = async () => {
+        console.log('InstallerAcceptanceSection: handleConfirmConflict triggered');
+        try {
+            // Pass the conflicting jobs to be auto-declined
+            await processAcceptance(conflictingJobs);
+        } catch (error) {
+            console.error('InstallerAcceptanceSection: handleConfirmConflict error', error);
+        }
+    };
+
     const handleAcceptClick = async () => {
+        console.log("InstallerAcceptanceSection: Accept clicked", { payouts: user.payouts, id: user.id });
         if (!user.payouts?.beneficiaryId) {
+            console.log("InstallerAcceptanceSection: Missing beneficiaryId");
             toast({
                 title: "Action Required: Setup Payouts",
                 description: "Please set up your bank account in your profile to ensure timely payments.",
@@ -95,16 +107,21 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
 
             // Query for OTHER jobs awarded to this user
             // We fetch all 'Awarded' and filter in memory for complex date ranges
+            console.log('InstallerAcceptanceSection: Conflict query started for user', user.id);
+            // Simplify query to avoid potential index issues in emulator
             const q = query(
                 jobsRef,
-                where('awardedInstaller', '==', doc(db, 'users', user.id)),
-                where('status', 'in', ['Awarded', 'In Progress', 'Pending Funding']) // Check against all active states
+                where('awardedInstaller', '==', doc(db, 'users', user.id))
             );
+
             const snapshot = await getDocs(q);
 
             const conflicts = snapshot.docs
                 .map(d => d.data() as Job)
                 .filter(otherJob => {
+                    // Filter status client-side
+                    if (!['Awarded', 'In Progress', 'Pending Funding'].includes(otherJob.status)) return false;
+
                     if (otherJob.id === job.id) return false; // Ignore self
 
                     const otherRange = getJobRange(otherJob);
@@ -114,6 +131,8 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
                     const isOverlapping = (currentRange.start < otherRange.end) && (currentRange.end > otherRange.start);
                     return isOverlapping;
                 });
+
+            console.log('InstallerAcceptanceSection: Conflict check complete', { conflictsCount: conflicts.length });
 
             if (conflicts.length > 0) {
                 setConflictingJobs(conflicts);
@@ -132,6 +151,7 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
     };
 
     const processAcceptance = async (conflictsToDecline: Job[]) => {
+        console.log('InstallerAcceptanceSection: processAcceptance started', { conflictsCount: conflictsToDecline?.length });
         setIsLoading(true);
         try {
             if (!db) throw new Error("Database connection unavailable");
@@ -163,6 +183,9 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
 
             const conflictingJob = snapshot.docs.find(d => {
                 const activeJob = d.data() as Job;
+                // Exclude jobs we are about to decline
+                if (conflictsToDecline.some(c => c.id === activeJob.id)) return false;
+
                 if (!activeJob.jobStartDate) return false;
                 const activeStart = toDate(activeJob.jobStartDate);
                 return activeStart.toDateString() === newJobStart.toDateString();
@@ -179,13 +202,20 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
                 }
                 const jobData = jobDoc.data() as Job;
 
-                if (jobData.awardedInstaller) {
-                    throw new Error("This job has already been accepted by another installer.");
+                // Validation: Ensure job is still in 'Awarded' state
+                if (jobData.status !== 'Awarded') {
+                    throw new Error(`This job is no longer available for acceptance. Status: ${jobData.status}`);
+                }
+
+                // Verify the current user is indeed the awarded installer
+                if (jobData.awardedInstaller?.id !== user.id) {
+                    throw new Error("You are not the awarded installer for this job.");
                 }
 
                 // Accept Current Job
                 transaction.update(jobRef, {
-                    awardedInstaller: doc(db, 'users', user.id),
+                    // awardedInstaller is already set, so strictly speaking we don't need to update it, 
+                    // but keeping it doesn't hurt.
                     status: "Pending Funding",
                     selectedInstallers: [],
                     acceptanceDeadline: deleteField(),
@@ -303,7 +333,8 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
                         <AlertDialogDescription>
                             You have {conflictingJobs.length} other pending job awards for this same date.
                             Accepting this job will <strong>automatically decline</strong> the other offers to prevent double-booking.
-                            <br /><br />
+                        </AlertDialogDescription>
+                        <div className="text-sm text-muted-foreground mt-4">
                             <strong>Jobs to be declined:</strong>
                             <ul className="list-disc pl-5 mt-2">
                                 {conflictingJobs.map(j => {
@@ -317,7 +348,7 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
                                     );
                                 })}
                             </ul>
-                        </AlertDialogDescription>
+                        </div>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>

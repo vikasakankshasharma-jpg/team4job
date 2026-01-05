@@ -113,6 +113,14 @@ const jobSchema = z.object({
 }, {
   message: "Job start date cannot be before the bidding deadline.",
   path: ["jobStartDate"],
+}).refine(data => {
+  if (data.priceEstimate && data.priceEstimate.max > 0) {
+    return data.priceEstimate.min <= data.priceEstimate.max;
+  }
+  return true;
+}, {
+  message: "Maximum budget cannot be less than minimum budget.",
+  path: ["priceEstimate.max"],
 });
 
 
@@ -644,6 +652,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                         <Input
                           placeholder="e.g., Install 8 IP Cameras for an Office"
                           {...field}
+                          data-testid="job-title-input"
                         />
                       </FormControl>
                       <VoiceInput onTranscript={handleVoiceTranscript} isProcessing={isGenerating} />
@@ -699,6 +708,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                         placeholder="e.g., IP Cameras, NVR Setup, Cabling"
                         className={cn(isGenerating && "opacity-50")}
                         {...field}
+                        data-testid="skills-input"
                       />
                     </FormControl>
                     <FormDescription>

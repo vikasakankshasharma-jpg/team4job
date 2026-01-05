@@ -5,6 +5,7 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { UploadCloud, File as FileIcon, X } from 'lucide-react';
 import { Button } from './button';
+import { useToast } from "@/hooks/use-toast";
 
 interface FileUploadProps {
   onFilesChange: (files: File[]) => void;
@@ -13,8 +14,20 @@ interface FileUploadProps {
 
 export function FileUpload({ onFilesChange, maxFiles = 5 }: FileUploadProps) {
   const [files, setFiles] = useState<File[]>([]);
+  const { toast } = useToast();
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback((acceptedFiles: File[], fileRejections: any[]) => {
+    if (fileRejections.length > 0) {
+      fileRejections.forEach(rejection => {
+        const errors = rejection.errors.map((e: any) => e.message).join(', ');
+        toast({
+          title: "File rejected",
+          description: `File ${rejection.file.name} was rejected: ${errors}`,
+          variant: "destructive",
+        });
+      });
+    }
+
     setFiles(prevFiles => {
       const newFiles = [...prevFiles, ...acceptedFiles].slice(0, maxFiles);
       onFilesChange(newFiles);
@@ -24,6 +37,7 @@ export function FileUpload({ onFilesChange, maxFiles = 5 }: FileUploadProps) {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    maxSize: 10 * 1024 * 1024, // 10MB limit
     accept: {
       'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
       'video/*': ['.mp4', '.mov', '.avi'],
@@ -45,9 +59,8 @@ export function FileUpload({ onFilesChange, maxFiles = 5 }: FileUploadProps) {
     <div className="space-y-4">
       <div
         {...getRootProps()}
-        className={`flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${
-          isDragActive ? 'border-primary bg-primary/10' : 'border-muted hover:border-primary/50'
-        }`}
+        className={`flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/10' : 'border-muted hover:border-primary/50'
+          }`}
       >
         <input {...getInputProps()} />
         <UploadCloud className="w-8 h-8 text-muted-foreground" />

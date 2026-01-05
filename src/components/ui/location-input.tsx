@@ -41,7 +41,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedPostOffice, setSelectedPostOffice] = useState('');
-    
+
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
     const [country, setCountry] = useState('');
@@ -69,7 +69,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
             });
         }
     }, [pincode, postOffices, setValue, name, isMapLoaded, onLocationGeocoded]);
-    
+
     const fetchPostOffices = useCallback(async (currentPincode: string, defaultPO?: string) => {
         if (currentPincode.length !== 6) {
             setPostOffices([]);
@@ -95,7 +95,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
                 setCity(fetchedPOs[0].District);
                 setState(fetchedPOs[0].State);
                 setCountry(fetchedPOs[0].Country);
-                
+
                 if (fetchedPOs.length === 1) {
                     // If only one post office, auto-select it
                     handlePostOfficeChange(fetchedPOs[0].Name, currentPincode, fetchedPOs[0]);
@@ -111,7 +111,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
             setIsLoading(false);
         }
     }, [handlePostOfficeChange]);
-    
+
     useEffect(() => {
         if (field.value && typeof field.value === 'string') {
             const [currentPincode, currentPO] = field.value.split(', ');
@@ -124,7 +124,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
                 setPincode(field.value);
             }
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [field.value]);
 
     const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,6 +153,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
                         onChange={handlePincodeChange}
                         maxLength={6}
                         className="pr-10"
+                        data-testid="pincode-input"
                     />
                     {isLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
                 </div>
@@ -161,7 +162,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
                     value={selectedPostOffice}
                     disabled={postOffices.length <= 1 || isLoading}
                 >
-                    <SelectTrigger>
+                    <SelectTrigger data-testid="po-select-trigger">
                         <SelectValue placeholder="Select Post Office" />
                     </SelectTrigger>
                     <SelectContent>
@@ -172,12 +173,13 @@ export function LocationInput({ name, label, placeholder, description, control, 
                         ))}
                     </SelectContent>
                 </Select>
-                 <Input value={city} placeholder="City / District" disabled className="bg-muted/50" />
-                 <Input value={state} placeholder="State" disabled className="bg-muted/50" />
-                 <Input value={country} placeholder="Country" disabled className="bg-muted/50" />
+                <Input value={city} placeholder="City / District" disabled className="bg-muted/50" data-testid="city-input" />
+                <Input value={state} placeholder="State" disabled className="bg-muted/50" data-testid="state-input" />
+                <Input value={country} placeholder="Country" disabled className="bg-muted/50" data-testid="country-input" />
             </div>
             {description && !fieldState.error && <FormDescription>{description}</FormDescription>}
-            <FormMessage>{fieldState.error?.message || error}</FormMessage>
+            <FormMessage data-testid="pincode-error">{fieldState.error?.message || error}</FormMessage>
+            <input type="hidden" name={name} value={field.value} />
         </FormItem>
     );
 }

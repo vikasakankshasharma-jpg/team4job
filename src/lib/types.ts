@@ -167,6 +167,7 @@ export type Job = {
   bidderIds?: string[];
   disqualifiedInstallerIds?: string[];
   awardedInstaller?: User | DocumentReference;
+  awardedInstallerId?: string; // Added for redundancy and robust querying
   selectedInstallers?: { installerId: string, rank: number }[];
   directAwardInstallerId?: string; // ID of the installer this job was directly sent to
   rating?: number;
