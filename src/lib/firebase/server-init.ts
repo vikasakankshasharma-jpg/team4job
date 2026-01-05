@@ -41,12 +41,12 @@ function initializeAdminApp() {
   }
 
   // 3. Fallback to Individual Environment Variables (Better for Vercel/hosting dashboards)
-  if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'); // Fix escaped newlines
+  if (process.env.DO_FIREBASE_PROJECT_ID && process.env.DO_FIREBASE_CLIENT_EMAIL && process.env.DO_FIREBASE_PRIVATE_KEY) {
+    const privateKey = process.env.DO_FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'); // Fix escaped newlines
     return initializeApp({
       credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        projectId: process.env.DO_FIREBASE_PROJECT_ID,
+        clientEmail: process.env.DO_FIREBASE_CLIENT_EMAIL,
         privateKey: privateKey,
       })
     });
