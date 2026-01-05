@@ -9,16 +9,16 @@ import type { User } from '../types';
 config({ path: '.env.local', override: true });
 
 function initializeFirebaseAdmin(): App {
-    if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+    if (process.env.DO_FIREBASE_CLIENT_EMAIL && process.env.DO_FIREBASE_PRIVATE_KEY) {
         try {
-            const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+            const privateKey = process.env.DO_FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
             const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
             if (!projectId) throw new Error("Missing NEXT_PUBLIC_FIREBASE_PROJECT_ID");
 
             const app = initializeApp({
                 credential: cert({
                     projectId,
-                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                    clientEmail: process.env.DO_FIREBASE_CLIENT_EMAIL,
                     privateKey
                 })
             });
