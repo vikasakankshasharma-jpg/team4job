@@ -5,7 +5,7 @@ import { User, BlacklistEntry } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
-import { getDoc, collection, getDocs, onSnapshot, query, where, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { getDoc, getDocFromServer, collection, getDocs, onSnapshot, query, where, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -45,6 +45,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const pathname = usePathname();
   const { toast } = useToast();
 
+  // Refs to prevent race conditions
+  const manualRoleSet = useRef(false);
+  const isLoggingOut = useRef(false);
+  const lastRedirect = useRef<{ path: string; timestamp: number } | null>(null);
+
   const updateUserState = useCallback((userData: User | null) => {
     setUser(userData);
     if (userData) {
@@ -52,14 +57,27 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isAdminUser = userData.roles.includes("Admin");
       setIsAdmin(isAdminUser);
 
-      if (isAdminUser) {
+      // If role was manually set and user hasn't changed, preserve it
+      if (manualRoleSet.current && storedRole && userData.roles.includes(storedRole)) {
+        setRoleState(storedRole);
+        return;
+      }
+
+      // Reset manual flag if this is a different user
+      manualRoleSet.current = false;
+
+      // Check if we can use the stored role (if it exists and user still has it)
+      const canUseStoredRole = storedRole && userData.roles.includes(storedRole);
+
+      if (canUseStoredRole) {
+        setRoleState(storedRole);
+        // If stored role is Admin, ensure localStorage matches (it should already)
+      } else if (isAdminUser) {
         setRoleState("Admin");
         localStorage.setItem('userRole', "Admin");
       } else if (userData.roles.includes("Support Team")) {
         setRoleState("Support Team");
         localStorage.setItem('userRole', "Support Team");
-      } else if (storedRole && userData.roles.includes(storedRole)) {
-        setRoleState(storedRole);
       } else {
         const initialRole = userData.roles.includes("Installer") ? "Installer" : "Job Giver";
         setRoleState(initialRole);
@@ -67,6 +85,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } else {
       setIsAdmin(false);
+      manualRoleSet.current = false;
       localStorage.removeItem('userRole');
     }
   }, []);
@@ -87,66 +106,68 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     errorEmitter.on('permission-error', handlePermissionError);
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      // Prevent re-initialization during logout
+      if (isLoggingOut.current) {
+        return;
+      }
+
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
-
-        // --- Immediate check on auth change ---
-        try {
-          const initialUserDoc = await getDoc(userDocRef);
-          if (!initialUserDoc.exists()) {
-            toast({ title: 'Login Error', description: 'Could not find your user profile. Please contact support.', variant: 'destructive' });
-            signOut(auth);
-            return;
-          }
-
-          const userData = { id: initialUserDoc.id, ...initialUserDoc.data() } as User;
-
-          if (userData.status === 'deactivated' || userData.status === 'suspended') {
-            toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
-            signOut(auth);
-            return;
-          }
-        } catch (e) {
-          console.error("Initial user fetch failed:", e);
-          signOut(auth);
-          return;
-        }
-        // --- End immediate check ---
-
         const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
           if (userDoc.exists()) {
             const userData = { id: userDoc.id, ...userDoc.data() } as User;
 
             if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && toDate(userData.suspensionEndDate) > new Date())) {
               toast({ title: 'Access Denied', description: `Your account is currently restricted.`, variant: 'destructive' });
-              signOut(auth); // The snapshot listener will handle state cleanup
+              signOut(auth);
             } else {
               updateUserState(userData);
-              // Update last login timestamp without triggering a full re-render cycle
-              if (userDoc.data().lastLoginAt === undefined || (Date.now() - toDate(userDoc.data().lastLoginAt).getTime()) > 5 * 60 * 1000) {
-                updateDoc(userDocRef, { lastLoginAt: serverTimestamp() });
+
+              const now = new Date();
+              const lastActive = toDate(userData.lastActiveAt || userData.lastLoginAt || userData.memberSince);
+              const daysInactive = (now.getTime() - lastActive.getTime()) / (1000 * 3600 * 24);
+
+              // Auto-Inactivate if > 90 days
+              if (daysInactive > 90 && userData.status === 'active' && userData.roles.includes('Installer')) {
+                updateDoc(userDocRef, {
+                  status: 'deactivated',
+                  'installerProfile.adminNotes': `Auto-deactivated for inactivity (>90 days) on ${now.toISOString()}`
+                });
+                toast({
+                  title: "Account Deactivated",
+                  description: "Your account has been deactivated due to inactivity (>3 months). Please contact support/admin to reactivate.",
+                  variant: "destructive"
+                });
+              } else {
+                if (userDoc.data().lastLoginAt === undefined || (Date.now() - toDate(userDoc.data().lastLoginAt).getTime()) > 5 * 60 * 1000) {
+                  updateDoc(userDocRef, {
+                    lastLoginAt: serverTimestamp(),
+                    lastActiveAt: serverTimestamp()
+                  });
+                }
               }
             }
           } else {
-            // This case should be rare now due to the initial getDoc, but kept as a fallback.
             console.error("User document not found for authenticated user in snapshot listener:", firebaseUser.uid);
-            toast({ title: 'Login Error', description: 'Your user profile disappeared. Please contact support.', variant: 'destructive' });
-            signOut(auth);
           }
           setLoading(false);
         }, (error) => {
           console.error("Error listening to user document:", error);
-          signOut(auth);
+          if (error.code === 'permission-denied') {
+            // Handle permission error gracefully?
+            console.error("Permission denied for user doc.");
+          }
           setLoading(false);
         });
 
-        return () => unsubscribeDoc();
+        return () => {
+          unsubscribeDoc();
+        };
       } else {
         updateUserState(null);
         setLoading(false);
       }
     });
-
     return () => {
       unsubscribeAuth();
       errorEmitter.off('permission-error', handlePermissionError);
@@ -167,53 +188,75 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (!user) {
+      console.log(`useUser: No user found, redirecting to /login from ${pathname}`);
       router.push('/login');
       return;
     }
 
     // Role-based route protection
-    const installerPaths = ['/dashboard/jobs', '/dashboard/my-bids', '/dashboard/verify-installer'];
+    const installerPaths = ['/dashboard/my-bids', '/dashboard/verify-installer'];
     const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs', '/dashboard/my-installers', '/dashboard/installers'];
     const adminOnlyPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/settings', '/dashboard/subscription-plans', '/dashboard/coupons', '/dashboard/blacklist'];
     const supportOnlyPaths = ['/dashboard/disputes'];
 
-    const isInstallerPage = installerPaths.some(p => pathname.startsWith(p));
+    const isInstallerPage = installerPaths.some(p => pathname.startsWith(p)) || pathname === '/dashboard/jobs'; // Browse jobs page only
     const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
     const isAdminPage = adminOnlyPaths.some(p => pathname.startsWith(p));
     const isSupportPage = supportOnlyPaths.some(p => pathname.startsWith(p));
 
     const userIsAdmin = user.roles.includes("Admin");
 
+    // Helper function to debounce redirects
+    const shouldRedirect = (targetPath: string): boolean => {
+      const now = Date.now();
+      if (lastRedirect.current &&
+        lastRedirect.current.path === targetPath &&
+        now - lastRedirect.current.timestamp < 500) {
+        return false; // Prevent rapid successive redirects
+      }
+      lastRedirect.current = { path: targetPath, timestamp: now };
+      return true;
+    };
+
     if (role === 'Job Giver' && isInstallerPage) {
-      router.push('/dashboard');
+      if (shouldRedirect('/dashboard')) router.push('/dashboard');
     } else if (role === 'Installer' && isJobGiverPage) {
-      router.push('/dashboard');
+      if (shouldRedirect('/dashboard')) router.push('/dashboard');
     } else if (role === 'Support Team' && !(isSupportPage || pathname === '/dashboard' || pathname.startsWith('/dashboard/profile'))) {
-      router.push('/dashboard/disputes');
+      if (shouldRedirect('/dashboard/disputes')) router.push('/dashboard/disputes');
     } else if (userIsAdmin && (isInstallerPage || isJobGiverPage)) {
       // Admins can access most pages, but we could redirect them if needed
     } else if (!userIsAdmin && isAdminPage) {
-      router.push('/dashboard');
+      if (shouldRedirect('/dashboard')) router.push('/dashboard');
     }
 
   }, [role, pathname, user, router, loading]);
 
 
-  const handleSetRole = (newRole: Role) => {
+  const handleSetRole = useCallback((newRole: Role) => {
     if (user && user.roles.includes(newRole)) {
       setRoleState(newRole);
       localStorage.setItem('userRole', newRole);
+      manualRoleSet.current = true; // Mark as manually set
     }
-  };
+  }, [user]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
+    isLoggingOut.current = true;
+    manualRoleSet.current = false;
+    localStorage.removeItem('userRole');
+
     signOut(auth).then(() => {
       updateUserState(null);
-      router.push('/login');
+      isLoggingOut.current = false;
+      router.replace('/login'); // Use replace to prevent back navigation
+    }).catch((error) => {
+      console.error("Logout error:", error);
+      isLoggingOut.current = false;
     });
-  }
+  }, [auth, updateUserState, router]);
 
-  const handleLogin = async (email: string, password?: string): Promise<boolean> => {
+  const handleLogin = useCallback(async (email: string, password?: string): Promise<boolean> => {
     if (!password) {
       console.error("Password missing.");
       return false;
@@ -227,7 +270,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return false;
     }
-  };
+  }, [auth]);
 
 
   const value = useMemo(() => ({
@@ -244,16 +287,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const publicPaths = ['/login', '/'];
   const isPublicPage = publicPaths.some(p => pathname.startsWith(p));
 
-  if (loading && !isPublicPage) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span>Loading user...</span>
-        </div>
-      </div>
-    );
-  }
+  // We no longer block the entire app render with a loading screen here. 
+  // Individual pages/components should handle 'loading' from useUser() for better UX (skeletons, etc.)
 
   return (
     <UserContext.Provider value={value}>

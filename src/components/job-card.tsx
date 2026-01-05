@@ -41,14 +41,14 @@ export function JobCard({ job }: JobCardProps) {
 
   const hasBidded = user && job.bidderIds?.includes(user.id);
   const myBidStatus = hasBidded && user ? getMyBidStatus(job, user) : null;
-  
+
   const displayStatus = myBidStatus ? myBidStatus.text : job.status;
   const statusVariant = myBidStatus ? myBidStatus.variant : getStatusVariant(job.status);
-  
+
   const getButtonText = () => {
-    if(myBidStatus) {
-        if(myBidStatus.text === 'Awarded to You' || myBidStatus.text === 'In Progress' || myBidStatus.text === 'Pending Funding') return "View Job & Respond";
-        if(myBidStatus.text === 'Completed & Won') return 'View Completed Job';
+    if (myBidStatus) {
+      if (myBidStatus.text === 'Awarded to You' || myBidStatus.text === 'In Progress' || myBidStatus.text === 'Pending Funding') return "View Job & Respond";
+      if (myBidStatus.text === 'Completed & Won') return 'View Completed Job';
     }
     switch (job.status) {
       case 'Open for Bidding':
@@ -76,35 +76,38 @@ export function JobCard({ job }: JobCardProps) {
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-             <div className="flex items-center gap-2 mb-2">
-                <Badge variant={statusVariant} className="capitalize">
-                    {displayStatus}
-                </Badge>
-                {job.travelTip && job.travelTip > 0 && (
-                    <Badge variant="warning" className="gap-1"><Gift className="h-3 w-3" /> Tip Included</Badge>
-                )}
-             </div>
+            <div className="flex items-center gap-2 mb-2">
+              <Badge variant={statusVariant} className="capitalize">
+                {displayStatus}
+              </Badge>
+              {job.travelTip && job.travelTip > 0 && (
+                <Badge variant="warning" className="gap-1"><Gift className="h-3 w-3" /> Tip Included</Badge>
+              )}
+            </div>
             <CardTitle className="text-lg leading-tight">{job.title}</CardTitle>
             <CardDescription className="font-mono text-xs pt-1">{job.id}</CardDescription>
           </div>
         </div>
-         <div className="flex items-center gap-3 pt-4">
-            <Avatar className="h-9 w-9 bg-muted border flex items-center justify-center">
-              <UserIcon className="h-5 w-5 text-muted-foreground" />
-            </Avatar>
-            <div>
-              <p className="font-semibold text-sm text-foreground">Job Giver</p>
-              <p className="text-xs text-muted-foreground">
-                Posted {postedAt}
-              </p>
-            </div>
+        <div className="flex items-center gap-3 pt-4">
+          <Avatar className="h-9 w-9 bg-muted border flex items-center justify-center">
+            <UserIcon className="h-5 w-5 text-muted-foreground" />
+          </Avatar>
+          <div>
+            <p className="font-semibold text-sm text-foreground">Job Giver</p>
+            <p className="text-xs text-muted-foreground">
+              Posted {postedAt}
+            </p>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="space-y-3 text-sm">
           <div className="flex items-center gap-2 text-foreground">
             <MapPin className="h-4 w-4" />
-            <span>{job.location}</span>
+            <span className={job.status !== 'In Progress' && job.status !== 'Completed' ? "blur-[2px] hover:blur-none transition-all cursor-crosshair ml-1" : ""}>
+              {job.status === 'In Progress' || job.status === 'Completed' ? job.location : job.location.split(',')[0] + " (Area)"}
+            </span>
+            {/* Privacy: Hide full address until awarded */}
           </div>
           <div className="flex items-center gap-2 text-foreground">
             <Users className="h-4 w-4" />
@@ -112,12 +115,12 @@ export function JobCard({ job }: JobCardProps) {
           </div>
           {job.travelTip && job.travelTip > 0 && (
             <div className="flex items-center gap-2 text-primary font-medium">
-                <IndianRupee className="h-4 w-4" />
-                <span>₹{job.travelTip.toLocaleString()} Travel Tip</span>
+              <IndianRupee className="h-4 w-4" />
+              <span>₹{job.travelTip.toLocaleString()} Travel Tip</span>
             </div>
           )}
           {job.status === 'Open for Bidding' && (
-             <div className="flex items-center gap-2 text-primary font-medium">
+            <div className="flex items-center gap-2 text-primary font-medium">
               <Clock className="h-4 w-4" />
               <span>Bidding ends {timeRemaining}</span>
             </div>
@@ -133,4 +136,3 @@ export function JobCard({ job }: JobCardProps) {
   );
 }
 
-    

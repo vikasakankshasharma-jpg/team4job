@@ -21,7 +21,7 @@ import type { User, Job, Dispute, BlacklistEntry, Transaction, SubscriptionPlan 
 import { PlaceHolderImages } from '../placeholder-images';
 import { config } from 'dotenv';
 
-config(); // Load environment variables
+config({ path: '.env.production', override: true }); // Load production env vars
 
 // --- Firebase Admin SDK Initialization ---
 
@@ -59,7 +59,28 @@ function initializeFirebaseAdmin() {
         }
     }
 
-    // 3. If neither method works, exit
+    // 3. Try separate env vars (from .env.production)
+    if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+        try {
+            const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+            const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+            if (!projectId) throw new Error("Missing NEXT_PUBLIC_FIREBASE_PROJECT_ID");
+
+            firebaseApp = initializeApp({
+                credential: cert({
+                    projectId,
+                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                    privateKey
+                })
+            });
+            console.log("Firebase Admin SDK initialized using separate environment variables.");
+            return;
+        } catch (error) {
+            console.error("Error with separate env vars:", error);
+        }
+    }
+
+    // 4. If neither method works, exit
     console.error("Could not initialize Firebase Admin SDK. Ensure either service-account.json exists or FIREBASE_SERVICE_ACCOUNT_KEY is set in your environment.");
     process.exit(1);
 }
@@ -74,220 +95,220 @@ const adminAuth = getAuth(firebaseApp);
 // --- Mock Data Definition ---
 
 const mockUsers: Omit<User, 'id'>[] = [
-  { // 0: Admin
-    name: 'Vikas Sharma',
-    email: 'vikasakankshasharma@gmail.com',
-    mobile: '9999999999',
-    roles: ['Admin'],
-    status: 'active',
-    memberSince: new Date('2024-01-01'),
-    avatarUrl: PlaceHolderImages[0].imageUrl,
-    realAvatarUrl: 'https://picsum.photos/seed/admin/200/200',
-    address: { house: '1', street: 'Admin Lane', cityPincode: '110001, Connaught Place S.O', fullAddress: '1 Admin Lane, Connaught Place, New Delhi, 110001' },
-    district: 'New Delhi',
-    pincodes: { residential: '110001' }
-  },
-  { // 1: Job Giver
-    name: 'Priya Singh',
-    email: 'jobgiver@example.com',
-    mobile: '9876543210',
-    roles: ['Job Giver'],
-    status: 'active',
-    memberSince: new Date('2024-02-10'),
-    avatarUrl: PlaceHolderImages[1].imageUrl,
-    realAvatarUrl: 'https://picsum.photos/seed/priya/200/200',
-    address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O', fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001' },
-    district: 'Bengaluru',
-    pincodes: { residential: '560001' }
-  },
+    { // 0: Admin
+        name: 'Vikas Sharma',
+        email: 'vikasakankshasharma@gmail.com',
+        mobile: '9999999999',
+        roles: ['Admin'],
+        status: 'active',
+        memberSince: new Date('2024-01-01'),
+        avatarUrl: PlaceHolderImages[0].imageUrl,
+        realAvatarUrl: 'https://picsum.photos/seed/admin/200/200',
+        address: { house: '1', street: 'Admin Lane', cityPincode: '110001, Connaught Place S.O', fullAddress: '1 Admin Lane, Connaught Place, New Delhi, 110001' },
+        district: 'New Delhi',
+        pincodes: { residential: '110001' }
+    },
+    { // 1: Job Giver
+        name: 'Priya Singh',
+        email: 'jobgiver@example.com',
+        mobile: '9876543210',
+        roles: ['Job Giver'],
+        status: 'active',
+        memberSince: new Date('2024-02-10'),
+        avatarUrl: PlaceHolderImages[1].imageUrl,
+        realAvatarUrl: 'https://picsum.photos/seed/priya/200/200',
+        address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O', fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001' },
+        district: 'Bengaluru',
+        pincodes: { residential: '560001' }
+    },
     { // 2: Dual Role (Installer/Job Giver)
-    name: 'Vikram Kumar',
-    email: 'installer@example.com',
-    mobile: '8765432109',
-    roles: ['Installer', 'Job Giver'],
-    status: 'active',
-    memberSince: new Date('2024-03-15'),
-    avatarUrl: PlaceHolderImages[2].imageUrl,
-    realAvatarUrl: 'https://picsum.photos/seed/vikram/200/200',
-    address: { house: '42/C', street: 'Link Road', cityPincode: '400053, Andheri West S.O', fullAddress: '42/C, Link Road, Andheri West, Mumbai, 400053' },
-    district: 'Mumbai',
-    pincodes: { residential: '400053', office: '400063' },
-    installerProfile: {
-      tier: 'Gold',
-      points: 1250,
-      skills: ['ip camera', 'nvr setup', 'cabling', 'troubleshooting', 'ptz', 'vms'],
-      rating: 4.8,
-      reviews: 25,
-      verified: true,
-      reputationHistory: [
-        { month: 'Jan', points: 100 }, { month: 'Feb', points: 350 }, { month: 'Mar', points: 600 },
-        { month: 'Apr', points: 800 }, { month: 'May', points: 1050 }, { month: 'Jun', points: 1250 },
-      ]
+        name: 'Vikram Kumar',
+        email: 'installer@example.com',
+        mobile: '8765432109',
+        roles: ['Installer', 'Job Giver'],
+        status: 'active',
+        memberSince: new Date('2024-03-15'),
+        avatarUrl: PlaceHolderImages[2].imageUrl,
+        realAvatarUrl: 'https://picsum.photos/seed/vikram/200/200',
+        address: { house: '42/C', street: 'Link Road', cityPincode: '400053, Andheri West S.O', fullAddress: '42/C, Link Road, Andheri West, Mumbai, 400053' },
+        district: 'Mumbai',
+        pincodes: { residential: '400053', office: '400063' },
+        installerProfile: {
+            tier: 'Gold',
+            points: 1250,
+            skills: ['ip camera', 'nvr setup', 'cabling', 'troubleshooting', 'ptz', 'vms'],
+            rating: 4.8,
+            reviews: 25,
+            verified: true,
+            reputationHistory: [
+                { month: 'Jan', points: 100 }, { month: 'Feb', points: 350 }, { month: 'Mar', points: 600 },
+                { month: 'Apr', points: 800 }, { month: 'May', points: 1050 }, { month: 'Jun', points: 1250 },
+            ]
+        },
     },
-  },
-  { // 3: Installer Only
-    name: 'Ravi Kumar',
-    email: 'just-installer@example.com',
-    mobile: '7654321098',
-    roles: ['Installer'],
-    status: 'active',
-    memberSince: new Date('2024-04-01'),
-    avatarUrl: PlaceHolderImages[3].imageUrl,
-    realAvatarUrl: 'https://picsum.photos/seed/ravi/200/200',
-    address: { house: 'Plot 88', street: 'Sector 18', cityPincode: '122022, Gurgaon S.O', fullAddress: 'Plot 88, Sector 18, Gurgaon, Haryana, 122022' },
-    district: 'Gurgaon',
-    pincodes: { residential: '122022' },
-    installerProfile: {
-      tier: 'Bronze',
-      points: 150,
-      skills: ['ip camera', 'cabling', 'troubleshooting'],
-      rating: 4.5,
-      reviews: 5,
-      verified: true,
-      reputationHistory: [
-        { month: 'Apr', points: 50 }, { month: 'May', points: 100 }, { month: 'Jun', points: 150 },
-      ]
+    { // 3: Installer Only
+        name: 'Ravi Kumar',
+        email: 'just-installer@example.com',
+        mobile: '7654321098',
+        roles: ['Installer'],
+        status: 'active',
+        memberSince: new Date('2024-04-01'),
+        avatarUrl: PlaceHolderImages[3].imageUrl,
+        realAvatarUrl: 'https://picsum.photos/seed/ravi/200/200',
+        address: { house: 'Plot 88', street: 'Sector 18', cityPincode: '122022, Gurgaon S.O', fullAddress: 'Plot 88, Sector 18, Gurgaon, Haryana, 122022' },
+        district: 'Gurgaon',
+        pincodes: { residential: '122022' },
+        installerProfile: {
+            tier: 'Bronze',
+            points: 150,
+            skills: ['ip camera', 'cabling', 'troubleshooting'],
+            rating: 4.5,
+            reviews: 5,
+            verified: true,
+            reputationHistory: [
+                { month: 'Apr', points: 50 }, { month: 'May', points: 100 }, { month: 'Jun', points: 150 },
+            ]
+        },
     },
-  },
-  { // 4: New Job Giver
-    name: 'Sunita Gupta',
-    email: 'sunita.g@example.com',
-    mobile: '9123456789',
-    roles: ['Job Giver'],
-    status: 'active',
-    memberSince: new Date('2024-05-20'),
-    avatarUrl: PlaceHolderImages[4].imageUrl,
-    realAvatarUrl: 'https://picsum.photos/seed/sunita/200/200',
-    address: { house: 'Flat 101', street: 'Koregaon Park', cityPincode: '411001, Pune S.O', fullAddress: 'Flat 101, Koregaon Park, Pune, 411001' },
-    district: 'Pune',
-    pincodes: { residential: '411001' },
-  },
-  { // 5: New Installer
-    name: 'Arjun Singh',
-    email: 'arjun.s@example.com',
-    mobile: '9988776655',
-    roles: ['Installer'],
-    status: 'active',
-    memberSince: new Date('2024-06-01'),
-    avatarUrl: PlaceHolderImages[5].imageUrl,
-    realAvatarUrl: 'https://picsum.photos/seed/arjun/200/200',
-    address: { house: '15/A', street: 'Salt Lake', cityPincode: '700091, Salt Lake S.O', fullAddress: '15/A, Salt Lake, Kolkata, 700091' },
-    district: 'Kolkata',
-    pincodes: { residential: '700091' },
-    installerProfile: {
-      tier: 'Bronze',
-      points: 50,
-      skills: ['analog cameras', 'dvr setup'],
-      rating: 0,
-      reviews: 0,
-      verified: true,
-      reputationHistory: [],
+    { // 4: New Job Giver
+        name: 'Sunita Gupta',
+        email: 'sunita.g@example.com',
+        mobile: '9123456789',
+        roles: ['Job Giver'],
+        status: 'active',
+        memberSince: new Date('2024-05-20'),
+        avatarUrl: PlaceHolderImages[4].imageUrl,
+        realAvatarUrl: 'https://picsum.photos/seed/sunita/200/200',
+        address: { house: 'Flat 101', street: 'Koregaon Park', cityPincode: '411001, Pune S.O', fullAddress: 'Flat 101, Koregaon Park, Pune, 411001' },
+        district: 'Pune',
+        pincodes: { residential: '411001' },
     },
-  },
-  { // 6: Unverified Installer
-    name: 'Anil Kapoor',
-    email: 'anil.k@example.com',
-    mobile: '9898989898',
-    roles: ['Installer'],
-    status: 'active',
-    memberSince: new Date('2024-02-15'),
-    avatarUrl: PlaceHolderImages[6].imageUrl,
-    realAvatarUrl: 'https://picsum.photos/seed/anil/200/200',
-    address: { house: '7, Janpath', street: 'Connaught Place', cityPincode: '110001, Connaught Place S.O', fullAddress: '7, Janpath, Connaught Place, New Delhi, 110001' },
-    district: 'New Delhi',
-    pincodes: { residential: '110001' },
-    installerProfile: {
-      tier: 'Bronze',
-      points: 25,
-      skills: ['ip camera', 'troubleshooting'],
-      rating: 2.5,
-      reviews: 4,
-      verified: false,
-      reputationHistory: [],
+    { // 5: New Installer
+        name: 'Arjun Singh',
+        email: 'arjun.s@example.com',
+        mobile: '9988776655',
+        roles: ['Installer'],
+        status: 'active',
+        memberSince: new Date('2024-06-01'),
+        avatarUrl: PlaceHolderImages[5].imageUrl,
+        realAvatarUrl: 'https://picsum.photos/seed/arjun/200/200',
+        address: { house: '15/A', street: 'Salt Lake', cityPincode: '700091, Salt Lake S.O', fullAddress: '15/A, Salt Lake, Kolkata, 700091' },
+        district: 'Kolkata',
+        pincodes: { residential: '700091' },
+        installerProfile: {
+            tier: 'Bronze',
+            points: 50,
+            skills: ['analog cameras', 'dvr setup'],
+            rating: 0,
+            reviews: 0,
+            verified: true,
+            reputationHistory: [],
+        },
     },
-  },
-  { // 7: Suspended Installer
-    name: 'Sanjay Verma',
-    email: 'sanjay.v@example.com',
-    mobile: '9797979797',
-    roles: ['Installer'],
-    status: 'suspended',
-    suspensionEndDate: new Date(new Date().setDate(new Date().getDate() + 30)),
-    memberSince: new Date('2024-03-01'),
-    avatarUrl: PlaceHolderImages[7].imageUrl,
-    realAvatarUrl: 'https://picsum.photos/seed/sanjay/200/200',
-    address: { house: 'House 55', street: 'Sector 22', cityPincode: '160022, Sector 22 S.O', fullAddress: 'House 55, Sector 22, Chandigarh, 160022' },
-    district: 'Chandigarh',
-    pincodes: { residential: '160022' },
-    installerProfile: {
-      tier: 'Silver',
-      points: 600,
-      skills: ['vms', 'access control'],
-      rating: 3.1,
-      reviews: 12,
-      verified: true,
-      reputationHistory: [],
+    { // 6: Unverified Installer
+        name: 'Anil Kapoor',
+        email: 'anil.k@example.com',
+        mobile: '9898989898',
+        roles: ['Installer'],
+        status: 'active',
+        memberSince: new Date('2024-02-15'),
+        avatarUrl: PlaceHolderImages[6].imageUrl,
+        realAvatarUrl: 'https://picsum.photos/seed/anil/200/200',
+        address: { house: '7, Janpath', street: 'Connaught Place', cityPincode: '110001, Connaught Place S.O', fullAddress: '7, Janpath, Connaught Place, New Delhi, 110001' },
+        district: 'New Delhi',
+        pincodes: { residential: '110001' },
+        installerProfile: {
+            tier: 'Bronze',
+            points: 25,
+            skills: ['ip camera', 'troubleshooting'],
+            rating: 2.5,
+            reviews: 4,
+            verified: false,
+            reputationHistory: [],
+        },
     },
-  },
+    { // 7: Suspended Installer
+        name: 'Sanjay Verma',
+        email: 'sanjay.v@example.com',
+        mobile: '9797979797',
+        roles: ['Installer'],
+        status: 'suspended',
+        suspensionEndDate: new Date(new Date().setDate(new Date().getDate() + 30)),
+        memberSince: new Date('2024-03-01'),
+        avatarUrl: PlaceHolderImages[7].imageUrl,
+        realAvatarUrl: 'https://picsum.photos/seed/sanjay/200/200',
+        address: { house: 'House 55', street: 'Sector 22', cityPincode: '160022, Sector 22 S.O', fullAddress: 'House 55, Sector 22, Chandigarh, 160022' },
+        district: 'Chandigarh',
+        pincodes: { residential: '160022' },
+        installerProfile: {
+            tier: 'Silver',
+            points: 600,
+            skills: ['vms', 'access control'],
+            rating: 3.1,
+            reviews: 12,
+            verified: true,
+            reputationHistory: [],
+        },
+    },
     { // 8: Platinum Installer
-    name: 'Deepika Rao',
-    email: 'deepika.r@example.com',
-    mobile: '9696969696',
-    roles: ['Installer'],
-    status: 'active',
-    memberSince: new Date('2023-01-20'),
-    avatarUrl: PlaceHolderImages[0].imageUrl,
-    realAvatarUrl: 'https://picsum.photos/seed/deepika/200/200',
-    address: { house: 'Penthouse A', street: 'Marine Drive', cityPincode: '400002, Kalbadevi S.O', fullAddress: 'Penthouse A, Marine Drive, Mumbai, 400002' },
-    district: 'Mumbai',
-    pincodes: { residential: '400002' },
-    installerProfile: {
-      tier: 'Platinum',
-      points: 2500,
-      skills: ['ip camera', 'nvr setup', 'cabling', 'troubleshooting', 'ptz', 'vms', 'fiber optics', 'thermal cameras', 'access control'],
-      rating: 4.9,
-      reviews: 55,
-      verified: true,
-      reputationHistory: [],
+        name: 'Deepika Rao',
+        email: 'deepika.r@example.com',
+        mobile: '9696969696',
+        roles: ['Installer'],
+        status: 'active',
+        memberSince: new Date('2023-01-20'),
+        avatarUrl: PlaceHolderImages[0].imageUrl,
+        realAvatarUrl: 'https://picsum.photos/seed/deepika/200/200',
+        address: { house: 'Penthouse A', street: 'Marine Drive', cityPincode: '400002, Kalbadevi S.O', fullAddress: 'Penthouse A, Marine Drive, Mumbai, 400002' },
+        district: 'Mumbai',
+        pincodes: { residential: '400002' },
+        installerProfile: {
+            tier: 'Platinum',
+            points: 2500,
+            skills: ['ip camera', 'nvr setup', 'cabling', 'troubleshooting', 'ptz', 'vms', 'fiber optics', 'thermal cameras', 'access control'],
+            rating: 4.9,
+            reviews: 55,
+            verified: true,
+            reputationHistory: [],
+        },
     },
-  },
-  { // 9: Support Team member
-    name: 'Amit Patel',
-    email: 'support@example.com',
-    mobile: '9595959595',
-    roles: ['Support Team'],
-    status: 'active',
-    memberSince: new Date('2024-04-10'),
-    avatarUrl: PlaceHolderImages[1].imageUrl,
-    realAvatarUrl: 'https://picsum.photos/seed/amit/200/200',
-    address: { house: '10B', street: 'Support Street', cityPincode: '110001, Connaught Place S.O', fullAddress: '10B, Support Street, Connaught Place, New Delhi, 110001' },
-    district: 'New Delhi',
-    pincodes: { residential: '110001' }
-  },
+    { // 9: Support Team member
+        name: 'Amit Patel',
+        email: 'support@example.com',
+        mobile: '9595959595',
+        roles: ['Support Team'],
+        status: 'active',
+        memberSince: new Date('2024-04-10'),
+        avatarUrl: PlaceHolderImages[1].imageUrl,
+        realAvatarUrl: 'https://picsum.photos/seed/amit/200/200',
+        address: { house: '10B', street: 'Support Street', cityPincode: '110001, Connaught Place S.O', fullAddress: '10B, Support Street, Connaught Place, New Delhi, 110001' },
+        district: 'New Delhi',
+        pincodes: { residential: '110001' }
+    },
 ];
 
 
 // --- Seeding Functions ---
 
 async function clearCollection(collectionPath: string) {
-  console.log(`Clearing collection: ${collectionPath}...`);
-  const collectionRef = adminDb.collection(collectionPath);
-  const snapshot = await collectionRef.limit(500).get();
-  if (snapshot.empty) {
-    console.log(`- Collection ${collectionPath} is already empty.`);
-    return;
-  }
+    console.log(`Clearing collection: ${collectionPath}...`);
+    const collectionRef = adminDb.collection(collectionPath);
+    const snapshot = await collectionRef.limit(500).get();
+    if (snapshot.empty) {
+        console.log(`- Collection ${collectionPath} is already empty.`);
+        return;
+    }
 
-  const batch = adminDb.batch();
-  snapshot.docs.forEach(doc => batch.delete(doc.ref));
-  await batch.commit();
-  
-  if (snapshot.size === 500) {
-      console.log(`- Cleared part of ${collectionPath}. Running again...`);
-      await clearCollection(collectionPath);
-  } else {
-      console.log(`- Cleared ${snapshot.size} documents from ${collectionPath}.`);
-  }
+    const batch = adminDb.batch();
+    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+
+    if (snapshot.size === 500) {
+        console.log(`- Cleared part of ${collectionPath}. Running again...`);
+        await clearCollection(collectionPath);
+    } else {
+        console.log(`- Cleared ${snapshot.size} documents from ${collectionPath}.`);
+    }
 }
 
 async function clearAuthUsers() {
@@ -304,7 +325,7 @@ async function clearAuthUsers() {
         if (listUsersResult.pageToken) {
             await clearAuthUsers();
         }
-    } catch(error) {
+    } catch (error) {
         console.error("Error clearing auth users:", error);
     }
 }
@@ -325,11 +346,11 @@ async function seedAuthAndGetUIDs(users: Omit<User, 'id'>[]) {
             console.log(`- Created auth user: ${user.email} (UID: ${userRecord.uid})`);
         } catch (error: any) {
             if (error.code === 'auth/email-already-exists') {
-                 const userRecord = await adminAuth.getUserByEmail(user.email);
-                 userUIDs[user.email] = userRecord.uid;
-                 // Ensure password is set for existing user, in case it was created without one
-                 await adminAuth.updateUser(userRecord.uid, { password: 'Vikas@129229', disabled: user.status === 'deactivated' || user.status === 'suspended' });
-                 console.log(`- Auth user already exists, password updated: ${user.email} (UID: ${userRecord.uid})`);
+                const userRecord = await adminAuth.getUserByEmail(user.email);
+                userUIDs[user.email] = userRecord.uid;
+                // Ensure password is set for existing user, in case it was created without one
+                await adminAuth.updateUser(userRecord.uid, { password: 'Vikas@129229', disabled: user.status === 'deactivated' || user.status === 'suspended' });
+                console.log(`- Auth user already exists, password updated: ${user.email} (UID: ${userRecord.uid})`);
             } else {
                 console.error(`- Error creating auth user ${user.email}:`, error.message);
             }
@@ -349,7 +370,7 @@ async function seedUserProfiles(users: Omit<User, 'id'>[], uids: { [email: strin
         if (!uid) return;
 
         const userRef = adminDb.collection('users').doc(uid);
-        
+
         const firestoreUserData: any = {
             ...user,
             id: uid,
@@ -360,15 +381,34 @@ async function seedUserProfiles(users: Omit<User, 'id'>[], uids: { [email: strin
                 expiresAt: Timestamp.fromDate(trialExpiry),
             }
         };
-        
+
         if (user.suspensionEndDate) {
             firestoreUserData.suspensionEndDate = Timestamp.fromDate(new Date(user.suspensionEndDate as Date));
         }
-        
+
         batch.set(userRef, firestoreUserData);
+
+        // Seed Public Profile
+        const publicProfileRef = adminDb.collection('public_profiles').doc(uid);
+        const publicData = {
+            id: uid,
+            name: user.name,
+            avatarUrl: user.avatarUrl,
+            realAvatarUrl: user.realAvatarUrl || user.avatarUrl,
+            roles: user.roles,
+            memberSince: Timestamp.fromDate(new Date(user.memberSince as Date)),
+            status: user.status,
+            pincodes: user.pincodes || {},
+            address: {
+                cityPincode: user.address?.cityPincode || '',
+            },
+            installerProfile: user.installerProfile || null,
+            district: user.district || null,
+        };
+        batch.set(publicProfileRef, publicData);
     });
     await batch.commit();
-    console.log(`- Committed ${users.length} user profiles.`);
+    console.log(`- Committed ${users.length} user profiles and public profiles.`);
 }
 
 async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
@@ -378,11 +418,11 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     const justInstallerUID = uids[mockUsers[3].email];
     const newJobGiverUID = uids[mockUsers[4].email];
     const platinumInstallerUID = uids[mockUsers[8].email];
-    
+
     if (!jobGiverUID || !installerUID || !justInstallerUID || !newJobGiverUID || !platinumInstallerUID) {
         throw new Error("Required mock users not found for seeding jobs.");
     }
-    
+
     const refs = {
         jobGiver: adminDb.doc('users/' + jobGiverUID),
         installer: adminDb.doc('users/' + installerUID),
@@ -392,7 +432,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     };
 
     const now = new Date();
-    
+
     // --- JOB 1: Open for Bidding ---
     const job1Id = "JOB-20240720-A1B2";
     const job1Ref = adminDb.collection('jobs').doc(job1Id);
@@ -416,7 +456,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
                 timestamp: Timestamp.fromDate(new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)),
                 coverLetter: "I'm a Gold-tier installer with 5 years of experience in large commercial projects. I can start next week and ensure a clean, professional installation."
             }
-        ], 
+        ],
         bidderIds: [installerUID],
         comments: [],
         privateMessages: [],
@@ -439,7 +479,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         postedAt: Timestamp.fromDate(new Date('2024-06-01')),
         jobStartDate: Timestamp.fromDate(new Date('2024-06-15')),
         awardedInstaller: refs.installer,
-        bids: [{ installer: refs.installer, amount: 52000, timestamp: Timestamp.fromDate(new Date('2024-06-03')), coverLetter: "I have extensive experience with large-scale factory installations and can complete this overhaul efficiently. My team is certified in Hikvision products."}],
+        bids: [{ installer: refs.installer, amount: 52000, timestamp: Timestamp.fromDate(new Date('2024-06-03')), coverLetter: "I have extensive experience with large-scale factory installations and can complete this overhaul efficiently. My team is certified in Hikvision products." }],
         bidderIds: [installerUID],
         rating: 5,
         completionOtp: "543210",
@@ -474,7 +514,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
 
     // --- JOB 4: Unbid Job ---
     const job4Id = "JOB-20240722-G7H8";
-     await adminDb.collection('jobs').doc(job4Id).set({
+    await adminDb.collection('jobs').doc(job4Id).set({
         id: job4Id,
         title: "Unbid Job: Small Shop Camera Setup",
         description: "Looking for an installer to set up 2 dome cameras in a small retail shop. Simple setup, hardware provided.",
@@ -493,7 +533,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         privateMessages: [],
         completionOtp: "112233",
     });
-    
+
     // --- JOB 5: Bidding Closed, Awaiting Award ---
     const job5Id = "JOB-20240725-J9K0";
     await adminDb.collection('jobs').doc(job5Id).set({
@@ -563,7 +603,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         privateMessages: [],
         completionOtp: "101112",
     });
-    
+
     // --- JOB 8: High Value Job for Platinum Installer ---
     const job8Id = "JOB-20240801-R7S8";
     await adminDb.collection('jobs').doc(job8Id).set({
@@ -580,7 +620,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         postedAt: Timestamp.fromDate(new Date()),
         jobStartDate: Timestamp.fromDate(new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000)),
         bids: [
-             { installer: refs.platinumInstaller, amount: 220000, timestamp: Timestamp.fromDate(new Date()), coverLetter: "As a Platinum installer specializing in large-scale enterprise solutions, my team is perfectly equipped for this project. We have extensive experience with fiber optic networks and VMS integration." }
+            { installer: refs.platinumInstaller, amount: 220000, timestamp: Timestamp.fromDate(new Date()), coverLetter: "As a Platinum installer specializing in large-scale enterprise solutions, my team is perfectly equipped for this project. We have extensive experience with fiber optic networks and VMS integration." }
         ],
         bidderIds: [platinumInstallerUID],
         comments: [],
@@ -603,7 +643,7 @@ async function seedDisputes(uids: { [email: string]: string }) {
     if (!adminUID || !jobGiverUID || !installerUID || !justInstallerUID || !supportUID) {
         throw new Error("Required mock users not found for seeding disputes.");
     }
-    
+
     // --- DISPUTE 1: Resolved by Admin ---
     const dispute1Id = "DISPUTE-1721981880000";
     await adminDb.collection('disputes').doc(dispute1Id).set({
@@ -625,8 +665,8 @@ async function seedDisputes(uids: { [email: string]: string }) {
         createdAt: Timestamp.fromDate(new Date('2024-07-20T10:00:00Z')),
         resolvedAt: Timestamp.fromDate(new Date('2024-07-21T12:01:00Z')),
     });
-    
-     // --- DISPUTE 2: Open ---
+
+    // --- DISPUTE 2: Open ---
     const dispute2Id = "DISPUTE-1721981880001";
     await adminDb.collection('disputes').doc(dispute2Id).set({
         id: dispute2Id,
@@ -658,36 +698,36 @@ async function seedDisputes(uids: { [email: string]: string }) {
         reason: "I was charged a higher commission fee than I expected on my last payout. Can you please clarify the calculation?",
         parties: { jobGiverId: jobGiverUID, installerId: justInstallerUID },
         messages: [
-            { authorId: justInstallerUID, authorRole: 'Installer', content: "My payout was less than expected, can someone check the commission?", timestamp: Timestamp.fromDate(new Date(new Date().getTime() - 3 * 24 * 60 * 60 * 1000))},
-            { authorId: supportUID, authorRole: 'Support Team', content: "Hi Ravi, I'm looking into this for you now. I'll check the transaction records and get back to you shortly.", timestamp: Timestamp.fromDate(new Date(new Date().getTime() - 1 * 24 * 60 * 60 * 1000))},
+            { authorId: justInstallerUID, authorRole: 'Installer', content: "My payout was less than expected, can someone check the commission?", timestamp: Timestamp.fromDate(new Date(new Date().getTime() - 3 * 24 * 60 * 60 * 1000)) },
+            { authorId: supportUID, authorRole: 'Support Team', content: "Hi Ravi, I'm looking into this for you now. I'll check the transaction records and get back to you shortly.", timestamp: Timestamp.fromDate(new Date(new Date().getTime() - 1 * 24 * 60 * 60 * 1000)) },
         ],
         createdAt: Timestamp.fromDate(new Date(new Date().getTime() - 3 * 24 * 60 * 60 * 1000)),
     });
-    
+
     console.log(`- Committed 3 disputes.`);
 }
 
 async function seedBlacklist() {
     console.log('\nSeeding blacklist...');
     const suspendedInstallerUID = (await adminAuth.getUserByEmail('sanjay.v@example.com')).uid;
-    
+
     const blacklistEntry: BlacklistEntry = {
-      id: `BL-USER-${Date.now()}`,
-      type: "user",
-      value: suspendedInstallerUID,
-      role: 'Installer',
-      reason: 'Account suspended due to multiple policy violations and user complaints.',
-      createdAt: Timestamp.now(),
+        id: `BL-USER-${Date.now()}`,
+        type: "user",
+        value: suspendedInstallerUID,
+        role: 'Installer',
+        reason: 'Account suspended due to multiple policy violations and user complaints.',
+        createdAt: Timestamp.now(),
     };
     await adminDb.collection('blacklist').doc(blacklistEntry.id).set(blacklistEntry);
 
     const pincodeEntry: BlacklistEntry = {
-      id: `BL-PINCODE-${Date.now()}`,
-      type: "pincode",
-      value: "999999",
-      role: 'Any',
-      reason: 'High rate of fraudulent activity reported from this pincode.',
-      createdAt: Timestamp.now(),
+        id: `BL-PINCODE-${Date.now()}`,
+        type: "pincode",
+        value: "999999",
+        role: 'Any',
+        reason: 'High rate of fraudulent activity reported from this pincode.',
+        createdAt: Timestamp.now(),
     };
     await adminDb.collection('blacklist').doc(pincodeEntry.id).set(pincodeEntry);
 
@@ -736,12 +776,12 @@ async function seedTransactions(uids: { [email: string]: string }) {
         payoutToInstaller: 8075,
         status: 'Funded',
         createdAt: Timestamp.fromDate(new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000)),
-        fundedAt: Timestamp.fromDate(new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000 + 5*60*1000)),
+        fundedAt: Timestamp.fromDate(new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000)),
         paymentGatewayOrderId: `cf_order_${Date.now()}-2`,
     };
     batch.set(adminDb.collection('transactions').doc(t2.id), t2);
 
-     // Transaction for Awarded Job (job6Id) - Funded
+    // Transaction for Awarded Job (job6Id) - Funded
     const t3: Transaction = {
         id: `TXN-JOB6-${Date.now()}`,
         jobId: "JOB-20240728-M3N4",
@@ -756,12 +796,12 @@ async function seedTransactions(uids: { [email: string]: string }) {
         payoutToInstaller: 18050,
         status: 'Funded',
         createdAt: Timestamp.fromDate(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
-        fundedAt: Timestamp.fromDate(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000 + 5*60*1000)),
+        fundedAt: Timestamp.fromDate(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000)),
         paymentGatewayOrderId: `cf_order_${Date.now()}-3`,
     };
     batch.set(adminDb.collection('transactions').doc(t3.id), t3);
 
-     // Transaction for a Failed Payment
+    // Transaction for a Failed Payment
     const t4: Transaction = {
         id: `TXN-FAILED-${Date.now()}`,
         jobId: "JOB-20240725-J9K0",
@@ -776,8 +816,8 @@ async function seedTransactions(uids: { [email: string]: string }) {
         payoutToInstaller: 6175,
         status: 'Failed',
         createdAt: Timestamp.fromDate(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)),
-        fundedAt: undefined,
-        failedAt: Timestamp.fromDate(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000 + 2*60*1000)),
+        fundedAt: null,
+        failedAt: Timestamp.fromDate(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 1000)),
         paymentGatewayOrderId: `cf_order_${Date.now()}-4`,
     };
     batch.set(adminDb.collection('transactions').doc(t4.id), t4);
@@ -803,7 +843,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
         refundTransferId: `refund_${Date.now()}-5`,
     };
     batch.set(adminDb.collection('transactions').doc(t5.id), t5);
-    
+
     await batch.commit();
     console.log(`- Committed 5 transactions.`);
 }
@@ -833,7 +873,7 @@ async function seedSubscriptionPlans() {
         isArchived: false,
     };
     batch.set(adminDb.collection('subscriptionPlans').doc(businessJobGiverPlan.id), businessJobGiverPlan);
-    
+
     await batch.commit();
     console.log('- Committed 2 subscription plans.');
 }
@@ -848,39 +888,39 @@ async function clearAllCollections() {
 
 
 async function main() {
-  try {
-    console.log('--- Starting Database Seeding ---');
-    
-    // Clear Auth & Firestore
-    await clearAuthUsers();
-    await clearAllCollections();
-    
-    // Seed Auth and get back the real UIDs
-    const userUIDs = await seedAuthAndGetUIDs(mockUsers);
-    
-    // Seed Firestore Users with the correct UIDs
-    await seedUserProfiles(mockUsers, userUIDs);
+    try {
+        console.log('--- Starting Database Seeding ---');
 
-    // Seed Subscription Plans
-    await seedSubscriptionPlans();
+        // Clear Auth & Firestore
+        await clearAuthUsers();
+        await clearAllCollections();
 
-    // Seed Jobs with subcollections
-    await seedJobsAndSubcollections(userUIDs);
+        // Seed Auth and get back the real UIDs
+        const userUIDs = await seedAuthAndGetUIDs(mockUsers);
 
-    // Seed Disputes
-    await seedDisputes(userUIDs);
-    
-    // Seed Blacklist
-    await seedBlacklist();
+        // Seed Firestore Users with the correct UIDs
+        await seedUserProfiles(mockUsers, userUIDs);
 
-    // Seed Transactions
-    await seedTransactions(userUIDs);
+        // Seed Subscription Plans
+        await seedSubscriptionPlans();
 
-    console.log('\nDatabase seeding completed successfully! ✅');
-  } catch (e) {
-      console.error('\nAn error occurred during database seeding:', e);
-      process.exit(1);
-  }
+        // Seed Jobs with subcollections
+        await seedJobsAndSubcollections(userUIDs);
+
+        // Seed Disputes
+        await seedDisputes(userUIDs);
+
+        // Seed Blacklist
+        await seedBlacklist();
+
+        // Seed Transactions
+        await seedTransactions(userUIDs);
+
+        console.log('\nDatabase seeding completed successfully! ✅');
+    } catch (e) {
+        console.error('\nAn error occurred during database seeding:', e);
+        process.exit(1);
+    }
 }
 
 main();

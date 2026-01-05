@@ -94,11 +94,30 @@ export default function InvoicePage() {
 
     const { subtotal, travelTip } = job.invoice;
     const sacCode = "9954";
-    const gstRate = 0.18;
+
+    // Use billingSnapshot for tax calculation to prevent "Tax Drift"
+    // This ensures we use the installer's details at the time of job award
+    const billingData = job.billingSnapshot || {
+        installerName: installer.name,
+        installerAddress: installer.address,
+        gstin: installer.gstin || '',
+        pan: installer.panNumber || ''
+    };
+
+    // Check if installer is GST registered (from snapshot)
+    const isGstRegistered = !!billingData.gstin;
+    const gstRate = isGstRegistered ? 0.18 : 0;
 
     const taxableValue = subtotal + travelTip;
     const gstAmount = taxableValue * gstRate;
     const grandTotal = taxableValue + gstAmount;
+
+    // Simple state detection from pincode (first 2 digits in India roughly Map to states, but full mapping is complex)
+    // For now, we'll just split into CGST/SGST if registered.
+    const cgstRate = gstRate / 2;
+    const sgstRate = gstRate / 2;
+    const cgstAmount = taxableValue * cgstRate;
+    const sgstAmount = taxableValue * sgstRate;
 
     return (
         <div className="max-w-4xl mx-auto p-4 sm:p-8 bg-background">
@@ -122,9 +141,10 @@ export default function InvoicePage() {
                 <div className="sm:text-right">
                     <h3 className="font-semibold mb-2">From (Service Provider):</h3>
                     <div className="text-sm text-muted-foreground">
-                        <p className="font-bold text-foreground">{installer.name}</p>
-                        <p>{installer.address.fullAddress}</p>
-                        {installer.gstin && <p><strong>GSTIN:</strong> {installer.gstin}</p>}
+                        <p className="font-bold text-foreground">{billingData.installerName}</p>
+                        <p>{billingData.installerAddress.fullAddress}</p>
+                        {billingData.gstin && <p><strong>GSTIN:</strong> {billingData.gstin}</p>}
+                        {billingData.pan && <p><strong>PAN:</strong> {billingData.pan}</p>}
                     </div>
                 </div>
             </div>
@@ -181,10 +201,23 @@ export default function InvoicePage() {
                         <span>Subtotal (Taxable Value)</span>
                         <span>₹{taxableValue.toLocaleString('en-IN')}</span>
                     </div>
-                    <div className="flex justify-between">
-                        <span>GST @ {(gstRate * 100).toFixed(0)}%</span>
-                        <span>₹{gstAmount.toLocaleString('en-IN')}</span>
-                    </div>
+                    {isGstRegistered ? (
+                        <>
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>CGST @ {(cgstRate * 100).toFixed(1)}%</span>
+                                <span>₹{cgstAmount.toLocaleString('en-IN')}</span>
+                            </div>
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>SGST @ {(sgstRate * 100).toFixed(1)}%</span>
+                                <span>₹{sgstAmount.toLocaleString('en-IN')}</span>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex justify-between text-xs text-muted-foreground italic">
+                            <span>GST (Not Registered)</span>
+                            <span>₹0.00</span>
+                        </div>
+                    )}
                     <Separator />
                     <div className="flex justify-between text-lg font-bold">
                         <span>Grand Total</span>

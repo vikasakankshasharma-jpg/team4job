@@ -1,9 +1,95 @@
+# CCTV Job Connect
 
-# MASTER PROMPT: CCTV Job Connect PWA (v2.0)
+## 1. Getting Started
 
-This document serves as the master prompt and detailed specification for building and extending the "CCTV Job Connect" Progressive Web App (PWA). This is a living document reflecting the platform's complete architecture as of the latest update.
+### Prerequisites
+*   Node.js v20+
+*   npm
 
-## 1. High-Level App Concept
+### Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone <repository-url>
+    cd DoDo
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+3.  **Environment Setup:**
+    Duplicate `.env` to `.env.local` and fill in the required values (see [Environment Configuration](#environment-configuration) below).
+
+4.  **Seed the Database (Optional):**
+    Populate Firestore with initial test data.
+    ```bash
+    npm run db:seed
+    ```
+
+5.  **Run Development Server:**
+    ```bash
+    npm run dev
+    ```
+    Open [http://localhost:3000](http://localhost:3000) to view the app.
+
+---
+
+## 2. Environment Configuration
+
+Create a `.env.local` file in the root directory. You will need keys from Firebase, Google Cloud, and Cashfree.
+
+### Required Variables
+
+| Variable | Description | Source |
+| :--- | :--- | :--- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase API Key | Firebase Console > Project Settings |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Auth Domain | Firebase Console |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Project ID | Firebase Console |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Storage Bucket | Firebase Console |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Sender ID | Firebase Console |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | App ID | Firebase Console |
+| `FIREBASE_PROJECT_ID` | Admin SDK Project ID | Service Account |
+| `FIREBASE_CLIENT_EMAIL` | Admin SDK Client Email | Service Account |
+| `FIREBASE_PRIVATE_KEY` | Admin SDK Private Key | Service Account (Handle newlines with `\n`) |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps API | Google Cloud Console |
+| `CASHFREE_APP_ID` | Cashfree App ID | Cashfree Dashboard |
+| `CASHFREE_SECRET_KEY` | Cashfree Secret | Cashfree Dashboard |
+| `CASHFREE_WEBHOOK_SECRET` | Webhook Secret | Cashfree Dashboard |
+| `GEMINI_API_KEY` | AI Model Key | Google AI Studio |
+| `BREVO_API_KEY` | Email API Key | Brevo Dashboard (for Notifications) |
+
+**Note:** For the `FIREBASE_PRIVATE_KEY`, ensure you wrap the key in quotes if it contains newlines, or replace real newlines with `\n`.
+
+### Automated Secrets Setup (GitHub Actions)
+For CI/CD to work, you need to sync your local secrets to GitHub. We have a helper script for this:
+
+1.  **Install GitHub CLI:** [https://cli.github.com/](https://cli.github.com/)
+2.  **Authenticate:** `gh auth login`
+3.  **Run Sync Script:**
+    ```powershell
+    ./scripts/sync-secrets.ps1
+    ```
+    This automatically uploads required values from `.env.local` to your repository's secrets.
+
+### Monitoring (Sentry)
+The application is configured with Sentry for error tracking.
+- **DSN:** Configured in `sentry.client.config.ts` and `sentry.server.config.ts`.
+- **Auth Token:** `SENTRY_AUTH_TOKEN` required in GitHub Secrets for source map uploads during build.
+
+---
+
+## 3. Known Issues & Workarounds
+
+> [!WARNING]
+> **Google Maps API Billing Issue (Current)**
+> The Google Maps API is currently paused due to pending billing verification.
+> **Workaround:** The application has been patched to support **Manual Address Entry**. The signup form's map component is disabled, allowing you to type addresses manually.
+
+---
+
+## 4. High-Level App Concept
 
 **App Name:** CCTV Job Connect
 
@@ -15,13 +101,15 @@ This document serves as the master prompt and detailed specification for buildin
 
 ---
 
-## 2. Core Features & Business Logic
+## 5. Core Features & Business Logic
 
 ### User & Subscription System
 *   **Dual Roles & Role Switching:** Users can sign up as a "Job Giver" or "Installer". A user can hold both roles and instantly switch between modes from their profile menu without logging out.
 *   **Subscription Model:** The platform operates on a freemium model. New users receive a trial or a basic plan. Access to premium features (e.g., browsing the Installer Directory, AI Bid Analysis) requires an active paid subscription.
 *   **Billing Management:** A dedicated "Billing" page where users can view their current plan, upgrade their subscription via Cashfree, and redeem promotional coupon codes. The system supports context-aware redirects, returning users to the feature they were trying to access after a successful purchase.
-*   **Installer KYC Verification:** Installers MUST complete an Aadhar OTP verification process to become "verified." This is a mandatory prerequisite for bidding on jobs and receiving payouts, ensuring a trusted marketplace.
+*   **Tiered Installer Verification:**
+    *   **Freelancer (Basic):** Identity verification via Aadhar OTP. Grants "Welcome Points" (50) to help new installers get started.
+    *   **Pro (Silver):** Established businesses can provide Shop Photos & GSTIN to earn "Pro" status and higher reputation visibility.
 *   **Secure Authentication:** Email/password-based login via Firebase Authentication, protected by client-side login attempt throttling to mitigate brute-force attacks.
 
 ### The Complete Job Lifecycle
@@ -34,6 +122,7 @@ This document serves as the master prompt and detailed specification for buildin
 2.  **Bidding & Private Offers:**
     *   **Public Bidding (Installer):** Verified installers browse public jobs and place bids, specifying their price and a cover letter. An "AI Bid Assistant" helps installers craft a professional and persuasive cover letter.
     *   **Private Bidding (Installer):** An installer who receives a Direct Award request is prompted to submit their bid privately. This bid becomes the official price for the job.
+    *   **Blind Bidding (Fairness):** Bid amounts are masked (`₹ ••••`) from competing installers to prevent "race-to-the-bottom" pricing. Only the Job Giver and the bidder themselves can see the actual price.
     *   **Marketplace Integrity (Anti-Self-Bidding):** The system strictly prohibits a user from bidding on a job they themselves have posted, preventing reputation farming and price manipulation.
 
 3.  **Awarding & Bid Analysis (Job Giver):**
@@ -57,7 +146,8 @@ This document serves as the master prompt and detailed specification for buildin
 6.  **Dual-Confirmation Completion & Payout:**
     *   **Installer Submission:** The installer uploads "Proof of Work" (photos/videos) through the platform and submits the job for review, changing the status to `Pending Confirmation`.
     *   **Job Giver Approval:** The Job Giver receives a notification, reviews the proof, and must explicitly click "Approve & Release Payment."
-    *   **Automated Payout:** The Job Giver's approval is the final trigger. It changes the job status to "Completed" and initiates an API call to Cashfree's Payouts product, which automatically splits the payment from the settlement account: the installer receives their earnings, and the platform receives its commission.
+    *   **Automated Payout:** The Job Giver's approval is the final trigger. It changes the job status to "Completed" and initiates an API call to Cashfree's Payouts product.
+    *   **Auto-Settle Protection:** To protect installers from "ghosting," if a Job Giver fails to approve submitted work within **5 days**, the system automatically releases the funds to the installer.
 
 7.  **Feedback & Invoicing:**
     *   The Job Giver can rate the installer and leave a review, which impacts the installer's reputation points.
@@ -76,7 +166,8 @@ This document serves as the master prompt and detailed specification for buildin
 *   **Team Management:** A dedicated section for the primary Admin to create and manage other `Admin` and `Support Team` user accounts.
 *   **Monetization Settings:** Admins can configure platform-wide settings, including installer commission rates, job giver fees, and create/manage `SubscriptionPlan` and `Coupon` entities.
 *   **Global Blacklist:** A critical security feature allowing Admins to block specific User IDs or pincodes, preventing them from registering, logging in, or posting jobs.
-*   **Dispute Resolution:** A formal system for users to raise disputes, which are then managed by the `Admin` or `Support Team` roles. Admins can trigger refunds or payouts via the backend if necessary.
+*   **Dispute Resolution:** A formal system for users to raise disputes. Admins can **Freeze** transactions during investigation and forcefully **Release** or **Refund** payments if necessary.
+*   **Dynamic Commissions:** Platform fees can be configured per-category, allowing flexible monetization strategies for different job types.
 
 ### Job Giver & Installer Relationship Tools
 *   **Installer Directory (Premium Feature):** Subscribed Job Givers can access a searchable directory to proactively find, filter, and review profiles of all verified installers.
@@ -87,24 +178,30 @@ This document serves as the master prompt and detailed specification for buildin
 
 ---
 
-## 3. Demo Accounts for Testing
+## 6. Demo Accounts for Testing
 
-To test the platform's features, use the following credentials. All accounts are pre-seeded when you run `npm run db:seed`.
+To test the platform's features, you can use the pre-seeded accounts or generate a new verified installer.
 
-*   **Default Password for all users:** `Vikas@129229`
+*   **Default Password:** `Vikas@129229` (for seeded accounts) / `password123` (for manually created accounts)
 
-| Role                | Email                             | Description                                                               |
-| ------------------- | --------------------------------- | ------------------------------------------------------------------------- |
-| **Admin**           | `vikasakankshasharma@gmail.com`   | Full access to all platform features, settings, and user management.      |
-| **Job Giver**       | `jobgiver@example.com`            | Can post jobs, award projects, and manage hired installers.               |
-| **Installer (Dual)**| `installer@example.com`           | A verified, Gold-tier installer who can also post jobs (switchable role). |
-| **Support Team**    | `support@example.com`             | Limited access, primarily for resolving user disputes.                    |
+| Role | Email | Description |
+| :--- | :--- | :--- |
+| **Admin** | `vikasakankshasharma@gmail.com` | Full access to platform settings. |
+| **Job Giver** | `jobgiver@example.com` | Can post jobs and hire. |
+| **Installer** | `installer@example.com` | Verified, Gold-tier installer. |
+| **New Installer** | `installer_final@test.com` | Pass: `password123` (Use `create_test_installer.ts` to reset). |
+
+**Creating a Fresh Test User:**
+If you need a pristine Installer account:
+```bash
+npx tsx src/lib/firebase/create_test_installer.ts
+```
 
 ---
 
-## 4. Technical Stack & Architecture
+## 7. Technical Stack & Architecture
 
-*   **Framework:** Next.js 14+ with App Router.
+*   **Framework:** Next.js 16+ (Turbopack) with App Router.
 *   **Language:** TypeScript.
 *   **UI Components:** ShadCN/UI, built on Radix UI and Tailwind CSS.
 *   **Styling:** Tailwind CSS. Use `globals.css` for theme variables.
@@ -112,7 +209,9 @@ To test the platform's features, use the following credentials. All accounts are
 *   **Forms:** React Hook Form with Zod for validation.
 *   **Database:** Firestore (Firebase).
 *   **Authentication:** Firebase Authentication (Email/Password).
-*   **Backend Functions:** Firebase Cloud Functions for scheduled tasks and notifications.
+*   **Backend Functions:** 
+    *   **Firebase Cloud Functions:** Scheduled tasks (e.g., job expiry).
+    *   **Vercel API Routes:** Real-time notifications (Email) via Zero-Cost proxy.
 *   **AI Functionality:** Genkit, configured to use Google's Gemini models.
 *   **Icons:** `lucide-react`.
 
@@ -121,6 +220,7 @@ To test the platform's features, use the following credentials. All accounts are
 /src
 ├── app/
 │   ├── (main)/              # Main marketing/landing pages
+│   │   ├── api/             # Vercel API Routes (Notifications, Cashfree)
 │   │   ├── page.tsx         # Landing page
 │   │   └── layout.tsx
 │   ├── dashboard/           # Authenticated part of the app
@@ -168,9 +268,47 @@ To test the platform's features, use the following credentials. All accounts are
 └── ...
 ```
 
+```
+
 ---
 
-## 5. UI/UX & Style Guidelines
+## 5. Testing & CI/CD
+
+This project uses a robust automated testing strategy to ensure reliability.
+
+### Local Testing
+
+*   **Smoke Tests:** Fast, critical path tests (Login, Navigation).
+    ```bash
+    npm run test:smoke
+    ```
+*   **Full E2E Tests:** Comprehensive user flows (Job Posting, Bidding, Hiring).
+    ```bash
+    npm run test:full
+    ```
+*   **Lint & Type Check:**
+    ```bash
+    npm run lint
+    npm run typecheck
+    ```
+
+### CI/CD Pipeline (GitHub Actions)
+The pipeline runs automatically on every push to `main`. It includes:
+1.  **Validation:** Linting and Type Checking.
+2.  **Build:** Verifies the app builds successfully (with Sentry source maps).
+3.  **Automated Testing:** Runs Smoke Tests in a headless browser against the production build.
+4.  **Deployment:** (configured) Deploys to production if all tests pass.
+
+**Triggering CI Manually:**
+You can trigger a run by pushing an empty commit:
+```bash
+git commit --allow-empty -m "chore: trigger CI"
+git push
+```
+
+---
+
+## 6. UI/UX & Style Guidelines
 
 *   **Primary Color:** `#B0B6C4` (Desaturated grayish-blue)
 *   **Background Color:** `#F0F2F5` (Very light grayish-blue)
@@ -181,7 +319,7 @@ To test the platform's features, use the following credentials. All accounts are
 
 ---
 
-## 6. Data Models (Firestore)
+## 7. Data Models (Firestore)
 
 All data models are defined in `src/lib/types.ts` and reflected in `docs/backend.json`.
 
@@ -195,6 +333,20 @@ All data models are defined in `src/lib/types.ts` and reflected in `docs/backend
     *   `subscriptionPlans`: Stores all `SubscriptionPlan` objects.
     *   `coupons`: Stores all `Coupon` objects.
     *   `blacklist`: Stores `BlacklistEntry` objects for users and pincodes.
+
 ---
 
-This detailed prompt provides a clear and comprehensive guide for any developer to understand, maintain, and extend the "CCTV Job Connect" application correctly and efficiently.
+## 8. Zero-Cost Infrastructure (Production)
+The platform is optimized to run on a **$0 budget** for the first 100-500 users by leveraging free tiers of robust service providers.
+
+### Architecture Shift: "Vercel Proxy"
+To bypass the credit-card requirement of Firebase Cloud Functions for external API calls, we route email logic through Vercel's API limits.
+
+| Feature | Provider | Plan | Limit | Method |
+| :--- | :--- | :--- | :--- | :--- |
+| **Hosting & API** | **Vercel** | Hobby | Unlimited (Fair Use) | `src/app/api/notifications/send` |
+| **Email Service** | **Brevo** | Free | 300 emails/day | SMTP/API via Vercel Route |
+| **Database/Auth** | **Firebase** | Spark | 50k reads/day | Client-Side SDK |
+| **Phone Auth** | **Firebase** | Spark | 10 SMS/day | `signInWithPhoneNumber` |
+
+*Note: The 10 SMS/day limit on Firebase Spark is the only tight bottleneck for high-volume signup days. Upgrading to Blaze (Pay-as-you-go) removes this.*
