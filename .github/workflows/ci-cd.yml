@@ -323,4 +323,4 @@ jobs:
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
         run: |
-          npx firebase-tools@latest deploy --only hosting --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
+          npx firebase-tools@latest deploy --only hosting --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive --force
