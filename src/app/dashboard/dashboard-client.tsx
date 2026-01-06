@@ -921,7 +921,7 @@ function AdminDashboard() {
     }));
 
     return { revenueData: months, jobHealthData };
-  }, [allUsers, allJobs, transactions]);
+  }, [allJobs, transactions]);
 
   const totalRevenue = revenueData.reduce((acc, m) => acc + m.revenue, 0);
 

@@ -536,7 +536,7 @@ export default function UserProfileClient() {
     };
 
     fetchUserData();
-  }, [id, db, toast]);
+  }, [id, db, toast, authUser?.id, isAdmin]);
 
 
   const handleSubscriptionUpdate = (newExpiry: Date) => {

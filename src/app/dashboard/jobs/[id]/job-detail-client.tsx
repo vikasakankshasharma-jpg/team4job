@@ -110,6 +110,7 @@ import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate, cn, validateMessageContent } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import Image from "next/image";
 
 import { createReport, ReportType } from "@/lib/services/reports";
 import { sendNotification } from "@/lib/notifications";
@@ -1443,7 +1444,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
             )
         });
         return () => setHelp({ title: null, content: null });
-    }, [setHelp, job?.status, isJobGiver, job?.title]);
+    }, [setHelp, job, isJobGiver]);
 
     // Fetch Job Data & Listen for Changes
     React.useEffect(() => {
@@ -1471,7 +1472,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
         });
 
         return () => unsubscribe();
-    }, [id, db, user]); // Added user to dependency and guard
+    }, [id, db, user, toast]); // Added user to dependency and guard
 
 
     // --- FETCH BIDS FROM SUB-COLLECTION ---
@@ -1521,7 +1522,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
             }
         };
         fetchCounterParty();
-    }, [job?.status, isJobGiver, job?.awardedInstaller, job?.jobGiver, user, db]);
+    }, [job, isJobGiver, user, db]);
 
     const handleJobUpdate = async (updatedFields: Partial<Job>) => {
         if (!job || !db) return;
@@ -1604,7 +1605,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                 delete (window as any).e2e_directFundJob;
             }
         };
-    }, [id]); // Depend on ID to ensure closure is fresh-ish, though handleDirectConfirm uses ref logic usually.
+    }, [id, handleDirectConfirm]); // Depend on ID to ensure closure is fresh-ish, though handleDirectConfirm uses ref logic usually.
     // handleDirectConfirm is stable? Not wrapped in callback.
     // It uses 'id' from closure. 'id' comes from params.
 
@@ -1755,12 +1756,18 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                                         {job.attachments.map((file: any, idx: number) => (
                                             <div key={idx} className="relative group aspect-square rounded-md overflow-hidden border bg-muted">
                                                 {file.fileType.startsWith('image/') ? (
-                                                    <img
-                                                        src={file.fileUrl}
-                                                        alt={file.fileName}
-                                                        className="object-cover w-full h-full transition-transform hover:scale-105 cursor-pointer"
+                                                    <div
+                                                        className="relative w-full h-full cursor-pointer transition-transform hover:scale-105"
                                                         onClick={() => window.open(file.fileUrl, '_blank')}
-                                                    />
+                                                    >
+                                                        <Image
+                                                            src={file.fileUrl}
+                                                            alt={file.fileName}
+                                                            fill
+                                                            className="object-cover"
+                                                            sizes="(max-width: 768px) 50vw, 25vw"
+                                                        />
+                                                    </div>
                                                 ) : (
                                                     <div className="flex flex-col items-center justify-center h-full p-2 text-center text-xs text-muted-foreground">
                                                         <FileIcon className="h-8 w-8 mb-1" />

@@ -108,7 +108,7 @@ export default function ChatClient() {
             // Better: Create placeholder UI state. 
             // Implementing "Create New" logic on send.
         }
-    }, [initialRecipientId, user, db, conversations.length]); // Dep check might be tricky
+    }, [initialRecipientId, user, db, conversations]); // Dep check might be tricky
 
     // 3. Fetch Messages for Active Chat
     useEffect(() => {
