@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "db:seed": "tsx src/lib/firebase/seed.ts",
     "postinstall": "patch-package",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test tests/e2e",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:smoke": "playwright test tests/e2e/smoke.spec.ts",
