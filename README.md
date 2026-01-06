@@ -157,9 +157,17 @@ The application is configured with Sentry for error tracking.
 *   **Mutual Cancellation:** Either party can initiate a cancellation request for `In Progress` jobs. The other party is notified to "Accept" or "Decline." If accepted, the job is marked `Cancelled`, and the Job Giver is prompted for a refund.
 *   **Offer Expiration (Installer):** If an installer fails to accept an offer within the time limit, they are penalized with a small reputation point deduction. They are then given a one-time option on the job page to "Request to Re-apply," which notifies the Job Giver and makes them eligible for selection again.
 *   **Funding Timeout (Job Giver):** A scheduled function (`handleUnfundedJobs`) runs every 6 hours. If a "Pending Funding" job's `fundingDeadline` passes, it is automatically "Cancelled," and both parties are notified.
-*   **Unbid Jobs (Job Giver):** If a job receives no bids, its status becomes "Unbid." The Job Giver is presented with two recovery options:
-    *   **Repost:** Instantly create a new job using the old one as a template.
     *   **Promote & Re-list:** Add a commission-free `travelTip` to the job and set a new deadline to attract a wider range of installers.
+
+### Role-Based Dashboards & Analytics
+*   **Installers:**
+    *   **Earnings Overview:** Visualized monthly payouts and trend indicators using interactive area charts.
+    *   **Job Stats:** Quick summary of active, completed, and pending jobs.
+    *   **Performance Metrics:** Track reputation points and customer ratings over time.
+*   **Job Givers:**
+    *   **Spending History:** Bar charts displaying monthly project spend.
+    *   **Job Status Distribution:** Pie charts visualizing the ratio of active vs. completed jobs.
+    *   **Installer Insights:** Data-driven view of most hired and top-rated installers.
 
 ### Platform Management & Monetization
 *   **Admin Dashboard & Reports:** A comprehensive backend for administrators to manage the platform, featuring KPI cards, charts on user growth and financials, and data export capabilities.
@@ -201,7 +209,7 @@ npx tsx src/lib/firebase/create_test_installer.ts
 
 ## 7. Technical Stack & Architecture
 
-*   **Framework:** Next.js 16+ (Turbopack) with App Router.
+*   **Framework:** Next.js 16.1+ (Turbopack) with App Router.
 *   **Language:** TypeScript.
 *   **UI Components:** ShadCN/UI, built on Radix UI and Tailwind CSS.
 *   **Styling:** Tailwind CSS. Use `globals.css` for theme variables.
@@ -285,6 +293,15 @@ This project uses a robust automated testing strategy to ensure reliability.
 *   **Full E2E Tests:** Comprehensive user flows (Job Posting, Bidding, Hiring).
     ```bash
     npm run test:full
+    ```
+*   **Edge Case Tests:** Stress tests for validations, timeouts, and error handling.
+    ```bash
+    npm run test:edge-cases
+    ```
+*   **Feature-Specific Tests:**
+    ```bash
+    npm run test:invoice
+    npm run test:reviews
     ```
 *   **Lint & Type Check:**
     ```bash
