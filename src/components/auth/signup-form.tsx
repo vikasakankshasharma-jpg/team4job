@@ -4,6 +4,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import Image from "next/image";
 import {
   Form,
   FormControl,
@@ -752,7 +753,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
 
       <div className="mx-auto w-64 h-64 bg-muted rounded-full overflow-hidden relative flex items-center justify-center">
         {photo ? (
-          <img src={photo} alt="Profile preview" className="w-full h-full object-cover" />
+          <Image src={photo} alt="Profile preview" fill className="object-cover" />
         ) : (
           <>
             <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
