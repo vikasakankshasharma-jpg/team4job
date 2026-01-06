@@ -1567,7 +1567,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     };
 
     // E2E Test Logic
-    const handleDirectConfirm = async () => {
+    const handleDirectConfirm = React.useCallback(async () => {
         const auth = getAuth();
         const token = await auth.currentUser?.getIdToken();
         const runId = id; // use params id
@@ -1592,7 +1592,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
         }
 
         // Removed redundant post-try toast to avoid confusion.
-    };
+    }, [id, toast]);
 
     // E2E Shim: Expose function globally
     React.useEffect(() => {

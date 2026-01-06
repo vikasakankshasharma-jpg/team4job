@@ -33,7 +33,7 @@ export function FileUpload({ onFilesChange, maxFiles = 5 }: FileUploadProps) {
       onFilesChange(newFiles);
       return newFiles;
     });
-  }, [onFilesChange, maxFiles]);
+  }, [onFilesChange, maxFiles, toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
