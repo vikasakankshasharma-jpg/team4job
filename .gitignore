@@ -28,21 +28,13 @@ pnpm-debug.log*
 *.log
 lint_log*.txt
 
-# local env files
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
 # firebase
 serviceAccountKey.json
+.firebase/
+
+# local env files
+.env
+.env.local
 
 # playwright
 /test-results/
