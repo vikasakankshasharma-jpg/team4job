@@ -8,7 +8,7 @@ const CASHFREE_API_BASE = 'https://sandbox.cashfree.com/pg';
 
 export async function POST(req: NextRequest) {
     try {
-        const { jobId, amount, description, userId } = await req.json();
+        const { jobId, amount, description, userId, taskId } = await req.json();
 
         if (!jobId || !amount || !userId || amount <= 0) {
             return NextResponse.json({ error: 'Invalid Request' }, { status: 400 });
@@ -78,15 +78,14 @@ export async function POST(req: NextRequest) {
             commission: commission,
             payoutToInstaller: installerPayout,
             installerAmount: amount, // Keeping purely for ref? Or remove? Types say 'amount' is base.
-            // 'installerAmount' was in previous code but not in type? 
-            // Type has 'payoutToInstaller'. Let's stick to Type.
             status: 'Pending', // Waiting for Webhook
             type: 'AddOn',
             description: description,
             createdAt: new Date(),
             paymentGatewayOrderId: response.data.order_id,
             jobGiverId: userId,
-            installerId: job?.awardedInstaller?.id || job?.awardedInstaller || null
+            installerId: job?.awardedInstaller?.id || job?.awardedInstaller || null,
+            relatedTaskId: taskId || null // Link to specific task if provided
         });
 
         // Log

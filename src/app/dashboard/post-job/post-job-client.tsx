@@ -514,8 +514,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
           description: `Your job is now ${jobData.directAwardInstallerId ? 'sent privately to the installer' : 'live and open for bidding'}.`,
         });
         form.reset();
-        console.log(`Redirecting to job detail page /dashboard/jobs/${newJobId} via location.assign...`);
-        window.location.assign(`/dashboard/jobs/${newJobId}`);
+        console.log(`Redirecting to job detail page /dashboard/jobs/${newJobId}...`);
+        router.push(`/dashboard/jobs/${newJobId}`);
       }
     } catch (error) {
       console.error("Error processing job:", error);
@@ -779,7 +779,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     <FormItem>
                       <FormLabel>Bidding Deadline</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardInstallerId} />
+                        <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardInstallerId} data-testid="job-deadline-input" />
                       </FormControl>
                       <FormDescription>Not applicable for direct awards.</FormDescription>
                       <FormMessage />
@@ -800,6 +800,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                           min={new Date().toISOString().slice(0, 16)}
                           value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ''}
                           onChange={field.onChange}
+                          data-testid="job-start-date-input"
                         />
                       </FormControl>
                       <FormMessage />

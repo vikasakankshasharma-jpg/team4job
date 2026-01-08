@@ -202,12 +202,23 @@ export class FormHelper {
     constructor(private page: Page) { }
 
     async fillInput(label: string, value: string) {
+        // Try getByLabel first (standard accessibility)
+        try {
+            const input = this.page.getByLabel(label).first();
+            if (await input.isVisible({ timeout: 1000 })) {
+                await input.fill(value);
+                return;
+            }
+        } catch (e) {
+            // Ignore and fallback
+        }
+
         // Convert "Job Title" -> "jobTitle" (camelCase)
         const camelCase = label.replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => index === 0 ? word.toLowerCase() : word.toUpperCase()).replace(/\s+/g, '');
         // Convert "Job Title" -> "job-title" (kebab-case)
         const kebabCase = label.toLowerCase().replace(/\s+/g, '-');
 
-        // Try data-testid first
+        // Try data-testid
         const testIdInput = this.page.getByTestId(`${kebabCase}-input`).or(this.page.getByTestId(kebabCase)).first();
         if (await testIdInput.isVisible({ timeout: 1000 })) {
             await testIdInput.fill(value);
@@ -228,7 +239,25 @@ export class FormHelper {
     }
 
     async fillTextarea(label: string, value: string) {
-        const textarea = this.page.locator(`label:has-text("${label}") ~ textarea, label:has-text("${label}") + textarea`).first();
+        // Try getByLabel first (standard accessibility)
+        try {
+            const textarea = this.page.getByLabel(label).first();
+            if (await textarea.isVisible({ timeout: 1000 })) {
+                await textarea.fill(value);
+                return;
+            }
+        } catch (e) {
+            // Ignore and fallback
+        }
+
+        // Expanded fallback locators for complex nesting (like Job Description with AI button)
+        const textarea = this.page.locator(
+            `label:has-text("${label}") ~ textarea, ` +
+            `label:has-text("${label}") + textarea, ` +
+            `label:has-text("${label}") + div textarea, ` +
+            `div:has(label:has-text("${label}")) ~ div textarea, ` + // Label in sibling div
+            `div:has(label:has-text("${label}")) + div textarea`
+        ).first();
         await textarea.fill(value);
     }
 

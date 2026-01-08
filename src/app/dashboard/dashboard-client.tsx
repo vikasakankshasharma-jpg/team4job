@@ -178,8 +178,11 @@ function InstallerDashboard() {
         const myBidsQuery = query(jobsRef, where('bidderIds', 'array-contains', user.id));
         const myAwardedQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
 
-        // Transactions for Earnings
-        const transactionsQuery = query(collection(db, "transactions"), where("payeeId", "==", user.id), where("status", "==", "Released"));
+        // Transactions for Earnings (Released & Funded)
+        const transactionsQuery = query(
+          collection(db, "transactions"),
+          where("payeeId", "==", user.id)
+        );
 
         const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot, transactionsSnapshot] = await Promise.all([
           getDocs(openJobsQuery),
@@ -209,7 +212,7 @@ function InstallerDashboard() {
 
   }, [user, db]);
 
-  // Process Data for Earnings Chart (Last 6 Months)
+  // Process Data for Earnings Chart (Last 6 Months - Realized Only)
   const earningsData = React.useMemo(() => {
     const months = Array.from({ length: 6 }).map((_, i) => {
       const d = subMonths(new Date(), i);
@@ -222,7 +225,7 @@ function InstallerDashboard() {
     }).reverse();
 
     transactions.forEach(t => {
-      if (t.releasedAt) {
+      if (t.status === 'Released' && t.releasedAt) {
         const date = toDate(t.releasedAt);
         const monthStr = format(date, 'MMM yyyy');
         const monthData = months.find(m => m.fullName === monthStr);
@@ -234,7 +237,13 @@ function InstallerDashboard() {
     return months;
   }, [transactions]);
 
-  const totalEarnings = transactions.reduce((acc, t) => acc + (t.payoutToInstaller || 0), 0);
+  const totalEarnings = transactions
+    .filter(t => t.status === 'Released')
+    .reduce((acc, t) => acc + (t.payoutToInstaller || 0), 0);
+
+  const projectedEarnings = transactions
+    .filter(t => t.status === 'Funded')
+    .reduce((acc, t) => acc + (t.payoutToInstaller || 0), 0);
 
 
   React.useEffect(() => {
@@ -252,6 +261,9 @@ function InstallerDashboard() {
             </li>
             <li>
               <span className="font-semibold">Jobs Won:</span> Displays the number of jobs you&apos;ve won that are currently active or in progress.
+            </li>
+            <li>
+              <span className="font-semibold">Projected Earnings:</span> The total value of jobs currently in the "Funded" (Escrow) state that you are working on.
             </li>
             {!isVerified && (
               <li>
@@ -351,14 +363,25 @@ function InstallerDashboard() {
           </ResponsiveContainer>
         </MetricChartCard>
 
-        <Card className="flex flex-col justify-center items-center text-center p-6 bg-green-50 dark:bg-green-950/20 border-green-100 dark:border-green-900">
-          <div className="p-4 rounded-full bg-green-200 dark:bg-green-900 mb-4">
-            <IndianRupee className="h-8 w-8 text-green-700 dark:text-green-400" />
-          </div>
-          <p className="text-sm font-medium text-green-600 dark:text-green-400">Total Earnings</p>
-          <h3 className="text-4xl font-bold mt-2 text-green-800 dark:text-green-300">₹{totalEarnings.toLocaleString()}</h3>
-          <p className="text-xs text-muted-foreground mt-2">Lifettime payout processed</p>
-        </Card>
+        <div className="flex flex-col gap-4">
+          <Card className="flex flex-col justify-center items-center text-center p-6 bg-green-50 dark:bg-green-950/20 border-green-100 dark:border-green-900 flex-1">
+            <div className="p-4 rounded-full bg-green-200 dark:bg-green-900 mb-4">
+              <IndianRupee className="h-8 w-8 text-green-700 dark:text-green-400" />
+            </div>
+            <p className="text-sm font-medium text-green-600 dark:text-green-400">Total Earnings</p>
+            <h3 className="text-4xl font-bold mt-2 text-green-800 dark:text-green-300">₹{totalEarnings.toLocaleString()}</h3>
+            <p className="text-xs text-muted-foreground mt-2">Lifetime payout processed</p>
+          </Card>
+
+          <Card className="flex flex-col justify-center items-center text-center p-6 bg-blue-50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900 flex-1">
+            <div className="p-4 rounded-full bg-blue-200 dark:bg-blue-900 mb-4">
+              <Clock className="h-8 w-8 text-blue-700 dark:text-blue-400" />
+            </div>
+            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Projected Earnings</p>
+            <h3 className="text-4xl font-bold mt-2 text-blue-800 dark:text-blue-300">₹{projectedEarnings.toLocaleString()}</h3>
+            <p className="text-xs text-muted-foreground mt-2">Funds currently in Escrow</p>
+          </Card>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
@@ -429,7 +452,10 @@ function JobGiverDashboard() {
         )
       );
 
-      const transactionsQuery = query(collection(db, "transactions"), where("payerId", "==", user.id), where("status", "==", "Released"));
+      const transactionsQuery = query(
+        collection(db, "transactions"),
+        where("payerId", "==", user.id)
+      );
 
       const [myJobsSnapshot, disputesSnapshot, transactionsSnapshot] = await Promise.all([
         getDocs(myJobsQuery),
@@ -469,8 +495,8 @@ function JobGiverDashboard() {
 
   }, [user, db]);
 
-  // Process Data for Spending Chart (Fix)
-  const { spendingData, jobStatusData, totalSpent } = React.useMemo(() => {
+  // Process Data for Spending Chart (Last 6 Months - Released Only)
+  const { spendingData, jobStatusData, totalSpent, fundsInEscrow } = React.useMemo(() => {
     const months = Array.from({ length: 6 }).map((_, i) => {
       const d = subMonths(new Date(), i);
       return {
@@ -482,7 +508,7 @@ function JobGiverDashboard() {
 
     const transactions = stats.transactions || [];
     transactions.forEach(t => {
-      if (t.releasedAt) {
+      if (t.status === 'Released' && t.releasedAt) {
         const date = toDate(t.releasedAt);
         const monthStr = format(date, 'MMM yyyy');
         const monthData = months.find(m => m.fullName === monthStr);
@@ -492,7 +518,13 @@ function JobGiverDashboard() {
       }
     });
 
-    const totalSpent = transactions.reduce((acc, t) => acc + (t.totalPaidByGiver || 0), 0);
+    const totalSpent = transactions
+      .filter(t => t.status === 'Released')
+      .reduce((acc, t) => acc + (t.totalPaidByGiver || 0), 0);
+
+    const fundsInEscrow = transactions
+      .filter(t => t.status === 'Funded')
+      .reduce((acc, t) => acc + (t.totalPaidByGiver || 0), 0);
 
     const jobStatusData = [
       { name: 'Active', value: stats.activeJobs, color: '#0088FE' }, // Blue
@@ -500,7 +532,7 @@ function JobGiverDashboard() {
       { name: 'Cancelled', value: stats.cancelledJobs, color: '#FF8042' } // Orange
     ].filter(d => d.value > 0);
 
-    return { spendingData: months, jobStatusData, totalSpent };
+    return { spendingData: months, jobStatusData, totalSpent, fundsInEscrow };
   }, [stats]);
 
   React.useEffect(() => {
@@ -514,13 +546,13 @@ function JobGiverDashboard() {
               <span className="font-semibold">Active Jobs:</span> This shows the number of jobs you&apos;ve posted that are currently open for bidding or in progress. Click to manage them.
             </li>
             <li>
+              <span className="font-semibold">Funds in Escrow:</span> The total amount you have currently deposited in safe escrow for active jobs.
+            </li>
+            <li>
               <span className="font-semibold">Total Bids Received:</span> See the total number of bids submitted across all your job postings.
             </li>
             <li>
               <span className="font-semibold">Completed Jobs:</span> View a history of all your successfully completed projects. Click to see your archived jobs.
-            </li>
-            <li>
-              <span className="font-semibold">Open Disputes:</span> Shows any active disputes on your jobs that require your attention.
             </li>
             <li>
               <span className="font-semibold">Need an Installer?:</span> A shortcut to post a new job and start receiving bids from professionals.
@@ -556,13 +588,13 @@ function JobGiverDashboard() {
           iconColor="text-blue-600 dark:text-blue-300"
         />
         <StatCard
-          title="Total Bids Received"
-          value={stats.totalBids}
-          description="Across all your job postings"
-          icon={FileText}
-          href="/dashboard/posted-jobs"
-          iconBgColor="bg-purple-100 dark:bg-purple-900"
-          iconColor="text-purple-600 dark:text-purple-300"
+          title="Funds in Escrow"
+          value={`₹${fundsInEscrow.toLocaleString()}`}
+          description="Securely held for active jobs"
+          icon={ShieldCheck}
+          href="/dashboard/posted-jobs" // Or transactions
+          iconBgColor="bg-encrow-100 dark:bg-indigo-900"
+          iconColor="text-indigo-600 dark:text-indigo-300"
         />
         <StatCard
           title="Completed Jobs"
@@ -586,7 +618,7 @@ function JobGiverDashboard() {
 
       {/* Job Giver Charts Section */}
       <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <MetricChartCard title="Spending History" description="Amount spent on completed jobs (last 6 months)" className="lg:col-span-2">
+        <MetricChartCard title="Spending History" description={`Total Spent: ₹${totalSpent.toLocaleString()} (Released)`} className="lg:col-span-2">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={spendingData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />

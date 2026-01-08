@@ -102,11 +102,59 @@ export async function POST(req: NextRequest) {
             console.log(`[E2E/Beta] Skipping Cashfree Payout for Job ${jobId}. Simulating success.`);
         }
 
+        // Initialize Invoice Data
+        const installerData = installerSnap.data() as User;
+
+        // Fetch Giver for Invoice To details
+        const giverSnap = await db.collection('users').doc(userId).get();
+        const giverData = giverSnap.data() as User;
+        if (!giverData) throw new Error("Job Giver profile not found for invoice generation");
+
+        // Billing Snapshot (Immutable record of installer details at time of invoice)
+        const billingSnapshot = {
+            installerName: installerData.name, // Use 'shopName' here? Use name for now.
+            installerAddress: installerData.address,
+            gstin: installerData.gstin || '',
+            pan: installerData.panNumber || ''
+        };
+
+        // Calculate Totals (Service Invoice: Installer -> Job Giver)
+        const subtotal = transaction.amount;
+        const travelTip = transaction.travelTip || 0;
+        const taxable = subtotal + travelTip;
+        // Determine GST based on Installer registration
+        const isGstRegistered = !!installerData.gstin;
+        const invoiceGstRate = isGstRegistered ? 0.18 : 0;
+        const invoiceTax = taxable * invoiceGstRate;
+        const totalAmount = taxable + invoiceTax;
+
+        const invoiceId = `INV-${jobId.slice(-6).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+
+        const invoice = {
+            id: invoiceId,
+            jobId: jobId,
+            jobTitle: job.title,
+            date: new Date(),
+            subtotal,
+            travelTip,
+            totalAmount,
+            from: {
+                name: installerData.name,
+                gstin: installerData.gstin || ''
+            },
+            to: {
+                name: giverData.name,
+                gstin: giverData.gstin || ''
+            }
+        };
+
         // Update DB
         await jobRef.update({
             status: 'Completed',
             completedAt: new Date(),
-            paymentReleasedAt: new Date()
+            paymentReleasedAt: new Date(),
+            invoice,
+            billingSnapshot
         });
 
         await transSnap.docs[0].ref.update({ status: 'Completed', releasedAt: new Date() });

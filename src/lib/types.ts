@@ -129,11 +129,20 @@ export type Invoice = {
 export type AdditionalTask = {
   id: string;
   description: string;
-  status: 'pending-quote' | 'quoted' | 'approved' | 'declined';
+  status: 'pending-quote' | 'quoted' | 'approved' | 'declined' | 'funded';
   quoteAmount?: number;
   quoteDetails?: string;
   createdBy: 'Job Giver' | 'Installer';
   createdAt: Date | Timestamp;
+}
+
+export interface Milestone {
+  id: string;
+  title: string;
+  description: string;
+  amount: number;
+  status: 'Pending' | 'Funded' | 'Released'; // 'Funded' means allocated from main escrow
+  createdAt: number;
 }
 
 export type Job = {
@@ -191,6 +200,7 @@ export type Job = {
   attachments?: JobAttachment[];
   invoice?: Invoice;
   additionalTasks?: AdditionalTask[];
+  milestones?: Milestone[];
   billingSnapshot?: {
     installerName: string;
     installerAddress: Address; // or string? strict Address type preferred
@@ -298,6 +308,7 @@ export type Transaction = {
   failedAt?: Date | Timestamp;
   releasedAt?: Date | Timestamp;
   refundedAt?: Date | Timestamp;
+  relatedTaskId?: string; // Links this transaction to a specific AdditionalTask
 };
 
 export type PlatformSettings = {
@@ -317,6 +328,7 @@ export type PlatformSettings = {
   platinumTierPoints: number;
   minJobBudget: number;
   autoVerifyInstallers: boolean;
+  minJobBudgetForMilestones: number; // Added for verification
 };
 
 export type JobCategoryTemplate = {

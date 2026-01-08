@@ -264,6 +264,86 @@ test.describe('Complete Transaction Cycle E2E', () => {
         await helper.job.waitForJobStatus('Completed');
         console.log('[PASS] Phase 8 Complete: Job Completed');
 
+        // --- PHASE 9: VERIFY INVOICE GENERATION ---
+        console.log('--- START: Phase 9 - Verify Invoice Generation ---');
+
+        // Reload page to ensure actions panel updates
+        await page.reload();
+        await helper.job.waitForJobStatus('Completed');
+
+        const invoiceBtn = page.getByTestId('download-invoice-button');
+        await expect(invoiceBtn).toBeVisible();
+
+        const platformInvoiceBtn = page.getByTestId('download-platform-invoice-button');
+        await expect(platformInvoiceBtn).toBeVisible();
+
+        // Verify Service Invoice Button Opens New Tab
+        const [invoicePage] = await Promise.all([
+            context.waitForEvent('page'),
+            invoiceBtn.click()
+        ]);
+        await invoicePage.waitForLoadState();
+        // Check for content in the new tab
+        await expect(invoicePage.getByText('Billed To (Job Giver):')).toBeVisible();
+        console.log('[PASS] Service Invoice Page Verified');
+        await invoicePage.close();
+
+        // Verify Platform Receipt Button Opens New Tab
+        const [platformPage] = await Promise.all([
+            context.waitForEvent('page'),
+            platformInvoiceBtn.click()
+        ]);
+        await platformPage.waitForLoadState();
+        // Check for content in the new tab
+        await expect(platformPage.getByText('Platform Receipt')).toBeVisible();
+        console.log('[PASS] Platform Receipt Page Verified');
+        await platformPage.close();
+
+        console.log('[PASS] Phase 9 Complete: Invoice generation verified');
+
+
+        // --- PHASE 10: VERIFY REVIEW & RATING ---
+        console.log('--- START: Phase 10 - Verify Review & Rating ---');
+
+        // 1. Job Giver Submits Review
+        await expect(page.getByText('Rate Your Experience')).toBeVisible();
+        await page.getByTestId('rating-star-5').click();
+        await page.getByTestId('rating-comment').fill('Great installer, highly recommended!');
+        await page.getByTestId('submit-review-button').click();
+
+        // Verify Sealed State
+        await expect(page.getByTestId('review-locked-card')).toBeVisible();
+        await expect(page.getByText('Review Submitted')).toBeVisible();
+        console.log('[PASS] Job Giver Review Submitted (Sealed)');
+
+        // 2. Switch to Installer to Submit Review
+        await helper.auth.logout();
+        await helper.auth.loginAsInstaller();
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.job.waitForJobStatus('Completed');
+
+        // Verify "The other party has already reviewed you" message in Card Description
+        await expect(page.getByText('The other party has already reviewed you!')).toBeVisible();
+
+        // Installer Submits Review
+        await expect(page.getByText('Rate Your Experience')).toBeVisible();
+        await page.getByTestId('rating-star-5').click();
+        await page.getByTestId('rating-comment').fill('Excellent client, clear requirements.');
+        await page.getByTestId('submit-review-button').click();
+
+        // 3. Verify Reveal (Both reviews visible)
+        await expect(page.getByTestId('reviews-revealed-section')).toBeVisible();
+        await expect(page.getByText('You Rated Them')).toBeVisible();
+        await expect(page.getByText('They Rated You')).toBeVisible();
+        await expect(page.getByText('Great installer, highly recommended!')).toBeVisible(); // Job Giver's review (as "They") - Wait, Installer is viewing
+        // Installer viewing: "They Rated You" should satisfy Giver's review text.
+        // Component logic: 
+        // myReview = InstallerReview. theirReview = JobGiverReview.
+        // "They Rated You" card shows `theirReview.review`.
+        // So yes, Installer sees 'Great installer...'? NO. Giver wrote "Great installer".
+
+        console.log('[PASS] Phase 10 Complete: Reviews Verified');
+
         await context.close();
     });
 });
