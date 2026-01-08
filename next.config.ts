@@ -110,6 +110,11 @@ const nextConfig: NextConfig = {
   },
 };
 
+
+export default nextConfig;
+
+/*
+// Temporarily disabled for Firebase Compatibility
 export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
@@ -147,3 +152,4 @@ export default withSentryConfig(nextConfig, {
     },
   },
 });
+*/
