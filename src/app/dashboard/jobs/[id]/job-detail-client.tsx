@@ -123,6 +123,10 @@ import { InstallerAcceptanceSection, tierIcons } from "@/components/job/installe
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { VariationOrderList } from "@/components/job/variation-order-list";
+import { VariationOrderDialog } from "@/components/job/variation-order-dialog";
+import { MilestoneList } from "@/components/milestone/milestone-list";
+import { MilestoneDialog } from "@/components/milestone/milestone-dialog";
 
 
 declare const cashfree: any;
@@ -563,7 +567,7 @@ function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJo
 
     if (myReview && canSeeReviews) {
         return (
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2" data-testid="reviews-revealed-section">
                 <Card className="border-green-200 bg-green-50/50">
                     <CardHeader><CardTitle>You Rated Them</CardTitle></CardHeader>
                     <CardContent>
@@ -588,7 +592,7 @@ function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJo
 
     if (myReview && !canSeeReviews) {
         return (
-            <Card className="bg-muted">
+            <Card className="bg-muted" data-testid="review-locked-card">
                 <CardContent className="flex flex-col items-center justify-center p-8 text-center space-y-4">
                     <ShieldCheck className="h-12 w-12 text-muted-foreground" />
                     <h3 className="text-lg font-semibold">Review Submitted</h3>
@@ -625,6 +629,7 @@ function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJo
                             onMouseEnter={() => setHoverRating(star)}
                             onMouseLeave={() => setHoverRating(0)}
                             onClick={() => setRating(star)}
+                            data-testid={`rating-star-${star}`}
                         />
                     ))}
                 </div>
@@ -632,10 +637,11 @@ function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (updatedJo
                     placeholder="Share honest feedback. It won't be visible until they review you..."
                     value={reviewText}
                     onChange={(e) => setReviewText(e.target.value)}
+                    data-testid="rating-comment"
                 />
             </CardContent>
             <CardFooter>
-                <Button onClick={handleRatingSubmit} disabled={isSubmitting || rating === 0}>
+                <Button onClick={handleRatingSubmit} disabled={isSubmitting || rating === 0} data-testid="submit-review-button">
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Submit Sealed Review
                 </Button>
@@ -1353,6 +1359,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     const isInstaller = role === 'Installer';
 
 
+
     const db = useFirestore();
 
     const { toast } = useToast();
@@ -1362,6 +1369,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     const [loading, setLoading] = React.useState(!initialJob);
     const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
     const [counterParty, setCounterParty] = React.useState<User | null>(null);
+    const isJobGiver = !!(user && job && (user.id === getRefId(job.jobGiver) || user.id === job.jobGiverId));
 
     // State for Payment Dialog
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = React.useState(false);
@@ -1384,12 +1392,167 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     const [reviewRating, setReviewRating] = React.useState(5);
     const [reviewComment, setReviewComment] = React.useState('');
     const [rescheduleDate, setRescheduleDate] = React.useState<Date | undefined>(undefined);
+    const [isVariationDialogOpen, setIsVariationDialogOpen] = React.useState(false);
+    const [isMilestoneDialogOpen, setIsMilestoneDialogOpen] = React.useState(false);
+
+
+    // --- Milestone Handlers ---
+    const handleCreateMilestone = async (title: string, description: string, amount: number) => {
+        if (!job || !user) return;
+
+
+        try {
+            const newMilestone = {
+                id: `MIL-${Date.now()}`,
+                title,
+                description,
+                amount,
+                status: 'Funded', // Automatically funded from main escrow budget
+                createdAt: Date.now()
+            };
+
+            await updateDoc(doc(db, 'jobs', job.id), {
+                milestones: arrayUnion(newMilestone)
+            });
+
+            toast({ title: "Milestone Created", description: "Milestone has been added to the job." });
+        } catch (error) {
+            console.error("Error creating milestone:", error);
+            toast({ title: "Error", description: "Failed to create milestone", variant: "destructive" });
+        }
+    };
+
+    const handleReleaseMilestone = async (milestoneId: string) => {
+        if (!job || !user) return;
+
+        try {
+            const updatedMilestones = (job.milestones || []).map((m: any) =>
+                m.id === milestoneId ? { ...m, status: 'Released' } : m
+            );
+
+            await updateDoc(doc(db, 'jobs', job.id), {
+                milestones: updatedMilestones
+            });
+
+            toast({ title: "Payment Released", description: "Milestone payment released to installer." });
+        } catch (error) {
+            console.error("Error releasing milestone:", error);
+            toast({ title: "Error", description: "Failed to release milestone", variant: "destructive" });
+        }
+    };
+
+    const handleProposeVariation = async (description: string, amount: number) => {
+        if (!job || !user) return;
+        const newTask: AdditionalTask = {
+            id: `TASK-${Date.now()}`,
+            description,
+            quoteAmount: amount,
+            status: 'quoted',
+            createdBy: 'Installer',
+            createdAt: new Date()
+        };
+        await handleJobUpdate({
+            additionalTasks: arrayUnion(newTask) as any
+        });
+        toast({ title: "Variation Proposed", description: "Sent to Job Giver for approval." });
+    };
+
+    const handleRequestVariation = async (description: string) => {
+        if (!job || !user) return;
+        const newTask: AdditionalTask = {
+            id: `TASK-${Date.now()}`,
+            description,
+            status: 'pending-quote',
+            createdBy: 'Job Giver',
+            createdAt: new Date()
+        };
+        await handleJobUpdate({
+            additionalTasks: arrayUnion(newTask) as any
+        });
+        toast({ title: "Variation Requested", description: "Sent to Installer for a quote." });
+    };
+
+    const handleQuoteVariation = async (task: AdditionalTask) => {
+        const quote = prompt("Enter quote amount (₹):");
+        if (!quote || isNaN(Number(quote))) return;
+
+        const amount = Number(quote);
+        const updatedTasks = job.additionalTasks?.map((t: AdditionalTask) => {
+            if (t.id === task.id) {
+                return { ...t, quoteAmount: amount, status: 'quoted' };
+            }
+            return t;
+        }) || [];
+
+        await handleJobUpdate({ additionalTasks: updatedTasks });
+        toast({ title: "Quote Submitted", description: "Job Giver notified." });
+    };
+
+    const handlePayForVariation = async (task: AdditionalTask) => {
+        if (!task.quoteAmount) return;
+        if (!confirm(`Confirm payment of ₹${task.quoteAmount} for "${task.description}"?`)) return;
+
+        setIsLoading(true);
+        try {
+            // reuse Add Funds API
+            const res = await axios.post('/api/escrow/add-funds', {
+                jobId: job.id,
+                userId: user!.id,
+                amount: task.quoteAmount,
+                description: `Variation Order: ${task.description}`,
+                taskId: task.id // Link payment to task
+            });
+
+            // If success (Sandbox mode mimic)
+            // Ideally we redirect to gateway. For now, let's assume direct success hook or we simulate it?
+            // The API returns payment_session_id.
+            // If we are in E2E/Dev mode, we might want to auto-fund.
+            // But 'add-funds' creates a Pending transaction.
+
+            // Critical: Client-side optimistic update? 
+            // Only if we trust the user paid. Real flow: Wait for webhook.
+            // BUT for this feature demo:
+
+            const paymentSessionId = res.data.payment_session_id;
+
+            // @ts-ignore
+            if (window.Cashfree) {
+                const checkoutOptions = {
+                    paymentSessionId: paymentSessionId,
+                    redirectTarget: "_self",
+                };
+                // @ts-ignore
+                const cashfree = new window.Cashfree({ mode: "sandbox" });
+                cashfree.checkout(checkoutOptions);
+            } else {
+                toast({ title: "Gateway Error", description: "SDK not loaded", variant: "destructive" });
+            }
+
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Payment Failed", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDeclineVariation = async (task: AdditionalTask) => {
+        if (!confirm("Decline this variation order?")) return;
+        const updatedTasks = job.additionalTasks?.map((t: AdditionalTask) => {
+            if (t.id === task.id) {
+                return { ...t, status: 'declined' };
+            }
+            return t;
+        }) || [];
+        await handleJobUpdate({ additionalTasks: updatedTasks });
+        toast({ title: "Variation Declined" });
+    };
 
 
 
     // Fetch Job Data
     // Fetch Job Data
-    const isJobGiver = !!(user && job && (user.id === getRefId(job.jobGiver) || user.id === job.jobGiverId));
+
 
     const { setHelp } = useHelp();
 
@@ -1579,7 +1742,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
         }
 
         try {
-            const res = await axios.post('/api/e2e/fund-job', {
+            const res = await axios.post('/api/e2e/fund-job-v2', {
                 jobId: runId,
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -1610,27 +1773,34 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     // It uses 'id' from closure. 'id' comes from params.
 
 
-    // Fetch Platform Settings (Fees) - Disabled to prevent permission error poisoning
-    /*
+    // Fetch Platform Settings (Fees & Rules)
     React.useEffect(() => {
+        if (!db) return;
         const fetchSettings = async () => {
             try {
-                const settingsRef = doc(db, 'platform_settings', 'config');
+                // Correct path based on settings-client.tsx
+                const settingsRef = doc(db, 'settings', 'platform');
                 const snap = await getDoc(settingsRef);
                 if (snap.exists()) {
                     setPlatformSettings(snap.data() as PlatformSettings);
                 } else {
                     // Fallback defaults
-                    setPlatformSettings({ jobGiverFeeRate: 2.5, installerCommissionRate: 5 } as any);
+                    setPlatformSettings({
+                        jobGiverFeeRate: 2.5,
+                        installerCommissionRate: 5,
+                        minJobBudgetForMilestones: 5000
+                    } as any);
                 }
             } catch (e) {
                 console.error("Failed to fetch settings", e);
-                setPlatformSettings({ jobGiverFeeRate: 2.5, installerCommissionRate: 5 } as any);
+                // Fallback on error
+                setPlatformSettings({
+                    minJobBudgetForMilestones: 5000
+                } as any);
             }
         };
         fetchSettings();
     }, [db]);
-    */
 
 
 
@@ -1930,10 +2100,32 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
                                 {/* Leave Review */}
                                 {job.status === 'Completed' && (
-                                    <Button className="w-full" variant="outline" onClick={() => setIsReviewDialogOpen(true)}>
-                                        <Star className="mr-2 h-4 w-4" />
-                                        Leave Review
-                                    </Button>
+                                    <div className="space-y-2">
+                                        <Button className="w-full" variant="outline" onClick={() => setIsReviewDialogOpen(true)}>
+                                            <Star className="mr-2 h-4 w-4" />
+                                            Leave Review
+                                        </Button>
+
+                                        <Button
+                                            className="w-full"
+                                            variant="secondary"
+                                            onClick={() => window.open(`/dashboard/jobs/${job.id}/invoice`, '_blank')}
+                                            data-testid="download-invoice-button"
+                                        >
+                                            <FileText className="mr-2 h-4 w-4" />
+                                            Download Service Invoice
+                                        </Button>
+
+                                        <Button
+                                            className="w-full"
+                                            variant="ghost"
+                                            onClick={() => window.open(`/dashboard/jobs/${job.id}/invoice?type=platform`, '_blank')}
+                                            data-testid="download-platform-invoice-button"
+                                        >
+                                            <FileText className="mr-2 h-4 w-4" />
+                                            Download Platform Receipt
+                                        </Button>
+                                    </div>
                                 )}
 
                                 {/* Secure Contact Reveal */}
@@ -2017,6 +2209,75 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                     onDirectConfirm={handleDirectConfirm}
                     platformSettings={platformSettings}
                     bidAmount={bids.find((b: any) => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)))?.amount || (job as any).budget?.min || 0}
+                />
+
+                {/* Variation Orders Section */}
+                {/* Variation Orders Section */}
+                <div className="md:col-span-3 mt-8">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <CardTitle>Variation Orders (Add Work)</CardTitle>
+                            <Button onClick={() => setIsVariationDialogOpen(true)} variant="outline" size="sm" data-testid="propose-variation-button">
+                                <Plus className="h-4 w-4 mr-2" />
+                                {isJobGiver ? "Request Variation" : "Propose Variation"}
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                            <VariationOrderList
+                                job={job}
+                                user={user}
+                                isJobGiver={isJobGiver}
+                                onJobUpdate={handleJobUpdate}
+                                onPayForTask={handlePayForVariation}
+                                onQuoteTask={handleQuoteVariation}
+                                onDeclineTask={handleDeclineVariation}
+                            />
+                        </CardContent>
+                    </Card>
+                </div>
+                {/* End Variation Orders Section */}
+
+                {/* Milestones Section */}
+                <div className="md:col-span-3 mt-8">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold">Payment Milestones</h3>
+                        {isJobGiver && job.status === 'In Progress' && (
+                            // Configurable Threshold Check
+                            ((bids.find(b => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)))?.amount || (job as any).priceEstimate?.min || 0) >= (platformSettings?.minJobBudgetForMilestones ?? 5000))
+                                ? (
+                                    <Button onClick={() => setIsMilestoneDialogOpen(true)} variant="outline" size="sm" data-testid="add-milestone-button">
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Milestone
+                                    </Button>
+                                ) : (
+                                    <div className="text-xs text-muted-foreground italic" title={`Milestones are only available for jobs over ₹${platformSettings?.minJobBudgetForMilestones ?? 5000}`}>
+                                        Milestones unavailable for small jobs
+                                    </div>
+                                )
+                        )}
+                    </div>
+                    <MilestoneList
+                        job={job}
+                        user={user || null}
+                        isJobGiver={isJobGiver}
+                        onRelease={handleReleaseMilestone}
+                    />
+                </div>
+
+                <MilestoneDialog
+                    open={isMilestoneDialogOpen}
+                    onOpenChange={setIsMilestoneDialogOpen}
+                    onSubmit={handleCreateMilestone}
+                    maxAmount={(job as any).budget?.max || 100000} // Fallback or logic to calculate remaining
+                />
+
+                {/* Dialogs */}
+                <VariationOrderDialog
+                    open={isVariationDialogOpen}
+                    onOpenChange={setIsVariationDialogOpen}
+                    onSubmitProposal={handleProposeVariation}
+                    onSubmitRequest={handleRequestVariation}
+                    isInstaller={!isJobGiver}
                 />
 
                 {

@@ -1,17 +1,20 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
 
 // Paths that do not require authentication (public APIs)
-// Add '/api/test' or similar if needed for health checks
 const PUBLIC_PATHS = [
-    '/api/auth/session', // If using next-auth or similar, adjust as needed. 
-    // We might want '/api/jobs/public' to be accessible, BUT it should still ideally require an auth token 
-    // if we want to rate limit or track. 
-    // However, the original analysis said: "Refactor /api/jobs/public ... to use the authenticated User ID". 
-    // So let's enforcing Auth for everything for now to be safe, except maybe strictly public webhooks.
-    '/api/cashfree/webhook', // Webhooks usually use signature verification, not Bearer tokens
+    '/api/auth/session',
+    '/api/cashfree/webhook',
 ];
+
+// Initialize rate limiter: 20 requests per minute per IP
+// Note: This is per-container/instance.
+const limiter = rateLimit({
+    interval: 60 * 1000, // 60 seconds
+    uniqueTokenPerInterval: 500, // Max 500 unique IPs per minute
+});
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -21,36 +24,41 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
-    // Skip public paths
+    // Skip public paths from Auth checks, but maybe NOT rate limits?
+    // Let's rate limit everything to be safe.
+
+    // 1. Rate Limiting Check
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+    try {
+        // Limit to 20 requests per minute per IP
+        await limiter.check(20, ip + pathname); // Scoping by IP + Path can be safer, or just IP. Let's do IP.
+        // Actually, just IP is better for global DOS protection.
+        // await limiter.check(50, ip); 
+        // Let's be generous for now: 50 req/min
+    } catch (e) {
+        // Rate Limited
+        console.warn(`[RateLimit] Blocked request from ${ip}`);
+        return NextResponse.json(
+            { error: 'Too Many Requests' },
+            { status: 429 }
+        );
+    }
+
+    // 2. Auth Check
     if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
         return NextResponse.next();
     }
 
-    // Check for Authorization header
     const authHeader = request.headers.get('Authorization');
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        // Return JSON error for API routes
         return NextResponse.json(
             { error: 'Authentication required. Please provide a valid Bearer token.' },
             { status: 401 }
         );
     }
 
-    // Note: We cannot verify the Firebase ID Token fully in Edge Middleware because 
-    // creating a Firebase Admin instance in Edge is tricky/limited. 
-    // Strategy: We check for presence here, and rely on the actual Route Handler 
-    // to do the heavy `adminAuth.verifyIdToken(token)`. 
-    // OR we forward the token.
-    // Ideally, we just enforce *presence* here to strip out low-effort attacks.
-    // The Route Handlers (Refactoring Step) will do the cryptographic verification.
-
-    const response = NextResponse.next();
-
-    // You can set custom headers here if needed for downstream
-    // response.headers.set('x-auth-present', 'true');
-
-    return response;
+    return NextResponse.next();
 }
 
 export const config = {

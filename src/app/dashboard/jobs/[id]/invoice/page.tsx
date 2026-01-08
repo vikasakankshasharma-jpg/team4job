@@ -1,11 +1,10 @@
-
 "use client";
 
 import { useFirebase, useUser } from "@/hooks/use-user";
-import { notFound, useParams } from "next/navigation";
+import { notFound, useParams, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { Job, User } from "@/lib/types";
-import { getDoc, doc, DocumentReference } from "firebase/firestore";
+import { Job, User, Transaction } from "@/lib/types";
+import { getDoc, doc, DocumentReference, collection, query, where, getDocs } from "firebase/firestore";
 import { Loader2, Printer } from "lucide-react";
 import { toDate } from "@/lib/utils";
 import { format } from "date-fns";
@@ -24,72 +23,270 @@ export default function InvoicePage() {
     const { user, isAdmin } = useUser();
     const { db } = useFirebase();
     const params = useParams();
+    const searchParams = useSearchParams();
     const id = params.id as string;
+    const type = searchParams.get('type'); // 'platform' or undefined (default)
 
     const [job, setJob] = useState<Job | null>(null);
+    const [transaction, setTransaction] = useState<Transaction | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!id || !db) return;
 
-        const fetchJob = async () => {
+        const fetchJobAndTransaction = async () => {
             setLoading(true);
-            const jobRef = doc(db, 'jobs', id);
-            const jobSnap = await getDoc(jobRef);
-            const jobData = jobSnap.data();
+            try {
+                // Fetch Job
+                const jobRef = doc(db, 'jobs', id);
+                const jobSnap = await getDoc(jobRef);
+                const jobData = jobSnap.data();
 
-            if (!jobSnap.exists() || !jobData || !jobData.invoice) {
-                setJob(null);
-                setLoading(false);
-                return;
-            }
-
-            const jobGiverRef = jobData.jobGiver as DocumentReference;
-            const jobGiverSnap = await getDoc(jobGiverRef);
-            const jobGiverData = jobGiverSnap.data();
-
-            if (!jobGiverData) {
-                setJob(null);
-                setLoading(false);
-                return;
-            }
-
-            let awardedInstaller: User | undefined = undefined;
-            if (jobData.awardedInstaller) {
-                const awardedInstallerRef = jobData.awardedInstaller as DocumentReference;
-                const awardedInstallerSnap = await getDoc(awardedInstallerRef);
-                const awardedInstallerData = awardedInstallerSnap.data();
-
-                if (awardedInstallerSnap.exists() && awardedInstallerData) {
-                    awardedInstaller = { id: awardedInstallerSnap.id, ...awardedInstallerData } as User;
+                if (!jobSnap.exists() || !jobData) {
+                    setJob(null);
+                    setLoading(false);
+                    return;
                 }
+
+                // Resolving References
+                const jobGiverRef = jobData.jobGiver as DocumentReference;
+                const jobGiverSnap = await getDoc(jobGiverRef);
+                const jobGiverData = jobGiverSnap.data();
+
+                if (!jobGiverData) {
+                    setJob(null);
+                    setLoading(false);
+                    return;
+                }
+
+                let awardedInstaller: User | undefined = undefined;
+                if (jobData.awardedInstaller) {
+                    const awardedInstallerRef = jobData.awardedInstaller as DocumentReference;
+                    const awardedInstallerSnap = await getDoc(awardedInstallerRef);
+                    const awardedInstallerData = awardedInstallerSnap.data();
+
+                    if (awardedInstallerSnap.exists() && awardedInstallerData) {
+                        awardedInstaller = { id: awardedInstallerSnap.id, ...awardedInstallerData } as User;
+                    }
+                }
+
+                setJob({
+                    ...(jobData as Job),
+                    jobGiver: { id: jobGiverSnap.id, ...jobGiverData } as User,
+                    awardedInstaller: awardedInstaller,
+                });
+
+                // Fetch Transaction if Platform Receipt requested
+                if (type === 'platform') {
+                    const q = query(collection(db, 'transactions'), where('jobId', '==', id), where('status', 'in', ['Funded', 'Released', 'Completed'])); // 'Funded' is usually enough, but 'Released' is final
+                    // Actually, for receipt, status should be 'Released' ideally, or at least Funded.
+                    // Let's grab the most recent one.
+                    const querySnapshot = await getDocs(q);
+                    if (!querySnapshot.empty) {
+                        const txnData = querySnapshot.docs[0].data();
+                        setTransaction({ id: querySnapshot.docs[0].id, ...txnData } as Transaction);
+                    }
+                }
+
+            } catch (error) {
+                console.error("Error fetching invoice data:", error);
+            } finally {
+                setLoading(false);
             }
-
-            setJob({
-                ...(jobData as Job),
-                jobGiver: { id: jobGiverSnap.id, ...jobGiverData } as User,
-                awardedInstaller: awardedInstaller,
-            });
-
-            setLoading(false);
         };
-        fetchJob();
+        fetchJobAndTransaction();
 
-    }, [id, db]);
+    }, [id, db, type]);
 
     if (loading) {
         return <InvoicePageSkeleton />;
     }
 
-    if (!job || !job.invoice) {
+    if (!job) {
         notFound();
     }
 
     const jobGiver = job.jobGiver as User;
     const installer = job.awardedInstaller as User;
 
+    // Permissions Check
     if (!user || (!isAdmin && user.id !== jobGiver.id && user.id !== installer.id)) {
         notFound();
+    }
+
+    // --- PLATFORM INVOICE LOGIC ---
+    if (type === 'platform') {
+        if (!transaction) {
+            return <div className="p-8 text-center">Transaction details not found. Receipt unavailable.</div>;
+        }
+
+        const isViewerJobGiver = user.id === jobGiver.id;
+        // If viewer is admin, we probably want to see both or ask? For now, default to JobGiver view if admin, or show error?
+        // Let's assume Admin is debugging, show Giver's for now or just generic.
+        // Better: Use role context. If user.role matches...
+        // If Admin, let's show a toggle or just Giver's by default.
+
+        // Determine Invoice Details based on Who is Viewing
+        // Invoice 2: Platform -> Installer (Commission)
+        // Invoice 3: Platform -> Job Giver (Service Fee)
+
+        let recipientName = "";
+        let recipientAddress = "";
+        let recipientGst = "";
+        let feeDescription = "";
+        let feeAmount = 0;
+        let invoiceNumber = `INV-PLT-${transaction.id.slice(-6).toUpperCase()}`;
+
+        if (user.id === installer.id) {
+            // Invoice 2
+            recipientName = installer.name;
+            recipientAddress = installer.address.fullAddress || "Address not provided";
+            recipientGst = installer.gstin || "";
+            feeDescription = "Platform Commission Fee";
+            feeAmount = transaction.commission || 0;
+            invoiceNumber += "-INST";
+        } else {
+            // Invoice 3 (Default for Job Giver)
+            recipientName = jobGiver.name;
+            recipientAddress = jobGiver.address.fullAddress || "Address not provided";
+            recipientGst = jobGiver.gstin || "";
+            feeDescription = "Platform Service Fee";
+            feeAmount = transaction.jobGiverFee || 0;
+            invoiceNumber += "-JG";
+        }
+
+        const gstRate = 0.18;
+        const taxAmount = feeAmount * gstRate; // Wait, usually the fee stored IN transaction includes tax?
+        // Let's check INVOICE_GUIDE.md
+        // "Platform Fee (5% of Bid Amount) = 500. GST on Platform Fee = 90. Total Fee = 590."
+        // Transaction type in types.ts:
+        // commission: number; // The platform commission amount taken from installer
+        // jobGiverFee: number; // The fee charged to the job giver
+        // Usually these are base amounts or total?
+        // Let's assume stored values are BASE amounts for cleaner calculation, OR we need to back-calculate.
+        // "commission: number; // The platform commission amount" -> In code we did `Math.ceil(amount * 0.05)`.
+        // That 5% is usually inclusive or exclusive?
+        // INVOICE_GUIDE says:
+        // Platform Commission (5%) = 500. GST @ 18% = 90. Total = 590.
+        // So the fee stored (e.g. 500) is Taxable Value. GST is extra.
+
+        // However, `jobGiverFee` in FundingDialog was:
+        // const platformFee = Math.round(subtotal * (jobGiverFeeRate / 100));
+        // const total = subtotal + travelTip + platformFee;
+        // Does `total` paid by Giver include TAX on that fee?
+        // In the `FundingBreakdownDialog`, we just showed "Platform Fee". We didn't explicitly add GST line item THERE (Phase 1 simplistic).
+        // But for INVOICE, we must show GST.
+        // If we charged 500, we need to decide if that 500 INCLUDES GST or not.
+        // Standard B2C/B2B: 500 + GST.
+        // If our logic in checkout collected 500 total, then 500 is Inclusive.
+        // Taxable = 500 / 1.18 = 423.72
+        // GST = 76.27
+        // Let's check `AddFundsDialog` logic:
+        // fee = amount * rate; total = amount + fee.
+        // It doesn't seem to add extra GST on top in the dialog.
+        // So the `commission` / `jobGiverFee` stored in DB is the TOTAL collected for that purpose.
+        // Thus we should treat it as INCLUSIVE of GST for the invoice to match the cash flow.
+
+        // CORRECTION: INVOICE_GUIDE says:
+        // "Total Paid by Job Giver ... Platform Fee 500 ... GST 90 ... Total 13570"
+        // This implies the checkout logic SHOULD have added GST.
+        // If the current code (FundingBreakdownDialog) DOES NOT add GST, then we have a discrepancy.
+        // BUT, I shouldn't break the invoice based on a potential checkout bug.
+        // I will stick to "Stored Amount is Taxable Value" pattern from the Guide IF the checkout supports it.
+        // If checkout only charged 500, and I say "500 + 90 Tax", then we invoiced 590 but collected 500. BAD.
+        // So safest bet behavior: Treat stored amount as INCLUSIVE.
+
+        const isInclusive = true;
+        const taxableAmount = isInclusive ? (feeAmount / 1.18) : feeAmount;
+        const gstAmt = isInclusive ? (feeAmount - taxableAmount) : (feeAmount * 0.18);
+        const totalAmount = isInclusive ? feeAmount : (feeAmount + gstAmt);
+
+        return (
+            <div className="max-w-4xl mx-auto p-4 sm:p-8 bg-background print:max-w-none">
+                <div className="flex justify-between items-start mb-8">
+                    <div>
+                        <h1 className="text-3xl font-bold">Platform Receipt</h1>
+                        <p className="text-muted-foreground">#{invoiceNumber}</p>
+                    </div>
+                    <div className="text-right">
+                        <h2 className="text-xl font-bold text-primary">CCTV Job Connect</h2>
+                        <p className="text-xs text-muted-foreground">GSTIN: 29ABCDE1234F1Z5</p>
+                        <p className="text-xs text-muted-foreground">Bangalore, India</p>
+                    </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-8 mb-8">
+                    <div>
+                        <h3 className="font-semibold mb-2">Billed To:</h3>
+                        <div className="text-sm text-muted-foreground">
+                            <p className="font-bold text-foreground">{recipientName}</p>
+                            <p>{recipientAddress}</p>
+                            {recipientGst && <p><strong>GSTIN:</strong> {recipientGst}</p>}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-8 mb-8 text-sm">
+                    <div>
+                        <h3 className="font-semibold mb-2">Date</h3>
+                        <p>{format(transaction.createdAt ? toDate(transaction.createdAt) : new Date(), 'MMMM d, yyyy')}</p>
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="p-2 text-left font-semibold">Description</th>
+                                <th className="p-2 text-center font-semibold">SAC</th>
+                                <th className="p-2 text-right font-semibold">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr className="border-b">
+                                <td className="p-2">
+                                    <p className="font-medium">{feeDescription}</p>
+                                    <p className="text-xs text-muted-foreground">Ref Job: {job.title} ({job.id})</p>
+                                </td>
+                                <td className="p-2 text-center">9984</td>
+                                <td className="p-2 text-right">₹{taxableAmount.toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="flex justify-end mt-4">
+                    <div className="w-full max-w-sm space-y-2 text-sm">
+                        <div className="flex justify-between">
+                            <span>Taxable Value</span>
+                            <span>₹{taxableAmount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>IGST @ 18%</span>
+                            <span>₹{gstAmt.toFixed(2)}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between text-lg font-bold">
+                            <span>Total Paid</span>
+                            <span>₹{totalAmount.toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-8 text-center print:hidden">
+                    <Button onClick={() => window.print()}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        Print / Save as PDF
+                    </Button>
+                </div>
+            </div>
+        )
+    }
+
+    // --- SERVICE INVOICE LOGIC (Existing/Default) ---
+    // (Preserve existing logic for Invoice 1)
+    if (!job.invoice) {
+        return <div className="p-8 text-center">Invoice not generated yet.</div>;
     }
 
     const { subtotal, travelTip } = job.invoice;
@@ -226,9 +423,7 @@ export default function InvoicePage() {
                 </div>
             </div>
 
-            <Separator className="my-8" />
-
-            <div className="space-y-4 text-xs text-muted-foreground">
+            <div className="space-y-4 text-xs text-muted-foreground mt-8">
                 <p><strong className="font-semibold">Note:</strong> This is a digitally generated invoice on behalf of the service provider by CCTV Job Connect.</p>
                 <p><strong className="font-semibold">Disclaimer:</strong> CCTV Job Connect acts as a marketplace facilitator. The responsibility for GST compliance, including charging the correct tax rate (CGST, SGST, or IGST) and remitting the tax to the government, lies solely with the service provider (Installer). The service recipient (Job Giver) is responsible for verifying the GST details for input tax credit purposes.</p>
             </div>

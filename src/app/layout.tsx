@@ -10,6 +10,7 @@ import { UserProvider } from "@/hooks/use-user";
 import { Providers } from "@/components/providers";
 import Script from 'next/script';
 import { GA_TRACKING_ID } from '@/lib/analytics';
+import { WebVitalsReporter } from "@/components/analytics/web-vitals";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
 
@@ -73,6 +74,7 @@ export default function RootLayout({
           <FirebaseClientProvider>
             <UserProvider>
               <Providers>
+                <WebVitalsReporter />
                 {children}
               </Providers>
             </UserProvider>
