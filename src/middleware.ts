@@ -16,7 +16,7 @@ const limiter = rateLimit({
     uniqueTokenPerInterval: 500, // Max 500 unique IPs per minute
 });
 
-export async function middleware(request: NextRequest) {
+export default async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Only strictly secure /api routes
