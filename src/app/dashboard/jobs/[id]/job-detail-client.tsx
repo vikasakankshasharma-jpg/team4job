@@ -717,6 +717,8 @@ function CancelJobDialog({ job, user, onJobUpdate, open, onOpenChange }: { job: 
             await axios.post('/api/escrow/refund', {
                 jobId: job.id,
                 userId: user.id
+            }, {
+                headers: { Authorization: `Bearer ${await getAuth().currentUser?.getIdToken()}` }
             });
 
             // Optimistic update
@@ -1501,6 +1503,8 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                 amount: task.quoteAmount,
                 description: `Variation Order: ${task.description}`,
                 taskId: task.id // Link payment to task
+            }, {
+                headers: { Authorization: `Bearer ${await getAuth().currentUser?.getIdToken()}` }
             });
 
             // If success (Sandbox mode mimic)

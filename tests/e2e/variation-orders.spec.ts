@@ -125,7 +125,8 @@ test.describe('Secured Variation Orders', () => {
         await page.fill('input[type="number"]', '150');
         await page.click('button:has-text("Send Proposal")');
 
-        await expect(page.locator('text=Variation Proposed')).toBeVisible();
+        // Check for toast (optional/relaxed) and verify data persistence
+        await expect(page.locator('text=Variation Proposed').first()).toBeVisible({ timeout: 5000 });
         await expect(page.locator('text=Extra Copper Wiring')).toBeVisible();
         await expect(page.locator('text=QUOTED')).toBeVisible();
         await helper.auth.logout();

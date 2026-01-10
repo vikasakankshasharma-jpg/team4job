@@ -200,7 +200,7 @@ export default function AdminClient() {
                                             </p>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                 <Clock className="h-3 w-3" />
-                                                {alert.timestamp ? formatDistanceToNow(alert.timestamp.toDate(), { addSuffix: true }) : 'Just now'}
+                                                {alert.timestamp ? formatDistanceToNow(new Date((alert.timestamp as any).toDate ? (alert.timestamp as any).toDate() : alert.timestamp), { addSuffix: true }) : 'Just now'}
                                                 {alert.metadata?.jobId && (
                                                     <span className="cursor-pointer hover:underline text-blue-600" onClick={() => router.push(`/dashboard/jobs/${alert.metadata.jobId}`)}>
                                                         • Job ID: {alert.metadata.jobId}

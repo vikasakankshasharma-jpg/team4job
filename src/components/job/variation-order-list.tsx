@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, XCircle, FileText, Plus } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 
 interface VariationOrderListProps {
     job: Job;
@@ -40,7 +40,7 @@ export function VariationOrderList({ job, user, isJobGiver, onJobUpdate, onPayFo
                                     {task.description}
                                 </CardTitle>
                                 <p className="text-xs text-muted-foreground">
-                                    Full ID: {task.id.substring(0, 8)}... • Created by {task.createdBy} • {format(task.createdAt ? (task.createdAt as any).toDate() : new Date(), 'MMM d, yyyy')}
+                                    Full ID: {task.id.substring(0, 8)}... • Created by {task.createdBy} • {format(task.createdAt ? toDate(task.createdAt) : new Date(), 'MMM d, yyyy')}
                                 </p>
                             </div>
                             <Badge variant={
