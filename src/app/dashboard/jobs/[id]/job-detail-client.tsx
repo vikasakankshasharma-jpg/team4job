@@ -259,7 +259,7 @@ function FundingBreakdownDialog({ job, onConfirm, onDirectConfirm, open, onOpenC
                     </div>
                     <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-md text-xs text-blue-700 dark:text-blue-300">
                         <ShieldCheck className="h-3 w-3 inline mr-1" />
-                        Funds are held securely in escrow until you approve the work.
+                        Funds are held in <strong>Secure and Lock Payment</strong> until you approve the work.
                     </div>
                 </div>
                 <DialogFooter>

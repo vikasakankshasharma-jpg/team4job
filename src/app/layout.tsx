@@ -14,18 +14,20 @@ import { WebVitalsReporter } from "@/components/analytics/web-vitals";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
 
+
 export const metadata: Metadata = {
-  title: "CCTV Job Connect | Professional Marketplace for CCTV Installations",
-  description: "Connect with verified CCTV professionals for your security projects. Secure escrow payments, AI-powered matching, and professional project management.",
-  keywords: ["CCTV", "Security", "Installation", "Installer", "Project Management", "Marketplace"],
-  authors: [{ name: "CCTV Job Connect Team" }],
+  metadataBase: new URL("https://dodo-beta.web.app"),
+  title: "Team4Job | Professional Services Marketplace",
+  description: "The premier marketplace for skilled professionals. Connect with verified experts for your projects, starting with CCTV installations.",
+  keywords: ["Team4Job", "CCTV", "Security", "Installation", "Installer", "Project Management", "Marketplace", "Professional Services"],
+  authors: [{ name: "Team4Job Team" }],
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://cctvjobconnect.com",
-    siteName: "CCTV Job Connect",
-    title: "CCTV Job Connect | Hire Verified Professionals",
-    description: "The most secure way to hire CCTV installers. Vetted professionals and escrow protection.",
+    url: "https://dodo-beta.web.app",
+    siteName: "Team4Job",
+    title: "Team4Job | Hire Verified Professionals",
+    description: "The most secure way to hire skilled professionals. Vetted experts and escrow protection.",
     images: [
       {
         url: "/og-image.png",
@@ -37,9 +39,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "CCTV Job Connect",
-    description: "The most secure way to hire CCTV installers.",
-    creator: "@cctvjobconnect",
+    title: "Team4Job",
+    description: "The most secure way to hire skilled professionals.",
+    creator: "@team4job",
     images: ["/og-image.png"],
   },
 };
@@ -107,9 +109,9 @@ export default function RootLayout({
             {
               "@context": "https://schema.org",
               "@type": "WebApplication",
-              "name": "CCTV Job Connect",
-              "description": "Professional Marketplace for CCTV Installations",
-              "url": "https://cctvjobconnect.com",
+              "name": "Team4Job",
+              "description": "Professional Marketplace for Skilled Services",
+              "url": "https://team4job.com",
               "applicationCategory": "BusinessApplication",
               "operatingSystem": "Web",
               "offers": {

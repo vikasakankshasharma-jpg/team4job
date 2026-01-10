@@ -263,7 +263,7 @@ function InstallerDashboard() {
               <span className="font-semibold">Jobs Won:</span> Displays the number of jobs you&apos;ve won that are currently active or in progress.
             </li>
             <li>
-              <span className="font-semibold">Projected Earnings:</span> The total value of jobs currently in the "Funded" (Escrow) state that you are working on.
+              <span className="font-semibold">Projected Earnings:</span> The total value of jobs currently in the "Funded" (Locked) state that you are working on.
             </li>
             {!isVerified && (
               <li>
@@ -379,7 +379,7 @@ function InstallerDashboard() {
             </div>
             <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Projected Earnings</p>
             <h3 className="text-4xl font-bold mt-2 text-blue-800 dark:text-blue-300">₹{projectedEarnings.toLocaleString()}</h3>
-            <p className="text-xs text-muted-foreground mt-2">Funds currently in Escrow</p>
+            <p className="text-xs text-muted-foreground mt-2">Funds currently Locked</p>
           </Card>
         </div>
       </div>
@@ -546,7 +546,7 @@ function JobGiverDashboard() {
               <span className="font-semibold">Active Jobs:</span> This shows the number of jobs you&apos;ve posted that are currently open for bidding or in progress. Click to manage them.
             </li>
             <li>
-              <span className="font-semibold">Funds in Escrow:</span> The total amount you have currently deposited in safe escrow for active jobs.
+              <span className="font-semibold">Funds in Secure Deposit:</span> The total amount you have currently deposited in safe Lock for active jobs.
             </li>
             <li>
               <span className="font-semibold">Total Bids Received:</span> See the total number of bids submitted across all your job postings.
@@ -588,9 +588,9 @@ function JobGiverDashboard() {
           iconColor="text-blue-600 dark:text-blue-300"
         />
         <StatCard
-          title="Funds in Escrow"
+          title="Funds in Secure Deposit"
           value={`₹${fundsInEscrow.toLocaleString()}`}
-          description="Securely held for active jobs"
+          description="Securely Locked for active jobs"
           icon={ShieldCheck}
           href="/dashboard/posted-jobs" // Or transactions
           iconBgColor="bg-encrow-100 dark:bg-indigo-900"
