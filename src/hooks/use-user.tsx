@@ -169,26 +169,34 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [auth, db, toast, updateUserState]);
 
-  useEffect(() => {
-    if (loading || isLoggingOut.current) return;
+  // Calculate if we need to redirect
+  // We do this during render to prevent "flash of content"
+  // If we determine a redirect is needed, we return a Loader instead of children
+  // and let the useEffect perform the side-effect (the actual navigation)
 
+  const getRedirectPath = (): string | null => {
+    // If still loading auth state, we are not ready to decide
+    if (loading) return null;
+
+    // 1. Handling Public Paths
     if (isPublicPath(pathname)) {
+      // If user is logged in and on login/home page, redirect to dashboard
       if (user && (pathname === '/login' || pathname === '/')) {
-        smartPush('/dashboard');
+        return '/dashboard';
       }
-      return;
+      // Otherwise, public pages are accessible
+      return null;
     }
 
+    // 2. Handling Private Paths (Auth Check)
+    // If not public and no user, needs login
+    // Note: We changed logic to immediate redirect instead of 5s timeout for better UX/security
     if (!user && !hasAuthUser) {
-      const timer = setTimeout(() => {
-        if (!user && !hasAuthUser && !loading) {
-          smartPush('/login');
-        }
-      }, 5000);
-      return () => clearTimeout(timer);
+      return '/login';
     }
 
-    if (!user) return;
+    // 3. Handling Role Protection & Role-Specific Pages
+    if (!user) return null; // Should be covered above, but for type safety check
 
     // Role protection
     const installerPaths = ['/dashboard/my-bids', '/dashboard/verify-installer', '/dashboard/jobs'];
@@ -205,15 +213,27 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isSupportPage = supportPaths.some(p => pathname.startsWith(p));
 
     if (role === 'Job Giver' && isInstallerOnlyPage) {
-      smartPush('/dashboard');
+      return '/dashboard';
     } else if (role === 'Installer' && isJobGiverPage) {
-      smartPush('/dashboard');
+      return '/dashboard';
     } else if (role === 'Support Team' && !isSupportPage && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/profile')) {
-      smartPush('/dashboard/disputes');
+      return '/dashboard/disputes';
     } else if (!user.roles.includes("Admin") && isAdminPage) {
-      smartPush('/dashboard');
+      return '/dashboard';
     }
-  }, [role, pathname, user, loading, hasAuthUser, smartPush]);
+
+    return null;
+  };
+
+  const redirectPath = getRedirectPath();
+
+  useEffect(() => {
+    if (redirectPath && !isLoggingOut.current) {
+      smartPush(redirectPath);
+    }
+  }, [redirectPath, smartPush]);
+
+
 
   const setRole = useCallback((newRole: Role) => {
     setRoleState(newRole);
@@ -245,13 +265,24 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [auth]);
 
+  // Value provided to context
   const value = useMemo(() => ({
     user, role, isAdmin, loading,
     setUser, setRole, logout, login
   }), [user, role, isAdmin, loading, setRole, logout, login]);
 
-  // Don't show loader on public pages to avoid flash
-  if (loading && !isPublicPath(pathname)) {
+
+  // RENDER LOGIC:
+  // 1. If loading, show loader (unless it's public path, then show content maybe? - Original logic said "Don't show loader on public pages to avoid flash")
+  //    Wait, if we are on public page and loading, we show content?
+  //    Original: if (loading && !isPublicPath(pathname)) return <Loader>
+  //    Refined:
+  //    If we are redirecting (redirectPath !== null), we MUST show loader to avoid flashing wrong content.
+  //    If we are initializing (loading === true) AND not on a public page, show loader.
+
+  const shouldShowLoader = (loading && !isPublicPath(pathname)) || (redirectPath !== null);
+
+  if (shouldShowLoader) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

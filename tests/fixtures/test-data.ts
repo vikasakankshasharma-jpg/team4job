@@ -5,17 +5,17 @@
 export const TEST_ACCOUNTS = {
     jobGiver: {
         email: 'jobgiver@example.com',
-        password: 'Vikas@129229',
+        password: 'Test@1234',
         role: 'Job Giver',
     },
     installer: {
         email: 'installer@example.com',
-        password: 'Vikas@129229',
+        password: 'Test@1234',
         role: 'Installer',
     },
     admin: {
         email: 'vikasakankshasharma@gmail.com',
-        password: 'Vikas@129229',
+        password: 'Test@1234',
         role: 'Admin',
     },
 };
