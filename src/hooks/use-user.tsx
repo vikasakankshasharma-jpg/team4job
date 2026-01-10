@@ -31,6 +31,28 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | null>(null);
 
+
+// Define public pages that don't require authentication
+
+// Define public pages that don't require authentication
+const PUBLIC_PAGES = ['/login', '/', '/privacy', '/terms', '/privacy-policy', '/terms-of-service'];
+
+// Helper to check if a path is public
+const isPublicPath = (path: string) => {
+  if (!path) return false;
+  // Accessing exactly /login/something is covered by startsWith
+  if (path.startsWith('/login')) return true;
+
+  // Normalize: remove trailing slash for exact matches
+  const normalized = path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
+
+  const isPublic = PUBLIC_PAGES.includes(normalized);
+  if (!isPublic) {
+    // console.log('[useUser] Protected path:', path, 'Normalized:', normalized);
+  }
+  return isPublic;
+};
+
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuth();
   const db = useFirestore();
@@ -150,10 +172,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (loading || isLoggingOut.current) return;
 
-    const isPublicPage = ['/login', '/'].some(p => pathname === p) || pathname.startsWith('/login');
-
-    if (isPublicPage) {
-      if (user) smartPush('/dashboard');
+    if (isPublicPath(pathname)) {
+      if (user && (pathname === '/login' || pathname === '/')) {
+        smartPush('/dashboard');
+      }
       return;
     }
 
@@ -229,8 +251,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }), [user, role, isAdmin, loading, setRole, logout, login]);
 
   // Don't show loader on public pages to avoid flash
-  const isPublicPage = ['/login', '/'].some(p => pathname === p) || pathname.startsWith('/login');
-  if (loading && !isPublicPage) {
+  if (loading && !isPublicPath(pathname)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

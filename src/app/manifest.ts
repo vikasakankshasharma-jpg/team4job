@@ -2,9 +2,9 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'CCTV Job Connect',
-    short_name: 'CCTV Connect',
-    description: 'Connecting Job Givers with skilled CCTV Installers.',
+    name: 'Team4Job',
+    short_name: 'Team4Job',
+    description: 'Connecting Job Givers with skilled professionals.',
     start_url: '/',
     display: 'standalone',
     background_color: '#F0F2F5',

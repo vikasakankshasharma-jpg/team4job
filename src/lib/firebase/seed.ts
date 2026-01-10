@@ -96,8 +96,8 @@ const adminAuth = getAuth(firebaseApp);
 
 const mockUsers: Omit<User, 'id'>[] = [
     { // 0: Admin
-        name: 'Vikas Sharma',
-        email: 'vikasakankshasharma@gmail.com',
+        name: 'Admin User',
+        email: 'admin@team4job.com',
         mobile: '9999999999',
         roles: ['Admin'],
         status: 'active',
@@ -357,7 +357,7 @@ async function seedAuthAndGetUIDs(users: Omit<User, 'id'>[]) {
         try {
             const userRecord = await adminAuth.createUser({
                 email: user.email,
-                password: "Vikas@129229", // All users get a default password
+                password: "Test@1234", // All users get a default password
                 displayName: user.name,
                 emailVerified: true,
                 disabled: user.status === 'deactivated' || user.status === 'suspended',
@@ -369,7 +369,7 @@ async function seedAuthAndGetUIDs(users: Omit<User, 'id'>[]) {
                 const userRecord = await adminAuth.getUserByEmail(user.email);
                 userUIDs[user.email] = userRecord.uid;
                 // Ensure password is set for existing user, in case it was created without one
-                await adminAuth.updateUser(userRecord.uid, { password: 'Vikas@129229', disabled: user.status === 'deactivated' || user.status === 'suspended' });
+                await adminAuth.updateUser(userRecord.uid, { password: 'Test@1234', disabled: user.status === 'deactivated' || user.status === 'suspended' });
                 console.log(`- Auth user already exists, password updated: ${user.email} (UID: ${userRecord.uid})`);
             } else {
                 console.error(`- Error creating auth user ${user.email}:`, error.message);
@@ -648,6 +648,53 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         completionOtp: "334455",
     });
 
+    // --- JOB 9: Explicit Archived Job for Demo User ---
+    const job9Id = "JOB-20240901-ARCH1";
+    await adminDb.collection('jobs').doc(job9Id).set({
+        id: job9Id,
+        title: "Archived: Office CCTV Upgrade",
+        description: "Upgraded 8 analog cameras to IP cameras for a small office. Work was completed on time.",
+        jobGiver: refs.jobGiver, // Explicitly for jobgiver@example.com
+        location: "560001",
+        fullAddress: 'C-20, MG Road, Bengaluru, 560001',
+        address: { house: 'C-20', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O' },
+        budget: { min: 10000, max: 15000 },
+        status: "Completed",
+        deadline: Timestamp.fromDate(new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000)),
+        postedAt: Timestamp.fromDate(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)),
+        jobStartDate: Timestamp.fromDate(new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000)),
+        awardedInstaller: refs.installer,
+        bids: [{ installer: refs.installer, amount: 12000, timestamp: Timestamp.fromDate(new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000)), coverLetter: "Experienced installer." }],
+        bidderIds: [installerUID],
+        rating: 5,
+        completionOtp: "654321",
+        comments: [],
+        privateMessages: [],
+        archived: true // Ensure archived flag if used
+    });
+
+    // --- JOB 10: Explicit Cancelled Job for Demo User ---
+    const job10Id = "JOB-20240901-CANC1";
+    await adminDb.collection('jobs').doc(job10Id).set({
+        id: job10Id,
+        title: "Cancelled: Outdoor Camera Install",
+        description: "Job cancelled due to change in requirements.",
+        jobGiver: refs.jobGiver, // Explicitly for jobgiver@example.com
+        location: "560001",
+        fullAddress: 'D-5, MG Road, Bengaluru, 560001',
+        address: { house: 'D-5', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O' },
+        budget: { min: 5000, max: 8000 },
+        status: "Cancelled",
+        deadline: Timestamp.fromDate(new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000)),
+        postedAt: Timestamp.fromDate(new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000)),
+        jobStartDate: Timestamp.fromDate(new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000)),
+        bids: [],
+        bidderIds: [],
+        comments: [],
+        privateMessages: [],
+        completionOtp: "998877",
+    });
+
 
     console.log(`- Committed 8 jobs.`);
 }
@@ -800,6 +847,47 @@ async function seedTransactions(uids: { [email: string]: string }) {
         paymentGatewayOrderId: `cf_order_${Date.now()}-2`,
     };
     batch.set(adminDb.collection('transactions').doc(t2.id), t2);
+
+    // --- NEW: POPULATED WALLET TRANSACTIONS FOR INSTALLER (User 2) ---
+    // Transaction Old 1: Old completed job
+    const tOld1: Transaction = {
+        id: `TXN-OLD-1-${Date.now()}`,
+        jobId: "JOB-OLD-1",
+        jobTitle: "Office Network Setup - Phase 1",
+        payerId: uids[mockUsers[1].email],
+        payeeId: uids[mockUsers[2].email], // Installer
+        amount: 15000,
+        travelTip: 500,
+        commission: 750,
+        jobGiverFee: 300,
+        totalPaidByGiver: 15800,
+        payoutToInstaller: 14750,
+        status: 'Released',
+        createdAt: Timestamp.fromDate(new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)),
+        fundedAt: Timestamp.fromDate(new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)),
+        releasedAt: Timestamp.fromDate(new Date(now.getTime() - 55 * 24 * 60 * 60 * 1000)),
+    };
+    batch.set(adminDb.collection('transactions').doc(tOld1.id), tOld1);
+
+    // Transaction Old 2: Another completed job
+    const tOld2: Transaction = {
+        id: `TXN-OLD-2-${Date.now()}`,
+        jobId: "JOB-OLD-2",
+        jobTitle: "CCTV Maintenance Contract - Q1",
+        payerId: uids[mockUsers[1].email],
+        payeeId: uids[mockUsers[2].email], // Installer
+        amount: 8000,
+        travelTip: 0,
+        commission: 400,
+        jobGiverFee: 160,
+        totalPaidByGiver: 8160,
+        payoutToInstaller: 7600,
+        status: 'Released',
+        createdAt: Timestamp.fromDate(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)),
+        fundedAt: Timestamp.fromDate(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)),
+        releasedAt: Timestamp.fromDate(new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000)),
+    };
+    batch.set(adminDb.collection('transactions').doc(tOld2.id), tOld2);
 
     // Transaction for Awarded Job (job6Id) - Funded
     const t3: Transaction = {

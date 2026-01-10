@@ -8,7 +8,7 @@ import { PlaceHolderImages } from './placeholder-images';
 export let users: User[] = [
   {
     id: 'ADMIN-20240101-0001',
-    name: 'Vikas Sharma',
+    name: 'Admin User',
     email: 'admin@example.com',
     mobile: '9999999999',
     roles: ['Admin'],

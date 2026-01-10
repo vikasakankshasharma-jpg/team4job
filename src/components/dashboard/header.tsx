@@ -16,6 +16,7 @@ import {
   AlertOctagon,
   UserCog,
   IndianRupee,
+  Crown,
 } from "lucide-react";
 import * as React from "react";
 import {
@@ -122,7 +123,7 @@ export function Header() {
   const renderContextualActions = () => {
     if (role === 'Job Giver') {
       return (
-        <Button size="sm" className="h-8 gap-1" asChild>
+        <Button size="sm" className="h-8 gap-1 rounded-full shadow-sm" asChild>
           <Link href="/dashboard/post-job">
             <PlusCircle className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -134,7 +135,7 @@ export function Header() {
     }
     if (role === 'Installer') {
       return (
-        <Button size="sm" className="h-8 gap-1" asChild>
+        <Button size="sm" className="h-8 gap-1 rounded-full shadow-sm" asChild>
           <Link href="/dashboard/jobs">
             <Search className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -151,7 +152,7 @@ export function Header() {
   const isTeamMember = role === 'Admin' || role === 'Support Team';
 
   return (
-    <header className="sticky top-0 z-30 flex h-auto flex-wrap items-center gap-4 border-b bg-background px-4 py-2 sm:px-6">
+    <header className="sticky top-0 z-50 flex h-auto flex-wrap items-center gap-4 border-b border-border/40 bg-background/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
           <Button size="icon" variant="outline" className="sm:hidden" suppressHydrationWarning>
@@ -219,14 +220,22 @@ export function Header() {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="flex w-full flex-1 items-center justify-end gap-4 md:ml-auto md:w-auto md:flex-grow-0">
-        {user?.subscription?.planId === 'trial' && daysLeft > 0 && !isTeamMember && <Badge variant="warning">Trial ({daysLeft} days left)</Badge>}
+        {/* Subscription Status Indicator - Systematic Design */}
+        {user?.subscription?.planId === 'trial' && daysLeft > 0 && !isTeamMember && (
+          <Link href="/dashboard/billing">
+            <Badge variant="outline" className="gap-2 h-8 px-3 border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors cursor-pointer">
+              <Crown className="h-3.5 w-3.5" />
+              <span className="font-medium">Trial: {daysLeft} Days Left</span>
+            </Badge>
+          </Link>
+        )}
         {pathname.startsWith('/dashboard/users') || pathname.startsWith('/dashboard/jobs') || pathname.startsWith('/dashboard/all-jobs') ? (
           <div className="relative w-full md:w-auto">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search..."
-              className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
+              className="w-full rounded-full bg-muted/50 border-transparent focus:bg-background transition-all duration-300 pl-8 md:w-[200px] lg:w-[336px]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               data-testid="search-input"
@@ -260,7 +269,12 @@ export function Header() {
 
         {renderContextualActions()}
         <HelpDialog>
-          <Button variant="outline" size="icon" suppressHydrationWarning>
+          <Button
+            variant="ghost"
+            size="icon"
+            suppressHydrationWarning
+            className="rounded-full h-9 w-9 bg-background/60 backdrop-blur-sm border border-border/40 shadow-sm hover:bg-accent hover:text-accent-foreground hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+          >
             <HelpCircle className="h-5 w-5" />
             <span className="sr-only">Help</span>
           </Button>

@@ -218,6 +218,7 @@ export default function BillingClient() {
             // We do NOT update the DB here. We wait for the webhook.
             // But we can trigger a re-fetch or show a pending state.
 
+
             // Wait a moment for webhook to process
             setTimeout(() => {
               fetchUser();

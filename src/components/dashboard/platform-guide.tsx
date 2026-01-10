@@ -24,7 +24,7 @@ export function PlatformGuide() {
                             Trusted Connections
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                            We connect verified CCTV professionals with clients. Our platform uses a secure Escrow system to ensure
+                            We connect verified CCTV professionals with clients. Our platform uses a <strong>Secure and Lock Payment System</strong> to ensure
                             payment safety for both parties.
                         </p>
                     </div>
@@ -34,9 +34,9 @@ export function PlatformGuide() {
                             <AccordionTrigger>How does payment work?</AccordionTrigger>
                             <AccordionContent>
                                 <div className="space-y-2 text-sm">
-                                    <p>We use a safe <strong>Escrow Model</strong>:</p>
+                                    <p>We use a safe <strong>Secure and Lock Payment Model</strong>:</p>
                                     <ol className="list-decimal pl-5 space-y-1">
-                                        <li><strong>Funding:</strong> Job Giver funds the job upfront. Money is held securely by the platform.</li>
+                                        <li><strong>Funding:</strong> Job Giver funds the job upfront. Money is <strong>Locked</strong> securely by the platform.</li>
                                         <li><strong>Work:</strong> Installer completes the task and uploads proof.</li>
                                         <li><strong>Release:</strong> Job Giver verifies work and releases payment.</li>
                                         <li><strong>Auto-Settle:</strong> If a Job Giver is unresponsive for <Badge variant="outline">5 Days</Badge> after submission, funds are auto-released to the installer.</li>
@@ -51,7 +51,7 @@ export function PlatformGuide() {
                                 <div className="space-y-2 text-sm">
                                     <p>Either party can raise a dispute if issues arise.</p>
                                     <ul className="list-disc pl-5 space-y-1">
-                                        <li><strong>Locking:</strong> Payments are <strong>frozen</strong> immediately when a dispute is active.</li>
+                                        <li><strong>Locking:</strong> Payments remain <strong>Locked</strong> immediately when a dispute is active.</li>
                                         <li><strong>Resolution:</strong> Our admins investigate and have the authority to refund the client or release funds to the installer based on evidence.</li>
                                     </ul>
                                 </div>
@@ -130,7 +130,7 @@ export function PlatformGuide() {
                                 <ol className="list-decimal pl-5 space-y-2 text-sm">
                                     <li><strong>Post a Job:</strong> Use our AI wizard or manual form.</li>
                                     <li><strong>Compare Bids:</strong> Review profiles, ratings, and quotes.</li>
-                                    <li><strong>Fund Escrow:</strong> Secure the money to start the job.</li>
+                                    <li><strong>Secure Deposit:</strong> Fund the <strong>Secure and Lock Deposit</strong> to start the job.</li>
                                     <li><strong>Approve:</strong> Only release payment when you are satisfied.</li>
                                 </ol>
                             </AccordionContent>
@@ -140,8 +140,8 @@ export function PlatformGuide() {
                             <AccordionTrigger>Is my money safe?</AccordionTrigger>
                             <AccordionContent>
                                 <p className="text-sm text-muted-foreground">
-                                    Yes. Your money is held in a neutral Escrow account. It is <strong>never</strong> released to the installer until you approve the work
-                                    or the auto-settle timer expires (5 days after submission). You can raise a dispute at any time to freeze the funds.
+                                    Yes. Your money is held in a neutral <strong>Secure and Lock</strong> account. It is <strong>never</strong> released to the installer until you approve the work
+                                    or the auto-settle timer expires (5 days after submission). You can raise a dispute at any time to keep the funds <strong>Locked</strong>.
                                 </p>
                             </AccordionContent>
                         </AccordionItem>
