@@ -55,11 +55,11 @@
 ### 7. Uptime Monitoring
 > **See detailed setup:** [`docs/POST_LAUNCH_TASKS.md#uptime-monitoring`](../docs/POST_LAUNCH_TASKS.md)
 
-- [ ] Create UptimeRobot account
-- [ ] Configure monitoring for production URL
-- [ ] Set up email/SMS alerts
-- [ ] Add status badge to README
-- [ ] Test alerting
+- [x] Create UptimeRobot account
+- [x] Configure monitoring for production URL
+- [x] Set up email/SMS alerts
+- [x] Add status badge to README
+- [x] Test alerting
 
 ### 8. Upgrade Firebase Plan
 - [x] Add payment method to Firebase Console
