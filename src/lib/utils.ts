@@ -2,7 +2,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Job, User } from "./types";
-import { Timestamp } from "firebase/firestore";
+import { Timestamp, DocumentReference } from "firebase/firestore";
 import { subMonths, format, parse } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
@@ -32,7 +32,7 @@ export const getStatusVariant = (status: Job['status']): "default" | "secondary"
     }
 }
 
-export const toDate = (timestamp: any): Date => {
+export const toDate = (timestamp: Date | Timestamp | { _seconds: number; _nanoseconds?: number } | string | number | null | undefined): Date => {
     if (!timestamp) return new Date();
 
     let date: Date;
@@ -120,10 +120,11 @@ export function validateMessageContent(message: string): { isValid: boolean; rea
     return { isValid: true };
 }
 
-const getRefId = (ref: any): string | null => {
+const getRefId = (ref: string | { id: string } | DocumentReference | null | undefined): string | null => {
     if (!ref) return null;
     if (typeof ref === 'string') return ref;
-    return ref.id || null;
+    if ('id' in ref) return ref.id;
+    return null;
 }
 
 export const getMyBidStatus = (job: Job, user: User): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
