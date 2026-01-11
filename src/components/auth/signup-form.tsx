@@ -118,6 +118,11 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
   const [verifiedCredential, setVerifiedCredential] = useState<any>(null); // Store credential for linking
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
+  // Email Verification State
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [emailOtp, setEmailOtp] = useState("");
+  const [showEmailOtpInput, setShowEmailOtpInput] = useState(false);
+
   // Use a temporary auth instance to verify phone without triggering main app Login/Redirect
   const { app: mainApp } = useFirebase();
   const tempAuthRef = useRef<Auth | null>(null);
@@ -137,7 +142,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         // Init Recaptcha on Temp Auth
         if (tempAuthRef.current) {
           recaptchaVerifierRef.current = new RecaptchaVerifier(tempAuthRef.current, "recaptcha-container", {
-            size: "invisible",
+            size: "normal", // Switched from invisible for better visibility/reliability
             callback: (response: any) => {
               // reCAPTCHA solved
             },
@@ -206,6 +211,61 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
     } catch (error: any) {
       console.error("Verify Error:", error);
       toast({ title: "Verification Failed", description: "Invalid OTP. Please try again.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendEmailOtp = async () => {
+    const email = form.getValues("email");
+    if (!email || !email.includes("@")) {
+      form.setError("email", { type: "manual", message: "Please enter a valid email address." });
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, action: 'send' })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setShowEmailOtpInput(true);
+        toast({ title: "Code Sent", description: "Please check your email for the verification code." });
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Failed to send code.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    const email = form.getValues("email");
+    if (!emailOtp || emailOtp.length !== 6) {
+      toast({ title: "Invalid Code", description: "Please enter the 6-digit code.", variant: "destructive" });
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp: emailOtp, action: 'verify' })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setIsEmailVerified(true);
+        setShowEmailOtpInput(false);
+        toast({ title: "Email Verified", description: "Your email has been verified successfully.", className: "bg-green-100 border-green-500" });
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
+      toast({ title: "Verification Failed", description: error.message || "Invalid code.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -887,9 +947,34 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         render={({ field }) => (
           <FormItem>
             <FormLabel>Email</FormLabel>
-            <FormControl>
-              <Input placeholder="name@example.com" {...field} />
-            </FormControl>
+            <div className="flex gap-2">
+              <FormControl>
+                <Input placeholder="name@example.com" {...field} disabled={isEmailVerified} />
+              </FormControl>
+              {!isEmailVerified && !showEmailOtpInput && (
+                <Button type="button" onClick={handleSendEmailOtp} disabled={isLoading} variant="secondary">
+                  Verify
+                </Button>
+              )}
+              {isEmailVerified && (
+                <Button type="button" disabled variant="ghost" className="text-green-600">
+                  <CheckCircle2 className="mr-2 h-4 w-4" /> Verified
+                </Button>
+              )}
+            </div>
+            {showEmailOtpInput && !isEmailVerified && (
+              <div className="mt-2 flex gap-2">
+                <Input
+                  placeholder="Enter 6-digit code"
+                  value={emailOtp}
+                  onChange={(e) => setEmailOtp(e.target.value)}
+                  maxLength={6}
+                />
+                <Button type="button" onClick={handleVerifyEmailOtp} disabled={isLoading}>
+                  Confirm
+                </Button>
+              </div>
+            )}
             <FormMessage />
           </FormItem>
         )}
@@ -934,7 +1019,6 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             )}
             <FormDescription>Verified mobile number will be your registered ID.</FormDescription>
             <FormMessage />
-            <div id="recaptcha-container"></div>
           </FormItem>
         )}
       />
@@ -995,9 +1079,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       />
       <div className="flex gap-2">
         <Button variant="outline" onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'photo')} className="w-full">Back</Button>
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full" disabled={isLoading || !isMobileVerified || !isEmailVerified}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Create Account
+          {(!isMobileVerified || !isEmailVerified) ? "Verify Mobile & Email to Continue" : "Create Account"}
         </Button>
       </div>
     </div>
@@ -1012,6 +1096,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         {currentStep === "photo" && renderPhotoStep()}
         {currentStep === 'skills' && renderSkillsStep()}
         {currentStep === "details" && renderDetailsStep()}
+        <div id="recaptcha-container"></div>
       </form>
     </Form>
   );

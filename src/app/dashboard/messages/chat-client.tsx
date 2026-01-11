@@ -214,7 +214,7 @@ export default function ChatClient() {
     };
 
     return (
-        <div className="flex h-full border rounded-lg overflow-hidden bg-background shadow-sm">
+        <div className="flex h-full border rounded-lg overflow-hidden bg-background shadow-sm max-w-full">
             {/* Sidebar (Conversation List) */}
             <div className="w-1/3 border-r bg-muted/10 flex flex-col">
                 <div className="p-4 border-b font-semibold bg-background">Messages</div>

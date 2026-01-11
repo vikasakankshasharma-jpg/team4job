@@ -131,7 +131,7 @@ export default function AdminClient() {
     }
 
     return (
-        <div className="container py-8 space-y-8">
+        <div className="container py-8 space-y-8 max-w-full overflow-x-hidden px-4">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Admin Command Center</h1>

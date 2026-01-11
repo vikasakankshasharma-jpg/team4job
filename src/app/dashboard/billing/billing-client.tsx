@@ -255,7 +255,7 @@ export default function BillingClient() {
   const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
 
   return (
-    <div className="grid gap-8">
+    <div className="grid gap-8 max-w-full overflow-x-hidden px-4">
       <Card>
         <CardHeader>
           <CardTitle>My Subscription</CardTitle>

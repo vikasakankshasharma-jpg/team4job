@@ -237,7 +237,7 @@ export default function DisputesClient() {
     const activeFiltersCount = Object.values(filters).filter(v => v && v !== 'all').length;
 
     return (
-        <div className="grid gap-6">
+        <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
             {isAdmin && (
                 <div className="grid gap-4 md:grid-cols-3">
                     <Card>

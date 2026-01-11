@@ -744,7 +744,7 @@ export default function ProfileClient() {
     const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
 
     return (
-        <div className="grid gap-8">
+        <div className="grid gap-8 max-w-full overflow-x-hidden px-4">
             <Card>
                 <CardHeader>
                     <div className="flex flex-col md:flex-row items-start md:items-center gap-6">

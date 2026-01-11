@@ -38,6 +38,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/hooks/use-help";
 import { collection, query, where, getDocs, doc, collectionGroup, getDoc, deleteDoc } from "firebase/firestore";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Search } from "lucide-react";
 
 const getRefId = (ref: any): string | null => {
   if (!ref) return null;
@@ -319,7 +321,7 @@ export default function MyBidsClient() {
   const bidStatuses = ["All", "Bidded", "Awarded to You", "In Progress", "Completed & Won", "Not Selected", "Cancelled"];
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
+    <div className="grid flex-1 items-start gap-4 md:gap-8 max-w-full overflow-x-hidden px-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -390,11 +392,24 @@ export default function MyBidsClient() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center h-64">
-                      {statusFilter !== 'All'
-                        ? `You have no bids with status "${statusFilter}".`
-                        : "You haven't placed any bids yet."
-                      }
+                    <TableCell colSpan={6} className="h-96">
+                      <EmptyState
+                        icon={Search}
+                        title="No bids found"
+                        description={
+                          statusFilter !== 'All'
+                            ? `You have no bids with status "${statusFilter}".`
+                            : "You haven't placed any bids yet. Browse open jobs to find your next project."
+                        }
+                        action={
+                          <Button asChild>
+                            <Link href="/dashboard/jobs">
+                              Browse Open Jobs
+                            </Link>
+                          </Button>
+                        }
+                        className="border-0 shadow-none min-h-[300px]"
+                      />
                     </TableCell>
                   </TableRow>
                 )}
@@ -411,11 +426,23 @@ export default function MyBidsClient() {
                   return <MyBidCard key={bid.id || bid.jobId} bid={bid} job={job} user={user} onWithdraw={handleWithdrawBid} />;
                 })
               ) : (
-                <div className="col-span-full text-center py-10 text-muted-foreground">
-                  {statusFilter !== 'All'
-                    ? `You have no bids with status "${statusFilter}".`
-                    : "You haven't placed any bids yet."
-                  }
+                <div className="col-span-full">
+                  <EmptyState
+                    icon={Search}
+                    title="No bids found"
+                    description={
+                      statusFilter !== 'All'
+                        ? `You have no bids with status "${statusFilter}".`
+                        : "You haven't placed any bids yet. Browse open jobs to find your next project."
+                    }
+                    action={
+                      <Button asChild>
+                        <Link href="/dashboard/jobs">
+                          Browse Open Jobs
+                        </Link>
+                      </Button>
+                    }
+                  />
                 </div>
               )}
             </div>

@@ -555,46 +555,29 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const handleSubmitClick = async () => {
     console.log("HandleSubmitClick triggered");
     // Check form validity before submission
-    const isValid = await form.trigger();
-
-    if (!isValid) {
-      const errors = form.formState.errors;
+    // If valid, submit the form
+    form.handleSubmit(onSubmit, (errors) => {
+      // Invalid handler
       console.error("Form validation errors:", errors);
-
-      // Log all values to see what's missing
-      console.log("Current form values:", form.getValues());
-
-      // Find the first error and show it to the user
       const firstErrorField = Object.keys(errors)[0];
-      const firstError = errors[firstErrorField as keyof typeof errors];
-
-      let errorMessage = "Please fix the validation errors before submitting.";
-      if (firstError && 'message' in firstError) {
-        errorMessage = `${firstErrorField}: ${firstError.message}`;
+      const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        (errorElement as HTMLElement).focus();
       }
 
       toast({
-        title: "Form Validation Failed",
-        description: errorMessage,
+        title: "Please check the form",
+        description: "There are missing or invalid fields that require your attention.",
         variant: "destructive",
       });
-
-      // Scroll to the first error field
-      const errorElement = document.querySelector('[data-invalid="true"]');
-      if (errorElement) {
-        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
-
-    // If valid, submit the form
-    form.handleSubmit(onSubmit)();
+    })();
   };
 
   return (
-    <div className="mx-auto grid max-w-4xl flex-1 auto-rows-max gap-4">
+    <div className="mx-auto grid max-w-4xl flex-1 auto-rows-max gap-4 px-4 max-w-full overflow-x-hidden">
       <div className="flex items-center gap-4">
-        <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
+        <h1 className="flex-1 shrink-0 text-xl font-semibold tracking-tight sm:grow-0 break-words" style={{ overflowWrap: 'anywhere' }}>
           {isEditMode ? 'Edit Job' : (repostJobId ? 'Re-post Job' : 'Post a New Job')}
         </h1>
         {isProcessing && <Loader2 className="h-5 w-5 animate-spin" />}

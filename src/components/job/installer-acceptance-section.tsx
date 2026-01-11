@@ -73,16 +73,6 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
         return { start, end };
     };
 
-    const handleConfirmConflict = async () => {
-        console.log('InstallerAcceptanceSection: handleConfirmConflict triggered');
-        try {
-            // Pass the conflicting jobs to be auto-declined
-            await processAcceptance(conflictingJobs);
-        } catch (error) {
-            console.error('InstallerAcceptanceSection: handleConfirmConflict error', error);
-        }
-    };
-
     const handleAcceptClick = async () => {
         console.log("InstallerAcceptanceSection: Accept clicked", { payouts: user.payouts, id: user.id });
         if (!user.payouts?.beneficiaryId) {
@@ -142,7 +132,7 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
             }
 
             // No conflicts, proceed normally
-            await processAcceptance([]);
+            await processAcceptance();
 
         } catch (error) {
             console.error("Conflict check failed", error);
@@ -150,8 +140,8 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
         }
     };
 
-    const processAcceptance = async (conflictsToDecline: Job[]) => {
-        console.log('InstallerAcceptanceSection: processAcceptance started', { conflictsCount: conflictsToDecline?.length });
+    const processAcceptance = async () => {
+        console.log('InstallerAcceptanceSection: processAcceptance started');
         setIsLoading(true);
         try {
             if (!db) throw new Error("Database connection unavailable");
@@ -170,30 +160,6 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
             const jobRef = doc(db, 'jobs', job.id);
             const fundingDeadline = new Date();
             fundingDeadline.setHours(fundingDeadline.getHours() + 48);
-
-            // Double Booking Check
-            const jobsRef = collection(db, 'jobs');
-            const q = query(
-                jobsRef,
-                where('awardedInstaller', '==', doc(db, 'users', user.id)),
-                where('status', 'in', ['In Progress', 'Pending Funding'])
-            );
-            const snapshot = await getDocs(q);
-            const newJobStart = toDate(job.jobStartDate);
-
-            const conflictingJob = snapshot.docs.find(d => {
-                const activeJob = d.data() as Job;
-                // Exclude jobs we are about to decline
-                if (conflictsToDecline.some(c => c.id === activeJob.id)) return false;
-
-                if (!activeJob.jobStartDate) return false;
-                const activeStart = toDate(activeJob.jobStartDate);
-                return activeStart.toDateString() === newJobStart.toDateString();
-            });
-
-            if (conflictingJob) {
-                throw new Error("You already have an active job scheduled for this date. Please decline one to proceed.");
-            }
 
             await runTransaction(db, async (transaction) => {
                 const jobDoc = await transaction.get(jobRef);
@@ -221,17 +187,6 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
                     acceptanceDeadline: deleteField(),
                     fundingDeadline: fundingDeadline,
                 });
-
-                // Auto-Decline Conflicting Jobs
-                for (const conflict of conflictsToDecline) {
-                    const conflictRef = doc(db, 'jobs', conflict.id);
-                    transaction.update(conflictRef, {
-                        awardedInstaller: deleteField(),
-                        status: 'Bidding Closed',
-                        disqualifiedInstallerIds: arrayUnion(user.id),
-                        acceptanceDeadline: deleteField()
-                    });
-                }
             });
 
             const updateLocal = {
@@ -327,17 +282,20 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
             </Card>
 
             <AlertDialog open={isConflictDialogOpen} onOpenChange={setIsConflictDialogOpen}>
-                <AlertDialogContent>
+                <AlertDialogContent className="max-h-[80vh] overflow-y-auto w-[95vw] sm:w-full rounded-lg">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Availability Conflict Detected</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            You have {conflictingJobs.length} other pending job awards for this same date.
-                            Accepting this job will <strong>automatically decline</strong> the other offers to prevent double-booking.
+                        <AlertDialogTitle>Schedule Conflict Warning</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left text-sm">
+                            You have {conflictingJobs.length} other active/pending jobs for this date range.
+                            Accepting this job will result in overlapping schedules.
+                            <br /><br />
+                            <strong>It is your responsibility to manage your time effectively.</strong>
+                            Failure to complete jobs on time may result in negative reputation points.
                         </AlertDialogDescription>
                         <div className="text-sm text-muted-foreground mt-4">
-                            <strong>Jobs to be declined:</strong>
+                            <strong>Conflicting Jobs:</strong>
                             <ul className="list-disc pl-5 mt-2">
-                                {conflictingJobs.map(j => {
+                                {conflictingJobs.slice(0, 3).map(j => {
                                     const range = getJobRange(j);
                                     const rangeText = range ? `${range.start.toLocaleDateString()} - ${range.end.toLocaleDateString()}` : 'Unknown Date';
                                     return (
@@ -347,17 +305,23 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
                                         </li>
                                     );
                                 })}
+                                {conflictingJobs.length > 3 && (
+                                    <li className="text-muted-foreground italic text-xs mt-1">
+                                        ...and {conflictingJobs.length - 3} others
+                                    </li>
+                                )}
                             </ul>
                         </div>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => {
+                    <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
+                        <AlertDialogCancel className="w-full sm:w-auto mt-2 sm:mt-0">Cancel</AlertDialogCancel>
+                        <Button onClick={() => {
+                            console.log("InstallerAcceptanceSection: Conflict Warning Accepted");
                             setIsConflictDialogOpen(false);
-                            processAcceptance(conflictingJobs);
-                        }} className="bg-red-600 hover:bg-red-700">
-                            Confirm & Auto-Decline
-                        </AlertDialogAction>
+                            processAcceptance();
+                        }} className="bg-yellow-600 hover:bg-yellow-700 w-full sm:w-auto">
+                            I Understand, Proceed & Accept
+                        </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
