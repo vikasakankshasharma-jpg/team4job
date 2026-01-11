@@ -100,7 +100,7 @@ export function VariationOrderList({ job, user, isJobGiver, onJobUpdate, onPayFo
 
                             {/* Scenario 3: Waiting (User waiting for quote) */}
                             {task.status === 'pending-quote' && isJobGiver && (
-                                <span className="text-xs text-muted-foreground italic">Waiting for Installer's Quote...</span>
+                                <span className="text-xs text-muted-foreground italic">Waiting for Installer&apos;s Quote...</span>
                             )}
                             {/* Scenario 4: Waiting (Installer waiting for approval) */}
                             {task.status === 'quoted' && !isJobGiver && (

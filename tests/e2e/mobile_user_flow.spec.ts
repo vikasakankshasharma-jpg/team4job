@@ -11,6 +11,7 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff)', () => 
 
   test('Full end-to-end flow on mobile', async ({ page }) => {
     const helper = new TestHelper(page);
+    await helper.acceptCookies();
     const uniqueJobTitle = generateUniqueJobTitle();
     let jobId: string;
 
@@ -85,10 +86,10 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff)', () => 
     await page.goto(`/dashboard/jobs/${jobId}`);
     await page.getByTestId('accept-job-button').first().click();
 
-    // Verify conflict dialog appears (Timeout increased for slow env)
+    // Verify conflict dialog appears (Timeout reduced)
     const conflictDialog = page.getByText('Schedule Conflict Warning');
     console.log("Waiting for conflict dialog...");
-    if (await conflictDialog.isVisible({ timeout: 90000 })) {
+    if (await conflictDialog.isVisible({ timeout: 10000 })) {
       console.log("Conflict dialog visible!");
       // Verification: Check for Responsive Classes
       const contentContainer = page.locator('.max-h-\\[80vh\\]');
@@ -96,18 +97,14 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff)', () => 
       console.log("Verified Responsive Classes are present.");
 
       const btn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
-      await btn.focus();
-      await page.keyboard.press('Enter');
-      console.log("Clicked Proceed button via keyboard.");
+      await btn.click();
+      console.log("Clicked Proceed button.");
       await expect(conflictDialog).not.toBeVisible();
       console.log("Dialog closed.");
     } else {
-      console.log("Warning: Conflict dialog NOT visible within timeout.");
+      console.log("Info: Conflict dialog NOT visible (No conflict detected).");
     }
 
-    // Conflict resolution involves backend batch writes, can be slow
-    // Wait for UI to update instead of relying on toast
-    await expect(page.getByText('Pending Funding')).toBeVisible({ timeout: 20000 });
     // Conflict resolution involves backend batch writes, can be slow
     // Wait for UI to update instead of relying on toast
     await expect(page.getByText('Pending Funding')).toBeVisible({ timeout: 20000 });

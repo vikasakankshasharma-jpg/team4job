@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2, Banknote, Gift, Copy } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2, Banknote, Gift, Copy, AlertTriangle } from "lucide-react";
 import {
     Collapsible,
     CollapsibleContent,
@@ -48,7 +48,8 @@ import { User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc, serverTimestamp } from "firebase/firestore";
+import { deleteUser } from "firebase/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHelp } from "@/hooks/use-help";
 import axios from "axios";
@@ -634,6 +635,118 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
     );
 }
 
+function DeleteAccountCard({ user }: { user: User }) {
+    const { toast } = useToast();
+    const { db, auth } = useFirebase();
+    const router = useRouter();
+    const [isDeleting, setIsDeleting] = React.useState(false);
+    const [confirmText, setConfirmText] = React.useState("");
+
+    const handleDelete = async () => {
+        if (!db || !auth || !auth.currentUser) return;
+
+        if (confirmText !== "DELETE") {
+            toast({ title: "Verification Failed", description: "Please type DELETE to confirm.", variant: "destructive" });
+            return;
+        }
+
+        setIsDeleting(true);
+        try {
+            // 1. Delete Firestore Data (or mark deleted)
+            const userRef = doc(db, 'users', user.id);
+            await updateDoc(userRef, {
+                status: 'deleted',
+                deletedAt: serverTimestamp(),
+                email: `deleted_${user.id}@example.com`,
+                name: 'Deleted User',
+                phone: null,
+                avatarUrl: null
+            });
+
+            // 2. Delete Auth User
+            await deleteUser(auth.currentUser);
+
+            toast({ title: "Account Deleted", description: "Your account has been permanently deleted." });
+            window.location.href = '/'; // Force reload/redirect
+        } catch (error: any) {
+            console.error("Delete account error:", error);
+            if (error.code === 'auth/requires-recent-login') {
+                toast({
+                    title: "Security Check Required",
+                    description: "For security, please log out and log back in, then try deleting your account again.",
+                    variant: "destructive"
+                });
+            } else {
+                toast({
+                    title: "Deletion Failed",
+                    description: "Something went wrong. Please contact support.",
+                    variant: "destructive"
+                });
+            }
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    return (
+        <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900/50">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
+                    <AlertTriangle className="h-5 w-5" />
+                    Danger Zone
+                </CardTitle>
+                <CardDescription className="text-red-600/80 dark:text-red-400/80">
+                    Irreversible actions related to your account.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h4 className="font-semibold text-red-900 dark:text-red-300">Delete Account</h4>
+                    <p className="text-sm text-red-700 dark:text-red-400">
+                        Permanently delete your account and all your data. This action cannot be undone.
+                    </p>
+                </div>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="destructive">Delete Account</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Are you absolutely sure?</DialogTitle>
+                            <DialogDescription>
+                                This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4">
+                            <Label htmlFor="confirm-delete">Type <strong>DELETE</strong> to confirm:</Label>
+                            <Input
+                                id="confirm-delete"
+                                value={confirmText}
+                                onChange={(e) => setConfirmText(e.target.value)}
+                                className="mt-2"
+                                placeholder="DELETE"
+                            />
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button variant="secondary">Cancel</Button>
+                            </DialogClose>
+                            <Button
+                                variant="destructive"
+                                onClick={handleDelete}
+                                disabled={isDeleting || confirmText !== "DELETE"}
+                            >
+                                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Confirm Deletion
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function ProfileClient() {
     const { user, role, setUser, setRole, loading: userLoading } = useUser();
     const { db } = useFirebase();
@@ -978,6 +1091,8 @@ export default function ProfileClient() {
                     </CardContent>
                 </Card>
             )}
+
+            <DeleteAccountCard user={user} />
         </div>
     );
 }

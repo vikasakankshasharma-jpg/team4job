@@ -2227,15 +2227,17 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                             </Button>
                         </CardHeader>
                         <CardContent>
-                            <VariationOrderList
-                                job={job}
-                                user={user}
-                                isJobGiver={isJobGiver}
-                                onJobUpdate={handleJobUpdate}
-                                onPayForTask={handlePayForVariation}
-                                onQuoteTask={handleQuoteVariation}
-                                onDeclineTask={handleDeclineVariation}
-                            />
+                            {user && (
+                                <VariationOrderList
+                                    job={job}
+                                    user={user}
+                                    isJobGiver={isJobGiver}
+                                    onJobUpdate={handleJobUpdate}
+                                    onPayForTask={handlePayForVariation}
+                                    onQuoteTask={handleQuoteVariation}
+                                    onDeclineTask={handleDeclineVariation}
+                                />
+                            )}
                         </CardContent>
                     </Card>
                 </div>

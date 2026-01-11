@@ -24,11 +24,10 @@ service cloud.firestore {
 
     // Confidential User Data (PII)
     match /users/{userId} {
-      // TEMPORARY: Allow authenticated read to unblock UI (Job Giver name, etc.)
-      // Ideal fix: Split into public_profiles (name, avatar, rating) and private users (email, phone, payouts).
-      // For now, we rely on client not displaying sensitive data, but this is a known privacy gap we can't fully close without data migration.
-      // TEMPORARY DEBUG: Allow public read to investigate permission denied
-      allow read: if true;
+      // PRODUCTION: Restrict user data access to authorized parties only
+      // Owner can read their own data, Admins and Support can read all
+      allow read: if request.auth != null && 
+        (request.auth.uid == userId || isAdmin() || isSupport());
       
       // Strict Update Policy: Prevent Privilege Escalation
       // Users can ONLY update specific profile fields. 
@@ -54,15 +53,18 @@ service cloud.firestore {
     }
     
     // Jobs - Core Logic Security
-    // Jobs - Core Logic Security
     match /jobs/{jobId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && 
         "Job Giver" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles &&
         request.resource.data.jobGiverId == request.auth.uid;
       
-      // DEBUG: Allow any update by auth user to ensure E2E tests pass
-      allow update: if request.auth != null;
+      allow update: if request.auth != null && 
+        (resource.data.jobGiverId == request.auth.uid || 
+         resource.data.installerId == request.auth.uid ||
+         (resource.data.awardedInstaller != null && resource.data.awardedInstaller == /databases/$(database)/documents/users/$(request.auth.uid)) ||
+         isAdmin() || 
+         isSupport());
       
       allow delete: if request.auth != null && 
         (resource.data.jobGiverId == request.auth.uid || isAdmin());
@@ -86,13 +88,23 @@ service cloud.firestore {
        allow write: if isAdmin();
     }
     
-    // Transactions - RELAXED for E2E Testing
+    // Transactions - Production Rules
     match /transactions/{transactionId} {
-      // Allow any auth user to read for E2E simplicity (querying by jobId)
-      allow read: if request.auth != null;
-      // Allow create/update for testing "Direct Fund"
-      allow create, update: if request.auth != null; 
-      allow delete: if false; 
+      allow read: if request.auth != null && 
+        (resource.data.payerId == request.auth.uid || 
+         resource.data.payeeId == request.auth.uid || 
+         isAdmin() || 
+         isSupport());
+      
+      // Allow creation only if user is the payer
+      allow create: if request.auth != null && 
+        request.resource.data.payerId == request.auth.uid;
+        
+      // Allow updates only by payer or admin (and restricted fields if needed)
+      allow update: if request.auth != null && 
+        (resource.data.payerId == request.auth.uid || isAdmin());
+        
+      allow delete: if isAdmin();
     }
 
     // Disputes

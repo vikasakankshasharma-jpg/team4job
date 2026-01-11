@@ -264,7 +264,7 @@ function InstallerDashboard() {
               <span className="font-semibold">Jobs Won:</span> Displays the number of jobs you&apos;ve won that are currently active or in progress.
             </li>
             <li>
-              <span className="font-semibold">Projected Earnings:</span> The total value of jobs currently in the "Funded" (Locked) state that you are working on.
+              <span className="font-semibold">Projected Earnings:</span> The total value of jobs currently in the &quot;Funded&quot; (Locked) state that you are working on.
             </li>
             {!isVerified && (
               <li>
