@@ -137,7 +137,7 @@
 - [x] Configure monitoring dashboards
 - [x] Train support team
 - [x] Prepare launch announcement
-- [x] Final smoke test on production
+- [x] **Final smoke test on production (LIVE at https://dodo-beta.web.app)**
 
 ## Progress Tracking
 

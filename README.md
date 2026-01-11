@@ -1,4 +1,7 @@
-# CCTV Job Connect
+# Team4Job
+
+![Uptime](https://img.shields.io/uptimerobot/status/m802129159-a13b5ddfbad7a36f5694cb3e)
+![Deployment](https://img.shields.io/badge/deployment-live-success)
 
 ## 1. Getting Started
 
@@ -91,7 +94,7 @@ The application is configured with Sentry for error tracking.
 
 ## 4. High-Level App Concept
 
-**App Name:** CCTV Job Connect
+**App Name:** Team4Job
 
 **Core Purpose:** A sophisticated, AI-enhanced marketplace connecting "Job Givers" (clients) with verified, skilled "Installers" for CCTV installation and maintenance services. The platform is architected around a subscription model to support professional users and ensure sustainable revenue.
 
@@ -314,7 +317,7 @@ The pipeline runs automatically on every push to `main`. It includes:
 1.  **Validation:** Linting and Type Checking.
 2.  **Build:** Verifies the app builds successfully (with Sentry source maps).
 3.  **Automated Testing:** Runs Smoke Tests in a headless browser against the production build.
-4.  **Deployment:** (configured) Deploys to production if all tests pass.
+4.  **Deployment:** (configured) Deploys to [dodo-beta.web.app](https://dodo-beta.web.app) if all tests pass.
 
 **Triggering CI Manually:**
 You can trigger a run by pushing an empty commit:
