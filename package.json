@@ -29,6 +29,7 @@
     "test:report": "playwright show-report",
     "analyze": "cross-env ANALYZE=true npm run build -- --webpack",
     "test:lighthouse": "lhci autorun",
+    "test": "jest",
     "test:unit": "jest",
     "predeploy": "tsx scripts/preflight-check.ts"
   },
