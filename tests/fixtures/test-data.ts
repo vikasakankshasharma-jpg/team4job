@@ -14,7 +14,7 @@ export const TEST_ACCOUNTS = {
         role: 'Installer',
     },
     admin: {
-        email: 'admin-test@team4job.com',
+        email: 'vikasakankshasharma@gmail.com',
         password: 'Test@1234',
         role: 'Admin',
     },
