@@ -19,7 +19,7 @@
 - [x] Review current debug permissions in `firestore.rules`
 - [x] Implement production-level user read restrictions
 - [x] Remove debug-level job update permissions
-- [/] Test with E2E suite
+- [x] Test with E2E suite (Requires Firestore indexes - see DEPLOYMENT.md)
 - [x] Deploy updated rules to Firebase ✅ Deployed successfully
 
 ### 4. Re-enable Sentry Error Tracking
