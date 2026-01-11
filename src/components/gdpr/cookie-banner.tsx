@@ -47,7 +47,7 @@ export default function CookieBanner() {
                 <span className="font-semibold text-sm">We value your privacy</span>
                 <span className="text-xs opacity-90">
                     We use cookies to enhance your experience, analyze site traffic, and assist in our marketing efforts.
-                    By clicking "Accept All", you consent to our use of cookies.
+                    By clicking &quot;Accept All&quot;, you consent to our use of cookies.
                     <Link href="/privacy" className="underline ml-1 hover:text-primary">
                         Read our Privacy Policy
                     </Link>
