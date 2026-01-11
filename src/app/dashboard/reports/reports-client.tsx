@@ -161,6 +161,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
 }
 
 function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
+    const { toast } = useToast();
     const [selectedState, setSelectedState] = useState<string>('all');
     const [selectedCity, setSelectedCity] = useState<string>('all');
     const [selectedPincode, setSelectedPincode] = useState<string>('all');
@@ -229,7 +230,11 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
 
     const handleDownload = () => {
         if (filteredInstallers.length === 0) {
-            alert('No data to export for the current filter.');
+            toast({
+                title: "Export Failed",
+                description: "No data to export for the current filter.",
+                variant: "destructive"
+            });
             return;
         }
 

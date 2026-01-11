@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ShieldAlert, TrendingUp, Users, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { collection, query, where, orderBy, onSnapshot, limit, getCountFromServer, doc, updateDoc } from "firebase/firestore";
 import { formatDistanceToNow } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 interface AdminAlert {
     id: string;
@@ -24,6 +25,7 @@ export default function AdminClient() {
     const { user, role, loading } = useUser();
     const { db } = useFirebase();
     const router = useRouter();
+    const { toast } = useToast();
 
     const [alerts, setAlerts] = React.useState<AdminAlert[]>([]);
     const [metrics, setMetrics] = React.useState({
@@ -119,10 +121,18 @@ export default function AdminClient() {
                 body: JSON.stringify({ jobId, resolution, splitPercentage, disputeId: null }) // Dispute ID ideally comes from metadata
             });
             await markAsRead(alertId);
-            alert("Resolution Processed Successfully.");
+            toast({
+                title: "Success",
+                description: "Resolution processed successfully.",
+                variant: "default"
+            });
         } catch (error) {
             console.error(error);
-            alert("Failed to process resolution. Check console.");
+            toast({
+                title: "Resolution Failed",
+                description: "Failed to process resolution. Check logs.",
+                variant: "destructive"
+            });
         }
     };
 

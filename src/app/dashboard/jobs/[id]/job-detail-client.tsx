@@ -214,7 +214,7 @@ function ReapplyCard({ job, user, onJobUpdate }: { job: Job, user: User, onJobUp
 }
 
 function FundingBreakdownDialog({ job, onConfirm, onDirectConfirm, open, onOpenChange, platformSettings, bidAmount }: { job: Job, onConfirm: () => void, onDirectConfirm: () => void, open: boolean, onOpenChange: (open: boolean) => void, platformSettings: PlatformSettings | null, bidAmount: number }) {
-    console.log('FundingBreakdownDialog: rendering', { status: job.status, awardedInstaller: !!job.awardedInstaller });
+
 
     // In this model, Job Giver pays Bid Amount + Travel Tip. Platform fee is deducted from Installer.
     // UPDATE: We also need to show the Job Giver fee if applicable, for transparency.
@@ -783,18 +783,11 @@ function CancelJobDialog({ job, user, onJobUpdate, open, onOpenChange }: { job: 
                             variant="destructive"
                             onClick={() => {
                                 onOpenChange(false);
-                                // Trigger Dispute Dialog (We need a way to open it from main component, or just route to it?)
-                                // Ideally, we should pass a prop to open Dispute Dialog.
-                                // For now, we can instruct the user or use a hack. 
-                                // Better: Just close this and show a Toast saying "Please click 'Raise Dispute' in the actions panel".
-                                // Or better, we can't easily open the *other* dialog from here without lifting state.
-                                // Let's simplify: Redirect user to Support/Help or just tell them.
-                                // Actually, we can add a 'Help' link? 
-                                // Let's just instruct them for MVP.
-                                // Wait, asking user to close and find another button is bad UX.
-                                // I will accept the limitation that I cannot trigger the OTHER dialog easily without refactoring state up.
-                                // Alternative: Show a button "Go to Support" which navigates to /dashboard/support?jobId=...
-                                alert("Please use the 'Raise a Dispute' button in the Actions panel (if available) or contact support to claim a full refund.");
+                                toast({
+                                    title: "Raise a Dispute",
+                                    description: "Please use the 'Raise a Dispute' button in the Actions panel to claim a full refund.",
+                                    variant: "default"
+                                });
                             }}
                         >
                             Raise Dispute (Full Refund)
@@ -861,7 +854,7 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
                         toast({ title: "Payment Failed", description: result.error.message, variant: "destructive" });
                     }
                     if (result.redirect) {
-                        console.log("Redirection");
+
                     }
                 });
             } else {
@@ -1618,7 +1611,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
         if (!id || !db || !user) return;
 
         const jobRef = doc(db, 'jobs', id);
-        console.log("DEBUG: Starting job snapshot listener for", id);
+
 
         const unsubscribe = onSnapshot(jobRef, (docSnap) => {
             if (docSnap.exists()) {
