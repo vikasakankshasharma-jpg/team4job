@@ -23,6 +23,8 @@
 - [x] Deploy updated rules to Firebase ✅ Deployed successfully
 
 ### 4. Re-enable Sentry Error Tracking
+> **See detailed setup:** [`docs/POST_LAUNCH_TASKS.md#sentry`](../docs/POST_LAUNCH_TASKS.md)
+
 - [ ] Create Sentry account (or use existing)
 - [ ] Get Sentry DSN
 - [x] Add `NEXT_PUBLIC_SENTRY_DSN` to `.env.local`
@@ -51,6 +53,8 @@
 - [x] Document baseline metrics (Deferred)
 
 ### 7. Uptime Monitoring
+> **See detailed setup:** [`docs/POST_LAUNCH_TASKS.md#uptime-monitoring`](../docs/POST_LAUNCH_TASKS.md)
+
 - [ ] Create UptimeRobot account
 - [ ] Configure monitoring for production URL
 - [ ] Set up email/SMS alerts
@@ -83,6 +87,8 @@
 - [x] Deploy API docs page
 
 ### 11. Staging Environment
+> **See detailed setup:** [`docs/POST_LAUNCH_TASKS.md#staging-environment`](../docs/POST_LAUNCH_TASKS.md)
+
 - [ ] Create staging Firebase project (Post-Launch)
 - [ ] Configure staging environment variables (Post-Launch)
 - [ ] Create staging deployment workflow (Post-Launch)
@@ -107,6 +113,8 @@
 - [x] Performance testing
 
 ### 14. Legal Review
+> **See detailed setup:** [`docs/POST_LAUNCH_TASKS.md#legal-review`](../docs/POST_LAUNCH_TASKS.md)
+
 - [ ] Get professional review of Privacy Policy (User Action)
 - [ ] Get professional review of Terms of Service (User Action)
 - [ ] DPDP Act compliance verification (User Action)
