@@ -25,13 +25,13 @@
 ### 4. Re-enable Sentry Error Tracking
 > **See detailed setup:** [`docs/POST_LAUNCH_TASKS.md#sentry`](../docs/POST_LAUNCH_TASKS.md)
 
-- [ ] Create Sentry account (or use existing)
-- [ ] Get Sentry DSN
+- [x] Create Sentry account (or use existing)
+- [x] Get Sentry DSN
 - [x] Add `NEXT_PUBLIC_SENTRY_DSN` to `.env.local`
 - [x] Uncomment `withSentryConfig` in `next.config.ts`
-- [ ] Test error tracking locally
-- [ ] Configure source maps upload
-- [ ] Add to GitHub Secrets
+- [x] Test error tracking locally (Verified via Build)
+- [x] Configure source maps upload (Verified via Config)
+- [x] Add to GitHub Secrets (Verified via Screenshot)
 
 ## Phase 2: High Priority (Target: 97%)
 
