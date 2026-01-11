@@ -98,7 +98,7 @@ function UserCard({ u, user, actionLoading, handleUserAction, setDeleteUser }: {
             </Avatar>
             <div>
               <CardTitle className="text-base"><Link href={`/dashboard/users/${u.id}`} className="hover:underline">{u.name}</Link></CardTitle>
-              <CardDescription className="font-mono text-xs">{u.id}</CardDescription>
+              <CardDescription className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Unique ID: {u.id}</CardDescription>
             </div>
           </div>
           {getUserStatusBadge(u.status)}
@@ -474,7 +474,7 @@ export default function UsersClient() {
           <div className="flex flex-col gap-2 mb-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
               <Input
-                placeholder="Filter by name, email, ID..."
+                placeholder="Search by Name, Email, Mobile, or Unique ID..."
                 value={filters.search}
                 onChange={e => handleFilterChange('search', e.target.value)}
                 className="h-8 lg:col-span-2"
@@ -504,7 +504,7 @@ export default function UsersClient() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead><Button variant="ghost" onClick={() => requestSort('name')}>User {getSortIcon('name')}</Button></TableHead>
+                  <TableHead><Button variant="ghost" onClick={() => requestSort('name')}>User / Unique ID {getSortIcon('name')}</Button></TableHead>
                   <TableHead><Button variant="ghost" onClick={() => requestSort('status')}>Status {getSortIcon('status')}</Button></TableHead>
                   <TableHead className="hidden sm:table-cell"><Button variant="ghost" onClick={() => requestSort('memberSince')}>Member Since {getSortIcon('memberSince')}</Button></TableHead>
                   <TableHead className="hidden sm:table-cell"><Button variant="ghost" onClick={() => requestSort('tier')}>Tier {getSortIcon('tier')}</Button></TableHead>
@@ -525,7 +525,7 @@ export default function UsersClient() {
                           </Avatar>
                           <div>
                             <Link href={`/dashboard/users/${u.id}`} className="font-medium hover:underline">{u.name}</Link>
-                            <p className="text-sm text-muted-foreground font-mono truncate max-w-[150px]">{u.id}</p>
+                            <p className="text-[10px] text-muted-foreground font-mono truncate max-w-[150px] uppercase tracking-wider">ID: {u.id}</p>
                           </div>
                         </div>
                       </TableCell>

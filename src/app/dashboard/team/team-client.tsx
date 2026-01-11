@@ -98,7 +98,7 @@ export default function TeamClient() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
       <TeamManagementCard onTeamMemberAdded={fetchTeamMembers} />
       <Card>
         <CardHeader className="sm:flex-row sm:items-center sm:justify-between">

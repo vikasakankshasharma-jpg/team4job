@@ -44,6 +44,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 
 import { RecommendedJobs } from "@/components/dashboard/recommended-jobs";
+import { RecentActivity } from "@/components/dashboard/recent-activity";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -388,7 +389,7 @@ function InstallerDashboard() {
         <div className="mt-8 mb-8">
           <RecommendedJobs user={user!} />
         </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card data-tour="find-project-card">
             <CardHeader>
               <CardTitle>Find Your Next Project</CardTitle>
@@ -404,6 +405,9 @@ function InstallerDashboard() {
               </Button>
             </CardContent>
           </Card>
+
+          <RecentActivity />
+
           <Card data-tour="manage-profile-card">
             <CardHeader>
               <CardTitle>Manage Your Profile</CardTitle>
@@ -437,58 +441,62 @@ function JobGiverDashboard() {
       if (!user || !db) return;
       setLoading(true);
 
-      const userDocRef = doc(db, 'users', user.id);
+      try {
+        const userDocRef = doc(db, 'users', user.id);
 
-      const myJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
+        const myJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
 
-      const disputesQuery = query(
-        collection(db, "disputes"),
-        and(
-          where('status', '==', 'Open'),
-          or(
-            where('parties.jobGiverId', '==', user.id),
-            where('parties.installerId', '==', user.id)
+        const disputesQuery = query(
+          collection(db, "disputes"),
+          and(
+            where('status', '==', 'Open'),
+            or(
+              where('parties.jobGiverId', '==', user.id),
+              where('parties.installerId', '==', user.id)
+            )
           )
-        )
-      );
+        );
 
-      const transactionsQuery = query(
-        collection(db, "transactions"),
-        where("payerId", "==", user.id)
-      );
+        const transactionsQuery = query(
+          collection(db, "transactions"),
+          where("payerId", "==", user.id)
+        );
 
-      const [myJobsSnapshot, disputesSnapshot, transactionsSnapshot] = await Promise.all([
-        getDocs(myJobsQuery),
-        getDocs(disputesQuery),
-        getDocs(transactionsQuery)
-      ]);
+        const [myJobsSnapshot, disputesSnapshot, transactionsSnapshot] = await Promise.all([
+          getDocs(myJobsQuery),
+          getDocs(disputesQuery),
+          getDocs(transactionsQuery)
+        ]);
 
-      const myJobs = myJobsSnapshot.docs.map(doc => doc.data() as Job);
-      const myTransactions = transactionsSnapshot.docs.map(doc => doc.data() as Transaction);
+        const myJobs = myJobsSnapshot.docs.map(doc => doc.data() as Job);
+        const myTransactions = transactionsSnapshot.docs.map(doc => doc.data() as Transaction);
 
-      let active = 0;
-      let completed = 0;
-      let bids = 0;
-      let cancelled = 0;
+        let active = 0;
+        let completed = 0;
+        let bids = 0;
+        let cancelled = 0;
 
-      myJobs.forEach(job => {
-        if (job.status === 'Completed') completed++;
-        else if (job.status === 'Cancelled') cancelled++;
-        else active++;
+        myJobs.forEach(job => {
+          if (job.status === 'Completed') completed++;
+          else if (job.status === 'Cancelled') cancelled++;
+          else active++;
 
-        bids += (job.bids || []).length;
-      });
+          bids += (job.bids || []).length;
+        });
 
-      setStats({
-        activeJobs: active,
-        completedJobs: completed,
-        totalBids: bids,
-        openDisputes: disputesSnapshot.size,
-        cancelledJobs: cancelled,
-        transactions: myTransactions
-      });
-
-      setLoading(false);
+        setStats({
+          activeJobs: active,
+          completedJobs: completed,
+          totalBids: bids,
+          openDisputes: disputesSnapshot.size,
+          cancelledJobs: cancelled,
+          transactions: myTransactions
+        });
+      } catch (error) {
+        console.error("Error fetching JobGiverDashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchData();
@@ -653,7 +661,7 @@ function JobGiverDashboard() {
         </MetricChartCard>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card data-tour="need-installer-card" className="col-span-1">
           <CardHeader>
             <CardTitle>Need an Installer?</CardTitle>
@@ -669,6 +677,9 @@ function JobGiverDashboard() {
             </Button>
           </CardContent>
         </Card>
+
+        <RecentActivity />
+
         <Card data-tour="manage-jobs-card" className="col-span-1">
           <CardHeader>
             <CardTitle>Manage Your Jobs</CardTitle>

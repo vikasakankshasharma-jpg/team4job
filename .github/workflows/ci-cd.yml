@@ -201,6 +201,11 @@ jobs:
             test-results/
           retention-days: 7
 
+      - name: Run Mobile & Desktop User Flows
+        run: npx playwright test tests/e2e/mobile_user_flow.spec.ts tests/e2e/desktop_user_flow.spec.ts
+        env:
+          CI: true
+
   # Job 5: Edge Case Tests
   edge-case-tests:
     name: Edge Case Tests

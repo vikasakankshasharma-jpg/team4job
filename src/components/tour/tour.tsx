@@ -25,6 +25,10 @@ const installerSteps: Step[] = [
     content: 'Use this section to find new job opportunities that match your skills.',
   },
   {
+    target: '[data-tour="recent-activity"]',
+    content: 'Stay updated with your latest actions, such as jobs awarded or payments received.',
+  },
+  {
     target: '[data-tour="manage-profile-card"]',
     content: 'Keep your profile updated to attract more job offers.',
   },
@@ -46,6 +50,10 @@ const jobGiverSteps: Step[] = [
   {
     target: '[data-tour="need-installer-card"]',
     content: 'Post a new job here whenever you need to hire an installer.',
+  },
+  {
+    target: '[data-tour="recent-activity"]',
+    content: 'Track recent events, including new bids on your jobs and payments made.',
   },
   {
     target: '[data-tour="manage-jobs-card"]',
@@ -112,7 +120,7 @@ const Tour = () => {
           color: 'hsl(var(--primary-foreground))',
         },
         buttonBack: {
-            color: 'hsl(var(--foreground))',
+          color: 'hsl(var(--foreground))',
         }
       }}
     />

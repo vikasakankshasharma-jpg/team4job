@@ -508,7 +508,7 @@ function PlaceBidDialog({ job, user, onBidSubmit, open, onOpenChange, platformSe
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleSubmit} disabled={isSubmitting}>
+                    <Button onClick={handleSubmit} disabled={isSubmitting} data-testid="submit-bid-button">
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Place Bid
                     </Button>
@@ -1849,7 +1849,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     };
 
     return (
-        <div className="container py-6 space-y-6">
+        <div className="container py-6 space-y-6 max-w-full overflow-x-hidden px-4">
             {/* Reschedule Banner */}
             {job.dateChangeProposal && (
                 <div className={`border p-4 rounded-md flex flex-col md:flex-row items-center justify-between gap-4 ${job.dateChangeProposal.status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
@@ -1909,11 +1909,11 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
             {/* Debug Logs */}
 
 
-            <h1 className="text-3xl font-bold" data-testid="job-title">{job.title}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold break-words" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }} data-testid="job-title">{job.title}</h1>
             <Badge variant="outline" data-testid="job-status-badge" data-status={job.status}>{job.status}</Badge>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-full overflow-hidden">
+                <div className="md:col-span-2 space-y-6 order-2 md:order-1">
                     <Card>
                         <CardHeader><CardTitle>Description</CardTitle></CardHeader>
                         <CardContent>
@@ -2020,7 +2020,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                     </Card>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-6 order-1 md:order-2">
                     {/* Actions Panel */}
                     <Card data-testid="actions-panel">
                         <CardHeader><CardTitle>Actions</CardTitle></CardHeader>
@@ -2217,7 +2217,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
                 {/* Variation Orders Section */}
                 {/* Variation Orders Section */}
-                <div className="md:col-span-3 mt-8">
+                <div className="md:col-span-3 mt-8 order-3">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>Variation Orders (Add Work)</CardTitle>
@@ -2242,7 +2242,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                 {/* End Variation Orders Section */}
 
                 {/* Milestones Section */}
-                <div className="md:col-span-3 mt-8">
+                <div className="md:col-span-3 mt-8 order-4">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold">Payment Milestones</h3>
                         {isJobGiver && job.status === 'In Progress' && (

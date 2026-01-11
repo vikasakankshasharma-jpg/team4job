@@ -641,7 +641,7 @@ export default function SettingsClient() {
     }
 
     return (
-        <div className="grid gap-6">
+        <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
             <h1 className="text-3xl font-bold">Settings</h1>
             <Tabs defaultValue="monetization" className="w-full">
                 <TabsList className="grid w-full grid-cols-4">

@@ -25,6 +25,7 @@
     "test:reviews": "playwright test tests/e2e/reviews.spec.ts",
     "test:all": "playwright test tests/e2e tests/accessibility tests/performance tests/e2e/invoice.spec.ts tests/e2e/reviews.spec.ts",
     "test:debug": "playwright test --debug",
+    "test:regression": "playwright test tests/e2e/complete-transaction-cycle.spec.ts tests/e2e/mobile_user_flow.spec.ts",
     "test:report": "playwright show-report"
   },
   "dependencies": {

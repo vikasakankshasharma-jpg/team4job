@@ -63,6 +63,8 @@ import type { DocumentReference } from "firebase/firestore";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Briefcase, Archive, RefreshCw as RefreshIcon } from "lucide-react";
 
 
 const getRefId = (ref: any): string | null => {
@@ -265,7 +267,24 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">You haven&apos;t posted any jobs in this category.</TableCell>
+                  <TableCell colSpan={6} className="h-64">
+                    <EmptyState
+                      icon={title.includes('Archived') ? Archive : Briefcase}
+                      title="No jobs found"
+                      description={title.includes('Active') ? "You don't have any active job postings at the moment." : "No jobs match this category."}
+                      action={
+                        title.includes('Active') ? (
+                          <Button asChild variant="outline">
+                            <Link href="/dashboard/post-job">
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              Post a Job
+                            </Link>
+                          </Button>
+                        ) : undefined
+                      }
+                      className="border-0 shadow-none min-h-[300px]"
+                    />
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -304,56 +323,61 @@ export default function PostedJobsClient() {
     };
 
     setLoading(true);
-    const userJobsQuery = query(collection(db, 'jobs'), where('jobGiverId', '==', user.id));
-    const jobSnapshot = await getDocs(userJobsQuery);
+    try {
+      const userJobsQuery = query(collection(db, 'jobs'), where('jobGiverId', '==', user.id));
+      const jobSnapshot = await getDocs(userJobsQuery);
 
-    const jobsData = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+      const jobsData = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
 
-    const userRefs = new Map<string, DocumentReference>();
-    jobsData.forEach(job => {
-      const awardedInstallerId = getRefId(job.awardedInstaller);
-      if (awardedInstallerId) userRefs.set(awardedInstallerId, doc(db, 'users', awardedInstallerId));
+      const userRefs = new Map<string, DocumentReference>();
+      jobsData.forEach(job => {
+        const awardedInstallerId = getRefId(job.awardedInstaller);
+        if (awardedInstallerId) userRefs.set(awardedInstallerId, doc(db, 'users', awardedInstallerId));
 
-      (job.bids || []).forEach(bid => {
-        const installerId = getRefId(bid.installer);
-        if (installerId) userRefs.set(installerId, doc(db, 'users', installerId));
+        (job.bids || []).forEach(bid => {
+          const installerId = getRefId(bid.installer);
+          if (installerId) userRefs.set(installerId, doc(db, 'users', installerId));
+        });
       });
-    });
 
-    const usersMap = new Map<string, User>();
-    if (userRefs.size > 0) {
-      const userRefArray = Array.from(userRefs.keys());
-      for (let i = 0; i < userRefArray.length; i += 30) {
-        const chunk = userRefArray.slice(i, i + 30);
-        if (chunk.length > 0) {
-          const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
-          const userDocs = await getDocs(usersQuery);
-          userDocs.forEach(docSnap => {
-            if (docSnap.exists()) {
-              usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
-            }
-          });
+      const usersMap = new Map<string, User>();
+      if (userRefs.size > 0) {
+        const userRefArray = Array.from(userRefs.keys());
+        for (let i = 0; i < userRefArray.length; i += 30) {
+          const chunk = userRefArray.slice(i, i + 30);
+          if (chunk.length > 0) {
+            const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
+            const userDocs = await getDocs(usersQuery);
+            userDocs.forEach(docSnap => {
+              if (docSnap.exists()) {
+                usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
+              }
+            });
+          }
         }
       }
+
+      const populatedJobs = jobsData.map(job => {
+        const awardedInstallerId = getRefId(job.awardedInstaller);
+        return {
+          ...job,
+          awardedInstaller: awardedInstallerId ? usersMap.get(awardedInstallerId) || job.awardedInstaller : undefined,
+          bids: (job.bids || []).map(bid => {
+            const installerId = getRefId(bid.installer);
+            return {
+              ...bid,
+              installer: installerId ? usersMap.get(installerId) || bid.installer : bid.installer,
+            }
+          }),
+        };
+      });
+
+      setJobs(populatedJobs);
+    } catch (error) {
+      console.error("Error fetching posted jobs:", error);
+    } finally {
+      setLoading(false);
     }
-
-    const populatedJobs = jobsData.map(job => {
-      const awardedInstallerId = getRefId(job.awardedInstaller);
-      return {
-        ...job,
-        awardedInstaller: awardedInstallerId ? usersMap.get(awardedInstallerId) || job.awardedInstaller : undefined,
-        bids: (job.bids || []).map(bid => {
-          const installerId = getRefId(bid.installer);
-          return {
-            ...bid,
-            installer: installerId ? usersMap.get(installerId) || bid.installer : bid.installer,
-          }
-        }),
-      };
-    });
-
-    setJobs(populatedJobs);
-    setLoading(false);
   }, [user, role, db]);
 
   React.useEffect(() => {

@@ -559,17 +559,22 @@ export default function ReportsClient() {
     const fetchData = React.useCallback(async () => {
         if (!db || !isAdmin) return;
         setLoading(true);
-        const [usersSnapshot, jobsSnapshot, transactionsSnapshot, disputesSnapshot] = await Promise.all([
-            getDocs(query(collection(db, "users"))),
-            getDocs(query(collection(db, "jobs"))),
-            getDocs(query(collection(db, "transactions"))),
-            getDocs(query(collection(db, "disputes"))),
-        ]);
-        setUsers(usersSnapshot.docs.map(doc => doc.data() as User));
-        setJobs(jobsSnapshot.docs.map(doc => doc.data() as Job));
-        setTransactions(transactionsSnapshot.docs.map(doc => doc.data() as Transaction));
-        setDisputes(disputesSnapshot.docs.map(doc => doc.data() as Dispute));
-        setLoading(false);
+        try {
+            const [usersSnapshot, jobsSnapshot, transactionsSnapshot, disputesSnapshot] = await Promise.all([
+                getDocs(query(collection(db, "users"))),
+                getDocs(query(collection(db, "jobs"))),
+                getDocs(query(collection(db, "transactions"))),
+                getDocs(query(collection(db, "disputes"))),
+            ]);
+            setUsers(usersSnapshot.docs.map(doc => doc.data() as User));
+            setJobs(jobsSnapshot.docs.map(doc => doc.data() as Job));
+            setTransactions(transactionsSnapshot.docs.map(doc => doc.data() as Transaction));
+            setDisputes(disputesSnapshot.docs.map(doc => doc.data() as Dispute));
+        } catch (error) {
+            console.error("Error fetching report data:", error);
+        } finally {
+            setLoading(false);
+        }
     }, [db, isAdmin]);
 
     useEffect(() => {
@@ -646,7 +651,7 @@ export default function ReportsClient() {
     const { totalUsers, installerCount, jobGiverCount, totalJobs, fillRate, userGrowthData, jobStatusData, allInstallers } = reportData;
 
     return (
-        <div className="grid gap-6">
+        <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
             <CardHeader className="p-0">
                 <CardTitle>Platform Reports</CardTitle>
                 <CardDescription>An overview of key metrics and trends across the platform.</CardDescription>
