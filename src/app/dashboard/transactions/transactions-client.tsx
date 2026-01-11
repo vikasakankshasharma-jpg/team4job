@@ -112,18 +112,19 @@ export default function TransactionsClient() {
                 const userIdsArray = Array.from(userIds).filter(id => id);
 
                 if (userIdsArray.length > 0) {
-                    // Firestore 'in' query supports max 10 values (or 30 depending on version). Safest to chunk.
-                    // For now, assuming small user base, but wrapping in try to be safe.
-                    const usersQuery = query(collection(db, 'users'), where('__name__', 'in', userIdsArray.slice(0, 10)));
-                    // Note: To support >10 users, we'd need to loop chunks. For existing flickering bug/loading, basic safety is key.
-
-                    // Better approach: Just fetch all relevant users or map carefully. 
-                    // For the audit fix, let's keep it simple but safe.
-                    const usersSnapshot = await getDocs(usersQuery);
+                    // Firestore 'in' query supports max 10 values. Chunk queries into batches of 10.
                     const fetchedUsersMap = new Map<string, User>();
-                    usersSnapshot.forEach(doc => {
-                        fetchedUsersMap.set(doc.id, { id: doc.id, ...doc.data() } as User);
-                    });
+
+                    for (let i = 0; i < userIdsArray.length; i += 10) {
+                        const chunk = userIdsArray.slice(i, i + 10);
+                        const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
+                        const usersSnapshot = await getDocs(usersQuery);
+
+                        usersSnapshot.forEach(doc => {
+                            fetchedUsersMap.set(doc.id, { id: doc.id, ...doc.data() } as User);
+                        });
+                    }
+
                     setUsersMap(fetchedUsersMap);
                 }
             }
