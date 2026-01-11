@@ -31,9 +31,14 @@ if (!process.env.FIREBASE_CLIENT_EMAIL && process.env.DO_FIREBASE_CLIENT_EMAIL) 
 // Initialize Firebase Admin
 if (!getApps().length) {
     try {
-        const privateKey = process.env.FIREBASE_PRIVATE_KEY.includes('\\n')
-            ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-            : process.env.FIREBASE_PRIVATE_KEY;
+        const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY;
+        if (!privateKeyRaw) {
+            throw new Error('FIREBASE_PRIVATE_KEY environment variable is not set');
+        }
+
+        const privateKey = privateKeyRaw.includes('\\n')
+            ? privateKeyRaw.replace(/\\n/g, '\n')
+            : privateKeyRaw;
 
         initializeApp({
             credential: cert({

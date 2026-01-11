@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendServerEmail } from '@/lib/server-email';
 import { db } from '@/lib/firebase/server-init';
-import { collection, doc, setDoc, getDoc, Timestamp, deleteDoc } from 'firebase/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
     try {
@@ -20,7 +20,8 @@ export async function POST(req: NextRequest) {
             const expiry = new Date();
             expiry.setMinutes(expiry.getMinutes() + 10);
 
-            await setDoc(doc(db, 'emailVerifyCodes', email.toLowerCase()), {
+            const docRef = db.collection('emailVerifyCodes').doc(email.toLowerCase());
+            await docRef.set({
                 otp: generatedOtp,
                 expiresAt: Timestamp.fromDate(expiry),
                 createdAt: Timestamp.now()
@@ -47,18 +48,22 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: false, message: 'OTP is required' }, { status: 400 });
             }
 
-            const docRef = doc(db, 'emailVerifyCodes', email.toLowerCase());
-            const docSnap = await getDoc(docRef);
+            const docRef = db.collection('emailVerifyCodes').doc(email.toLowerCase());
+            const docSnap = await docRef.get();
 
-            if (!docSnap.exists()) {
+            if (!docSnap.exists) {
                 return NextResponse.json({ success: false, message: 'No verification code found or already expired' }, { status: 404 });
             }
 
             const data = docSnap.data();
+            if (!data) {
+                return NextResponse.json({ success: false, message: 'Invalid verification data' }, { status: 400 });
+            }
+
             const now = Timestamp.now();
 
             if (data.expiresAt.toMillis() < now.toMillis()) {
-                await deleteDoc(docRef);
+                await docRef.delete();
                 return NextResponse.json({ success: false, message: 'OTP has expired' }, { status: 400 });
             }
 
@@ -67,7 +72,7 @@ export async function POST(req: NextRequest) {
             }
 
             // Success: Clean up
-            await deleteDoc(docRef);
+            await docRef.delete();
             return NextResponse.json({ success: true, message: 'Email verified successfully' });
         }
 

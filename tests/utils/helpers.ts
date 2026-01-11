@@ -94,6 +94,11 @@ export class AuthHelper {
                 await this.page.goto(ROUTES.login);
                 await this.page.waitForLoadState('load');
 
+                // Force hide cookie banner to prevent interception
+                await this.page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
+
+                await this.acceptCookies(); // Still try to accept contextually
+
                 // If redirected to dashboard, we ARE logged in. 
                 // We check if it's the right mode later in the test via ensureRole.
                 if (this.page.url().includes('dashboard')) {
@@ -191,6 +196,19 @@ export class AuthHelper {
         } finally {
             // ALWAYS clear persistence to prevent zombie sessions
             await this.clearAuthPersistence();
+        }
+    }
+
+    async acceptCookies() {
+        try {
+            const acceptBtn = this.page.getByRole('button', { name: 'Accept All' }).first();
+            if (await acceptBtn.isVisible({ timeout: 2000 })) {
+                await acceptBtn.click();
+                await acceptBtn.waitFor({ state: 'hidden', timeout: 2000 });
+                console.log('[AuthHelper] Accepted cookies.');
+            }
+        } catch (e) {
+            // Ignore
         }
     }
 }
@@ -345,34 +363,44 @@ export class FormHelper {
 export class NavigationHelper {
     constructor(private page: Page) { }
 
+    private async injectCookieHide() {
+        await this.page.addStyleTag({ content: '.CookieConsent { display: none !important; }' }).catch(() => { });
+    }
+
     async goToPostJob() {
         await this.page.goto(ROUTES.postJob);
         await this.page.waitForLoadState('domcontentloaded');
+        await this.injectCookieHide();
     }
 
     async goToPostedJobs() {
         await this.page.goto(ROUTES.postedJobs);
         await this.page.waitForLoadState('load');
+        await this.injectCookieHide();
     }
 
     async goToBrowseJobs() {
         await this.page.goto(ROUTES.browseJobs);
         await this.page.waitForLoadState('domcontentloaded');
+        await this.injectCookieHide();
     }
 
     async goToMyBids() {
         await this.page.goto(ROUTES.myBids);
         await this.page.waitForLoadState('domcontentloaded');
+        await this.injectCookieHide();
     }
 
     async goToTransactions() {
         await this.page.goto(ROUTES.transactions);
         await this.page.waitForLoadState('domcontentloaded');
+        await this.injectCookieHide();
     }
 
     async goToDashboard() {
         await this.page.goto(ROUTES.dashboard);
         await this.page.waitForLoadState('domcontentloaded');
+        await this.injectCookieHide();
     }
 }
 
@@ -526,14 +554,35 @@ export class TestHelper {
     wait: WaitHelper;
     debug: DebugHelper;
 
-    constructor(page: Page) {
+    constructor(public page: Page) {
         this.auth = new AuthHelper(page);
-        this.form = new FormHelper(page);
         this.nav = new NavigationHelper(page);
         this.job = new JobHelper(page);
+        this.form = new FormHelper(page);
+
+        // Globally suppress cookie banner for all navigations
+        this.page.addInitScript(() => {
+            const style = document.createElement('style');
+            style.innerHTML = '.CookieConsent { display: none !important; }';
+            document.head.appendChild(style);
+        });
         this.wait = new WaitHelper(page);
         this.debug = new DebugHelper(page);
         // Auto-enable console logging for debugging
         this.debug.logConsoleErrors();
+    }
+
+    async acceptCookies() {
+        console.log('[TestHelper] Checking for cookie consent banner...');
+        try {
+            const acceptBtn = this.page.getByRole('button', { name: 'Accept All' }).first();
+            if (await acceptBtn.isVisible({ timeout: 5000 })) {
+                await acceptBtn.click();
+                await acceptBtn.waitFor({ state: 'hidden', timeout: 2000 });
+                console.log('[TestHelper] Accepted cookies.');
+            }
+        } catch (e) {
+            console.log('[TestHelper] Cookie banner not found or already accepted.');
+        }
     }
 }

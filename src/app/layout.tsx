@@ -11,6 +11,7 @@ import { Providers } from "@/components/providers";
 import Script from 'next/script';
 import { GA_TRACKING_ID } from '@/lib/analytics';
 import { WebVitalsReporter } from "@/components/analytics/web-vitals";
+import CookieBanner from "@/components/gdpr/cookie-banner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
 
@@ -133,6 +134,7 @@ export default function RootLayout({
           src="https://sdk.cashfree.com/js/v3/cashfree.js"
           strategy="beforeInteractive"
         />
+        <CookieBanner />
       </body>
     </html>
   );

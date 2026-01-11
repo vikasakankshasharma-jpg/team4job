@@ -4,8 +4,8 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
-    // Temporarily ignore build errors to deploy (Next.js 16 type validation issue)
-    ignoreBuildErrors: true,
+    // TypeScript validation now enabled - all type errors have been fixed
+    ignoreBuildErrors: false,
   },
   images: {
     remotePatterns: [
@@ -111,7 +111,13 @@ const nextConfig: NextConfig = {
 };
 
 
-export default nextConfig;
+import withBundleAnalyzer from '@next/bundle-analyzer';
+
+const bundleAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+export default bundleAnalyzer(nextConfig);
 
 /*
 // Temporarily disabled for Firebase Compatibility
