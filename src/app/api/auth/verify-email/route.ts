@@ -3,14 +3,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendServerEmail } from '@/lib/server-email';
 import { db } from '@/lib/firebase/server-init';
 import { Timestamp } from 'firebase-admin/firestore';
+import { verifyEmailSchema } from '@/lib/validations/auth';
+import { z } from 'zod';
 
 export async function POST(req: NextRequest) {
     try {
-        const { email, otp, action } = await req.json();
+        const body = await req.json();
 
-        if (!email) {
-            return NextResponse.json({ success: false, message: 'Email is required' }, { status: 400 });
+        // Validate input
+        const validation = verifyEmailSchema.safeParse(body);
+
+        if (!validation.success) {
+            const errorMessage = validation.error.errors[0].message;
+            return NextResponse.json({ success: false, message: errorMessage }, { status: 400 });
         }
+
+        const { email, otp, action } = validation.data;
 
         if (action === 'send') {
             // Generate 6-digit OTP
@@ -44,6 +52,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (action === 'verify') {
+            // TS knows otp is present if schema passes, but let's be safe for runtime
             if (!otp) {
                 return NextResponse.json({ success: false, message: 'OTP is required' }, { status: 400 });
             }

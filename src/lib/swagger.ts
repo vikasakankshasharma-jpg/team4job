@@ -16,7 +16,7 @@ export const openApiSpec = {
             description: 'Production Server',
         },
         {
-            url: 'http://localhost:3000/api',
+            url: process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/api` : 'http://localhost:3000/api',
             description: 'Local Development',
         },
     ],

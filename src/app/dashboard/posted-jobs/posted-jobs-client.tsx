@@ -54,7 +54,7 @@ import {
 import { MoreHorizontal } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation";
 import { Job, User } from "@/lib/types";
-import { getStatusVariant, toDate } from "@/lib/utils";
+import { getStatusVariant, toDate, getRefId } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import React from "react";
 import { useHelp } from "@/hooks/use-help";
@@ -67,11 +67,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Briefcase, Archive, RefreshCw as RefreshIcon } from "lucide-react";
 
 
-const getRefId = (ref: any): string | null => {
-  if (!ref) return null;
-  if (typeof ref === 'string') return ref;
-  return ref.id || null;
-}
+
 
 const statusDescriptions: Record<string, string> = {
   "Open for Bidding": "The job is live and installers can place bids.",

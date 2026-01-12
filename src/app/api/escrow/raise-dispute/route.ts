@@ -5,6 +5,8 @@ import { Job, Transaction } from '@/lib/types';
 import { logAdminAlert } from '@/lib/admin-logger';
 import { sendServerEmail } from '@/lib/server-email';
 
+import { raiseDisputeSchema } from '@/lib/validations/escrow';
+
 export async function POST(req: NextRequest) {
     try {
         const authHeader = req.headers.get('Authorization');
@@ -14,9 +16,14 @@ export async function POST(req: NextRequest) {
         const decodedToken = await adminAuth.verifyIdToken(idToken);
         const userId = decodedToken.uid;
 
-        const { jobId, reason, description } = await req.json();
+        const body = await req.json();
+        const validation = raiseDisputeSchema.safeParse(body);
 
-        if (!jobId || !reason || !description) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error.errors[0].message }, { status: 400 });
+        }
+
+        const { jobId, reason, description } = validation.data;
 
         const jobRef = db.collection('jobs').doc(jobId);
         const jobSnap = await jobRef.get();

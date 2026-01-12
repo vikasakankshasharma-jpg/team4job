@@ -21,6 +21,8 @@ async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
     };
 }
 
+import { initiatePaymentSchema } from '@/lib/validations/escrow';
+
 export async function POST(req: NextRequest) {
     try {
         // 1. Authorization & Security Check
@@ -40,11 +42,14 @@ export async function POST(req: NextRequest) {
 
         const authenticatedUserId = decodedToken.uid;
 
-        const { jobId, planId, taskId } = await req.json(); // REMOVED: jobGiverId from body
+        const body = await req.json();
+        const validation = initiatePaymentSchema.safeParse(body);
 
-        if (!jobId) {
-            return NextResponse.json({ error: 'Missing required payment details' }, { status: 400 });
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error.errors[0].message }, { status: 400 });
         }
+
+        const { jobId, planId, taskId } = validation.data;
 
         // Check if it is a subscription payment
         const isSubscription = jobId.startsWith('SUB-');

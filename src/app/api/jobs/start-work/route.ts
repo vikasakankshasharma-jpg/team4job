@@ -4,23 +4,21 @@ import { db, adminAuth } from '@/lib/firebase/server-init';
 import { Job } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 
+import { startWorkSchema } from '@/lib/validations/jobs';
+import { z } from 'zod';
+
 export async function POST(req: NextRequest) {
     try {
-        const { jobId, otp, userId } = await req.json();
+        const body = await req.json();
+        const validation = startWorkSchema.safeParse(body);
+
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error.errors[0].message }, { status: 400 });
+        }
+
+        const { jobId, otp, userId } = validation.data;
 
         // 1. Authorization
-        // Ideally verify ID Token. For now, we trust the Client's User Context if validated by Middleware roughly.
-        // But let's do a strict check if we can. 
-        // Assuming Middleware or Client passes a token? 
-        // The existing verify-otp-complete didn't check auth token explicitly, relying on `userId` + data match? 
-        // Actually verify-otp-complete didn't check `userId`. It verified `otp` and `jobId`.
-        // Let's mimic that for speed, but ideally add token verification.
-
-        // Let's add simple ownership check via DB logic.
-
-        if (!jobId || !otp) {
-            return NextResponse.json({ error: 'Missing jobId or OTP' }, { status: 400 });
-        }
 
         const jobRef = db.collection('jobs').doc(jobId);
         const jobSnap = await jobRef.get();

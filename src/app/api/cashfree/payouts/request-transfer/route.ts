@@ -113,13 +113,20 @@ export async function POST(req: NextRequest) {
 
     let transferAmount = amount;
     if (transferType === 'release_payout') {
-      // Calculate commission
-      const commissionRate = 0.10; // 10% hardcoded for now or fetch settings
-      // Wait, transaction object should might have commission details if we saved them.
-      // Let's check transaction type.
-      // If we want consistency, we should use the same logic as 'release-funds'.
-      // For this critical fix, let's keep it simple: Transfer what was escrowed minus 10% default if not present.
-      const commission = transaction.commission || (amount * 0.10);
+      // Fetch commission rate from platform settings
+      let commissionRate = 0.10; // Default fallback
+      try {
+        const settingsRef = db.collection('platform_settings').doc('fees');
+        const settingsSnap = await settingsRef.get();
+        if (settingsSnap.exists) {
+          const settings = settingsSnap.data() as PlatformSettings;
+          commissionRate = settings.installerCommissionRate || 0.10;
+        }
+      } catch (settingsError) {
+        console.error('Failed to fetch commission rate, using default 10%:', settingsError);
+      }
+
+      const commission = transaction.commission || (amount * commissionRate);
       transferAmount = amount - commission;
     }
 

@@ -120,7 +120,7 @@ export function validateMessageContent(message: string): { isValid: boolean; rea
     return { isValid: true };
 }
 
-const getRefId = (ref: string | { id: string } | DocumentReference | null | undefined): string | null => {
+export const getRefId = (ref: string | { id: string } | DocumentReference | null | undefined): string | null => {
     if (!ref) return null;
     if (typeof ref === 'string') return ref;
     if ('id' in ref) return ref.id;

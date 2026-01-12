@@ -23,7 +23,7 @@ import { Job, User, Dispute } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, getRefId } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirebase, useUser as useAuthUser } from "@/hooks/use-user";
 import { collection, query, where, getDocs, getDoc, doc, updateDoc, deleteDoc as deleteFirestoreDoc } from "firebase/firestore";
@@ -66,11 +66,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-const getRefId = (ref: any): string | null => {
-  if (!ref) return null;
-  if (typeof ref === 'string') return ref;
-  return ref.id || null;
-}
+
 
 const wasJobAwardedDirectly = (job: Job) => {
   if (!job.awardedInstaller) return false;
