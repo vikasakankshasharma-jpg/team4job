@@ -23,7 +23,7 @@ import { Award, IndianRupee, ListFilter, X, Loader2, List, Grid, Trash2 } from "
 import { useToast } from "@/hooks/use-toast";
 import { Job, Bid, User } from "@/lib/types";
 import React, { useEffect, useCallback, useMemo } from "react";
-import { getStatusVariant, toDate, getMyBidStatus } from "@/lib/utils";
+import { getStatusVariant, toDate, getMyBidStatus, getRefId } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
@@ -41,11 +41,7 @@ import { collection, query, where, getDocs, doc, collectionGroup, getDoc, delete
 import { EmptyState } from "@/components/ui/empty-state";
 import { Search } from "lucide-react";
 
-const getRefId = (ref: any): string | null => {
-  if (!ref) return null;
-  if (typeof ref === 'string') return ref;
-  return ref.id || null;
-}
+
 
 
 interface BidItemProps {

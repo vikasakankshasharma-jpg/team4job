@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Star, Heart, UserX, Briefcase, Medal, Gem, Award, Search, Users, ShieldCheck } from 'lucide-react';
 import { useUser, useFirebase } from '@/hooks/use-user';
 import { User, Job } from '@/lib/types';
+import { getRefId } from '@/lib/utils';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import type { DocumentReference } from 'firebase/firestore';
 import { useHelp } from '@/hooks/use-help';
@@ -36,11 +37,7 @@ const tierIcons: Record<string, React.ReactNode> = {
   Platinum: <Gem className="h-5 w-5 text-cyan-400" />,
 };
 
-const getRefId = (ref: any): string | null => {
-  if (!ref) return null;
-  if (typeof ref === 'string') return ref;
-  return ref.id || null;
-}
+
 
 const InstallerCard = ({ installer, user, onUpdate }: { installer: User, user: User, onUpdate: (userId: string, action: 'favorite' | 'unfavorite' | 'block' | 'unblock') => void }) => {
   const isFavorite = user.favoriteInstallerIds?.includes(installer.id);

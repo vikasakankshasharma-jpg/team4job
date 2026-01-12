@@ -5,15 +5,21 @@ import { Job } from '@/lib/types';
 import { logAdminAlert } from '@/lib/admin-logger';
 import { sendServerEmail } from '@/lib/server-email';
 
+import { rescheduleJobSchema } from '@/lib/validations/jobs';
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
         const jobId = id;
-        const { action, proposedDate, userId, userRole } = await req.json();
 
-        if (!jobId || !action || !userId) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        const body = await req.json();
+        const validation = rescheduleJobSchema.safeParse(body);
+
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error.errors[0].message }, { status: 400 });
         }
+
+        const { action, proposedDate, userId, userRole } = validation.data;
 
         const jobRef = db.collection('jobs').doc(jobId);
         const jobSnap = await jobRef.get();
