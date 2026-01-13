@@ -326,7 +326,7 @@ export default function PendingSignupsClient() {
 
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Today's Queue</CardTitle>
+                        <CardTitle className="text-sm font-medium">Today&apos;s Queue</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-orange-600">{stats.today}</div>
@@ -357,7 +357,7 @@ export default function PendingSignupsClient() {
                 <TabsList>
                     <TabsTrigger value="all">All ({filteredSignups.length})</TabsTrigger>
                     <TabsTrigger value="today">
-                        Today's Follow-Ups ({stats.today})
+                        Today&apos;s Follow-Ups ({stats.today})
                         {stats.today > 0 && <Badge className="ml-2 bg-orange-500">{stats.today}</Badge>}
                     </TabsTrigger>
                     <TabsTrigger value="overdue">
