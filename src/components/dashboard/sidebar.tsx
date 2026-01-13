@@ -23,6 +23,8 @@ import {
   CreditCard,
   Heart,
   Zap,
+  UserPlus,
+  TrendingUp,
 } from "lucide-react";
 import { Logo } from "@/components/icons";
 import { usePathname } from "next/navigation";
@@ -64,11 +66,17 @@ const adminNavItems: NavItem[] = [
   { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
   { href: "/dashboard/transactions", icon: IndianRupee, label: "Transactions" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
+  { href: "/dashboard/audit-logs", icon: FileText, label: "Audit Log" },
+  { href: "/dashboard/pending-signups", icon: UserPlus, label: "Pending Signups" },
+  { href: "/dashboard/signup-analytics", icon: TrendingUp, label: "Signup Analytics" },
 ];
 
 const supportTeamNavItems: NavItem[] = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
+  { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
+  { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
+  { href: "/dashboard/transactions", icon: IndianRupee, label: "Transactions" },
 ];
 
 

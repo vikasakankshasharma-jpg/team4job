@@ -32,7 +32,8 @@
     "test:lighthouse": "lhci autorun",
     "test": "jest",
     "test:unit": "jest",
-    "predeploy": "tsx scripts/preflight-check.ts"
+    "predeploy": "tsx scripts/preflight-check.ts",
+    "deploy": "firebase deploy"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.25.0",

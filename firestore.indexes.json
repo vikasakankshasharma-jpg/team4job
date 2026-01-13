@@ -1,0 +1,19 @@
+{
+    "indexes": [
+        {
+            "collectionGroup": "pending_signups",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "converted",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "lastActiveAt",
+                    "order": "DESCENDING"
+                }
+            ]
+        }
+    ],
+    "fieldOverrides": []
+}

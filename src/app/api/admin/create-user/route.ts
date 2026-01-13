@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { adminApp } from '@/lib/firebase/server-init';
+import { adminApp, adminAuth } from '@/lib/firebase/server-init';
 import type { User } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -11,8 +11,29 @@ const db = getFirestore(adminApp);
 
 export async function POST(req: NextRequest) {
   try {
-    // In a real app, you MUST add authentication here to ensure only an admin can call this endpoint.
-    // For now, we'll proceed assuming the caller is authorized.
+    // 0. Auth Check via Header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
+    }
+
+    let adminUser;
+    try {
+      const idToken = authHeader.split('Bearer ')[1];
+      const decodedToken = await adminAuth.verifyIdToken(idToken);
+      const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+
+      if (!userDoc.exists) throw new Error("User not found");
+
+      const userData = userDoc.data() as User;
+      if (!userData.roles.includes('Admin')) {
+        return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      }
+      adminUser = userData;
+    } catch (e) {
+      console.error("Auth verification failed:", e);
+      return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
+    }
 
     const { name, email, password, role } = await req.json();
 
@@ -54,6 +75,19 @@ export async function POST(req: NextRequest) {
     };
 
     await userRef.set(newUserProfile);
+
+    // 3. Log Admin Action
+    const { logAdminAction } = await import('@/lib/admin-logger');
+    await logAdminAction({
+      adminId: adminUser.id,
+      adminName: adminUser.name,
+      adminEmail: adminUser.email,
+      actionType: 'TEAM_MEMBER_ADDED',
+      targetType: 'team',
+      targetId: userRecord.uid,
+      targetName: name,
+      details: { role, email }
+    });
 
     return NextResponse.json({ success: true, uid: userRecord.uid });
 

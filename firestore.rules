@@ -118,22 +118,54 @@ service cloud.firestore {
       allow update: if request.auth != null && (resource.data.requesterId == request.auth.uid || isSupport());
     }
 
-    // Blacklist
+    // Blacklist - Admin Only
     match /blacklist/{entry} {
       allow read: if request.auth != null;
       allow write: if isAdmin();
     }
     
-    // Subscription Plans
+    // Subscription Plans - Admin Write, Public Read
     match /subscriptionPlans/{planId} {
         allow read: if true;
         allow write: if isAdmin();
     }
 
-    // Platform Settings
+    // Platform Settings - Admin Write, Public Read
     match /platform_settings/{setting} {
         allow read: if true;
         allow write: if isAdmin();
+    }
+    
+    // Coupons - Admin Only
+    match /coupons/{couponId} {
+      allow read: if request.auth != null; // Users can read to validate coupons
+      allow write: if isAdmin();
+    }
+    
+    // Admin Alerts - Admin Only
+    match /admin_alerts/{alertId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only via Cloud Functions/Admin SDK
+    }
+    
+    // Admin Action Logs - Admin Read, System Write
+    match /admin_action_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only via Cloud Functions/Admin SDK
+    }
+    
+    // Pending Signups - Admin Read/Write, System Write
+    match /pending_signups/{mobile} {
+      allow read: if isAdmin() || isSupport();
+      allow create: if request.auth == null; // Allow creation during signup (before auth)
+      allow update: if request.auth == null || isAdmin() || isSupport(); // Allow updates during signup or by admin
+      allow delete: if isAdmin();
+    }
+    
+    // Settings (not platform_settings) - readable by all authenticated users
+    match /settings/{settingId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
     }
   }
 }

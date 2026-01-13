@@ -1,34 +1,119 @@
-import { db } from '@/lib/firebase/server-init';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { adminApp } from '@/lib/firebase/server-init';
 
-export type AlertLevel = 'INFO' | 'WARNING' | 'CRITICAL';
+const db = getFirestore(adminApp);
 
-export async function logAdminAlert(level: AlertLevel, message: string, metadata: Record<string, any> = {}) {
+export type AdminActionType =
+    | 'USER_SUSPENDED'
+    | 'USER_ACTIVATED'
+    | 'USER_DELETED'
+    | 'USER_VERIFIED'
+    | 'JOB_DELETED'
+    | 'JOB_FLAGGED'
+    | 'DISPUTE_RESOLVED'
+    | 'REFUND_PROCESSED'
+    | 'SETTINGS_CHANGED'
+    | 'TEAM_MEMBER_ADDED'
+    | 'TEAM_MEMBER_REMOVED'
+    | 'SUBSCRIPTION_GRANTED'
+    | 'COUPON_CREATED'
+    | 'BLACKLIST_UPDATED';
+
+export interface AdminActionLog {
+    id: string;
+    adminId: string;
+    adminName: string;
+    adminEmail: string;
+    actionType: AdminActionType;
+    targetType: 'user' | 'job' | 'dispute' | 'transaction' | 'settings' | 'team' | 'coupon' | 'blacklist';
+    targetId?: string;
+    targetName?: string;
+    details: Record<string, any>;
+    timestamp: Timestamp;
+    ipAddress?: string;
+    userAgent?: string;
+}
+
+/**
+ * Log an admin action to Firestore for audit trail
+ * Should be called from API routes (server-side only)
+ */
+export async function logAdminAction(params: {
+    adminId: string;
+    adminName: string;
+    adminEmail: string;
+    actionType: AdminActionType;
+    targetType: AdminActionLog['targetType'];
+    targetId?: string;
+    targetName?: string;
+    details?: Record<string, any>;
+    ipAddress?: string;
+    userAgent?: string;
+}): Promise<void> {
+    try {
+        const logEntry: Omit<AdminActionLog, 'id'> = {
+            adminId: params.adminId,
+            adminName: params.adminName,
+            adminEmail: params.adminEmail,
+            actionType: params.actionType,
+            targetType: params.targetType,
+            targetId: params.targetId,
+            targetName: params.targetName,
+            details: params.details || {},
+            timestamp: Timestamp.now(),
+            ipAddress: params.ipAddress,
+            userAgent: params.userAgent,
+        };
+
+        await db.collection('admin_action_logs').add(logEntry);
+    } catch (error) {
+        console.error('Failed to log admin action:', error);
+        // Don't throw - logging failure shouldn't break the main operation
+    }
+}
+
+/**
+ * Get action type display name
+ */
+export function getActionTypeLabel(actionType: AdminActionType): string {
+    const labels: Record<AdminActionType, string> = {
+        USER_SUSPENDED: 'User Suspended',
+        USER_ACTIVATED: 'User Activated',
+        USER_DELETED: 'User Deleted',
+        USER_VERIFIED: 'Installer Verified',
+        JOB_DELETED: 'Job Deleted',
+        JOB_FLAGGED: 'Job Flagged',
+        DISPUTE_RESOLVED: 'Dispute Resolved',
+        REFUND_PROCESSED: 'Refund Processed',
+        SETTINGS_CHANGED: 'Settings Changed',
+        TEAM_MEMBER_ADDED: 'Team Member Added',
+        TEAM_MEMBER_REMOVED: 'Team Member Removed',
+        SUBSCRIPTION_GRANTED: 'Subscription Granted',
+        COUPON_CREATED: 'Coupon Created',
+        BLACKLIST_UPDATED: 'Blacklist Updated',
+    };
+
+    return labels[actionType] || actionType;
+}
+
+/**
+ * Legacy function: Create admin alerts (for backward compatibility)
+ * Creates real-time alerts in admin_alerts collection
+ */
+export async function logAdminAlert(
+    level: 'INFO' | 'WARNING' | 'CRITICAL',
+    message: string,
+    metadata?: any
+): Promise<void> {
     try {
         await db.collection('admin_alerts').add({
             level,
             message,
-            metadata,
-            timestamp: new Date(),
+            metadata: metadata || {},
+            timestamp: Timestamp.now(),
             read: false,
         });
-        console.log(`[AdminAlert] [${level}] ${message}`, metadata);
-
-        // Critical/High-Priority Alerts: Send Email via Notification Service
-        if (level === 'CRITICAL' || level === 'WARNING') {
-            const settingsSnap = await db.collection('platform_settings').doc('config').get();
-            const adminEmail = settingsSnap.exists ? settingsSnap.data()?.adminEmail : null;
-
-            if (adminEmail) {
-                // Importing notification service dynamically to avoid circular deps if any
-                const { sendNotification } = require('./notifications');
-                await sendNotification(
-                    adminEmail,
-                    `[DoDo Admin] ${level}: ${message.substring(0, 50)}...`,
-                    `A new critical alert was logged:\n\nMessage: ${message}\nLevel: ${level}\nTime: ${new Date().toLocaleString()}\n\nCheck dashboard: ${process.env.NEXT_PUBLIC_APP_URL}/dashboard/admin`
-                );
-            }
-        }
     } catch (error) {
-        console.error('Failed to log admin alert:', error);
+        console.error('Failed to create admin alert:', error);
     }
 }

@@ -336,3 +336,89 @@ export type JobCategoryTemplate = {
   name: string;
   includedItems: string[];
 };
+
+// Pending Signup Tracking
+export type SignupStep = 1 | 2 | 3 | 4;
+
+export type SignupStatus =
+  | 'new'           // Just started, never contacted
+  | 'contacted'     // Reached out at least once
+  | 'follow_up'     // Need to contact again (scheduled)
+  | 'busy'          // User asked to call back later
+  | 'denied'        // User explicitly declined
+  | 'converted';    // Completed signup
+
+export type SignupPriority = 'high' | 'medium' | 'low';
+
+export type DenialReason =
+  | 'not_interested'
+  | 'too_expensive'
+  | 'found_alternative'
+  | 'technical_issues'
+  | 'trust_concerns'
+  | 'other';
+
+export type ContactOutcome =
+  | 'answered'      // Talked to them
+  | 'no_answer'     // Didn't pick up
+  | 'busy'          // Asked to call later
+  | 'voicemail'     // Left message
+  | 'scheduled'     // Set follow-up appointment
+  | 'denied';       // Said no
+
+export interface ActivityLogEntry {
+  id: string;
+  timestamp: Date | Timestamp;
+  adminId: string;
+  adminName: string;
+  action: 'call' | 'sms' | 'email' | 'note' | 'status_change';
+  outcome?: ContactOutcome;
+  notes: string;
+  nextAction?: string;
+  followUpScheduled?: Date | Timestamp;
+}
+
+export interface DenialInfo {
+  denied: boolean;
+  reason: DenialReason;
+  customReason?: string;
+  deniedAt: Date | Timestamp;
+  deniedBy: string;
+}
+
+export type PendingSignup = {
+  id: string;
+  mobile: string; // PRIMARY - captured first
+  email?: string; // Captured at Step 3
+  name?: string; // From profile step
+  role?: 'Installer' | 'Job Giver';
+  currentStep: SignupStep; // Last completed step
+  stepDetails: {
+    step1: { completed: boolean; timestamp?: Date | Timestamp }; // Role selection
+    step2: { completed: boolean; timestamp?: Date | Timestamp }; // KYC/Profile
+    step3: { completed: boolean; timestamp?: Date | Timestamp }; // Email/Password
+    step4: { completed: boolean; timestamp?: Date | Timestamp }; // Avatar
+  };
+  startedAt: Date | Timestamp;
+  lastActiveAt: Date | Timestamp;
+  attemptCount: number;
+  dropoffReason?: 'timeout' | 'error' | 'manual_exit' | 'unknown';
+  contacted: boolean;
+  contactedAt?: Date | Timestamp;
+  contactedBy?: string; // Admin user ID
+  contactNotes?: string; // Admin notes about contact
+
+  // NEW CRM FIELDS
+  status: SignupStatus; // Current lead status
+  priority: SignupPriority; // Lead priority
+  followUpDate?: Date | Timestamp; // When to contact next
+  denialInfo?: DenialInfo; // If denied, why?
+  activityLog: ActivityLogEntry[]; // Full contact history
+  totalContactAttempts: number; // Count of contact attempts
+  lastContactedAt?: Date | Timestamp; // Last contact timestamp
+  lastContactedBy?: string; // Last admin who contacted
+
+  converted: boolean; // True when signup completes
+  convertedAt?: Date | Timestamp;
+  convertedUserId?: string; // Final user ID after successful signup
+};

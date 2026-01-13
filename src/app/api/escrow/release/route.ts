@@ -88,7 +88,32 @@ export async function POST(req: NextRequest) {
 
         console.log(`[Release API] Debug: NODE_ENV=${process.env.NODE_ENV}, ProjectID=${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}, Host=${host}, isE2E=${isE2E}`);
 
-        if (!isE2E) {
+        // Check if automated payouts are configured
+        const hasPayoutCredentials = !!(process.env.CASHFREE_PAYOUTS_CLIENT_ID && process.env.CASHFREE_PAYOUTS_CLIENT_SECRET);
+        const useManualPayouts = !hasPayoutCredentials;
+
+        let payoutStatus: 'automated' | 'manual' | 'simulated' = 'automated';
+
+        if (isE2E) {
+            // E2E Mode: Simulate payout success
+            console.log(`[E2E/Beta] Skipping Cashfree Payout for Job ${jobId}. Simulating success.`);
+            payoutStatus = 'simulated';
+        } else if (useManualPayouts) {
+            // Manual Mode: Skip automated payout, mark for manual processing
+            console.log(`[Manual Mode] Cashfree Payouts not configured. Job ${jobId} marked for manual payout processing.`);
+            payoutStatus = 'manual';
+
+            // Log to admin for manual processing
+            await logAdminAlert('INFO', `Manual Payout Required: Job ${jobId}`, {
+                jobId,
+                installerId,
+                amount: payoutAmount,
+                beneId,
+                installerName: installerSnap.data()?.name,
+                message: 'Automated payouts not enabled. Please process this payout manually via bank transfer.'
+            });
+        } else {
+            // Automated Mode: Execute payout via Cashfree API
             try {
                 const token = await getPayoutToken();
                 await axios.post(
@@ -100,13 +125,13 @@ export async function POST(req: NextRequest) {
                     },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
+                console.log(`[Automated] Payout sent via Cashfree API for Job ${jobId}`);
+                payoutStatus = 'automated';
             } catch (e: any) {
                 console.error("Payout API Fail", e?.response?.data || e);
                 await logAdminAlert('CRITICAL', `Release Payment Failed (API Error): Job ${jobId}`, { error: e.message });
                 return NextResponse.json({ error: 'Payout Gateway Error. Admin notified.' }, { status: 500 });
             }
-        } else {
-            console.log(`[E2E/Beta] Skipping Cashfree Payout for Job ${jobId}. Simulating success.`);
         }
 
         // Initialize Invoice Data
@@ -164,7 +189,12 @@ export async function POST(req: NextRequest) {
             billingSnapshot
         });
 
-        await transSnap.docs[0].ref.update({ status: 'Completed', releasedAt: new Date() });
+        await transSnap.docs[0].ref.update({
+            status: payoutStatus === 'manual' ? 'Pending Payout' : 'Completed',
+            releasedAt: new Date(),
+            payoutMode: payoutStatus,
+            ...(payoutStatus === 'manual' && { manualPayoutRequired: true })
+        });
 
         // Emails (Non-blocking)
         try {
@@ -186,7 +216,17 @@ export async function POST(req: NextRequest) {
             console.error("Email Notification Failed (Non-critical):", emailError);
         }
 
-        return NextResponse.json({ success: true, message: 'Payment released successfully.' });
+        // Return appropriate success message based on payout mode
+        const successMessage = payoutStatus === 'manual'
+            ? 'Job completed successfully! Payment will be processed manually within 24 hours.'
+            : 'Payment released successfully. Funds transferred to installer.';
+
+        return NextResponse.json({
+            success: true,
+            message: successMessage,
+            payoutMode: payoutStatus,
+            ...(payoutStatus === 'manual' && { note: 'Automated payouts not configured. Payment requires manual processing.' })
+        });
 
     } catch (error: any) {
         console.error("Release Error", error);

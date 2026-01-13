@@ -57,6 +57,7 @@ import { initializeApp, getApps } from "firebase/app";
 import { useAuth, useFirestore, useFirebase } from "@/lib/firebase/client-provider";
 import { useHelp } from "@/hooks/use-help";
 import { allSkills } from "@/lib/data";
+import { trackSignupProgress, markSignupComplete } from "@/lib/signup-tracker";
 
 const addressSchema = z.object({
   house: z.string().min(1, "House/Flat No. is required."),
@@ -206,6 +207,19 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
 
       // Sign out temp auth to be clean
       if (tempAuthRef.current) await tempAuthRef.current.signOut();
+
+      // Track signup progress - Step 1 (Mobile Verified)
+      try {
+        if (db) {
+          const mobile = form.getValues("mobile");
+          await trackSignupProgress(db, mobile, 1, {
+            mobile,
+            attemptCount: 1,
+          });
+        }
+      } catch (trackError) {
+        console.error("Tracking error (non-fatal):", trackError);
+      }
 
       toast({ title: "Verified!", description: "Mobile number verified successfully.", className: "bg-green-100 border-green-500" });
     } catch (error: any) {
@@ -505,8 +519,8 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
     }
 
     try {
-      const result = await verifyPan({ panNumber: pan });
-      if (result.valid) {
+      const result = await verifyPan({ pan: pan });
+      if (result.isValid) {
         setVerificationSubStep("verified");
         toast({
           title: "PAN Verified!",
@@ -622,14 +636,14 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         }
         newUser.panNumber = values.pan;
         newUser.kycAddress = values.kycAddress;
-        newUser.isPanVerified = true;
+        newUser.isPanVerified = true; // Format verified only
         newUser.installerProfile = {
           tier: 'Bronze',
           points: 0,
           skills: values.skills || [],
           rating: 0,
           reviews: 0,
-          verified: true,
+          verified: process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true', // True if automated, False if manual
           reputationHistory: []
         };
       }
@@ -637,6 +651,14 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       const userDocRef = doc(db, "users", firebaseUser.uid);
 
       await setDoc(userDocRef, { ...newUser, id: firebaseUser.uid });
+
+      // Mark signup as complete in pending_signups
+      try {
+        const mobile = values.mobile;
+        await markSignupComplete(db, mobile, firebaseUser.uid);
+      } catch (trackError) {
+        console.error("Tracking error (non-fatal):", trackError);
+      }
 
       // We are essentially already logged in if verified.
       // But let's call login hook just in case app state needs sync.
@@ -683,9 +705,23 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           </FormItem>
         )}
       />
-      <Button onClick={() => setCurrentStep(role === 'Installer' ? 'verification' : 'photo')} className="w-full" disabled={!role}>Next</Button>
+      <Button onClick={async () => {
+        // Track role selection
+        try {
+          if (db && isMobileVerified) {
+            const mobile = form.getValues("mobile");
+            const selectedRole = form.getValues("role");
+            await trackSignupProgress(db, mobile, 1, { role: selectedRole });
+          }
+        } catch (trackError) {
+          console.error("Tracking error (non-fatal):", trackError);
+        }
+        setCurrentStep(role === 'Installer' ? 'verification' : 'photo');
+      }} className="w-full" disabled={!role}>Next</Button>
     </div>
   );
+
+  const isAutomatedKycEnabled = process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true';
 
   const renderVerificationStep = () => {
     if (verificationSubStep !== 'verified') {
@@ -703,6 +739,17 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             </Alert>
           )}
 
+          {!isAutomatedKycEnabled && (
+            <div className="bg-muted p-4 rounded-lg mb-4">
+              <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-primary" /> Manual Verification Required
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Please enter your government ID details below. Our team will verify them manually within 24 hours.
+              </p>
+            </div>
+          )}
+
           <FormField
             control={form.control}
             name="aadhar"
@@ -715,10 +762,10 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                       placeholder="XXXX XXXX XXXX"
                       {...field}
                       maxLength={12}
-                      disabled={verificationSubStep !== 'enterAadhar'}
+                      disabled={isAutomatedKycEnabled && verificationSubStep !== 'enterAadhar'}
                     />
                   </FormControl>
-                  {verificationSubStep === 'enterAadhar' && (
+                  {isAutomatedKycEnabled && verificationSubStep === 'enterAadhar' && (
                     <Button
                       type="button"
                       onClick={handleInitiateVerification}
@@ -729,13 +776,14 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                     </Button>
                   )}
                 </div>
-                <FormDescription>For testing, use Aadhaar: <strong>999999990019</strong></FormDescription>
+                {!isAutomatedKycEnabled && <FormDescription>Enter your 12-digit Aadhar number.</FormDescription>}
+                {isAutomatedKycEnabled && <FormDescription>For testing, use Aadhaar: <strong>999999990019</strong></FormDescription>}
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          {verificationSubStep === "enterOtp" && (
+          {isAutomatedKycEnabled && verificationSubStep === "enterOtp" && (
             <FormField
               control={form.control}
               name="otp"
@@ -766,23 +814,23 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             />
           )}
 
-          {verificationSubStep === "enterPan" && (
-            <FormField
-              control={form.control}
-              name="pan"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>PAN Number</FormLabel>
-                  <div className="flex gap-2">
-                    <FormControl>
-                      <Input
-                        placeholder="ABCDE1234F"
-                        {...field}
-                        maxLength={10}
-                        className="uppercase"
-                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                      />
-                    </FormControl>
+          <FormField
+            control={form.control}
+            name="pan"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>PAN Number</FormLabel>
+                <div className="flex gap-2">
+                  <FormControl>
+                    <Input
+                      placeholder="ABCDE1234F"
+                      {...field}
+                      maxLength={10}
+                      className="uppercase"
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                    />
+                  </FormControl>
+                  {isAutomatedKycEnabled && verificationSubStep === 'enterPan' && (
                     <Button
                       type="button"
                       onClick={handleVerifyPan}
@@ -791,12 +839,30 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Verify PAN
                     </Button>
-                  </div>
-                  <FormDescription>For testing, use any valid PAN format e.g., <strong>ABCDE1234F</strong>.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  )}
+                </div>
+                <FormDescription>For testing, use any valid PAN format e.g., <strong>ABCDE1234F</strong>.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {!isAutomatedKycEnabled && (
+            <Button
+              type="button"
+              className="w-full mt-4"
+              disabled={!isAadharValid || !isPanValid}
+              onClick={() => {
+                setVerificationSubStep("verified");
+                toast({
+                  title: "Details Submitted",
+                  description: "Your KYC details have been recorded for manual review.",
+                });
+                setCurrentStep("photo");
+              }}
+            >
+              Submit for Manual Verification
+            </Button>
           )}
 
           <Button variant="outline" onClick={() => setCurrentStep('role')} className="w-full">Back</Button>
