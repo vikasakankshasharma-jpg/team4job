@@ -184,7 +184,7 @@ export default function PendingSignupsClient() {
                 selectedSignup.mobile,
                 data.date,
                 data.priority,
-                user.uid,
+                user.id,
                 user.name || "Admin",
                 data.notes,
                 data.nextAction
@@ -213,7 +213,7 @@ export default function PendingSignupsClient() {
                 selectedSignup.mobile,
                 data.reason,
                 data.customReason,
-                user.uid,
+                user.id,
                 user.name || "Admin",
                 data.notes
             );
@@ -239,7 +239,7 @@ export default function PendingSignupsClient() {
             await addActivityLog(
                 db,
                 signup.mobile,
-                user.uid,
+                user.id,
                 user.name || "Admin",
                 action,
                 undefined,
@@ -264,7 +264,7 @@ export default function PendingSignupsClient() {
         if (!db || !user) return;
 
         try {
-            await updateSignupStatus(db, signup.mobile, signup.status, priority, user.uid, user.name || "Admin");
+            await updateSignupStatus(db, signup.mobile, signup.status, priority, user.id, user.name || "Admin");
             toast({
                 title: "Priority updated",
                 description: `Set to ${priority} priority`,

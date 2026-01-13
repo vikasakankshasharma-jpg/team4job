@@ -69,7 +69,7 @@ test.describe('Admin System Smoke Tests', () => {
         // - Audit Logs link
         // - Settings tabs
 
-        test.skip('Support team RBAC test requires test account setup');
+        test.skip(true, 'Support team RBAC test requires test account setup');
     });
 
     test('Admin can access all sections', async ({ page }) => {

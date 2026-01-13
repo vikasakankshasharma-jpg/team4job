@@ -5,6 +5,7 @@
 
 import { collection, getDocs, query, where, Firestore } from 'firebase/firestore';
 import { PendingSignup } from './types';
+import { toDate } from './utils';
 
 export interface SignupFunnelData {
     totalStarted: number;
@@ -132,7 +133,7 @@ export async function getSignupTrends(
     const trends: Record<string, { started: number; converted: number }> = {};
 
     for (const signup of allSignups) {
-        const date = new Date(signup.startedAt.toDate()).toISOString().split('T')[0];
+        const date = toDate(signup.startedAt).toISOString().split('T')[0];
 
         if (!trends[date]) {
             trends[date] = { started: 0, converted: 0 };
