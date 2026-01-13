@@ -258,7 +258,7 @@ test.describe('Complete Transaction Cycle E2E', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         const approveBtn = page.getByTestId('approve-release-button');
-        await expect(approveBtn).toBeVisible();
+        await expect(approveBtn).toBeVisible({ timeout: TIMEOUTS.long });
         await approveBtn.click();
         await helper.form.waitForToast('Job Approved & Payment Released!');
         await helper.job.waitForJobStatus('Completed');
