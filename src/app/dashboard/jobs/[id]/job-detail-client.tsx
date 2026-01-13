@@ -930,12 +930,14 @@ function JobGiverConfirmationSection({ job, onJobUpdate, onCancel, onAddFunds }:
 
     const handleApproveAndPay = async () => {
         setIsLoading(true);
+
         try {
-            const q = query(collection(db, "transactions"), where("jobId", "==", job.id), where("status", "==", "Funded"));
+            if (!user) return;
+
+            const q = query(collection(db, "transactions"), where("jobId", "==", job.id), where("payerId", "==", user.id), where("status", "==", "Funded"));
             const querySnapshot = await getDocs(q);
+
             if (querySnapshot.empty) {
-                // throw new Error("Could not find a funded transaction for this job.");
-                // Fallback for demo/manual
                 console.warn("Could not find a funded transaction, allowing manual completion override for dev/demo.");
             }
             const transactionDoc = querySnapshot.docs[0];
