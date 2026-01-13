@@ -5,7 +5,7 @@ if (result.error) console.error("Dotenv error:", result.error);
 
 async function seedJob() {
     // Dynamic import to ensure env vars are loaded first
-    const { db } = await import('../src/lib/firebase/server-init');
+    const { getAdminDb } = await import('../src/lib/firebase/server-init');
     const { getAuth } = await import('firebase-admin/auth');
     const { Timestamp } = await import('firebase-admin/firestore');
 
@@ -14,6 +14,7 @@ async function seedJob() {
         const userId = userRecord.uid;
 
         const jobId = `JOB-SEED-${Date.now()}`;
+        const db = getAdminDb();
         const jobRef = db.collection('jobs').doc(jobId);
 
         // 1. Create Job

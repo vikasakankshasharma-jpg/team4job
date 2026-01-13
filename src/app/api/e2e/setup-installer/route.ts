@@ -1,7 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase/server-init';
-import { getAuth } from 'firebase-admin/auth';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
 
 export async function POST(req: NextRequest) {
     if (process.env.NODE_ENV === 'production') {
@@ -14,7 +13,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Email required' }, { status: 400 });
         }
 
-        const userRecord = await getAuth().getUserByEmail(email);
+        const db = getAdminDb();
+        const auth = getAdminAuth();
+        const userRecord = await auth.getUserByEmail(email);
         const uid = userRecord.uid;
 
         await db.collection('users').doc(uid).set({

@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import { User, Transaction, Job, PlatformSettings } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import axios from 'axios';
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing jobId or OTP' }, { status: 400 });
         }
 
+        const db = getAdminDb();
         const jobRef = db.collection('jobs').doc(jobId);
         const jobSnap = await jobRef.get();
 

@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db, adminAuth } from '@/lib/firebase/server-init';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
 import { Job, Transaction } from '@/lib/types';
 import { logAdminAlert } from '@/lib/admin-logger';
 import { sendServerEmail } from '@/lib/server-email';
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
         if (!authHeader?.startsWith('Bearer ')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
         const idToken = authHeader.split('Bearer ')[1];
+        const adminAuth = getAdminAuth();
         const decodedToken = await adminAuth.verifyIdToken(idToken);
         const userId = decodedToken.uid;
 
@@ -25,6 +26,9 @@ export async function POST(req: NextRequest) {
 
         const { jobId, reason, description } = validation.data;
 
+
+
+        const db = getAdminDb();
         const jobRef = db.collection('jobs').doc(jobId);
         const jobSnap = await jobRef.get();
         if (!jobSnap.exists) return NextResponse.json({ error: 'Job not found' }, { status: 404 });

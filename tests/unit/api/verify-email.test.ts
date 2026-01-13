@@ -1,7 +1,7 @@
 /** @jest-environment node */
 import { POST } from '../../../src/app/api/auth/verify-email/route';
 import { sendServerEmail } from '@/lib/server-email';
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import { Timestamp } from 'firebase-admin/firestore';
 import { NextRequest } from 'next/server';
 
@@ -11,9 +11,7 @@ jest.mock('@/lib/server-email', () => ({
 }));
 
 jest.mock('@/lib/firebase/server-init', () => ({
-    db: {
-        collection: jest.fn(),
-    },
+    getAdminDb: jest.fn(),
 }));
 
 jest.mock('firebase-admin/firestore', () => ({
@@ -44,7 +42,9 @@ describe('verify-email API', () => {
         mockCollection = {
             doc: jest.fn().mockReturnValue(mockDoc),
         };
-        (db.collection as jest.Mock).mockReturnValue(mockCollection);
+        (getAdminDb as jest.Mock).mockReturnValue({
+            collection: jest.fn().mockReturnValue(mockCollection)
+        });
     });
 
     it('should return 400 if email is missing', async () => {

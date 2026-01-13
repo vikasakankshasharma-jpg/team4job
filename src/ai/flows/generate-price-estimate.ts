@@ -2,7 +2,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 
 // Define the input schema for the price estimation flow
 export const GeneratePriceEstimateInputSchema = z.object({
@@ -75,41 +75,42 @@ export const generatePriceEstimateFlow = ai.defineFlow(
   },
   async (input) => {
     let historicalContext = '';
-    
+
     // RAG: Fetch historical data from Firestore
     try {
-        const jobsRef = db.collection('jobs');
-        const snapshot = await jobsRef
-            .where('jobCategory', '==', input.jobCategory)
-            .where('status', '==', 'Completed')
-            .limit(5)
-            .get();
+      const db = getAdminDb();
+      const jobsRef = db.collection('jobs');
+      const snapshot = await jobsRef
+        .where('jobCategory', '==', input.jobCategory)
+        .where('status', '==', 'Completed')
+        .limit(5)
+        .get();
 
-        if (!snapshot.empty) {
-            const examples = snapshot.docs.map(doc => {
-                const data = doc.data();
-                // Prioritize subtotal (service cost) if available, otherwise total amount
-                const amount = data.invoice?.subtotal || data.invoice?.totalAmount;
-                if (!amount) return null;
-                
-                const shortDesc = data.description ? data.description.substring(0, 120).replace(/\n/g, ' ') : '';
-                return `- Job: "${data.title}" | Scope: "${shortDesc}..." | Agreed Price: ₹${amount}`;
-            }).filter(Boolean);
+      if (!snapshot.empty) {
+        const examples = snapshot.docs.map(doc => {
+          const data = doc.data();
+          // Prioritize subtotal (service cost) if available, otherwise total amount
+          const amount = data.invoice?.subtotal || data.invoice?.totalAmount;
+          if (!amount) return null;
 
-            if (examples.length > 0) {
-                historicalContext = examples.join('\n');
-            }
+          const shortDesc = data.description ? data.description.substring(0, 120).replace(/\n/g, ' ') : '';
+          return `- Job: "${data.title}" | Scope: "${shortDesc}..." | Agreed Price: ₹${amount}`;
+        }).filter(Boolean);
+
+        if (examples.length > 0) {
+          historicalContext = examples.join('\n');
         }
+      }
     } catch (error) {
-        console.warn("Failed to fetch historical context for price estimate:", error);
-        // Continue without history if fetch fails
+      console.warn("Failed to fetch historical context for price estimate:", error);
+      // Continue without history if fetch fails
     }
 
     const { output } = await priceEstimatePrompt({
-        ...input,
-        historicalContext
+      ...input,
+      historicalContext
     });
-    
+
     if (!output) {
       throw new Error('AI failed to generate a price estimate.');
     }

@@ -1,4 +1,4 @@
-import { db } from "@/lib/firebase/server-init"; // Correct import for Server Side
+import { getAdminDb } from "@/lib/firebase/server-init"; // Correct import for Server Side
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 const LIMITS = {
@@ -12,6 +12,7 @@ export async function checkRateLimit(userId: string, action: keyof typeof LIMITS
     if (!userId) return { allowed: false, reason: "User ID required" };
 
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const db = getAdminDb();
     const limitRef = db.collection('rate_limits').doc(`${userId}_${today}`);
 
     try {

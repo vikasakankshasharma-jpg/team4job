@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Job ID required' }, { status: 400 });
         }
 
+        const db = getAdminDb();
         const jobRef = db.collection('jobs').doc(jobId);
         const jobSnap = await jobRef.get();
         if (!jobSnap.exists) {

@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import { db, adminAuth } from '@/lib/firebase/server-init';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
 import { Job, User, Transaction, PlatformSettings, SubscriptionPlan } from '@/lib/types';
 import axios from 'axios';
 
@@ -9,6 +9,7 @@ import axios from 'axios';
 const CASHFREE_API_BASE = 'https://sandbox.cashfree.com/pg';
 
 async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
+    const db = getAdminDb();
     const settingsRef = db.collection('settings').doc('platform');
     const settingsSnap = await settingsRef.get();
     if (settingsSnap.exists) {
@@ -25,6 +26,8 @@ import { initiatePaymentSchema } from '@/lib/validations/escrow';
 
 export async function POST(req: NextRequest) {
     try {
+        const adminAuth = getAdminAuth();
+        const db = getAdminDb();
         // 1. Authorization & Security Check
         const authHeader = req.headers.get('Authorization');
         if (!authHeader?.startsWith('Bearer ')) {

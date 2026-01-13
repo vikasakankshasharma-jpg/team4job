@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import { User } from '@/lib/types';
 import axios from 'axios';
 
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Fetch user details from Firestore
+    const db = getAdminDb();
     const userRef = db.collection('users').doc(userId);
     const userSnap = await userRef.get();
 

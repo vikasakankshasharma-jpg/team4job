@@ -1,13 +1,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sendServerEmail } from '@/lib/server-email';
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import { Timestamp } from 'firebase-admin/firestore';
 import { verifyEmailSchema } from '@/lib/validations/auth';
 import { z } from 'zod';
 
 export async function POST(req: NextRequest) {
     try {
+        const db = getAdminDb();
         const body = await req.json();
 
         // Validate input

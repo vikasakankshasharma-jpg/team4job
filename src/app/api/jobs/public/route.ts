@@ -1,10 +1,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db, adminAuth } from '@/lib/firebase/server-init';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
 import { Job, User } from '@/lib/types';
 
 export async function POST(req: NextRequest) {
     try {
+        const db = getAdminDb();
         const { jobId } = await req.json(); // REMOVED: userId from body
 
         if (!jobId) {
@@ -19,6 +20,7 @@ export async function POST(req: NextRequest) {
         if (authHeader && authHeader.startsWith('Bearer ')) {
             const idToken = authHeader.split('Bearer ')[1];
             try {
+                const adminAuth = getAdminAuth();
                 const decodedToken = await adminAuth.verifyIdToken(idToken);
                 authenticatedUserId = decodedToken.uid;
 

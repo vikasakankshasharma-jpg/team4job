@@ -8,7 +8,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import type { User, SubscriptionPlan } from '@/lib/types';
 
 const GrantProPlanInputSchema = z.object({
@@ -40,6 +40,7 @@ export const grantProPlan = ai.defineFlow(
         throw new Error("Forbidden: Only Admins can grant Pro plans.");
       }
 
+      const db = getAdminDb();
       const userRef = db.collection('users').doc(userId);
       const userSnap = await userRef.get();
 

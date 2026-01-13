@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db, adminAuth } from '@/lib/firebase/server-init';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
 import { Job } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
         const { jobId, otp, userId } = validation.data;
 
         // 1. Authorization
-
+        const db = getAdminDb();
         const jobRef = db.collection('jobs').doc(jobId);
         const jobSnap = await jobRef.get();
 

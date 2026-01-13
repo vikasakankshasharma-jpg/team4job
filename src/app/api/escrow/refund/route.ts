@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import { Job, Transaction } from '@/lib/types';
 import axios from 'axios';
 import { logAdminAlert } from '@/lib/admin-logger';
@@ -10,6 +10,7 @@ const CASHFREE_API_BASE = 'https://sandbox.cashfree.com/pg';
 
 export async function POST(req: NextRequest) {
     try {
+        const db = getAdminDb();
         const { jobId, userId } = await req.json();
 
         if (!jobId || !userId) {

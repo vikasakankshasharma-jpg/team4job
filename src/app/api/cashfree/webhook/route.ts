@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import { verifyWebhookSignature } from '@/lib/cashfree-utils';
 import { Transaction, User, SubscriptionPlan } from '@/lib/types';
 import { toDate } from '@/lib/utils';
@@ -11,6 +11,7 @@ import { toDate } from '@/lib/utils';
  */
 export async function POST(req: NextRequest) {
   try {
+    const db = getAdminDb();
     const rawBody = await req.text();
     const data = JSON.parse(rawBody);
     console.log('Received Cashfree webhook:', JSON.stringify(data, null, 2));

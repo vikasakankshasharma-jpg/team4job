@@ -6,7 +6,7 @@ import JobDetailClient from './job-detail-client';
 export const dynamic = 'force-dynamic';
 
 import { Metadata } from 'next';
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 
 type Props = {
     params: Promise<{ id: string }>
@@ -21,6 +21,7 @@ export async function generateMetadata(
 
     try {
         if (!id) return { title: 'CCTV Job Connect' };
+        const db = getAdminDb();
         const docRef = db.collection('jobs').doc(id);
         const docSnap = await docRef.get();
 
@@ -57,6 +58,7 @@ export default async function JobDetailPageWrapper(props: Props) {
 
     if (id) {
         try {
+            const db = getAdminDb();
             const docRef = db.collection('jobs').doc(id);
             const docSnap = await docRef.get();
             if (docSnap.exists) {

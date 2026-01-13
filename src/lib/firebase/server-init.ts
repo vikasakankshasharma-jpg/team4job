@@ -3,23 +3,27 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-let app: App;
+let app: App | undefined;
 
 // This function initializes the Firebase Admin SDK.
 // It's designed to be used in server-side environments (e.g., API routes, server components).
-function initializeAdminApp() {
+export function getAdminApp() {
+  if (app) return app;
+
   // If an app is already initialized, return it.
   if (getApps().length > 0) {
-    return getApps()[0];
+    app = getApps()[0];
+    return app;
   }
 
   // 1. Try to use service-account.json first for local development
   // UNCOMMENT the lines below if you have a service-account.json file in this directory.
   // try {
   //   const serviceAccount = require('./service-account.json');
-  //   return initializeApp({
+  //   app = initializeApp({
   //     credential: cert(serviceAccount)
   //   });
+  //   return app;
   // } catch (error: any) {
   //   if (error.code !== 'MODULE_NOT_FOUND') {
   //     console.error("Error reading or parsing service-account.json:", error);
@@ -32,9 +36,10 @@ function initializeAdminApp() {
   const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   if (serviceAccountEnv) {
     try {
-      return initializeApp({
+      app = initializeApp({
         credential: cert(JSON.parse(serviceAccountEnv)),
       });
+      return app;
     } catch (error) {
       console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY.", error);
     }
@@ -43,25 +48,23 @@ function initializeAdminApp() {
   // 3. Fallback to Individual Environment Variables (Better for Vercel/hosting dashboards)
   if (process.env.DO_FIREBASE_PROJECT_ID && process.env.DO_FIREBASE_CLIENT_EMAIL && process.env.DO_FIREBASE_PRIVATE_KEY) {
     const privateKey = process.env.DO_FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'); // Fix escaped newlines
-    return initializeApp({
+    app = initializeApp({
       credential: cert({
         projectId: process.env.DO_FIREBASE_PROJECT_ID,
         clientEmail: process.env.DO_FIREBASE_CLIENT_EMAIL,
         privateKey: privateKey,
       })
     });
+    return app;
   }
 
   throw new Error('Failed to initialize Firebase Admin SDK. Missing credentials (FIREBASE_SERVICE_ACCOUNT_KEY or individual vars).');
 }
-
-app = initializeAdminApp();
 
 import { getAuth } from 'firebase-admin/auth';
 // ... existing imports ...
 
 // ... existing code ...
 
-export const db = getFirestore(app);
-export const adminAuth = getAuth(app);
-export const adminApp = app;
+export const getAdminDb = () => getFirestore(getAdminApp());
+export const getAdminAuth = () => getAuth(getAdminApp());
