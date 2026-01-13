@@ -1036,10 +1036,10 @@ function AdminDashboard() {
               <CardHeader><CardTitle>Recent Signups</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[...allUsers].sort((a, b) => toDate(b.memberSince).getTime() - toDate(a.memberSince).getTime()).slice(0, 5).map(u => (
-                    <div key={u.id} className="flex items-center gap-4">
+                  {[...allUsers].sort((a, b) => toDate(b.memberSince).getTime() - toDate(a.memberSince).getTime()).slice(0, 5).filter(u => u.id).map((u, index) => (
+                    <div key={u.id || `user-${index}`} className="flex items-center gap-4">
                       <Avatar className="h-8 w-8"><AnimatedAvatar svg={u.avatarUrl} /></Avatar>
-                      <div><p className="text-sm font-medium">{u.name}</p><p className="text-xs text-muted-foreground">{u.roles?.join(', ') || 'User'}</p></div>
+                      <div><p className="text-sm font-medium">{u.name || 'Unknown User'}</p><p className="text-xs text-muted-foreground">{u.roles?.join(', ') || 'User'}</p></div>
                     </div>
                   ))}
                 </div>

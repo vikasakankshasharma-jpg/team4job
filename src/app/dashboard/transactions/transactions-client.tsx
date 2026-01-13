@@ -21,7 +21,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, IndianRupee, ArrowRight, X, Wallet, CheckCircle2, ShieldEllipsis, Hourglass, Calendar as CalendarIcon } from "lucide-react";
+import { Loader2, IndianRupee, ArrowRight, X, Wallet, CheckCircle2, ShieldEllipsis, Hourglass, Calendar as CalendarIcon, TrendingUp, DollarSign, RefreshCw, CreditCard, Inbox } from "lucide-react";
+import { StatCard, FilterBar, ExportButton, AdminEmptyState } from "@/components/admin";
+import type { Filter } from "@/components/admin";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { Transaction, User } from "@/lib/types";
@@ -143,56 +146,64 @@ export default function TransactionsClient() {
         }
     }, [user, fetchTransactionsAndUsers]);
 
-    const stats = useMemo(() => {
-        let startDate: Date | null = null;
-        let endDate: Date | null = null;
-        const now = new Date();
+    const enhancedStats = useMemo(() => {
+        // Calculate base total volume
+        const totalVolume = transactions.reduce((sum, t) => {
+            if (t.status === 'Funded' || t.status === 'Released') {
+                return sum + t.amount;
+            }
+            return sum;
+        }, 0);
 
-        switch (dateFilter) {
-            case 'today':
-                startDate = startOfDay(now);
-                endDate = endOfDay(now);
-                break;
-            case 'week':
-                startDate = startOfWeek(now);
-                endDate = endOfWeek(now);
-                break;
-            case 'month':
-                startDate = startOfMonth(now);
-                endDate = endOfMonth(now);
-                break;
-            case 'year':
-                startDate = startOfYear(now);
-                endDate = endOfYear(now);
-                break;
-            case 'custom':
-                if (customDate?.from) {
-                    startDate = startOfDay(customDate.from);
-                    endDate = customDate.to ? endOfDay(customDate.to) : endOfDay(customDate.from);
-                }
-                break;
-        }
-
-        const filteredTransactions = transactions.filter(t => {
-            if (!startDate || !endDate || t.status !== 'Released') return true;
-            const releasedDate = t.releasedAt ? toDate(t.releasedAt) : null;
-            if (!releasedDate) return false;
-            return releasedDate >= startDate && releasedDate <= endDate;
-        });
-
-        return transactions.reduce((acc, t) => {
+        // Calculate total commission (platform revenue)
+        const totalCommission = transactions.reduce((sum, t) => {
             if (t.status === 'Released') {
-                const releasedDate = t.releasedAt ? toDate(t.releasedAt) : null;
-                if (!startDate || !endDate || (releasedDate && releasedDate >= startDate && releasedDate <= endDate)) {
-                    acc.totalReleased += t.amount;
-                }
+                return sum + (t.commission || 0) + (t.jobGiverFee || 0);
             }
+            return sum;
+        }, 0);
+
+        // Calculate refunded amount
+        const totalRefunded = transactions.reduce((sum, t) => {
+            if (t.status === 'Refunded') {
+                return sum + t.amount;
+            }
+            return sum;
+        }, 0);
+
+        // Calculate released and funded amounts
+        const totalReleased = transactions.reduce((sum, t) => {
+            if (t.status === 'Released') {
+                return sum + t.amount;
+            }
+            return sum;
+        }, 0);
+
+        const totalFunded = transactions.reduce((sum, t) => {
             if (t.status === 'Funded') {
-                acc.totalFunded += t.amount;
+                return sum + t.amount;
             }
-            return acc;
-        }, { totalReleased: 0, totalFunded: 0 });
-    }, [transactions, dateFilter, customDate]);
+            return sum;
+        }, 0);
+
+        // Count transactions
+        const totalTransactions = transactions.length;
+        const fundedTransactions = transactions.filter(t => t.status === 'Funded').length;
+        const releasedTransactions = transactions.filter(t => t.status === 'Released').length;
+        const refundedTransactions = transactions.filter(t => t.status === 'Refunded').length;
+
+        return {
+            totalReleased,
+            totalFunded,
+            totalVolume,
+            totalCommission,
+            totalRefunded,
+            totalTransactions,
+            fundedTransactions,
+            releasedTransactions,
+            refundedTransactions,
+        };
+    }, [transactions]);
 
 
     const enrichedTransactions = useMemo(() => {
@@ -224,8 +235,58 @@ export default function TransactionsClient() {
     };
 
     const clearFilters = () => setFilters(initialFilters);
-    const activeFiltersCount = Object.values(filters).filter(v => v && v !== 'all').length;
     const allStatuses = ["All", ...Array.from(new Set(transactions.map(t => t.status)))];
+
+    const [activeTab, setActiveTab] = useState<string>('all');
+
+    // Filter configuration for FilterBar
+    const filterConfig: Filter[] = [
+        {
+            id: 'search',
+            label: 'Search',
+            type: 'search',
+            placeholder: 'Search by ID, Job, or User...',
+            value: filters.search,
+            onChange: (value) => handleFilterChange('search', value),
+        },
+        {
+            id: 'status',
+            label: 'Status',
+            type: 'select',
+            options: allStatuses.map(s => ({
+                label: s,
+                value: s.toLowerCase() === 'all' ? 'all' : s
+            })),
+            value: filters.status,
+            onChange: (value) => handleFilterChange('status', value),
+        },
+    ];
+
+    // Export data
+    const exportData = filteredTransactions.map(t => ({
+        'Transaction ID': t.id,
+        'Job ID': t.jobId,
+        'Job Title': t.jobTitle,
+        'From': t.payerName,
+        'To': t.payeeName,
+        'Amount': t.amount,
+        'Status': t.status,
+        'Created': format(toDate(t.createdAt), 'yyyy-MM-dd HH:mm:ss'),
+    }));
+
+    // Tab filtered transactions
+    const tabFilteredTransactions = useMemo(() => {
+        switch (activeTab) {
+            case 'funded':
+                return filteredTransactions.filter(t => t.status === 'Funded');
+            case 'released':
+                return filteredTransactions.filter(t => t.status === 'Released');
+            case 'refunded':
+                return filteredTransactions.filter(t => t.status === 'Refunded');
+            default:
+                return filteredTransactions;
+        }
+    }, [filteredTransactions, activeTab]);
 
     if (userLoading) {
         return <div className="flex h-48 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
@@ -233,110 +294,84 @@ export default function TransactionsClient() {
 
     return (
         <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
+            {/* Revenue Dashboard - Admin Only */}
             {isAdmin && (
                 <>
-                    <div className="flex justify-end items-center gap-2 flex-wrap">
-                        <Select value={dateFilter} onValueChange={setDateFilter}>
-                            <SelectTrigger className="w-full sm:w-[180px]">
-                                <SelectValue placeholder="Select period" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Time</SelectItem>
-                                <SelectItem value="today">Today</SelectItem>
-                                <SelectItem value="week">This Week</SelectItem>
-                                <SelectItem value="month">This Month</SelectItem>
-                                <SelectItem value="year">This Year</SelectItem>
-                                <SelectItem value="custom">Custom Range</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {dateFilter === 'custom' && (
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        id="date"
-                                        variant={"outline"}
-                                        className={cn("w-full sm:w-[300px] justify-start text-left font-normal", !customDate && "text-muted-foreground")}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {customDate?.from ? (
-                                            customDate.to ? (
-                                                <>
-                                                    {format(customDate.from, "LLL dd, y")} -{" "}
-                                                    {format(customDate.to, "LLL dd, y")}
-                                                </>
-                                            ) : (
-                                                format(customDate.from, "LLL dd, y")
-                                            )
-                                        ) : (
-                                            <span>Pick a date</span>
-                                        )}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="end">
-                                    <Calendar
-                                        initialFocus
-                                        mode="range"
-                                        defaultMonth={customDate?.from}
-                                        selected={customDate}
-                                        onSelect={setCustomDate}
-                                        numberOfMonths={2}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        )}
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Value Released</CardTitle>
-                                <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">₹{stats.totalReleased.toLocaleString()}</div>
-                                <p className="text-xs text-muted-foreground">Funds paid out to installers in selected period</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Currently Held in Secure Deposit</CardTitle>
-                                <Hourglass className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">₹{stats.totalFunded.toLocaleString()}</div>
-                                <p className="text-xs text-muted-foreground">Funds from job givers awaiting job completion</p>
-                            </CardContent>
-                        </Card>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                        <StatCard
+                            title="Total Volume"
+                            value={`₹${enhancedStats.totalVolume.toLocaleString()}`}
+                            icon={TrendingUp}
+                            description="All transactions"
+                        />
+                        <StatCard
+                            title="Released"
+                            value={`₹${enhancedStats.totalReleased.toLocaleString()}`}
+                            icon={CheckCircle2}
+                            description={`${enhancedStats.releasedTransactions} payouts`}
+                        />
+                        <StatCard
+                            title="Held in Escrow"
+                            value={`₹${enhancedStats.totalFunded.toLocaleString()}`}
+                            icon={Hourglass}
+                            description={`${enhancedStats.fundedTransactions} pending`}
+                        />
+                        <StatCard
+                            title="Platform Revenue"
+                            value={`₹${enhancedStats.totalCommission.toLocaleString()}`}
+                            icon={DollarSign}
+                            description="Commissions earned"
+                        />
+                        <StatCard
+                            title="Refunded"
+                            value={`₹${enhancedStats.totalRefunded.toLocaleString()}`}
+                            icon={RefreshCw}
+                            description={`${enhancedStats.refundedTransactions} refunds`}
+                        />
                     </div>
                 </>
             )}
+
             <Card>
                 <CardHeader>
-                    <CardTitle>Transactions</CardTitle>
-                    <CardDescription>A log of all your financial transactions on the platform.</CardDescription>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <CardTitle>Transactions</CardTitle>
+                            <CardDescription>
+                                {isAdmin ? 'All platform transactions' : 'Your transaction history'}
+                                {' '}• {filteredTransactions.length} transactions shown
+                            </CardDescription>
+                        </div>
+                        <ExportButton
+                            data={exportData}
+                            filename={`transactions-${new Date().toISOString().split('T')[0]}`}
+                            formats={['csv', 'json']}
+                        />
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="mb-4 flex flex-col sm:flex-row items-center gap-2">
-                        <Input
-                            placeholder="Search by ID, Job, User..."
-                            className="flex-1"
-                            value={filters.search}
-                            onChange={(e) => handleFilterChange('search', e.target.value)}
-                        />
-                        <Select value={filters.status} onValueChange={(v) => handleFilterChange('status', v)}>
-                            <SelectTrigger className="w-full sm:w-[180px]">
-                                <SelectValue placeholder="Filter by Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {allStatuses.map(s => <SelectItem key={s} value={s.toLowerCase() === 'all' ? 'all' : s}>{s}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        {activeFiltersCount > 0 && (
-                            <Button variant="ghost" onClick={clearFilters}>
-                                <X className="h-4 w-4 mr-1" />
-                                Clear ({activeFiltersCount})
-                            </Button>
-                        )}
+                    {/* Tabs */}
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+                        <TabsList>
+                            <TabsTrigger value="all">All ({filteredTransactions.length})</TabsTrigger>
+                            <TabsTrigger value="funded">
+                                Funded ({filteredTransactions.filter(t => t.status === 'Funded').length})
+                            </TabsTrigger>
+                            <TabsTrigger value="released">
+                                Released ({filteredTransactions.filter(t => t.status === 'Released').length})
+                            </TabsTrigger>
+                            <TabsTrigger value="refunded">
+                                Refunded ({filteredTransactions.filter(t => t.status === 'Refunded').length})
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+
+                    {/* Filters */}
+                    <div className="mb-4">
+                        <FilterBar filters={filterConfig} onReset={clearFilters} />
                     </div>
+
+                    {/* Transactions Table */}
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -355,8 +390,8 @@ export default function TransactionsClient() {
                                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                                     </TableCell>
                                 </TableRow>
-                            ) : filteredTransactions.length > 0 ? (
-                                filteredTransactions.map((t) => {
+                            ) : tabFilteredTransactions.length > 0 ? (
+                                tabFilteredTransactions.map((t) => {
                                     const latestTimestamp = toDate(t.releasedAt || t.fundedAt || t.failedAt || t.createdAt);
                                     return (
                                         <TableRow key={t.id}>
@@ -384,8 +419,16 @@ export default function TransactionsClient() {
                                 })
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center">
-                                        No transactions found.
+                                    <TableCell colSpan={6} className="h-24">
+                                        <AdminEmptyState
+                                            icon={Inbox}
+                                            title="No transactions found"
+                                            description="No transactions match your current filters"
+                                            action={{
+                                                label: 'Reset Filters',
+                                                onClick: clearFilters,
+                                            }}
+                                        />
                                     </TableCell>
                                 </TableRow>
                             )}

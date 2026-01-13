@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import { initiateAadharVerification, confirmAadharVerification } from "@/ai/flows/aadhar-verification";
+import { verifyGst } from "@/ai/flows/gst-verification";
 import { useRouter } from "next/navigation";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -167,6 +168,24 @@ export default function VerifyInstallerClient() {
     if (!user || !db) return;
     setIsLoading(true);
     try {
+      if (values.gstNumber && process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true') {
+        try {
+          const gstResult = await verifyGst({ gstin: values.gstNumber });
+          if (!gstResult.isValid) {
+            toast({ title: "GST Verification Failed", description: gstResult.message, variant: "destructive" });
+            setIsLoading(false);
+            return;
+          }
+          toast({ title: "GST Verified!", description: `Business: ${gstResult.legalName || 'Verified'}` });
+        } catch (e) {
+          console.error("GST Check Error", e);
+          // Block if API enabled and failed
+          toast({ title: "Verification Error", description: "Could not verify GSTIN. Please check or try again.", variant: "destructive" });
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const userRef = doc(db, 'users', user.id);
       const isPro = !!(values.shopPhotoUrl || values.gstNumber);
 
@@ -178,7 +197,7 @@ export default function VerifyInstallerClient() {
           skills: skillsForm.getValues().skills,
           rating: 0,
           reviews: 0,
-          verified: true,
+          verified: process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true', // True if automated, False if manual
           verificationLevel: isPro ? ('Pro' as const) : ('Basic' as const),
           shopPhotoUrl: values.shopPhotoUrl || null,
           gstNumber: values.gstNumber || null,
@@ -199,7 +218,14 @@ export default function VerifyInstallerClient() {
         setRole('Installer');
       }
 
-      toast({ title: "Installer Profile Activated!", description: isPro ? "Congrats! You are a Pro Installer." : "You can now find jobs and place bids.", variant: "default" });
+      const isAutomated = process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true';
+      toast({
+        title: isAutomated ? "Installer Profile Activated!" : "Profile Submitted!",
+        description: isAutomated
+          ? "Congrats! You are now a verified Installer."
+          : "Your installer profile is pending manual verification. You will be notified once approved.",
+        variant: "default"
+      });
       router.push('/dashboard/profile');
     } catch (error) {
       console.error("Error finalizing installer profile:", error);
@@ -238,9 +264,39 @@ export default function VerifyInstallerClient() {
             </Alert>
           )}
 
+
           {step === "enterAadhar" && (
             <Form {...aadharForm}>
-              <form onSubmit={aadharForm.handleSubmit(onAadharSubmit)} className="space-y-8">
+              <form onSubmit={aadharForm.handleSubmit(async (values) => {
+                const isAutomated = process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true';
+                setIsLoading(true);
+                setError(null);
+
+                if (isAutomated) {
+                  try {
+                    const result = await initiateAadharVerification(values);
+                    if (result.success) {
+                      setVerificationId(result.verificationId);
+                      setStep("enterOtp");
+                      toast({ title: "OTP Sent", description: result.message });
+                    } else {
+                      setError(result.message);
+                      toast({ title: "Error", description: result.message, variant: "destructive" });
+                    }
+                  } catch (e: any) {
+                    setError(e.message || "An unexpected error occurred.");
+                    toast({ title: "Error", description: e.message, variant: "destructive" });
+                  } finally {
+                    setIsLoading(false);
+                  }
+                } else {
+                  // Manual Mode
+                  setVerificationId(`MANUAL_${Date.now()}`);
+                  setStep("enterOtp");
+                  toast({ title: "Details Recorded", description: "Please confirm your details." });
+                  setIsLoading(false);
+                }
+              })} className="space-y-8">
                 <FormField
                   control={aadharForm.control}
                   name="aadharNumber"
@@ -250,44 +306,62 @@ export default function VerifyInstallerClient() {
                       <FormControl>
                         <Input placeholder="Enter your 12-digit Aadhar number" {...field} />
                       </FormControl>
-                      {process.env.NODE_ENV === 'development' && (
-                        <FormDescription>For testing, use Aadhar: <strong>999999990019</strong></FormDescription>
-                      )}
+                      <FormDescription>
+                        {process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true'
+                          ? "An OTP will be sent to your linked mobile number."
+                          : "This will be manually verified by our team."}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <Button type="submit" disabled={isLoading} className="w-full">
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send OTP
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true' ? "Send OTP" : "Next"}
                 </Button>
               </form>
             </Form>
           )}
 
           {step === "enterOtp" && (
-            <Form {...otpForm}>
-              <form onSubmit={otpForm.handleSubmit(onOtpSubmit)} className="space-y-8">
-                <FormField
-                  control={otpForm.control}
-                  name="otp"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>One-Time Password (OTP)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter the 6-digit OTP" {...field} />
-                      </FormControl>
-                      {process.env.NODE_ENV === 'development' && (
-                        <FormDescription>For testing, use OTP: <strong>123456</strong></FormDescription>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={isLoading} className="w-full">
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Verify
+            process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true' ? (
+              <Form {...otpForm}>
+                <form onSubmit={otpForm.handleSubmit(onOtpSubmit)} className="space-y-8">
+                  <FormField
+                    control={otpForm.control}
+                    name="otp"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>One-Time Password (OTP)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter the 6-digit OTP" {...field} />
+                        </FormControl>
+                        <FormDescription>Enter the OTP sent to your mobile.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" disabled={isLoading} className="w-full">
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Verify
+                  </Button>
+                </form>
+              </Form>
+            ) : (
+              <div className="space-y-6">
+                <div className="bg-muted p-4 rounded-md">
+                  <h3 className="font-medium mb-2">Confirm Submission</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Since automated verification is currently disabled for maintenance, your details will be submitted for manual review by our admin team.
+                  </p>
+                </div>
+                <Button onClick={() => {
+                  setStep("selectSkills");
+                  toast({ title: "Submitted", description: "Proceeding to skills selection." });
+                }} className="w-full">
+                  Confirm & Continue
                 </Button>
-              </form>
-            </Form>
+              </div>
+            )
           )}
 
           {step === "selectSkills" && (

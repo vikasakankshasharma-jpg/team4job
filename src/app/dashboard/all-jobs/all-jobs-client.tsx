@@ -33,7 +33,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { Calendar as CalendarIcon, X, ArrowUpDown, Loader2, Download, List, Grid } from "lucide-react";
+import { Calendar as CalendarIcon, X, ArrowUpDown, Loader2, Download, List, Grid, Briefcase, Clock, CheckCircle, AlertTriangle, FileText, Inbox } from "lucide-react";
+import { StatCard, FilterBar, ExportButton, AdminEmptyState } from "@/components/admin";
+import type { Filter } from "@/components/admin";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn, exportToCsv } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
@@ -118,6 +121,7 @@ export default function AllJobsClient() {
   const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'postedAt', direction: 'descending' });
   const { setHelp } = useHelp();
   const [view, setView] = React.useState<'list' | 'grid'>('list');
+  const [activeTab, setActiveTab] = React.useState<string>('all');
 
   React.useEffect(() => {
     setHelp({
@@ -300,19 +304,50 @@ export default function AllJobsClient() {
     return filtered;
   }, [jobs, filters, sortConfig]);
 
-  const handleExport = () => {
-    const dataToExport = filteredAndSortedJobs.map(job => ({
-      ID: job.id,
-      Title: job.title,
-      Status: job.status,
-      'Job Giver': (job.jobGiver as User)?.name || 'N/A',
-      Bids: (job.bids || []).length,
-      'Job Type': getJobType(job),
-      'Posted Date': format(toDate(job.postedAt), 'yyyy-MM-dd'),
-      Location: job.location,
-    }));
-    exportToCsv(`cctv-jobs-${new Date().toISOString().split('T')[0]}.csv`, dataToExport);
-  };
+  // Stats calculations  
+  const stats = React.useMemo(() => {
+    const totalJobs = jobs.length;
+    const activeJobs = jobs.filter(j => j.status === 'Open for Bidding' || j.status === 'Bidding Closed' || j.status === 'Awarded' || j.status === 'In Progress').length;
+    const completedJobs = jobs.filter(j => j.status === 'Completed').length;
+    const disputedJobs = jobs.filter(j => j.status === 'Disputed').length;
+    const biddingJobs = jobs.filter(j => getJobType(j) === 'Bidding').length;
+    const directJobs = jobs.filter(j => getJobType(j) === 'Direct').length;
+
+    return {
+      totalJobs,
+      activeJobs,
+      completedJobs,
+      disputedJobs,
+      biddingJobs,
+      directJobs,
+    };
+  }, [jobs]);
+
+  // Export data
+  const exportData = filteredAndSortedJobs.map(job => ({
+    ID: job.id,
+    Title: job.title,
+    Status: job.status,
+    'Job Giver': (job.jobGiver as User)?.name || 'N/A',
+    Bids: (job.bids || []).length,
+    'Job Type': getJobType(job),
+    'Posted Date': format(toDate(job.postedAt), 'yyyy-MM-dd'),
+    Location: job.location,
+  }));
+
+  // Tab-based filtering
+  const tabFilteredJobs = React.useMemo(() => {
+    switch (activeTab) {
+      case 'active':
+        return filteredAndSortedJobs.filter(j => j.status === 'Open for Bidding' || j.status === 'Bidding Closed' || j.status === 'Awarded' || j.status === 'In Progress');
+      case 'completed':
+        return filteredAndSortedJobs.filter(j => j.status === 'Completed');
+      case 'disputed':
+        return filteredAndSortedJobs.filter(j => j.status === 'Disputed');
+      default:
+        return filteredAndSortedJobs;
+    }
+  }, [filteredAndSortedJobs, activeTab]);
 
 
   if (userLoading || !isAdmin) {
@@ -344,205 +379,232 @@ export default function AllJobsClient() {
     return sortConfig.direction === 'ascending' ? '▲' : '▼';
   };
 
+  // FilterBar configuration
+  const filterConfig: Filter[] = [
+    {
+      id: 'jobId',
+      label: 'Job Title',
+      type: 'search',
+      placeholder: 'Filter by Job Title...',
+      value: filters.jobId,
+      onChange: (value) => handleFilterChange('jobId', value),
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      type: 'select',
+      options: allStatuses.map(s => ({ label: s === 'all' ? 'All Statuses' : s, value: s })),
+      value: filters.status,
+      onChange: (value) => handleFilterChange('status', value),
+    },
+    {
+      id: 'jobType',
+      label: 'Type',
+      type: 'select',
+      options: jobTypes.map(t => ({ label: t === 'all' ? 'All Types' : t, value: t })),
+      value: filters.jobType,
+      onChange: (value) => handleFilterChange('jobType', value),
+    },
+  ];
+
   return (
-    <Card>
-      <CardHeader className="sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <CardTitle>All Jobs</CardTitle>
-          <CardDescription>A list of all jobs created on the platform. Click on a job to view details.</CardDescription>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
-            <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
-              <List className="h-4 w-4" />
-            </Button>
-            <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
-              <Grid className="h-4 w-4" />
-            </Button>
-          </div>
-          <Button onClick={handleExport} variant="outline" size="sm">
-            <Download className="mr-2 h-4 w-4" />
-            Export to CSV
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {/* Filters Section - visible on all screen sizes */}
-        <div className="flex flex-col gap-2 mb-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
-            <Input placeholder="Filter by Job Title..." value={filters.jobId} onChange={e => handleFilterChange('jobId', e.target.value)} className="h-8 lg:col-span-1" />
-            <Input placeholder="Filter by Pincode..." value={filters.pincode} onChange={e => handleFilterChange('pincode', e.target.value)} className="h-8" />
-            <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Filter by status..." />
-              </SelectTrigger>
-              <SelectContent>
-                {allStatuses.map(status => (
-                  <SelectItem key={status} value={status}>{status === 'all' ? 'All Statuses' : status}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input placeholder="Filter by Job Giver..." value={filters.jobGiver} onChange={e => handleFilterChange('jobGiver', e.target.value)} className="h-8" />
-            <Select value={filters.jobType} onValueChange={value => handleFilterChange('jobType', value)}>
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Filter by Type..." />
-              </SelectTrigger>
-              <SelectContent>
-                {jobTypes.map(type => (
-                  <SelectItem key={type} value={type}>{type === 'all' ? 'All Types' : type}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="date"
-                  variant={"outline"}
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-left font-normal h-8",
-                    !filters.date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filters.date?.from ? (
-                    filters.date.to ? (
-                      <>
-                        {format(filters.date.from, "LLL dd, y")} -{" "}
-                        {format(filters.date.to, "LLL dd, y")}
-                      </>
-                    ) : (
-                      format(filters.date.from, "LLL dd, y")
-                    )
-                  ) : (
-                    <span>Filter by date...</span>
-                  )}
+    <>
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <StatCard
+          title="Total Jobs"
+          value={stats.totalJobs}
+          icon={Briefcase}
+          description="All jobs posted"
+        />
+        <StatCard
+          title="Active"
+          value={stats.activeJobs}
+          icon={Clock}
+          description="Open & in progress"
+        />
+        <StatCard
+          title="Completed"
+          value={stats.completedJobs}
+          icon={CheckCircle}
+          description="Successfully finished"
+        />
+        <StatCard
+          title="Disputed"
+          value={stats.disputedJobs}
+          icon={AlertTriangle}
+          description="Need attention"
+        />
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle>All Jobs</CardTitle>
+              <CardDescription>
+                {filteredAndSortedJobs.length} jobs shown • {stats.biddingJobs} bidding, {stats.directJobs} direct
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
+                <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
+                  <List className="h-4 w-4" />
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={filters.date?.from}
-                  selected={filters.date}
-                  onSelect={value => handleFilterChange('date', value)}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
-
-            {activeFiltersCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs">
-                <X className="h-3 w-3 mr-1" />
-                Clear Filters ({activeFiltersCount})
-              </Button>
-            )}
+                <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
+                  <Grid className="h-4 w-4" />
+                </Button>
+              </div>
+              <ExportButton
+                data={exportData}
+                filename={`jobs-${new Date().toISOString().split('T')[0]}`}
+                formats={['csv', 'json']}
+              />
+            </div>
           </div>
-        </div>
+        </CardHeader>
+        <CardContent>
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+            <TabsList>
+              <TabsTrigger value="all">All ({filteredAndSortedJobs.length})</TabsTrigger>
+              <TabsTrigger value="active">Active ({filteredAndSortedJobs.filter(j => j.status === 'Open for Bidding' || j.status === 'In Progress').length})</TabsTrigger>
+              <TabsTrigger value="completed">Completed ({stats.completedJobs})</TabsTrigger>
+              <TabsTrigger value="disputed">Disputed ({stats.disputedJobs})</TabsTrigger>
+            </TabsList>
+          </Tabs>
 
-        {view === 'list' && (
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead>
-                  <Button variant="ghost" onClick={() => requestSort('title')}>
-                    Job Title
-                    {getSortIcon('title')}
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button variant="ghost" onClick={() => requestSort('status')}>
-                    Status
-                    {getSortIcon('status')}
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button variant="ghost" onClick={() => requestSort('jobGiver')}>
-                    Job Giver
-                    {getSortIcon('jobGiver')}
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button variant="ghost" onClick={() => requestSort('bids')}>
-                    Bids
-                    {getSortIcon('bids')}
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button variant="ghost" onClick={() => requestSort('jobType')}>
-                    Job Type
-                    {getSortIcon('jobType')}
-                  </Button>
-                </TableHead>
-                <TableHead className="text-right">
-                  <Button variant="ghost" onClick={() => requestSort('postedAt')}>
-                    Posted
-                    {getSortIcon('postedAt')}
-                  </Button>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    Loading jobs...
-                  </TableCell>
+          {/* Filters */}
+          <div className="mb-4">
+            <FilterBar filters={filterConfig} onReset={clearFilters} />
+          </div>
+
+          {/* List View */}
+          {view === 'list' && (
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('title')}>
+                      Job Title
+                      {getSortIcon('title')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('status')}>
+                      Status
+                      {getSortIcon('status')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('jobGiver')}>
+                      Job Giver
+                      {getSortIcon('jobGiver')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('bids')}>
+                      Bids
+                      {getSortIcon('bids')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('jobType')}>
+                      Job Type
+                      {getSortIcon('jobType')}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-right">
+                    <Button variant="ghost" onClick={() => requestSort('postedAt')}>
+                      Posted
+                      {getSortIcon('postedAt')}
+                    </Button>
+                  </TableHead>
                 </TableRow>
-              ) : filteredAndSortedJobs.length > 0 ? (
-                filteredAndSortedJobs.map((job) => (
-                  <TableRow key={job.id} onClick={() => handleRowClick(job.id)} className="cursor-pointer">
-                    <TableCell>
-                      <p className="font-medium">{job.title}</p>
-                      <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Link href={`/dashboard/users/${(job.jobGiver as User).id}`} className="hover:underline" onClick={e => e.stopPropagation()}>
-                        {(job.jobGiver as User).name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {(job.bids || []).length}
-                    </TableCell>
-                    <TableCell>
-                      {getJobType(job)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {format(toDate(job.postedAt), 'MMM d, yyyy')}
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    No jobs found for your search.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        )}
+                ) : tabFilteredJobs.length > 0 ? (
+                  tabFilteredJobs.map((job) => (
+                    <TableRow key={job.id} onClick={() => handleRowClick(job.id)} className="cursor-pointer">
+                      <TableCell>
+                        <p className="font-medium">{job.title}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Link href={`/dashboard/users/${(job.jobGiver as User).id}`} className="hover:underline" onClick={e => e.stopPropagation()}>
+                          {(job.jobGiver as User).name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        {(job.bids || []).length}
+                      </TableCell>
+                      <TableCell>
+                        {getJobType(job)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {format(toDate(job.postedAt), 'MMM d, yyyy')}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24">
+                      <AdminEmptyState
+                        icon={Inbox}
+                        title="No jobs found"
+                        description="Try adjusting your filters or search criteria"
+                        action={{
+                          label: 'Reset Filters',
+                          onClick: clearFilters,
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
 
-        {view === 'grid' && (
-          <div>
-            {loading ? (
-              <div className="text-center py-10 text-muted-foreground">Loading jobs...</div>
-            ) : filteredAndSortedJobs.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredAndSortedJobs.map((job) => (
-                  <JobCard key={job.id} job={job} onRowClick={handleRowClick} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-10 text-muted-foreground">No jobs found for your search.</div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          {/* Grid View */}
+          {view === 'grid' && (
+            <div>
+              {loading ? (
+                <AdminEmptyState
+                  icon={Clock}
+                  title="Loading jobs..."
+                  description="Please wait while we fetch all jobs"
+                />
+              ) : tabFilteredJobs.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {tabFilteredJobs.map((job) => (
+                    <JobCard key={job.id} job={job} onRowClick={handleRowClick} />
+                  ))}
+                </div>
+              ) : (
+                <AdminEmptyState
+                  icon={Inbox}
+                  title="No jobs found"
+                  description="Try adjusting your filters or search criteria"
+                  action={{
+                    label: 'Reset Filters',
+                    onClick: clearFilters,
+                  }}
+                />
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </>
   );
 }
 

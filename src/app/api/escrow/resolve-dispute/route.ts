@@ -191,14 +191,44 @@ export async function POST(req: NextRequest) {
 
         await logAdminAlert('INFO', `Dispute Resolved: Job ${jobId} via ${resolution}`, { refundAmount, payoutAmount });
 
-        // Phase 13: System Notifications (Email)
-        // Notify Job Giver
+        // Consolidate email notifications
         const giverSnap = await db.collection('users').doc(transaction.payerId).get();
         const giverEmail = giverSnap.data()?.email;
         if (giverEmail) {
             await sendServerEmail(giverEmail, `Dispute Resolved: ${job.title}`,
                 `The dispute has been resolved by Admin.\nResolution: ${resolution}\nRefund: ₹${refundAmount}\nPayout: ₹${payoutAmount}\nStatus: ${status}`
             );
+        }
+
+        // Log to Audit Trail
+        // We fetch admin details from the token verification block ideally context, 
+        // but simple way is to re-verify or trust we are here.
+        // Better: decode token earlier and store user data. 
+        // Re-decoding here for safety (or reusing variable if I refactor).
+        // Refactoring to get admin details:
+        const idToken = authHeader.split('Bearer ')[1];
+        const decoded = await adminAuth.verifyIdToken(idToken);
+        const adminSnap = await db.collection('users').doc(decoded.uid).get();
+        const adminData = adminSnap.data();
+
+        if (adminData) {
+            const { logAdminAction } = await import('@/lib/admin-logger');
+            await logAdminAction({
+                adminId: decoded.uid,
+                adminName: adminData.name || 'Admin',
+                adminEmail: adminData.email || 'admin@example.com',
+                actionType: 'DISPUTE_RESOLVED',
+                targetType: 'dispute',
+                targetId: disputeId,
+                targetName: `Dispute for Job ${jobId}`,
+                details: {
+                    resolution,
+                    jobId,
+                    refundAmount,
+                    payoutAmount,
+                    status
+                }
+            });
         }
 
         // Notify Installer

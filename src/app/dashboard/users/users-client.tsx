@@ -20,7 +20,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
-import { Gem, Medal, ShieldCheck, X, ArrowUpDown, MoreHorizontal, UserX, UserCheck, Ban, Trash2, Loader2, Download, List, Grid } from "lucide-react";
+import { Gem, Medal, ShieldCheck, X, ArrowUpDown, MoreHorizontal, UserX, UserCheck, Ban, Trash2, Loader2, Download, List, Grid, Users, UserPlus, UserCheck2, Activity, Clock, Inbox } from "lucide-react";
+import { StatCard, FilterBar, ExportButton, AdminEmptyState } from "@/components/admin";
+import type { Filter } from "@/components/admin";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -197,6 +200,7 @@ export default function UsersClient() {
   const [deleteConfirmation, setDeleteConfirmation] = React.useState("");
   const { setHelp } = useHelp();
   const [view, setView] = React.useState<'list' | 'grid'>('list');
+  const [activeTab, setActiveTab] = React.useState<string>('all');
 
   React.useEffect(() => {
     setHelp({
@@ -431,134 +435,296 @@ export default function UsersClient() {
     }
   };
 
-  const handleExport = () => {
-    const dataToExport = sortedAndFilteredUsers.map(u => ({
-      ID: u.id,
-      Name: u.name,
-      Email: u.email,
-      Roles: u.roles.join(', '),
-      Status: u.status || 'active',
-      'Member Since': format(toDate(u.memberSince), 'yyyy-MM-dd'),
-      'Installer Tier': u.installerProfile?.tier || 'N/A',
-      'Installer Points': u.installerProfile?.points || 0,
-      'Installer Rating': u.installerProfile?.rating || 0,
-    }));
-    exportToCsv(`cctv-users-${new Date().toISOString().split('T')[0]}.csv`, dataToExport);
-  };
+  const exportData = sortedAndFilteredUsers.map(u => ({
+    ID: u.id,
+    Name: u.name,
+    Email: u.email,
+    Mobile: u.mobile || '',
+    Roles: u.roles.join(', '),
+    Status: u.status || 'active',
+    'Member Since': format(toDate(u.memberSince), 'yyyy-MM-dd'),
+    'Installer Tier': u.installerProfile?.tier || 'N/A',
+    'Installer Points': u.installerProfile?.points || 0,
+    'Installer Rating': u.installerProfile?.rating || 0,
+    'Installer Verified': u.installerProfile?.verified ? 'Yes' : 'No',
+  }));
 
+  // Stats calculations
+  const stats = React.useMemo(() => {
+    const totalUsers = users.length;
+    const installers = users.filter(u => u.roles.includes('Installer')).length;
+    const jobGivers = users.filter(u => u.roles.includes('Job Giver')).length;
+    const verifiedInstallers = users.filter(u => u.installerProfile?.verified).length;
+    const activeUsers = users.filter(u => !u.status || u.status === 'active').length;
+    const suspendedUsers = users.filter(u => u.status === 'suspended').length;
+
+    // Active today (joined in last 24h)
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    const activeToday = users.filter(u => {
+      const joinDate = toDate(u.memberSince);
+      return joinDate > oneDayAgo;
+    }).length;
+
+    return {
+      totalUsers,
+      installers,
+      jobGivers,
+      verifiedInstallers,
+      activeUsers,
+      suspendedUsers,
+      activeToday,
+    };
+  }, [users]);
+
+
+  // Filter configuration for FilterBar
+  const filterConfig: Filter[] = [
+    {
+      id: 'search',
+      label: 'Search',
+      type: 'search',
+      placeholder: 'Search by name, email, mobile, or ID...',
+      value: filters.search,
+      onChange: (value) => handleFilterChange('search', value),
+    },
+    {
+      id: 'role',
+      label: 'Role',
+      type: 'select',
+      options: [
+        { label: 'All Roles', value: 'all' },
+        { label: 'Installer', value: 'Installer' },
+        { label: 'Job Giver', value: 'Job Giver' },
+        { label: 'Admin', value: 'Admin' },
+        { label: 'Support Team', value: 'Support Team' },
+      ],
+      value: filters.role,
+      onChange: (value) => handleFilterChange('role', value),
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      type: 'select',
+      options: statusFilters.map(s => ({ label: s.label, value: s.value })),
+      value: filters.status,
+      onChange: (value) => handleFilterChange('status', value),
+    },
+  ];
+
+  // Tab-based filtering
+  const tabFilteredUsers = React.useMemo(() => {
+    switch (activeTab) {
+      case 'installers':
+        return sortedAndFilteredUsers.filter(u => u.roles.includes('Installer'));
+      case 'jobgivers':
+        return sortedAndFilteredUsers.filter(u => u.roles.includes('Job Giver'));
+      case 'pending':
+        return sortedAndFilteredUsers.filter(u => u.roles.includes('Installer') && !u.installerProfile?.verified);
+      default:
+        return sortedAndFilteredUsers;
+    }
+  }, [sortedAndFilteredUsers, activeTab]);
 
   return (
     <>
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <StatCard
+          title="Total Users"
+          value={stats.totalUsers}
+          icon={Users}
+          description={`${stats.activeUsers} active`}
+        />
+        <StatCard
+          title="Installers"
+          value={stats.installers}
+          icon={UserPlus}
+          description={`${stats.verifiedInstallers} verified`}
+        />
+        <StatCard
+          title="Job Givers"
+          value={stats.jobGivers}
+          icon={UserCheck2}
+          description="Clients"
+        />
+        <StatCard
+          title="New Today"
+          value={stats.activeToday}
+          icon={Activity}
+          trend={
+            stats.activeToday > 0
+              ? { value: `+${stats.activeToday} joined`, isPositive: true }
+              : undefined
+          }
+        />
+      </div>
+
       <Card>
-        <CardHeader className="sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <CardTitle>User Directory</CardTitle>
-            <CardDescription>A list of all registered users in the system. Use actions to manage users.</CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
-              <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
-                <List className="h-4 w-4" />
-              </Button>
-              <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
-                <Grid className="h-4 w-4" />
-              </Button>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle>User Directory</CardTitle>
+              <CardDescription>
+                Manage all registered users. {sortedAndFilteredUsers.length} users shown
+              </CardDescription>
             </div>
-            <Button onClick={handleExport} variant="outline" size="sm">
-              <Download className="mr-2 h-4 w-4" />
-              Export to CSV
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
+                <Button
+                  variant={view === 'list' ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setView('list')}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={view === 'grid' ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setView('grid')}
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+              </div>
+              <ExportButton
+                data={exportData}
+                filename={`users-${new Date().toISOString().split('T')[0]}`}
+                formats={['csv', 'json']}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-2 mb-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
-              <Input
-                placeholder="Search by Name, Email, Mobile, or Unique ID..."
-                value={filters.search}
-                onChange={e => handleFilterChange('search', e.target.value)}
-                className="h-8 lg:col-span-2"
-              />
-              <Select value={filters.role} onValueChange={value => handleFilterChange('role', value)}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Role" /></SelectTrigger>
-                <SelectContent>{roles.map(r => <SelectItem key={r} value={r === 'All' ? 'all' : r}>{r}</SelectItem>)}</SelectContent>
-              </Select>
-              <Select value={filters.tier} onValueChange={value => handleFilterChange('tier', value)}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Tier" /></SelectTrigger>
-                <SelectContent>{tiers.map(t => <SelectItem key={t} value={t === 'All' ? 'all' : t}>{t}</SelectItem>)}</SelectContent>
-              </Select>
-              <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
-                <SelectContent>{statusFilters.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-              </Select>
-              {activeFiltersCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs">
-                  <X className="h-3 w-3 mr-1" />
-                  Clear Filters
-                </Button>
-              )}
-            </div>
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+            <TabsList>
+              <TabsTrigger value="all">All ({sortedAndFilteredUsers.length})</TabsTrigger>
+              <TabsTrigger value="installers">
+                Installers ({sortedAndFilteredUsers.filter(u => u.roles.includes('Installer')).length})
+              </TabsTrigger>
+              <TabsTrigger value="jobgivers">
+                Job Givers ({sortedAndFilteredUsers.filter(u => u.roles.includes('Job Giver')).length})
+              </TabsTrigger>
+              <TabsTrigger value="pending">
+                Pending Verification (
+                {sortedAndFilteredUsers.filter(u => u.roles.includes('Installer') && !u.installerProfile?.verified).length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {/* Filters */}
+          <div className="mb-4">
+            <FilterBar filters={filterConfig} onReset={clearFilters} />
           </div>
 
+          {/* List View */}
           {view === 'list' && (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead><Button variant="ghost" onClick={() => requestSort('name')}>User / Unique ID {getSortIcon('name')}</Button></TableHead>
-                  <TableHead><Button variant="ghost" onClick={() => requestSort('status')}>Status {getSortIcon('status')}</Button></TableHead>
-                  <TableHead className="hidden sm:table-cell"><Button variant="ghost" onClick={() => requestSort('memberSince')}>Member Since {getSortIcon('memberSince')}</Button></TableHead>
-                  <TableHead className="hidden sm:table-cell"><Button variant="ghost" onClick={() => requestSort('tier')}>Tier {getSortIcon('tier')}</Button></TableHead>
-                  <TableHead><span className="sr-only">Actions</span></TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('name')}>
+                      User / Unique ID {getSortIcon('name')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('status')}>
+                      Status {getSortIcon('status')}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    <Button variant="ghost" onClick={() => requestSort('memberSince')}>
+                      Member Since {getSortIcon('memberSince')}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    <Button variant="ghost" onClick={() => requestSort('tier')}>
+                      Tier {getSortIcon('tier')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={5} className="h-24 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></TableCell></TableRow>
-                ) : sortedAndFilteredUsers.length > 0 ? (
-                  sortedAndFilteredUsers.map((u) => (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                    </TableCell>
+                  </TableRow>
+                ) : tabFilteredUsers.length > 0 ? (
+                  tabFilteredUsers.map((u) => (
                     <TableRow key={u.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
                             <AnimatedAvatar svg={u.avatarUrl} />
-                            <AvatarFallback>{u.name.substring(0, 2)}</AvatarFallback>
+                            <AvatarFallback>{u.name?.substring(0, 2) || 'UN'}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <Link href={`/dashboard/users/${u.id}`} className="font-medium hover:underline">{u.name}</Link>
-                            <p className="text-[10px] text-muted-foreground font-mono truncate max-w-[150px] uppercase tracking-wider">ID: {u.id}</p>
+                            <Link
+                              href={`/dashboard/users/${u.id}`}
+                              className="font-medium hover:underline"
+                            >
+                              {u.name}
+                            </Link>
+                            <p className="text-[10px] text-muted-foreground font-mono truncate max-w-[150px] uppercase tracking-wider">
+                              ID: {u.id}
+                            </p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>{getUserStatusBadge(u.status)}</TableCell>
-                      <TableCell className="hidden sm:table-cell">{format(toDate(u.memberSince), 'MMM, yyyy')}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        {format(toDate(u.memberSince), 'MMM, yyyy')}
+                      </TableCell>
                       <TableCell className="hidden sm:table-cell">
                         {u.installerProfile ? (
                           <div className="flex items-center gap-2">
                             {tierIcons[u.installerProfile.tier]}
                             {u.installerProfile.tier}
-                            {u.installerProfile.verified && <ShieldCheck className="h-4 w-4 text-green-600" />}
+                            {u.installerProfile.verified && (
+                              <ShieldCheck className="h-4 w-4 text-green-600" />
+                            )}
                           </div>
-                        ) : <span className="text-muted-foreground">—</span>}
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
-                        {actionLoading === u.id ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                        {actionLoading === u.id ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
                           user.id !== u.id && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Actions for {u.name}</span></Button>
+                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Actions for {u.name}</span>
+                                </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem asChild><Link href={`/dashboard/users/${u.id}`}>View Profile</Link></DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/dashboard/users/${u.id}`}>View Profile</Link>
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 {(u.status === 'active' || u.status === undefined) && (
-                                  <DropdownMenuItem onClick={() => handleUserAction(u, 'deactivated')}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleUserAction(u, 'deactivated')}
+                                  >
                                     <UserX className="mr-2 h-4 w-4" />
                                     Deactivate
                                   </DropdownMenuItem>
                                 )}
                                 {u.status !== 'suspended' && (
-                                  <DropdownMenuItem onClick={() => handleUserAction(u, 'suspended', 7)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleUserAction(u, 'suspended', 7)}
+                                  >
                                     <Ban className="mr-2 h-4 w-4" />
                                     Suspend (7 Days)
                                   </DropdownMenuItem>
@@ -570,7 +736,13 @@ export default function UsersClient() {
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(u)}><Trash2 className="mr-2 h-4 w-4" />Delete Permanently</DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => setDeleteUser(u)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Permanently
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )
@@ -579,18 +751,37 @@ export default function UsersClient() {
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow><TableCell colSpan={5} className="h-24 text-center">No users found.</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24">
+                      <AdminEmptyState
+                        icon={Inbox}
+                        title="No users found"
+                        description="Try adjusting your filters or search criteria"
+                        action={{
+                          label: 'Reset Filters',
+                          onClick: clearFilters,
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>
           )}
 
+          {/* Grid View */}
           {view === 'grid' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {loading ? (
-                <div className="col-span-full text-center py-10 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin" /></div>
-              ) : sortedAndFilteredUsers.length > 0 ? (
-                sortedAndFilteredUsers.map(u => (
+                <div className="col-span-full">
+                  <AdminEmptyState
+                    icon={Clock}
+                    title="Loading users..."
+                    description="Please wait while we fetch the user directory"
+                  />
+                </div>
+              ) : tabFilteredUsers.length > 0 ? (
+                tabFilteredUsers.map((u) => (
                   <UserCard
                     key={u.id}
                     u={u}
@@ -601,7 +792,17 @@ export default function UsersClient() {
                   />
                 ))
               ) : (
-                <div className="col-span-full text-center py-10 text-muted-foreground">No users found.</div>
+                <div className="col-span-full">
+                  <AdminEmptyState
+                    icon={Inbox}
+                    title="No users found"
+                    description="Try adjusting your filters or search criteria"
+                    action={{
+                      label: 'Reset Filters',
+                      onClick: clearFilters,
+                    }}
+                  />
+                </div>
               )}
             </div>
           )}
