@@ -5,6 +5,8 @@ import { getAdminAuth, getAdminDb } from '@/lib/firebase/server-init';
 import type { User } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   const adminAuth = getAdminAuth();
   const db = getAdminDb();

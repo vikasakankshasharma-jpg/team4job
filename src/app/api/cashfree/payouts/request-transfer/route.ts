@@ -30,6 +30,8 @@ async function getCashfreeBearerToken(): Promise<string> {
  * This route is intended for admin-initiated transfers like refunds.
  * Payouts to installers are handled by /api/escrow/release-funds
  */
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const db = getAdminDb();

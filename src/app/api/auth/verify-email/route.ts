@@ -6,6 +6,9 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { verifyEmailSchema } from '@/lib/validations/auth';
 import { z } from 'zod';
 
+
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     try {
         const db = getAdminDb();

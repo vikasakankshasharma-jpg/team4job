@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
 import { Job, User } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     try {
         const db = getAdminDb();

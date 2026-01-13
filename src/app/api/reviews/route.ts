@@ -4,6 +4,8 @@ import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
 import { Job, User } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     try {
         const adminAuth = getAdminAuth();

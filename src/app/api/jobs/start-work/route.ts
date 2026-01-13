@@ -7,6 +7,8 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { startWorkSchema } from '@/lib/validations/jobs';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();

@@ -8,6 +8,8 @@ import { logAdminAlert } from '@/lib/admin-logger';
 // Use sandbox for beta
 const CASHFREE_API_BASE = 'https://sandbox.cashfree.com/pg';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     try {
         const db = getAdminDb();
