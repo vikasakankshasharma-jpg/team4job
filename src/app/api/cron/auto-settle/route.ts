@@ -22,6 +22,8 @@ async function getCashfreeBearerToken(): Promise<string> {
     return response.data?.data?.token;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
     try {
         // SECURITY: Verify secret to prevent unauthorized triggers

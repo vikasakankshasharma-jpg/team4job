@@ -24,6 +24,8 @@ async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
 
 import { initiatePaymentSchema } from '@/lib/validations/escrow';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     try {
         const adminAuth = getAdminAuth();

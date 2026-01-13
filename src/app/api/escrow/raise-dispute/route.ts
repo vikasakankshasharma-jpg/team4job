@@ -7,6 +7,8 @@ import { sendServerEmail } from '@/lib/server-email';
 
 import { raiseDisputeSchema } from '@/lib/validations/escrow';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     try {
         const authHeader = req.headers.get('Authorization');

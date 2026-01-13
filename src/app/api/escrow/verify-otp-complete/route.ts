@@ -26,6 +26,8 @@ async function getCashfreeBearerToken(): Promise<string> {
     throw new Error('Failed to authenticate with Cashfree Payouts.');
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     try {
         const { jobId, otp, completionAttachments } = await req.json();
