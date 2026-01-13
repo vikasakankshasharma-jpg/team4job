@@ -12,7 +12,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import { grantProPlan } from '@/ai/flows/grant-pro-plan';
 import type { User } from '@/lib/types';
 import { calculateMonthlyPerformance } from '@/lib/utils';
@@ -45,6 +45,7 @@ export const rewardTopPerformers = ai.defineFlow(
       // in the frontend to be an admin (which is checked in ReportsPage).
 
       // 1. Fetch all active installers
+      const db = getAdminDb();
       const snapshot = await db.collection('users')
         .where('roles', 'array-contains', 'Installer')
         .where('status', '==', 'active')

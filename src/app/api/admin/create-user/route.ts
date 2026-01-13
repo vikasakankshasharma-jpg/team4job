@@ -1,15 +1,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { adminApp, adminAuth } from '@/lib/firebase/server-init';
+import { getAdminAuth, getAdminDb } from '@/lib/firebase/server-init';
 import type { User } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-const auth = getAuth(adminApp);
-const db = getFirestore(adminApp);
-
 export async function POST(req: NextRequest) {
+  const adminAuth = getAdminAuth();
+  const db = getAdminDb();
+
   try {
     // 0. Auth Check via Header
     const authHeader = req.headers.get('Authorization');
@@ -46,7 +45,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Create user in Firebase Authentication
-    const userRecord = await auth.createUser({
+    const userRecord = await adminAuth.createUser({
       email,
       password,
       displayName: name,

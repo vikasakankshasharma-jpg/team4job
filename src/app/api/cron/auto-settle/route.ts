@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import { Job, Transaction } from '@/lib/types';
 import axios from 'axios';
 
@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
         const fiveDaysAgo = new Date(now.getTime() - (5 * 24 * 60 * 60 * 1000));
 
         // 1. Find jobs in 'Pending Confirmation' submitted more than 5 days ago
+        const db = getAdminDb();
         const jobsSnap = await db.collection('jobs')
             .where('status', '==', 'Pending Confirmation')
             .where('workSubmittedAt', '<=', fiveDaysAgo)

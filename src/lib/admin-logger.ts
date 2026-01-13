@@ -1,7 +1,5 @@
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { adminApp } from '@/lib/firebase/server-init';
-
-const db = getFirestore(adminApp);
+import { getAdminDb } from '@/lib/firebase/server-init';
 
 export type AdminActionType =
     | 'USER_SUSPENDED'
@@ -49,8 +47,10 @@ export async function logAdminAction(params: {
     details?: Record<string, any>;
     ipAddress?: string;
     userAgent?: string;
+
 }): Promise<void> {
     try {
+        const db = getAdminDb();
         const logEntry: Omit<AdminActionLog, 'id'> = {
             adminId: params.adminId,
             adminName: params.adminName,
@@ -104,8 +104,10 @@ export async function logAdminAlert(
     level: 'INFO' | 'WARNING' | 'CRITICAL',
     message: string,
     metadata?: any
+
 ): Promise<void> {
     try {
+        const db = getAdminDb();
         await db.collection('admin_alerts').add({
             level,
             message,

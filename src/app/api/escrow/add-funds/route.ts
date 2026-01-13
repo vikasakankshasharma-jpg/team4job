@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import axios from 'axios';
 import { logAdminAlert } from '@/lib/admin-logger';
 
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
 
         const { jobId, amount, description, userId, taskId } = validation.data;
 
+        const db = getAdminDb();
         const jobRef = db.collection('jobs').doc(jobId);
         const jobSnap = await jobRef.get();
 

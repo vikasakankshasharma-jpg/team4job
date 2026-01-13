@@ -4,7 +4,7 @@ config({ path: '.env.local' });
 
 async function fundJob(jobId: string) {
     // Dynamic import
-    const { db } = await import('../src/lib/firebase/server-init');
+    const { getAdminDb } = await import('../src/lib/firebase/server-init');
     const { Timestamp } = await import('firebase-admin/firestore');
 
     if (!jobId) {
@@ -15,6 +15,7 @@ async function fundJob(jobId: string) {
     console.log(`Funding job ${jobId}...`);
 
     try {
+        const db = getAdminDb();
         const jobRef = db.collection('jobs').doc(jobId);
         const jobSnap = await jobRef.get();
 

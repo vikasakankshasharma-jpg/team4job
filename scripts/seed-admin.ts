@@ -5,7 +5,7 @@ if (result.error) console.error("Dotenv error:", result.error);
 
 async function seedAdmin() {
     // Dynamic import to ensure env vars are loaded first
-    const { db } = await import('../src/lib/firebase/server-init');
+    const { getAdminDb } = await import('../src/lib/firebase/server-init');
     const { getAuth } = await import('firebase-admin/auth');
     const { Timestamp } = await import('firebase-admin/firestore');
 
@@ -38,6 +38,7 @@ async function seedAdmin() {
         if (!uid) throw new Error("Failed to get UID");
 
         // Seed Firestore
+        const db = getAdminDb();
         const userRef = db.collection('users').doc(uid);
         const publicProfileRef = db.collection('public_profiles').doc(uid);
 

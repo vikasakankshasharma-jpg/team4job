@@ -13,7 +13,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import axios from 'axios';
 
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import { PlatformSettings } from '@/lib/types';
 
 
@@ -187,6 +187,7 @@ async function callCashfreeToVerifyOtp(verificationId: string, otp: string): Pro
 }
 
 async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
+  const db = getAdminDb();
   const settingsRef = db.collection('settings').doc('platform');
   const settingsSnap = await settingsRef.get();
   if (settingsSnap.exists) {

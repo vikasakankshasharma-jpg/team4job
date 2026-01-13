@@ -1,11 +1,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db, adminAuth } from '@/lib/firebase/server-init';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
 import { Job, User } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
     try {
+        const adminAuth = getAdminAuth();
+        const db = getAdminDb();
         const authHeader = req.headers.get('Authorization');
         if (!authHeader?.startsWith('Bearer ')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

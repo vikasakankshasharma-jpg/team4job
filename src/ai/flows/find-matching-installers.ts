@@ -13,7 +13,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { User } from '@/lib/types';
 
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 
 const FindMatchingInstallersInputSchema = z.object({
   jobDescription: z.string().describe('Detailed description of the job requirements.'),
@@ -42,6 +42,7 @@ const findMatchingInstallersFlow = ai.defineFlow(
     // For this implementation, we will fetch installers with relevant skills and in the same location
     // and then use an LLM to rank them based on the job description.
 
+    const db = getAdminDb();
     const snapshot = await db.collection('users')
       .where('roles', 'array-contains', 'Installer')
       .where('installerProfile.verified', '==', true)

@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db, adminAuth } from '@/lib/firebase/server-init';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
 import { User, Transaction, Job } from '@/lib/types';
 import axios from 'axios';
 import { logAdminAlert } from '@/lib/admin-logger';
@@ -30,6 +30,8 @@ async function getPayoutToken(): Promise<string> {
 
 export async function POST(req: NextRequest) {
     try {
+        const adminAuth = getAdminAuth();
+        const db = getAdminDb();
         // 1. Auth Check (Admin Only)
         const authHeader = req.headers.get('Authorization');
         if (!authHeader?.startsWith('Bearer ')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

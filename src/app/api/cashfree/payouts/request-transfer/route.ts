@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import { db, adminAuth } from '@/lib/firebase/server-init';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
 import { User, Transaction, PlatformSettings } from '@/lib/types';
 import axios from 'axios';
 
@@ -32,6 +32,8 @@ async function getCashfreeBearerToken(): Promise<string> {
  */
 export async function POST(req: NextRequest) {
   try {
+    const db = getAdminDb();
+    const adminAuth = getAdminAuth();
     // 1. Verify Authentication & Admin Role
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {

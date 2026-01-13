@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/lib/firebase/server-init';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        const db = getAdminDb();
         const userRef = db.collection('users').doc(userId);
         const userSnap = await userRef.get();
 
