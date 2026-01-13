@@ -86,7 +86,7 @@ export default function RefundPolicyPage() {
                             If either party is dissatisfied and cannot reach mutual agreement:
                         </p>
                         <ul className="list-disc pl-6 space-y-2">
-                            <li><strong>Raise a Dispute:</strong> Use the platform's dispute resolution system.</li>
+                            <li><strong>Raise a Dispute:</strong> Use the platform&apos;s dispute resolution system.</li>
                             <li><strong>Evidence Required:</strong> Submit photos, videos, chat logs, and other proof.</li>
                             <li><strong>Admin Review:</strong> Our support team will review within 3-5 business days.</li>
                             <li><strong>Final Decision:</strong> Admin decision is binding and funds will be released accordingly.</li>
@@ -172,7 +172,7 @@ export default function RefundPolicyPage() {
                         </p>
                         <ul className="list-disc pl-6 space-y-2">
                             <li><strong>Email:</strong> support@team4job.com</li>
-                            <li><strong>In-App Support:</strong> Use the "Help" button in your dashboard</li>
+                            <li><strong>In-App Support:</strong> Use the &quot;Help&quot; button in your dashboard</li>
                             <li><strong>Response Time:</strong> Within 24-48 hours</li>
                         </ul>
                     </section>

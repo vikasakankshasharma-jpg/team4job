@@ -385,13 +385,6 @@ export default function UsersClient() {
     return filtered;
   }, [users, filters, sortConfig, user]);
 
-  if (!user || !isAdmin) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Redirecting...</p>
-      </div>
-    );
-  }
 
   const clearFilters = () => setFilters(initialFilters);
 
@@ -525,6 +518,14 @@ export default function UsersClient() {
         return sortedAndFilteredUsers;
     }
   }, [sortedAndFilteredUsers, activeTab]);
+
+  if (!user || !isAdmin) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground">Redirecting...</p>
+      </div>
+    );
+  }
 
   return (
     <>
