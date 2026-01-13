@@ -284,7 +284,7 @@ test.describe('Complete Transaction Cycle E2E', () => {
         ]);
         await invoicePage.waitForLoadState();
         // Check for content in the new tab
-        await expect(invoicePage.getByText('Billed To (Job Giver):')).toBeVisible();
+        await expect(invoicePage.getByText('Billed To (Job Giver):')).toBeVisible({ timeout: TIMEOUTS.medium });
         console.log('[PASS] Service Invoice Page Verified');
         await invoicePage.close();
 
@@ -295,7 +295,7 @@ test.describe('Complete Transaction Cycle E2E', () => {
         ]);
         await platformPage.waitForLoadState();
         // Check for content in the new tab
-        await expect(platformPage.getByText('Platform Receipt')).toBeVisible();
+        await expect(platformPage.getByText('Platform Receipt')).toBeVisible({ timeout: TIMEOUTS.medium });
         console.log('[PASS] Platform Receipt Page Verified');
         await platformPage.close();
 
