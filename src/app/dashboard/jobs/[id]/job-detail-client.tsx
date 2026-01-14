@@ -951,7 +951,8 @@ function JobGiverConfirmationSection({ job, onJobUpdate, onCancel, onAddFunds }:
                 }, { headers: { Authorization: `Bearer ${idToken}` } });
             }
 
-            await onJobUpdate({ status: 'Completed' });
+            // Server-side API already generates invoice and updates status to 'Completed'
+            // No need to duplicate that logic here
 
             toast({
                 title: "Job Approved & Payment Released!",
@@ -1689,7 +1690,17 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     const handleJobUpdate = async (updatedFields: Partial<Job>) => {
         if (!job || !db) return;
         const jobRef = doc(db, 'jobs', job.id);
-        await updateDoc(jobRef, updatedFields);
+        console.log("[handleJobUpdate] Updating job with fields:", Object.keys(updatedFields));
+        if (updatedFields.invoice) {
+            console.log("[handleJobUpdate] Invoice object:", JSON.stringify(updatedFields.invoice));
+        }
+        try {
+            await updateDoc(jobRef, updatedFields);
+            console.log("[handleJobUpdate] Update successful");
+        } catch (error) {
+            console.error("[handleJobUpdate] Update failed:", error);
+            throw error;
+        }
     };
 
     const handleStartCheckout = async () => {

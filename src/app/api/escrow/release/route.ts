@@ -1,10 +1,10 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
 import { Job, Transaction, User } from '@/lib/types';
 import axios from 'axios';
 import { logAdminAlert } from '@/lib/admin-logger';
 import { sendServerEmail } from '@/lib/server-email';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // Cashfree Payouts Config (Production/Sandbox)
 const CASHFREE_PAYOUT_URL = 'https://payout-gamma.cashfree.com/payouts';
@@ -166,36 +166,62 @@ export async function POST(req: NextRequest) {
 
         const invoiceId = `INV-${jobId.slice(-6).toUpperCase()}-${Date.now().toString().slice(-4)}`;
 
-        const invoice = {
+        // Convert to plain object to ensure Admin SDK compatibility
+        const invoiceData = {
             id: invoiceId,
             jobId: jobId,
             jobTitle: job.title,
-            date: new Date(),
-            subtotal,
-            travelTip,
-            totalAmount,
+            date: Timestamp.fromDate(new Date()),
+            subtotal: subtotal,
+            travelTip: travelTip,
+            totalAmount: totalAmount,
             from: {
-                name: installerData.name,
-                gstin: installerData.gstin || ''
+                name: String(installerData.name),
+                gstin: String(installerData.gstin || '')
             },
             to: {
-                name: giverData.name,
-                gstin: giverData.gstin || ''
+                name: String(giverData.name),
+                gstin: String(giverData.gstin || '')
             }
         };
 
-        // Update DB
-        await jobRef.update({
-            status: 'Completed',
-            completedAt: new Date(),
-            paymentReleasedAt: new Date(),
-            invoice,
-            billingSnapshot
-        });
+        console.log('[Invoice Generation] Created invoice object:', invoiceData.id);
+
+        // Update DB with explicit error handling
+        try {
+            await jobRef.update({
+                status: 'Completed',
+                completedAt: Timestamp.fromDate(new Date()),
+                paymentReleasedAt: Timestamp.fromDate(new Date()),
+                invoice: invoiceData,
+                billingSnapshot: billingSnapshot
+            });
+
+            console.log('[Invoice Generation] ✅ Firestore update successful');
+
+            // Verify the write actually persisted
+            const verification = await jobRef.get();
+            const verificationData = verification.data();
+
+            if (verificationData?.invoice) {
+                console.log('[Invoice Generation] ✅ VERIFIED: Invoice persisted with ID:', verificationData.invoice.id);
+            } else {
+                console.error('[Invoice Generation] ❌ CRITICAL: Invoice NOT found after write!');
+                throw new Error('Invoice failed to persist to Firestore');
+            }
+        } catch (updateError: any) {
+            console.error('[Invoice Generation] ❌ Firestore update failed:', updateError);
+            console.error('[Invoice Generation] Error details:', {
+                code: updateError.code,
+                message: updateError.message,
+                stack: updateError.stack
+            });
+            throw new Error(`Failed to save invoice: ${updateError.message}`);
+        }
 
         await transSnap.docs[0].ref.update({
             status: payoutStatus === 'manual' ? 'Pending Payout' : 'Completed',
-            releasedAt: new Date(),
+            releasedAt: Timestamp.fromDate(new Date()),
             payoutMode: payoutStatus,
             ...(payoutStatus === 'manual' && { manualPayoutRequired: true })
         });

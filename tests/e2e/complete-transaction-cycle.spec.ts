@@ -94,7 +94,7 @@ test.describe('Complete Transaction Cycle E2E', () => {
         await page.fill('input[name="address.fullAddress"]', `${TEST_JOB_DATA.house}, ${TEST_JOB_DATA.street} `);
 
         await page.fill('input[name="deadline"]', getDateString(7));
-        const randomDays = Math.floor(Math.random() * 90) + 10;
+        const randomDays = Math.floor(Math.random() * 90) + 50; // increased min from 10 to 50 to clear random deadline (max 37)
         await page.fill('input[name="jobStartDate"]', getDateTimeString(randomDays));
         await page.fill('input[name="priceEstimate.min"]', TEST_JOB_DATA.minBudget.toString());
         await page.fill('input[name="priceEstimate.max"]', TEST_JOB_DATA.maxBudget.toString());
@@ -163,14 +163,15 @@ test.describe('Complete Transaction Cycle E2E', () => {
         }
 
         // Handle potential Conflict Dialog (if previous test runs left awarded jobs)
-        // Use a broader locator strategy
-        const conflictDialogText = page.getByText('Availability Conflict Detected');
+        // Handle potential Conflict Dialog (if previous test runs left awarded jobs)
+        // Correct text found in installer-acceptance-section.tsx
+        const conflictDialogText = page.getByText('Schedule Conflict Warning');
 
         try {
             // Short timeout to check presence - extended to 120s because conflict check query can be VERY slow
             if (await conflictDialogText.isVisible({ timeout: 120000 })) {
                 console.log('E2E: Conflict Dialog detected. Clicking Confirm...');
-                await page.getByRole('button', { name: "Confirm & Auto-Decline" }).click();
+                await page.getByRole('button', { name: "I Understand, Proceed & Accept" }).click();
             } else {
                 console.log('E2E: No Conflict Dialog detected.');
             }
@@ -271,6 +272,9 @@ test.describe('Complete Transaction Cycle E2E', () => {
         await page.reload();
         await helper.job.waitForJobStatus('Completed');
 
+        // Wait a moment for invoice data to be fetched by onSnapshot listener
+        await page.waitForTimeout(2000);
+
         const invoiceBtn = page.getByTestId('download-invoice-button');
         await expect(invoiceBtn).toBeVisible();
 
@@ -283,6 +287,10 @@ test.describe('Complete Transaction Cycle E2E', () => {
             invoiceBtn.click()
         ]);
         await invoicePage.waitForLoadState();
+
+        // Wait for invoice page to fully load and render content
+        await invoicePage.waitForTimeout(1000);
+
         // Check for content in the new tab
         await expect(invoicePage.getByText('Billed To (Job Giver):')).toBeVisible({ timeout: TIMEOUTS.medium });
         console.log('[PASS] Service Invoice Page Verified');

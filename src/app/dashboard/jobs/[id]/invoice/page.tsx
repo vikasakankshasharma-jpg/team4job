@@ -4,9 +4,9 @@ import { useFirebase, useUser } from "@/hooks/use-user";
 import { notFound, useParams, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Job, User, Transaction } from "@/lib/types";
-import { getDoc, doc, DocumentReference, collection, query, where, getDocs } from "firebase/firestore";
+import { getDoc, doc, DocumentReference, collection, query, where, getDocs, onSnapshot } from "firebase/firestore";
 import { Loader2, Printer } from "lucide-react";
-import { toDate } from "@/lib/utils";
+import { toDate, getRefId } from "@/lib/utils";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -34,68 +34,79 @@ export default function InvoicePage() {
     useEffect(() => {
         if (!id || !db) return;
 
-        const fetchJobAndTransaction = async () => {
-            setLoading(true);
-            try {
-                // Fetch Job
-                const jobRef = doc(db, 'jobs', id);
-                const jobSnap = await getDoc(jobRef);
-                const jobData = jobSnap.data();
+        setLoading(true);
 
-                if (!jobSnap.exists() || !jobData) {
-                    setJob(null);
-                    setLoading(false);
-                    return;
-                }
+        const jobRef = doc(db, 'jobs', id);
 
-                // Resolving References
-                const jobGiverRef = jobData.jobGiver as DocumentReference;
-                const jobGiverSnap = await getDoc(jobGiverRef);
-                const jobGiverData = jobGiverSnap.data();
+        // Use real-time listener to handle cases where invoice is generated milliseconds after page load
+        const unsubscribe = onSnapshot(jobRef, async (jobSnap) => {
+            const jobData = jobSnap.data();
 
-                if (!jobGiverData) {
-                    setJob(null);
-                    setLoading(false);
-                    return;
-                }
-
-                let awardedInstaller: User | undefined = undefined;
-                if (jobData.awardedInstaller) {
-                    const awardedInstallerRef = jobData.awardedInstaller as DocumentReference;
-                    const awardedInstallerSnap = await getDoc(awardedInstallerRef);
-                    const awardedInstallerData = awardedInstallerSnap.data();
-
-                    if (awardedInstallerSnap.exists() && awardedInstallerData) {
-                        awardedInstaller = { id: awardedInstallerSnap.id, ...awardedInstallerData } as User;
-                    }
-                }
-
-                setJob({
-                    ...(jobData as Job),
-                    jobGiver: { id: jobGiverSnap.id, ...jobGiverData } as User,
-                    awardedInstaller: awardedInstaller,
-                });
-
-                // Fetch Transaction if Platform Receipt requested
-                if (type === 'platform') {
-                    const q = query(collection(db, 'transactions'), where('jobId', '==', id), where('status', 'in', ['Funded', 'Released', 'Completed'])); // 'Funded' is usually enough, but 'Released' is final
-                    // Actually, for receipt, status should be 'Released' ideally, or at least Funded.
-                    // Let's grab the most recent one.
-                    const querySnapshot = await getDocs(q);
-                    if (!querySnapshot.empty) {
-                        const txnData = querySnapshot.docs[0].data();
-                        setTransaction({ id: querySnapshot.docs[0].id, ...txnData } as Transaction);
-                    }
-                }
-
-            } catch (error) {
-                console.error("Error fetching invoice data:", error);
-            } finally {
+            if (!jobSnap.exists() || !jobData) {
+                setJob(null);
                 setLoading(false);
+                return;
             }
-        };
-        fetchJobAndTransaction();
 
+            // Resolving References
+            let finalJobGiver = jobData.jobGiver;
+            let finalInstaller = jobData.awardedInstaller;
+
+            // Fetch Job Giver
+            try {
+                const jobGiverId = getRefId(jobData.jobGiver);
+                if (jobGiverId) {
+                    const jobGiverSnap = await getDoc(doc(db, 'users', jobGiverId));
+                    const jobGiverData = jobGiverSnap.data();
+                    if (jobGiverData) {
+                        finalJobGiver = { id: jobGiverSnap.id, ...jobGiverData } as User;
+                    }
+                }
+            } catch (err) {
+                console.warn("Error fetching job giver:", err);
+            }
+
+            // Fetch Installer (May fail due to permissions)
+            try {
+                const awardedInstallerId = getRefId(jobData.awardedInstaller);
+                if (awardedInstallerId) {
+                    const awardedInstallerSnap = await getDoc(doc(db, 'users', awardedInstallerId));
+                    const awardedInstallerData = awardedInstallerSnap.data();
+                    if (awardedInstallerData) {
+                        finalInstaller = { id: awardedInstallerSnap.id, ...awardedInstallerData } as User;
+                    }
+                }
+            } catch (err) {
+                console.warn("Error fetching installer:", err);
+            }
+
+            setJob({
+                ...(jobData as Job),
+                jobGiver: finalJobGiver,
+                awardedInstaller: finalInstaller,
+            });
+
+            // Fetch Transaction if Platform Receipt requested
+            if (type === 'platform') {
+                try {
+                    const q = query(collection(db, 'transactions'), where('jobId', '==', id));
+                    const querySnapshot = await getDocs(q);
+                    const validStatuses = ['Funded', 'Released', 'Completed'];
+                    const validTxn = querySnapshot.docs.find(doc => validStatuses.includes(doc.data().status));
+
+                    if (validTxn) {
+                        const txnData = validTxn.data();
+                        setTransaction({ id: validTxn.id, ...txnData } as Transaction);
+                    }
+                } catch (e) {
+                    console.error("Error fetching transaction:", e);
+                }
+            }
+
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
     }, [id, db, type]);
 
     if (loading) {
@@ -107,10 +118,16 @@ export default function InvoicePage() {
     }
 
     const jobGiver = job.jobGiver as User;
-    const installer = job.awardedInstaller as User;
+    const installer = job.awardedInstaller as User; // safe if undefined, handled in check
 
     // Permissions Check
-    if (!user || (!isAdmin && user.id !== jobGiver.id && user.id !== installer.id)) {
+    // Handle case where installer is undefined (not fetched yet or legacy data)
+    // Note: If user is admin, allow. If user is job giver, allow. If user is installer, allow.
+
+    // Safety check for installer.id access
+    const installerId = installer?.id;
+
+    if (user && !isAdmin && user.id !== jobGiver.id && user.id !== installerId) {
         notFound();
     }
 
@@ -120,7 +137,7 @@ export default function InvoicePage() {
             return <div className="p-8 text-center">Transaction details not found. Receipt unavailable.</div>;
         }
 
-        const isViewerJobGiver = user.id === jobGiver.id;
+        const isViewerJobGiver = user ? user.id === jobGiver.id : false;
         // If viewer is admin, we probably want to see both or ask? For now, default to JobGiver view if admin, or show error?
         // Let's assume Admin is debugging, show Giver's for now or just generic.
         // Better: Use role context. If user.role matches...
@@ -137,7 +154,7 @@ export default function InvoicePage() {
         let feeAmount = 0;
         let invoiceNumber = `INV-PLT-${transaction.id.slice(-6).toUpperCase()}`;
 
-        if (user.id === installer.id) {
+        if (user && user.id === installer.id) {
             // Invoice 2
             recipientName = installer.name;
             recipientAddress = installer.address.fullAddress || "Address not provided";
