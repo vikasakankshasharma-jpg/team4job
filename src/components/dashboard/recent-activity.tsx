@@ -45,7 +45,7 @@ export function RecentActivity() {
                 const jobsRef = collection(db, 'jobs');
                 let jobsQuery;
                 if (role === 'Job Giver') {
-                    jobsQuery = query(jobsRef, where('jobGiverId', '==', user.id), orderBy('postedAt', 'desc'), limit(5));
+                    jobsQuery = query(jobsRef, where('jobGiverId', '==', user.id), limit(20)); // Fetch more to sort client side
                 } else {
                     // For installers, finding 'recent bids' is harder without a composite index on subcollections.
                     // We'll stick to 'jobs awarded' or 'jobs completed' which are easier to query if we had a proper index.
