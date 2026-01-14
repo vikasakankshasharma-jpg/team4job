@@ -128,7 +128,7 @@ test.describe('Edge Case Tests', () => {
             await page.fill('[data-testid="max-budget-input"]', '12000');
 
             await page.fill('input[name="deadline"]', getDateString(2));
-            await page.fill('input[name="jobStartDate"]', getDateTimeString(4));
+            await page.fill('input[name="jobStartDate"]', getDateTimeString(40));
 
             await helper.form.clickButton('Post Job');
             await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
@@ -158,7 +158,7 @@ test.describe('Edge Case Tests', () => {
             await page.fill('[data-testid="max-budget-input"]', '12000');
 
             await page.fill('input[name="deadline"]', getDateString(2));
-            await page.fill('input[name="jobStartDate"]', getDateTimeString(4));
+            await page.fill('input[name="jobStartDate"]', getDateTimeString(40));
 
             await helper.form.clickButton('Post Job');
             await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
@@ -188,7 +188,9 @@ test.describe('Edge Case Tests', () => {
             await helper.nav.goToPostJob();
 
             await helper.form.selectDropdown('Job Category', TEST_JOB_DATA.category);
-            await page.fill('input[name="deadline"]', getDateString(-1));
+            const pastDate = new Date();
+            pastDate.setDate(pastDate.getDate() - 2); // 2 days ago
+            await page.fill('input[name="deadline"]', pastDate.toISOString().split('T')[0]);
 
             await helper.form.clickButton('Post Job');
 
@@ -218,7 +220,7 @@ test.describe('Edge Case Tests', () => {
             await page.fill('[data-testid="max-budget-input"]', '12000');
 
             await page.fill('input[name="deadline"]', getDateString(2));
-            await page.fill('input[name="jobStartDate"]', getDateTimeString(4));
+            await page.fill('input[name="jobStartDate"]', getDateTimeString(40));
 
             await helper.form.clickButton('Post Job');
 
@@ -398,7 +400,7 @@ test.describe('Edge Case Tests', () => {
             await page.fill('[data-testid="max-budget-input"]', '1000');
 
             await page.fill('input[name="deadline"]', getDateString(2));
-            await page.fill('input[name="jobStartDate"]', getDateTimeString(4));
+            await page.fill('input[name="jobStartDate"]', getDateTimeString(40));
 
             await helper.form.clickButton('Post Job');
 
@@ -429,7 +431,7 @@ test.describe('Edge Case Tests', () => {
             await page.fill('input[name="priceEstimate.max"]', '1000');
 
             await page.fill('input[name="deadline"]', getDateString(2));
-            await page.fill('input[name="jobStartDate"]', getDateTimeString(4));
+            await page.fill('input[name="jobStartDate"]', getDateTimeString(40));
 
             await helper.form.clickButton('Post Job');
 

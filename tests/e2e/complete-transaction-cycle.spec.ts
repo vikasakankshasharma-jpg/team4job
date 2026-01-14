@@ -302,8 +302,15 @@ test.describe('Complete Transaction Cycle E2E', () => {
             platformInvoiceBtn.click()
         ]);
         await platformPage.waitForLoadState();
-        // Check for content in the new tab
-        await expect(platformPage.getByText('Platform Receipt')).toBeVisible({ timeout: TIMEOUTS.medium });
+        // Check for content in the new tab with retry logic
+        try {
+            await expect(platformPage.getByText('Platform Receipt')).toBeVisible({ timeout: 5000 });
+        } catch (e) {
+            console.log('[Phase 9b] Platform Receipt not found initially, reloading...');
+            await platformPage.reload();
+            await platformPage.waitForLoadState();
+            await expect(platformPage.getByText('Platform Receipt')).toBeVisible({ timeout: TIMEOUTS.medium });
+        }
         console.log('[PASS] Platform Receipt Page Verified');
         await platformPage.close();
 

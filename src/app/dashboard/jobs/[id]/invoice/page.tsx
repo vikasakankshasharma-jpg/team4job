@@ -35,11 +35,9 @@ export default function InvoicePage() {
         if (!id || !db) return;
 
         setLoading(true);
-
         const jobRef = doc(db, 'jobs', id);
 
-        // Use real-time listener to handle cases where invoice is generated milliseconds after page load
-        const unsubscribe = onSnapshot(jobRef, async (jobSnap) => {
+        const unsubscribeJob = onSnapshot(jobRef, async (jobSnap) => {
             const jobData = jobSnap.data();
 
             if (!jobSnap.exists() || !jobData) {
@@ -66,7 +64,7 @@ export default function InvoicePage() {
                 console.warn("Error fetching job giver:", err);
             }
 
-            // Fetch Installer (May fail due to permissions)
+            // Fetch Installer
             try {
                 const awardedInstallerId = getRefId(jobData.awardedInstaller);
                 if (awardedInstallerId) {
@@ -86,27 +84,46 @@ export default function InvoicePage() {
                 awardedInstaller: finalInstaller,
             });
 
-            // Fetch Transaction if Platform Receipt requested
-            if (type === 'platform') {
-                try {
-                    const q = query(collection(db, 'transactions'), where('jobId', '==', id));
-                    const querySnapshot = await getDocs(q);
-                    const validStatuses = ['Funded', 'Released', 'Completed'];
-                    const validTxn = querySnapshot.docs.find(doc => validStatuses.includes(doc.data().status));
-
-                    if (validTxn) {
-                        const txnData = validTxn.data();
-                        setTransaction({ id: validTxn.id, ...txnData } as Transaction);
-                    }
-                } catch (e) {
-                    console.error("Error fetching transaction:", e);
-                }
+            // Only stop loading here if we are NOT waiting for a transaction
+            if (type !== 'platform') {
+                setLoading(false);
             }
+        });
 
+        return () => unsubscribeJob();
+    }, [id, db, type]);
+
+    // Separate Effect for Transaction (Real-time)
+    useEffect(() => {
+        if (!id || !db || type !== 'platform') return;
+
+        // Keep loading true while we init listener
+        // (If job loaded first, it might have set loading=false, but we need it true for platform)
+        // Actually, we generally want both ready.
+
+        const q = query(collection(db, 'transactions'), where('jobId', '==', id));
+
+        const unsubscribeTxn = onSnapshot(q, (querySnapshot) => {
+            const validStatuses = ['Funded', 'Released', 'Completed', 'Pending Payout'];
+            console.log(`[InvoicePage] Real-time txn update passed. Count: ${querySnapshot.size}. IDs: ${querySnapshot.docs.map(d => d.id).join(',')}`);
+            querySnapshot.docs.forEach(d => console.log(`[InvoicePage] Txn ${d.id} status: ${d.data().status}`));
+
+            const validTxn = querySnapshot.docs.find(doc => validStatuses.includes(doc.data().status));
+
+            if (validTxn) {
+                const txnData = validTxn.data();
+                setTransaction({ id: validTxn.id, ...txnData } as Transaction);
+            } else {
+                setTransaction(null);
+            }
+            // Once we have a response (even if null), we are done loading for txn part
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching transaction:", error);
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => unsubscribeTxn();
     }, [id, db, type]);
 
     if (loading) {
