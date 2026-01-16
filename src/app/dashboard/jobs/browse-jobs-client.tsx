@@ -335,8 +335,8 @@ export default function BrowseJobsClient() {
     <div className="max-w-full overflow-x-hidden px-4 sm:px-0 grid flex-1 items-start gap-4 md:gap-8">
       <Tabs value={currentTab} onValueChange={handleTabChange}>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <TabsList className="w-full sm:w-auto">
-            <TabsTrigger value="nearby" className="flex-1 sm:flex-none gap-2">
+          <TabsList className="w-full sm:w-auto h-auto p-1">
+            <TabsTrigger value="nearby" className="flex-1 sm:flex-none gap-2 min-h-[44px]">
               <MapPin className="h-4 w-4" />
               Near You
               {filteredRecommendedJobs.length > 0 && (
@@ -345,7 +345,7 @@ export default function BrowseJobsClient() {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="all" className="flex-1 sm:flex-none">Browse All</TabsTrigger>
+            <TabsTrigger value="all" className="flex-1 sm:flex-none min-h-[44px]">Browse All</TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
             <DropdownMenu>

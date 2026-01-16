@@ -220,7 +220,7 @@ export function Header() {
           {renderBreadcrumbs()}
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="flex w-full flex-1 items-center justify-end gap-4 md:ml-auto md:w-auto md:flex-grow-0">
+      <div className="flex w-full flex-1 items-center justify-end gap-2 overflow-hidden md:ml-auto md:w-auto md:flex-grow-0 md:gap-4 md:overflow-visible">
         {/* Subscription Status Indicator - Systematic Design */}
         {user?.subscription?.planId === 'trial' && daysLeft > 0 && !isTeamMember && (
           <Link href="/dashboard/billing">
