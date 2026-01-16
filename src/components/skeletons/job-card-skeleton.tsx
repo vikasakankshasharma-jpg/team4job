@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function JobCardSkeleton() {
     return (
-        <Card className="flex flex-col relative">
+        <Card className="flex flex-col relative" data-testid="skeleton-loader">
             <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-3">

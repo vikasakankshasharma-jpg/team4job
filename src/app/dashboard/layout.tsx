@@ -14,9 +14,9 @@ export default function DashboardLayout({
 }) {
   return (
     <SearchProvider>
-      <div className="flex min-h-screen w-full flex-row bg-muted/40">
+      <div className="flex min-h-screen w-full flex-row bg-muted/40 overflow-x-hidden">
         <DashboardSidebar />
-        <div className="flex flex-1 flex-col sm:ml-14">
+        <div className="flex flex-1 flex-col sm:ml-14 min-w-0">
           <Header />
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:gap-8 pb-20 md:pb-6">
             {children}
