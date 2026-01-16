@@ -49,18 +49,29 @@ export function NotificationList({ notifications, onMarkAsRead, onItemClick, cla
 
     return (
         <ScrollArea className={cn("h-[400px]", className)}>
-            <div className="flex flex-col gap-1 p-1">
+            <div className="flex flex-col gap-1 p-1" role="list">
                 {notifications.map((notification) => (
                     <div
                         key={notification.id}
+                        role="button"
+                        tabIndex={0}
                         className={cn(
-                            "flex items-start gap-4 p-4 rounded-lg transition-colors cursor-pointer border border-transparent",
-                            notification.read ? "bg-background hover:bg-muted/50" : "bg-blue-50/50 hover:bg-blue-50 dark:bg-blue-900/10 dark:hover:bg-blue-900/20 border-l-blue-500",
+                            "flex items-start gap-4 p-4 rounded-lg transition-colors cursor-pointer border border-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            notification.read
+                                ? "bg-background hover:bg-muted/50"
+                                : "bg-primary/5 hover:bg-primary/10 border-l-primary",
                             "group"
                         )}
                         onClick={() => {
                             if (!notification.read) onMarkAsRead(notification.id);
                             if (onItemClick) onItemClick(notification);
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                if (!notification.read) onMarkAsRead(notification.id);
+                                if (onItemClick) onItemClick(notification);
+                            }
                         }}
                     >
                         <div className="mt-1 flex-shrink-0">
@@ -83,11 +94,11 @@ export function NotificationList({ notifications, onMarkAsRead, onItemClick, cla
                                     })()}
                                 </span>
                             </div>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
+                            <p className="text-sm text-muted-foreground line-clamp-2 overflow-wrap-anywhere">
                                 {notification.message}
                             </p>
                             {notification.actionLabel && (
-                                <Button variant="link" className="p-0 h-auto text-xs mt-1">
+                                <Button variant="link" className="p-0 h-auto min-h-[32px] text-xs mt-1 font-medium">
                                     {notification.actionLabel}
                                 </Button>
                             )}

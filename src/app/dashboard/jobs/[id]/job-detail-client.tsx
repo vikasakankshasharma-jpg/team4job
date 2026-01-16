@@ -439,6 +439,7 @@ function PlaceBidDialog({ job, user, onBidSubmit, open, onOpenChange, platformSe
                             placeholder="e.g. 5000"
                             value={amount || ''}
                             onChange={e => setAmount(Number(e.target.value))}
+                            className="h-12 text-lg"
                         />
                     </div>
                     {/* Phase 10: Duration Input */}
@@ -695,7 +696,7 @@ function StartWorkInput({ job, user, onJobUpdate }: { job: Job, user: User, onJo
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     maxLength={6}
-                    className="font-mono"
+                    className="font-mono h-12 text-lg tracking-widest"
                 />
                 <Button size="sm" onClick={handleStartWork} disabled={isLoading || otp.length < 6}>
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start"}
@@ -2042,7 +2043,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
                                     {/* Job Giver Actions */}
                                     {isJobGiver && job.status === 'Open for Bidding' && (
-                                        <Button variant="destructive" className="w-full" onClick={() => handleJobUpdate({ status: 'Bidding Closed' })}>Close Bidding</Button>
+                                        <Button variant="destructive" className="w-full min-h-[44px]" onClick={() => handleJobUpdate({ status: 'Bidding Closed' })}>Close Bidding</Button>
                                     )}
 
                                     {/* Installer Actions: Place Bid */}
@@ -2090,12 +2091,12 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                                     )}
 
                                     {isJobGiver && job.status === 'Pending Funding' && (
-                                        <Button className="w-full" onClick={handleStartCheckout} data-testid="proceed-payment-button">Proceed to Payment</Button>
+                                        <Button className="w-full min-h-[44px]" onClick={handleStartCheckout} data-testid="proceed-payment-button">Proceed to Payment</Button>
                                     )}
 
                                     {/* Release Payment */}
                                     {isJobGiver && job.status === 'Pending Confirmation' && (
-                                        <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
+                                        <Button className="w-full bg-green-600 hover:bg-green-700 min-h-[44px]" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
                                             <CheckCircle className="mr-2 h-4 w-4" />
                                             Approve Work & Release Payment
                                         </Button>

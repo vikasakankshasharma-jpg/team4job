@@ -9,6 +9,7 @@ import { Job, User } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface QuickMetricsRowProps {
     userId: string;
@@ -132,6 +133,7 @@ export function QuickMetricsRow({ userId, user }: QuickMetricsRowProps) {
                 value={metrics.avgBidsPerJob.toFixed(1)}
                 icon={Target}
                 tooltip="Average number of bids you receive per job (last 90 days)"
+                className="h-full"
             />
 
             <QuickMetricCard
@@ -139,6 +141,7 @@ export function QuickMetricsRow({ userId, user }: QuickMetricsRowProps) {
                 value={metrics.avgTimeToFirstBid}
                 icon={Clock}
                 tooltip="Average time before receiving your first bid"
+                className="h-full"
             />
 
             <QuickMetricCard
@@ -156,7 +159,10 @@ export function QuickMetricsRow({ userId, user }: QuickMetricsRowProps) {
                         ? "Click to review completed jobs"
                         : "All completed jobs have been reviewed"
                 }
-                className={metrics.pendingReviews > 0 ? "border-amber-200 bg-amber-50/30 dark:border-amber-900/30 dark:bg-amber-950/20" : ""}
+                className={cn(
+                    "h-full",
+                    metrics.pendingReviews > 0 ? "border-amber-200 bg-amber-50/30 dark:border-amber-900/30 dark:bg-amber-950/20" : ""
+                )}
             />
 
             <QuickMetricCard
@@ -166,6 +172,7 @@ export function QuickMetricsRow({ userId, user }: QuickMetricsRowProps) {
                 onClick={() => router.push("/dashboard/my-installers?tab=favorites")}
                 actionable
                 tooltip="Installers you've favorited. Click to view them."
+                className="h-full"
             />
         </div>
     );

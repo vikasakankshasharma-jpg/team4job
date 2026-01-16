@@ -55,13 +55,13 @@ export function BulkActionsToolbar({
 
     return (
         <>
-            <Card className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 shadow-lg border-2 border-primary/20">
-                <div className="flex items-center gap-4 px-4 py-3">
-                    <span className="text-sm font-medium">
-                        {selectedCount} job{selectedCount > 1 ? "s" : ""} selected
+            <Card className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 shadow-lg border-2 border-primary/20 w-[calc(100vw-2rem)] max-w-md sm:w-auto">
+                <div className="flex items-center gap-2 sm:gap-4 px-3 py-2 sm:px-4 sm:py-3 justify-between sm:justify-start">
+                    <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
+                        {selectedCount} selected
                     </span>
 
-                    <div className="h-6 w-px bg-border" />
+                    <div className="h-6 w-px bg-border hidden sm:block" />
 
                     <div className="flex items-center gap-2">
                         <Button
@@ -69,13 +69,14 @@ export function BulkActionsToolbar({
                             variant="outline"
                             onClick={handleArchive}
                             disabled={isArchiving || isDeleting}
+                            className="h-10 px-3 sm:px-4"
                         >
                             {isArchiving ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                                <Archive className="mr-2 h-4 w-4" />
+                                <Archive className="h-4 w-4 sm:mr-2" />
                             )}
-                            Archive
+                            <span className="hidden sm:inline ml-2">Archive</span>
                         </Button>
 
                         <Button
@@ -83,13 +84,14 @@ export function BulkActionsToolbar({
                             variant="destructive"
                             onClick={() => setShowDeleteDialog(true)}
                             disabled={isArchiving || isDeleting}
+                            className="h-10 px-3 sm:px-4"
                         >
                             {isDeleting ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                                <Trash2 className="mr-2 h-4 w-4" />
+                                <Trash2 className="h-4 w-4 sm:mr-2" />
                             )}
-                            Delete
+                            <span className="hidden sm:inline ml-2">Delete</span>
                         </Button>
 
                         <Button
@@ -97,8 +99,9 @@ export function BulkActionsToolbar({
                             variant="ghost"
                             onClick={onClearSelection}
                             disabled={isArchiving || isDeleting}
+                            className="h-10 w-10 p-0"
                         >
-                            <X className="h-4 w-4" />
+                            <X className="h-5 w-5" />
                         </Button>
                     </div>
                 </div>

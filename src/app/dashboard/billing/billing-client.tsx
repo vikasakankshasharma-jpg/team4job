@@ -100,14 +100,15 @@ function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () =
         <CardDescription>Have a coupon code? Enter it here to extend your subscription or get premium features.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Input
             placeholder="Enter Coupon Code"
             value={couponCode}
             onChange={(e) => setCouponCode(e.target.value)}
             disabled={isLoading}
+            className="flex-1"
           />
-          <Button onClick={handleRedeem} disabled={isLoading}>
+          <Button onClick={handleRedeem} disabled={isLoading} className="w-full sm:w-auto">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Redeem
           </Button>

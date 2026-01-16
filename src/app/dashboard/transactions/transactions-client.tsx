@@ -36,6 +36,7 @@ import { useHelp } from "@/hooks/use-help";
 import { DateRange } from "react-day-picker";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { MobileTransactionCard } from "@/components/dashboard/transactions/mobile-transaction-card";
 
 const getStatusVariant = (status: Transaction['status']) => {
     switch (status) {
@@ -371,71 +372,96 @@ export default function TransactionsClient() {
                         <FilterBar filters={filterConfig} onReset={clearFilters} />
                     </div>
 
-                    {/* Transactions Table */}
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Transaction</TableHead>
-                                <TableHead>Job</TableHead>
-                                <TableHead>Parties</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Timestamp</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
+                    {/* Transactions Table (Desktop) */}
+                    <div className="hidden md:block">
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center">
-                                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                                    </TableCell>
+                                    <TableHead>Transaction</TableHead>
+                                    <TableHead>Job</TableHead>
+                                    <TableHead>Parties</TableHead>
+                                    <TableHead className="text-right">Amount</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Timestamp</TableHead>
                                 </TableRow>
-                            ) : tabFilteredTransactions.length > 0 ? (
-                                tabFilteredTransactions.map((t) => {
-                                    const latestTimestamp = toDate(t.releasedAt || t.fundedAt || t.failedAt || t.createdAt);
-                                    return (
-                                        <TableRow key={t.id}>
-                                            <TableCell className="font-mono text-xs">{t.id}</TableCell>
-                                            <TableCell>
-                                                <Link href={`/dashboard/jobs/${t.jobId}`} className="font-medium hover:underline">{t.jobTitle}</Link>
-                                                <p className="text-xs text-muted-foreground font-mono">{t.jobId}</p>
-                                            </TableCell>
-                                            <TableCell className="text-sm">
-                                                <div className="flex items-center gap-2">
-                                                    <Link href={`/dashboard/users/${t.payerId}`} className="font-medium hover:underline">{t.payerName}</Link>
-                                                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                                                    <Link href={`/dashboard/users/${t.payeeId}`} className="font-medium hover:underline">{t.payeeName}</Link>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right font-semibold">₹{t.amount.toLocaleString()}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={getStatusVariant(t.status)}>{t.status}</Badge>
-                                            </TableCell>
-                                            <TableCell title={format(latestTimestamp, "PPpp")}>
-                                                {formatDistanceToNow(latestTimestamp, { addSuffix: true })}
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="h-24">
-                                        <AdminEmptyState
-                                            icon={Inbox}
-                                            title="No transactions found"
-                                            description="No transactions match your current filters"
-                                            action={{
-                                                label: 'Reset Filters',
-                                                onClick: clearFilters,
-                                            }}
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="h-24 text-center">
+                                            <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : tabFilteredTransactions.length > 0 ? (
+                                    tabFilteredTransactions.map((t) => {
+                                        const latestTimestamp = toDate(t.releasedAt || t.fundedAt || t.failedAt || t.createdAt);
+                                        return (
+                                            <TableRow key={t.id}>
+                                                <TableCell className="font-mono text-xs">{t.id}</TableCell>
+                                                <TableCell>
+                                                    <Link href={`/dashboard/jobs/${t.jobId}`} className="font-medium hover:underline">{t.jobTitle}</Link>
+                                                    <p className="text-xs text-muted-foreground font-mono">{t.jobId}</p>
+                                                </TableCell>
+                                                <TableCell className="text-sm">
+                                                    <div className="flex items-center gap-2">
+                                                        <Link href={`/dashboard/users/${t.payerId}`} className="font-medium hover:underline">{t.payerName}</Link>
+                                                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                                        <Link href={`/dashboard/users/${t.payeeId}`} className="font-medium hover:underline">{t.payeeName}</Link>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right font-semibold">₹{t.amount.toLocaleString()}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={getStatusVariant(t.status)}>{t.status}</Badge>
+                                                </TableCell>
+                                                <TableCell title={format(latestTimestamp, "PPpp")}>
+                                                    {formatDistanceToNow(latestTimestamp, { addSuffix: true })}
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="h-24">
+                                            <AdminEmptyState
+                                                icon={Inbox}
+                                                title="No transactions found"
+                                                description="No transactions match your current filters"
+                                                action={{
+                                                    label: 'Reset Filters',
+                                                    onClick: clearFilters,
+                                                }}
+                                            />
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Mobile: Cards List */}
+                    <div className="md:hidden space-y-4">
+                        {loading ? (
+                            <div className="flex justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : tabFilteredTransactions.length > 0 ? (
+                            tabFilteredTransactions.map(t => (
+                                <MobileTransactionCard key={t.id} transaction={t} />
+                            ))
+                        ) : (
+                            <AdminEmptyState
+                                icon={Inbox}
+                                title="No transactions found"
+                                description="No transactions match your current filters"
+                                action={{
+                                    label: 'Reset Filters',
+                                    onClick: clearFilters,
+                                }}
+                            />
+                        )}
+                    </div>
                 </CardContent>
             </Card>
-        </div>
+        </div >
     );
 }

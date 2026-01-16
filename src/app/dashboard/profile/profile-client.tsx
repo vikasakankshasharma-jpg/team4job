@@ -593,7 +593,7 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
                                     <p className="font-medium text-sm">{contact.name} <span className="text-muted-foreground text-xs">({contact.relation})</span></p>
                                     <p className="text-xs text-muted-foreground font-mono">{contact.mobile}</p>
                                 </div>
-                                <Button variant="ghost" size="sm" onClick={() => handleRemoveContact(contact)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                                <Button variant="ghost" size="sm" onClick={() => handleRemoveContact(contact)} className="h-10 px-4 text-red-500 hover:text-red-700 hover:bg-red-50">
                                     Remove
                                 </Button>
                             </div>
@@ -625,8 +625,8 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
                         </form>
                     </Form>
                 ) : (
-                    <Button variant="outline" size="sm" onClick={() => setIsAdding(true)} className="w-full border-dashed text-muted-foreground hover:text-foreground">
-                        <PlusCircle className="mr-2 h-4 w-4" />
+                    <Button variant="outline" size="sm" onClick={() => setIsAdding(true)} className="w-full h-12 border-dashed text-muted-foreground hover:text-foreground">
+                        <PlusCircle className="mr-2 h-5 w-5" />
                         Add Emergency Contact
                     </Button>
                 )}
