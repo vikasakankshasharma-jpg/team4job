@@ -1855,506 +1855,508 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     };
 
     return (
-        <div className="container py-6 space-y-6 max-w-full overflow-x-hidden px-4">
-            {/* Reschedule Banner */}
-            {job.dateChangeProposal && (
-                <div className={`border p-4 rounded-md flex flex-col md:flex-row items-center justify-between gap-4 ${job.dateChangeProposal.status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
-                    }`}>
-                    <div className={`flex items-center gap-2 ${job.dateChangeProposal.status === 'rejected' ? 'text-red-800' : 'text-blue-800'}`}>
-                        {job.dateChangeProposal.status === 'rejected' ? <XCircle className="h-5 w-5" /> : <Calendar className="h-5 w-5" />}
-                        <div>
-                            <p className="font-semibold">
-                                {job.dateChangeProposal.status === 'rejected' ? "Reschedule Request Rejected" : "Reschedule Request"}
-                            </p>
-                            <p className="text-sm">
-                                {job.dateChangeProposal.status === 'rejected' ? (
-                                    <span>
-                                        The other party rejected the new date. The job proceeds on <span className="font-bold">{job.jobStartDate ? new Date((job.jobStartDate as any).toDate ? (job.jobStartDate as any).toDate() : job.jobStartDate).toLocaleDateString() : 'Original Date'}</span>.
-                                    </span>
-                                ) : (
-                                    <span>
-                                        {job.dateChangeProposal.proposedBy} proposed to move job to <span className="font-bold">{new Date((job.dateChangeProposal.newDate as any).toDate ? (job.dateChangeProposal.newDate as any).toDate() : job.dateChangeProposal.newDate).toLocaleDateString()}</span>
-                                    </span>
-                                )}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Pending Actions */}
-                    {job.dateChangeProposal.status === 'pending' && (
-                        <>
-                            {((job.dateChangeProposal.proposedBy === 'Job Giver' && !isJobGiver) ||
-                                (job.dateChangeProposal.proposedBy === 'Installer' && isJobGiver)) ? (
-                                <div className="flex gap-2">
-                                    <Button size="sm" variant="outline" onClick={() => handleReschedule('reject')} disabled={isLoading}>Reject</Button>
-                                    <Button size="sm" onClick={() => handleReschedule('accept')} disabled={isLoading}>Accept New Date</Button>
-                                </div>
-                            ) : (
-                                <div className="text-xs text-blue-600 italic">Waiting for response...</div>
-                            )}
-                        </>
-                    )}
-
-                    {/* Rejected Actions (Dismiss) */}
-                    {job.dateChangeProposal.status === 'rejected' && (
-                        <div className="flex gap-2">
-                            {/* If Job Giver was rejected, show Cancel Hint? */}
-                            {isJobGiver && (
-                                <Button size="sm" variant="destructive" onClick={() => setIsCancelDialogOpen(true)}>
-                                    Cancel Job
-                                </Button>
-                            )}
-                            <Button size="sm" variant="outline" onClick={() => handleReschedule('dismiss')} disabled={isLoading}>
-                                Dismiss
-                            </Button>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Debug Logs */}
-
-
-            <h1 className="text-2xl md:text-3xl font-bold break-words" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }} data-testid="job-title">{job.title}</h1>
-            <Badge variant="outline" data-testid="job-status-badge" data-status={job.status}>{job.status}</Badge>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-full overflow-hidden">
-                <div className="md:col-span-2 space-y-6 order-2 md:order-1">
-                    <Card>
-                        <CardHeader><CardTitle>Description</CardTitle></CardHeader>
-                        <CardContent>
-                            <p className="whitespace-pre-line mb-4">{job.description}</p>
-
-                            {/* Attachments Grid */}
-                            {job.attachments && job.attachments.length > 0 && (
-                                <div className="space-y-2">
-                                    <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                        <Paperclip className="h-4 w-4" />
-                                        Attachments ({job.attachments.length})
-                                    </h4>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                        {job.attachments.map((file: any, idx: number) => (
-                                            <div key={idx} className="relative group aspect-square rounded-md overflow-hidden border bg-muted">
-                                                {file.fileType.startsWith('image/') ? (
-                                                    <div
-                                                        className="relative w-full h-full cursor-pointer transition-transform hover:scale-105"
-                                                        onClick={() => window.open(file.fileUrl, '_blank')}
-                                                    >
-                                                        <Image
-                                                            src={file.fileUrl}
-                                                            alt={file.fileName}
-                                                            fill
-                                                            className="object-cover"
-                                                            sizes="(max-width: 768px) 50vw, 25vw"
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col items-center justify-center h-full p-2 text-center text-xs text-muted-foreground">
-                                                        <FileIcon className="h-8 w-8 mb-1" />
-                                                        <span className="truncate w-full">{file.fileName}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Bids Section */}
-                    <Card id="bids-section">
-                        <CardHeader><CardTitle>Bids ({bids.length})</CardTitle></CardHeader>
-                        <CardContent>
-                            {bids.length === 0 ? <p className="text-muted-foreground">No bids yet.</p> : (
-                                <div className="space-y-4">
-                                    {bids.map(bid => (
-                                        <Card key={bid.id} data-testid="bid-card-wrapper">
-                                            <CardContent className="p-4 flex justify-between items-center">
-                                                <div>
-                                                    <p className="font-semibold text-lg" data-testid="bid-amount">
-                                                        {isJobGiver || user?.id === getRefId(bid.installer) ? `₹${bid.amount}` : "₹ ••••"}
-                                                    </p>
-                                                    <p className="text-sm text-muted-foreground">{formatDistanceToNow(toDate(bid.timestamp))} ago</p>
-                                                    {(!isJobGiver && user?.id !== getRefId(bid.installer)) && (
-                                                        <p className="text-[10px] text-muted-foreground italic">Bid amount hidden</p>
-                                                    )}
-                                                </div>
-                                                {/* Award Action (Only for Job Giver) */}
-                                                {isJobGiver && job.status === 'Open for Bidding' && (
-                                                    <Button data-testid="send-offer-button" onClick={async () => {
-                                                        // Award Logic
-                                                        // 1. Update Job Status to 'Pending Acceptance' (Phase 4 of checklist)
-                                                        // Or directly Awarded?
-                                                        // Actually, standard flow: Job Giver Selects -> Installer Accepts.
-                                                        // The 'Send Offer' button does this.
-
-                                                        // We can handle this logic inside a "BidCard" component or here.
-                                                        // For simplicity, just logic here:
-                                                        await handleJobUpdate({
-                                                            status: 'Awarded', // Or 'Pending Acceptance' if we want that step
-                                                            awardedInstaller: doc(db, 'users', getRefId(bid.installer)),
-                                                            awardedInstallerId: getRefId(bid.installer), // Added for robust permission rules
-                                                            selectedInstallers: [{ installerId: getRefId(bid.installer), rank: 1 }]
-                                                        });
-                                                        toast({ title: "Offer Sent", description: "Waiting for installer acceptance." });
-                                                    }}>
-                                                        Send Offer
-                                                    </Button>
-                                                )}
-                                            </CardContent>
-                                            {/* Bid Chat (Silent Bid Fix) */}
-                                            <CardFooter className="pt-0 pb-4 px-4 bg-muted/20">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="w-full text-xs text-muted-foreground hover:text-primary"
-                                                    onClick={() => {
-                                                        const contactUrl = `/dashboard/messages?recipientId=${getRefId(bid.installer)}`;
-                                                        window.open(contactUrl, '_blank');
-                                                    }}
-                                                >
-                                                    <MessageSquare className="h-3 w-3 mr-1" />
-                                                    Ask Question / Chat
-                                                </Button>
-                                            </CardFooter>
-                                        </Card>
-                                    ))}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <div className="space-y-6 order-1 md:order-2">
-                    {/* Actions Panel */}
-                    <Card data-testid="actions-panel">
-                        <CardHeader><CardTitle>Actions</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className={cn("space-y-4", userLoading && "opacity-50 pointer-events-none")}>
-                                {userLoading && (
-                                    <div className="flex items-center justify-center py-2 text-xs text-muted-foreground animate-pulse">
-                                        <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                                        Syncing permissions...
-                                    </div>
-                                )}
-
-                                {/* Job Giver Actions */}
-                                {isJobGiver && job.status === 'Open for Bidding' && (
-                                    <Button variant="destructive" className="w-full" onClick={() => handleJobUpdate({ status: 'Bidding Closed' })}>Close Bidding</Button>
-                                )}
-
-                                {/* Installer Actions: Place Bid */}
-                                {!isJobGiver && job.status === 'Open for Bidding' && (
-                                    <Button className="w-full" onClick={() => setIsBidDialogOpen(true)} disabled={userLoading || bids.some(b => getRefId(b.installer) === user?.id)} data-testid="place-bid-button">
-                                        {bids.some(b => getRefId(b.installer) === user?.id) ? "Bid Placed" : "Place Bid"}
-                                    </Button>
-                                )}
-
-                                {/* ... other actions truncated in this view but I will preserve them in real write ... */}
-                                {/* Wait, I have to provide the FULL content of the block I am replacing. */}
-                                {/* Let me rewrite the whole thing carefully. */}
-
-                                {/* Reschedule Action */}
-                                {job.status === 'In Progress' && !job.workStartedAt && !job.dateChangeProposal?.status.includes('pending') && (
-                                    <Button variant="outline" className="w-full" onClick={() => setIsRescheduleDialogOpen(true)}>
-                                        <Calendar className="mr-2 h-4 w-4" />
-                                        Request Reschedule
-                                    </Button>
-                                )}
-
-                                {/* Retract Offer */}
-                                {isJobGiver && job.status === 'Awarded' && (
-                                    <div className="space-y-4">
-                                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
-                                            You have sent an offer. Waiting for installer to accept.
-                                        </div>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full text-amber-600 border-amber-200 hover:bg-amber-50"
-                                            onClick={async () => {
-                                                if (!window.confirm("Retract offer? This will allow other installers to bid again.")) return;
-                                                await handleJobUpdate({
-                                                    status: 'Open for Bidding',
-                                                    awardedInstaller: deleteField() as any,
-                                                    selectedInstallers: deleteField() as any
-                                                });
-                                                toast({ title: "Offer Retracted", description: "Job is open for bidding again." });
-                                            }}
-                                        >
-                                            <UserX className="mr-2 h-4 w-4" />
-                                            Retract Offer
-                                        </Button>
-                                    </div>
-                                )}
-
-                                {isJobGiver && job.status === 'Pending Funding' && (
-                                    <Button className="w-full" onClick={handleStartCheckout} data-testid="proceed-payment-button">Proceed to Payment</Button>
-                                )}
-
-                                {/* Release Payment */}
-                                {isJobGiver && job.status === 'Pending Confirmation' && (
-                                    <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
-                                        <CheckCircle className="mr-2 h-4 w-4" />
-                                        Approve Work & Release Payment
-                                    </Button>
-                                )}
-
-                                {/* Raise Dispute */}
-                                {(job.status === 'In Progress' || job.status === 'Pending Confirmation') && (
-                                    <Button variant="destructive" className="w-full border-red-200 text-red-600 hover:bg-red-50" onClick={() => setIsDisputeDialogOpen(true)}>
-                                        <ShieldAlert className="mr-2 h-4 w-4" />
-                                        Report Issue / Raise Dispute
-                                    </Button>
-                                )}
-
-                                {/* Leave Review */}
-                                {job.status === 'Completed' && (
-                                    <div className="space-y-2">
-                                        <Button className="w-full" variant="outline" onClick={() => setIsReviewDialogOpen(true)}>
-                                            <Star className="mr-2 h-4 w-4" />
-                                            Leave Review
-                                        </Button>
-
-                                        <Button
-                                            className="w-full"
-                                            variant="secondary"
-                                            onClick={() => window.open(`/dashboard/jobs/${job.id}/invoice`, '_blank')}
-                                            data-testid="download-invoice-button"
-                                        >
-                                            <FileText className="mr-2 h-4 w-4" />
-                                            Download Service Invoice
-                                        </Button>
-
-                                        <Button
-                                            className="w-full"
-                                            variant="ghost"
-                                            onClick={() => window.open(`/dashboard/jobs/${job.id}/invoice?type=platform`, '_blank')}
-                                            data-testid="download-platform-invoice-button"
-                                        >
-                                            <FileText className="mr-2 h-4 w-4" />
-                                            Download Platform Receipt
-                                        </Button>
-                                    </div>
-                                )}
-
-                                {/* Secure Contact Reveal */}
-                                {counterParty && (
-                                    <div className="space-y-4">
-                                        <div className="border rounded-lg overflow-hidden">
-                                            <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-3 text-white">
-                                                <h4 className="font-bold text-sm flex items-center">
-                                                    <ShieldCheck className="h-4 w-4 mr-2" />
-                                                    Verified Identity
-                                                </h4>
-                                            </div>
-                                            <div className="p-4 bg-background flex items-center gap-4">
-                                                <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
-                                                    <AvatarImage src={counterParty.realAvatarUrl || counterParty.avatarUrl} />
-                                                    <AvatarFallback>{counterParty.name.substring(0, 2)}</AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="font-bold text-lg leading-none">{counterParty.name}</p>
-                                                    <p className="text-sm text-muted-foreground">{isJobGiver ? "Installer" : "Job Giver"}</p>
-                                                    <div className="flex items-center gap-1 mt-1 text-xs text-green-600 font-medium">
-                                                        <CheckCircle2 className="h-3 w-3" />
-                                                        Background Checked
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {counterParty.mobile && (
-                                                <div className="bg-blue-50 p-3 border-t border-blue-100 flex items-center justify-between">
-                                                    <span className="text-xs text-blue-700 font-semibold">Mobile Contact</span>
-                                                    <a href={`tel:${counterParty.mobile}`} className="text-sm font-bold text-blue-900 flex items-center hover:underline">
-                                                        <Phone className="h-3 w-3 mr-1" />
-                                                        {counterParty.mobile}
-                                                    </a>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Acceptance Section */}
-                                {
-                                    !isJobGiver && job.status === 'Awarded' && (
-                                        <InstallerAcceptanceSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
-                                    )
-                                }
-
-                                {/* Completion Sections */}
-                                {
-                                    !isJobGiver && job.status === 'In Progress' && !job.workStartedAt && (
-                                        <StartWorkInput job={job} user={user!} onJobUpdate={handleJobUpdate} />
-                                    )
-                                }
-
-                                {
-                                    !isJobGiver && job.status === 'In Progress' && job.workStartedAt && (
-                                        <InstallerCompletionSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
-                                    )
-                                }
-
-                                {
-                                    isJobGiver && (job.status === 'In Progress' || job.status === 'Pending Confirmation') && (
-                                        <JobGiverConfirmationSection job={job} onJobUpdate={handleJobUpdate} onCancel={() => setIsCancelDialogOpen(true)} onAddFunds={() => setIsAddFundsDialogOpen(true)} />
-                                    )
-                                }
-
-                                {
-                                    job.status === 'Completed' && (
-                                        <RatingSection job={job} onJobUpdate={handleJobUpdate} />
-                                    )
-                                }
+        <div className="max-w-full overflow-x-hidden">
+            <div className="container py-4 sm:py-6 space-y-4 sm:space-y-6 px-4 sm:px-6">
+                {/* Reschedule Banner */}
+                {job.dateChangeProposal && (
+                    <div className={`border p-4 rounded-md flex flex-col md:flex-row items-center justify-between gap-4 ${job.dateChangeProposal.status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
+                        }`}>
+                        <div className={`flex items-center gap-2 ${job.dateChangeProposal.status === 'rejected' ? 'text-red-800' : 'text-blue-800'}`}>
+                            {job.dateChangeProposal.status === 'rejected' ? <XCircle className="h-5 w-5" /> : <Calendar className="h-5 w-5" />}
+                            <div>
+                                <p className="font-semibold">
+                                    {job.dateChangeProposal.status === 'rejected' ? "Reschedule Request Rejected" : "Reschedule Request"}
+                                </p>
+                                <p className="text-sm">
+                                    {job.dateChangeProposal.status === 'rejected' ? (
+                                        <span>
+                                            The other party rejected the new date. The job proceeds on <span className="font-bold">{job.jobStartDate ? new Date((job.jobStartDate as any).toDate ? (job.jobStartDate as any).toDate() : job.jobStartDate).toLocaleDateString() : 'Original Date'}</span>.
+                                        </span>
+                                    ) : (
+                                        <span>
+                                            {job.dateChangeProposal.proposedBy} proposed to move job to <span className="font-bold">{new Date((job.dateChangeProposal.newDate as any).toDate ? (job.dateChangeProposal.newDate as any).toDate() : job.dateChangeProposal.newDate).toLocaleDateString()}</span>
+                                        </span>
+                                    )}
+                                </p>
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                        </div>
 
-                <FundingBreakdownDialog
-                    open={isPaymentDialogOpen}
-                    onOpenChange={setIsPaymentDialogOpen}
-                    job={job}
-                    onConfirm={handleConfirmPayment}
-                    onDirectConfirm={handleDirectConfirm}
-                    platformSettings={platformSettings}
-                    bidAmount={bids.find((b: any) => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)))?.amount || (job as any).budget?.min || 0}
-                />
-
-                {/* Variation Orders Section */}
-                {/* Variation Orders Section */}
-                <div className="md:col-span-3 mt-8 order-3">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>Variation Orders (Add Work)</CardTitle>
-                            <Button onClick={() => setIsVariationDialogOpen(true)} variant="outline" size="sm" data-testid="propose-variation-button">
-                                <Plus className="h-4 w-4 mr-2" />
-                                {isJobGiver ? "Request Variation" : "Propose Variation"}
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            {user && (
-                                <VariationOrderList
-                                    job={job}
-                                    user={user}
-                                    isJobGiver={isJobGiver}
-                                    onJobUpdate={handleJobUpdate}
-                                    onPayForTask={handlePayForVariation}
-                                    onQuoteTask={handleQuoteVariation}
-                                    onDeclineTask={handleDeclineVariation}
-                                />
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-                {/* End Variation Orders Section */}
-
-                {/* Milestones Section */}
-                <div className="md:col-span-3 mt-8 order-4">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold">Payment Milestones</h3>
-                        {isJobGiver && job.status === 'In Progress' && (
-                            // Configurable Threshold Check
-                            ((bids.find(b => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)))?.amount || (job as any).priceEstimate?.min || 0) >= (platformSettings?.minJobBudgetForMilestones ?? 5000))
-                                ? (
-                                    <Button onClick={() => setIsMilestoneDialogOpen(true)} variant="outline" size="sm" data-testid="add-milestone-button">
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Add Milestone
-                                    </Button>
-                                ) : (
-                                    <div className="text-xs text-muted-foreground italic" title={`Milestones are only available for jobs over ₹${platformSettings?.minJobBudgetForMilestones ?? 5000}`}>
-                                        Milestones unavailable for small jobs
+                        {/* Pending Actions */}
+                        {job.dateChangeProposal.status === 'pending' && (
+                            <>
+                                {((job.dateChangeProposal.proposedBy === 'Job Giver' && !isJobGiver) ||
+                                    (job.dateChangeProposal.proposedBy === 'Installer' && isJobGiver)) ? (
+                                    <div className="flex gap-2">
+                                        <Button size="sm" variant="outline" onClick={() => handleReschedule('reject')} disabled={isLoading}>Reject</Button>
+                                        <Button size="sm" onClick={() => handleReschedule('accept')} disabled={isLoading}>Accept New Date</Button>
                                     </div>
-                                )
+                                ) : (
+                                    <div className="text-xs text-blue-600 italic">Waiting for response...</div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Rejected Actions (Dismiss) */}
+                        {job.dateChangeProposal.status === 'rejected' && (
+                            <div className="flex gap-2">
+                                {/* If Job Giver was rejected, show Cancel Hint? */}
+                                {isJobGiver && (
+                                    <Button size="sm" variant="destructive" onClick={() => setIsCancelDialogOpen(true)}>
+                                        Cancel Job
+                                    </Button>
+                                )}
+                                <Button size="sm" variant="outline" onClick={() => handleReschedule('dismiss')} disabled={isLoading}>
+                                    Dismiss
+                                </Button>
+                            </div>
                         )}
                     </div>
-                    <MilestoneList
+                )}
+
+                {/* Debug Logs */}
+
+
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold overflow-wrap-anywhere" data-testid="job-title">{job.title}</h1>
+                <Badge variant="outline" className="w-fit" data-testid="job-status-badge" data-status={job.status}>{job.status}</Badge>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                    <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-2 lg:order-1">
+                        <Card>
+                            <CardHeader><CardTitle>Description</CardTitle></CardHeader>
+                            <CardContent>
+                                <p className="whitespace-pre-line mb-4 overflow-wrap-anywhere">{job.description}</p>
+
+                                {/* Attachments Grid */}
+                                {job.attachments && job.attachments.length > 0 && (
+                                    <div className="space-y-2">
+                                        <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                            <Paperclip className="h-4 w-4" />
+                                            Attachments ({job.attachments.length})
+                                        </h4>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                            {job.attachments.map((file: any, idx: number) => (
+                                                <div key={idx} className="relative group aspect-square rounded-md overflow-hidden border bg-muted">
+                                                    {file.fileType.startsWith('image/') ? (
+                                                        <div
+                                                            className="relative w-full h-full cursor-pointer transition-transform hover:scale-105"
+                                                            onClick={() => window.open(file.fileUrl, '_blank')}
+                                                        >
+                                                            <Image
+                                                                src={file.fileUrl}
+                                                                alt={file.fileName}
+                                                                fill
+                                                                className="object-cover"
+                                                                sizes="(max-width: 768px) 50vw, 25vw"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center h-full p-2 text-center text-xs text-muted-foreground">
+                                                            <FileIcon className="h-8 w-8 mb-1" />
+                                                            <span className="truncate w-full">{file.fileName}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Bids Section */}
+                        <Card id="bids-section">
+                            <CardHeader><CardTitle>Bids ({bids.length})</CardTitle></CardHeader>
+                            <CardContent>
+                                {bids.length === 0 ? <p className="text-muted-foreground">No bids yet.</p> : (
+                                    <div className="space-y-4">
+                                        {bids.map(bid => (
+                                            <Card key={bid.id} data-testid="bid-card-wrapper">
+                                                <CardContent className="p-4 flex justify-between items-center">
+                                                    <div>
+                                                        <p className="font-semibold text-lg" data-testid="bid-amount">
+                                                            {isJobGiver || user?.id === getRefId(bid.installer) ? `₹${bid.amount}` : "₹ ••••"}
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">{formatDistanceToNow(toDate(bid.timestamp))} ago</p>
+                                                        {(!isJobGiver && user?.id !== getRefId(bid.installer)) && (
+                                                            <p className="text-[10px] text-muted-foreground italic">Bid amount hidden</p>
+                                                        )}
+                                                    </div>
+                                                    {/* Award Action (Only for Job Giver) */}
+                                                    {isJobGiver && job.status === 'Open for Bidding' && (
+                                                        <Button data-testid="send-offer-button" onClick={async () => {
+                                                            // Award Logic
+                                                            // 1. Update Job Status to 'Pending Acceptance' (Phase 4 of checklist)
+                                                            // Or directly Awarded?
+                                                            // Actually, standard flow: Job Giver Selects -> Installer Accepts.
+                                                            // The 'Send Offer' button does this.
+
+                                                            // We can handle this logic inside a "BidCard" component or here.
+                                                            // For simplicity, just logic here:
+                                                            await handleJobUpdate({
+                                                                status: 'Awarded', // Or 'Pending Acceptance' if we want that step
+                                                                awardedInstaller: doc(db, 'users', getRefId(bid.installer)),
+                                                                awardedInstallerId: getRefId(bid.installer), // Added for robust permission rules
+                                                                selectedInstallers: [{ installerId: getRefId(bid.installer), rank: 1 }]
+                                                            });
+                                                            toast({ title: "Offer Sent", description: "Waiting for installer acceptance." });
+                                                        }}>
+                                                            Send Offer
+                                                        </Button>
+                                                    )}
+                                                </CardContent>
+                                                {/* Bid Chat (Silent Bid Fix) */}
+                                                <CardFooter className="pt-0 pb-4 px-4 bg-muted/20">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="w-full text-xs text-muted-foreground hover:text-primary"
+                                                        onClick={() => {
+                                                            const contactUrl = `/dashboard/messages?recipientId=${getRefId(bid.installer)}`;
+                                                            window.open(contactUrl, '_blank');
+                                                        }}
+                                                    >
+                                                        <MessageSquare className="h-3 w-3 mr-1" />
+                                                        Ask Question / Chat
+                                                    </Button>
+                                                </CardFooter>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
+                        {/* Actions Panel */}
+                        <Card data-testid="actions-panel">
+                            <CardHeader><CardTitle>Actions</CardTitle></CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className={cn("space-y-4", userLoading && "opacity-50 pointer-events-none")}>
+                                    {userLoading && (
+                                        <div className="flex items-center justify-center py-2 text-xs text-muted-foreground animate-pulse">
+                                            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                                            Syncing permissions...
+                                        </div>
+                                    )}
+
+                                    {/* Job Giver Actions */}
+                                    {isJobGiver && job.status === 'Open for Bidding' && (
+                                        <Button variant="destructive" className="w-full" onClick={() => handleJobUpdate({ status: 'Bidding Closed' })}>Close Bidding</Button>
+                                    )}
+
+                                    {/* Installer Actions: Place Bid */}
+                                    {!isJobGiver && job.status === 'Open for Bidding' && (
+                                        <Button className="w-full min-h-[48px]" onClick={() => setIsBidDialogOpen(true)} disabled={userLoading || bids.some(b => getRefId(b.installer) === user?.id)} data-testid="place-bid-button">
+                                            {bids.some(b => getRefId(b.installer) === user?.id) ? "Bid Placed" : "Place Bid"}
+                                        </Button>
+                                    )}
+
+                                    {/* ... other actions truncated in this view but I will preserve them in real write ... */}
+                                    {/* Wait, I have to provide the FULL content of the block I am replacing. */}
+                                    {/* Let me rewrite the whole thing carefully. */}
+
+                                    {/* Reschedule Action */}
+                                    {job.status === 'In Progress' && !job.workStartedAt && !job.dateChangeProposal?.status.includes('pending') && (
+                                        <Button variant="outline" className="w-full" onClick={() => setIsRescheduleDialogOpen(true)}>
+                                            <Calendar className="mr-2 h-4 w-4" />
+                                            Request Reschedule
+                                        </Button>
+                                    )}
+
+                                    {/* Retract Offer */}
+                                    {isJobGiver && job.status === 'Awarded' && (
+                                        <div className="space-y-4">
+                                            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
+                                                You have sent an offer. Waiting for installer to accept.
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                className="w-full text-amber-600 border-amber-200 hover:bg-amber-50"
+                                                onClick={async () => {
+                                                    if (!window.confirm("Retract offer? This will allow other installers to bid again.")) return;
+                                                    await handleJobUpdate({
+                                                        status: 'Open for Bidding',
+                                                        awardedInstaller: deleteField() as any,
+                                                        selectedInstallers: deleteField() as any
+                                                    });
+                                                    toast({ title: "Offer Retracted", description: "Job is open for bidding again." });
+                                                }}
+                                            >
+                                                <UserX className="mr-2 h-4 w-4" />
+                                                Retract Offer
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    {isJobGiver && job.status === 'Pending Funding' && (
+                                        <Button className="w-full" onClick={handleStartCheckout} data-testid="proceed-payment-button">Proceed to Payment</Button>
+                                    )}
+
+                                    {/* Release Payment */}
+                                    {isJobGiver && job.status === 'Pending Confirmation' && (
+                                        <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
+                                            <CheckCircle className="mr-2 h-4 w-4" />
+                                            Approve Work & Release Payment
+                                        </Button>
+                                    )}
+
+                                    {/* Raise Dispute */}
+                                    {(job.status === 'In Progress' || job.status === 'Pending Confirmation') && (
+                                        <Button variant="destructive" className="w-full border-red-200 text-red-600 hover:bg-red-50" onClick={() => setIsDisputeDialogOpen(true)}>
+                                            <ShieldAlert className="mr-2 h-4 w-4" />
+                                            Report Issue / Raise Dispute
+                                        </Button>
+                                    )}
+
+                                    {/* Leave Review */}
+                                    {job.status === 'Completed' && (
+                                        <div className="space-y-2">
+                                            <Button className="w-full" variant="outline" onClick={() => setIsReviewDialogOpen(true)}>
+                                                <Star className="mr-2 h-4 w-4" />
+                                                Leave Review
+                                            </Button>
+
+                                            <Button
+                                                className="w-full"
+                                                variant="secondary"
+                                                onClick={() => window.open(`/dashboard/jobs/${job.id}/invoice`, '_blank')}
+                                                data-testid="download-invoice-button"
+                                            >
+                                                <FileText className="mr-2 h-4 w-4" />
+                                                Download Service Invoice
+                                            </Button>
+
+                                            <Button
+                                                className="w-full"
+                                                variant="ghost"
+                                                onClick={() => window.open(`/dashboard/jobs/${job.id}/invoice?type=platform`, '_blank')}
+                                                data-testid="download-platform-invoice-button"
+                                            >
+                                                <FileText className="mr-2 h-4 w-4" />
+                                                Download Platform Receipt
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    {/* Secure Contact Reveal */}
+                                    {counterParty && (
+                                        <div className="space-y-4">
+                                            <div className="border rounded-lg overflow-hidden">
+                                                <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-3 text-white">
+                                                    <h4 className="font-bold text-sm flex items-center">
+                                                        <ShieldCheck className="h-4 w-4 mr-2" />
+                                                        Verified Identity
+                                                    </h4>
+                                                </div>
+                                                <div className="p-4 bg-background flex items-center gap-4">
+                                                    <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
+                                                        <AvatarImage src={counterParty.realAvatarUrl || counterParty.avatarUrl} />
+                                                        <AvatarFallback>{counterParty.name.substring(0, 2)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-bold text-lg leading-none">{counterParty.name}</p>
+                                                        <p className="text-sm text-muted-foreground">{isJobGiver ? "Installer" : "Job Giver"}</p>
+                                                        <div className="flex items-center gap-1 mt-1 text-xs text-green-600 font-medium">
+                                                            <CheckCircle2 className="h-3 w-3" />
+                                                            Background Checked
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {counterParty.mobile && (
+                                                    <div className="bg-blue-50 p-3 border-t border-blue-100 flex items-center justify-between">
+                                                        <span className="text-xs text-blue-700 font-semibold">Mobile Contact</span>
+                                                        <a href={`tel:${counterParty.mobile}`} className="text-sm font-bold text-blue-900 flex items-center hover:underline">
+                                                            <Phone className="h-3 w-3 mr-1" />
+                                                            {counterParty.mobile}
+                                                        </a>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Acceptance Section */}
+                                    {
+                                        !isJobGiver && job.status === 'Awarded' && (
+                                            <InstallerAcceptanceSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
+                                        )
+                                    }
+
+                                    {/* Completion Sections */}
+                                    {
+                                        !isJobGiver && job.status === 'In Progress' && !job.workStartedAt && (
+                                            <StartWorkInput job={job} user={user!} onJobUpdate={handleJobUpdate} />
+                                        )
+                                    }
+
+                                    {
+                                        !isJobGiver && job.status === 'In Progress' && job.workStartedAt && (
+                                            <InstallerCompletionSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
+                                        )
+                                    }
+
+                                    {
+                                        isJobGiver && (job.status === 'In Progress' || job.status === 'Pending Confirmation') && (
+                                            <JobGiverConfirmationSection job={job} onJobUpdate={handleJobUpdate} onCancel={() => setIsCancelDialogOpen(true)} onAddFunds={() => setIsAddFundsDialogOpen(true)} />
+                                        )
+                                    }
+
+                                    {
+                                        job.status === 'Completed' && (
+                                            <RatingSection job={job} onJobUpdate={handleJobUpdate} />
+                                        )
+                                    }
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <FundingBreakdownDialog
+                        open={isPaymentDialogOpen}
+                        onOpenChange={setIsPaymentDialogOpen}
                         job={job}
-                        user={user || null}
-                        isJobGiver={isJobGiver}
-                        onRelease={handleReleaseMilestone}
+                        onConfirm={handleConfirmPayment}
+                        onDirectConfirm={handleDirectConfirm}
+                        platformSettings={platformSettings}
+                        bidAmount={bids.find((b: any) => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)))?.amount || (job as any).budget?.min || 0}
                     />
-                </div>
 
-                <MilestoneDialog
-                    open={isMilestoneDialogOpen}
-                    onOpenChange={setIsMilestoneDialogOpen}
-                    onSubmit={handleCreateMilestone}
-                    maxAmount={(job as any).budget?.max || 100000} // Fallback or logic to calculate remaining
-                />
+                    {/* Variation Orders Section */}
+                    {/* Variation Orders Section */}
+                    <div className="md:col-span-3 mt-8 order-3">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <CardTitle>Variation Orders (Add Work)</CardTitle>
+                                <Button onClick={() => setIsVariationDialogOpen(true)} variant="outline" size="sm" data-testid="propose-variation-button">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    {isJobGiver ? "Request Variation" : "Propose Variation"}
+                                </Button>
+                            </CardHeader>
+                            <CardContent>
+                                {user && (
+                                    <VariationOrderList
+                                        job={job}
+                                        user={user}
+                                        isJobGiver={isJobGiver}
+                                        onJobUpdate={handleJobUpdate}
+                                        onPayForTask={handlePayForVariation}
+                                        onQuoteTask={handleQuoteVariation}
+                                        onDeclineTask={handleDeclineVariation}
+                                    />
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                    {/* End Variation Orders Section */}
 
-                {/* Dialogs */}
-                <VariationOrderDialog
-                    open={isVariationDialogOpen}
-                    onOpenChange={setIsVariationDialogOpen}
-                    onSubmitProposal={handleProposeVariation}
-                    onSubmitRequest={handleRequestVariation}
-                    isInstaller={!isJobGiver}
-                />
-
-                {
-                    user && (
-                        <PlaceBidDialog
-                            job={job}
-                            user={user}
-                            onBidSubmit={() => {
-                                // Bids will auto-update via listener
-                                setIsBidDialogOpen(false);
-                            }}
-                            open={isBidDialogOpen}
-                            onOpenChange={setIsBidDialogOpen}
-                            platformSettings={platformSettings}
-                        />
-                    )
-                }
-
-                {
-                    isJobGiver && user && (
-                        <CancelJobDialog
-                            job={job}
-                            user={user}
-                            onJobUpdate={handleJobUpdate}
-                            open={isCancelDialogOpen}
-                            onOpenChange={setIsCancelDialogOpen}
-                        />
-                    )
-                }
-
-                {
-                    isJobGiver && user && (
-                        <AddFundsDialog
-                            job={job}
-                            user={user}
-                            open={isAddFundsDialogOpen}
-                            onOpenChange={setIsAddFundsDialogOpen}
-                            platformSettings={platformSettings}
-                        />
-                    )
-                }
-
-                {/* Reschedule Dialog */}
-                <Dialog open={isRescheduleDialogOpen} onOpenChange={setIsRescheduleDialogOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Propose New Date</DialogTitle>
-                            <DialogDescription>
-                                Ask the other party to reschedule the job. They must accept for the date to change.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="py-4">
-                            <Label>New Date</Label>
-                            <Input
-                                type="date"
-                                onChange={(e) => setRescheduleDate(e.target.valueAsDate || undefined)}
-                                min={new Date().toISOString().split('T')[0]} // No past dates
-                            />
+                    {/* Milestones Section */}
+                    <div className="md:col-span-3 mt-8 order-4">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold">Payment Milestones</h3>
+                            {isJobGiver && job.status === 'In Progress' && (
+                                // Configurable Threshold Check
+                                ((bids.find(b => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)))?.amount || (job as any).priceEstimate?.min || 0) >= (platformSettings?.minJobBudgetForMilestones ?? 5000))
+                                    ? (
+                                        <Button onClick={() => setIsMilestoneDialogOpen(true)} variant="outline" size="sm" data-testid="add-milestone-button">
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Add Milestone
+                                        </Button>
+                                    ) : (
+                                        <div className="text-xs text-muted-foreground italic" title={`Milestones are only available for jobs over ₹${platformSettings?.minJobBudgetForMilestones ?? 5000}`}>
+                                            Milestones unavailable for small jobs
+                                        </div>
+                                    )
+                            )}
                         </div>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsRescheduleDialogOpen(false)}>Cancel</Button>
-                            <Button onClick={() => handleReschedule('propose')} disabled={!rescheduleDate || isLoading}>Send Proposal</Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                        <MilestoneList
+                            job={job}
+                            user={user || null}
+                            isJobGiver={isJobGiver}
+                            onRelease={handleReleaseMilestone}
+                        />
+                    </div>
+
+                    <MilestoneDialog
+                        open={isMilestoneDialogOpen}
+                        onOpenChange={setIsMilestoneDialogOpen}
+                        onSubmit={handleCreateMilestone}
+                        maxAmount={(job as any).budget?.max || 100000} // Fallback or logic to calculate remaining
+                    />
+
+                    {/* Dialogs */}
+                    <VariationOrderDialog
+                        open={isVariationDialogOpen}
+                        onOpenChange={setIsVariationDialogOpen}
+                        onSubmitProposal={handleProposeVariation}
+                        onSubmitRequest={handleRequestVariation}
+                        isInstaller={!isJobGiver}
+                    />
+
+                    {
+                        user && (
+                            <PlaceBidDialog
+                                job={job}
+                                user={user}
+                                onBidSubmit={() => {
+                                    // Bids will auto-update via listener
+                                    setIsBidDialogOpen(false);
+                                }}
+                                open={isBidDialogOpen}
+                                onOpenChange={setIsBidDialogOpen}
+                                platformSettings={platformSettings}
+                            />
+                        )
+                    }
+
+                    {
+                        isJobGiver && user && (
+                            <CancelJobDialog
+                                job={job}
+                                user={user}
+                                onJobUpdate={handleJobUpdate}
+                                open={isCancelDialogOpen}
+                                onOpenChange={setIsCancelDialogOpen}
+                            />
+                        )
+                    }
+
+                    {
+                        isJobGiver && user && (
+                            <AddFundsDialog
+                                job={job}
+                                user={user}
+                                open={isAddFundsDialogOpen}
+                                onOpenChange={setIsAddFundsDialogOpen}
+                                platformSettings={platformSettings}
+                            />
+                        )
+                    }
+
+                    {/* Reschedule Dialog */}
+                    <Dialog open={isRescheduleDialogOpen} onOpenChange={setIsRescheduleDialogOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Propose New Date</DialogTitle>
+                                <DialogDescription>
+                                    Ask the other party to reschedule the job. They must accept for the date to change.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4">
+                                <Label>New Date</Label>
+                                <Input
+                                    type="date"
+                                    onChange={(e) => setRescheduleDate(e.target.valueAsDate || undefined)}
+                                    min={new Date().toISOString().split('T')[0]} // No past dates
+                                />
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsRescheduleDialogOpen(false)}>Cancel</Button>
+                                <Button onClick={() => handleReschedule('propose')} disabled={!rescheduleDate || isLoading}>Send Proposal</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
         </div>
     );

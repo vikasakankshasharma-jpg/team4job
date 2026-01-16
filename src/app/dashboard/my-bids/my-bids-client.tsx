@@ -144,7 +144,7 @@ function MyBidCard({ bid, job, user, onWithdraw }: BidItemProps) {
       )}
       <CardHeader>
         <div className="flex justify-between items-start">
-          <CardTitle className="text-base leading-tight pr-8">{job.title}</CardTitle>
+          <CardTitle className="text-base leading-tight pr-8 overflow-wrap-anywhere">{job.title}</CardTitle>
           <Badge variant={myBidStatus.variant}>{myBidStatus.text}</Badge>
         </div>
         <CardDescription className="font-mono text-xs pt-1">{job.id}</CardDescription>
@@ -317,44 +317,44 @@ export default function MyBidsClient() {
   const bidStatuses = ["All", "Bidded", "Awarded to You", "In Progress", "Completed & Won", "Not Selected", "Cancelled"];
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8 max-w-full overflow-x-hidden px-4">
+    <div className="max-w-full overflow-x-hidden px-4 sm:px-6 grid flex-1 items-start gap-4 sm:gap-6 md:gap-8">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>{pageTitle}</CardTitle>
-            <CardDescription>{pageDescription}</CardDescription>
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="overflow-wrap-anywhere">{pageTitle}</CardTitle>
+            <CardDescription className="overflow-wrap-anywhere">{pageDescription}</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
-              <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('list')}>
+              <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-9 w-9 min-h-[36px]" onClick={() => setView('list')} aria-label="List view">
                 <List className="h-4 w-4" />
               </Button>
-              <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setView('grid')}>
+              <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-9 w-9 min-h-[36px]" onClick={() => setView('grid')} aria-label="Grid view">
                 <Grid className="h-4 w-4" />
               </Button>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-1">
-                  <ListFilter className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Filter</span>
-                  {statusFilter !== 'All' && <Badge variant="secondary" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">1</Badge>}
+                <Button variant="outline" size="default" className="h-10 min-h-[44px] gap-2 flex-1 sm:flex-none">
+                  <ListFilter className="h-4 w-4" />
+                  <span className="sm:whitespace-nowrap">Filter</span>
+                  {statusFilter !== 'All' && <Badge variant="secondary" className="rounded-full h-6 w-6 p-0 flex items-center justify-center text-xs">1</Badge>}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-64">
                 <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={statusFilter} onValueChange={handleFilterChange}>
                   {bidStatuses.map(status => (
-                    <DropdownMenuRadioItem key={status} value={status}>{status}</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem key={status} value={status} className="min-h-[44px]">{status}</DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
             {statusFilter !== 'All' && (
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <Button variant="ghost" size="default" onClick={clearFilters} className="min-h-[44px]">
                 <X className="h-4 w-4 mr-1" />
-                Clear
+                <span className="hidden sm:inline">Clear</span>
               </Button>
             )}
           </div>
