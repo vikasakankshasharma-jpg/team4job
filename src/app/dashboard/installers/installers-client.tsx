@@ -66,13 +66,13 @@ const InstallerCard = ({ installer, currentUser, onUpdate, onClick }: { installe
             <AnimatedAvatar svg={installer.realAvatarUrl} />
             <AvatarFallback>{installer.name.substring(0, 2)}</AvatarFallback>
           </Avatar>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <CardTitle className="text-lg flex justify-between items-center">
-              <span className="hover:underline text-primary">{installer.name}</span>
+              <span className="hover:underline text-primary truncate pr-2">{installer.name}</span>
               {isGhost && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span onClick={(e) => e.stopPropagation()} className="flex items-center text-xs font-normal text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200 cursor-help">
+                    <span onClick={(e) => e.stopPropagation()} className="flex items-center text-xs font-normal text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200 cursor-help flex-shrink-0">
                       <Zap className="h-3 w-3 mr-1" />
                       Inactive
                     </span>
@@ -111,10 +111,10 @@ const InstallerCard = ({ installer, currentUser, onUpdate, onClick }: { installe
       </CardContent>
       <CardFooter>
         <div className="flex gap-2 w-full" onClick={(e) => e.stopPropagation()}>
-          <Button variant={isFavorite ? 'default' : 'outline'} size="sm" className="flex-1" onClick={() => onUpdate(installer.id, isFavorite ? 'unfavorite' : 'favorite')}>
+          <Button variant={isFavorite ? 'default' : 'outline'} size="sm" className="flex-1 min-h-[44px]" onClick={() => onUpdate(installer.id, isFavorite ? 'unfavorite' : 'favorite')}>
             <Heart className="mr-2 h-4 w-4" /> {isFavorite ? 'Favorited' : 'Favorite'}
           </Button>
-          <Button variant={isBlocked ? 'destructive' : 'outline'} size="sm" className="flex-1" onClick={() => onUpdate(installer.id, isBlocked ? 'unblock' : 'block')}>
+          <Button variant={isBlocked ? 'destructive' : 'outline'} size="sm" className="flex-1 min-h-[44px]" onClick={() => onUpdate(installer.id, isBlocked ? 'unblock' : 'block')}>
             <UserX className="mr-2 h-4 w-4" /> {isBlocked ? 'Blocked' : 'Block'}
           </Button>
         </div>
@@ -267,7 +267,7 @@ export default function InstallersClient() {
       <CardHeader>
         <CardTitle className="text-2xl">Find Installers</CardTitle>
         <CardDescription>Browse and filter through all verified installers on the platform.</CardDescription>
-        <div className="pt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="pt-4 flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Phase 11 Enhancement #6: SmartSearch with fuzzy matching */}
           <SmartSearch
             placeholder="Search by name or skill..."
@@ -275,14 +275,16 @@ export default function InstallersClient() {
             suggestions={searchSuggestions}
             enableHistory
             storageKey="smartSearch_installers"
+            className="h-11"
           />
           <Input
             placeholder="Filter by pincode..."
             value={filters.pincode}
             onChange={(e) => handleFilterChange('pincode', e.target.value)}
+            className="h-11"
           />
           <Select value={filters.tier} onValueChange={(v) => handleFilterChange('tier', v)}>
-            <SelectTrigger><SelectValue placeholder="Filter by tier..." /></SelectTrigger>
+            <SelectTrigger className="h-11"><SelectValue placeholder="Filter by tier..." /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Tiers</SelectItem>
               <SelectItem value="Platinum">Platinum</SelectItem>
@@ -292,7 +294,7 @@ export default function InstallersClient() {
             </SelectContent>
           </Select>
           <Select value={filters.skills[0] || 'all'} onValueChange={(v) => handleFilterChange('skills', v === 'all' ? [] : [v])}>
-            <SelectTrigger><SelectValue placeholder="Filter by skill..." /></SelectTrigger>
+            <SelectTrigger className="h-11"><SelectValue placeholder="Filter by skill..." /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Skills</SelectItem>
               {allSkills.map(skill => <SelectItem key={skill} value={skill} className="capitalize">{skill}</SelectItem>)}

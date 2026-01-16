@@ -547,10 +547,10 @@ export default function PostedJobsClient() {
     <>
       <Tabs defaultValue={tab} className="w-full">
         <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="active">Active ({activeJobs.length})</TabsTrigger>
-            <TabsTrigger value="unbid">Unbid ({unbidJobs.length})</TabsTrigger>
-            <TabsTrigger value="archived">Archived ({archivedJobs.length})</TabsTrigger>
+          <TabsList className="h-auto flex-wrap justify-start w-full sm:w-auto grid-cols-1 sm:grid-cols-3">
+            <TabsTrigger value="active" className="flex-1 sm:flex-none">Active ({activeJobs.length})</TabsTrigger>
+            <TabsTrigger value="unbid" className="flex-1 sm:flex-none">Unbid ({unbidJobs.length})</TabsTrigger>
+            <TabsTrigger value="archived" className="flex-1 sm:flex-none">Archived ({archivedJobs.length})</TabsTrigger>
           </TabsList>
           <Button asChild>
             <Link href="/dashboard/post-job">

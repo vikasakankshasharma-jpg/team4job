@@ -149,21 +149,21 @@ export function MobileJobCard({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-9 w-9"
+                                        className="h-11 w-11"
                                     >
-                                        <MoreVertical className="h-4 w-4" />
+                                        <MoreVertical className="h-5 w-5" />
                                         <span className="sr-only">Actions</span>
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem asChild>
-                                        <Link href={`/dashboard/jobs/${job.id}`}>
+                                        <Link href={`/dashboard/jobs/${job.id}`} className="min-h-[44px] flex items-center">
                                             <ExternalLink className="mr-2 h-4 w-4" />
                                             View Details
                                         </Link>
                                     </DropdownMenuItem>
                                     {onArchive && (
-                                        <DropdownMenuItem onClick={() => onArchive(job.id!)}>
+                                        <DropdownMenuItem onClick={() => onArchive(job.id!)} className="min-h-[44px] flex items-center">
                                             <Archive className="mr-2 h-4 w-4" />
                                             Archive
                                         </DropdownMenuItem>
@@ -171,7 +171,7 @@ export function MobileJobCard({
                                     {onDelete && (
                                         <DropdownMenuItem
                                             onClick={() => onDelete(job.id!)}
-                                            className="text-destructive"
+                                            className="text-destructive min-h-[44px] flex items-center"
                                         >
                                             <Trash2 className="mr-2 h-4 w-4" />
                                             Delete
@@ -210,7 +210,7 @@ export function MobileJobCard({
 
                     {/* Action Button */}
                     <Button
-                        className="w-full mt-3"
+                        className="w-full mt-3 min-h-[44px]"
                         size="sm"
                         asChild
                     >

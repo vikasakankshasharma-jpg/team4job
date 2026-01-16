@@ -644,22 +644,22 @@ export default function SettingsClient() {
         <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
             <h1 className="text-3xl font-bold">Settings</h1>
             <Tabs defaultValue="monetization" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="monetization">
-                        <Package className="mr-2 h-4 w-4 sm:hidden" />
-                        <span className="hidden sm:inline">Monetization</span>
+                <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto p-1 bg-muted/50">
+                    <TabsTrigger value="monetization" className="flex-shrink-0">
+                        <Package className="mr-2 h-4 w-4" />
+                        <span>Monetization</span>
                     </TabsTrigger>
-                    <TabsTrigger value="reputation">
-                        <Gem className="mr-2 h-4 w-4 sm:hidden" />
-                        <span className="hidden sm:inline">User &amp; Reputation</span>
+                    <TabsTrigger value="reputation" className="flex-shrink-0">
+                        <Gem className="mr-2 h-4 w-4" />
+                        <span>User &amp; Reputation</span>
                     </TabsTrigger>
-                    <TabsTrigger value="platform">
-                        <Ban className="mr-2 h-4 w-4 sm:hidden" />
-                        <span className="hidden sm:inline">Platform Rules</span>
+                    <TabsTrigger value="platform" className="flex-shrink-0">
+                        <Ban className="mr-2 h-4 w-4" />
+                        <span>Platform Rules</span>
                     </TabsTrigger>
-                    <TabsTrigger value="general">
-                        <SettingsIcon className="mr-2 h-4 w-4 sm:hidden" />
-                        <span className="hidden sm:inline">General</span>
+                    <TabsTrigger value="general" className="flex-shrink-0">
+                        <SettingsIcon className="mr-2 h-4 w-4" />
+                        <span>General</span>
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="monetization">
