@@ -39,6 +39,18 @@ export function JobCard({ job }: JobCardProps) {
     }
   }, [job.deadline, job.postedAt]);
 
+  // Check if job is in installer's pincode area
+  const isNearby = React.useMemo(() => {
+    if (!user?.pincodes || !job.location) return false;
+    const locationLower = job.location.toLowerCase();
+    const residentialMatch = user.pincodes.residential && locationLower.includes(user.pincodes.residential);
+    const officeMatch = user.pincodes.office && locationLower.includes(user.pincodes.office);
+    return residentialMatch || officeMatch;
+  }, [user, job.location]);
+
+  // Check if job is unbid (no bids yet)
+  const isUnbid = job.status === 'Unbid' || (job.status === 'Open for Bidding' && job.bids.length === 0);
+
   const hasBidded = user && job.bidderIds?.includes(user.id);
   const myBidStatus = hasBidded && user ? getMyBidStatus(job, user) : null;
 
@@ -83,8 +95,18 @@ export function JobCard({ job }: JobCardProps) {
               {job.travelTip && job.travelTip > 0 && (
                 <Badge variant="warning" className="gap-1"><Gift className="h-3 w-3" /> Tip Included</Badge>
               )}
+              {isNearby && (
+                <Badge variant="default" className="gap-1 bg-green-600 hover:bg-green-700">
+                  <MapPin className="h-3 w-3" /> Near You
+                </Badge>
+              )}
+              {isUnbid && (
+                <Badge variant="secondary" className="gap-1 border border-amber-500 text-amber-700 bg-amber-50 dark:bg-amber-950 dark:text-amber-300">
+                  🔄 Second Chance
+                </Badge>
+              )}
             </div>
-            <CardTitle className="text-lg leading-tight">{job.title}</CardTitle>
+            <CardTitle className="text-lg leading-tight overflow-wrap-anywhere">{job.title}</CardTitle>
             <CardDescription className="font-mono text-xs pt-1">{job.id}</CardDescription>
           </div>
         </div>
