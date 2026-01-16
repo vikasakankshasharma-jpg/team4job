@@ -1,34 +1,24 @@
-'use server';
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { getAdminDb } from '@/lib/firebase/server-init';
-
-// Define the input schema for the price estimation flow
-export const GeneratePriceEstimateInputSchema = z.object({
-  jobTitle: z.string().describe('The title of the job.'),
-  jobDescription: z.string().describe('The detailed description of the job requirements.'),
-  jobCategory: z.string().describe('The category of the job (e.g., "IP Camera Installation", "CCTV Maintenance").'),
-});
-export type GeneratePriceEstimateInput = z.infer<typeof GeneratePriceEstimateInputSchema>;
-
-// Define the output schema for the price estimation flow
-export const GeneratePriceEstimateOutputSchema = z.object({
-  priceEstimate: z.object({
-    min: z.number().describe('The estimated minimum price for the job in INR.'),
-    max: z.number().describe('The estimated maximum price for the job in INR.'),
-  }),
-});
-export type GeneratePriceEstimateOutput = z.infer<typeof GeneratePriceEstimateOutputSchema>;
+import {
+  GeneratePriceEstimateInputSchema,
+  GeneratePriceEstimateOutputSchema,
+  type GeneratePriceEstimateInput,
+  type GeneratePriceEstimateOutput
+} from './generate-price-estimate-schema';
 
 // Extended schema for the prompt to include history
 const PromptInputSchema = GeneratePriceEstimateInputSchema.extend({
   historicalContext: z.string().optional(),
 });
 
+import { z } from 'genkit'; // Re-import z for extend if needed, or use imported schema
+
 // The prompt for the AI
 const priceEstimatePrompt = ai.definePrompt({
   name: 'priceEstimatePrompt',
+  model: 'googleai/gemini-pro-latest',
   input: { schema: PromptInputSchema },
   output: { schema: GeneratePriceEstimateOutputSchema },
   prompt: `
@@ -50,17 +40,20 @@ const priceEstimatePrompt = ai.definePrompt({
 
     **Your Estimation Process:**
     1.  **Analyze Scope:** Carefully read the title, category, and description to understand the complexity.
-        -   Consider the number of cameras, type of cameras (IP, Analog), required wiring, NVR/DVR setup, and any other specific tasks mentioned.
     2.  **Factor in Labor Costs:** Estimate the man-hours required.
     3.  **Consider Material Costs (Implicitly):** Factor in a general buffer for consumables.
-    4.  **Determine Range:**
-        -   The **minimum price** should reflect a baseline cost.
-        -   The **maximum price** should account for higher-quality work or unexpected complexities.
-    5.  **Output Format:** Return the final \`min\` and \`max\` price estimate in the specified JSON format. The values should be numbers only, without any currency symbols or commas. Ensure the max is greater than the min.
+    4.  **Determine Range:** The min/max price.
+    5.  **Explain Reasoning:** Why did you pick this range? What are the main cost drivers?
+
+    **Output Format:** Return JSON with:
+    - priceEstimate: { min, max }
+    - confidence: "high", "medium", or "low"
+    - reasoning: "Based on 3 cameras..."
+    - factors: ["3 IP Cameras", "Cabling"]
 
     **Example:**
-    -   **Input:** Title="Install 2 indoor wifi cameras", Description="Simple setup for my living room."
-    -   **Output:** { "priceEstimate": { "min": 1500, "max": 2500 } }
+    -   **Input:** Title="Install 2 indoor wifi cameras"
+    -   **Output:** { "priceEstimate": { "min": 1500, "max": 2500 }, "confidence": "high", "reasoning": "Standard rate for basic wifi camera setup...", "factors": ["2 Cameras", "No cabling"] }
 
     Now, analyze the provided job and generate the price estimate.
   `,
@@ -117,8 +110,3 @@ export const generatePriceEstimateFlow = ai.defineFlow(
     return output;
   }
 );
-
-// We need a server-callable wrapper
-export async function generatePriceEstimate(input: GeneratePriceEstimateInput): Promise<GeneratePriceEstimateOutput> {
-  return generatePriceEstimateFlow(input);
-}

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -6,13 +5,21 @@ import { useFormContext, useController, Control } from 'react-hook-form';
 import { GoogleMap, Marker } from '@react-google-maps/api';
 import { FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Map as MapIcon, Maximize2 } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+
 const debounce = require('lodash.debounce');
 
 const containerStyle = {
   width: '100%',
   height: '300px',
   borderRadius: '0.5rem',
+};
+
+const mobileContainerStyle = {
+  width: '100%',
+  height: '100%',
 };
 
 const defaultCenter = {
@@ -35,6 +42,15 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [marker, setMarker] = useState<google.maps.LatLngLiteral | null>(propCenter || null);
   const [center, setCenter] = useState(propCenter || defaultCenter);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect Mobile View
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const geocodeAddress = useCallback(
     (address: string) => {
@@ -117,29 +133,67 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
     );
   }
 
+  const renderMap = (isSheet = false) => (
+    <GoogleMap
+      mapContainerStyle={isSheet ? mobileContainerStyle : containerStyle}
+      center={center}
+      zoom={15}
+      onLoad={onMapLoad}
+      onUnmount={onUnmount}
+      onClick={onMapClick}
+      options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
+    >
+      {marker && <Marker position={marker} />}
+    </GoogleMap>
+  );
+
   return (
     <FormItem>
       <FormLabel>{label}</FormLabel>
-      <Input
-        placeholder="Type address or click on map"
-        {...addressField}
-        onChange={handleAddressChange}
-        data-testid="full-address-input"
-      />
-      <GoogleMap
-        mapContainerStyle={containerStyle}
-        center={center}
-        zoom={15}
-        onLoad={onMapLoad}
-        onUnmount={onUnmount}
-        onClick={onMapClick}
-        options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
-      >
-        {marker && <Marker position={marker} />}
-      </GoogleMap>
-      <FormDescription>
-        Click on the map to pin the exact job location or type the full address. This is required.
-      </FormDescription>
+      <div className="space-y-2">
+        <Input
+          placeholder="Type address or click on map"
+          {...addressField}
+          onChange={handleAddressChange}
+          data-testid="full-address-input"
+        />
+
+        {isMobile ? (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="w-full text-muted-foreground justify-start" type="button">
+                <MapIcon className="mr-2 h-4 w-4" />
+                {marker ? "Update Location on Map" : "Pin Location on Map"}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[85vh] p-0 flex flex-col">
+              <SheetHeader className="px-4 py-3 border-b">
+                <SheetTitle>Pin Location</SheetTitle>
+              </SheetHeader>
+              <div className="flex-1 w-full bg-muted">
+                {renderMap(true)}
+              </div>
+              <div className="p-4 border-t bg-background">
+                <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded mb-3">
+                  Tap on the map to place the pin at your exact location.
+                </div>
+                {/* 
+                           Note: The parent sheet usually has a generic close.
+                           Since 'setValue' updates immediately on click, no "Save" button strictly needed.
+                           But a "Done" button helps UX.
+                        */}
+              </div>
+            </SheetContent>
+          </Sheet>
+        ) : (
+          <>
+            {renderMap(false)}
+            <FormDescription>
+              Click on the map to pin the exact job location or type the full address. This is required.
+            </FormDescription>
+          </>
+        )}
+      </div>
       <FormMessage>{addressFieldState.error?.message}</FormMessage>
     </FormItem>
   );

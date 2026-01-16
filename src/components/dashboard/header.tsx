@@ -41,7 +41,7 @@ import { useSearch } from "@/hooks/use-search";
 import { Badge } from "../ui/badge";
 import { toDate } from "@/lib/utils";
 import { differenceInDays } from "date-fns";
-import { NotificationsDropdown } from "./notifications-dropdown";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 const installerNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
@@ -281,7 +281,7 @@ export function Header() {
           </Button>
         </HelpDialog>
         <ThemeToggle />
-        <NotificationsDropdown />
+        <NotificationBell />
         <UserNav />
       </div>
     </header>

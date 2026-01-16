@@ -53,6 +53,7 @@ const jobGiverNavItems: NavItem[] = [
   { href: "/dashboard/installers", icon: Search, label: "Find Installers", tourId: "find-installers", premium: true },
   { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job", tourId: "post-job" },
   { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs", tourId: "posted-jobs" },
+  { href: "/dashboard/analytics", icon: TrendingUp, label: "Analytics", tourId: "analytics" },
   { href: "/dashboard/my-installers", icon: Heart, label: "My Installers", tourId: "my-installers" },
   { href: "/dashboard/billing", icon: CreditCard, label: "Subscription" },
   { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },

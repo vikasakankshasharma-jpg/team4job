@@ -64,7 +64,14 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Briefcase, Archive, RefreshCw as RefreshIcon } from "lucide-react";
+import { Briefcase, Archive, RefreshCw as RefreshIcon, Inbox, Check } from "lucide-react";
+import { StatusBadge } from "@/components/job-giver/status-badge";
+import { EnhancedEmptyState } from "@/components/job-giver/enhanced-empty-state";
+import { BulkActionsToolbar } from "@/components/posted-jobs/bulk-actions-toolbar";
+import { AdvancedFilters, type JobFilters } from "@/components/posted-jobs/advanced-filters";
+import { Checkbox } from "@/components/ui/checkbox";
+import { writeBatch, deleteDoc } from "firebase/firestore";
+import { MobileJobCard } from "@/components/posted-jobs/mobile-job-card";
 
 
 
@@ -207,84 +214,104 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Job Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Bids</TableHead>
-                <TableHead className="hidden md:table-cell">Job Type</TableHead>
-                <TableHead className="hidden md:table-cell">Posted On</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
+          {/* Desktop: Table */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24"><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></TableCell>
+                  <TableHead>Job Title</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden md:table-cell">Bids</TableHead>
+                  <TableHead className="hidden md:table-cell">Job Type</TableHead>
+                  <TableHead className="hidden md:table-cell">Posted On</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
                 </TableRow>
-              ) : jobs.length > 0 ? jobs.map(job => (
-                <TableRow key={job.id}>
-                  <TableCell className="font-medium">
-                    <Link href={`/dashboard/jobs/${job.id}`} className="hover:underline">{job.title}</Link>
-                    <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{statusDescriptions[job.status]}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{(job.bids || []).length}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {getJobType(job)}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{format(toDate(job.postedAt), "MMM d, yyyy")}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        {getActionsForJob(job)}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              )) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-64">
-                    <EmptyState
-                      icon={title.includes('Archived') ? Archive : Briefcase}
-                      title="No jobs found"
-                      description={title.includes('Active') ? "You don't have any active job postings at the moment." : "No jobs match this category."}
-                      action={
-                        title.includes('Active') ? (
-                          <Button asChild variant="outline">
-                            <Link href="/dashboard/post-job">
-                              <PlusCircle className="mr-2 h-4 w-4" />
-                              Post a Job
-                            </Link>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24"><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></TableCell>
+                  </TableRow>
+                ) : jobs.length > 0 ? jobs.map(job => (
+                  <TableRow key={job.id}>
+                    <TableCell className="font-medium">
+                      <Link href={`/dashboard/jobs/${job.id}`} className="hover:underline">{job.title}</Link>
+                      <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={job.status} showTooltip={false} size="sm" />
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{(job.bids || []).length}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {getJobType(job)}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{format(toDate(job.postedAt), "MMM d, yyyy")}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
                           </Button>
-                        ) : undefined
-                      }
-                      className="border-0 shadow-none min-h-[300px]"
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          {getActionsForJob(job)}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-64 p-8">
+                      <EnhancedEmptyState
+                        icon={title.includes('Archived') ? Archive : title.includes('Unbid') ? Inbox : Briefcase}
+                        title={title.includes('Active') ? "No active jobs yet" : title.includes('Unbid') ? "No unbid jobs" : "No archived jobs"}
+                        description={
+                          title.includes('Active')
+                            ? "Start by creating your first job posting to find qualified installers."
+                            : title.includes('Unbid')
+                              ? "All your jobs have received bids. Great work!"
+                              : "Completed and cancelled jobs will appear here."
+                        }
+                        action={
+                          title.includes('Active') ? {
+                            label: "Post Your First Job",
+                            onClick: () => window.location.href = '/dashboard/post-job',
+                            variant: 'default' as const
+                          } : undefined
+                        }
+                        className="border-0 shadow-none"
+                      />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile: Cards */}
+          <div className="md:hidden space-y-4">
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : jobs.length > 0 ? (
+              jobs.map(job => (
+                <MobileJobCard key={job.id} job={job} />
+              ))
+            ) : (
+              <EnhancedEmptyState
+                icon={Briefcase}
+                title={title.includes('Active') ? "No active jobs" : title.includes('Unbid') ? "No unbid jobs" : "No jobs"}
+                description={title.includes('Active') ? "Start by creating your first job posting." : "All jobs have received bids!"}
+                action={title.includes('Active') ? { label: "Post Job", onClick: () => window.location.href = '/dashboard/post-job' } : undefined}
+                className="border-0 shadow-none"
+              />
+            )}
+          </div>
         </CardContent>
         <CardFooter>
           <div className="text-xs text-muted-foreground">
@@ -303,8 +330,11 @@ export default function PostedJobsClient() {
   const { db } = useFirebase();
   const router = useRouter();
   const { setHelp } = useHelp();
+  const { toast } = useToast();
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [selectedJobIds, setSelectedJobIds] = React.useState<string[]>([]);
+  const [filters, setFilters] = React.useState<JobFilters>({});
 
   React.useEffect(() => {
     if (!userLoading && user && (user.roles.includes('Admin') || role === 'Installer')) {
@@ -413,6 +443,89 @@ export default function PostedJobsClient() {
     });
   }, [setHelp]);
 
+  // Batch operations
+  const handleBulkArchive = async () => {
+    if (!db || selectedJobIds.length === 0) return;
+
+    try {
+      const batch = writeBatch(db);
+      selectedJobIds.forEach(jobId => {
+        const jobRef = doc(db, 'jobs', jobId);
+        batch.update(jobRef, { status: 'Cancelled' });
+      });
+
+      await batch.commit();
+      toast({ title: "Success", description: `${selectedJobIds.length} job(s) archived.` });
+      setSelectedJobIds([]);
+      fetchJobs();
+    } catch (error) {
+      console.error("Bulk archive error:", error);
+      toast({ title: "Error", description: "Failed to archive jobs.", variant: "destructive" });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!db || selectedJobIds.length === 0) return;
+
+    try {
+      const batch = writeBatch(db);
+      selectedJobIds.forEach(jobId => {
+        const jobRef = doc(db, 'jobs', jobId);
+        batch.delete(jobRef);
+      });
+
+      await batch.commit();
+      toast({ title: "Success", description: `${selectedJobIds.length} job(s) deleted permanently.` });
+      setSelectedJobIds([]);
+      fetchJobs();
+    } catch (error) {
+      console.error("Bulk delete error:", error);
+      toast({ title: "Error", description: "Failed to delete jobs.", variant: "destructive" });
+    }
+  };
+
+  // Filter logic
+  const applyFilters = (jobsList: Job[]) => {
+    return jobsList.filter(job => {
+      // Search filter
+      if (filters.search && !job.title.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+
+      // Budget filters - use priceEstimate if available
+      if (filters.budgetMin || filters.budgetMax) {
+        const jobBudget = job.priceEstimate?.max || job.priceEstimate?.min || 0;
+        if (filters.budgetMin && jobBudget < filters.budgetMin) return false;
+        if (filters.budgetMax && jobBudget > filters.budgetMax) return false;
+      }
+
+      // Category filter
+      if (filters.category && job.jobCategory !== filters.category) return false;
+
+      // Date filters
+      if (filters.dateFrom) {
+        const jobDate = toDate(job.postedAt);
+        const fromDate = new Date(filters.dateFrom);
+        if (jobDate < fromDate) return false;
+      }
+      if (filters.dateTo) {
+        const jobDate = toDate(job.postedAt);
+        const toDateFilter = new Date(filters.dateTo);
+        if (jobDate > toDateFilter) return false;
+      }
+
+      // Installer filter
+      if (filters.installer) {
+        const awardedInstallerName = typeof job.awardedInstaller === 'object' && 'name' in job.awardedInstaller ? job.awardedInstaller.name : '';
+        if (!awardedInstallerName || !awardedInstallerName.toLowerCase().includes(filters.installer.toLowerCase())) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
   if (userLoading || (!userLoading && role !== 'Job Giver')) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -421,58 +534,81 @@ export default function PostedJobsClient() {
     );
   }
 
-  const activeJobs = jobs.filter(job => !['Completed', 'Cancelled', 'Unbid'].includes(job.status)).sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
-  const unbidJobs = jobs.filter(job => job.status === 'Unbid').sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
-  const archivedJobs = jobs.filter(job => job.status === 'Completed' || job.status === 'Cancelled').sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+  const activeJobs = applyFilters(jobs.filter(job => !['Completed', 'Cancelled', 'Unbid'].includes(job.status))).sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+  const unbidJobs = applyFilters(jobs.filter(job => job.status === 'Unbid')).sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+  const archivedJobs = applyFilters(jobs.filter(job => job.status === 'Completed' || job.status === 'Cancelled')).sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
 
   const pageTitle = tab === 'active' ? `My Active Jobs (${activeJobs.length})` : tab === 'unbid' ? `Unbid Jobs (${unbidJobs.length})` : `Archived Jobs (${archivedJobs.length})`;
 
+  // Get categories for filter dropdown
+  const categories = Array.from(new Set(jobs.map(j => j.jobCategory).filter(Boolean)));
+
   return (
-    <Tabs defaultValue={tab} className="w-full">
-      <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="active">Active ({activeJobs.length})</TabsTrigger>
-          <TabsTrigger value="unbid">Unbid ({unbidJobs.length})</TabsTrigger>
-          <TabsTrigger value="archived">Archived ({archivedJobs.length})</TabsTrigger>
-        </TabsList>
-        <Button asChild>
-          <Link href="/dashboard/post-job">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Post New Job
-          </Link>
-        </Button>
-      </div>
-      <TabsContent value="active">
-        <PostedJobsTable
-          jobs={activeJobs}
-          title="My Active Jobs"
-          description="Manage your job postings and review bids from installers."
-          footerText={`You have ${activeJobs.length} active jobs.`}
-          loading={loading}
-          onUpdate={fetchJobs}
-        />
-      </TabsContent>
-      <TabsContent value="unbid">
-        <PostedJobsTable
-          jobs={unbidJobs}
-          title="Unbid Jobs"
-          description="Jobs that received no bids. You can repost or promote them."
-          footerText={`You have ${unbidJobs.length} unbid jobs requiring attention.`}
-          loading={loading}
-          onUpdate={fetchJobs}
-        />
-      </TabsContent>
-      <TabsContent value="archived">
-        <PostedJobsTable
-          jobs={archivedJobs}
-          title="My Archived Jobs"
-          description="A history of your completed or cancelled projects."
-          footerText={`You have ${archivedJobs.length} archived jobs.`}
-          loading={loading}
-          onUpdate={fetchJobs}
-        />
-      </TabsContent>
-    </Tabs>
+    <>
+      <Tabs defaultValue={tab} className="w-full">
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="active">Active ({activeJobs.length})</TabsTrigger>
+            <TabsTrigger value="unbid">Unbid ({unbidJobs.length})</TabsTrigger>
+            <TabsTrigger value="archived">Archived ({archivedJobs.length})</TabsTrigger>
+          </TabsList>
+          <Button asChild>
+            <Link href="/dashboard/post-job">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Post New Job
+            </Link>
+          </Button>
+        </div>
+
+        {/* Advanced Filters */}
+        <div className="mb-4">
+          <AdvancedFilters
+            onFilterChange={setFilters}
+            appliedFilters={filters}
+            categories={categories}
+          />
+        </div>
+
+        <TabsContent value="active">
+          <PostedJobsTable
+            jobs={activeJobs}
+            title="My Active Jobs"
+            description="Manage your job postings and review bids from installers."
+            footerText={`You have ${activeJobs.length} active jobs.`}
+            loading={loading}
+            onUpdate={fetchJobs}
+          />
+        </TabsContent>
+        <TabsContent value="unbid">
+          <PostedJobsTable
+            jobs={unbidJobs}
+            title="Unbid Jobs"
+            description="Jobs that received no bids. You can repost or promote them."
+            footerText={`You have ${unbidJobs.length} unbid jobs requiring attention.`}
+            loading={loading}
+            onUpdate={fetchJobs}
+          />
+        </TabsContent>
+        <TabsContent value="archived">
+          <PostedJobsTable
+            jobs={archivedJobs}
+            title="My Archived Jobs"
+            description="A history of your completed or cancelled projects."
+            footerText={`You have ${archivedJobs.length} archived jobs.`}
+            loading={loading}
+            onUpdate={fetchJobs}
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* Bulk Actions Toolbar */}
+      <BulkActionsToolbar
+        selectedCount={selectedJobIds.length}
+        onArchive={handleBulkArchive}
+        onDelete={handleBulkDelete}
+        onClearSelection={() => setSelectedJobIds([])}
+      />
+    </>
   )
 }
 

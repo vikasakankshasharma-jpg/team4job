@@ -14,6 +14,11 @@
  *  npm run db:seed
  *
  */
+import { ReadStream } from 'fs';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// ... existing imports ...
 import { initializeApp, cert, App } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -25,34 +30,34 @@ config({ path: '.env.production', override: true }); // Load production env vars
 
 // --- Firebase Admin SDK Initialization ---
 
-let firebaseApp: App;
+// let firebaseApp: App; // Removed global variable
 
-function initializeFirebaseAdmin() {
+function initializeFirebaseAdmin(): App {
     // 1. Try to use service-account.json first
     try {
-        const serviceAccount = require('./service-account.json');
-        firebaseApp = initializeApp({
-            credential: cert(serviceAccount)
-        });
-        console.log("Firebase Admin SDK initialized using service-account.json file.");
-        return;
-    } catch (error: any) {
-        if (error.code !== 'MODULE_NOT_FOUND') {
-            console.error("Error reading or parsing service-account.json:", error);
-            process.exit(1);
+        const serviceAccountPath = path.resolve(process.cwd(), 'src/lib/firebase/service-account.json');
+        if (fs.existsSync(serviceAccountPath)) {
+            const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+            const app = initializeApp({
+                credential: cert(serviceAccount)
+            });
+            console.log("Firebase Admin SDK initialized using service-account.json file.");
+            return app;
         }
-        // If file is not found, proceed to check environment variable
+    } catch (error: any) {
+        console.error("Error reading or parsing service-account.json:", error);
+        // Continue to check env var
     }
 
     // 2. If file not found, try to use environment variable
     if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
         try {
             const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-            firebaseApp = initializeApp({
+            const app = initializeApp({
                 credential: cert(serviceAccount)
             });
             console.log("Firebase Admin SDK initialized using environment variable.");
-            return;
+            return app;
         } catch (error) {
             console.error("Error parsing FIREBASE_SERVICE_ACCOUNT_KEY from .env:", error);
             process.exit(1);
@@ -66,7 +71,7 @@ function initializeFirebaseAdmin() {
             const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
             if (!projectId) throw new Error("Missing NEXT_PUBLIC_FIREBASE_PROJECT_ID");
 
-            firebaseApp = initializeApp({
+            const app = initializeApp({
                 credential: cert({
                     projectId,
                     clientEmail: process.env.DO_FIREBASE_CLIENT_EMAIL,
@@ -74,7 +79,7 @@ function initializeFirebaseAdmin() {
                 })
             });
             console.log("Firebase Admin SDK initialized using separate environment variables.");
-            return;
+            return app;
         } catch (error) {
             console.error("Error with separate env vars:", error);
         }
@@ -85,7 +90,7 @@ function initializeFirebaseAdmin() {
     process.exit(1);
 }
 
-initializeFirebaseAdmin();
+const firebaseApp = initializeFirebaseAdmin();
 
 
 const adminDb = getFirestore(firebaseApp);
@@ -94,7 +99,7 @@ const adminAuth = getAuth(firebaseApp);
 
 // --- Mock Data Definition ---
 
-const mockUsers: Omit<User, 'id'>[] = [
+const mockUsers: any[] = [
     { // 0: Admin
         name: 'Admin User',
         email: 'admin@team4job.com',
@@ -350,7 +355,7 @@ async function clearAuthUsers() {
     }
 }
 
-async function seedAuthAndGetUIDs(users: Omit<User, 'id'>[]) {
+async function seedAuthAndGetUIDs(users: any[]) {
     console.log('\nCreating authentication users...');
     const userUIDs: { [email: string]: string } = {};
     for (const user of users) {
@@ -379,7 +384,7 @@ async function seedAuthAndGetUIDs(users: Omit<User, 'id'>[]) {
     return userUIDs;
 }
 
-async function seedUserProfiles(users: Omit<User, 'id'>[], uids: { [email: string]: string }) {
+async function seedUserProfiles(users: any[], uids: { [email: string]: string }) {
     console.log('\nCreating user profiles in Firestore...');
     const batch = adminDb.batch();
     const trialExpiry = new Date();
@@ -778,7 +783,7 @@ async function seedBlacklist() {
     console.log('\nSeeding blacklist...');
     const suspendedInstallerUID = (await adminAuth.getUserByEmail('sanjay.v@example.com')).uid;
 
-    const blacklistEntry: BlacklistEntry = {
+    const blacklistEntry: any = {
         id: `BL-USER-${Date.now()}`,
         type: "user",
         value: suspendedInstallerUID,
@@ -788,7 +793,7 @@ async function seedBlacklist() {
     };
     await adminDb.collection('blacklist').doc(blacklistEntry.id).set(blacklistEntry);
 
-    const pincodeEntry: BlacklistEntry = {
+    const pincodeEntry: any = {
         id: `BL-PINCODE-${Date.now()}`,
         type: "pincode",
         value: "999999",
@@ -807,7 +812,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
     const now = new Date();
 
     // Transaction for Completed Job (job2Id)
-    const t1: Transaction = {
+    const t1: any = {
         id: `TXN-JOB2-${Date.now()}`,
         jobId: "JOB-20240615-C3D4",
         jobTitle: "Factory Security System Overhaul",
@@ -829,7 +834,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
     batch.set(adminDb.collection('transactions').doc(t1.id), t1);
 
     // Transaction for In-Progress Job (job3Id) - Funded but not released
-    const t2: Transaction = {
+    const t2: any = {
         id: `TXN-JOB3-${Date.now()}`,
         jobId: "JOB-20240718-E5F6",
         jobTitle: "Residential Villa - 4 PTZ Cameras (Disputed)",
@@ -850,7 +855,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
 
     // --- NEW: POPULATED WALLET TRANSACTIONS FOR INSTALLER (User 2) ---
     // Transaction Old 1: Old completed job
-    const tOld1: Transaction = {
+    const tOld1: any = {
         id: `TXN-OLD-1-${Date.now()}`,
         jobId: "JOB-OLD-1",
         jobTitle: "Office Network Setup - Phase 1",
@@ -870,7 +875,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
     batch.set(adminDb.collection('transactions').doc(tOld1.id), tOld1);
 
     // Transaction Old 2: Another completed job
-    const tOld2: Transaction = {
+    const tOld2: any = {
         id: `TXN-OLD-2-${Date.now()}`,
         jobId: "JOB-OLD-2",
         jobTitle: "CCTV Maintenance Contract - Q1",
@@ -890,7 +895,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
     batch.set(adminDb.collection('transactions').doc(tOld2.id), tOld2);
 
     // Transaction for Awarded Job (job6Id) - Funded
-    const t3: Transaction = {
+    const t3: any = {
         id: `TXN-JOB6-${Date.now()}`,
         jobId: "JOB-20240728-M3N4",
         jobTitle: "Warehouse Access Control System - Jogeshwari",
@@ -910,7 +915,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
     batch.set(adminDb.collection('transactions').doc(t3.id), t3);
 
     // Transaction for a Failed Payment
-    const t4: Transaction = {
+    const t4: any = {
         id: `TXN-FAILED-${Date.now()}`,
         jobId: "JOB-20240725-J9K0",
         jobTitle: "Urgent: Replace 4 Cameras at Andheri Office",
@@ -931,7 +936,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
     batch.set(adminDb.collection('transactions').doc(t4.id), t4);
 
     // Transaction for a Refunded payment
-    const t5: Transaction = {
+    const t5: any = {
         id: `TXN-REFUND-${Date.now()}`,
         jobId: "JOB-SOME-OLD-JOB",
         jobTitle: "Office Camera Maintenance",
@@ -960,7 +965,7 @@ async function seedSubscriptionPlans() {
     console.log('\nSeeding default subscription plans...');
     const batch = adminDb.batch();
 
-    const proInstallerPlan: SubscriptionPlan = {
+    const proInstallerPlan: any = {
         id: "pro-installer-annual",
         name: "Pro Installer (Annual)",
         description: "Unlock premium features for professional installers.",
@@ -971,7 +976,7 @@ async function seedSubscriptionPlans() {
     };
     batch.set(adminDb.collection('subscriptionPlans').doc(proInstallerPlan.id), proInstallerPlan);
 
-    const businessJobGiverPlan: SubscriptionPlan = {
+    const businessJobGiverPlan: any = {
         id: "business-job-giver-annual",
         name: "Business Job Giver (Annual)",
         description: "Post unlimited jobs and get access to top-tier installers.",

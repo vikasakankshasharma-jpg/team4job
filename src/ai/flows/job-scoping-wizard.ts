@@ -8,9 +8,10 @@
  * detailed job post, including a title, description, and suggested skills.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import { GenerateJobDetailsOutputSchema } from './generate-job-details';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
+import { GenerateJobDetailsOutputSchema } from './generate-job-details-schema';
+
 
 const JobScopingWizardInputSchema = z.object({
   userQuery: z.string().describe('A simple, natural language description of the user\'s need.'),
@@ -26,8 +27,8 @@ export async function jobScopingWizard(input: JobScopingWizardInput): Promise<Jo
 
 const jobScopingPrompt = ai.definePrompt({
   name: 'jobScopingPrompt',
-  input: {schema: JobScopingWizardInputSchema},
-  output: {schema: GenerateJobDetailsOutputSchema},
+  input: { schema: JobScopingWizardInputSchema },
+  output: { schema: GenerateJobDetailsOutputSchema },
   prompt: `You are an expert CCTV and security consultant helping a non-technical user create a detailed job post.
   The user has provided a simple description of their needs. Your task is to transform this simple query into a professional, structured job post.
 
@@ -58,7 +59,7 @@ const jobScopingWizardFlow = ai.defineFlow(
     outputSchema: GenerateJobDetailsOutputSchema,
   },
   async input => {
-    const {output} = await jobScopingPrompt(input);
+    const { output } = await jobScopingPrompt(input);
     if (!output) {
       throw new Error("Failed to generate job details from AI wizard.");
     }

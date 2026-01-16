@@ -1,3 +1,4 @@
 {
-    "antigravityWorkspace": true
+    "antigravityWorkspace": true,
+    "css.lint.unknownAtRules": "ignore"
 }

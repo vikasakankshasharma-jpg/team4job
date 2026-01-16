@@ -25,8 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Zap, Loader2, UserPlus, ShieldCheck } from "lucide-react";
-import { generateJobDetails } from "@/ai/flows/generate-job-details";
-import { generatePriceEstimate } from "@/ai/flows/generate-price-estimate";
+import { generateJobDetails, generatePriceEstimate } from "@/ai/actions";
 import { useToast } from "@/hooks/use-toast";
 import React, { useEffect, useState, useCallback } from "react";
 import { cn, toDate } from "@/lib/utils";
@@ -57,6 +56,15 @@ import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { jobCategoryTemplates } from "@/lib/job-category-templates";
 import { VoiceInput } from "@/components/ui/voice-input";
+import { useAutoSave } from "@/hooks/use-auto-save";
+import { DraftRecoveryDialog } from "@/components/post-job/draft-recovery-dialog";
+import { TemplateSelector } from "@/components/post-job/template-selector";
+import { SaveTemplateDialog } from "@/components/post-job/save-template-dialog";
+import { BudgetTemplateSelector } from "@/components/post-job/budget-template-selector";
+import { SmartEstimatorDialog } from "@/components/post-job/smart-estimator-dialog";
+import { getLatestDraft, deleteDraft, JobDraft, JobTemplate, incrementTemplateUsage } from "@/lib/api/drafts";
+import { Save, Check, Loader2 as Loader, Bookmark, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const addressSchema = z.object({
   house: z.string().min(3, "Please enter a valid house/building detail."),
@@ -216,6 +224,13 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const { setHelp } = useHelp();
   const [isProcessing, setIsProcessing] = React.useState(false);
 
+  // Draft & Template state
+  const [showDraftDialog, setShowDraftDialog] = useState(false);
+  const [loadedDraft, setLoadedDraft] = useState<JobDraft | null>(null);
+  const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
+  const [showSmartEstimator, setShowSmartEstimator] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
     mode: "onChange",
@@ -246,11 +261,111 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const directAwardParam = searchParams.get('directAwardInstallerId');
   const isEditMode = !!editJobId;
 
+  // Auto-save hook
+  const { saveStatus, draftId, saveNow, setDraftId } = useAutoSave(
+    () => ({
+      title: form.getValues('jobTitle'),
+      description: form.getValues('jobDescription'),
+      jobCategory: form.getValues('jobCategory'),
+      skills: form.getValues('skills')?.split(',').map(s => s.trim()),
+      budget: form.getValues('priceEstimate'),
+      location: form.getValues('address.cityPincode'),
+      address: form.getValues('address'),
+      fullAddress: form.getValues('address.fullAddress'),
+      jobStartDate: form.getValues('jobStartDate') ? new Date(form.getValues('jobStartDate')) : undefined,
+      travelTip: form.getValues('travelTip'),
+      directAwardInstallerId: form.getValues('directAwardInstallerId'),
+      isGstInvoiceRequired: form.getValues('isGstInvoiceRequired'),
+    }),
+    {
+      enabled: !isEditMode && !isSubmitted && !repostJobId,
+      onSave: (id) => setDraftId(id),
+    }
+  );
+
   useEffect(() => {
     if (directAwardParam) {
       form.setValue('directAwardInstallerId', directAwardParam, { shouldValidate: true });
     }
   }, [directAwardParam, form]);
+
+  // Load draft on mount (only for new jobs)
+  useEffect(() => {
+    async function checkForDraft() {
+      if (isEditMode || repostJobId || !user || !db) return;
+
+      const draft = await getLatestDraft(db, user.id);
+      if (draft && !isSubmitted) {
+        setLoadedDraft(draft);
+        setShowDraftDialog(true);
+      }
+    }
+    checkForDraft();
+  }, [isEditMode, repostJobId, user, db, isSubmitted]);
+
+  // Handle draft recovery
+  const handleResumeDraft = useCallback(() => {
+    if (!loadedDraft) return;
+
+    form.reset({
+      jobTitle: loadedDraft.title || '',
+      jobDescription: loadedDraft.description || '',
+      jobCategory: loadedDraft.jobCategory || '',
+      skills: loadedDraft.skills?.join(', ') || '',
+      travelTip: loadedDraft.travelTip || 0,
+      isGstInvoiceRequired: loadedDraft.isGstInvoiceRequired || false,
+      address: loadedDraft.address || form.getValues('address'),
+      deadline: '',
+      jobStartDate: loadedDraft.jobStartDate ? format(toDate(loadedDraft.jobStartDate), "yyyy-MM-dd'T'HH:mm") : '',
+      directAwardInstallerId: loadedDraft.directAwardInstallerId || '',
+      priceEstimate: loadedDraft.budget || { min: 0, max: 0 },
+    });
+
+    setDraftId(loadedDraft.id);
+    setShowDraftDialog(false);
+    toast({
+      title: 'Draft loaded',
+      description: 'Your previous work has been restored.',
+    });
+  }, [loadedDraft, form, setDraftId, toast]);
+
+  const handleDiscardDraft = useCallback(async () => {
+    if (!loadedDraft || !user || !db) return;
+
+    await deleteDraft(db, user.id, loadedDraft.id);
+    setShowDraftDialog(false);
+    toast({
+      title: 'Draft discarded',
+      description: 'Starting with a fresh form.',
+    });
+  }, [loadedDraft, user, db, toast]);
+
+  // Handle template selection
+  const handleTemplateSelect = useCallback(async (template: JobTemplate) => {
+    if (!user || !db) return;
+
+    const fields = template.fields;
+    form.reset({
+      jobTitle: fields.title || '',
+      jobDescription: fields.description || '',
+      jobCategory: template.category,
+      skills: fields.skills?.join(', ') || '',
+      travelTip: fields.travelTip || 0,
+      isGstInvoiceRequired: fields.isGstInvoiceRequired || false,
+      address: fields.address || form.getValues('address'),
+      deadline: '',
+      jobStartDate: '',
+      directAwardInstallerId: '',
+      priceEstimate: fields.budget || { min: 0, max: 0 },
+    });
+
+    await incrementTemplateUsage(db, user.id, template.id);
+
+    toast({
+      title: 'Template loaded',
+      description: `"${template.name}" has been applied.`,
+    });
+  }, [user, db, form, toast]);
 
   React.useEffect(() => {
     async function prefillForm() {
@@ -509,6 +624,14 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         await setDoc(doc(db, "jobs", newJobId), jobData);
         console.log("Job saved successfully!");
 
+        // Delete draft after successful submission
+        setIsSubmitted(true);
+        if (draftId && user && db) {
+          await deleteDraft(db, user.id, draftId).catch(err =>
+            console.error('Error deleting draft after submission:', err)
+          );
+        }
+
         toast({
           title: repostJobId ? "Job Re-posted Successfully!" : "Job Posted Successfully!",
           description: `Your job is now ${jobData.directAwardInstallerId ? 'sent privately to the installer' : 'live and open for bidding'}.`,
@@ -586,17 +709,51 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         <form onSubmit={e => e.preventDefault()} className="grid gap-4">
           <Card>
             <CardHeader>
-              <CardTitle>Job Details</CardTitle>
-              <CardDescription>
-                {isEditMode
-                  ? "Update the details of your job posting."
-                  : (repostJobId
-                    ? "Review and update the job details, then set a new deadline to re-list it."
-                    : "Fill in the details for your job posting. Use the AI generator for a quick start.")
-                }
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Job Details</CardTitle>
+                  <CardDescription>
+                    {isEditMode
+                      ? "Update the details of your job posting."
+                      : (repostJobId
+                        ? "Review and update the job details, then set a new deadline to re-list it."
+                        : "Fill in the details for your job posting. Use the AI generator for a quick start.")
+                    }
+                  </CardDescription>
+                </div>
+                {/* Save Status Indicator */}
+                {!isEditMode && !repostJobId && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    {saveStatus === 'saving' && (
+                      <>
+                        <Loader className="h-4 w-4 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    )}
+                    {saveStatus === 'saved' && (
+                      <>
+                        <Check className="h-4 w-4 text-green-600" />
+                        <span className="text-green-600">Saved</span>
+                      </>
+                    )}
+                    {saveStatus === 'idle' && draftId && (
+                      <>
+                        <Save className="h-4 w-4" />
+                        <span>Draft auto-saved</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Template Selector */}
+              {!isEditMode && !repostJobId && (
+                <TemplateSelector
+                  onTemplateSelect={handleTemplateSelect}
+                  onManageTemplates={() => router.push('/dashboard/templates')}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="jobCategory"
@@ -605,7 +762,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     <FormLabel>Job Category</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger data-testid="job-category-select">
+                        <SelectTrigger data-testid="job-category-select" className="h-12 md:h-10 text-base md:text-sm">
                           <SelectValue placeholder="Select a category for your job" />
                         </SelectTrigger>
                       </FormControl>
@@ -636,6 +793,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                           placeholder="e.g., Install 8 IP Cameras for an Office"
                           {...field}
                           data-testid="job-title-input"
+                          className="h-12 md:h-10 text-base md:text-sm"
                         />
                       </FormControl>
                       <VoiceInput onTranscript={handleVoiceTranscript} isProcessing={isGenerating} />
@@ -668,7 +826,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     <FormControl>
                       <Textarea
                         placeholder="Describe the project requirements, scope, and any important details..."
-                        className={cn("min-h-32", isGenerating && "opacity-50")}
+                        className={cn("min-h-32 text-base md:text-sm", isGenerating && "opacity-50")}
                         {...field}
                         data-testid="job-description-input"
                       />
@@ -689,7 +847,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     <FormControl>
                       <Input
                         placeholder="e.g., IP Cameras, NVR Setup, Cabling"
-                        className={cn(isGenerating && "opacity-50")}
+                        className={cn(isGenerating && "opacity-50", "h-12 md:h-10 text-base md:text-sm")}
                         {...field}
                         data-testid="skills-input"
                       />
@@ -824,43 +982,63 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={handleEstimatePrice}
-                  disabled={isEstimating || !canEstimatePrice}
+                  onClick={() => setShowSmartEstimator(true)}
+                  disabled={!canEstimatePrice}
+                  className="gap-2 text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/30"
                 >
-                  {isEstimating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4 text-amber-500" />}
-                  AI Suggest Budget
+                  <Sparkles className="h-4 w-4" />
+                  AI Estimate
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="priceEstimate.min"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{directAwardInstallerId ? 'Offered Budget (₹)' : 'Minimum Budget (₹)'}</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="e.g. 8000" {...field} data-testid="min-budget-input" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <CardContent className="space-y-6">
+              {/* Budget Template Selector */}
               {!directAwardInstallerId && (
+                <div className="flex justify-end">
+                  <BudgetTemplateSelector
+                    onSelect={(template) => {
+                      form.setValue('priceEstimate.min', template.min, { shouldValidate: true });
+                      form.setValue('priceEstimate.max', template.max, { shouldValidate: true });
+                      toast({ title: "Budget Applied", description: `Applied "${template.name}" range.` });
+                    }}
+                    currentValues={{
+                      min: form.watch('priceEstimate.min') || 0,
+                      max: form.watch('priceEstimate.max') || 0
+                    }}
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
-                  name="priceEstimate.max"
+                  name="priceEstimate.min"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Maximum Budget (₹, Optional)</FormLabel>
+                      <FormLabel>{directAwardInstallerId ? 'Offered Budget (₹)' : 'Minimum Budget (₹)'}</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g. 12000" {...field} data-testid="max-budget-input" />
+                        <Input type="number" placeholder="e.g. 8000" {...field} data-testid="min-budget-input" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
+                {!directAwardInstallerId && (
+                  <FormField
+                    control={form.control}
+                    name="priceEstimate.max"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Maximum Budget (₹, Optional)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g. 12000" {...field} data-testid="max-budget-input" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
             </CardContent>
           </Card>
           {!isEditMode && (
@@ -879,47 +1057,106 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
               </CardContent>
             </Card>
           )}
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="outline" type="button" onClick={() => router.back()}>
-              Cancel
-            </Button>
-            {isEditMode ? (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button type="button" disabled={isProcessing || isGenerating}>
-                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Changes
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to save changes?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Editing a live job will remove all existing bids to ensure fairness. Previous bidders will be notified and will need to bid again on the updated job details. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleSubmitClick}>
-                      {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirm & Save"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            ) : (
-              <Button
-                type="button"
-                disabled={isProcessing || isGenerating}
-                onClick={handleSubmitClick}
-                data-testid="post-job-button"
-              >
-                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {repostJobId ? 'Re-post Job' : 'Post Job'}
+          <div className="flex items-center justify-between">
+            <div>
+              {/* Save as Template Button */}
+              {!isEditMode && jobCategory && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSaveTemplateDialog(true)}
+                  disabled={isProcessing}
+                >
+                  <Bookmark className="mr-2 h-4 w-4" />
+                  Save as Template
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" type="button" onClick={() => router.back()}>
+                Cancel
               </Button>
-            )}
+              {isEditMode ? (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button type="button" disabled={isProcessing || isGenerating}>
+                      {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Save Changes
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure you want to save changes?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Editing a live job will remove all existing bids to ensure fairness. Previous bidders will be notified and will need to bid again on the updated job details. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleSubmitClick}>
+                        {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirm & Save"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              ) : (
+                <Button
+                  type="button"
+                  disabled={isProcessing || isGenerating}
+                  onClick={handleSubmitClick}
+                  data-testid="post-job-button"
+                >
+                  {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {repostJobId ? 'Re-post Job' : 'Post Job'}
+                </Button>
+              )}
+            </div>
           </div>
         </form>
       </Form>
+
+      {/* Draft Recovery Dialog */}
+      <DraftRecoveryDialog
+        open={showDraftDialog}
+        draft={loadedDraft}
+        onResume={handleResumeDraft}
+        onDiscard={handleDiscardDraft}
+        onCancel={() => setShowDraftDialog(false)}
+      />
+
+      {/* Save Template Dialog */}
+      <SaveTemplateDialog
+        open={showSaveTemplateDialog}
+        onOpenChange={setShowSaveTemplateDialog}
+        draftData={{
+          title: form.getValues('jobTitle'),
+          description: form.getValues('jobDescription'),
+          jobCategory: form.getValues('jobCategory'),
+          skills: form.getValues('skills')?.split(',').map(s => s.trim()),
+          budget: form.getValues('priceEstimate'),
+          travelTip: form.getValues('travelTip'),
+          isGstInvoiceRequired: form.getValues('isGstInvoiceRequired'),
+        }}
+        category={form.getValues('jobCategory')}
+      />
+
+      {/* Smart Estimator Dialog */}
+      <SmartEstimatorDialog
+        open={showSmartEstimator}
+        onOpenChange={setShowSmartEstimator}
+        jobDetails={{
+          title: jobTitle,
+          description: jobDescription,
+          category: jobCategory
+        }}
+        onApply={(min, max) => {
+          form.setValue('priceEstimate.min', min, { shouldValidate: true });
+          if (!directAwardInstallerId) {
+            form.setValue('priceEstimate.max', max, { shouldValidate: true });
+          }
+        }}
+      />
     </div>
   );
 }

@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { AnimatedAvatar } from '@/components/ui/animated-avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Star, Heart, UserX, Briefcase, Medal, Gem, Award, Search, Users, ShieldCheck } from 'lucide-react';
+import { Loader2, Star, Heart, UserX, Briefcase, Medal, Gem, Award, Search, Users, ShieldCheck, Mail, Zap, Tag, Clock, IndianRupee, X, Plus } from 'lucide-react';
 import { useUser, useFirebase } from '@/hooks/use-user';
 import { User, Job } from '@/lib/types';
 import { getRefId } from '@/lib/utils';
@@ -29,6 +29,15 @@ import { useHelp } from '@/hooks/use-help';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { InstallerProfileModal } from '@/components/installers/installer-profile-modal';
+import { InviteToJobDialog } from '@/components/my-installers/invite-to-job-dialog';
+import { TagManagementDialog } from '@/components/my-installers/tag-management-dialog';
+import { calculateBatchInstallerMetrics, InstallerRelationshipMetrics } from '@/lib/services/installer-relationship-metrics';
+import { getInstallerTags, getAllUniqueTags, getInstallersByTag } from '@/lib/services/installer-tags';
+import { formatDistanceToNow } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SmartSearch } from '@/components/ui/smart-search';
+import Fuse from 'fuse.js';
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-5 w-5 text-yellow-700" />,
@@ -39,12 +48,32 @@ const tierIcons: Record<string, React.ReactNode> = {
 
 
 
-const InstallerCard = ({ installer, user, onUpdate }: { installer: User, user: User, onUpdate: (userId: string, action: 'favorite' | 'unfavorite' | 'block' | 'unblock') => void }) => {
+const InstallerCard = ({
+  installer,
+  user,
+  onUpdate,
+  onClick,
+  metrics,
+  tags,
+  onInvite,
+  onHireAgain,
+  onManageTags
+}: {
+  installer: User,
+  user: User,
+  onUpdate: (userId: string, action: 'favorite' | 'unfavorite' | 'block' | 'unblock') => void,
+  onClick: (installer: User) => void,
+  metrics?: InstallerRelationshipMetrics,
+  tags: string[],
+  onInvite: () => void,
+  onHireAgain: () => void,
+  onManageTags: () => void
+}) => {
   const isFavorite = user.favoriteInstallerIds?.includes(installer.id);
   const isBlocked = user.blockedInstallerIds?.includes(installer.id);
 
   return (
-    <Card>
+    <Card className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => onClick(installer)}>
       <CardHeader>
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
@@ -52,7 +81,7 @@ const InstallerCard = ({ installer, user, onUpdate }: { installer: User, user: U
             <AvatarFallback>{installer.name.substring(0, 2)}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <CardTitle className="text-lg"><Link href={`/dashboard/users/${installer.id}`} className="hover:underline">{installer.name}</Link></CardTitle>
+            <CardTitle className="text-lg"><span className="hover:underline text-primary">{installer.name}</span></CardTitle>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {installer.installerProfile && tierIcons[installer.installerProfile.tier]}
               <span>{installer.installerProfile?.tier} Tier</span>
@@ -63,29 +92,81 @@ const InstallerCard = ({ installer, user, onUpdate }: { installer: User, user: U
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground flex items-center gap-1"><Star className="h-4 w-4" /> Rating</span>
-          <span className="font-semibold">{installer.installerProfile?.rating.toFixed(1)} ({installer.installerProfile?.reviews} reviews)</span>
+          <span className="text-muted-foreground flex items-center gap-1"><Star className="h-4 w-4" /> Platform Rating</span>
+          <span className="font-semibold">{installer.installerProfile?.rating.toFixed(1)} ({installer.installerProfile?.reviews})</span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground flex items-center gap-1"><Briefcase className="h-4 w-4" /> Jobs Completed</span>
-          <span className="font-semibold">{installer.installerProfile?.reviews || 0}</span>
-        </div>
+
+        {/* Phase 11: Performance Metrics */}
+        {metrics && metrics.jobsCompleted > 0 && (
+          <div className="border-t pt-3 space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground">Your Relationship</p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Briefcase className="h-3 w-3" />
+                <span>{metrics.jobsCompleted} jobs</span>
+              </div>
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <IndianRupee className="h-3 w-3" />
+                <span>₹{metrics.totalSpent.toLocaleString()}</span>
+              </div>
+              {metrics.avgRatingFromYou > 0 && (
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                  <span>{metrics.avgRatingFromYou.toFixed(1)} from you</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1 text-green-600">
+                <Clock className="h-3 w-3" />
+                <span>{metrics.onTimePercentage}% on-time</span>
+              </div>
+            </div>
+            {metrics.lastHiredDate && (
+              <p className="text-xs text-muted-foreground">
+                Last hired: {formatDistanceToNow(metrics.lastHiredDate)} ago
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Phase 11: Tags */}
+        {tags.length > 0 && (
+          <div className="pt-2">
+            <div className="flex flex-wrap gap-1">
+              {tags.map(tag => (
+                <Badge key={tag} variant="outline" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="pt-2">
           <p className="text-xs font-semibold text-muted-foreground mb-1">Top Skills</p>
           <div className="flex flex-wrap gap-1">
             {(installer.installerProfile?.skills || []).slice(0, 3).map(skill => (
-              <Badge key={skill} variant="secondary" className="capitalize">{skill}</Badge>
+              <Badge key={skill} variant="secondary" className="capitalize text-xs">{skill}</Badge>
             ))}
           </div>
         </div>
       </CardContent>
-      <CardContent>
+
+      {/* Phase 11: Enhanced Actions */}
+      <CardContent className="space-y-2" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="flex-1" onClick={onInvite}>
+            <Mail className="mr-2 h-4 w-4" /> Invite
+          </Button>
+          <Button size="sm" className="flex-1" onClick={onHireAgain}>
+            <Zap className="mr-2 h-4 w-4" /> Hire Again
+          </Button>
+        </div>
         <div className="flex gap-2">
           <Button variant={isFavorite ? 'default' : 'outline'} size="sm" className="flex-1" onClick={() => onUpdate(installer.id, isFavorite ? 'unfavorite' : 'favorite')}>
             <Heart className="mr-2 h-4 w-4" /> {isFavorite ? 'Favorited' : 'Favorite'}
           </Button>
-          <Button variant={isBlocked ? 'destructive' : 'outline'} size="sm" className="flex-1" onClick={() => onUpdate(installer.id, isBlocked ? 'unblock' : 'block')}>
-            <UserX className="mr-2 h-4 w-4" /> {isBlocked ? 'Blocked' : 'Block'}
+          <Button variant="outline" size="sm" className="flex-1" onClick={onManageTags}>
+            <Tag className="mr-2 h-4 w-4" /> Tags
           </Button>
         </div>
       </CardContent>
@@ -101,7 +182,14 @@ export default function MyInstallersClient() {
   const [installers, setInstallers] = useState<User[]>([]);
   const [search, setSearch] = useState('');
   const { setHelp } = useHelp();
+  const [selectedInstaller, setSelectedInstaller] = useState<User | null>(null);
   const router = useRouter();
+
+  // Phase 11: New state
+  const [metricsMap, setMetricsMap] = useState<Map<string, InstallerRelationshipMetrics>>(new Map());
+  const [inviteDialogInstaller, setInviteDialogInstaller] = useState<User | null>(null);
+  const [tagDialogInstaller, setTagDialogInstaller] = useState<User | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string>('all');
 
   useEffect(() => {
     if (role && role !== 'Job Giver') {
@@ -170,7 +258,20 @@ export default function MyInstallersClient() {
 
   useEffect(() => {
     fetchRelatedInstallers();
-  }, [fetchRelatedInstallers]);
+  }, [db, user, fetchRelatedInstallers]);
+
+  // Phase 11: Fetch metrics for all installers
+  useEffect(() => {
+    const loadMetrics = async () => {
+      if (!db || !user || installers.length === 0) return;
+
+      const installerIds = installers.map(i => i.id);
+      const metrics = await calculateBatchInstallerMetrics(db, user.id, installerIds);
+      setMetricsMap(metrics);
+    };
+
+    loadMetrics();
+  }, [db, user, installers]);
 
   const handleUpdate = async (installerId: string, action: 'favorite' | 'unfavorite' | 'block' | 'unblock') => {
     if (!user || !db) return;
@@ -202,14 +303,38 @@ export default function MyInstallersClient() {
     });
   };
 
+  // Phase 11: Filter by tags first, then search
+  const filteredByTag = useMemo(() => {
+    if (!selectedTag || selectedTag === 'all') return installers;
+    if (!user) return installers;
+    const taggedIds = getInstallersByTag(user, selectedTag);
+    return installers.filter(i => taggedIds.includes(i.id));
+  }, [installers, selectedTag, user]);
+
+  // Phase 11: Get all unique tags for filter
+  const allTags = useMemo(() => {
+    if (!user) return [];
+    return getAllUniqueTags(user);
+  }, [user]);
+
+  // Phase 11 Enhancement #6: Build suggestions for SmartSearch
+  const searchSuggestions = useMemo(() => {
+    const names = filteredByTag.map(i => i.name);
+    const skills = Array.from(new Set(filteredByTag.flatMap(i => i.installerProfile?.skills || [])));
+    const tags = allTags;
+    return [...names, ...skills, ...tags].filter(Boolean);
+  }, [filteredByTag, allTags]);
+
+  // Phase 11 Enhancement #6: Fuzzy search with Fuse.js
   const filteredInstallers = useMemo(() => {
-    if (!search) return installers;
-    const lowercasedSearch = search.toLowerCase();
-    return installers.filter(i =>
-      i.name.toLowerCase().includes(lowercasedSearch) ||
-      i.installerProfile?.skills?.some(s => s.toLowerCase().includes(lowercasedSearch))
-    );
-  }, [installers, search]);
+    if (!search) return filteredByTag;
+    const fuse = new Fuse(filteredByTag, {
+      keys: ['name', 'installerProfile.skills'],
+      threshold: 0.3,
+      ignoreLocation: true,
+    });
+    return fuse.search(search).map(r => r.item);
+  }, [filteredByTag, search]);
 
   const { hired, favorites, blocked } = useMemo(() => {
     return {
@@ -235,7 +360,18 @@ export default function MyInstallersClient() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {installerList.map(installer => (
-          <InstallerCard key={installer.id} installer={installer} user={user} onUpdate={handleUpdate} />
+          <InstallerCard
+            key={installer.id}
+            installer={installer}
+            user={user}
+            onUpdate={handleUpdate}
+            onClick={setSelectedInstaller}
+            metrics={metricsMap.get(installer.id)}
+            tags={getInstallerTags(user, installer.id)}
+            onInvite={() => setInviteDialogInstaller(installer)}
+            onHireAgain={() => router.push(`/dashboard/post-job?directAward=${installer.id}`)}
+            onManageTags={() => setTagDialogInstaller(installer)}
+          />
         ))}
       </div>
     );
@@ -249,13 +385,28 @@ export default function MyInstallersClient() {
             <CardTitle className="text-2xl">My Installers</CardTitle>
             <CardDescription>Manage your network of previously hired, favorite, and blocked installers.</CardDescription>
           </div>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
+          <div className="flex gap-2">
+            {/* Phase 11: Tag Filter */}
+            {allTags.length > 0 && (
+              <Select value={selectedTag} onValueChange={setSelectedTag}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Filter by tag" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tags</SelectItem>
+                  {allTags.map(tag => (
+                    <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            <SmartSearch
               placeholder="Search by name or skill..."
-              className="pl-8 w-full sm:w-64"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onSearch={(query) => setSearch(query)}
+              suggestions={searchSuggestions}
+              enableHistory
+              storageKey="smartSearch_my_installers"
             />
           </div>
         </div>
@@ -278,6 +429,35 @@ export default function MyInstallersClient() {
           </TabsContent>
         </Tabs>
       </CardContent>
-    </Card>
+      {selectedInstaller && (
+        <InstallerProfileModal
+          installer={selectedInstaller}
+          isOpen={!!selectedInstaller}
+          onClose={() => setSelectedInstaller(null)}
+          currentUser={user}
+          onUpdateAction={handleUpdate}
+        />
+      )}
+
+      {/* Phase 11: New Dialogs */}
+      {inviteDialogInstaller && user && (
+        <InviteToJobDialog
+          isOpen={!!inviteDialogInstaller}
+          onClose={() => setInviteDialogInstaller(null)}
+          installer={inviteDialogInstaller}
+          currentUser={user}
+        />
+      )}
+
+      {tagDialogInstaller && user && (
+        <TagManagementDialog
+          isOpen={!!tagDialogInstaller}
+          onClose={() => setTagDialogInstaller(null)}
+          installer={tagDialogInstaller}
+          currentUser={user}
+          onTagsUpdated={fetchRelatedInstallers}
+        />
+      )}
+    </Card >
   );
 }

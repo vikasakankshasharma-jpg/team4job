@@ -44,6 +44,23 @@ service cloud.firestore {
         
       // Allow Admin to write anything
       allow write: if isAdmin();
+      
+      // --- SUBCOLLECTIONS ---
+      
+      // Job Drafts (e.g. users/123/jobDrafts/draft_456)
+      match /jobDrafts/{draftId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Job Templates (Full Job)
+      match /jobTemplates/{templateId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Budget Templates (Price Ranges)
+      match /budgetTemplates/{templateId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // Public Profiles - Visible to everyone
@@ -80,7 +97,33 @@ service cloud.firestore {
           
         allow update, delete: if isOwner(resource.data.installerId) || isAdmin();
       }
+      
+      // --- COMMUNICATIONS SUB-COLLECTION (Phase 11 Enhancement #7) ---
+      match /communications/{commId} {
+        // Helper to check if user is job participant
+        function isJobParticipant() {
+          let jobData = get(/databases/$(database)/documents/jobs/$(jobId)).data;
+          return request.auth.uid == jobData.jobGiverId ||
+                 request.auth.uid == jobData.awardedInstaller ||
+                 (jobData.awardedInstaller != null && 
+                  jobData.awardedInstaller == /databases/$(database)/documents/users/$(request.auth.uid));
+        }
+        
+        // Job participants can read all communications
+        allow read: if request.auth != null && isJobParticipant();
+        
+        // Job participants can create communications
+        allow create: if request.auth != null && 
+          isJobParticipant() &&
+          request.resource.data.author == request.auth.uid &&
+          request.resource.data.jobId == jobId;
+        
+        // Only admins can update/delete (or author within 5 minutes - future enhancement)
+        allow update, delete: if isAdmin();
+      }
     }
+
+
     
     // Bids (Legacy Root Collection)
     match /bids/{bidId} {
@@ -166,6 +209,32 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow read: if request.auth != null;
       allow write: if isAdmin();
+    }
+
+    // --- NOTIFICATIONS ---
+    
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Allow creation by admin or system (or any auth user triggering an event for another user - effectively protected by business logic, but strictly should be admin/system)
+      // For simplicity in this implementation phase, we allow auth users to creating notifications for now (e.g. initiating a chat)
+      allow create: if request.auth != null; 
+        // && (request.resource.data.userId == request.auth.uid || isAdmin()); // Ideally restrict creation
+      
+      allow update: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || isAdmin()); // e.g. marking as read
+
+      allow delete: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /notificationPreferences/{userId} {
+      allow read: if request.auth != null && 
+        (request.auth.uid == userId || isAdmin());
+      
+      allow write: if request.auth != null && 
+        (request.auth.uid == userId || isAdmin());
     }
   }
 }

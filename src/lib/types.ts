@@ -11,6 +11,15 @@ export type Address = {
 
 export type UserStatus = 'active' | 'suspended' | 'deactivated';
 
+export type PortfolioItem = {
+  id: string;
+  imageUrl: string;
+  title: string;
+  description: string;
+  category: string;
+  completedAt: Date | Timestamp;
+};
+
 export type User = {
   id: string;
   name: string;
@@ -36,6 +45,9 @@ export type User = {
     planId: string;
     planName: string;
     expiresAt: Date | Timestamp;
+    status?: string;
+    startDate?: Date | Timestamp;
+    autoRenew?: boolean;
   };
   aadharLast4?: string;
   panNumber?: string;
@@ -51,6 +63,7 @@ export type User = {
   fcmTokens?: string[];
   favoriteInstallerIds?: string[];
   blockedInstallerIds?: string[];
+  installerTags?: { [installerId: string]: string[] }; // Custom tags for organizing installers
   isFoundingInstaller?: boolean;
   installerProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
@@ -64,6 +77,13 @@ export type User = {
     gstNumber?: string | null;
     adminNotes?: string;
     reputationHistory?: { month: string; points: number }[];
+    bio?: string;
+    specialties?: string[];
+    portfolio?: PortfolioItem[];
+    availability?: {
+      status: 'available' | 'busy' | 'on-vacation';
+      nextAvailable?: Date | Timestamp;
+    };
   };
   emergencyContacts?: {
     name: string;
@@ -216,6 +236,13 @@ export type Job = {
   cancellationReason?: string;
   archived?: boolean;
   adminNotes?: string;
+  statusHistory?: {
+    oldStatus: string;
+    newStatus: string;
+    timestamp: Date | Timestamp;
+    changedBy: string;  // User ID
+    reason?: string;
+  }[];
 };
 
 export type DisputeAttachment = {
@@ -422,3 +449,51 @@ export type PendingSignup = {
   convertedAt?: Date | Timestamp;
   convertedUserId?: string; // Final user ID after successful signup
 };
+
+// --- Notifications ---
+
+export type NotificationType =
+  | 'NEW_BID'
+  | 'BID_UPDATED'
+  | 'FAVORITE_INSTALLER_BID'
+  | 'FUNDING_DEADLINE_APPROACHING'
+  | 'AWARD_DEADLINE_APPROACHING'
+  | 'JOB_STARTED'
+  | 'WORK_SUBMITTED'
+  | 'MESSAGE_RECEIVED'
+  | 'PAYMENT_RELEASED'
+  | 'REVIEW_REQUESTED';
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  actionUrl?: string;
+  actionLabel?: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  read: boolean;
+  createdAt: Date | Timestamp;
+}
+
+export interface NotificationPreferences {
+  userId: string;
+  channels: {
+    inApp: boolean;
+    email: boolean;
+    sms: boolean;
+  };
+  frequency: 'realtime' | 'hourly_digest' | 'daily_digest';
+  quietHours: {
+    enabled: boolean;
+    start: string; // "22:00"
+    end: string;   // "08:00"
+  };
+  categories: {
+    bidding: { enabled: boolean; channels: string[] };
+    payments: { enabled: boolean; channels: string[] };
+    communication: { enabled: boolean; channels: string[] };
+    deadlines: { enabled: boolean; channels: string[] };
+  };
+}
