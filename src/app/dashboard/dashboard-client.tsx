@@ -33,7 +33,7 @@ import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
 import { Job, User, Dispute, Transaction, Role } from "@/lib/types";
-import { collection, query, where, getDocs, or, and, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, or, and, doc, getDoc, getCountFromServer, limit } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
 import { cn, toDate } from "@/lib/utils";
 import { differenceInMilliseconds, format, getMonth, getYear, startOfMonth, subMonths } from "date-fns";
@@ -45,6 +45,10 @@ import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 
 import { RecommendedJobs } from "@/components/dashboard/recommended-jobs";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { ActionRequiredDashboard } from "@/components/notifications/action-required-dashboard";
+import { QuickMetricsRow } from "@/components/dashboard/quick-metrics-row";
+import { RecommendedInstallersCard } from "@/components/dashboard/recommended-installers-card";
+import { SpendingInsightsCard } from "@/components/dashboard/spending-insights-card";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -179,14 +183,15 @@ function InstallerDashboard() {
         const myBidsQuery = query(jobsRef, where('bidderIds', 'array-contains', user.id));
         const myAwardedQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
 
-        // Transactions for Earnings (Released & Funded)
+        // Transactions for Earnings (Released & Funded) - Limit to recent 100
         const transactionsQuery = query(
           collection(db, "transactions"),
-          where("payeeId", "==", user.id)
+          where("payeeId", "==", user.id),
+          limit(100)
         );
 
-        const [openJobsSnapshot, myBidsSnapshot, myAwardedSnapshot, transactionsSnapshot] = await Promise.all([
-          getDocs(openJobsQuery),
+        const [openJobsCount, myBidsSnapshot, myAwardedSnapshot, transactionsSnapshot] = await Promise.all([
+          getCountFromServer(openJobsQuery),
           getDocs(myBidsQuery),
           getDocs(myAwardedQuery),
           getDocs(transactionsQuery)
@@ -195,7 +200,7 @@ function InstallerDashboard() {
         const myJobsSet = new Set([...myBidsSnapshot.docs.map(d => d.id), ...myAwardedSnapshot.docs.map(d => d.id)]);
 
         setStats({
-          openJobs: openJobsSnapshot.size,
+          openJobs: openJobsCount.data().count,
           myBids: myJobsSet.size,
           jobsWon: myAwardedSnapshot.size
         });
@@ -585,6 +590,13 @@ function JobGiverDashboard() {
       <div className="flex items-center mb-8">
         <h1 className="text-lg font-semibold md:text-2xl">Welcome, {user?.name}!</h1>
       </div>
+      <div className="mb-6">
+        <ActionRequiredDashboard />
+      </div>
+
+      {/* Phase 11: Quick Metrics Row */}
+      {user && <QuickMetricsRow userId={user.id} user={user} />}
+
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <StatCard
           title="Active Jobs"
@@ -624,41 +636,50 @@ function JobGiverDashboard() {
         />
       </div>
 
-      {/* Job Giver Charts Section */}
-      <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <MetricChartCard title="Spending History" description={`Total Spent: ₹${totalSpent.toLocaleString()} (Released)`} className="lg:col-span-2">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={spendingData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" />
-              <YAxis tickFormatter={(val) => `₹${val}`} />
-              <Tooltip formatter={(val) => `₹${Number(val).toLocaleString()}`} labelStyle={{ color: 'black' }} cursor={{ fill: 'transparent' }} />
-              <Bar dataKey="amount" fill="#8884d8" radius={[4, 4, 0, 0]} name="Spent" />
-            </BarChart>
-          </ResponsiveContainer>
-        </MetricChartCard>
+      {/* Phase 11: Enhanced Layout - Two-column with sidebar widgets */}
+      <div className="mt-8 grid gap-6 lg:grid-cols-3">
+        {/* Left column: Charts */}
+        <div className="lg:col-span-2 space-y-6">
+          <MetricChartCard title="Spending History" description={`Total Spent: ₹${totalSpent.toLocaleString()} (Released)`}>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={spendingData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" />
+                <YAxis tickFormatter={(val) => `₹${val}`} />
+                <Tooltip formatter={(val) => `₹${Number(val).toLocaleString()}`} labelStyle={{ color: 'black' }} cursor={{ fill: 'transparent' }} />
+                <Bar dataKey="amount" fill="#8884d8" radius={[4, 4, 0, 0]} name="Spent" />
+              </BarChart>
+            </ResponsiveContainer>
+          </MetricChartCard>
 
-        <MetricChartCard title="Job Statuses" description="Distribution of your posted jobs">
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={jobStatusData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={80}
-                paddingAngle={5}
-                dataKey="value"
-              >
-                {jobStatusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend verticalAlign="bottom" height={36} />
-            </PieChart>
-          </ResponsiveContainer>
-        </MetricChartCard>
+          <MetricChartCard title="Job Status Distribution" description="Distribution of your posted jobs">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={jobStatusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {jobStatusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend verticalAlign="bottom" height={36} />
+              </PieChart>
+            </ResponsiveContainer>
+          </MetricChartCard>
+        </div>
+
+        {/* Right column: Phase 11 Widgets */}
+        <div className="space-y-6">
+          {user && <RecommendedInstallersCard userId={user.id} currentUser={user} />}
+          {user && <SpendingInsightsCard userId={user.id} />}
+        </div>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

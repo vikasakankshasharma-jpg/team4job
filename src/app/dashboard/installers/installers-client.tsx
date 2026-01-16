@@ -32,6 +32,9 @@ import {
 import { allSkills } from '@/lib/data';
 import { toDate } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { InstallerProfileModal } from '@/components/installers/installer-profile-modal';
+import { SmartSearch } from '@/components/ui/smart-search';
+import Fuse from 'fuse.js';
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-5 w-5 text-yellow-700" />,
@@ -47,7 +50,7 @@ const initialFilters = {
   pincode: ""
 };
 
-const InstallerCard = ({ installer, currentUser, onUpdate }: { installer: User, currentUser: User, onUpdate: (installerId: string, action: 'favorite' | 'unfavorite' | 'block' | 'unblock') => void }) => {
+const InstallerCard = ({ installer, currentUser, onUpdate, onClick }: { installer: User, currentUser: User, onUpdate: (installerId: string, action: 'favorite' | 'unfavorite' | 'block' | 'unblock') => void, onClick: (installer: User) => void }) => {
   const isFavorite = currentUser.favoriteInstallerIds?.includes(installer.id);
   const isBlocked = currentUser.blockedInstallerIds?.includes(installer.id);
 
@@ -56,26 +59,26 @@ const InstallerCard = ({ installer, currentUser, onUpdate }: { installer: User, 
   const isGhost = daysSinceActive > 30;
 
   return (
-    <Card className={isGhost ? "border-amber-200 bg-amber-50/30 dark:border-amber-900/50 dark:bg-amber-950/20" : ""}>
-      <CardHeader>
+    <Card className={`cursor-pointer transition-shadow hover:shadow-md ${isGhost ? "border-amber-200 bg-amber-50/30 dark:border-amber-900/50 dark:bg-amber-950/20" : ""}`} onClick={() => onClick(installer)}>
+      <CardHeader className="pb-3">
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
             <AnimatedAvatar svg={installer.realAvatarUrl} />
             <AvatarFallback>{installer.name.substring(0, 2)}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <CardTitle className="text-lg flex justify-between">
-              <Link href={`/dashboard/users/${installer.id}`} className="hover:underline">{installer.name}</Link>
+            <CardTitle className="text-lg flex justify-between items-center">
+              <span className="hover:underline text-primary">{installer.name}</span>
               {isGhost && (
                 <Tooltip>
-                  <TooltipTrigger>
-                    <span className="flex items-center text-xs font-normal text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
+                  <TooltipTrigger asChild>
+                    <span onClick={(e) => e.stopPropagation()} className="flex items-center text-xs font-normal text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200 cursor-help">
                       <Zap className="h-3 w-3 mr-1" />
                       Inactive
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    This installer hasn&apos;t been online for {Math.floor(daysSinceActive)} days. Response may be slow.
+                    This installer hasn&apos;t been online for {Math.floor(daysSinceActive)} days.
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -83,12 +86,12 @@ const InstallerCard = ({ installer, currentUser, onUpdate }: { installer: User, 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {installer.installerProfile && tierIcons[installer.installerProfile.tier]}
               <span>{installer.installerProfile?.tier} Tier</span>
-              <ShieldCheck className="h-4 w-4 text-green-600" />
+              {installer.installerProfile?.verified && <ShieldCheck className="h-4 w-4 text-green-600" />}
             </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 text-sm">
+      <CardContent className="space-y-3 text-sm pb-3">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground flex items-center gap-1"><Star className="h-4 w-4" /> Rating</span>
           <span className="font-semibold">{installer.installerProfile?.rating.toFixed(1)} ({installer.installerProfile?.reviews} reviews)</span>
@@ -107,7 +110,7 @@ const InstallerCard = ({ installer, currentUser, onUpdate }: { installer: User, 
         </div>
       </CardContent>
       <CardFooter>
-        <div className="flex gap-2 w-full">
+        <div className="flex gap-2 w-full" onClick={(e) => e.stopPropagation()}>
           <Button variant={isFavorite ? 'default' : 'outline'} size="sm" className="flex-1" onClick={() => onUpdate(installer.id, isFavorite ? 'unfavorite' : 'favorite')}>
             <Heart className="mr-2 h-4 w-4" /> {isFavorite ? 'Favorited' : 'Favorite'}
           </Button>
@@ -126,6 +129,15 @@ export default function InstallersClient() {
   const [loading, setLoading] = useState(true);
   const [installers, setInstallers] = useState<User[]>([]);
   const [filters, setFilters] = useState(initialFilters);
+  const [selectedInstaller, setSelectedInstaller] = useState<User | null>(null);
+
+  // Phase 11 Enhancement #6: Build suggestions for SmartSearch
+  const searchSuggestions = useMemo(() => {
+    const names = installers.map(i => i.name);
+    const skills = Array.from(new Set(installers.flatMap(i => i.installerProfile?.skills || [])));
+    const specialties = Array.from(new Set(installers.flatMap(i => i.installerProfile?.specialties || [])));
+    return [...names, ...skills, ...specialties].filter(Boolean);
+  }, [installers]);
   const { setHelp } = useHelp();
   const router = useRouter();
 
@@ -206,17 +218,32 @@ export default function InstallersClient() {
     setFilters(prev => ({ ...prev, [filterName]: value }));
   };
 
+  // Phase 11 Enhancement #6: Fuzzy search with Fuse.js
   const filteredInstallers = useMemo(() => {
-    return installers.filter(installer => {
-      if (filters.search && !installer.name.toLowerCase().includes(filters.search.toLowerCase())) return false;
-      if (filters.tier !== 'all' && installer.installerProfile?.tier !== filters.tier) return false;
-      if (filters.pincode && (!installer.pincodes.residential?.includes(filters.pincode) && !installer.pincodes.office?.includes(filters.pincode))) return false;
+    let result = installers;
+
+    // Apply fuzzy search if query exists
+    if (filters.search) {
+      const fuse = new Fuse(installers, {
+        keys: ['name', 'installerProfile.skills', 'installerProfile.specialties', 'installerProfile.bio'],
+        threshold: 0.3,
+        ignoreLocation: true,
+      });
+      result = fuse.search(filters.search).map(r => r.item);
+    }
+
+    // Apply other filters
+    result = result.filter(installer => {
+      if (filters.pincode && !installer.pincodes?.residential?.includes(filters.pincode) && !installer.pincodes?.office?.includes(filters.pincode)) return false;
+      if (filters.tier !== "all" && installer.installerProfile?.tier !== filters.tier) return false;
       if (filters.skills.length > 0) {
-        const installerSkills = new Set(installer.installerProfile?.skills || []);
-        return filters.skills.every(skill => installerSkills.has(skill));
+        const hasSkill = filters.skills.some(skill => installer.installerProfile?.skills?.includes(skill));
+        if (!hasSkill) return false;
       }
       return true;
     }).sort((a, b) => (b.installerProfile?.points || 0) - (a.installerProfile?.points || 0));
+
+    return result;
   }, [installers, filters]);
 
   if (userLoading || !user) {
@@ -241,10 +268,13 @@ export default function InstallersClient() {
         <CardTitle className="text-2xl">Find Installers</CardTitle>
         <CardDescription>Browse and filter through all verified installers on the platform.</CardDescription>
         <div className="pt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Input
-            placeholder="Search by name..."
-            value={filters.search}
-            onChange={(e) => handleFilterChange('search', e.target.value)}
+          {/* Phase 11 Enhancement #6: SmartSearch with fuzzy matching */}
+          <SmartSearch
+            placeholder="Search by name or skill..."
+            onSearch={(query) => handleFilterChange('search', query)}
+            suggestions={searchSuggestions}
+            enableHistory
+            storageKey="smartSearch_installers"
           />
           <Input
             placeholder="Filter by pincode..."
@@ -277,13 +307,29 @@ export default function InstallersClient() {
           ) : filteredInstallers.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredInstallers.map(installer => (
-                <InstallerCard key={installer.id} installer={installer} currentUser={user} onUpdate={handleUpdate} />
+                <InstallerCard
+                  key={installer.id}
+                  installer={installer}
+                  currentUser={user}
+                  onUpdate={handleUpdate}
+                  onClick={setSelectedInstaller}
+                />
               ))}
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-8">No installers found matching your criteria.</p>
           )}
         </TooltipProvider>
+
+        {selectedInstaller && (
+          <InstallerProfileModal
+            installer={selectedInstaller}
+            isOpen={!!selectedInstaller}
+            onClose={() => setSelectedInstaller(null)}
+            currentUser={user}
+            onUpdateAction={handleUpdate}
+          />
+        )}
       </CardContent>
     </Card>
   );
