@@ -9,11 +9,11 @@ import {
     SpendingTrendData,
     InstallerPerformance
 } from "@/lib/api/analytics";
-import { StatCards } from "@/components/analytics/stat-cards-row";
-import { TimeToHireChart } from "@/components/analytics/time-to-hire-chart";
-import { CostTrendsChart } from "@/components/analytics/cost-trends-chart";
-import { InstallerPerformanceTable } from "@/components/analytics/installer-performance-table";
-import { InsightsPanel } from "@/components/analytics/insights-panel";
+import { StatCards } from "@/components/dashboard/analytics/stat-cards-row";
+import { TimeToHireChart } from "@/components/dashboard/analytics/time-to-hire-chart";
+import { CostTrendsChart } from "@/components/dashboard/analytics/cost-trends-chart";
+import { InstallerPerformanceTable } from "@/components/dashboard/analytics/installer-performance-table";
+import { InsightsPanel } from "@/components/dashboard/analytics/insights-panel";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -35,20 +35,13 @@ export default function AnalyticsClient() {
 
         try {
             setRefreshing(true);
-            // Load all data in parallel
-            const [summaryData, hiringData, spendingData, categoryData] = await Promise.all([
-                AnalyticsService.getSummary(user.id),
-                AnalyticsService.getTimeToHire(user.id),
-                AnalyticsService.getSpendingTrends(user.id),
-                AnalyticsService.getCategoryBreakdown(user.id)
-            ]);
+            // Load all data in one optimized call
+            const data = await AnalyticsService.getAnalytics(user.id);
 
-            setSummary(summaryData);
-            setTimeToHire(hiringData);
-            setSpendingTrends(spendingData);
-
-            // Mocking installer performance for now
-            setTopInstallers([]);
+            setSummary(data.summary);
+            setTimeToHire(data.timeToHire);
+            setSpendingTrends(data.spendingTrends);
+            setTopInstallers(data.topInstallers);
 
         } catch (error) {
             console.error("Failed to load analytics:", error);
@@ -70,15 +63,55 @@ export default function AnalyticsClient() {
 
     // Generate AI insights from data
     const insights = useMemo(() => {
-        // TODO: Fix property names to match AnalyticsSummary interface
-        return [];
-    }, [summary]);
+        if (!summary) return [];
+        const result = [];
+
+        // 1. Spending Trend
+        if (spendingTrends.length >= 2) {
+            const current = spendingTrends[spendingTrends.length - 1].amount;
+            const previous = spendingTrends[spendingTrends.length - 2].amount;
+            if (current > previous * 1.1) {
+                result.push({ title: "Spending Increasing", insight: "Your spending has increased by over 10% compared to last month.", type: 'warning' } as const);
+            } else if (current < previous * 0.9) {
+                result.push({ title: "Budget Optimized", insight: "You spent significantly less this month than last month.", type: 'success' } as const);
+            }
+        }
+
+        // 2. Hiring Velocity
+        if (summary.activeJobs > 3) {
+            result.push({ title: "High Hiring Volume", insight: "You have multiple active jobs. Consider scheduling interviews in batches.", type: 'info' } as const);
+        }
+
+        // 3. Unrated Jobs
+        // We don't have this data explicitly in summary, but if we had it, we'd add it here.
+
+        return result;
+    }, [summary, spendingTrends]);
 
 
     const handleExport = () => {
+        if (!summary || !user) return;
+
+        const csvContent = "data:text/csv;charset=utf-8,"
+            + "Metric,Value\n"
+            + `Total Jobs,${summary.totalJobs}\n`
+            + `Completed Jobs,${summary.completedJobs}\n`
+            + `Total Spend,${summary.totalSpend}\n`
+            + `Active Jobs,${summary.activeJobs}\n\n`
+            + "Month,Spending\n"
+            + spendingTrends.map(e => `${e.month},${e.amount}`).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `analytics_report_${user.name}_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
         toast({
-            title: "Export started",
-            description: "Your analytics data is being prepared for download.",
+            title: "Export Complete",
+            description: "Your analytics report has been downloaded.",
         });
     };
 

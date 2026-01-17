@@ -1,8 +1,8 @@
+"use client";
+
 import React, { Suspense } from 'react';
 import { Loader2 } from "lucide-react";
 import LoginClient from './login-client';
-
-export const dynamic = 'force-dynamic';
 
 export default function LoginPage() {
     return (

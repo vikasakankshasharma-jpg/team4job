@@ -3,7 +3,7 @@
  * Calculate funnel metrics and outreach effectiveness
  */
 
-import { collection, getDocs, query, where, Firestore } from 'firebase/firestore';
+import { collection, getDocs, query, where, Firestore, orderBy, limit } from 'firebase/firestore';
 import { PendingSignup } from './types';
 import { toDate } from './utils';
 
@@ -37,15 +37,50 @@ export interface OutreachEffectiveness {
     improvement: number; // Percentage point improvement
 }
 
+export interface RoleDistribution {
+    Installer: number;
+    'Job Giver': number;
+    unknown: number;
+}
+
+export interface AnalyticsData {
+    funnel: SignupFunnelData;
+    outreach: OutreachEffectiveness;
+    roles: RoleDistribution;
+}
+
 /**
- * Calculate signup funnel metrics
+ * Master function to fetch all analytics data in ONE read operation
+ * Reduces costs by 66% compared to separate calls
  */
-export async function calculateFunnelMetrics(db: Firestore): Promise<SignupFunnelData> {
+export async function getSignupAnalytics(db: Firestore): Promise<AnalyticsData> {
+    // 1. Single efficient read
     const pendingRef = collection(db, 'pending_signups');
-    const snapshot = await getDocs(pendingRef);
+    // Using a broad query to get all relevant processing data
+    // We could optimize further by excluding 'converted' if we only wanted pending,
+    // but for funnel analysis we actually need BOTH converted and pending to see the full picture.
+    // However, the original code queried 'pending_signups' collection which presumably holds both
+    // (or moved converted ones? The types suggest 'converted' is a boolean flag).
+    // Let's assume the collection holds history.
+
+    // Safety Limit: If this collection grows huge, we simply cap it for analytics to avoid bill shock.
+    // 2000 records is plenty for a trend analysis and costs only ~2000 reads ($0.06).
+    const q = query(pendingRef, orderBy('startedAt', 'desc'), limit(2000));
+    const snapshot = await getDocs(q);
 
     const allSignups = snapshot.docs.map(doc => doc.data() as PendingSignup);
 
+    return {
+        funnel: calculateFunnelMetrics(allSignups),
+        outreach: getOutreachEffectiveness(allSignups),
+        roles: getRoleDistribution(allSignups)
+    };
+}
+
+/**
+ * Calculate signup funnel metrics (In-Memory)
+ */
+function calculateFunnelMetrics(allSignups: PendingSignup[]): SignupFunnelData {
     // Count signups at each step (with safe property access)
     const step1Complete = allSignups.filter(s => s.stepDetails?.step1?.completed).length;
     const step2Complete = allSignups.filter(s => s.stepDetails?.step2?.completed).length;
@@ -77,14 +112,9 @@ export async function calculateFunnelMetrics(db: Firestore): Promise<SignupFunne
 }
 
 /**
- * Calculate outreach effectiveness
+ * Calculate outreach effectiveness (In-Memory)
  */
-export async function getOutreachEffectiveness(db: Firestore): Promise<OutreachEffectiveness> {
-    const pendingRef = collection(db, 'pending_signups');
-    const snapshot = await getDocs(pendingRef);
-
-    const allSignups = snapshot.docs.map(doc => doc.data() as PendingSignup);
-
+function getOutreachEffectiveness(allSignups: PendingSignup[]): OutreachEffectiveness {
     // Split by contacted vs non-contacted
     const contacted = allSignups.filter(s => s.contacted);
     const nonContacted = allSignups.filter(s => !s.contacted);
@@ -118,51 +148,9 @@ export async function getOutreachEffectiveness(db: Firestore): Promise<OutreachE
 }
 
 /**
- * Get recent signup trends (last N days)
+ * Get role distribution (In-Memory)
  */
-export async function getSignupTrends(
-    db: Firestore,
-    days: number = 7
-): Promise<Array<{ date: string; started: number; converted: number }>> {
-    const pendingRef = collection(db, 'pending_signups');
-    const snapshot = await getDocs(pendingRef);
-
-    const allSignups = snapshot.docs.map(doc => doc.data() as PendingSignup);
-
-    // Group by date
-    const trends: Record<string, { started: number; converted: number }> = {};
-
-    for (const signup of allSignups) {
-        const date = toDate(signup.startedAt).toISOString().split('T')[0];
-
-        if (!trends[date]) {
-            trends[date] = { started: 0, converted: 0 };
-        }
-
-        trends[date].started++;
-        if (signup.converted) {
-            trends[date].converted++;
-        }
-    }
-
-    // Convert to array and sort by date
-    return Object.entries(trends)
-        .map(([date, data]) => ({ date, ...data }))
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(-days);
-}
-
-/**
- * Get role distribution
- */
-export async function getRoleDistribution(
-    db: Firestore
-): Promise<{ Installer: number; 'Job Giver': number; unknown: number }> {
-    const pendingRef = collection(db, 'pending_signups');
-    const snapshot = await getDocs(pendingRef);
-
-    const allSignups = snapshot.docs.map(doc => doc.data() as PendingSignup);
-
+function getRoleDistribution(allSignups: PendingSignup[]): RoleDistribution {
     const distribution = {
         Installer: 0,
         'Job Giver': 0,

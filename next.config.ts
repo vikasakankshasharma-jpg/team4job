@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     // TypeScript validation now enabled - all type errors have been fixed
     ignoreBuildErrors: false,
   },
+  compress: true, // Enable Gzip/Brotli compression for smaller payloads
   images: {
     remotePatterns: [
       {

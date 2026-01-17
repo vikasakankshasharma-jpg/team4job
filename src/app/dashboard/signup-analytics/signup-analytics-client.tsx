@@ -6,9 +6,7 @@ import { useFirestore } from "@/lib/firebase/client-provider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, TrendingUp, TrendingDown, Users, Target } from "lucide-react";
 import {
-    calculateFunnelMetrics,
-    getOutreachEffectiveness,
-    getRoleDistribution,
+    getSignupAnalytics,
     SignupFunnelData,
     OutreachEffectiveness,
 } from "@/lib/signup-analytics";
@@ -33,11 +31,8 @@ export default function SignupAnalyticsClient() {
         async function fetchAnalytics() {
             setLoading(true);
             try {
-                const [funnel, outreach, roles] = await Promise.all([
-                    calculateFunnelMetrics(db),
-                    getOutreachEffectiveness(db),
-                    getRoleDistribution(db),
-                ]);
+                // Optimized: Single read operation (Costs 1x instead of 3x)
+                const { funnel, outreach, roles } = await getSignupAnalytics(db);
 
                 setFunnelData(funnel);
                 setOutreachData(outreach);

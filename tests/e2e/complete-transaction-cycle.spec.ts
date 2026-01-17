@@ -63,6 +63,15 @@ test.describe('Complete Transaction Cycle E2E', () => {
             });
         });
 
+        // Handle "Resume your draft?" dialog automatically if it appears
+        await page.addLocatorHandler(
+            page.getByRole('dialog', { name: 'Resume your draft?' }),
+            async () => {
+                console.log('E2E: Draft Recovery Dialog handler triggered. Clicking Discard...');
+                await page.getByRole('button', { name: "Discard" }).click();
+            }
+        );
+
         await helper.nav.goToPostJob();
         await expect(page).toHaveURL(/\/post-job/);
 

@@ -85,7 +85,7 @@ export function JobCard({ job }: JobCardProps) {
   const buttonVariant = statusVariant === 'success' ? 'success' : statusVariant === 'warning' ? 'warning' : statusVariant === 'info' ? 'info' : 'default';
 
   return (
-    <Card className="flex flex-col relative">
+    <Card className="flex flex-col relative transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
