@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@/hooks/use-user";
 import { useFirestore } from "@/lib/firebase/client-provider";
-import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import type { PendingSignup } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Phone, Mail, MessageSquare, MoreVertical, Calendar, XCircle, Star, History, AlertCircle } from "lucide-react";
+import { Loader2, Phone, Mail, MessageSquare, MoreVertical, Calendar, XCircle, Star, History, AlertCircle, RefreshCw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { StatusBadge } from "@/components/pending-signups/status-badge";
@@ -69,26 +69,41 @@ export default function PendingSignupsClient() {
     const [timelineDialogOpen, setTimelineDialogOpen] = useState(false);
     const [selectedSignup, setSelectedSignup] = useState<PendingSignup | null>(null);
 
-    // Fetch signups
-    useEffect(() => {
+    // Manual Fetch
+    const fetchSignups = async () => {
         if (!db || !isAdmin) return;
+        setLoading(true);
+        try {
+            const q = query(
+                collection(db, "pending_signups"),
+                where("converted", "==", false),
+                orderBy("lastActiveAt", "desc"),
+                limit(100) // Safety limit
+            );
 
-        const q = query(
-            collection(db, "pending_signups"),
-            where("converted", "==", false),
-            orderBy("lastActiveAt", "desc")
-        );
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+            // Manual Get instead of Listener
+            const snapshot = await getDocs(q);
             const data = snapshot.docs.map((doc) => ({
                 ...doc.data(),
                 id: doc.id,
             })) as PendingSignup[];
             setSignups(data);
+        } catch (error) {
+            console.error("Error fetching pending signups:", error);
+            toast({
+                title: "Error",
+                description: "Failed to load pending signups.",
+                variant: "destructive"
+            });
+        } finally {
             setLoading(false);
-        });
+        }
+    };
 
-        return () => unsubscribe();
+    // Initial Load
+    useEffect(() => {
+        fetchSignups();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [db, isAdmin]);
 
     if (!isAdmin) {
@@ -281,9 +296,15 @@ export default function PendingSignupsClient() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Pending Signups CRM</h1>
-                <p className="text-muted-foreground">Manage and follow up with incomplete signups</p>
+            <div className="flex flex-row items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Pending Signups CRM</h1>
+                    <p className="text-muted-foreground">Manage and follow up with incomplete signups</p>
+                </div>
+                <Button onClick={fetchSignups} variant="outline" size="sm" className="gap-2">
+                    <RefreshCw className="h-4 w-4" />
+                    Refresh Data
+                </Button>
             </div>
 
             {/* Stats Cards */}

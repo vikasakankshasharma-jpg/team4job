@@ -49,7 +49,12 @@ import { MapPin, Bell } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
 import { JobCardSkeletonGrid } from "@/components/skeletons/job-card-skeleton";
 import { JobFilters } from "@/components/jobs/job-filters";
-import { SaveSearchDialog } from "@/components/jobs/save-search-dialog";
+import dynamic from "next/dynamic";
+
+const SaveSearchDialog = dynamic(
+  () => import("@/components/jobs/save-search-dialog").then((mod) => mod.SaveSearchDialog),
+  { ssr: false }
+);
 
 // Helper function to extract location parts from a full address string
 const getLocationParts = (

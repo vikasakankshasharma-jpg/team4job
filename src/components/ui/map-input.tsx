@@ -72,7 +72,7 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
     [isMapLoaded, map]
   );
 
-  const debouncedGeocode = React.useMemo(() => debounce(geocodeAddress, 1000), [geocodeAddress]);
+  const debouncedGeocode = React.useMemo(() => debounce(geocodeAddress, 2000), [geocodeAddress]);
 
   useEffect(() => {
     if (propCenter) {

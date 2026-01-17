@@ -70,6 +70,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const manualRoleSet = useRef(false);
   const isLoggingOut = useRef(false);
   const lastRedirectPath = useRef<string | null>(null);
+  const lastUpdateRef = useRef<number>(0);
 
   const smartPush = useCallback((path: string) => {
     if (pathname === path || lastRedirectPath.current === path) return;
@@ -145,8 +146,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
               signOut(auth);
             } else {
               updateUserState(userData);
-              if (!userDoc.data().lastLoginAt || (Date.now() - toDate(userDoc.data().lastLoginAt).getTime()) > 5 * 60 * 1000) {
-                updateDoc(userDocRef, { lastLoginAt: serverTimestamp(), lastActiveAt: serverTimestamp() });
+
+              // Safety Throttle: Prevent infinite loops if DB clock is off or multiple snapshots fire
+              const lastUpdate = lastUpdateRef.current;
+              const now = Date.now();
+              const timeSinceLocalUpdate = now - lastUpdate;
+
+              const dbLastLogin = userDoc.data().lastLoginAt ? toDate(userDoc.data().lastLoginAt).getTime() : 0;
+              const timeSinceDbUpdate = now - dbLastLogin;
+
+              // Only update if it's been > 5 minutes LOCALLY and remotely
+              if (timeSinceLocalUpdate > 5 * 60 * 1000 && timeSinceDbUpdate > 5 * 60 * 1000) {
+                lastUpdateRef.current = now; // Mark local update immediately
+                updateDoc(userDocRef, { lastLoginAt: serverTimestamp(), lastActiveAt: serverTimestamp() }).catch(e => {
+                  console.error("Failed to update user activity:", e);
+                });
               }
             }
           }

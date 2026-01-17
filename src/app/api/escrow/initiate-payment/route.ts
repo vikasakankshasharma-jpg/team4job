@@ -218,7 +218,9 @@ export async function POST(req: NextRequest) {
                 customer_name: jobGiver.name,
             },
             order_meta: {
-                return_url: isSubscription ? `https://cctv-job-connect.web.app/dashboard/billing?payment_status=success&order_id={order_id}` : `https://cctv-job-connect.web.app/dashboard/jobs/${jobId}?payment_status=success&order_id={order_id}`,
+                return_url: isSubscription
+                    ? `${req.headers.get('origin') || 'https://dodo-beta.web.app'}/dashboard/billing?payment_status=success&order_id={order_id}`
+                    : `${req.headers.get('origin') || 'https://dodo-beta.web.app'}/dashboard/jobs/${jobId}?payment_status=success&order_id={order_id}`,
             },
             order_note: `Payment for: ${jobTitle}`
         };

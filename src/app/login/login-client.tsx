@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm } from "@/components/auth/login-form";
-import { SignUpForm } from "@/components/auth/signup-form";
+import { SignUpWrapper } from "@/components/auth/signup-wrapper";
 import { Logo } from "@/components/icons";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -19,10 +19,7 @@ import React, { useEffect, useState } from "react";
 import { HelpDialog } from "@/components/help-dialog";
 import { Button } from "@/components/ui/button";
 import { HelpCircle } from "lucide-react";
-import { useJsApiLoader } from "@react-google-maps/api";
 import { useHelp } from "@/hooks/use-help";
-
-const GOOGLE_MAPS_LIBRARIES = ["places", "geocoding"] as ("places" | "geocoding")[];
 
 export default function LoginClient() {
   const router = useRouter();
@@ -30,7 +27,8 @@ export default function LoginClient() {
   const searchParams = useSearchParams();
   //... rest of the component content
 
-  const initialTab = searchParams.get("tab") || "login";
+  // Safe handling of searchParams - prevents 500 error on direct navigation
+  const initialTab = searchParams?.get("tab") ?? "login";
   const [activeTab, setActiveTab] = useState(initialTab);
   const { setHelp } = useHelp();
 
@@ -49,15 +47,8 @@ export default function LoginClient() {
     });
   }, [setHelp]);
 
-
-  const { isLoaded: isMapLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: GOOGLE_MAPS_LIBRARIES,
-  });
-
   useEffect(() => {
-    const tabFromUrl = searchParams.get("tab") || "login";
+    const tabFromUrl = searchParams?.get("tab") ?? "login";
     if (tabFromUrl !== activeTab) {
       setActiveTab(tabFromUrl);
     }
@@ -117,7 +108,7 @@ export default function LoginClient() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <SignUpForm isMapLoaded={isMapLoaded} referredBy={searchParams.get("ref") || undefined} />
+                <SignUpWrapper referredBy={searchParams?.get("ref") ?? undefined} />
               </CardContent>
             </Card>
           </TabsContent>

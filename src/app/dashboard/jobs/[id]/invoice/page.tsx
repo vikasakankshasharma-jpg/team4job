@@ -95,13 +95,20 @@ export default function InvoicePage() {
 
     // Separate Effect for Transaction (Real-time)
     useEffect(() => {
-        if (!id || !db || type !== 'platform') return;
+        if (!id || !db || type !== 'platform' || !user) return;
 
         // Keep loading true while we init listener
         // (If job loaded first, it might have set loading=false, but we need it true for platform)
         // Actually, we generally want both ready.
 
-        const q = query(collection(db, 'transactions'), where('jobId', '==', id));
+        // Fix for Firestore Rules: The query must filter by payerId or payeeId to match the 'allow read' rule.
+        // Since we are looking for the receipt where the USER paid (Job Giver -> Platform or Installer -> Platform),
+        // filtering by payerId is the correct approach.
+        const q = query(
+            collection(db, 'transactions'),
+            where('jobId', '==', id),
+            where('payerId', '==', user.id)
+        );
 
         const unsubscribeTxn = onSnapshot(q, (querySnapshot) => {
             const validStatuses = ['Funded', 'Released', 'Completed', 'Pending Payout'];
@@ -124,7 +131,7 @@ export default function InvoicePage() {
         });
 
         return () => unsubscribeTxn();
-    }, [id, db, type]);
+    }, [id, db, type, user]);
 
     if (loading) {
         return <InvoicePageSkeleton />;

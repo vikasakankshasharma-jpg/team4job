@@ -10,7 +10,7 @@ import { UserProvider } from "@/hooks/use-user";
 import { Providers } from "@/components/providers";
 import Script from 'next/script';
 import { GA_TRACKING_ID } from '@/lib/analytics';
-import { WebVitalsReporter } from "@/components/analytics/web-vitals";
+import { WebVitalsReporter } from "@/components/dashboard/analytics/web-vitals";
 import CookieBanner from "@/components/gdpr/cookie-banner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body" });

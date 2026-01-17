@@ -5,7 +5,8 @@ import {
     where,
     getDocs,
     Timestamp,
-    orderBy
+    orderBy,
+    limit
 } from 'firebase/firestore';
 import { Job } from '@/lib/types';
 import { differenceInDays, subMonths, format, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
@@ -44,26 +45,50 @@ export interface CategoryBreakdown {
 
 const JOBS_COLLECTION = 'jobs';
 
+// Output Interface
+export interface AnalyticsData {
+    summary: AnalyticsSummary;
+    timeToHire: TimeToHireData[];
+    spendingTrends: SpendingTrendData[];
+    topInstallers: InstallerPerformance[];
+}
+
 export const AnalyticsService = {
 
     /**
-     * Get high-level summary stats for a job giver
+     * Master function to fetch all analytics data in ONE read operation
      */
-    async getSummary(userId: string): Promise<AnalyticsSummary> {
+    async getAnalytics(userId: string): Promise<AnalyticsData> {
+        // 1. Single efficient read of all user's jobs (up to safe limit)
         const q = query(
             collection(db, JOBS_COLLECTION),
-            where('jobGiverId', '==', userId)
+            where('jobGiverId', '==', userId),
+            orderBy('postedAt', 'desc'),
+            limit(1000) // Safety cap
         );
 
         const querySnapshot = await getDocs(q);
-        const jobs = querySnapshot.docs.map(doc => doc.data() as Job);
+        const allJobs = querySnapshot.docs.map(doc => doc.data() as Job);
 
+        // 2. Calculate all metrics in-memory
+        return {
+            summary: this.calculateSummary(allJobs),
+            timeToHire: this.calculateTimeToHire(allJobs),
+            spendingTrends: this.calculateSpendingTrends(allJobs),
+            topInstallers: this.calculateInstallerPerformance(allJobs)
+        };
+    },
+
+    /**
+     * Calculate high-level summary stats (In-Memory)
+     */
+    calculateSummary(jobs: Job[]): AnalyticsSummary {
         const completed = jobs.filter(j => j.status === 'Completed');
         const active = jobs.filter(j => ['Open for Bidding', 'In Progress', 'Awarded'].includes(j.status));
 
         let totalSpend = 0;
         completed.forEach(job => {
-            // @ts-ignore - Assuming acceptedBidAmount might exist or derive from budget median
+            // @ts-ignore
             const amount = job.invoice?.totalAmount || (job.priceEstimate ? (job.priceEstimate.min + job.priceEstimate.max) / 2 : 0);
             totalSpend += amount;
         });
@@ -73,25 +98,21 @@ export const AnalyticsService = {
             completedJobs: completed.length,
             totalSpend,
             activeJobs: active.length,
-            avgRating: 0 // Placeholder
+            avgRating: 0
         };
     },
 
     /**
-     * Calculate average time to hire (Posted -> In Progress) over last 6 months
+     * Calculate average time to hire (In-Memory)
      */
-    async getTimeToHire(userId: string): Promise<TimeToHireData[]> {
+    calculateTimeToHire(jobs: Job[]): TimeToHireData[] {
         const sixMonthsAgo = subMonths(new Date(), 6);
 
-        // Using postedAt for range query
-        const q = query(
-            collection(db, JOBS_COLLECTION),
-            where('jobGiverId', '==', userId),
-            where('postedAt', '>=', Timestamp.fromDate(sixMonthsAgo))
-        );
-
-        const querySnapshot = await getDocs(q);
-        const jobs = querySnapshot.docs.map(doc => doc.data() as Job);
+        // Filter relevant jobs first
+        const relevantJobs = jobs.filter(job => {
+            const postedDate = job.postedAt instanceof Timestamp ? job.postedAt.toDate() : new Date();
+            return postedDate >= sixMonthsAgo;
+        });
 
         // Group by month
         const groupedData: Record<string, number[]> = {};
@@ -101,17 +122,8 @@ export const AnalyticsService = {
             groupedData[format(month, 'MMM yyyy')] = [];
         });
 
-        jobs.forEach(job => {
-            // Using postedAt as start
+        relevantJobs.forEach(job => {
             const postedDate = job.postedAt instanceof Timestamp ? job.postedAt.toDate() : new Date();
-
-            // Using awardedInstallerId or status change as evidence of hire
-            // We don't have exact 'hiredAt' field comfortably available in all jobs maybe, 
-            // but let's check if there is one. 
-            // Job type has `awardedInstaller` but no `awardedAt`. 
-            // It has `jobStartDate`.
-            // Let's use `jobStartDate` as a proxy for "hired" if available, or just skip if null.
-
             const hiredDate = job.jobStartDate instanceof Timestamp ? job.jobStartDate.toDate() : null;
 
             if (hiredDate) {
@@ -119,7 +131,7 @@ export const AnalyticsService = {
                 const monthKey = format(hiredDate, 'MMM yyyy');
 
                 if (groupedData[monthKey]) {
-                    groupedData[monthKey].push(days); // Only non-negative
+                    groupedData[monthKey].push(days);
                 }
             }
         });
@@ -138,20 +150,15 @@ export const AnalyticsService = {
     },
 
     /**
-     * Calculate spending trends over last 12 months
+     * Calculate spending trends (In-Memory)
      */
-    async getSpendingTrends(userId: string): Promise<SpendingTrendData[]> {
+    calculateSpendingTrends(jobs: Job[]): SpendingTrendData[] {
         const oneYearAgo = subMonths(new Date(), 12);
 
-        const q = query(
-            collection(db, JOBS_COLLECTION),
-            where('jobGiverId', '==', userId),
-            where('status', '==', 'Completed'),
-            where('postedAt', '>=', Timestamp.fromDate(oneYearAgo))
-        );
-
-        const querySnapshot = await getDocs(q);
-        const jobs = querySnapshot.docs.map(doc => doc.data() as Job);
+        const relevantJobs = jobs.filter(job => {
+            const postedDate = job.postedAt instanceof Timestamp ? job.postedAt.toDate() : new Date();
+            return job.status === 'Completed' && postedDate >= oneYearAgo;
+        });
 
         const groupedData: Record<string, number> = {};
         const months = eachMonthOfInterval({ start: oneYearAgo, end: new Date() });
@@ -160,11 +167,9 @@ export const AnalyticsService = {
             groupedData[format(month, 'MMM')] = 0;
         });
 
-        jobs.forEach(job => {
-            // Using postedAt as proxy for project month
+        relevantJobs.forEach(job => {
             const date = job.postedAt instanceof Timestamp ? job.postedAt.toDate() : new Date();
             const monthKey = format(date, 'MMM');
-
             const amount = job.invoice?.totalAmount || (job.priceEstimate ? (job.priceEstimate.min + job.priceEstimate.max) / 2 : 0);
 
             if (typeof groupedData[monthKey] !== 'undefined') {
@@ -179,26 +184,58 @@ export const AnalyticsService = {
     },
 
     /**
-     * Get Category breakdown of all jobs
+     * Calculate installer performance (In-Memory)
      */
-    async getCategoryBreakdown(userId: string): Promise<CategoryBreakdown[]> {
-        const q = query(
-            collection(db, JOBS_COLLECTION),
-            where('jobGiverId', '==', userId)
-        );
+    calculateInstallerPerformance(jobs: Job[]): InstallerPerformance[] {
+        const completedJobs = jobs.filter(j => j.status === 'Completed');
 
-        const querySnapshot = await getDocs(q);
-        const jobs = querySnapshot.docs.map(doc => doc.data() as Job);
+        const installerMap: Record<string, {
+            name: string;
+            count: number;
+            totalPaid: number;
+            totalRating: number;
+            ratedCount: number;
+        }> = {};
 
-        const categoryMap: Record<string, number> = {};
+        completedJobs.forEach(job => {
+            const installerId = job.awardedInstallerId;
+            if (!installerId) return;
 
-        jobs.forEach(job => {
-            const cat = job.jobCategory || 'Uncategorized';
-            categoryMap[cat] = (categoryMap[cat] || 0) + 1;
+            if (!installerMap[installerId]) {
+                const name = job.billingSnapshot?.installerName || 'Unknown Installer';
+                installerMap[installerId] = {
+                    name,
+                    count: 0,
+                    totalPaid: 0,
+                    totalRating: 0,
+                    ratedCount: 0
+                };
+            }
+
+            const amount = job.invoice?.totalAmount || 0;
+            installerMap[installerId].count += 1;
+            installerMap[installerId].totalPaid += amount;
+
+            if (job.installerReview?.rating) {
+                installerMap[installerId].totalRating += job.installerReview.rating;
+                installerMap[installerId].ratedCount += 1;
+            }
         });
 
-        return Object.entries(categoryMap)
-            .map(([name, value]) => ({ name, value }))
-            .sort((a, b) => b.value - a.value);
-    }
+        return Object.entries(installerMap).map(([id, data]) => ({
+            id,
+            name: data.name,
+            jobsCount: data.count,
+            totalPaid: data.totalPaid,
+            avgRating: data.ratedCount > 0 ? data.totalRating / data.ratedCount : 0
+        })).sort((a, b) => b.totalPaid - a.totalPaid);
+    },
+
+    // Legacy Support (Optional - kept for interface compatibility if needed elsewhere, but ideally updated)
+    // For now, we are replacing the logic completely. The client code MUST be updated.
+    getSummary: async () => ({ totalJobs: 0, completedJobs: 0, totalSpend: 0, activeJobs: 0, avgRating: 0 }),
+    getTimeToHire: async () => [],
+    getSpendingTrends: async () => [],
+    getInstallerPerformance: async () => [],
+    getCategoryBreakdown: async () => []
 };

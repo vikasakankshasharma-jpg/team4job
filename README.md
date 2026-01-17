@@ -1,372 +1,260 @@
-# Team4Job
+# Team4Job: The Master Developer Guide
+> **"Zero to Hero" Manual for Recreating the Platform**
 
-![Uptime](https://img.shields.io/uptimerobot/status/m802129159-a13b5ddfbad7a36f5694cb3e)
 ![Deployment](https://img.shields.io/badge/deployment-live-success)
+![Next.js](https://img.shields.io/badge/Next.js-16.1-black)
+![Firebase](https://img.shields.io/badge/Firebase-Spark%20Plan-orange)
+![Readiness](https://img.shields.io/badge/Readiness-100%25-brightgreen)
 
-## 1. Getting Started
+[View Readiness Summary](./READINESS_100_SUMMARY.md)
 
-### Prerequisites
-*   Node.js v20+
-*   npm
+## 1. Project Overview & Vision
 
-### Installation
+**Team4Job** is a sophisticated, AI-enhanced marketplace connecting "Job Givers" (clients) with verified "Installers" (CCTV/Security professionals).
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    cd DoDo
-    ```
-
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Environment Setup:**
-    Duplicate `.env` to `.env.local` and fill in the required values (see [Environment Configuration](#environment-configuration) below).
-
-4.  **Seed the Database (Optional):**
-    Populate Firestore with initial test data.
-    ```bash
-    npm run db:seed
-    ```
-
-5.  **Run Development Server:**
-    ```bash
-    npm run dev
-    ```
-    Open [http://localhost:3000](http://localhost:3000) to view the app.
+**Core Philosophy:**
+*   **Dual-Role Architecture:** Every user can be both a Job Giver and an Installer.
+*   **Zero-Cost Infrastructure:** Designed to run on free tiers (Firebase Spark + Vercel Hobby) for the first 500 users.
+*   **Safety First:** Regulated payments (Cashfree Marketplace), verified identities (Aadhar/GST), and anti-fraud logic (No self-bidding).
 
 ---
 
-## 2. Environment Configuration
+## 2. Architecture Blueprint
 
-Create a `.env.local` file in the root directory. You will need keys from Firebase, Google Cloud, and Cashfree.
+### Tech Stack
+*   **Frontend:** Next.js 16 (App Router), React 19, TailwindCSS, ShadCN/UI.
+*   **Backend:** Firebase (Firestore, Auth), Vercel API Routes (for cost-free serverless functions).
+*   **Database:** Cloud Firestore (NoSQL).
+*   **AI:** Google Gemini (via Genkit) for job scoping and bid analysis.
+*   **Payments:** Cashfree Payment Gateway (Marketplace Split logic).
+*   **Maps:** Google Maps API (Geocoding, Places).
 
-### Required Variables
-
-| Variable | Description | Source |
-| :--- | :--- | :--- |
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase API Key | Firebase Console > Project Settings |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Auth Domain | Firebase Console |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Project ID | Firebase Console |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Storage Bucket | Firebase Console |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Sender ID | Firebase Console |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | App ID | Firebase Console |
-| `FIREBASE_PROJECT_ID` | Admin SDK Project ID | Service Account |
-| `FIREBASE_CLIENT_EMAIL` | Admin SDK Client Email | Service Account |
-| `FIREBASE_PRIVATE_KEY` | Admin SDK Private Key | Service Account (Handle newlines with `\n`) |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps API | Google Cloud Console |
-| `CASHFREE_APP_ID` | Cashfree App ID | Cashfree Dashboard |
-| `CASHFREE_SECRET_KEY` | Cashfree Secret | Cashfree Dashboard |
-| `CASHFREE_WEBHOOK_SECRET` | Webhook Secret | Cashfree Dashboard |
-| `GEMINI_API_KEY` | AI Model Key | Google AI Studio |
-| `BREVO_API_KEY` | Email API Key | Brevo Dashboard (for Notifications) |
-
-**Note:** For the `FIREBASE_PRIVATE_KEY`, ensure you wrap the key in quotes if it contains newlines, or replace real newlines with `\n`.
-
-### Automated Secrets Setup (GitHub Actions)
-For CI/CD to work, you need to sync your local secrets to GitHub. We have a helper script for this:
-
-1.  **Install GitHub CLI:** [https://cli.github.com/](https://cli.github.com/)
-2.  **Authenticate:** `gh auth login`
-3.  **Run Sync Script:**
-    ```powershell
-    ./scripts/sync-secrets.ps1
-    ```
-    This automatically uploads required values from `.env.local` to your repository's secrets.
-
-### Monitoring (Sentry)
-The application is configured with Sentry for error tracking.
-- **DSN:** Configured in `sentry.client.config.ts` and `sentry.server.config.ts`.
-- **Auth Token:** `SENTRY_AUTH_TOKEN` required in GitHub Secrets for source map uploads during build.
-
----
-
-## 3. Known Issues & Workarounds
-
-> [!WARNING]
-> **Google Maps API Billing Issue (Current)**
-> The Google Maps API is currently paused due to pending billing verification.
-> **Workaround:** The application has been patched to support **Manual Address Entry**. The signup form's map component is disabled, allowing you to type addresses manually.
-
----
-
-## 4. High-Level App Concept
-
-**App Name:** Team4Job
-
-**Core Purpose:** A sophisticated, AI-enhanced marketplace connecting "Job Givers" (clients) with verified, skilled "Installers" for CCTV installation and maintenance services. The platform is architected around a subscription model to support professional users and ensure sustainable revenue.
-
-**Target Audience:**
-*   **Job Givers:** Homeowners, business owners, and property managers needing CCTV services. This includes both non-technical novices and high-volume "Pro" users who manage multiple properties.
-*   **Installers:** Vetted, professional CCTV and security system installers seeking employment opportunities, from individual contractors to small businesses.
-
----
-
-## 5. Core Features & Business Logic
-
-### User & Subscription System
-*   **Dual Roles & Role Switching:** Users can sign up as a "Job Giver" or "Installer". A user can hold both roles and instantly switch between modes from their profile menu without logging out.
-*   **Subscription Model:** The platform operates on a freemium model. New users receive a trial or a basic plan. Access to premium features (e.g., browsing the Installer Directory, AI Bid Analysis) requires an active paid subscription.
-*   **Billing Management:** A dedicated "Billing" page where users can view their current plan, upgrade their subscription via Cashfree, and redeem promotional coupon codes. The system supports context-aware redirects, returning users to the feature they were trying to access after a successful purchase.
-*   **Tiered Installer Verification:**
-    *   **Freelancer (Basic):** Identity verification via Aadhar OTP. Grants "Welcome Points" (50) to help new installers get started.
-    *   **Pro (Silver):** Established businesses can provide Shop Photos & GSTIN to earn "Pro" status and higher reputation visibility.
-*   **Secure Authentication:** Email/password-based login via Firebase Authentication, protected by client-side login attempt throttling to mitigate brute-force attacks.
-
-### The Complete Job Lifecycle
-1.  **Job Posting (Job Giver):**
-    *   **AI Job Scoping Wizard:** For novice users, a conversational interface asks for a simple description (e.g., "I need cameras for my shop"). The AI then generates a complete, structured job post with a professional title, description, suggested skills, and budget.
-    *   **Manual Posting:** Expert users can skip the wizard and fill out a detailed form manually, including title, description, skills, location, budget, and bidding deadline.
-    *   **AI-Assisted Details:** In manual mode, an "AI Generate" button uses the job title to create a compelling job description and a list of required skills.
-    *   **Direct Award (Private Bid Request):** A Job Giver can skip public bidding by entering a known installer's public ID. This sends a *private request to bid* on the job directly to that installer. The job is not visible to others.
-
-2.  **Bidding & Private Offers:**
-    *   **Public Bidding (Installer):** Verified installers browse public jobs and place bids, specifying their price and a cover letter. An "AI Bid Assistant" helps installers craft a professional and persuasive cover letter.
-    *   **Private Bidding (Installer):** An installer who receives a Direct Award request is prompted to submit their bid privately. This bid becomes the official price for the job.
-    *   **Blind Bidding (Fairness):** Bid amounts are masked (`₹ ••••`) from competing installers to prevent "race-to-the-bottom" pricing. Only the Job Giver and the bidder themselves can see the actual price.
-    *   **Marketplace Integrity (Anti-Self-Bidding):** The system strictly prohibits a user from bidding on a job they themselves have posted, preventing reputation farming and price manipulation.
-
-3.  **Awarding & Bid Analysis (Job Giver):**
-    *   After the bidding deadline (or after a private bid is received), the Job Giver reviews all bids.
-    *   **AI Bid Analysis (Premium Feature):** A subscribed Job Giver can use an AI-powered tool to analyze all bids. The analysis provides a summary, a top recommendation, a "best value" option, and red flags.
-    *   **Relationship-Aware Bidding:** The bidding UI and AI analysis are "Relationship-Aware." Bids from installers previously marked as "Favorite" or "Blocked" by the Job Giver are clearly badged, and the AI heavily weights this personal trust signal in its recommendations.
-    *   **Strategic Awarding:** The Job Giver can select up to 3 installers and choose their award strategy:
-        *   **Simultaneous:** Send offers to all selected installers at once. The first one to accept wins the job.
-        *   **Sequential (Ranked):** Rank the selected installers. The offer is sent to the #1 choice first. If they decline or their time expires, the offer is automatically sent to the #2 choice, and so on.
-
-4.  **Acceptance & Funding:**
-    *   The first selected installer to accept the offer wins the job. The job status changes to **"Pending Funding,"** and a 48-hour `fundingDeadline` is set for the Job Giver.
-    *   The Job Giver funds the project via Cashfree Payment Gateway. **CRITICAL:** Funds are held in a regulated Marketplace Settlement account ("Easy Split"), not the platform's bank account.
-    *   Upon successful funding, the status changes to **"In Progress."**
-
-5.  **Job Execution & Scope Changes:**
-    *   The Job Giver and Installer communicate via a private, auditable messaging thread. All communication must remain on the platform.
-    *   **Formal Date Change:** Either party can formally propose a new `jobStartDate`. The other party must explicitly accept or reject the proposal.
-    *   **Additional Tasks:** Either party can propose an additional task. The installer provides a quote, which the Job Giver must approve and fund before work begins.
-
-6.  **Dual-Confirmation Completion & Payout:**
-    *   **Installer Submission:** The installer uploads "Proof of Work" (photos/videos) through the platform and submits the job for review, changing the status to `Pending Confirmation`.
-    *   **Job Giver Approval:** The Job Giver receives a notification, reviews the proof, and must explicitly click "Approve & Release Payment."
-    *   **Automated Payout:** The Job Giver's approval is the final trigger. It changes the job status to "Completed" and initiates an API call to Cashfree's Payouts product.
-    *   **Auto-Settle Protection:** To protect installers from "ghosting," if a Job Giver fails to approve submitted work within **5 days**, the system automatically releases the funds to the installer.
-
-7.  **Feedback & Invoicing:**
-    *   The Job Giver can rate the installer and leave a review, which impacts the installer's reputation points.
-    *   Upon completion, a formal invoice from the Installer to the Job Giver is automatically generated and made available on the job details page.
-
-### Exception & Recovery Workflows
-*   **Mutual Cancellation:** Either party can initiate a cancellation request for `In Progress` jobs. The other party is notified to "Accept" or "Decline." If accepted, the job is marked `Cancelled`, and the Job Giver is prompted for a refund.
-*   **Offer Expiration (Installer):** If an installer fails to accept an offer within the time limit, they are penalized with a small reputation point deduction. They are then given a one-time option on the job page to "Request to Re-apply," which notifies the Job Giver and makes them eligible for selection again.
-*   **Funding Timeout (Job Giver):** A scheduled function (`handleUnfundedJobs`) runs every 6 hours. If a "Pending Funding" job's `fundingDeadline` passes, it is automatically "Cancelled," and both parties are notified.
-    *   **Promote & Re-list:** Add a commission-free `travelTip` to the job and set a new deadline to attract a wider range of installers.
-
-### Role-Based Dashboards & Analytics
-*   **Installers:**
-    *   **Earnings Overview:** Visualized monthly payouts and trend indicators using interactive area charts.
-    *   **Job Stats:** Quick summary of active, completed, and pending jobs.
-    *   **Performance Metrics:** Track reputation points and customer ratings over time.
-*   **Job Givers:**
-    *   **Spending History:** Bar charts displaying monthly project spend.
-    *   **Job Status Distribution:** Pie charts visualizing the ratio of active vs. completed jobs.
-    *   **Installer Insights:** Data-driven view of most hired and top-rated installers.
-
-### Platform Management & Monetization
-*   **Admin Dashboard & Reports:** A comprehensive backend for administrators to manage the platform, featuring KPI cards, charts on user growth and financials, and data export capabilities.
-*   **Team Management:** A dedicated section for the primary Admin to create and manage other `Admin` and `Support Team` user accounts.
-*   **Monetization Settings:** Admins can configure platform-wide settings, including installer commission rates, job giver fees, and create/manage `SubscriptionPlan` and `Coupon` entities.
-*   **Global Blacklist:** A critical security feature allowing Admins to block specific User IDs or pincodes, preventing them from registering, logging in, or posting jobs.
-*   **Dispute Resolution:** A formal system for users to raise disputes. Admins can **Freeze** transactions during investigation and forcefully **Release** or **Refund** payments if necessary.
-*   **Dynamic Commissions:** Platform fees can be configured per-category, allowing flexible monetization strategies for different job types.
-
-### Job Giver & Installer Relationship Tools
-*   **Installer Directory (Premium Feature):** Subscribed Job Givers can access a searchable directory to proactively find, filter, and review profiles of all verified installers.
-*   **"My Installers" CRM:** A personal CRM for Job Givers to manage their network, with tabs for:
-    *   **Previously Hired:** A list of all installers they have successfully worked with.
-    *   **Favorites:** A curated list of preferred installers, sourced from the "Previously Hired" list. This list is used to highlight bids from trusted installers.
-    *   **Blocked:** A personal blocklist to prevent specific installers from bidding on their jobs.
-
----
-
-## 6. Demo Accounts for Testing
-
-To test the platform's features, you can use the pre-seeded accounts or generate a new verified installer.
-
-*   **Default Password:** `Vikas@129229` (for seeded accounts) / `password123` (for manually created accounts)
-
-| Role | Email | Description |
-| :--- | :--- | :--- |
-| **Admin** | `vikasakankshasharma@gmail.com` | Full access to platform settings. |
-| **Job Giver** | `jobgiver@example.com` | Can post jobs and hire. |
-| **Installer** | `installer@example.com` | Verified, Gold-tier installer. |
-| **New Installer** | `installer_final@test.com` | Pass: `password123` (Use `create_test_installer.ts` to reset). |
-
-**Creating a Fresh Test User:**
-If you need a pristine Installer account:
+### Folder Structure Convention
 ```bash
-npx tsx src/lib/firebase/create_test_installer.ts
-```
-
----
-
-## 7. Technical Stack & Architecture
-
-*   **Framework:** Next.js 16.1+ (Turbopack) with App Router.
-*   **Language:** TypeScript.
-*   **UI Components:** ShadCN/UI, built on Radix UI and Tailwind CSS.
-*   **Styling:** Tailwind CSS. Use `globals.css` for theme variables.
-*   **State Management:** React Context and Hooks.
-*   **Forms:** React Hook Form with Zod for validation.
-*   **Database:** Firestore (Firebase).
-*   **Authentication:** Firebase Authentication (Email/Password).
-*   **Backend Functions:** 
-    *   **Firebase Cloud Functions:** Scheduled tasks (e.g., job expiry).
-    *   **Vercel API Routes:** Real-time notifications (Email) via Zero-Cost proxy.
-*   **AI Functionality:** Genkit, configured to use Google's Gemini models.
-*   **Icons:** `lucide-react`.
-
-### File System Architecture
-```
 /src
-├── app/
-│   ├── (main)/              # Main marketing/landing pages
-│   │   ├── api/             # Vercel API Routes (Notifications, Cashfree)
-│   │   ├── page.tsx         # Landing page
-│   │   └── layout.tsx
-│   ├── dashboard/           # Authenticated part of the app
-│   │   ├── layout.tsx       # Main dashboard layout with sidebar/header
-│   │   ├── page.tsx         # Role-specific dashboard homepage
-│   │   ├── all-jobs/        # [Admin] View all jobs
-│   │   ├── blacklist/       # [Admin] Manage blacklisted users/pincodes
-│   │   ├── billing/         # [User] Manage subscription
-│   │   ├── coupons/         # [Admin] Manage coupons
-│   │   ├── disputes/        # View/manage disputes
-│   │   ├── installers/      # [Job Giver] Installer Directory
-│   │   ├── jobs/            # Browse jobs ([Installer]) & view job details
-│   │   ├── my-bids/         # [Installer] View bids they have placed
-│   │   ├── my-installers/   # [Job Giver] Manage hired/favorite/blocked installers
-│   │   ├── post-job/        # [Job Giver] Page to create a new job
-│   │   ├── posted-jobs/     # [Job Giver] View jobs they have posted
-│   │   ├── profile/         # User's own profile page
-│   │   ├── reports/         # [Admin] Reports and analytics
-│   │   ├── settings/        # App settings (Personal & Admin)
-│   │   ├── subscription-plans/ # [Admin] Manage subscription plans
-│   │   ├── team/            # [Admin] Manage admin/support users
-│   │   ├── transactions/    # [Admin] View all financial transactions
-│   │   └── users/           # [Admin] User directory
-│   ├── login/
-│   │   └── page.tsx         # Login and Sign Up forms
-│   └── layout.tsx           # Root layout
-├── ai/
-│   ├── flows/               # Genkit flows for AI features
-│   └── genkit.ts            # Genkit initialization
-├── components/
-│   ├── auth/                # Login/Signup forms
-│   ├── dashboard/           # Sidebar, Header
-│   ├── ui/                  # ShadCN UI components (Button, Card, etc.)
-│   └── *.tsx                # Other shared components (e.g., job-card.tsx)
-├── hooks/
-│   ├── use-user.tsx         # Critical hook for managing auth state and user data
-│   └── ...                  # Other custom hooks
-├── lib/
-│   ├── firebase/
-│   │   ├── client-provider.tsx # Client-side Firebase initialization
-│   │   ├── server-init.ts   # Server-side Firebase Admin initialization
-│   │   └── seed.ts          # Database seeding script
-│   ├── types.ts             # All TypeScript type definitions for Firestore entities
-│   └── utils.ts             # Utility functions
-└── ...
-```
-
+  /app          # App Router (Pages & API Routes)
+    /dashboard  # Protected routes (Role-based access)
+    /api        # Serverless functions (Webhooks, Notifications)
+  /components   # React Components
+    /ui         # ShadCN Primitives (Atomic Design)
+    /dashboard  # Business Logic Components
+  /lib          # Core Logic
+    /firebase   # Initialization & Seed scripts
+    types.ts    # centralized TypeScript interfaces (Source of Truth)
+  /ai           # Genkit flows (Gemini integration)
 ```
 
 ---
 
-## 5. Testing & CI/CD
+## 3. Step-by-Step Implementation Guide
 
-This project uses a robust automated testing strategy to ensure reliability.
+If you were rebuilding this from scratch, follow this exact sequence:
 
-### Local Testing
+### Phase 1: Foundation & Authentication
+1.  **Initialize Next.js:** `npx create-next-app@latest` with TypeScript, Tailwind, ESLint.
+2.  **Firebase Setup:** Create a Firebase project. Enable Auth (Email/Pass) and Firestore.
+3.  **Role Logic:**
+    *   **User Schema:** See `UserProfile` in `types.ts`.
+    *   **Crucial Field:** `roles: ['Job Giver', 'Installer']`.
+    *   **Logic:** On login, fetch the user profile. If `roles` array contains both, show a "Switch View" toggle in the navbar.
 
-*   **Smoke Tests:** Fast, critical path tests (Login, Navigation).
-    ```bash
-    npm run test:smoke
-    ```
-*   **Full E2E Tests:** Comprehensive user flows (Job Posting, Bidding, Hiring).
-    ```bash
-    npm run test:full
-    ```
-*   **Edge Case Tests:** Stress tests for validations, timeouts, and error handling.
-    ```bash
-    npm run test:edge-cases
-    ```
-*   **Feature-Specific Tests:**
-    ```bash
-    npm run test:invoice
-    npm run test:reviews
-    ```
-*   **Lint & Type Check:**
-    ```bash
-    npm run lint
-    npm run typecheck
-    ```
+### Phase 2: Database Schema (The "Brain")
+Create these collections. Use `types.ts` as your strict schema definition.
 
-### CI/CD Pipeline (GitHub Actions)
-The pipeline runs automatically on every push to `main`. It includes:
-1.  **Validation:** Linting and Type Checking.
-2.  **Build:** Verifies the app builds successfully (with Sentry source maps).
-3.  **Automated Testing:** Runs Smoke Tests in a headless browser against the production build.
-4.  **Deployment:** (configured) Deploys to [dodo-beta.web.app](https://dodo-beta.web.app) if all tests pass.
+| Collection | Doc ID | Purpose | Critical Fields |
+| :--- | :--- | :--- | :--- |
+| `users` | `uid` | User Profiles | `roles`, `pincodes`, `walletBalance` |
+| `jobs` | `auto-id` | Job Postings | `status`, `jobGiverId`, `bids` (Subcol or Array) |
+| `transactions` | `auto-id` | Financials | `payerId`, `payeeId`, `amount`, `status` |
+| `disputes` | `auto-id` | Support | `requesterId`, `reason`, `status` |
 
-**Triggering CI Manually:**
-You can trigger a run by pushing an empty commit:
+**Indexing:** You MUST create composite indexes for:
+*   `jobs`: `jobGiverId` (ASC) + `postedAt` (DESC)
+*   `jobs`: `status` (ASC) + `deadline` (ASC)
+
+### Phase 3: The Job Lifecycle (Core Business Logic)
+
+#### 1. Posting a Job (Job Giver)
+*   **Input:** Title, Description, Budget, Location (Google Maps).
+*   **AI Feature:** Use Gemini to auto-generate description from a 3-word prompt.
+*   **Status Entry:** Set `status: 'Open for Bidding'`.
+
+#### 2. Bidding (Installer)
+*   **Validation:** Check if `user.id === job.jobGiverId`. If yes, **BLOCK** (Self-bidding protection).
+*   **Blind Bidding:** In the UI, mask other bidders' amounts (`₹ ••••`) to prevent price wars.
+*   **Data:** Add a `Bid` object to the `job.bids` array.
+
+#### 3. Awarding (Job Giver)
+*   **Selection:** Giver picks an installer.
+*   **State Change:** `status` -> `Pending Funding`.
+*   **Action:** Generate a `fundingDeadline` (48 hours).
+
+#### 4. Funding (Escrow)
+*   **Gateway:** Initiate Cashfree Payment.
+*   **Settlement:** Money goes to **Marketplace Account**, not your bank account.
+*   **Success:** Webhook receives `SUCCESS`. Update `status` -> `In Progress`.
+
+#### 5. Completion & Payout
+*   **Work Proof:** Installer uploads photo. `status` -> `Pending Confirmation`.
+*   **Approval:** Job Giver clicks "Approve".
+*   **Payout:** Trigger Cashfree `Easy Split`.
+    *   `Vendor Amount`: 90% (to Installer)
+    *   `Platform Fee`: 10% (to You)
+*   **Final State:** `status` -> `Completed`.
+
+---
+
+## 4. Zero-Cost Security Architecture
+
+To maintain the free tier, we use a specific architecture:
+1.  **No Cloud Functions (Paid):** We do NOT use Firebase Cloud Functions for API calls.
+2.  **Vercel Proxy:** We route external API calls (Email, SMS) through Next.js API Routes (`/src/app/api/...`), which run on Vercel's free tier.
+3.  **Client-Side Throttling:** We use `lodash.debounce` on all write operations to save Firestore quotas.
+
+---
+
+## 5. Operational Guide
+
+### Getting Started
 ```bash
-git commit --allow-empty -m "chore: trigger CI"
-git push
+# 1. Clone & Install
+git clone <url>
+npm install
+
+# 2. Setup Environment
+cp .env .env.local
+# Add keys: FIREBASE_*, CASHFREE_*, GEMINI_API_KEY
+
+# 3. Seed Data (Crucial for testing)
+npm run db:seed  # Creates dummy users & jobs
+
+# 4. Run Locally
+npm run dev
 ```
 
----
+### Testing Strategy
+We use **Playwright** for everything. Do NOT skip these before pushing.
 
-## 6. UI/UX & Style Guidelines
+*   **Regression Suite (Critical Flows):**
+    ```bash
+    npm run test:regression
+    ```
+    *Runs: Full Transaction Cycle + Mobile Responsiveness Tests*
 
-*   **Primary Color:** `#B0B6C4` (Desaturated grayish-blue)
-*   **Background Color:** `#F0F2F5` (Very light grayish-blue)
-*   **Accent Color:** `#C88E4D` (Muted amber)
-*   **Font:** 'Inter', sans-serif.
-*   **Layout:** Clean, modern, with generous whitespace. Use `Card` components for grouping information. Dashboards use a main content area with a left-hand icon-based sidebar and a top header.
-*   **Responsiveness:** The app must be fully responsive and function as a PWA on mobile devices.
+*   **Lighthouse (Performance):**
+    ```bash
+    npm run test:lighthouse
+    ```
 
----
-
-## 7. Data Models (Firestore)
-
-All data models are defined in `src/lib/types.ts` and reflected in `docs/backend.json`.
-
-*   **`users` collection:** Stores `UserProfile` objects. Key fields include `id`, `name`, `email`, `roles` (array), `status`, `pincodes`, `address`, `subscription`, `favoriteInstallerIds`, `blockedInstallerIds`, and the nested `installerProfile` object.
-*   **`installerProfile` sub-object:** Contains installer-specific data: `tier`, `points`, `skills`, `rating`, `reviews`, `verified`, and `reputationHistory`.
-*   **`jobs` collection:** Stores `Job` objects. This is the central entity, containing all job details, `budget`, `status`, deadlines (`deadline`, `acceptanceDeadline`, `fundingDeadline`), `dateChangeProposal` object, `cancellationProposer`, and embedded arrays for `bids`, `comments`, and `privateMessages`.
-*   **`disputes` collection:** Stores `Dispute` objects for tracking and resolving all user-raised issues.
-*   **`transactions` collection:** A financial ledger storing all `Transaction` objects, providing an audit trail for payments, payouts, commissions, and fees.
-*   **Admin Collections:**
-    *   `/settings/platform`: A singleton document for global `PlatformSettings`.
-    *   `subscriptionPlans`: Stores all `SubscriptionPlan` objects.
-    *   `coupons`: Stores all `Coupon` objects.
-    *   `blacklist`: Stores `BlacklistEntry` objects for users and pincodes.
+### Deployment
+*   **Production:** Deploys automatically to `team4job.com` via GitHub Actions on push to `main`.
+*   **Manual:** `firebase deploy` (hosting only).
 
 ---
 
-## 8. Zero-Cost Infrastructure (Production)
-The platform is optimized to run on a **$0 budget** for the first 100-500 users by leveraging free tiers of robust service providers.
+## 6. Comprehensive Role Scenarios
 
-### Architecture Shift: "Vercel Proxy"
-To bypass the credit-card requirement of Firebase Cloud Functions for external API calls, we route email logic through Vercel's API limits.
+### A. Job Giver Scenarios (The Clients)
 
-| Feature | Provider | Plan | Limit | Method |
-| :--- | :--- | :--- | :--- | :--- |
-| **Hosting & API** | **Vercel** | Hobby | Unlimited (Fair Use) | `src/app/api/notifications/send` |
-| **Email Service** | **Brevo** | Free | 300 emails/day | SMTP/API via Vercel Route |
-| **Database/Auth** | **Firebase** | Spark | 50k reads/day | Client-Side SDK |
-| **Phone Auth** | **Firebase** | Spark | 10 SMS/day | `signInWithPhoneNumber` |
+#### 1. The "Non-Technical" Posting (AI Wizard)
+*   **User Goal:** "I just want a camera in my shop, I don't know the specs."
+*   **Flow:** User enters "CCTV for jewelry shop" -> Click "AI Generate".
+*   **System Action:** Genkit creates a structured post: "3 High-Res Dome Cameras, Night Vision required".
+*   **Outcome:** A professional job post is created without the user knowing technical jargon.
 
-*Note: The 10 SMS/day limit on Firebase Spark is the only tight bottleneck for high-volume signup days. Upgrading to Blaze (Pay-as-you-go) removes this.*
+#### 2. The Direct Award (Private Hiring)
+*   **User Goal:** "I want to hire John Doe specifically because he did my neighbor's house."
+*   **Flow:** Post Job -> Select "Direct Award" -> Enter Installer ID (`installer-123`).
+*   **System Action:**
+    *   Job status = `Open for Bidding` (but `visibility` = `private`).
+    *   Notification sent ONLY to John Doe.
+    *   Public board does NOT show this job.
+*   **Outcome:** Private transaction loop.
+
+#### 3. Bidding Analysis (Decision Paralysis)
+*   **User Goal:** "I have 15 bids, who is the best?"
+*   **Flow:** User clicks "Analyze Bids with AI".
+*   **System Action:** Genkit reads all 15 cover letters + Installer Ratings.
+*   **Output:** "Top Recommendation: Installer B (Highest Rating, Fair Price). Best Value: Installer F (Lowest Price, Good Reviews)."
+
+#### 4. The "No-Show" Dispute
+*   **Scenario:** Job is funded (`In Progress`), but Installer never showed up.
+*   **Flow:** Job Giver clicks "Report Issue" -> "Installer No-Show".
+*   **System Action:**
+    *   Creates `Dispute` record.
+    *   Freezes the Job (No payouts possible).
+    *   Notifies Admin.
+
+### B. Installer Scenarios (The Professionals)
+
+#### 1. Zero-Balance Bidding (Freemium)
+*   **Scenario:** New installer, 0 wallet balance.
+*   **System Logic:**
+    *   New users get **3 Free Bids**.
+    *   After 3 bids, system prompts "Upgrade to Silver Tier".
+*   **Outcome:** Removes friction for onboarding new supply.
+
+#### 2. The "Start OTP" (Proof of Presence)
+*   **Scenario:** Installer arrives at the site.
+*   **Risk:** Client claims "He never came."
+*   **Flow:**
+    *   Client's App shows a 4-digit OTP.
+    *   Installer asks Client for OTP -> Enters in their App.
+    *   System validates & logs timestamp `workStartedAt`.
+*   **Outcome:** Irrefutable proof of physical presence.
+
+#### 3. Scope Creep (Additional Tasks)
+*   **Scenario:** Client says "Can you also fix the doorbell while you are here?"
+*   **Risk:** Doing free work / getting paid off-platform.
+*   **Flow:**
+    *   Installer clicks "Add Task" -> "Fix Doorbell" -> "₹500".
+    *   Client gets push notification -> "Approve & Fund".
+    *   Client pays ₹500 via Cashfree.
+*   **Outcome:** Revenue capture + documented change order.
+
+#### 4. Payout Preferences
+*   **Scenario:** Job Completed. Money released.
+*   **Options:**
+    1.  **Bank Transfer:** Enter IFSC/Account No.
+    2.  **UPI:** Enter VPA.
+*   **System:** Uses Cashfree Payouts to route funds instantly (T+0 settlement).
+
+### C. Admin Scenarios (The Controllers)
+
+#### 1. The "Force Release" (Unresponsive Client)
+*   **Scenario:** Installer finished work, uploaded proof. Client is ghosting (not clicking "Approve") to delay payment.
+*   **System Action (Auto):**
+    *   Timer starts at `workSubmittedAt`.
+    *   At **Day 5**, System runs `handleExpiredAwards`.
+    *   **Action:** Auto-approves the job, releases funds to Installer.
+*   **Outcome:** Protects gig workers from wage theft.
+
+#### 2. Blacklisting a Bad Actor
+*   **Scenario:** User `bad_guy_99` is abusive in chat.
+*   **Admin Action:** Dashboard -> Blacklist -> Add User ID `bad_guy_99`.
+*   **System Effect:**
+    *   User is logged out force-fully.
+    *   Cannot log in again.
+    *   All their active bids are withdrawn.
+
+#### 3. Commission Rate Adjustment
+*   **Scenario:** Platform wants to run a "Zero Fee" promotion.
+*   **Admin Action:** Dashboard -> Platform Settings -> Set `installerCommission` = 0%.
+*   **System Effect:** All *future* jobs (created after this moment) will have 0% fee. Existing jobs preserve their original contract.
+
+---
+
+## 7. Appendix
+
+### Key Test Data (Seeded)
+*   **Admin:** `vikasakankshasharma@gmail.com`
+*   **Job Giver:** `jobgiver@example.com`
+*   **Installer:** `installer@example.com`
+*   **Password:** `password123`
+
+### Environment Variables (.env.local)
+| Variable | Purpose |
+| :--- | :--- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Auth & DB Access |
+| `CASHFREE_APP_ID` | Payments |
+| `GEMINI_API_KEY` | AI Features | |

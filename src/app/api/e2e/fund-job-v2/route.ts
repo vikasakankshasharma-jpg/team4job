@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
             id: transactionId,
             jobId,
             jobTitle: job?.title || 'Unknown',
-            payerId: job?.jobGiverId || (job?.jobGiver ? (job.jobGiver as any).id : 'UNKNOWN'),
-            payeeId: job?.awardedInstallerId || (job?.awardedInstaller ? (job.awardedInstaller as any).id : 'ESCROW_HOLD'),
+            payerId: job?.jobGiverId || (job?.jobGiver?.id) || 'UNKNOWN',
+            payeeId: job?.awardedInstallerId || (job?.awardedInstaller?.id) || 'ESCROW_HOLD',
             amount: 1000,
             status: 'Funded',
             transactionType: 'JOB',
@@ -44,7 +44,8 @@ export async function POST(req: NextRequest) {
             paymentGatewaySessionId: `TEST_SESSION_${Date.now()}`,
             totalPaidByGiver: 2360,
             payoutToInstaller: 2000,
-            platformFee: 360
+            jobGiverFee: 360, // Renamed from platformFee to match Invoice Page logic
+            commission: 100     // Added commission for Installer Invoice testing
         };
 
         await transactionRef.set(newTransaction);
