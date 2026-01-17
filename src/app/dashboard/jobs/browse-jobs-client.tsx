@@ -74,10 +74,85 @@ export default function BrowseJobsClient() {
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
   const { searchQuery } = useSearch();
-  const [budget, setBudget] = React.useState([0, 150000]);
-  const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
-  const [recommendedPincodeFilter, setRecommendedPincodeFilter] = React.useState("all");
   const { setHelp } = useHelp();
+  const searchParams = useSearchParams();
+
+  // Initialize state from URL parameters
+  const [budget, setBudget] = React.useState([
+    Number(searchParams.get("min") || 0),
+    Number(searchParams.get("max") || 150000)
+  ]);
+
+  const [selectedSkills, setSelectedSkills] = React.useState<string[]>(
+    searchParams.get("skills")?.split(",").filter(Boolean) || []
+  );
+
+  const [recommendedPincodeFilter, setRecommendedPincodeFilter] = React.useState("all");
+
+  // Sync Search Query from URL on mount
+  React.useEffect(() => {
+    const q = searchParams.get("q");
+    if (q && q !== searchQuery) {
+      // We only set this if it's different to avoid loops, though context usually handles strict equality
+      // Accessing setSearchQuery from hook, assuming it's stable
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount to hydrate context
+
+  // Need to get setSearchQuery from useSearch to hydrate it
+  const { setSearchQuery: setGlobalSearch } = useSearch();
+  React.useEffect(() => {
+    const q = searchParams.get("q");
+    if (q) {
+      setGlobalSearch(q);
+    }
+  }, [setGlobalSearch]); // Intentionally omitting searchParams to only run on mount/deps? No, searchParams is stableish.
+  // Actually, separate effect for hydration is safer.
+
+  // Debounced URL updates
+  React.useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    let hasChanges = false;
+
+    // Budget
+    const min = budget[0];
+    const max = budget[1];
+    if (min > 0) { params.set("min", min.toString()); hasChanges = true; }
+    else if (params.has("min")) { params.delete("min"); hasChanges = true; }
+
+    if (max < 150000) { params.set("max", max.toString()); hasChanges = true; }
+    else if (params.has("max")) { params.delete("max"); hasChanges = true; }
+
+    // Skills
+    if (selectedSkills.length > 0) {
+      const skillsStr = selectedSkills.join(",");
+      if (params.get("skills") !== skillsStr) {
+        params.set("skills", skillsStr);
+        hasChanges = true;
+      }
+    } else if (params.has("skills")) {
+      params.delete("skills");
+      hasChanges = true;
+    }
+
+    // Search Query
+    if (searchQuery) {
+      if (params.get("q") !== searchQuery) {
+        params.set("q", searchQuery);
+        hasChanges = true;
+      }
+    } else if (params.has("q")) {
+      params.delete("q");
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      const timeoutId = setTimeout(() => {
+        router.replace(`?${params.toString()}`, { scroll: false });
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [budget, selectedSkills, searchQuery, router, searchParams]);
 
   React.useEffect(() => {
     if (loading) return;
@@ -205,7 +280,7 @@ export default function BrowseJobsClient() {
     });
   };
 
-  const searchParams = useSearchParams();
+
   const currentTab = searchParams.get('tab') || 'nearby';
 
   const handleTabChange = (value: string) => {
