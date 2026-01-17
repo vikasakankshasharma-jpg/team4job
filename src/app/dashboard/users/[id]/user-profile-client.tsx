@@ -27,7 +27,9 @@ import { cn, getRefId } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirebase, useUser as useAuthUser } from "@/hooks/use-user";
 import { collection, query, where, getDocs, getDoc, doc, updateDoc, deleteDoc as deleteFirestoreDoc } from "firebase/firestore";
+import { signInWithCustomToken } from "firebase/auth";
 import type { DocumentReference } from "firebase/firestore";
+import axios from "axios";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -146,12 +148,38 @@ function ManageSubscriptionDialog({ user, onSubscriptionUpdate }: { user: User, 
 
 function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (data: Partial<User>) => void }) {
   const { toast } = useToast();
-  const { db } = useFirebase();
+  const { db, auth } = useFirebase();
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
   const [suspensionDays, setSuspensionDays] = React.useState(7);
   const [isSuspendOpen, setIsSuspendOpen] = React.useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = React.useState("");
+
+  const handleImpersonate = async () => {
+    if (!auth || !auth.currentUser) return;
+    setIsLoading(true);
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const response = await axios.post('/api/admin/impersonate', { targetUserId: user.id }, {
+        headers: { Authorization: `Bearer ${idToken}` }
+      });
+
+      const { token } = response.data;
+      await signInWithCustomToken(auth, token);
+
+      toast({ title: "Impersonation Active", description: `You are now logged in as ${user.name}.` });
+      window.location.href = '/dashboard'; // Force reload as new user
+
+    } catch (error: any) {
+      console.error("Impersonation failed:", error);
+      toast({
+        title: "Impersonation Failed",
+        description: error.response?.data?.error || "Could not login as user.",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+    }
+  };
 
   const handleDeactivate = async () => {
     setIsLoading(true);
@@ -203,6 +231,18 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
         <CardDescription>Manage this user&apos;s account status and permissions.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex items-center justify-between rounded-lg border p-4 bg-indigo-50/50 border-indigo-100">
+          <div>
+            <h3 className="font-semibold text-indigo-900">Login as User ("God Mode")</h3>
+            <p className="text-sm text-indigo-700/80">Access the platform exactly as {user.name} sees it. Useful for debugging.</p>
+          </div>
+          <Button variant="outline" className="border-indigo-200 text-indigo-700 hover:bg-indigo-100" onClick={handleImpersonate} disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <UserCheck className="mr-2 h-4 w-4" />
+            Login as {user.name.split(' ')[0]}
+          </Button>
+        </div>
+
         {user.status === 'active' && (
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>

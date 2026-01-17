@@ -20,6 +20,7 @@ import React from "react";
 import { AnimatedAvatar } from "./ui/animated-avatar";
 import { CardDescription } from "./ui/card";
 import { useUser } from "@/hooks/use-user";
+import { BookmarkButton } from "@/components/jobs/bookmark-button";
 
 type JobCardProps = {
   job: Job;
@@ -109,6 +110,7 @@ export function JobCard({ job }: JobCardProps) {
             <CardTitle className="text-lg leading-tight overflow-wrap-anywhere">{job.title}</CardTitle>
             <CardDescription className="font-mono text-xs pt-1">{job.id}</CardDescription>
           </div>
+          <BookmarkButton jobId={job.id} className="-mt-1" />
         </div>
         <div className="flex items-center gap-3 pt-4">
           <Avatar className="h-9 w-9 bg-muted border flex items-center justify-center">

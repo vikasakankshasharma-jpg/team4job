@@ -20,6 +20,7 @@ import { collection, query, where, orderBy, limit, getDocs } from "firebase/fire
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { toDate } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type NotificationItem = {
     id: string;
@@ -171,8 +172,13 @@ export function NotificationsDropdown() {
                             ))}
                         </div>
                     ) : (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                            No new notifications.
+                        <div className="h-full flex flex-col justify-center">
+                            <EmptyState
+                                icon={Bell}
+                                title="No new notifications"
+                                description="We'll notify you when important updates happen."
+                                className="border-0 min-h-[200px] p-4"
+                            />
                         </div>
                     )}
                 </ScrollArea>

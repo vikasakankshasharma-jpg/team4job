@@ -15,7 +15,8 @@ export type AdminActionType =
     | 'TEAM_MEMBER_REMOVED'
     | 'SUBSCRIPTION_GRANTED'
     | 'COUPON_CREATED'
-    | 'BLACKLIST_UPDATED';
+    | 'BLACKLIST_UPDATED'
+    | 'IMPERSONATE_USER';
 
 export interface AdminActionLog {
     id: string;
@@ -91,6 +92,7 @@ export function getActionTypeLabel(actionType: AdminActionType): string {
         SUBSCRIPTION_GRANTED: 'Subscription Granted',
         COUPON_CREATED: 'Coupon Created',
         BLACKLIST_UPDATED: 'Blacklist Updated',
+        IMPERSONATE_USER: 'Impersonated User',
     };
 
     return labels[actionType] || actionType;

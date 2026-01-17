@@ -129,7 +129,7 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Email Address</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="name@example.com" {...field} disabled={!!lockoutUntil} />
+                <Input type="email" placeholder="name@example.com" {...field} disabled={!!lockoutUntil} className="h-11" />
               </FormControl>
               <FormMessage data-testid="email-error" />
             </FormItem>
@@ -142,13 +142,13 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} disabled={!!lockoutUntil} />
+                <Input type="password" placeholder="••••••••" {...field} disabled={!!lockoutUntil} className="h-11" />
               </FormControl>
               <FormMessage data-testid="password-error" />
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={isLoading || !!lockoutUntil} data-testid="login-submit-btn">
+        <Button type="submit" className="w-full h-11" disabled={isLoading || !!lockoutUntil} data-testid="login-submit-btn">
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Log In
         </Button>

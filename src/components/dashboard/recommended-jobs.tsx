@@ -11,6 +11,7 @@ import { recommendJobs, RecommendJobsOutput } from "@/ai/flows/recommend-jobs";
 import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
 import { useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
+import { EmptyState } from "@/components/ui/empty-state";
 
 import { toDate } from '@/lib/utils';
 
@@ -147,8 +148,19 @@ export function RecommendedJobs({ user }: RecommendedJobsProps) {
                         })}
                     </div>
                 ) : (
-                    <div className="text-center py-6 text-muted-foreground text-sm">
-                        {isLoading ? "Analyzing marketplace..." : "No perfect matches found right now. Check back later!"}
+                    <div className="text-center">
+                        {isLoading ? (
+                            <div className="py-6 text-muted-foreground text-sm flex items-center justify-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" /> Analyzing marketplace...
+                            </div>
+                        ) : (
+                            <EmptyState
+                                icon={Sparkles}
+                                title="No matches yet"
+                                description="No perfect matches found right now. Check back later!"
+                                className="border-0 min-h-[150px] p-4 shadow-none"
+                            />
+                        )}
                     </div>
                 )}
                 {!isLoading && recommendations.length === 0 && <Button variant="outline" className="w-full mt-4" onClick={fetchRecommendations}>Scan Jobs</Button>}

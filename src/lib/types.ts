@@ -92,6 +92,7 @@ export type User = {
   }[];
   referredBy?: string;
   platformDebt?: number; // Amount owed to platform (e.g. from No-Show penalties)
+  bookmarks?: string[]; // IDs of saved jobs
 };
 
 export type Comment = {
@@ -496,4 +497,17 @@ export interface NotificationPreferences {
     communication: { enabled: boolean; channels: string[] };
     deadlines: { enabled: boolean; channels: string[] };
   };
+}
+
+export interface Activity {
+  id?: string;
+  userId: string; // The user who sees this activity
+  type: 'job_posted' | 'bid_placed' | 'bid_received' | 'job_awarded' | 'job_won' | 'job_completed' | 'payment_released' | 'payment_received' | 'dispute_opened' | 'new_message' | 'system_alert';
+  title: string;
+  description: string;
+  timestamp: Date | Timestamp;
+  link: string;
+  metadata?: any;
+  read: boolean;
+  relatedId?: string; // Job ID, Transaction ID, etc.
 }
