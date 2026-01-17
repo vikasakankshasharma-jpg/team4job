@@ -152,7 +152,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
                         value={pincode}
                         onChange={handlePincodeChange}
                         maxLength={6}
-                        className="pr-10"
+                        className="pr-10 h-11"
                         data-testid="pincode-input"
                     />
                     {isLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
@@ -162,7 +162,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
                     value={selectedPostOffice}
                     disabled={postOffices.length <= 1 || isLoading}
                 >
-                    <SelectTrigger data-testid="po-select-trigger">
+                    <SelectTrigger data-testid="po-select-trigger" className="h-11">
                         <SelectValue placeholder="Select Post Office" />
                     </SelectTrigger>
                     <SelectContent>
@@ -173,9 +173,9 @@ export function LocationInput({ name, label, placeholder, description, control, 
                         ))}
                     </SelectContent>
                 </Select>
-                <Input value={city} placeholder="City / District" disabled className="bg-muted/50" data-testid="city-input" />
-                <Input value={state} placeholder="State" disabled className="bg-muted/50" data-testid="state-input" />
-                <Input value={country} placeholder="Country" disabled className="bg-muted/50" data-testid="country-input" />
+                <Input value={city} placeholder="City / District" disabled className="bg-muted/50 h-11" data-testid="city-input" />
+                <Input value={state} placeholder="State" disabled className="bg-muted/50 h-11" data-testid="state-input" />
+                <Input value={country} placeholder="Country" disabled className="bg-muted/50 h-11" data-testid="country-input" />
             </div>
             {description && !fieldState.error && <FormDescription>{description}</FormDescription>}
             <FormMessage data-testid="pincode-error">{fieldState.error?.message || error}</FormMessage>

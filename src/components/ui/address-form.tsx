@@ -54,7 +54,7 @@ export function AddressForm({
                             <FormItem>
                                 <FormLabel className="text-xs">House / Flat No. & Building</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="e.g., Flat 4B, Sunshine Apartments" {...field} data-testid="house-input" />
+                                    <Input placeholder="e.g., Flat 4B, Sunshine Apartments" {...field} data-testid="house-input" className="h-11" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -67,7 +67,7 @@ export function AddressForm({
                             <FormItem>
                                 <FormLabel className="text-xs">Street, Colony / Area</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="e.g., 12th Main Road, Indiranagar" {...field} data-testid="street-input" />
+                                    <Input placeholder="e.g., 12th Main Road, Indiranagar" {...field} data-testid="street-input" className="h-11" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -81,7 +81,7 @@ export function AddressForm({
                         <FormItem>
                             <FormLabel className="text-xs">Nearby Landmark (Optional)</FormLabel>
                             <FormControl>
-                                <Input placeholder="e.g., Near City Hospital" {...field} data-testid="landmark-input" />
+                                <Input placeholder="e.g., Near City Hospital" {...field} data-testid="landmark-input" className="h-11" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

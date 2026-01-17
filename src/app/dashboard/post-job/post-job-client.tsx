@@ -41,6 +41,7 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
 import debounce from "lodash.debounce";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { logActivity } from "@/lib/activity-logger";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -623,6 +624,16 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         console.log("Saving job to Firestore:", jobData);
         await setDoc(doc(db, "jobs", newJobId), jobData);
         console.log("Job saved successfully!");
+
+        // Log Activity
+        await logActivity(db, {
+          userId: user.id,
+          type: 'job_posted',
+          title: 'Job Posted',
+          description: `You posted: ${jobData.title}`,
+          link: `/dashboard/jobs/${newJobId}`,
+          relatedId: newJobId
+        });
 
         // Delete draft after successful submission
         setIsSubmitted(true);

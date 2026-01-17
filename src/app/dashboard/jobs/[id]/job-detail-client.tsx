@@ -105,6 +105,7 @@ import React from "react";
 import { analyzeBidsFlow, AnalyzeBidsOutput } from "@/ai/flows/analyze-bids";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { JobDetailSkeleton } from "@/components/skeletons/job-detail-skeleton";
 import { Bid, Job, Comment, User, JobAttachment, PrivateMessage, Dispute, Transaction, Invoice, PlatformSettings, AdditionalTask } from "@/lib/types";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { getStatusVariant, toDate, cn, validateMessageContent } from "@/lib/utils";
@@ -127,6 +128,7 @@ import { VariationOrderList } from "@/components/job/variation-order-list";
 import { VariationOrderDialog } from "@/components/job/variation-order-dialog";
 import { MilestoneList } from "@/components/milestone/milestone-list";
 import { MilestoneDialog } from "@/components/milestone/milestone-dialog";
+import { logActivity } from "@/lib/activity-logger";
 
 
 declare const cashfree: any;
@@ -411,6 +413,29 @@ function PlaceBidDialog({ job, user, onBidSubmit, open, onOpenChange, platformSe
             };
 
             await addDoc(bidsRef, newBid);
+
+            // Notify Job Giver
+            const jobGiverId = job.jobGiverId || getRefId(job.jobGiver);
+            if (jobGiverId) {
+                await logActivity(db, {
+                    userId: jobGiverId,
+                    type: 'bid_received',
+                    title: 'New Bid Received',
+                    description: `New bid of ₹${amount} for ${job.title}`,
+                    link: `/dashboard/jobs/${job.id}`,
+                    relatedId: job.id
+                });
+            }
+
+            // Log for Installer
+            await logActivity(db, {
+                userId: user.id,
+                type: 'bid_placed',
+                title: 'Bid Placed',
+                description: `You bid ₹${amount} on ${job.title}`,
+                link: `/dashboard/jobs/${job.id}`,
+                relatedId: job.id
+            });
 
             toast({ title: "Bid Placed!", description: "The Job Giver has been notified." });
             onBidSubmit();
@@ -961,8 +986,39 @@ function JobGiverConfirmationSection({ job, onJobUpdate, onCancel, onAddFunds }:
                 variant: 'default'
             });
 
+            // Log for Job Giver
+            await logActivity(db, {
+                userId: user.id,
+                type: 'payment_released',
+                title: 'Payment Released',
+                description: `Payment released for ${job.title}`,
+                link: `/dashboard/jobs/${job.id}`,
+                relatedId: job.id
+            });
+
             if (job.awardedInstaller) {
                 const installer = job.awardedInstaller as User;
+
+                // Log for Installer
+                if (installer.id) {
+                    await logActivity(db, {
+                        userId: installer.id,
+                        type: 'payment_received',
+                        title: 'Payment Received',
+                        description: `Payment received for ${job.title}`,
+                        link: `/dashboard/jobs/${job.id}`,
+                        relatedId: job.id
+                    });
+                    await logActivity(db, {
+                        userId: installer.id,
+                        type: 'job_completed',
+                        title: 'Job Completed',
+                        description: `You completed ${job.title}`,
+                        link: `/dashboard/jobs/${job.id}`,
+                        relatedId: job.id
+                    });
+                }
+
                 if (installer.email) {
                     await sendNotification(
                         installer.email,
@@ -1203,7 +1259,7 @@ function JobGiverConfirmationSection({ job, onJobUpdate, onCancel, onAddFunds }:
 
 function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
     const { toast } = useToast();
-    const { storage } = useFirebase();
+    const { db, storage } = useFirebase();
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [completionFiles, setCompletionFiles] = React.useState<File[]>([]);
     const [otp, setOtp] = React.useState("");
@@ -1270,6 +1326,24 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
                         title: "Job Completed Successfully!",
                         description: "OTP Verified. Payment has been released.",
                         variant: 'success' as any
+                    });
+
+                    // Log Activity (OTP Instant Complete)
+                    await logActivity(db, {
+                        userId: user.id,
+                        type: 'job_completed',
+                        title: 'Job Completed',
+                        description: `You completed ${job.title} via OTP`,
+                        link: `/dashboard/jobs/${job.id}`,
+                        relatedId: job.id
+                    });
+                    await logActivity(db, {
+                        userId: user.id,
+                        type: 'payment_received',
+                        title: 'Payment Received',
+                        description: `Payment released for ${job.title}`,
+                        link: `/dashboard/jobs/${job.id}`,
+                        relatedId: job.id
                     });
                 } catch (error: any) {
                     console.error("OTP Verification failed:", error);
@@ -1815,6 +1889,10 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
 
 
+    if (loading) {
+        return <JobDetailSkeleton />;
+    }
+
     if (!job) {
         return <div className="p-8 text-center">Job not found.</div>;
     }
@@ -1920,7 +1998,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold overflow-wrap-anywhere" data-testid="job-title">{job.title}</h1>
                 <Badge variant="outline" className="w-fit" data-testid="job-status-badge" data-status={job.status}>{job.status}</Badge>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
                     <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-2 lg:order-1">
                         <Card>
                             <CardHeader><CardTitle>Description</CardTitle></CardHeader>
@@ -2028,7 +2106,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                         </Card>
                     </div>
 
-                    <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
+                    <div className="space-y-4 sm:space-y-6 order-1 lg:order-2 lg:sticky lg:top-24 h-fit">
                         {/* Actions Panel */}
                         <Card data-testid="actions-panel">
                             <CardHeader><CardTitle>Actions</CardTitle></CardHeader>

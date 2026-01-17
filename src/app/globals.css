@@ -91,9 +91,10 @@
     --card-foreground: 210 20% 98%;
     --popover: 224 71.4% 4.1%;
     --popover-foreground: 210 20% 98%;
-    --primary: 221 15% 70%;
-    /* Lighter grayish-blue for dark mode */
-    --primary-foreground: 224 71.4% 4.1%;
+    --primary: 212 90% 65%;
+    /* Vibrant light blue for dark mode */
+    --primary-foreground: 222 47% 11%;
+    /* Dark text for better contrast on light primary */
     --secondary: 215 27.9% 16.9%;
     --secondary-foreground: 210 20% 98%;
     --muted: 217.2 32.6% 17.5%;

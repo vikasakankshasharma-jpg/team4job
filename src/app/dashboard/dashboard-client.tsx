@@ -33,7 +33,7 @@ import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
 import React from "react";
 import { Job, User, Dispute, Transaction, Role } from "@/lib/types";
-import { collection, query, where, getDocs, or, and, doc, getDoc, getCountFromServer, limit } from "firebase/firestore";
+import { collection, query, where, getDocs, or, and, doc, getDoc, getCountFromServer, limit, onSnapshot } from "firebase/firestore";
 import { DocumentReference } from "firebase/firestore";
 import { cn, toDate } from "@/lib/utils";
 import { differenceInMilliseconds, format, getMonth, getYear, startOfMonth, subMonths } from "date-fns";
@@ -46,6 +46,7 @@ import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { RecommendedJobs } from "@/components/dashboard/recommended-jobs";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { ActionRequiredDashboard } from "@/components/notifications/action-required-dashboard";
+import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
 import { QuickMetricsRow } from "@/components/dashboard/quick-metrics-row";
 import { RecommendedInstallersCard } from "@/components/dashboard/recommended-installers-card";
 import { SpendingInsightsCard } from "@/components/dashboard/spending-insights-card";
@@ -170,51 +171,67 @@ function InstallerDashboard() {
   const [transactions, setTransactions] = React.useState<Transaction[]>([]);
 
   React.useEffect(() => {
-    async function fetchData() {
+    const unsubscribeFuncs: (() => void)[] = [];
+
+    async function setupListeners() {
       if (!user || !db) return;
 
       setLoading(true);
       try {
         const jobsRef = collection(db, "jobs");
-        const openJobsQuery = query(jobsRef, where('status', '==', 'Open for Bidding'));
         const installerDocRef = doc(db, 'users', user.id);
 
-        // Fix: Queries for arrays or specific fields
-        const myBidsQuery = query(jobsRef, where('bidderIds', 'array-contains', user.id));
-        const myAwardedQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
+        // 1. Open Jobs Count (Keep as one-time fetch to save reads)
+        const openJobsQuery = query(jobsRef, where('status', '==', 'Open for Bidding'));
+        getCountFromServer(openJobsQuery).then(snap => {
+          setStats(prev => ({ ...prev, openJobs: snap.data().count }));
+        });
 
-        // Transactions for Earnings (Released & Funded) - Limit to recent 100
+        // 2. My Bids Listener
+        const myBidsQuery = query(jobsRef, where('bidderIds', 'array-contains', user.id));
+        const unsubBids = onSnapshot(myBidsQuery, (snapshot) => {
+          setStats(prev => ({
+            ...prev,
+            myBids: snapshot.size
+          }));
+        });
+        unsubscribeFuncs.push(unsubBids);
+
+        // 3. My Awarded Jobs Listener
+        const myAwardedQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
+        const unsubAwarded = onSnapshot(myAwardedQuery, (snapshot) => {
+          setStats(prev => ({
+            ...prev,
+            jobsWon: snapshot.size
+          }));
+        });
+        unsubscribeFuncs.push(unsubAwarded);
+
+        // 4. Transactions Listener
         const transactionsQuery = query(
           collection(db, "transactions"),
           where("payeeId", "==", user.id),
           limit(100)
         );
-
-        const [openJobsCount, myBidsSnapshot, myAwardedSnapshot, transactionsSnapshot] = await Promise.all([
-          getCountFromServer(openJobsQuery),
-          getDocs(myBidsQuery),
-          getDocs(myAwardedQuery),
-          getDocs(transactionsQuery)
-        ]);
-
-        const myJobsSet = new Set([...myBidsSnapshot.docs.map(d => d.id), ...myAwardedSnapshot.docs.map(d => d.id)]);
-
-        setStats({
-          openJobs: openJobsCount.data().count,
-          myBids: myJobsSet.size,
-          jobsWon: myAwardedSnapshot.size
+        const unsubTx = onSnapshot(transactionsQuery, (snapshot) => {
+          const txs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Transaction));
+          setTransactions(txs);
         });
+        unsubscribeFuncs.push(unsubTx);
 
-        setTransactions(transactionsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Transaction)));
+        setLoading(false);
 
       } catch (error) {
-        console.error("Error fetching InstallerDashboard data:", error);
-      } finally {
+        console.error("Error setting up InstallerDashboard listeners:", error);
         setLoading(false);
       }
     }
 
-    fetchData();
+    setupListeners();
+
+    return () => {
+      unsubscribeFuncs.forEach(unsub => unsub());
+    };
 
   }, [user, db]);
 
@@ -287,11 +304,7 @@ function InstallerDashboard() {
   }, [setHelp, isVerified]);
 
   if (loading) {
-    return (
-      <div className="flex h-48 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   return (
@@ -442,15 +455,44 @@ function JobGiverDashboard() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    async function fetchData() {
+    const unsubscribeFuncs: (() => void)[] = [];
+
+    async function setupListeners() {
       if (!user || !db) return;
       setLoading(true);
 
       try {
         const userDocRef = doc(db, 'users', user.id);
 
+        // 1. My Jobs Listener
         const myJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
+        const unsubJobs = onSnapshot(myJobsQuery, (snapshot) => {
+          const myJobs = snapshot.docs.map(doc => doc.data() as Job);
 
+          let active = 0;
+          let completed = 0;
+          let bids = 0;
+          let cancelled = 0;
+
+          myJobs.forEach(job => {
+            if (job.status === 'Completed') completed++;
+            else if (job.status === 'Cancelled') cancelled++;
+            else active++;
+
+            bids += (job.bids || []).length;
+          });
+
+          setStats(prev => ({
+            ...prev,
+            activeJobs: active,
+            completedJobs: completed,
+            cancelledJobs: cancelled,
+            totalBids: bids
+          }));
+        });
+        unsubscribeFuncs.push(unsubJobs);
+
+        // 2. Disputes Listener
         const disputesQuery = query(
           collection(db, "disputes"),
           and(
@@ -461,50 +503,40 @@ function JobGiverDashboard() {
             )
           )
         );
+        const unsubDisputes = onSnapshot(disputesQuery, (snapshot) => {
+          setStats(prev => ({
+            ...prev,
+            openDisputes: snapshot.size
+          }));
+        });
+        unsubscribeFuncs.push(unsubDisputes);
 
+        // 3. Transactions Listener
         const transactionsQuery = query(
           collection(db, "transactions"),
           where("payerId", "==", user.id)
         );
-
-        const [myJobsSnapshot, disputesSnapshot, transactionsSnapshot] = await Promise.all([
-          getDocs(myJobsQuery),
-          getDocs(disputesQuery),
-          getDocs(transactionsQuery)
-        ]);
-
-        const myJobs = myJobsSnapshot.docs.map(doc => doc.data() as Job);
-        const myTransactions = transactionsSnapshot.docs.map(doc => doc.data() as Transaction);
-
-        let active = 0;
-        let completed = 0;
-        let bids = 0;
-        let cancelled = 0;
-
-        myJobs.forEach(job => {
-          if (job.status === 'Completed') completed++;
-          else if (job.status === 'Cancelled') cancelled++;
-          else active++;
-
-          bids += (job.bids || []).length;
+        const unsubTx = onSnapshot(transactionsQuery, (snapshot) => {
+          const myTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
+          setStats(prev => ({
+            ...prev,
+            transactions: myTransactions
+          }));
         });
+        unsubscribeFuncs.push(unsubTx);
 
-        setStats({
-          activeJobs: active,
-          completedJobs: completed,
-          totalBids: bids,
-          openDisputes: disputesSnapshot.size,
-          cancelledJobs: cancelled,
-          transactions: myTransactions
-        });
+        setLoading(false);
       } catch (error) {
-        console.error("Error fetching JobGiverDashboard data:", error);
-      } finally {
+        console.error("Error setting up JobGiverDashboard listeners:", error);
         setLoading(false);
       }
     }
 
-    fetchData();
+    setupListeners();
+
+    return () => {
+      unsubscribeFuncs.forEach(unsub => unsub());
+    };
 
   }, [user, db]);
 
@@ -578,11 +610,7 @@ function JobGiverDashboard() {
   }, [setHelp]);
 
   if (loading) {
-    return (
-      <div className="flex h-48 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   return (
@@ -990,11 +1018,7 @@ function AdminDashboard() {
   const totalRevenue = revenueData.reduce((acc, m) => acc + m.revenue, 0);
 
   if (loading) {
-    return (
-      <div className="flex h-48 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   return (

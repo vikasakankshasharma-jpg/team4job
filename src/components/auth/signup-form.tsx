@@ -694,7 +694,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             <FormLabel>I want to...</FormLabel>
             <Select onValueChange={(value) => field.onChange(value)} defaultValue={field.value}>
               <FormControl>
-                <SelectTrigger><SelectValue placeholder="Select your primary role" /></SelectTrigger>
+                <SelectTrigger className="h-11"><SelectValue placeholder="Select your primary role" /></SelectTrigger>
               </FormControl>
               <SelectContent>
                 <SelectItem value="Job Giver">Hire an Installer</SelectItem>
@@ -717,7 +717,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           console.error("Tracking error (non-fatal):", trackError);
         }
         setCurrentStep(role === 'Installer' ? 'verification' : 'photo');
-      }} className="w-full" disabled={!role}>Next</Button>
+      }} className="w-full h-11" disabled={!role}>Next</Button>
     </div>
   );
 
@@ -763,13 +763,14 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                       {...field}
                       maxLength={12}
                       disabled={isAutomatedKycEnabled && verificationSubStep !== 'enterAadhar'}
+                      className="h-11"
                     />
                   </FormControl>
                   {isAutomatedKycEnabled && verificationSubStep === 'enterAadhar' && (
                     <Button
                       type="button"
-                      onClick={handleInitiateVerification}
-                      disabled={!isAadharValid || isLoading}
+                      className="h-11"
+                      aria-label="Send OTP to Aadhar number"
                     >
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Send OTP
@@ -796,12 +797,14 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                         placeholder="Enter 6-digit OTP"
                         {...field}
                         maxLength={6}
+                        className="h-11"
                       />
                     </FormControl>
                     <Button
                       type="button"
                       onClick={handleConfirmVerification}
                       disabled={isLoading || !isOtpValid}
+                      className="h-11"
                     >
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Verify OTP
@@ -826,7 +829,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                       placeholder="ABCDE1234F"
                       {...field}
                       maxLength={10}
-                      className="uppercase"
+                      className="uppercase h-11"
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                     />
                   </FormControl>
@@ -835,6 +838,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                       type="button"
                       onClick={handleVerifyPan}
                       disabled={isLoading || !isPanValid}
+                      className="h-11"
                     >
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Verify PAN
@@ -850,7 +854,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           {!isAutomatedKycEnabled && (
             <Button
               type="button"
-              className="w-full mt-4"
+              className="w-full mt-4 h-11"
               disabled={!isAadharValid || !isPanValid}
               onClick={() => {
                 setVerificationSubStep("verified");
@@ -865,7 +869,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             </Button>
           )}
 
-          <Button variant="outline" onClick={() => setCurrentStep('role')} className="w-full">Back</Button>
+          <Button variant="outline" onClick={() => setCurrentStep('role')} className="w-full h-11">Back</Button>
         </div>
       )
     }
@@ -910,9 +914,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
 
       <div className="flex gap-2">
         {photo ? (
-          <Button variant="outline" onClick={() => { setPhoto(null); startCamera(); }} className="w-full">Retake Photo</Button>
+          <Button variant="outline" onClick={() => { setPhoto(null); startCamera(); }} className="w-full h-11" aria-label="Retake photo">Retake Photo</Button>
         ) : (
-          <Button onClick={handleCapture} disabled={!hasCameraPermission} className="w-full">
+          <Button onClick={handleCapture} disabled={!hasCameraPermission} className="w-full h-11" aria-label="Capture photo">
             <Camera className="mr-2 h-4 w-4" />
             Capture
           </Button>
@@ -920,8 +924,8 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       </div>
 
       <div className="flex gap-2">
-        <Button variant="outline" onClick={() => setCurrentStep(role === 'Job Giver' ? 'role' : 'verification')} className="w-full">Back</Button>
-        <Button onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'details')} className="w-full" disabled={!photo}>Next</Button>
+        <Button variant="outline" onClick={() => setCurrentStep(role === 'Job Giver' ? 'role' : 'verification')} className="w-full h-11">Back</Button>
+        <Button onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'details')} className="w-full h-11" disabled={!photo}>Next</Button>
       </div>
       <canvas ref={canvasRef} className="hidden"></canvas>
     </div>
@@ -978,8 +982,8 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       />
 
       <div className="flex gap-2">
-        <Button variant="outline" onClick={() => setCurrentStep('photo')} className="w-full">Back</Button>
-        <Button onClick={() => setCurrentStep('details')} className="w-full" disabled={(form.watch('skills') || []).length === 0}>Next</Button>
+        <Button variant="outline" onClick={() => setCurrentStep('photo')} className="w-full h-11">Back</Button>
+        <Button onClick={() => setCurrentStep('details')} className="w-full h-11" disabled={(form.watch('skills') || []).length === 0}>Next</Button>
       </div>
     </div>
   );
@@ -1001,7 +1005,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           <FormItem>
             <FormLabel>Full Name</FormLabel>
             <FormControl>
-              <Input placeholder="John Doe" {...field} />
+              <Input placeholder="John Doe" {...field} className="h-11" />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -1015,10 +1019,10 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             <FormLabel>Email</FormLabel>
             <div className="flex gap-2">
               <FormControl>
-                <Input placeholder="name@example.com" {...field} disabled={isEmailVerified} />
+                <Input placeholder="name@example.com" {...field} disabled={isEmailVerified} className="h-11" />
               </FormControl>
               {!isEmailVerified && !showEmailOtpInput && (
-                <Button type="button" onClick={handleSendEmailOtp} disabled={isLoading} variant="secondary">
+                <Button type="button" onClick={handleSendEmailOtp} disabled={isLoading} variant="secondary" className="h-11">
                   Verify
                 </Button>
               )}
@@ -1035,8 +1039,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                   value={emailOtp}
                   onChange={(e) => setEmailOtp(e.target.value)}
                   maxLength={6}
+                  className="h-11"
                 />
-                <Button type="button" onClick={handleVerifyEmailOtp} disabled={isLoading}>
+                <Button type="button" onClick={handleVerifyEmailOtp} disabled={isLoading} className="h-11">
                   Confirm
                 </Button>
               </div>
@@ -1057,10 +1062,11 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                   placeholder="10-digit mobile number"
                   {...field}
                   disabled={isMobileVerified}
+                  className="h-11"
                 />
               </FormControl>
               {!isMobileVerified && !showMobileOtpInput && (
-                <Button type="button" onClick={handleSendMobileOtp} disabled={isLoading} variant="secondary">
+                <Button type="button" onClick={handleSendMobileOtp} disabled={isLoading} variant="secondary" className="h-11">
                   Verify
                 </Button>
               )}
@@ -1077,8 +1083,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                   value={mobileOtp}
                   onChange={(e) => setMobileOtp(e.target.value)}
                   maxLength={6}
+                  className="h-11"
                 />
-                <Button type="button" onClick={handleVerifyMobileOtp} disabled={isLoading}>
+                <Button type="button" onClick={handleVerifyMobileOtp} disabled={isLoading} className="h-11">
                   Confirm
                 </Button>
               </div>
@@ -1095,7 +1102,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           <FormItem>
             <FormLabel>Password</FormLabel>
             <FormControl>
-              <Input type="password" placeholder="••••••••" {...field} />
+              <Input type="password" placeholder="••••••••" {...field} className="h-11" />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -1144,8 +1151,8 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         )}
       />
       <div className="flex gap-2">
-        <Button variant="outline" onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'photo')} className="w-full">Back</Button>
-        <Button type="submit" className="w-full" disabled={isLoading || !isMobileVerified || !isEmailVerified}>
+        <Button variant="outline" onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'photo')} className="w-full h-11">Back</Button>
+        <Button type="submit" className="w-full h-11" disabled={isLoading || !isMobileVerified || !isEmailVerified}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {(!isMobileVerified || !isEmailVerified) ? "Verify Mobile & Email to Continue" : "Create Account"}
         </Button>

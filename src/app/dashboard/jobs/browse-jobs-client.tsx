@@ -48,6 +48,7 @@ import type { DocumentReference } from "firebase/firestore";
 import { MapPin } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
 import { JobCardSkeletonGrid } from "@/components/skeletons/job-card-skeleton";
+import { JobFilters } from "@/components/jobs/job-filters";
 
 // Helper function to extract location parts from a full address string
 const getLocationParts = (
@@ -332,205 +333,230 @@ export default function BrowseJobsClient() {
   }
 
   return (
-    <div className="max-w-full overflow-x-hidden px-4 sm:px-0 grid flex-1 items-start gap-4 md:gap-8">
-      <Tabs value={currentTab} onValueChange={handleTabChange}>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <TabsList className="w-full sm:w-auto h-auto p-1">
-            <TabsTrigger value="nearby" className="flex-1 sm:flex-none gap-2 min-h-[44px]">
-              <MapPin className="h-4 w-4" />
-              Near You
-              {filteredRecommendedJobs.length > 0 && (
-                <Badge variant="secondary" className="ml-1 rounded-full">
-                  {filteredRecommendedJobs.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="all" className="flex-1 sm:flex-none min-h-[44px]">Browse All</TabsTrigger>
-          </TabsList>
-          <div className="ml-auto flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="default" className="h-10 min-h-[44px] gap-2 flex-1 sm:flex-none">
-                  <ListFilter className="h-4 w-4" />
-                  <span className="sm:whitespace-nowrap">
-                    Filter
-                  </span>
-                  {activeFiltersCount > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="rounded-full h-6 w-6 p-0 flex items-center justify-center text-xs"
-                    >
-                      {activeFiltersCount}
+    <div className="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+
+        {/* DESKTOP SIDEBAR */}
+        <aside className="hidden lg:block w-72 flex-shrink-0 sticky top-20">
+          <Card>
+            <CardHeader>
+              <CardTitle>Filters</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <JobFilters
+                budget={budget}
+                setBudget={setBudget}
+                selectedSkills={selectedSkills}
+                onSkillChange={handleSkillChange}
+                onClearFilters={clearFilters}
+                activeFiltersCount={activeFiltersCount}
+              />
+            </CardContent>
+          </Card>
+        </aside>
+
+        {/* MAIN CONTENT AREA */}
+        <div className="flex-1 w-full min-w-0">
+          <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <TabsList className="w-full sm:w-auto h-auto p-1">
+                <TabsTrigger value="nearby" className="flex-1 sm:flex-none gap-2 min-h-[44px]">
+                  <MapPin className="h-4 w-4" />
+                  Near You
+                  {filteredRecommendedJobs.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 rounded-full">
+                      {filteredRecommendedJobs.length}
                     </Badge>
                   )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-80 p-4 space-y-4">
-                <DropdownMenuLabel>Filter by</DropdownMenuLabel>
-                <DropdownMenuSeparator className="-mx-4" />
-
-                <div className="space-y-2">
-                  <Label>Budget Range</Label>
-                  <Slider
-                    min={0}
-                    max={150000}
-                    step={1000}
-                    value={budget}
-                    onValueChange={setBudget}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>₹{budget[0].toLocaleString()}</span>
-                    <span>₹{budget[1].toLocaleString()}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Skills</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start font-normal min-h-[44px]">
-                        {selectedSkills.length > 0
-                          ? `${selectedSkills.length} skill(s) selected`
-                          : "Select skills"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80 p-0" align="start">
-                      <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
-                        {allSkills.map(skill => (
-                          <div key={skill} className="flex items-center space-x-2 min-h-[44px]">
-                            <Checkbox
-                              id={`skill-${skill}`}
-                              checked={selectedSkills.includes(skill)}
-                              onCheckedChange={() => handleSkillChange(skill)}
-                              className="h-5 w-5"
-                            />
-                            <Label
-                              htmlFor={`skill-${skill}`}
-                              className="capitalize font-normal cursor-pointer flex-1 py-2"
-                            >
-                              {skill}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {activeFiltersCount > 0 && (
-              <Button variant="ghost" size="default" onClick={clearFilters} className="min-h-[44px]">
-                <X className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Clear</span>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <TabsContent value="all">
-          <Card className="max-w-full overflow-hidden">
-            <CardHeader className="px-4 sm:px-6">
-              <CardTitle className="overflow-wrap-anywhere">Available Jobs</CardTitle>
-              <CardDescription className="overflow-wrap-anywhere">
-                Find your next project. Browse open jobs and submit your bid.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-4 sm:px-6">
-              {loading ? (
-                <JobCardSkeletonGrid count={6} />
-              ) : (
-                <>
-                  <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredJobs.map(job => (
-                      <JobCard key={job.id} job={job} />
-                    ))}
-                  </div>
-                  {filteredJobs.length === 0 && (
-                    <div className="text-center py-10">
-                      <p className="text-muted-foreground overflow-wrap-anywhere px-4">
-                        No jobs found matching your criteria.
-                      </p>
-                    </div>
+                </TabsTrigger>
+                <TabsTrigger value="saved" className="flex-1 sm:flex-none gap-2 min-h-[44px]">
+                  Saved
+                  {user?.bookmarks && user.bookmarks.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 rounded-full">
+                      {user.bookmarks.filter(id => jobs.find(j => j.id === id)).length}
+                    </Badge>
                   )}
-                </>
-              )}
-            </CardContent>
-            <CardFooter className="px-4 sm:px-6">
-              <div className="text-xs text-muted-foreground overflow-wrap-anywhere">
-                Showing <strong>{filteredJobs.length}</strong> of{" "}
-                <strong>{openForBiddingJobs.length}</strong> open jobs
-              </div>
-            </CardFooter>
-          </Card>
-        </TabsContent>
+                </TabsTrigger>
+                <TabsTrigger value="all" className="flex-1 sm:flex-none min-h-[44px]">Browse All</TabsTrigger>
+              </TabsList>
 
-        <TabsContent value="nearby">
-          <Card className="max-w-full overflow-hidden">
-            <CardHeader className="px-4 sm:px-6">
-              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="overflow-wrap-anywhere flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-primary" />
-                    Near You
-                  </CardTitle>
-                  <CardDescription className="overflow-wrap-anywhere">
-                    Jobs in your pincodes plus <Badge variant="outline" className="mx-1 text-xs">Unbid</Badge> opportunities in your city
-                  </CardDescription>
-                </div>
-                {user && user.pincodes?.office && (
-                  <Select
-                    value={recommendedPincodeFilter}
-                    onValueChange={setRecommendedPincodeFilter}
-                  >
-                    <SelectTrigger className="w-full sm:w-[240px] min-h-[44px]">
-                      <SelectValue placeholder="Filter by pincode..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all" className="min-h-[44px]">All My Pincodes</SelectItem>
-                      <SelectItem value="residential" className="min-h-[44px]">
-                        Residential: {user.pincodes?.residential || 'N/A'}
-                      </SelectItem>
-                      <SelectItem value="office" className="min-h-[44px]">
-                        Office: {user.pincodes?.office || 'N/A'}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="ml-auto flex items-center gap-2 lg:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="default" className="h-10 min-h-[44px] gap-2 flex-1 sm:flex-none">
+                      <ListFilter className="h-4 w-4" />
+                      <span className="sm:whitespace-nowrap">
+                        Filter
+                      </span>
+                      {activeFiltersCount > 0 && (
+                        <Badge
+                          variant="secondary"
+                          className="rounded-full h-6 w-6 p-0 flex items-center justify-center text-xs"
+                        >
+                          {activeFiltersCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-80 p-4">
+                    <DropdownMenuLabel>Filter by</DropdownMenuLabel>
+                    <DropdownMenuSeparator className="-mx-4 mb-4" />
+                    <JobFilters
+                      budget={budget}
+                      setBudget={setBudget}
+                      selectedSkills={selectedSkills}
+                      onSkillChange={handleSkillChange}
+                      onClearFilters={clearFilters}
+                      activeFiltersCount={activeFiltersCount}
+                    />
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {activeFiltersCount > 0 && (
+                  <Button variant="ghost" size="default" onClick={clearFilters} className="min-h-[44px]">
+                    <X className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">Clear</span>
+                  </Button>
                 )}
               </div>
-            </CardHeader>
-            <CardContent className="px-4 sm:px-6">
-              {loading ? (
-                <JobCardSkeletonGrid count={6} />
-              ) : (
-                <>
-                  <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredRecommendedJobs.map(job => (
-                      <JobCard key={job.id} job={job} />
-                    ))}
-                  </div>
-                  {filteredRecommendedJobs.length === 0 && (
-                    <div className="text-center py-10">
-                      <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-lg font-semibold mb-2">No nearby jobs right now</p>
-                      <p className="text-muted-foreground overflow-wrap-anywhere px-4 mb-4">
-                        Check back soon, or browse all jobs to find opportunities in other areas.
-                      </p>
-                      <Button onClick={() => handleTabChange('all')} variant="outline">
-                        Browse All Jobs
-                      </Button>
-                    </div>
+            </div>
+
+            <TabsContent value="all" className="m-0">
+              <Card className="max-w-full overflow-hidden border-none shadow-none sm:border sm:shadow-sm bg-transparent sm:bg-card">
+                <CardHeader className="px-0 sm:px-6">
+                  <CardTitle className="overflow-wrap-anywhere">Available Jobs</CardTitle>
+                  <CardDescription className="overflow-wrap-anywhere">
+                    Find your next project. Browse open jobs and submit your bid.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-0 sm:px-6">
+                  {loading ? (
+                    <JobCardSkeletonGrid count={6} />
+                  ) : (
+                    <>
+                      <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                        {filteredJobs.map(job => (
+                          <JobCard key={job.id} job={job} />
+                        ))}
+                      </div>
+                      {filteredJobs.length === 0 && (
+                        <div className="text-center py-10">
+                          <p className="text-muted-foreground overflow-wrap-anywhere px-4">
+                            No jobs found matching your criteria.
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            </CardContent>
-            <CardFooter className="px-4 sm:px-6">
-              <div className="text-xs text-muted-foreground overflow-wrap-anywhere">
-                Showing <strong>{filteredRecommendedJobs.length}</strong> nearby jobs
-              </div>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                </CardContent>
+                <CardFooter className="px-0 sm:px-6">
+                  <div className="text-xs text-muted-foreground overflow-wrap-anywhere">
+                    Showing <strong>{filteredJobs.length}</strong> of{" "}
+                    <strong>{openForBiddingJobs.length}</strong> open jobs
+                  </div>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="nearby" className="m-0">
+              <Card className="max-w-full overflow-hidden border-none shadow-none sm:border sm:shadow-sm bg-transparent sm:bg-card">
+                <CardHeader className="px-0 sm:px-6">
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="overflow-wrap-anywhere flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-primary" />
+                        Near You
+                      </CardTitle>
+                      <CardDescription className="overflow-wrap-anywhere">
+                        Jobs in your pincodes plus <Badge variant="outline" className="mx-1 text-xs">Unbid</Badge> opportunities in your city
+                      </CardDescription>
+                    </div>
+                    {user && user.pincodes?.office && (
+                      <Select
+                        value={recommendedPincodeFilter}
+                        onValueChange={setRecommendedPincodeFilter}
+                      >
+                        <SelectTrigger className="w-full sm:w-[240px] min-h-[44px]">
+                          <SelectValue placeholder="Filter by pincode..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all" className="min-h-[44px]">All My Pincodes</SelectItem>
+                          <SelectItem value="residential" className="min-h-[44px]">
+                            Residential: {user?.pincodes?.residential || 'N/A'}
+                          </SelectItem>
+                          <SelectItem value="office" className="min-h-[44px]">
+                            Office: {user?.pincodes?.office || 'N/A'}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="px-0 sm:px-6">
+                  {loading ? (
+                    <JobCardSkeletonGrid count={6} />
+                  ) : (
+                    <>
+                      <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                        {filteredRecommendedJobs.map(job => (
+                          <JobCard key={job.id} job={job} />
+                        ))}
+                      </div>
+                      {filteredRecommendedJobs.length === 0 && (
+                        <div className="text-center py-10">
+                          <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                          <p className="text-lg font-semibold mb-2">No nearby jobs right now</p>
+                          <p className="text-muted-foreground overflow-wrap-anywhere px-4 mb-4">
+                            Check back soon, or browse all jobs to find opportunities in other areas.
+                          </p>
+                          <Button onClick={() => handleTabChange('all')} variant="outline">
+                            Browse All Jobs
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+                <CardFooter className="px-0 sm:px-6">
+                  <div className="text-xs text-muted-foreground overflow-wrap-anywhere">
+                    Showing <strong>{filteredRecommendedJobs.length}</strong> nearby jobs
+                  </div>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="saved" className="m-0">
+              <Card className="max-w-full overflow-hidden border-none shadow-none sm:border sm:shadow-sm bg-transparent sm:bg-card">
+                <CardHeader className="px-0 sm:px-6">
+                  <CardTitle className="overflow-wrap-anywhere">Saved Jobs</CardTitle>
+                  <CardDescription className="overflow-wrap-anywhere">
+                    Jobs you have bookmarked for later.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-0 sm:px-6">
+                  {loading ? (
+                    <JobCardSkeletonGrid count={6} />
+                  ) : (
+                    <>
+                      <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                        {jobs.filter(job => user?.bookmarks?.includes(job.id)).map(job => (
+                          <JobCard key={job.id} job={job} />
+                        ))}
+                      </div>
+                      {jobs.filter(job => user?.bookmarks?.includes(job.id)).length === 0 && (
+                        <div className="text-center py-10">
+                          <p className="text-muted-foreground overflow-wrap-anywhere px-4">
+                            You haven't saved any jobs yet.
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div >
   );
 }
