@@ -1,9 +1,7 @@
-
+"use strict";
 // ZERO COST MIGRATION: These functions are DISABLED in favor of Client-Side Vercel Proxy.
 // See src/app/api/notifications/send/route.ts and src/lib/notifications.ts
-
 // THIS FILE IS BROKEN AND UNUSED. COMMENTING OUT TO PASS BUILD.
-
 /*
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
@@ -52,3 +50,4 @@ export const emailOnJobUpdated = functions.firestore
         // ... implementation ...
     });
 */
+//# sourceMappingURL=notifications.js.map
