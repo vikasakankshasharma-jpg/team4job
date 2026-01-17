@@ -45,10 +45,11 @@ import type { Job, User } from "@/lib/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import type { DocumentReference } from "firebase/firestore";
-import { MapPin } from "lucide-react";
+import { MapPin, Bell } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
 import { JobCardSkeletonGrid } from "@/components/skeletons/job-card-skeleton";
 import { JobFilters } from "@/components/jobs/job-filters";
+import { SaveSearchDialog } from "@/components/jobs/save-search-dialog";
 
 // Helper function to extract location parts from a full address string
 const getLocationParts = (
@@ -414,8 +415,16 @@ export default function BrowseJobsClient() {
         {/* DESKTOP SIDEBAR */}
         <aside className="hidden lg:block w-72 flex-shrink-0 sticky top-20">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
               <CardTitle>Filters</CardTitle>
+              <SaveSearchDialog
+                currentFilters={{
+                  query: searchQuery,
+                  minPrice: budget[0],
+                  maxPrice: budget[1],
+                  skills: selectedSkills
+                }}
+              />
             </CardHeader>
             <CardContent>
               <JobFilters
@@ -456,6 +465,19 @@ export default function BrowseJobsClient() {
               </TabsList>
 
               <div className="ml-auto flex items-center gap-2 lg:hidden">
+                <SaveSearchDialog
+                  currentFilters={{
+                    query: searchQuery,
+                    minPrice: budget[0],
+                    maxPrice: budget[1],
+                    skills: selectedSkills
+                  }}
+                  trigger={
+                    <Button variant="outline" size="default" className="h-10 min-h-[44px] w-10 p-0 flex-shrink-0">
+                      <Bell className="h-4 w-4" />
+                    </Button>
+                  }
+                />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="default" className="h-10 min-h-[44px] gap-2 flex-1 sm:flex-none">

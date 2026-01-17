@@ -95,6 +95,22 @@ export type User = {
   bookmarks?: string[]; // IDs of saved jobs
 };
 
+export type SavedSearch = {
+  id: string;
+  userId: string;
+  name: string;
+  criteria: {
+    query?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    skills?: string[];
+    location?: string;
+  };
+  alertFrequency: 'instant' | 'daily' | 'never';
+  active: boolean;
+  createdAt: any; // Using any to avoid Timestamp import issues in shared types, or use generic
+};
+
 export type Comment = {
   id?: string;
   author: User | DocumentReference;
