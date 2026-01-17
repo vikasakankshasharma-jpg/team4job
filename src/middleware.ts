@@ -7,6 +7,7 @@ import { rateLimit } from '@/lib/rate-limit';
 const PUBLIC_PATHS = [
     '/api/auth/session',
     '/api/cashfree/webhook',
+    '/api/test-email', // Email testing endpoint
 ];
 
 // Initialize rate limiter: 20 requests per minute per IP
