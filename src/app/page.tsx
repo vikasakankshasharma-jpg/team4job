@@ -1,12 +1,8 @@
 
-"use client";
-
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, CheckCircle, PanelLeft, ShieldCheck, Zap, Bot, Search, CreditCard, Award } from "lucide-react";
 import { Logo } from "@/components/icons";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import HowItWorksCarousel from "@/components/landing/how-it-works-carousel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,38 +35,18 @@ export default function Home() {
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2">
             <Logo className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">CCTV Job Connect</span>
+            <span className="text-xl font-bold">Team4Job</span>
           </Link>
         </div>
 
-        <nav className="hidden md:flex items-center gap-4">
-          <ThemeToggle />
-          <Button variant="secondary" asChild>
+        <nav className="flex items-center gap-4">
+          <Button variant="secondary" asChild className="hidden sm:inline-flex">
             <Link href="/login?tab=login">Log In</Link>
           </Button>
           <Button asChild>
             <Link href="/login?tab=signup">Get Started</Link>
           </Button>
         </nav>
-        <div className="md:hidden">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button size="icon" variant="outline">
-                <PanelLeft className="h-5 w-5" />
-                <span className="sr-only">Toggle Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <nav className="grid gap-6 text-lg font-medium mt-8">
-                <Link href="/login?tab=login" className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground">Log In</Link>
-                <Link href="/login?tab=signup" className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground">Sign Up</Link>
-                <div className="absolute bottom-4 left-4">
-                  <ThemeToggle />
-                </div>
-              </nav>
-            </SheetContent>
-          </Sheet>
-        </div>
       </header>
 
       <main className="flex-grow">
@@ -164,7 +140,7 @@ export default function Home() {
 
       <footer className="py-8 border-t">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-muted-foreground gap-4">
-          <p>&copy; {new Date().getFullYear()} CCTV Job Connect. All Rights Reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Team4Job. All Rights Reserved.</p>
           <div className="flex gap-6 text-sm">
             <Link href="/terms" className="hover:underline hover:text-foreground">Terms of Service</Link>
             <Link href="/privacy" className="hover:underline hover:text-foreground">Privacy Policy</Link>
