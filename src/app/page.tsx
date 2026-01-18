@@ -1,11 +1,23 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ArrowRight, CheckCircle, PanelLeft, ShieldCheck, Zap, Bot, Search, CreditCard, Award } from "lucide-react";
 import { Logo } from "@/components/icons";
-import HowItWorksCarousel from "@/components/landing/how-it-works-carousel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+// Lazy load carousel - not needed for initial paint
+const HowItWorksCarousel = dynamic(
+  () => import("@/components/landing/how-it-works-carousel"),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    ),
+  }
+);
 
 export default function Home() {
   const features = [
