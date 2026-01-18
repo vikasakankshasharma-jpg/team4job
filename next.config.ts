@@ -147,7 +147,8 @@ export default withSentryConfig(bundleAnalyzer(nextConfig), {
   // This can increase your server load as well as your hosting bill.
   // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
   // side errors will fail.
-  tunnelRoute: "/monitoring",
+  // Disabled in Firebase environment as it causes 502 errors and isn't needed (no ad-blockers)
+  tunnelRoute: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? undefined : "/monitoring",
 
   webpack: {
     // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)

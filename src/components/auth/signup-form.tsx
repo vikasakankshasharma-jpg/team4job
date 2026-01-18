@@ -1005,7 +1005,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           <FormItem>
             <FormLabel>Full Name</FormLabel>
             <FormControl>
-              <Input placeholder="John Doe" {...field} className="h-11" />
+              <Input placeholder="John Doe" {...field} className="h-11" autoComplete="name" />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -1019,7 +1019,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             <FormLabel>Email</FormLabel>
             <div className="flex gap-2">
               <FormControl>
-                <Input placeholder="name@example.com" {...field} disabled={isEmailVerified} className="h-11" />
+                <Input placeholder="name@example.com" {...field} disabled={isEmailVerified} className="h-11" autoComplete="email" />
               </FormControl>
               {!isEmailVerified && !showEmailOtpInput && (
                 <Button type="button" onClick={handleSendEmailOtp} disabled={isLoading} variant="secondary" className="h-11">
@@ -1063,6 +1063,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                   {...field}
                   disabled={isMobileVerified}
                   className="h-11"
+                  autoComplete="tel"
                 />
               </FormControl>
               {!isMobileVerified && !showMobileOtpInput && (
@@ -1102,7 +1103,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           <FormItem>
             <FormLabel>Password</FormLabel>
             <FormControl>
-              <Input type="password" placeholder="••••••••" {...field} className="h-11" />
+              <Input type="password" placeholder="••••••••" {...field} className="h-11" autoComplete="new-password" />
             </FormControl>
             <FormMessage />
           </FormItem>

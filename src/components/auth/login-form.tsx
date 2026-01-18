@@ -129,7 +129,7 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Email Address</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="name@example.com" {...field} disabled={!!lockoutUntil} className="h-11" />
+                <Input type="email" placeholder="name@example.com" {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="email" />
               </FormControl>
               <FormMessage data-testid="email-error" />
             </FormItem>
@@ -142,7 +142,7 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} disabled={!!lockoutUntil} className="h-11" />
+                <Input type="password" placeholder="••••••••" {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="current-password" />
               </FormControl>
               <FormMessage data-testid="password-error" />
             </FormItem>
