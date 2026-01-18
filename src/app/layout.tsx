@@ -99,14 +99,14 @@ export default function RootLayout({
           </FirebaseClientProvider>
           <Toaster />
         </ThemeProvider>
-        {/* Google Analytics */}
+        {/* Google Analytics - deferred for better performance */}
         {GA_TRACKING_ID && (
           <>
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`}
-              strategy="afterInteractive"
+              strategy="lazyOnload"
             />
-            <Script id="google-analytics" strategy="afterInteractive">
+            <Script id="google-analytics" strategy="lazyOnload">
               {`
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
@@ -144,10 +144,10 @@ export default function RootLayout({
           `}
         </Script>
 
-        {/* Cashfree Payment SDK */}
+        {/* Cashfree Payment SDK - deferred */}
         <Script
           src="https://sdk.cashfree.com/js/v3/cashfree.js"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
         <CookieBanner />
       </body>
