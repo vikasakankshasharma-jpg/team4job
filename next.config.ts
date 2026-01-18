@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   compress: true, // Enable Gzip/Brotli compression for smaller payloads
+  experimental: {
+    // Optimize package imports for smaller bundles
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      'recharts',
+      'date-fns',
+    ],
+  },
   images: {
     remotePatterns: [
       {

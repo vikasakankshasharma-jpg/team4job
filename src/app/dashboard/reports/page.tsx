@@ -1,7 +1,15 @@
 
 import React, { Suspense } from 'react';
+import dynamicImport from 'next/dynamic';
 import { Loader2 } from "lucide-react";
-import ReportsClient from './reports-client';
+
+const ReportsClient = dynamicImport(() => import('./reports-client'), {
+    loading: () => (
+        <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    ),
+});
 
 export const dynamic = 'force-dynamic';
 
