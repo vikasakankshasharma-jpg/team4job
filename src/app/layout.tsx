@@ -149,6 +149,23 @@ export default function RootLayout({
           src="https://sdk.cashfree.com/js/v3/cashfree.js"
           strategy="afterInteractive"
         />
+        {/* Service Worker Registration */}
+        <Script id="register-sw" strategy="afterInteractive">
+          {`
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(
+                  function(registration) {
+                    console.log('Service Worker registration successful with scope: ', registration.scope);
+                  },
+                  function(err) {
+                    console.log('Service Worker registration failed: ', err);
+                  }
+                );
+              });
+            }
+          `}
+        </Script>
         <CookieBanner />
       </body>
     </html>
