@@ -268,6 +268,17 @@ test.describe('Complete Transaction Cycle E2E', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         const approveBtn = page.getByTestId('approve-release-button');
+
+        // CI STABILIZATION: Wait for status to reflect 'Pending Confirmation'
+        // If it doesn't appear quickly (10s), reload to force fresh data
+        try {
+            await expect(page.getByTestId('job-status-badge')).toContainText('Pending Confirmation', { timeout: 10000 });
+        } catch (e) {
+            console.log('[INFO] Phase 8: Status not updated to Pending Confirmation yet. Reloading page...');
+            await page.reload();
+            await expect(page.getByTestId('job-status-badge')).toContainText('Pending Confirmation', { timeout: TIMEOUTS.long });
+        }
+
         await expect(approveBtn).toBeVisible({ timeout: TIMEOUTS.long });
         await approveBtn.click();
         await helper.form.waitForToast('Job Approved & Payment Released!');
