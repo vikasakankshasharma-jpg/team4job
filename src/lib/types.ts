@@ -260,6 +260,7 @@ export type Job = {
     changedBy: string;  // User ID
     reason?: string;
   }[];
+  isDummyData?: boolean;
 };
 
 export type DisputeAttachment = {

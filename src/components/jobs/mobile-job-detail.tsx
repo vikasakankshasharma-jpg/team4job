@@ -8,6 +8,7 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { DummyDataBadge } from "./dummy-data-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/job-giver/status-badge";
@@ -57,6 +58,7 @@ export function MobileJobDetail({
                     <h1 className="text-xl font-bold leading-tight line-clamp-2">
                         {job.title}
                     </h1>
+                    <DummyDataBadge isDummyData={job.isDummyData} />
                     <div className="flex-shrink-0">
                         <StatusBadge status={job.status} size="sm" showTooltip={false} />
                     </div>
