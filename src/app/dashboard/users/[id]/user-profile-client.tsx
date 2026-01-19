@@ -233,7 +233,7 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between rounded-lg border p-4 bg-indigo-50/50 border-indigo-100">
           <div>
-            <h3 className="font-semibold text-indigo-900">Login as User ("God Mode")</h3>
+            <h3 className="font-semibold text-indigo-900">Login as User (&quot;God Mode&quot;)</h3>
             <p className="text-sm text-indigo-700/80">Access the platform exactly as {user.name} sees it. Useful for debugging.</p>
           </div>
           <Button variant="outline" className="border-indigo-200 text-indigo-700 hover:bg-indigo-100" onClick={handleImpersonate} disabled={isLoading}>

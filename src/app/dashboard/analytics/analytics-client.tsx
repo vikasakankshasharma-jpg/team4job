@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useUser } from "@/hooks/use-user";
 import {
     AnalyticsService,
@@ -30,7 +30,7 @@ export default function AnalyticsClient() {
     const [spendingTrends, setSpendingTrends] = useState<SpendingTrendData[]>([]);
     const [topInstallers, setTopInstallers] = useState<InstallerPerformance[]>([]);
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         if (!user?.id) return;
 
         try {
@@ -54,12 +54,12 @@ export default function AnalyticsClient() {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, [user?.id, toast]);
 
     useEffect(() => {
         setLoading(true);
         loadData();
-    }, [user?.id]);
+    }, [loadData]);
 
     // Generate AI insights from data
     const insights = useMemo(() => {

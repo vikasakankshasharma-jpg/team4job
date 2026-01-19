@@ -8,3 +8,5 @@ Phase 6: JobID=JOB-20260117-B03Z, TargetURL=/dashboard/jobs/JOB-20260117-B03Z
 Phase 6: JobID=JOB-20260117-ROM2, TargetURL=/dashboard/jobs/JOB-20260117-ROM2
 Phase 6: JobID=JOB-20260117-3VSA, TargetURL=/dashboard/jobs/JOB-20260117-3VSA
 Phase 6: JobID=JOB-20260117-HSZX, TargetURL=/dashboard/jobs/JOB-20260117-HSZX
+Phase 6: JobID=JOB-20260119-SULI, TargetURL=/dashboard/jobs/JOB-20260119-SULI
+Phase 6: JobID=JOB-20260119-XPV0, TargetURL=/dashboard/jobs/JOB-20260119-XPV0

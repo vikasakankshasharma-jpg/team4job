@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     Select,
     SelectContent,
@@ -52,13 +52,7 @@ export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTempla
     // Manage Dialog State
     const [isManageOpen, setIsManageOpen] = useState(false);
 
-    // Load templates
-    useEffect(() => {
-        if (!user) return;
-        loadTemplates();
-    }, [user]);
-
-    const loadTemplates = async () => {
+    const loadTemplates = useCallback(async () => {
         if (!user) return;
         setLoading(true);
         try {
@@ -69,7 +63,12 @@ export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTempla
         } finally {
             setLoading(false);
         }
-    };
+    }, [user, db]);
+
+    // Load templates
+    useEffect(() => {
+        loadTemplates();
+    }, [loadTemplates]);
 
     const handleSaveTemplate = async () => {
         if (!user || !newTemplateName || !currentValues) return;

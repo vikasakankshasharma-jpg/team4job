@@ -144,8 +144,8 @@ export function InviteToJobDialog({
                                     <div
                                         key={job.id}
                                         className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedJob?.id === job.id
-                                                ? "border-primary bg-primary/5"
-                                                : "hover:bg-accent"
+                                            ? "border-primary bg-primary/5"
+                                            : "hover:bg-accent"
                                             }`}
                                         onClick={() => setSelectedJob(job)}
                                     >
@@ -199,7 +199,7 @@ export function InviteToJobDialog({
                         <Send className="h-12 w-12 mx-auto mb-2 opacity-20" />
                         <p className="text-sm font-medium">No Open Jobs</p>
                         <p className="text-xs mt-1">
-                            You don't have any jobs open for bidding right now.
+                            You don&apos;t have any jobs open for bidding right now.
                         </p>
                         <Button
                             variant="outline"
