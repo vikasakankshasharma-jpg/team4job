@@ -34,7 +34,7 @@ export default function CookieBanner() {
             }}
             declineButtonStyle={{
                 background: "transparent",
-                color: isDark ? "#94a3b8" : "#64748b",
+                color: isDark ? "#94a3b8" : "#334155",
                 fontSize: "13px",
                 padding: "8px 16px",
                 border: `1px solid ${isDark ? "#475569" : "#cbd5e1"}`,
