@@ -229,11 +229,7 @@ test.describe('Complete Transaction Cycle E2E', () => {
         console.log(`[DEBUG] Phase 6: Navigating to job detail. JobID: ${jobId}`);
         const targetUrl = `/dashboard/jobs/${jobId}`;
         console.log(`[DEBUG] Target URL: ${targetUrl}`);
-        try {
-            fs.appendFileSync('debug_phase6.txt', `Phase 6: JobID=${jobId}, TargetURL=${targetUrl}\n`);
-        } catch (e) {
-            console.error('Failed to write debug log', e);
-        }
+
         await page.goto(targetUrl);
 
         await page.locator('input[placeholder="Enter Code"]').fill(startOtp);
@@ -258,7 +254,13 @@ test.describe('Complete Transaction Cycle E2E', () => {
         await submitBtn.click();
         await helper.form.waitForToast('Submitted for Confirmation');
         await helper.job.waitForJobStatus('Pending Confirmation');
-        console.log('[PASS] Phase 7 Complete: Work submitted');
+
+        // CI STABILIZATION: Verify persistence of status change
+        console.log('[INFO] Phase 7: Validating persistence of Pending Confirmation status...');
+        await page.reload();
+        await helper.job.waitForJobStatus('Pending Confirmation');
+
+        console.log('[PASS] Phase 7 Complete: Work submitted and status persisted');
 
         // --- PHASE 8: JOB GIVER APPROVES & PAYS ---
         console.log('--- START: Phase 8 - Job Giver approves work ---');
