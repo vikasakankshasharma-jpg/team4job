@@ -122,6 +122,12 @@ async function reseedPlatform() {
                     verified: true,
                     skills: ['CCTV', 'Biometric', 'Networking', 'Smart Home'],
                     bio: "Expert installer with 10 years of experience. Platinum tier verified professional."
+                },
+                payouts: {
+                    beneficiaryId: 'TEST_BENE_INIT',
+                    accountHolderName: 'Rajesh Pro',
+                    accountNumberMasked: '**** 1234',
+                    ifsc: 'TEST0001234'
                 }
             },
             {
@@ -195,6 +201,10 @@ async function reseedPlatform() {
                     fullAddress: "Demo Address, Bangalore"
                 }
             };
+
+            if ((p as any).payouts) {
+                userData.payouts = (p as any).payouts;
+            }
 
             if (p.roles.includes('Installer')) {
                 userData.installerProfile = {
