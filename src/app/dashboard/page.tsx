@@ -2,8 +2,14 @@
 import React, { Suspense } from 'react';
 import { Loader2 } from "lucide-react";
 import DashboardClient from './dashboard-client';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+    title: 'Dashboard | Team4Job',
+    description: 'Manage your jobs, bids, and transactions',
+};
 
 export default function DashboardPage() {
     return (

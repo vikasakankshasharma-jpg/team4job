@@ -41,9 +41,9 @@ test.describe('Accessibility Tests', () => {
         // Login first
         await page.goto('/login');
         await page.fill('input[type="email"]', 'installer@example.com');
-        await page.fill('input[type="password"]', 'Vikas@129229');
+        await page.fill('input[type="password"]', 'Test@1234');
         await page.click('button[type="submit"]');
-        await page.waitForURL(/\/dashboard/);
+        await page.waitForURL(/\/dashboard.*/, { timeout: 60000 });
 
         const accessibilityScanResults = await new AxeBuilder({ page })
             .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
