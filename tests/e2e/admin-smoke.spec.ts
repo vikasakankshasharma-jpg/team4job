@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 /**
  * Admin System Smoke Tests
@@ -7,9 +7,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Admin System Smoke Tests', () => {
 
-    const loginAsAdmin = async (page) => {
-        const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@team4job.com';
-        const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Test@1234';
+    const loginAsAdmin = async (page: Page) => {
+        const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'vikasakankshasharma@gmail.com';
+        const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Vks2bhdj@9229';
 
         await page.goto('http://localhost:3006/login');
         await page.fill('input[type="email"]', ADMIN_EMAIL);
@@ -31,8 +31,8 @@ test.describe('Admin System Smoke Tests', () => {
         await loginAsAdmin(page);
         await page.goto('http://localhost:3006/dashboard/audit-logs');
 
-        // Wait a moment for page to load
-        await page.waitForTimeout(2000);
+        // Wait for page to load (spinner to disappear)
+        await page.locator('.animate-spin').waitFor({ state: 'hidden', timeout: 10000 }).catch(() => { });
 
         // Check if user has admin role by looking for either h1 or loading spinner
         const hasH1 = await page.locator('h1').count() > 0;
