@@ -84,9 +84,7 @@ export const JOB_STATUSES = {
  */
 export function getDateString(daysFromNow: number): string {
     const date = new Date();
-    // Use a random offset (1-30 days) to avoid conflicts with previous test runs
-    const randomOffset = Math.floor(Math.random() * 29) + 1;
-    date.setDate(date.getDate() + daysFromNow + randomOffset);
+    date.setDate(date.getDate() + daysFromNow);
     return date.toISOString().split('T')[0];
 }
 

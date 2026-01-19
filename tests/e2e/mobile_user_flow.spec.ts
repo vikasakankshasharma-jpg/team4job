@@ -1,7 +1,7 @@
 // tests/e2e/mobile_user_flow.spec.ts
 import { test, expect } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
-import { TEST_JOB_DATA, generateUniqueJobTitle, getDateString, getDateTimeString } from '../fixtures/test-data';
+import { TEST_JOB_DATA, generateUniqueJobTitle, getDateString, getDateTimeString, TEST_ACCOUNTS } from '../fixtures/test-data';
 
 // Emulate iPhone 13
 const device = { name: 'iPhone 13', viewport: { width: 390, height: 844 }, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1' };
@@ -81,6 +81,12 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff)', () => 
     await helper.form.waitForToast('Offer Sent');
 
     // ---------- Installer Accepts ----------
+    // Ensure Installer has Payouts Setup
+    await page.request.post('/api/e2e/setup-installer', {
+      data: { email: TEST_ACCOUNTS.installer.email }
+    });
+    console.log('[INFO] Seeded installer payouts via API');
+
     await helper.auth.logout();
     await helper.auth.loginAsInstaller();
     await page.goto(`/dashboard/jobs/${jobId}`);

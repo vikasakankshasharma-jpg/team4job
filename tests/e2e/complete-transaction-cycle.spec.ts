@@ -2,7 +2,7 @@
 import * as fs from 'fs';
 import { test, expect } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
-import { TEST_JOB_DATA, TEST_CREDENTIALS, getDateString, getDateTimeString, generateUniqueJobTitle, JOB_STATUSES, TIMEOUTS } from '../fixtures/test-data';
+import { TEST_JOB_DATA, TEST_CREDENTIALS, TEST_ACCOUNTS, getDateString, getDateTimeString, generateUniqueJobTitle, JOB_STATUSES, TIMEOUTS } from '../fixtures/test-data';
 
 /**
  * E2E Test: Complete Transaction Cycle
@@ -151,7 +151,7 @@ test.describe('Complete Transaction Cycle E2E', () => {
 
         // Ensure Installer has Payouts Setup (via Test API)
         await page.request.post('/api/e2e/setup-installer', {
-            data: { email: 'installer@example.com' }
+            data: { email: TEST_ACCOUNTS.installer.email }
         });
         console.log('[INFO] Seeded installer payouts via API');
 

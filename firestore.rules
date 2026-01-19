@@ -80,6 +80,7 @@ service cloud.firestore {
         (resource.data.jobGiverId == request.auth.uid || 
          resource.data.installerId == request.auth.uid ||
          (resource.data.awardedInstaller != null && resource.data.awardedInstaller == /databases/$(database)/documents/users/$(request.auth.uid)) ||
+         (resource.data.awardedInstallerId != null && resource.data.awardedInstallerId == request.auth.uid) ||
          isAdmin() || 
          isSupport());
       
