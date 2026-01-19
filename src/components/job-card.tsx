@@ -21,6 +21,7 @@ import { AnimatedAvatar } from "./ui/animated-avatar";
 import { CardDescription } from "./ui/card";
 import { useUser } from "@/hooks/use-user";
 import { BookmarkButton } from "@/components/jobs/bookmark-button";
+import { DummyDataBadge } from "@/components/jobs/dummy-data-badge";
 
 type JobCardProps = {
   job: Job;
@@ -93,6 +94,7 @@ export function JobCard({ job }: JobCardProps) {
               <Badge variant={statusVariant} className="capitalize">
                 {displayStatus}
               </Badge>
+              <DummyDataBadge isDummyData={job.isDummyData} />
               {job.travelTip && job.travelTip > 0 && (
                 <Badge variant="warning" className="gap-1"><Gift className="h-3 w-3" /> Tip Included</Badge>
               )}
