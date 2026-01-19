@@ -112,7 +112,7 @@ export default function BrowseJobsClient() {
     if (q) {
       setGlobalSearch(q);
     }
-  }, [setGlobalSearch]); // Intentionally omitting searchParams to only run on mount/deps? No, searchParams is stableish.
+  }, [setGlobalSearch, searchParams]);
   // Actually, separate effect for hydration is safer.
 
   // Debounced URL updates
@@ -647,7 +647,7 @@ export default function BrowseJobsClient() {
                       {jobs.filter(job => user?.bookmarks?.includes(job.id)).length === 0 && (
                         <div className="text-center py-10">
                           <p className="text-muted-foreground overflow-wrap-anywhere px-4">
-                            You haven't saved any jobs yet.
+                            You haven&apos;t saved any jobs yet.
                           </p>
                         </div>
                       )}

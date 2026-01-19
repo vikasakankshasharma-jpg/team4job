@@ -145,7 +145,7 @@ export function SaveSearchDialog({ currentFilters, trigger }: SaveSearchDialogPr
                     <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
                         <strong>Saving Filters:</strong>
                         <ul className="list-disc pl-4 mt-1 space-y-1">
-                            {currentFilters.query && <li>Query: "{currentFilters.query}"</li>}
+                            {currentFilters.query && <li>Query: &quot;{currentFilters.query}&quot;</li>}
                             {currentFilters.skills.length > 0 && <li>Skills: {currentFilters.skills.join(", ")}</li>}
                             {(currentFilters.minPrice > 0 || currentFilters.maxPrice < 150000) && (
                                 <li>Budget: ₹{currentFilters.minPrice.toLocaleString()} - ₹{currentFilters.maxPrice.toLocaleString()}</li>

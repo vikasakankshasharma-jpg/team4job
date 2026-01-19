@@ -694,7 +694,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             <FormLabel>I want to...</FormLabel>
             <Select onValueChange={(value) => field.onChange(value)} defaultValue={field.value}>
               <FormControl>
-                <SelectTrigger className="h-11"><SelectValue placeholder="Select your primary role" /></SelectTrigger>
+                <SelectTrigger className="h-11" aria-label="Select your role"><SelectValue placeholder="Select your primary role" /></SelectTrigger>
               </FormControl>
               <SelectContent>
                 <SelectItem value="Job Giver">Hire an Installer</SelectItem>
@@ -764,6 +764,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                       maxLength={12}
                       disabled={isAutomatedKycEnabled && verificationSubStep !== 'enterAadhar'}
                       className="h-11"
+                      aria-label="Aadhar Number"
                     />
                   </FormControl>
                   {isAutomatedKycEnabled && verificationSubStep === 'enterAadhar' && (
@@ -798,6 +799,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                         {...field}
                         maxLength={6}
                         className="h-11"
+                        aria-label="OTP"
                       />
                     </FormControl>
                     <Button
@@ -830,6 +832,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                       {...field}
                       maxLength={10}
                       className="uppercase h-11"
+                      aria-label="PAN Number"
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                     />
                   </FormControl>
@@ -1005,7 +1008,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           <FormItem>
             <FormLabel>Full Name</FormLabel>
             <FormControl>
-              <Input placeholder="John Doe" {...field} className="h-11" autoComplete="name" />
+              <Input placeholder="John Doe" {...field} className="h-11" autoComplete="name" aria-label="Full Name" />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -1019,7 +1022,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             <FormLabel>Email</FormLabel>
             <div className="flex gap-2">
               <FormControl>
-                <Input placeholder="name@example.com" {...field} disabled={isEmailVerified} className="h-11" autoComplete="email" />
+                <Input placeholder="name@example.com" {...field} disabled={isEmailVerified} className="h-11" autoComplete="email" aria-label="Email Address" />
               </FormControl>
               {!isEmailVerified && !showEmailOtpInput && (
                 <Button type="button" onClick={handleSendEmailOtp} disabled={isLoading} variant="secondary" className="h-11">
@@ -1040,6 +1043,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                   onChange={(e) => setEmailOtp(e.target.value)}
                   maxLength={6}
                   className="h-11"
+                  aria-label="Email OTP"
                 />
                 <Button type="button" onClick={handleVerifyEmailOtp} disabled={isLoading} className="h-11">
                   Confirm
@@ -1064,6 +1068,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                   disabled={isMobileVerified}
                   className="h-11"
                   autoComplete="tel"
+                  aria-label="Mobile Number"
                 />
               </FormControl>
               {!isMobileVerified && !showMobileOtpInput && (
@@ -1085,6 +1090,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                   onChange={(e) => setMobileOtp(e.target.value)}
                   maxLength={6}
                   className="h-11"
+                  aria-label="Mobile OTP"
                 />
                 <Button type="button" onClick={handleVerifyMobileOtp} disabled={isLoading} className="h-11">
                   Confirm
@@ -1103,7 +1109,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           <FormItem>
             <FormLabel>Password</FormLabel>
             <FormControl>
-              <Input type="password" placeholder="••••••••" {...field} className="h-11" autoComplete="new-password" />
+              <Input type="password" placeholder="••••••••" {...field} className="h-11" autoComplete="new-password" aria-label="Password" />
             </FormControl>
             <FormMessage />
           </FormItem>

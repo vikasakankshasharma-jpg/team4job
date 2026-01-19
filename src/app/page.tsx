@@ -136,7 +136,7 @@ export default function Home() {
                   <span className="text-2xl font-bold text-primary">3</span>
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Complete Work</h3>
-                <p className="text-muted-foreground">Secure escrow protects your payment. Release funds only when you're satisfied.</p>
+                <p className="text-muted-foreground">Secure escrow protects your payment. Release funds only when you&apos;re satisfied.</p>
               </div>
             </div>
           </div>

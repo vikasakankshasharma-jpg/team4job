@@ -223,13 +223,11 @@ service cloud.firestore {
       allow read: if request.auth != null && 
         (resource.data.userId == request.auth.uid || isAdmin());
       
-      // Allow creation by admin or system (or any auth user triggering an event for another user - effectively protected by business logic, but strictly should be admin/system)
-      // For simplicity in this implementation phase, we allow auth users to creating notifications for now (e.g. initiating a chat)
-      allow create: if request.auth != null; 
-        // && (request.resource.data.userId == request.auth.uid || isAdmin()); // Ideally restrict creation
+      // Allow creation by any authenticated user (needed for invites/chats)
+      allow create: if request.auth != null;
       
       allow update: if request.auth != null && 
-        (resource.data.userId == request.auth.uid || isAdmin()); // e.g. marking as read
+        (resource.data.userId == request.auth.uid || isAdmin());
 
       allow delete: if request.auth != null && 
         (resource.data.userId == request.auth.uid || isAdmin());
