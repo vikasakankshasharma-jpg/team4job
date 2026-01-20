@@ -141,7 +141,6 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
     };
 
     const processAcceptance = async () => {
-        console.log('InstallerAcceptanceSection: processAcceptance started');
         setIsLoading(true);
         try {
             if (!db) throw new Error("Database connection unavailable");
@@ -180,7 +179,7 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
 
                 // Accept Current Job
                 transaction.update(jobRef, {
-                    // awardedInstaller is already set, so strictly speaking we don't need to update it, 
+                    // awardedInstaller is already set, so strictly speaking we don't need to update it,
                     // but keeping it doesn't hurt.
                     status: "Pending Funding",
                     selectedInstallers: [],
@@ -198,7 +197,6 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
             };
             await onJobUpdate(updateLocal as any);
 
-            console.log("InstallerAcceptanceSection: Transaction completed");
 
             if ((job.jobGiver as User)?.email) {
                 await sendNotification(

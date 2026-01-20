@@ -247,9 +247,18 @@ test.describe('Edge Case Tests', () => {
             await helper.auth.loginAsInstaller();
             await page.goto('/dashboard/jobs');
 
-            await page.click('button:has-text("All Jobs")');
-
+            // Verify search input is initially visible
             const searchInput = page.getByTestId('search-input').first();
+            await expect(searchInput).toBeVisible({ timeout: 10000 });
+
+            // Click the "Browse All" tab explicitly
+            await page.getByRole('tab', { name: 'Browse All' }).click();
+
+            // Wait for UI to stabilize
+            await page.waitForTimeout(1000);
+
+            // Verify search input persists
+            await expect(searchInput).toBeVisible({ timeout: 10000 });
             await searchInput.fill('NonExistentJobXYZ' + Math.random().toString(36).substring(7));
             await searchInput.press('Enter');
 
@@ -261,9 +270,14 @@ test.describe('Edge Case Tests', () => {
             await helper.auth.loginAsInstaller();
             await page.goto('/dashboard/jobs');
 
-            await page.click('button:has-text("All Jobs")');
+            // Click the "Browse All" tab explicitly
+            await page.getByRole('tab', { name: 'Browse All' }).click();
+
+            // Wait for UI to stabilize
+            await page.waitForTimeout(1000);
 
             const searchInput = page.getByTestId('search-input').first();
+            await expect(searchInput).toBeVisible({ timeout: 10000 });
             await searchInput.fill('!@#$%^&*()');
             await searchInput.press('Enter');
 
