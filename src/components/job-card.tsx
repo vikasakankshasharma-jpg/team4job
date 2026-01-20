@@ -51,7 +51,7 @@ export function JobCard({ job }: JobCardProps) {
   }, [user, job.location]);
 
   // Check if job is unbid (no bids yet)
-  const isUnbid = job.status === 'Unbid' || (job.status === 'Open for Bidding' && (job.bids?.length || 0) === 0);
+  const isUnbid = job.status === 'Unbid' || (job.status === 'Open for Bidding' && ((job.bids as any)?.length || 0) === 0);
 
   const hasBidded = user && job.bidderIds?.includes(user.id);
   const myBidStatus = hasBidded && user ? getMyBidStatus(job, user) : null;
