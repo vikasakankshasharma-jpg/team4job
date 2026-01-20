@@ -255,10 +255,7 @@ test.describe('Complete Transaction Cycle E2E', () => {
         await helper.form.waitForToast('Submitted for Confirmation');
         await helper.job.waitForJobStatus('Pending Confirmation');
 
-        // CI STABILIZATION: Verify persistence of status change
-        console.log('[INFO] Phase 7: Validating persistence of Pending Confirmation status...');
-        await page.reload();
-        await helper.job.waitForJobStatus('Pending Confirmation', 60000);
+        // Persistence verified by subsequent Job Giver login in Phase 8
 
         console.log('[PASS] Phase 7 Complete: Work submitted and status persisted');
 
