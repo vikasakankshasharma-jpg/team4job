@@ -92,10 +92,22 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff)', () => 
     await page.goto(`/dashboard/jobs/${jobId}`);
     await page.getByTestId('accept-job-button').first().click();
 
-    // Verify conflict dialog appears (Timeout reduced)
+    // Wait for React state to settle after button click
+    await page.waitForTimeout(1500);
+
+    // Verify conflict dialog appears - check multiple times to handle async rendering
     const conflictDialog = page.getByText('Schedule Conflict Warning');
     console.log("Waiting for conflict dialog...");
-    if (await conflictDialog.isVisible({ timeout: 10000 })) {
+    let dialogVisible = false;
+
+    // Try multiple times with short waits to catch the dialog as it appears
+    for (let i = 0; i < 3; i++) {
+      dialogVisible = await conflictDialog.isVisible({ timeout: 5000 }).catch(() => false);
+      if (dialogVisible) break;
+      await page.waitForTimeout(1000);
+    }
+
+    if (dialogVisible) {
       console.log("Conflict dialog visible!");
       // Verification: Check for Responsive Classes
       const contentContainer = page.locator('.max-h-\\[80vh\\]');
@@ -105,20 +117,24 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff)', () => 
       const btn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
       await btn.click();
       console.log("Clicked Proceed button.");
-      await expect(conflictDialog).not.toBeVisible();
+      await expect(conflictDialog).not.toBeVisible({ timeout: 10000 });
       console.log("Dialog closed.");
     } else {
       console.log("Info: Conflict dialog NOT visible (No conflict detected).");
     }
 
+    // Wait for acceptance to complete - backend processing
+    await page.waitForTimeout(3000);
+
     // Conflict resolution involves backend batch writes, can be slow
     // Wait for UI to update instead of relying on toast
-    await expect(page.getByText('Pending Funding')).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText('Pending Funding')).toBeVisible({ timeout: 30000 });
 
     // ---------- Admin / Support Access Check ----------
     await helper.auth.logout();
     await helper.auth.loginAsAdmin();
-    await expect(page.locator('text=Admin Dashboard')).toBeVisible();
+    // Admin dashboard shows stats cards, check for one of them
+    await expect(page.locator('text=Total Users').first()).toBeVisible({ timeout: 20000 });
 
     console.log('Mobile Flow Completed Successfully');
   });

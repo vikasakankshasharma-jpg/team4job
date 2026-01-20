@@ -128,6 +128,11 @@ async function reseedPlatform() {
                     accountHolderName: 'Rajesh Pro',
                     accountNumberMasked: '**** 1234',
                     ifsc: 'TEST0001234'
+                },
+                subscription: {
+                    planId: 'pro-annual',
+                    status: 'active',
+                    expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
                 }
             },
             {
@@ -204,6 +209,10 @@ async function reseedPlatform() {
 
             if ((p as any).payouts) {
                 userData.payouts = (p as any).payouts;
+            }
+
+            if ((p as any).subscription) {
+                userData.subscription = (p as any).subscription;
             }
 
             if (p.roles.includes('Installer')) {
@@ -286,7 +295,9 @@ async function reseedPlatform() {
                 // Optional extras for variety
                 travelTip: i % 3 === 0 ? 100 : 0,
                 isUrgent: i % 10 === 0,
-                isDummyData: true
+                isDummyData: true,
+                bids: [],
+                bidderIds: []
             });
 
             // Batch limit is 500, we are safe with 100, but good practice to commit chunks if larger
