@@ -315,9 +315,22 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Setup Firebase credentials
+        env:
+          PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $HOME/gcloud-key.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
+          node -e '
+            const fs = require("fs");
+            const key = {
+              type: "service_account",
+              project_id: process.env.PROJECT_ID,
+              private_key: process.env.PRIVATE_KEY.replace(/\\n/g, "\n"),
+              client_email: process.env.CLIENT_EMAIL,
+            };
+            fs.writeFileSync("gcloud-key.json", JSON.stringify(key));
+          '
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$PWD/gcloud-key.json" >> $GITHUB_ENV
 
       - name: Set Artifact Registry Cleanup Policy
         run: |
