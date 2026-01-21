@@ -78,7 +78,7 @@ test.describe('Self-Interaction Guardrails', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         // 4. Verification
-        await expect(page.getByText(jobTitle)).toBeVisible({ timeout: 10000 });
+        await expect(page.getByTestId('job-title')).toBeVisible({ timeout: 10000 });
 
         // Wait for actions panel to load
         await expect(page.getByTestId('actions-panel')).toBeVisible();

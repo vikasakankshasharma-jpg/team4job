@@ -78,14 +78,15 @@ test.describe('Dashboard Financials E2E', () => {
         await page.getByTestId('accept-job-button').first().click();
         // Handle potential conflict dialog
         // Handle potential conflict dialog
+        // Robust Conflict Handling (copied from complete-transaction-cycle.spec.ts)
+        const conflictDialogText = page.getByText('Schedule Conflict Warning');
         try {
-            console.log("Checking for conflict dialog...");
-            // Try to click the confirm button directly. If it exists, it clicks. If not, it throws after timeout.
-            // We use a short timeout because if it's not there, we want to move on.
-            await page.getByRole('button', { name: "Confirm & Auto-Decline" }).click({ timeout: 5000 });
-            console.log("Conflict dialog confirmed.");
+            console.log("Waiting for conflict dialog (up to 10s)...");
+            await conflictDialogText.waitFor({ state: 'visible', timeout: 10000 });
+            console.log("Conflict Dialog detected. Clicking Confirm...");
+            await page.getByRole('button', { name: "I Understand, Proceed & Accept" }).click();
         } catch (e) {
-            console.log("No conflict dialog appeared (or button not found).");
+            console.log("No Conflict Dialog detected (timeout).");
         }
         await helper.form.waitForToast('Job Accepted!');
         await helper.job.waitForJobStatus('Pending Funding');
@@ -106,8 +107,8 @@ test.describe('Dashboard Financials E2E', () => {
 
         // --- VERIFICATION: Job Giver Dashboard ---
         await page.goto('/dashboard');
-        // Check "Funds in Escrow"
-        await expect(page.getByText('Funds in Escrow')).toBeVisible();
+        // Check "Funds in Secure Deposit"
+        await expect(page.getByText('Funds in Secure Deposit')).toBeVisible();
         // Since test account accumulates data, we check for presence of a non-zero currency value
         // Job Giver uses StatCard which uses div.text-2xl.font-bold
         await expect(page.locator('.text-2xl.font-bold').filter({ hasText: /^₹[\d,]+$/ }).first()).toBeVisible();
