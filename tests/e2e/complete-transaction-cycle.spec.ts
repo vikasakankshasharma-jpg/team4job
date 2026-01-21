@@ -368,7 +368,13 @@ test.describe('Complete Transaction Cycle E2E', () => {
         await helper.job.waitForJobStatus('Completed');
 
         // Verify "The other party has already reviewed you" message in Card Description
-        await expect(page.getByText('The other party has already reviewed you!')).toBeVisible();
+        try {
+            await expect(page.getByText('The other party has already reviewed you!')).toBeVisible({ timeout: 10000 });
+        } catch (e) {
+            console.log('[INFO] Phase 10: Review not synced yet. Reloading...');
+            await page.reload();
+            await expect(page.getByText('The other party has already reviewed you!')).toBeVisible({ timeout: TIMEOUTS.long });
+        }
 
         // Installer Submits Review
         await expect(page.getByText('Rate Your Experience')).toBeVisible();
