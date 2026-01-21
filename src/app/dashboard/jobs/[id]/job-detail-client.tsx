@@ -693,7 +693,7 @@ function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user
                     status: 'Pending Confirmation',
                     attachments: arrayUnion(...uploadedAttachments) as any,
                 };
-                onJobUpdate(updatedJobData);
+                await onJobUpdate(updatedJobData);
 
                 // Notify Job Giver
                 const jobGiver = job.jobGiver as User;
