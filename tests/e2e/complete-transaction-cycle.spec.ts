@@ -357,24 +357,39 @@ test.describe('Complete Transaction Cycle E2E', () => {
         await page.getByTestId('submit-review-button').click();
 
         // Verify Sealed State
-        await expect(page.getByTestId('review-locked-card')).toBeVisible();
-        await expect(page.getByText('Review Submitted')).toBeVisible();
-        console.log('[PASS] Job Giver Review Submitted (Sealed)');
 
-        // 2. Switch to Installer to Submit Review
+
+        // Verify "Review Submitted" toast/text
+        await expect(page.getByText('Review Submitted')).toBeVisible();
+
+        // CRITICAL: Ensure persistence by verifying the Locked Card appears
+        // This confirms the local client has updated.
+        await expect(page.getByTestId('review-locked-card')).toBeVisible();
+
+        // DOUBLE CHECK: Reload to ensure it's persisted on server before switching users
+        console.log('[Phase 10] Verifying Job Giver persistence via reload...');
+        await page.reload();
+        await expect(page.getByTestId('review-locked-card')).toBeVisible({ timeout: TIMEOUTS.medium });
+
+        console.log('[PASS] Job Giver Review Persisted');
+
+        // Logout Job Giver
         await helper.auth.logout();
+
+        // Installer Logs in
         await helper.auth.loginAsInstaller();
-        await page.goto(`/dashboard/jobs/${jobId}`);
         await helper.job.waitForJobStatus('Completed');
 
         // Verify "The other party has already reviewed you" message in Card Description
         try {
-            await page.waitForTimeout(5000); // Wait for potential CI propagation
+            // We can now rely on the previous step's persistence check.
+            // Still keeping a small wait for safety.
+            await page.waitForTimeout(2000);
             await expect(page.getByTestId('other-party-reviewed-text')).toBeVisible({ timeout: 10000 });
         } catch (e) {
-            console.log('[INFO] Phase 10: Review not synced yet. Reloading...');
+            console.log('[INFO] Phase 10: Review not synced to Installer yet. Reloading...');
             await page.reload();
-            await page.waitForTimeout(5000); // Wait after reload
+            await page.waitForTimeout(3000);
             await expect(page.getByTestId('other-party-reviewed-text')).toBeVisible({ timeout: TIMEOUTS.long });
         }
 
