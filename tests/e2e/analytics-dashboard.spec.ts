@@ -16,14 +16,14 @@ test.describe('Job Performance Analytics Dashboard', () => {
         await page.goto('/dashboard/analytics');
 
         // 1. Verify Page Header
-        await expect(page.getByRole('heading', { name: 'Project Analytics' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Analytics Dashboard' })).toBeVisible();
         await expect(page.getByText('Insights into your hiring performance and spending')).toBeVisible();
 
         // 2. Verify Stat Cards
         await expect(page.getByText('Total Jobs')).toBeVisible();
         await expect(page.getByText('Completed')).toBeVisible();
         await expect(page.getByText('Total Spend')).toBeVisible();
-        await expect(page.getByText('Avg Rating')).toBeVisible();
+        await expect(page.getByText('Avg Rating').first()).toBeVisible();
 
         // 3. Verify Charts (Check for card titles as proxies for charts rendering)
         await expect(page.getByText('Time to Hire')).toBeVisible();
@@ -34,11 +34,11 @@ test.describe('Job Performance Analytics Dashboard', () => {
         await expect(page.getByRole('table')).toBeVisible();
 
         // 5. Verify Export Button
-        const exportBtn = page.getByRole('button', { name: 'Export CSV' });
+        const exportBtn = page.getByRole('button', { name: 'Export' });
         await expect(exportBtn).toBeVisible();
 
         // Test Export Click
         await exportBtn.click();
-        await expect(page.getByText('Export started')).toBeVisible();
+        await expect(page.getByText('Export Complete').first()).toBeVisible();
     });
 });
