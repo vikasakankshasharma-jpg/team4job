@@ -104,14 +104,23 @@ export function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (up
         );
     }
 
+    // DEBUG: Log review state for CI diagnosis
+    console.log('[RatingSection] Render:', {
+        role,
+        isJobGiver,
+        hasJobGiverReview: !!jobGiverReview,
+        hasInstallerReview: !!installerReview,
+        theirReviewPresent: !!theirReview
+    });
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Rate Your Experience</CardTitle>
-                <CardDescription>
+                <CardDescription data-testid="rating-description">
                     {theirReview
-                        ? "The other party has already reviewed you! Submit yours to unlock and read it."
-                        : "Reviews are double-blind. Neither party sees the review until both are submitted."}
+                        ? <span data-testid="other-party-reviewed-text">The other party has already reviewed you! Submit yours to unlock and read it.</span>
+                        : <span data-testid="double-blind-text">Reviews are double-blind. Neither party sees the review until both are submitted.</span>}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

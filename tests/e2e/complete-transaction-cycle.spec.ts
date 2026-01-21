@@ -369,20 +369,13 @@ test.describe('Complete Transaction Cycle E2E', () => {
 
         // Verify "The other party has already reviewed you" message in Card Description
         try {
-            await page.waitForTimeout(5000); // Explicit wait for CI propagation
-            await expect(page.getByText(/The other party has already reviewed you/i)).toBeVisible({ timeout: 10000 });
+            await page.waitForTimeout(5000); // Wait for potential CI propagation
+            await expect(page.getByTestId('other-party-reviewed-text')).toBeVisible({ timeout: 10000 });
         } catch (e) {
             console.log('[INFO] Phase 10: Review not synced yet. Reloading...');
             await page.reload();
             await page.waitForTimeout(5000); // Wait after reload
-            try {
-                await expect(page.getByText(/The other party has already reviewed you/i)).toBeVisible({ timeout: TIMEOUTS.long });
-            } catch (finalError) {
-                console.log('[ERROR] Review text still not visible.');
-                const bodyText = await page.locator('body').innerText();
-                console.log('Page Content Snapshot:', bodyText.substring(0, 1000)); // Log first 1000 chars
-                throw finalError;
-            }
+            await expect(page.getByTestId('other-party-reviewed-text')).toBeVisible({ timeout: TIMEOUTS.long });
         }
 
         // Installer Submits Review
