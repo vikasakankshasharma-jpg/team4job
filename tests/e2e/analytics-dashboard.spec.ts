@@ -8,7 +8,7 @@ test.describe('Job Performance Analytics Dashboard', () => {
         await page.fill('input[type="email"]', TEST_ACCOUNTS.jobGiver.email);
         await page.fill('input[type="password"]', TEST_ACCOUNTS.jobGiver.password);
         await page.getByRole('button', { name: /Log In/i }).click();
-        await page.waitForURL('/dashboard');
+        await page.waitForURL(/\/dashboard/);
     });
 
     test('should display analytics dashboard with all components', async ({ page }) => {

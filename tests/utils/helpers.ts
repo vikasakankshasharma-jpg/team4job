@@ -120,7 +120,7 @@ export class AuthHelper {
                 await submitButton.click({ force: true });
 
                 // Wait for redirect to dashboard
-                await this.page.waitForURL('**/dashboard**', { timeout: 30000 });
+                await this.page.waitForURL(/\/dashboard/, { timeout: 30000 });
                 console.log(`[AuthHelper] Login successful for ${email}`);
                 return;
             } catch (error) {
