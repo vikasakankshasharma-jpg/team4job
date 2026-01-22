@@ -11,7 +11,7 @@ test.describe('Job Giver Enhancements Verification', () => {
         await page.fill('input[type="email"]', TEST_ACCOUNTS.jobGiver.email);
         await page.fill('input[type="password"]', TEST_ACCOUNTS.jobGiver.password);
         await page.getByRole('button', { name: /Log In/i }).click();
-        await page.waitForURL('/dashboard');
+        await page.waitForURL(/\/dashboard/);
 
         // 2. Verify Posted Jobs Design Enhancements (Phase 1)
         console.log('Verifying Design Enhancements...');
