@@ -10,14 +10,23 @@ async function seedJob() {
     const { Timestamp } = await import('firebase-admin/firestore');
 
     try {
-        const userRecord = await getAuth().getUserByEmail('jobgiver@example.com');
+        const db = getAdminDb(); // Initialize Admin App first
+        const userRecord = await getAuth().getUserByEmail('giver_vip@team4job.com');
         const userId = userRecord.uid;
 
         const jobId = `JOB-SEED-${Date.now()}`;
-        const db = getAdminDb();
         const jobRef = db.collection('jobs').doc(jobId);
 
         // 1. Create Job
+        const mockBid = {
+            id: `BID-${Date.now()}`,
+            jobId: jobId,
+            installer: { id: 'INSTALLER_MOCK_123', name: 'Mock Installer', email: 'mock@installer.com' },
+            amount: 15000,
+            status: 'Accepted',
+            createdAt: Timestamp.now()
+        };
+
         const jobData = {
             id: jobId,
             title: `Seeded Milestone Job ${Date.now()}`,
@@ -25,7 +34,7 @@ async function seedJob() {
             status: 'In Progress', // Skip to In Progress
             jobGiverId: userId,
             jobGiver: db.collection('users').doc(userId),
-            priceEstimate: { min: 8000, max: 12000 },
+            priceEstimate: { min: 8000, max: 15000 },
             postedAt: Timestamp.now(),
             deadline: Timestamp.fromDate(new Date(Date.now() + 86400000)), // tomorrow
             jobStartDate: Timestamp.fromDate(new Date(Date.now() + 86400000)),
@@ -33,8 +42,11 @@ async function seedJob() {
             fullAddress: '123 Test St, Bangalore 560001',
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now(),
-            bids: [],
-            bidderIds: []
+            bids: [mockBid],
+            bidderIds: ['INSTALLER_MOCK_123'],
+            awardedInstaller: 'INSTALLER_MOCK_123',
+            awardedBid: mockBid,
+            budget: { min: 15000, max: 15000 } // Ensure budget is defined for validation logic
         };
 
         await jobRef.set(jobData);
@@ -48,7 +60,7 @@ async function seedJob() {
             jobTitle: jobData.title,
             payerId: userId,
             payeeId: 'ESCROW_HOLD',
-            amount: 10000, // Sufficient for milestones
+            amount: 15000, // Sufficient for milestones
             status: 'Funded',
             transactionType: 'JOB',
             createdAt: Timestamp.now(),

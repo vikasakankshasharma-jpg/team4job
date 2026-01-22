@@ -51,7 +51,7 @@ export function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (up
         };
 
         const updatePayload: Partial<Job> = isJobGiver
-            ? { jobGiverReview: reviewData, rating: rating, review: reviewText }
+            ? { jobGiverReview: reviewData }
             : { installerReview: reviewData };
 
         await onJobUpdate(updatePayload);
