@@ -39,7 +39,7 @@ test.describe('Notification System', () => {
         await expect(page.getByText('Action Required')).toBeHidden();
     });
 
-    test.skip('should navigate to notification settings', async ({ page }) => {
+    test('should navigate to notification settings', async ({ page }) => {
         await page.goto('/dashboard/notifications');
         await expect(page).toHaveURL(/\/dashboard\/notifications/);
 

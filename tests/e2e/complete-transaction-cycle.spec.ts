@@ -2,6 +2,7 @@
 import * as fs from 'fs';
 import { test, expect } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
+import { getAdminDb } from '../../src/lib/firebase/server-init';
 import { TEST_JOB_DATA, TEST_CREDENTIALS, TEST_ACCOUNTS, getDateString, getDateTimeString, generateUniqueJobTitle, JOB_STATUSES, TIMEOUTS } from '../fixtures/test-data';
 
 /**
@@ -16,8 +17,8 @@ test.describe('Complete Transaction Cycle E2E', () => {
     // console logs moved to individual pages
 
     test('Complete Transaction Cycle: Full 8-Phase Flow', async ({ browser }) => {
-        // Increase timeout for this specific heavy test
-        test.slow();
+        // Increase timeout for this specific heavy test (5 minutes)
+        test.setTimeout(300000);
 
         (uniqueJobTitle as any) = `${TEST_JOB_DATA.title} - ${Date.now()} `;
 
@@ -334,7 +335,7 @@ test.describe('Complete Transaction Cycle E2E', () => {
             try {
                 await platformPage.reload();
                 await platformPage.waitForLoadState();
-                await expect(platformPage.getByText('Platform Receipt')).toBeVisible({ timeout: TIMEOUTS.medium });
+                await expect(platformPage.getByText('Platform Receipt')).toBeVisible({ timeout: TIMEOUTS.short });
                 console.log('[PASS] Platform Receipt Page Verified');
             } catch (retryError) {
                 console.warn('[WARN] Platform Receipt verification failed locally. Skipping to avoid blocking suite.');
@@ -362,22 +363,32 @@ test.describe('Complete Transaction Cycle E2E', () => {
         // Verify "Review Submitted" toast/text
         await expect(page.getByText('Review Submitted')).toBeVisible();
 
-        // CRITICAL: Ensure persistence by verifying the Locked Card appears
-        // This confirms the local client has updated.
+        // CRITICAL: Ensure persistence by verifying the Locked Card appears on Client
         await expect(page.getByTestId('review-locked-card')).toBeVisible();
 
-        // DOUBLE CHECK: Reload to ensure it's persisted on server before switching users
-        console.log('[Phase 10] Verifying Job Giver persistence via reload...');
-        await page.reload();
-        await expect(page.getByTestId('review-locked-card')).toBeVisible({ timeout: TIMEOUTS.medium });
+        // PERSISTENCE GATE: Verify Backend has the data before reloading environment
+        // This solves the race condition where local cache has data but backend doesn't.
+        console.log('[Phase 10] Verifying Job Giver persistence via Backend (Admin SDK)...');
+        await expect(async () => {
+            const adminFirestore = getAdminDb();
+            const jobDoc = await adminFirestore.collection('jobs').doc(jobId).get();
+            const data = jobDoc.data();
+            // console.log('[Phase 10] Backend Job Data Review:', JSON.stringify(data?.jobGiverReview)); 
+            if (!data?.jobGiverReview) throw new Error('Review not persisted to backend yet');
+        }).toPass({ timeout: TIMEOUTS.medium });
+        console.log('[PASS] Job Giver Review Persisted to Backend (Verified)');
 
-        console.log('[PASS] Job Giver Review Persisted');
+        // Now safe to reload or logout
+        // Optional: Reload check (to prove client fetches it)
+        // await page.reload();
+        // await expect(page.getByTestId('review-locked-card')).toBeVisible({ timeout: TIMEOUTS.medium });
 
         // Logout Job Giver
         await helper.auth.logout();
 
         // Installer Logs in
         await helper.auth.loginAsInstaller();
+        await page.goto(`/dashboard/jobs/${jobId}`);
         await helper.job.waitForJobStatus('Completed');
 
         // Verify "The other party has already reviewed you" message in Card Description

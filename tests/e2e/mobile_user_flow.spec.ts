@@ -132,6 +132,7 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff)', () => 
 
     // ---------- Admin / Support Access Check ----------
     await helper.auth.logout();
+    await page.goto('/login'); // Force clean start
     await helper.auth.loginAsAdmin();
     // Admin dashboard shows stats cards, check for one of them
     await expect(page.locator('text=Total Users').first()).toBeVisible({ timeout: 20000 });

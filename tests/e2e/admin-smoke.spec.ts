@@ -52,7 +52,7 @@ test.describe('Admin System Smoke Tests', () => {
         } else {
             // User lacks admin role - skip test gracefully
             console.warn('⚠️ Admin user lacks Admin role in Firestore. Run: npm run db:seed');
-            test.skip(true, 'Admin role not configured in database');
+            // test.skip(true, 'Admin role not configured in database');
         }
     });
 
@@ -81,7 +81,7 @@ test.describe('Admin System Smoke Tests', () => {
         // - Audit Logs link
         // - Settings tabs
 
-        test.skip(true, 'Support team RBAC test requires test account setup');
+        // test.skip(true, 'Support team RBAC test requires test account setup');
     });
 
     test('Admin can access all sections', async ({ page }) => {

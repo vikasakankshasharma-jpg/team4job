@@ -1692,7 +1692,12 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                         open={isMilestoneDialogOpen}
                         onOpenChange={setIsMilestoneDialogOpen}
                         onSubmit={handleCreateMilestone}
-                        maxAmount={(job as any).budget?.max || 100000} // Fallback or logic to calculate remaining
+                        maxAmount={(() => {
+                            const awardedBid = bids.find(b => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)));
+                            const totalBudget = awardedBid?.amount || (job as any).priceEstimate?.max || 0;
+                            const usedBudget = (job.milestones || []).reduce((acc: number, m: any) => acc + (Number(m.amount) || 0), 0);
+                            return Math.max(0, totalBudget - usedBudget);
+                        })()}
                     />
 
                     {/* Dialogs */}
