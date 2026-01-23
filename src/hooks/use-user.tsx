@@ -4,7 +4,7 @@ import { User } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
-import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -26,7 +26,7 @@ interface UserContextType {
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   setRole: (role: Role) => void;
   logout: () => void;
-  login: (email: string, password?: string) => Promise<boolean>;
+  login: (identifier: string, password?: string) => Promise<boolean>;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -268,16 +268,48 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [auth, smartPush, updateUserState]);
 
-  const login = useCallback(async (email: string, password?: string) => {
+  const login = useCallback(async (identifier: string, password?: string) => {
     if (!password) return false;
     try {
+      let email = identifier;
+
+      // Check if identifier is a mobile number (10 digits)
+      const isMobile = /^\d{10}$/.test(identifier);
+
+      if (isMobile) {
+        // Query Firestore to find user with this mobile number
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("mobile", "==", identifier));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          console.error("Login failed: No user found with this mobile number");
+          toast({
+            title: "Login Failed",
+            description: "No account found with this mobile number.",
+            variant: "destructive",
+          });
+          return false;
+        }
+
+        // Get the first matching user's email
+        // Assuming mobile numbers are unique
+        const userDoc = querySnapshot.docs[0];
+        const userData = userDoc.data();
+        if (!userData.email) {
+          console.error("Login failed: User has no email");
+          return false;
+        }
+        email = userData.email;
+      }
+
       await signInWithEmailAndPassword(auth, email, password);
       return true;
     } catch (error) {
       console.error("Login failed:", error);
       return false;
     }
-  }, [auth]);
+  }, [auth, db, toast]);
 
   // Value provided to context
   const value = useMemo(() => ({

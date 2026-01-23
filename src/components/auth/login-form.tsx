@@ -18,12 +18,16 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const formSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address." }),
+  identifier: z.string().refine((val) => {
+    const isEmail = z.string().email().safeParse(val).success;
+    const isMobile = /^\d{10}$/.test(val);
+    return isEmail || isMobile;
+  }, { message: "Please enter a valid email address or 10-digit mobile number." }),
   password: z.string().min(1, { message: "Password cannot be empty." }),
 });
 
@@ -38,6 +42,7 @@ export function LoginForm() {
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [lockoutUntil, setLockoutUntil] = useState<Date | null>(null);
   const [remainingTime, setRemainingTime] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -61,19 +66,20 @@ export function LoginForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      identifier: "",
       password: "",
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("LoginForm: onSubmit called", values.email);
+    console.log("LoginForm: onSubmit called", values.identifier);
     if (lockoutUntil) return;
 
     setIsLoading(true);
-    const isDemoUser = values.email.endsWith("@example.com");
+    // basic demo check - still useful if user types dummy email
+    const isDemoUser = values.identifier.endsWith("@example.com");
     console.log("LoginForm: Calling login...");
-    const success = await login(values.email, values.password);
+    const success = await login(values.identifier, values.password);
     console.log("LoginForm: Login result:", success);
 
     if (success) {
@@ -124,12 +130,12 @@ export function LoginForm() {
         )}
         <FormField
           control={form.control}
-          name="email"
+          name="identifier"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email Address</FormLabel>
+              <FormLabel>Email or Mobile Number</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="name@example.com" {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="email" aria-label="Email Address" />
+                <Input placeholder="name@example.com or 9876543210" {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="username" aria-label="Email or Mobile Number" />
               </FormControl>
               <FormMessage data-testid="email-error" />
             </FormItem>
@@ -142,7 +148,32 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="current-password" aria-label="Password" />
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    {...field}
+                    disabled={!!lockoutUntil}
+                    className="h-11 pr-10"
+                    autoComplete="current-password"
+                    aria-label="Password"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    )}
+                    <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                  </Button>
+                </div>
               </FormControl>
               <FormMessage data-testid="password-error" />
             </FormItem>

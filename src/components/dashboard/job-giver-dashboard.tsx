@@ -27,7 +27,7 @@ import { format, subMonths } from "date-fns";
 import dynamic from "next/dynamic";
 import { StatCard } from "@/components/dashboard/cards/stat-card";
 import { ActionRequiredDashboard } from "@/components/notifications/action-required-dashboard";
-import { QuickMetricsRow } from "@/components/dashboard/quick-metrics-row";
+import { QuickMetricsRowV2 } from "@/components/dashboard/quick-metrics-row";
 import { RecommendedInstallersCard } from "@/components/dashboard/recommended-installers-card";
 import { SpendingInsightsCard } from "@/components/dashboard/spending-insights-card";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
@@ -213,7 +213,7 @@ export function JobGiverDashboard() {
             </div>
 
             {/* Phase 11: Quick Metrics Row */}
-            {user && <QuickMetricsRow userId={user.id} user={user} />}
+            {user && <QuickMetricsRowV2 userId={user.id} user={user} />}
 
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                 <StatCard
