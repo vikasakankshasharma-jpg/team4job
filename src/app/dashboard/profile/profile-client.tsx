@@ -94,8 +94,8 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
         resolver: zodResolver(editProfileSchema),
         defaultValues: {
             name: user.name || "",
-            residentialPincode: user.pincodes.residential || "",
-            officePincode: user.pincodes.office || "",
+            residentialPincode: user.pincodes?.residential || "",
+            officePincode: user.pincodes?.office || "",
             gstin: user.gstin || "",
         },
     });
@@ -817,7 +817,7 @@ export default function ProfileClient() {
                     name: values.name,
                     pincodes: {
                         residential: values.residentialPincode,
-                        office: values.officePincode || prevUser.pincodes.office,
+                        office: values.officePincode || prevUser.pincodes?.office || '',
                     },
                     gstin: values.gstin || prevUser.gstin,
                 };
@@ -886,9 +886,9 @@ export default function ProfileClient() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <MapPin className="h-4 w-4" />
-                                    <span>{user.pincodes.residential} (Home)</span>
+                                    <span>{user.pincodes?.residential || 'N/A'} (Home)</span>
                                 </div>
-                                {user.pincodes.office && (
+                                {user.pincodes?.office && (
                                     <div className="flex items-center gap-2">
                                         <Building className="h-4 w-4" />
                                         <span>{user.pincodes.office} (Office)</span>
