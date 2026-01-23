@@ -110,9 +110,9 @@ async function getRecentlyHiredAvailable(
     for (let i = 0; i < installerIdsArray.length; i += 10) {
         const batch = installerIdsArray.slice(i, i + 10);
         const usersQuery = query(
-            collection(db, "users"),
+            collection(db, "public_profiles"),
             where("__name__", "in", batch),
-            where("role", "==", "Installer")
+            where("roles", "array-contains", "Installer")
         );
         const usersSnapshot = await getDocs(usersQuery);
 
@@ -148,9 +148,9 @@ async function getHighRatedFavorites(
     for (let i = 0; i < unseenFavorites.length; i += 10) {
         const batch = unseenFavorites.slice(i, i + 10);
         const usersQuery = query(
-            collection(db, "users"),
+            collection(db, "public_profiles"),
             where("__name__", "in", batch),
-            where("role", "==", "Installer")
+            where("roles", "array-contains", "Installer")
         );
         const usersSnapshot = await getDocs(usersQuery);
 
@@ -209,8 +209,8 @@ async function getTopRatedByCategory(
 ): Promise<User[]> {
     // Query for installers with Gold or Platinum tier
     const installersQuery = query(
-        collection(db, "users"),
-        where("role", "==", "Installer"),
+        collection(db, "public_profiles"),
+        where("roles", "array-contains", "Installer"),
         where("installerProfile.tier", "in", ["Gold", "Platinum"]),
         limit(20)
     );

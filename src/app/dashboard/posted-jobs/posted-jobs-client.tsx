@@ -350,8 +350,10 @@ export default function PostedJobsClient() {
 
     setLoading(true);
     try {
+      console.log('PostedJobsClient: Starting fetchJobs...');
       const userJobsQuery = query(collection(db, 'jobs'), where('jobGiverId', '==', user.id));
       const jobSnapshot = await getDocs(userJobsQuery);
+      console.log('PostedJobsClient: Fetched jobs count:', jobSnapshot.size);
 
       const jobsData = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
 
@@ -372,7 +374,8 @@ export default function PostedJobsClient() {
         for (let i = 0; i < userRefArray.length; i += 30) {
           const chunk = userRefArray.slice(i, i + 30);
           if (chunk.length > 0) {
-            const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
+            // Query public_profiles instead of users collection to avoid permission errors
+            const usersQuery = query(collection(db, 'public_profiles'), where('__name__', 'in', chunk));
             const userDocs = await getDocs(usersQuery);
             userDocs.forEach(docSnap => {
               if (docSnap.exists()) {

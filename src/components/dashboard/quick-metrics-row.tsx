@@ -23,7 +23,7 @@ interface QuickMetrics {
     favoriteInstallers: number;
 }
 
-export function QuickMetricsRow({ userId, user }: QuickMetricsRowProps) {
+export function QuickMetricsRowV2({ userId, user }: QuickMetricsRowProps) {
     const { db } = useFirebase();
     const router = useRouter();
     const [metrics, setMetrics] = useState<QuickMetrics | null>(null);
@@ -64,6 +64,7 @@ export function QuickMetricsRow({ userId, user }: QuickMetricsRowProps) {
     }, [db, userId, user]);
 
     const calculateMetrics = (jobs: Job[], currentUser: User): QuickMetrics => {
+
         // 1. Average Bids Per Job
         const jobsWithBids = jobs.filter(job => job.bids && job.bids.length > 0);
         const totalBids = jobsWithBids.reduce((sum, job) => sum + (job.bids?.length || 0), 0);
@@ -71,31 +72,72 @@ export function QuickMetricsRow({ userId, user }: QuickMetricsRowProps) {
 
         // 2. Average Time to First Bid
         let avgTimeToFirstBid = "No data";
-        if (jobsWithBids.length > 0) {
-            const timeDifferences = jobsWithBids
-                .map(job => {
-                    const postedAt = job.postedAt instanceof Timestamp ? job.postedAt.toDate() : new Date(job.postedAt);
-                    const firstBid = job.bids?.sort((a, b) => {
-                        const aTime = a.timestamp instanceof Timestamp ? a.timestamp.toDate() : new Date(a.timestamp);
-                        const bTime = b.timestamp instanceof Timestamp ? b.timestamp.toDate() : new Date(b.timestamp);
-                        return aTime.getTime() - bTime.getTime();
-                    })[0];
+        try {
+            if (jobsWithBids.length > 0) {
+                const timeDifferences: number[] = [];
 
-                    if (firstBid) {
-                        const firstBidTime = firstBid.timestamp instanceof Timestamp
-                            ? firstBid.timestamp.toDate()
-                            : new Date(firstBid.timestamp);
-                        return firstBidTime.getTime() - postedAt.getTime();
+                jobsWithBids.forEach(job => {
+                    if (!job.postedAt || !job.bids) return;
+
+                    try {
+                        let postedAt: Date;
+                        if (job.postedAt instanceof Timestamp) {
+                            postedAt = job.postedAt.toDate();
+                        } else {
+                            postedAt = new Date(job.postedAt);
+                        }
+
+                        if (isNaN(postedAt.getTime())) {
+                            console.warn('Invalid postedAt for job', job.id);
+                            return;
+                        }
+
+                        // Find earliest bid time
+                        let earliestBidTime: number | null = null;
+
+                        job.bids.forEach(bid => {
+                            if (!bid.timestamp) return;
+
+                            let bidDate: Date;
+                            if (bid.timestamp instanceof Timestamp) {
+                                bidDate = bid.timestamp.toDate();
+                            } else {
+                                bidDate = new Date(bid.timestamp);
+                            }
+
+                            if (!isNaN(bidDate.getTime())) {
+                                if (earliestBidTime === null || bidDate.getTime() < earliestBidTime) {
+                                    earliestBidTime = bidDate.getTime();
+                                }
+                            }
+                        });
+
+                        if (earliestBidTime !== null) {
+                            const diff = earliestBidTime - postedAt.getTime();
+                            if (diff >= 0 && isFinite(diff)) {
+                                timeDifferences.push(diff);
+                            }
+                        }
+                    } catch (innerErr) {
+                        console.error("Error processing job time diff:", job.id, innerErr);
                     }
-                    return null;
-                })
-                .filter(diff => diff !== null) as number[];
+                });
 
-            if (timeDifferences.length > 0) {
-                const avgMs = timeDifferences.reduce((sum, diff) => sum + diff, 0) / timeDifferences.length;
-                const avgDate = new Date(Date.now() - avgMs);
-                avgTimeToFirstBid = formatDistanceToNow(avgDate, { addSuffix: false });
+                if (timeDifferences.length > 0) {
+                    const avgMs = timeDifferences.reduce((sum, diff) => sum + diff, 0) / timeDifferences.length;
+
+                    if (!isNaN(avgMs) && isFinite(avgMs)) {
+                        // Use current time minus average duration to get a "past date" representing the delay
+                        const avgDate = new Date(Date.now() - avgMs);
+                        if (!isNaN(avgDate.getTime())) {
+                            avgTimeToFirstBid = formatDistanceToNow(avgDate, { addSuffix: false });
+                        }
+                    }
+                }
             }
+        } catch (e) {
+            console.error("Error calculating avgTimeToFirstBid:", e);
+            avgTimeToFirstBid = "Error";
         }
 
         // 3. Pending Reviews (Completed jobs without ratings)
