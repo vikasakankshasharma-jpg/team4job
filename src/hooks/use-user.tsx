@@ -215,7 +215,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Role protection
     const installerPaths = ['/dashboard/my-bids', '/dashboard/verify-installer', '/dashboard/jobs'];
     const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs', '/dashboard/my-installers', '/dashboard/installers'];
-    const adminPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/settings', '/dashboard/subscription-plans', '/dashboard/coupons', '/dashboard/blacklist'];
+    const adminPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/subscription-plans', '/dashboard/coupons', '/dashboard/blacklist'];
     const supportPaths = ['/dashboard/disputes'];
 
     const isBrowseJobsPage = pathname === '/dashboard/jobs';
