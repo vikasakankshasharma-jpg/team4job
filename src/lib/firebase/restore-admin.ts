@@ -67,11 +67,19 @@ async function restoreAdmin() {
         id: uid,
         name: name,
         email: email,
-        roles: ['Admin', 'Job Giver'], // Give Job Giver too so they can test
+        mobile: '9876543210', // Required for payments
+        roles: ['Admin', 'Job Giver', 'Installer'], // Super User
         status: 'active',
         memberSince: Timestamp.now(),
         avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-        isAdmin: true // Redundant but good for client-side quick checks
+        isAdmin: true,
+        installerProfile: {
+            tier: 'Platinum',
+            rating: 5.0,
+            reviews: 99,
+            skills: ['Super Admin', 'CCTV Expert', 'Full Stack Security'],
+            verified: true
+        }
     }, { merge: true });
 
     console.log("✅ Admin Restored Successfully!");
