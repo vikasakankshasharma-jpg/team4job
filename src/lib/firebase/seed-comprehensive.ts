@@ -148,6 +148,15 @@ async function createUsers() {
             }
             userIdMap[u.email] = uid;
 
+            const dummyPayouts = (u.role === 'Installer') ? {
+                beneficiaryId: `BENE_TEST_${uid.slice(0, 5)}_${Date.now()}`,
+                accountHolderName: u.name,
+                accountNumberMasked: "**** **** 9999",
+                ifsc: "TEST0000000",
+                bankAccount: "9999999999",
+                address1: "Test Address, Sandbox City"
+            } : null;
+
             // Firestore
             const userRef = db.collection('users').doc(uid);
             await userRef.set({
@@ -166,7 +175,8 @@ async function createUsers() {
                 memberSince: Timestamp.now(),
                 avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.email}`,
                 installerProfile: u.installerProfile || null,
-                isMobileVerified: true
+                isMobileVerified: true,
+                ...(dummyPayouts && { payouts: dummyPayouts })
             });
 
             // Public Profile
