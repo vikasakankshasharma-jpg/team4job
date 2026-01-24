@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
             customer_details: {
                 customer_id: jobGiverId,
                 customer_email: jobGiver.email,
-                customer_phone: jobGiver.mobile,
+                customer_phone: jobGiver.mobile || '9999999999', // Fallback for Cashfree
                 customer_name: jobGiver.name,
             },
             order_meta: {
