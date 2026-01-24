@@ -129,8 +129,14 @@ export function QuickMetricsRowV2({ userId, user }: QuickMetricsRowProps) {
                     if (!isNaN(avgMs) && isFinite(avgMs)) {
                         // Use current time minus average duration to get a "past date" representing the delay
                         const avgDate = new Date(Date.now() - avgMs);
-                        if (!isNaN(avgDate.getTime())) {
-                            avgTimeToFirstBid = formatDistanceToNow(avgDate, { addSuffix: false });
+
+                        try {
+                            if (!isNaN(avgDate.getTime())) {
+                                avgTimeToFirstBid = formatDistanceToNow(avgDate, { addSuffix: false });
+                            }
+                        } catch (dateErr) {
+                            console.error("Error formatting avgTimeToFirstBid date:", avgDate, dateErr);
+                            avgTimeToFirstBid = "~";
                         }
                     }
                 }
