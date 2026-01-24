@@ -154,7 +154,7 @@ export function LoginForm() {
                     placeholder="••••••••"
                     {...field}
                     disabled={!!lockoutUntil}
-                    className="h-11 pr-10"
+                    className="h-11 pr-12"
                     autoComplete="current-password"
                     aria-label="Password"
                   />
@@ -162,7 +162,7 @@ export function LoginForm() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent z-10"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
                   >
