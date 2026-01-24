@@ -94,7 +94,7 @@ export function JobCard({ job }: JobCardProps) {
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <Badge variant={statusVariant} className="capitalize">
                 {displayStatus}
               </Badge>

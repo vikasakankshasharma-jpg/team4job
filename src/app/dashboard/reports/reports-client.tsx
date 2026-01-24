@@ -113,45 +113,47 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                 </div>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Rank</TableHead>
-                            <TableHead>Installer</TableHead>
-                            <TableHead>Monthly Points</TableHead>
-                            <TableHead>Rating</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {rankedInstallers.slice(0, 5).map((installer, index) => (
-                            <TableRow key={installer.id} className={index < 3 ? "bg-primary/5" : ""}>
-                                <TableCell className="font-bold text-lg">{index + 1}</TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-3">
-                                        <Avatar className="h-9 w-9 hidden sm:flex">
-                                            <AnimatedAvatar svg={installer.avatarUrl} />
-                                            <AvatarFallback>{installer.name.substring(0, 2)}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="font-medium">{installer.name}</p>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                {tierIcons[installer.installerProfile?.tier || 'Bronze']}
-                                                <span>{installer.installerProfile?.tier} Tier</span>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Rank</TableHead>
+                                <TableHead>Installer</TableHead>
+                                <TableHead>Monthly Points</TableHead>
+                                <TableHead>Rating</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {rankedInstallers.slice(0, 5).map((installer, index) => (
+                                <TableRow key={installer.id} className={index < 3 ? "bg-primary/5" : ""}>
+                                    <TableCell className="font-bold text-lg">{index + 1}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-9 w-9 hidden sm:flex">
+                                                <AnimatedAvatar svg={installer.avatarUrl} />
+                                                <AvatarFallback>{installer.name.substring(0, 2)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-medium">{installer.name}</p>
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                    {tierIcons[installer.installerProfile?.tier || 'Bronze']}
+                                                    <span>{installer.installerProfile?.tier} Tier</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell className="font-semibold text-green-600">+{installer.monthlyPoints} pts</TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-1">
-                                        <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                                        <span>{installer.installerProfile?.rating.toFixed(1)}</span>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                                    </TableCell>
+                                    <TableCell className="font-semibold text-green-600">+{installer.monthlyPoints} pts</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-1">
+                                            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                                            <span>{installer.installerProfile?.rating.toFixed(1)}</span>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
                 {rankedInstallers.length === 0 && (
                     <p className="text-center py-8 text-muted-foreground">Not enough data to generate performance report.</p>
                 )}

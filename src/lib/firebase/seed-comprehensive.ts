@@ -249,8 +249,10 @@ async function createJobs() {
             }
             else if (sc.type.includes('Bidding War')) {
                 // Add 5-8 bids
-                const bidCount = 5 + Math.floor(Math.random() * 4);
-                for (let b = 0; b < bidCount; b++) {
+                const targetBidCount = 5 + Math.floor(Math.random() * 4);
+                let attempts = 0;
+                while (jobData.bids.length < targetBidCount && attempts < 50) {
+                    attempts++;
                     const instId = getInstaller();
                     if (!jobData.bidderIds.includes(instId)) {
                         jobData.bidderIds.push(instId);

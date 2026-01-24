@@ -38,11 +38,14 @@ export default function Home() {
           </Link>
         </div>
 
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-2 sm:gap-4">
+          <Button variant="ghost" asChild className="sm:hidden px-2">
+            <Link href="/login?tab=login">Log In</Link>
+          </Button>
           <Button variant="secondary" asChild className="hidden sm:inline-flex">
             <Link href="/login?tab=login">Log In</Link>
           </Button>
-          <Button asChild>
+          <Button asChild className="px-3 sm:px-4">
             <Link href="/login?tab=signup">Get Started</Link>
           </Button>
         </nav>

@@ -711,7 +711,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   return (
     <div className="mx-auto grid max-w-4xl flex-1 auto-rows-max gap-4 px-4 max-w-full overflow-x-hidden">
       <div className="flex items-center gap-4">
-        <h1 className="flex-1 shrink-0 text-xl font-semibold tracking-tight sm:grow-0 break-words" style={{ overflowWrap: 'anywhere' }}>
+        <h1 className="text-xl font-semibold tracking-tight break-words">
           {isEditMode ? 'Edit Job' : (repostJobId ? 'Re-post Job' : 'Post a New Job')}
         </h1>
         {isProcessing && <Loader2 className="h-5 w-5 animate-spin" />}
