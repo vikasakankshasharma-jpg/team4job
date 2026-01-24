@@ -29,6 +29,9 @@ service cloud.firestore {
       allow read: if request.auth != null && 
         (request.auth.uid == userId || isAdmin() || isSupport());
       
+      // Allow users to create their own profile (Signup)
+      allow create: if isOwner(userId);
+      
       // Strict Update Policy: Prevent Privilege Escalation
       // Users can ONLY update specific profile fields. 
       // THEY CANNOT UPDATE: roles, status, subscription, kycStatus, installerProfile.verified, etc.
@@ -43,7 +46,7 @@ service cloud.firestore {
         );
         
       // Allow Admin to write anything
-      allow write: if isAdmin();
+      allow delete: if isAdmin();
       
       // --- SUBCOLLECTIONS ---
       
@@ -197,8 +200,8 @@ service cloud.firestore {
     // Pending Signups - Admin Read/Write, System Write
     match /pending_signups/{mobile} {
       allow read: if isAdmin() || isSupport();
-      allow create: if request.auth == null; // Allow creation during signup (before auth)
-      allow update: if request.auth == null || isAdmin() || isSupport(); // Allow updates during signup or by admin
+      allow create: if true; // Allowed for signup
+      allow update: if true; // Allowed for signup
       allow delete: if isAdmin();
     }
     

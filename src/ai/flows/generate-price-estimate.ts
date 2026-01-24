@@ -18,7 +18,7 @@ import { z } from 'genkit'; // Re-import z for extend if needed, or use imported
 // The prompt for the AI
 const priceEstimatePrompt = ai.definePrompt({
   name: 'priceEstimatePrompt',
-  model: 'googleai/gemini-pro-latest',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: PromptInputSchema },
   output: { schema: GeneratePriceEstimateOutputSchema },
   prompt: `

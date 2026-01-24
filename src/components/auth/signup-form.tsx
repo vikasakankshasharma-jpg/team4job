@@ -14,6 +14,13 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +35,7 @@ import { useUser } from "@/hooks/use-user";
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { CheckCircle2, Loader2, ShieldCheck, Camera, Upload } from "lucide-react";
+import { CheckCircle2, Loader2, ShieldCheck, Camera, Upload, Eye, EyeOff } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { User, PlatformSettings } from "@/lib/types";
 import {
@@ -87,6 +94,10 @@ const formSchema = z.object({
     errorMap: () => ({ message: "You must accept the Terms and Conditions" }),
   }),
   fax: z.string().optional(), // Honeypot field
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 
@@ -127,6 +138,12 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
   // Use a temporary auth instance to verify phone without triggering main app Login/Redirect
   const { app: mainApp } = useFirebase();
   const tempAuthRef = useRef<Auth | null>(null);
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
+  const [verificationType, setVerificationType] = useState<"mobile" | "email" | null>(null);
 
   useEffect(() => {
     // Initialize Temp Auth
@@ -172,7 +189,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       // @ts-ignore
       window.confirmationResult = confirmation;
       setMobileVerificationId(confirmation.verificationId);
-      setShowMobileOtpInput(true);
+      // setShowMobileOtpInput(true); // Removed inline
+      setVerificationType("mobile");
+      setIsOtpDialogOpen(true);
       toast({ title: "OTP Sent", description: "Please check your mobile for the verification code." });
     } catch (error: any) {
       console.error("SMS Error:", error);
@@ -203,7 +222,10 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       setVerifiedCredential(cred);
 
       setIsMobileVerified(true);
-      setShowMobileOtpInput(false);
+      // setShowMobileOtpInput(false); // Removed inline
+      setIsOtpDialogOpen(false);
+      setVerificationType(null);
+      setMobileOtp("");
 
       // Sign out temp auth to be clean
       if (tempAuthRef.current) await tempAuthRef.current.signOut();
@@ -245,7 +267,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       });
       const data = await response.json();
       if (data.success) {
-        setShowEmailOtpInput(true);
+        // setShowEmailOtpInput(true); // Removed inline
+        setVerificationType("email");
+        setIsOtpDialogOpen(true);
         toast({ title: "Code Sent", description: "Please check your email for the verification code." });
       } else {
         throw new Error(data.message);
@@ -273,7 +297,10 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       const data = await response.json();
       if (data.success) {
         setIsEmailVerified(true);
-        setShowEmailOtpInput(false);
+        // setShowEmailOtpInput(false); // Removed inline
+        setIsOtpDialogOpen(false);
+        setVerificationType(null);
+        setEmailOtp("");
         toast({ title: "Email Verified", description: "Your email has been verified successfully.", className: "bg-green-100 border-green-500" });
       } else {
         throw new Error(data.message);
@@ -376,6 +403,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       name: "",
       email: "",
       password: "",
+      confirmPassword: "",
       role: undefined,
       mobile: "",
       address: {
@@ -898,17 +926,19 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                     Please allow camera access to use this feature.
                   </AlertDescription>
                 </Alert>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="mt-4"
-                  onClick={() => {
-                    setPhoto(PlaceHolderImages[0].imageUrl);
-                    form.setValue('realAvatarUrl', PlaceHolderImages[0].imageUrl);
-                  }}
-                >
-                  Use Test Photo
-                </Button>
+                {process.env.NODE_ENV !== 'production' && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="mt-4"
+                    onClick={() => {
+                      setPhoto(PlaceHolderImages[0].imageUrl);
+                      form.setValue('realAvatarUrl', PlaceHolderImages[0].imageUrl);
+                    }}
+                  >
+                    Use Test Photo
+                  </Button>
+                )}
               </div>
             )}
           </>
@@ -931,7 +961,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         <Button onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'details')} className="w-full h-11" disabled={!photo}>Next</Button>
       </div>
       <canvas ref={canvasRef} className="hidden"></canvas>
-    </div>
+    </div >
   );
 
   const renderSkillsStep = () => (
@@ -1024,7 +1054,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
               <FormControl>
                 <Input placeholder="name@example.com" {...field} disabled={isEmailVerified} className="h-11" autoComplete="email" aria-label="Email Address" />
               </FormControl>
-              {!isEmailVerified && !showEmailOtpInput && (
+              {!isEmailVerified && (
                 <Button type="button" onClick={handleSendEmailOtp} disabled={isLoading} variant="secondary" className="h-11">
                   Verify
                 </Button>
@@ -1035,21 +1065,6 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                 </Button>
               )}
             </div>
-            {showEmailOtpInput && !isEmailVerified && (
-              <div className="mt-2 flex gap-2">
-                <Input
-                  placeholder="Enter 6-digit code"
-                  value={emailOtp}
-                  onChange={(e) => setEmailOtp(e.target.value)}
-                  maxLength={6}
-                  className="h-11"
-                  aria-label="Email OTP"
-                />
-                <Button type="button" onClick={handleVerifyEmailOtp} disabled={isLoading} className="h-11">
-                  Confirm
-                </Button>
-              </div>
-            )}
             <FormMessage />
           </FormItem>
         )}
@@ -1071,7 +1086,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                   aria-label="Mobile Number"
                 />
               </FormControl>
-              {!isMobileVerified && !showMobileOtpInput && (
+              {!isMobileVerified && (
                 <Button type="button" onClick={handleSendMobileOtp} disabled={isLoading} variant="secondary" className="h-11">
                   Verify
                 </Button>
@@ -1082,21 +1097,6 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                 </Button>
               )}
             </div>
-            {showMobileOtpInput && !isMobileVerified && (
-              <div className="mt-2 flex gap-2">
-                <Input
-                  placeholder="Enter 6-digit SMS OTP"
-                  value={mobileOtp}
-                  onChange={(e) => setMobileOtp(e.target.value)}
-                  maxLength={6}
-                  className="h-11"
-                  aria-label="Mobile OTP"
-                />
-                <Button type="button" onClick={handleVerifyMobileOtp} disabled={isLoading} className="h-11">
-                  Confirm
-                </Button>
-              </div>
-            )}
             <FormDescription>Verified mobile number will be your registered ID.</FormDescription>
             <FormMessage />
           </FormItem>
@@ -1109,7 +1109,64 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           <FormItem>
             <FormLabel>Password</FormLabel>
             <FormControl>
-              <Input type="password" placeholder="••••••••" {...field} className="h-11" autoComplete="new-password" aria-label="Password" />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  {...field}
+                  className="h-11 pr-10"
+                  autoComplete="new-password"
+                  aria-label="Password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="confirmPassword"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Confirm Password</FormLabel>
+            <FormControl>
+              <div className="relative">
+                <Input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  {...field}
+                  className="h-11 pr-10"
+                  autoComplete="new-password"
+                  aria-label="Confirm Password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -1178,6 +1235,43 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         {currentStep === "details" && renderDetailsStep()}
         <div id="recaptcha-container"></div>
       </form>
+
+      <Dialog open={isOtpDialogOpen} onOpenChange={setIsOtpDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{verificationType === 'mobile' ? 'Verify Mobile Number' : 'Verify Email Address'}</DialogTitle>
+            <DialogDescription>
+              {verificationType === 'mobile'
+                ? `Enter the 6-digit code sent to ${form.getValues('mobile')}`
+                : `Enter the 6-digit code sent to ${form.getValues('email')}`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2">
+            <div className="grid flex-1 gap-2">
+              <Input
+                id="otp-input"
+                maxLength={6}
+                value={verificationType === 'mobile' ? mobileOtp : emailOtp}
+                onChange={(e) => verificationType === 'mobile' ? setMobileOtp(e.target.value) : setEmailOtp(e.target.value)}
+                placeholder="000000"
+                className="text-center text-lg tracking-widest"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsOtpDialogOpen(false)}>Cancel</Button>
+            <Button
+              type="button"
+              onClick={verificationType === 'mobile' ? handleVerifyMobileOtp : handleVerifyEmailOtp}
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirm
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Form>
   );
 }
