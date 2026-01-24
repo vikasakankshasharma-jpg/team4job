@@ -16,6 +16,7 @@ import { CheckCircle2, CreditCard, Gift, Loader2, Ticket } from "lucide-react";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { SubscriptionPlan, User } from "@/lib/types";
 import { collection, getDocs, query, where, doc, updateDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { format, formatDistanceToNow, formatDistanceToNowStrict } from "date-fns";
 import { toDate } from "@/lib/utils";
 import { useHelp } from "@/hooks/use-help";
@@ -189,6 +190,13 @@ export default function BillingClient() {
     setIsPurchasing(plan.id);
 
     try {
+      const auth = getAuth();
+      const token = await auth.currentUser?.getIdToken();
+
+      if (!token) {
+        throw new Error("You must be logged in to make a purchase.");
+      }
+
       const response = await axios.post('/api/escrow/initiate-payment', {
         jobId: `SUB-${user.id}-${plan.id}-${Date.now()}`,
         jobTitle: `Subscription: ${plan.name}`,
@@ -198,6 +206,10 @@ export default function BillingClient() {
         amount: plan.price,
         travelTip: 0,
         jobGiverFee: 0,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
 
       if (!response.data.payment_session_id) {
