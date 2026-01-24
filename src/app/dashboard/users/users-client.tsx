@@ -622,152 +622,154 @@ export default function UsersClient() {
 
           {/* List View */}
           {view === 'list' && (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('name')}>
-                      User / Unique ID {getSortIcon('name')}
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('status')}>
-                      Status {getSortIcon('status')}
-                    </Button>
-                  </TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    <Button variant="ghost" onClick={() => requestSort('memberSince')}>
-                      Member Since {getSortIcon('memberSince')}
-                    </Button>
-                  </TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    <Button variant="ghost" onClick={() => requestSort('tier')}>
-                      Tier {getSortIcon('tier')}
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                    </TableCell>
+                    <TableHead>
+                      <Button variant="ghost" onClick={() => requestSort('name')}>
+                        User / Unique ID {getSortIcon('name')}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button variant="ghost" onClick={() => requestSort('status')}>
+                        Status {getSortIcon('status')}
+                      </Button>
+                    </TableHead>
+                    <TableHead className="hidden sm:table-cell">
+                      <Button variant="ghost" onClick={() => requestSort('memberSince')}>
+                        Member Since {getSortIcon('memberSince')}
+                      </Button>
+                    </TableHead>
+                    <TableHead className="hidden sm:table-cell">
+                      <Button variant="ghost" onClick={() => requestSort('tier')}>
+                        Tier {getSortIcon('tier')}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
                   </TableRow>
-                ) : tabFilteredUsers.length > 0 ? (
-                  tabFilteredUsers.map((u) => (
-                    <TableRow key={u.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                            <AnimatedAvatar svg={u.avatarUrl} />
-                            <AvatarFallback>{u.name?.substring(0, 2) || 'UN'}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <Link
-                              href={`/dashboard/users/${u.id}`}
-                              className="font-medium hover:underline"
-                            >
-                              {u.name}
-                            </Link>
-                            <p className="text-[10px] text-muted-foreground font-mono truncate max-w-[150px] uppercase tracking-wider">
-                              ID: {u.id}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getUserStatusBadge(u.status)}</TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {format(toDate(u.memberSince), 'MMM, yyyy')}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {u.installerProfile ? (
-                          <div className="flex items-center gap-2">
-                            {tierIcons[u.installerProfile.tier]}
-                            {u.installerProfile.tier}
-                            {u.installerProfile.verified && (
-                              <ShieldCheck className="h-4 w-4 text-green-600" />
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {actionLoading === u.id ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          user.id !== u.id && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button aria-haspopup="true" size="icon" variant="ghost">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">Actions for {u.name}</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem asChild>
-                                  <Link href={`/dashboard/users/${u.id}`}>View Profile</Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                {(u.status === 'active' || u.status === undefined) && (
-                                  <DropdownMenuItem
-                                    onClick={() => handleUserAction(u, 'deactivated')}
-                                  >
-                                    <UserX className="mr-2 h-4 w-4" />
-                                    Deactivate
-                                  </DropdownMenuItem>
-                                )}
-                                {u.status !== 'suspended' && (
-                                  <DropdownMenuItem
-                                    onClick={() => handleUserAction(u, 'suspended', 7)}
-                                  >
-                                    <Ban className="mr-2 h-4 w-4" />
-                                    Suspend (7 Days)
-                                  </DropdownMenuItem>
-                                )}
-                                {(u.status === 'deactivated' || u.status === 'suspended') && (
-                                  <DropdownMenuItem onClick={() => handleUserAction(u, 'active')}>
-                                    <UserCheck className="mr-2 h-4 w-4" />
-                                    Re-activate
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() => setDeleteUser(u)}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete Permanently
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )
-                        )}
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24">
-                      <AdminEmptyState
-                        icon={Inbox}
-                        title="No users found"
-                        description="Try adjusting your filters or search criteria"
-                        action={{
-                          label: 'Reset Filters',
-                          onClick: clearFilters,
-                        }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  ) : tabFilteredUsers.length > 0 ? (
+                    tabFilteredUsers.map((u) => (
+                      <TableRow key={u.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                              <AnimatedAvatar svg={u.avatarUrl} />
+                              <AvatarFallback>{u.name?.substring(0, 2) || 'UN'}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <Link
+                                href={`/dashboard/users/${u.id}`}
+                                className="font-medium hover:underline"
+                              >
+                                {u.name}
+                              </Link>
+                              <p className="text-[10px] text-muted-foreground font-mono truncate max-w-[150px] uppercase tracking-wider">
+                                ID: {u.id}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getUserStatusBadge(u.status)}</TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {format(toDate(u.memberSince), 'MMM, yyyy')}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {u.installerProfile ? (
+                            <div className="flex items-center gap-2">
+                              {tierIcons[u.installerProfile.tier]}
+                              {u.installerProfile.tier}
+                              {u.installerProfile.verified && (
+                                <ShieldCheck className="h-4 w-4 text-green-600" />
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {actionLoading === u.id ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            user.id !== u.id && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button aria-haspopup="true" size="icon" variant="ghost">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Actions for {u.name}</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`/dashboard/users/${u.id}`}>View Profile</Link>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {(u.status === 'active' || u.status === undefined) && (
+                                    <DropdownMenuItem
+                                      onClick={() => handleUserAction(u, 'deactivated')}
+                                    >
+                                      <UserX className="mr-2 h-4 w-4" />
+                                      Deactivate
+                                    </DropdownMenuItem>
+                                  )}
+                                  {u.status !== 'suspended' && (
+                                    <DropdownMenuItem
+                                      onClick={() => handleUserAction(u, 'suspended', 7)}
+                                    >
+                                      <Ban className="mr-2 h-4 w-4" />
+                                      Suspend (7 Days)
+                                    </DropdownMenuItem>
+                                  )}
+                                  {(u.status === 'deactivated' || u.status === 'suspended') && (
+                                    <DropdownMenuItem onClick={() => handleUserAction(u, 'active')}>
+                                      <UserCheck className="mr-2 h-4 w-4" />
+                                      Re-activate
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => setDeleteUser(u)}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete Permanently
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24">
+                        <AdminEmptyState
+                          icon={Inbox}
+                          title="No users found"
+                          description="Try adjusting your filters or search criteria"
+                          action={{
+                            label: 'Reset Filters',
+                            onClick: clearFilters,
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           )}
 
           {/* Grid View */}
