@@ -35,7 +35,7 @@
       enable = true;
       previews = {
         web = {
-          command = ["bash", "-c", "./node_modules/.bin/next dev -H 0.0.0.0 --webpack -p $PORT"];
+          command = ["bash" "-c" "./node_modules/.bin/next dev -H 0.0.0.0 --webpack -p $PORT"];
           manager = "web";
         };
       };
