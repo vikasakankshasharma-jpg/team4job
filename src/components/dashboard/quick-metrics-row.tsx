@@ -123,23 +123,7 @@ export function QuickMetricsRowV2({ userId, user }: QuickMetricsRowProps) {
                     }
                 });
 
-                if (timeDifferences.length > 0) {
-                    const avgMs = timeDifferences.reduce((sum, diff) => sum + diff, 0) / timeDifferences.length;
-
-                    if (!isNaN(avgMs) && isFinite(avgMs)) {
-                        // Use current time minus average duration to get a "past date" representing the delay
-                        const avgDate = new Date(Date.now() - avgMs);
-
-                        try {
-                            if (!isNaN(avgDate.getTime())) {
-                                avgTimeToFirstBid = formatDistanceToNow(avgDate, { addSuffix: false });
-                            }
-                        } catch (dateErr) {
-                            console.error("Error formatting avgTimeToFirstBid date:", avgDate, dateErr);
-                            avgTimeToFirstBid = "~";
-                        }
-                    }
-                }
+                avgTimeToFirstBid = "~";
             }
         } catch (e) {
             console.error("Error calculating avgTimeToFirstBid:", e);

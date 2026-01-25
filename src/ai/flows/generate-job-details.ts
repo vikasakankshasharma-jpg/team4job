@@ -15,7 +15,7 @@ import {
 
 const generateJobDetailsPrompt = ai.definePrompt({
   name: 'generateJobDetailsPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-2.0-flash',
   input: { schema: GenerateJobDetailsInputSchema },
   output: { schema: GenerateJobDetailsOutputSchema },
   prompt: `You are an expert in the CCTV and security installation industry in India.
