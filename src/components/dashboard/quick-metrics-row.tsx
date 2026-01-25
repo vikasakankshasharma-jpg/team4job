@@ -6,7 +6,7 @@ import { QuickMetricCard } from "./quick-metric-card";
 import { Target, Clock, Star, Users } from "lucide-react";
 import { collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { Job, User } from "@/lib/types";
-import { formatDistanceToNow } from "date-fns";
+
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -51,7 +51,18 @@ export function QuickMetricsRowV2({ userId, user }: QuickMetricsRowProps) {
                 const jobs = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
 
                 // Calculate metrics
-                const calculatedMetrics = calculateMetrics(jobs, user);
+                let calculatedMetrics: QuickMetrics = {
+                    avgBidsPerJob: 0,
+                    avgTimeToFirstBid: "No data",
+                    pendingReviews: 0,
+                    favoriteInstallers: 0
+                };
+
+                try {
+                    calculatedMetrics = calculateMetrics(jobs, user);
+                } catch (calcError) {
+                    console.error("Critical error in calculateMetrics, using defaults:", calcError);
+                }
                 setMetrics(calculatedMetrics);
             } catch (error) {
                 console.error("Error fetching quick metrics:", error);
