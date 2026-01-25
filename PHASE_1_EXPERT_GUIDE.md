@@ -2,7 +2,7 @@
 
 ## 📋 Current Setup Analysis
 
-**Project ID:** `studio-1890574003-16f26`
+**Project ID:** `dodo-beta`
 **Hosting Configuration:** ✅ `maxInstances: 1` (Perfect for cost control)
 
 ---
@@ -70,7 +70,7 @@
    ```
 
 3. **DO Use Composite Indexes** (You already have some based on your Firestore rules)
-   - Check [Firestore Console > Indexes](https://console.firebase.google.com/project/studio-1890574003-16f26/firestore/indexes) regularly
+   - Check [Firestore Console > Indexes](https://console.firebase.google.com/project/dodo-beta/firestore/indexes) regularly
    - Add indexes for queries that filter by multiple fields
 
 **Action Item:**
@@ -89,7 +89,7 @@ firebase deploy --only firestore:indexes
 - Geocoding API: $5 per 1,000 requests → **~40,000 free requests/month**
 
 **Your Current Setup:**
-- API Key: `AIzaSyDyz5Ku7bukk2NX_03-05fowrh11GEtCbQ`
+- API Key: `AIzaSyBOm9kvA-1Ne3nl3GBL45dYXj8w_nwH6Ko`
 - ⚠️ **This key is PUBLICLY VISIBLE** in your production bundle
 
 **Expert Recommendations:**
@@ -102,12 +102,12 @@ Your Maps API key is exposed in the frontend. Anyone can copy it and use it for 
 
 1. **Add API Key Restrictions:**
    - Go to [Google Cloud Console > APIs & Credentials](https://console.cloud.google.com/apis/credentials)
-   - Click on your API key `AIzaSyDyz5Ku7bukk2NX_03-05fowrh11GEtCbQ`
+   - Click on your API key `AIzaSyBOm9kvA-1Ne3nl3GBL45dYXj8w_nwH6Ko`
    - Under "Application restrictions", select **HTTP referrers**
    - Add these URLs:
      ```
-     https://studio-1890574003-16f26.web.app/*
-     https://studio-1890574003-16f26.firebaseapp.com/*
+     https://dodo-beta.web.app/*
+     https://dodo-beta.firebaseapp.com/*
      http://localhost:3000/*
      ```
    - Under "API restrictions", select **Restrict key**
@@ -118,7 +118,7 @@ Your Maps API key is exposed in the frontend. Anyone can copy it and use it for 
 
 2. **Verify Billing is Enabled:**
    - Go to [Google Cloud Console > Billing](https://console.cloud.google.com/billing)
-   - Ensure your project `studio-1890574003-16f26` is linked to a billing account
+   - Ensure your project `dodo-beta` is linked to a billing account
    - **Even though you won't pay (due to $200 credit), billing MUST be enabled to access the API**
 
 3. **Set Up Budget Alerts:**
@@ -143,7 +143,7 @@ const debouncedGeocode = useCallback(debounce(geocodeAddress, 2000), [geocodeAdd
 
 ### 4. **Gemini AI (Google AI Studio)** ✅ OPTIMAL
 
-**Current API Key:** `AIzaSyCg6OjGn9jmxzd-hbe8RGJA3vOqlBL8soY`
+**Current API Key:** `AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE`
 
 **Free Tier:**
 - 15 RPM (requests per minute)
@@ -163,7 +163,7 @@ You MUST verify this is a Google AI Studio key (free tier), NOT a Vertex AI key 
 
 **How to Check:**
 1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Verify your key `AIzaSyCg6OjGn9jmxzd-hbe8RGJA3vOqlBL8soY` is listed there
+2. Verify your key `AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE` is listed there
 3. If it's NOT there, you might be using Vertex AI accidentally, which will charge you
 
 **If you're using Vertex AI (paid), here's how to switch:**

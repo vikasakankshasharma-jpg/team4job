@@ -6,11 +6,11 @@ import {
     getDocs,
     deleteDoc,
     query,
-    where,
     orderBy,
     limit,
     Timestamp,
-    DocumentReference,
+    updateDoc,
+    increment,
 } from 'firebase/firestore';
 import { Address, JobAttachment } from '@/lib/types';
 
@@ -69,7 +69,6 @@ export async function saveDraft(
             createdAt: draftData.createdAt || Timestamp.now(),
         };
 
-        // Create a new object, only including properties that are not undefined.
         const cleanedDraft = Object.entries(draftToSave).reduce(
             (acc, [key, value]) => {
                 if (value !== undefined) {
@@ -151,9 +150,9 @@ export async function deleteDraft(
 }
 
 /**
- * Get the most recent draft for a user
+ * Get the latest draft for a user
  */
-export async function getMostRecentDraft(
+export async function getLatestDraft(
     db: any,
     userId: string
 ): Promise<JobDraft | null> {
@@ -167,7 +166,7 @@ export async function getMostRecentDraft(
         }
         return null;
     } catch (error) {
-        console.error('Error getting most recent draft:', error);
+        console.error('Error getting latest draft:', error);
         throw error;
     }
 }
@@ -175,7 +174,7 @@ export async function getMostRecentDraft(
 /**
  * Save a job template from a draft
  */
-export async function saveTemplateFromDraft(
+export async function saveTemplate(
     db: any,
     userId: string,
     draft: JobDraft,
@@ -208,7 +207,7 @@ export async function saveTemplateFromDraft(
 /**
  * Get all job templates for a user
  */
-export async function getAllTemplates(
+export async function getTemplates(
     db: any,
     userId: string
 ): Promise<JobTemplate[]> {
@@ -237,6 +236,26 @@ export async function deleteTemplate(
         await deleteDoc(templateRef);
     } catch (error) {
         console.error('Error deleting template:', error);
+        throw error;
+    }
+}
+
+/**
+ * Increment the usage count of a job template
+ */
+export async function incrementTemplateUsage(
+    db: any,
+    userId: string,
+    templateId: string
+): Promise<void> {
+    try {
+        const templateRef = doc(db, 'users', userId, 'jobTemplates', templateId);
+        await updateDoc(templateRef, {
+            useCount: increment(1),
+            lastUsed: Timestamp.now(),
+        });
+    } catch (error) {
+        console.error('Error incrementing template usage:', error);
         throw error;
     }
 }

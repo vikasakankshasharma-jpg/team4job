@@ -1,114 +1,64 @@
+# Firebase Config (dodo-beta)
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyC0NaO2x65_mdXpe1S62l2bwoc3KZwjn3o
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=dodo-beta.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=dodo-beta
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=dodo-beta.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=912974459558
+NEXT_PUBLIC_FIREBASE_APP_ID=1:912974459558:web:0d04a5c2d3373c28547a67
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-B46YNTH6E2
 
-# Required API Keys for CCTV Job Connect
+# Firebase Admin (dodo-beta)
+DO_FIREBASE_PROJECT_ID=dodo-beta
+DO_FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@dodo-beta.iam.gserviceaccount.com
+DO_FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQD5wcNVv6kHRfxE
+IUu1fwo2EEJDF2cIF3BS6AZFiDk5Q1MrJ7hWY9t/F8WG9QdYtnV5xJX21ef6g6rV
+QeoY7z8kG/9Qkys0LQbtqWSLVCgIoQo4uHNCjk2EhyXgdB28TJq4UqH61DIYn9SS
+5/8VeUlK/TX2ucT1wNqYznQRQmpE2VK9USY4vtM+CnC/rKjYzWxbNllGMvpASaIR
+OqXUAJE0FT7CGSD3F2GN23F11O8eUUUgoEmT0ujqs5CAaXv8sJRz/N6mSD4OmlFc
+LQWXTgW1r54S2qSmZT2BdeooWwyw/ULwhrBvucSaW0HpVWMDyNhcYCiq2rxCw+2W
+eFv7AbHxAgMBAAECggEAMMsRgdmZSKH8GEVW+KTSlmBTya6zQsnteEz7GK912oGU
+KHywjzQgCDLZNLX/Eu5Ggh0NXTVKBk+d2t7vQKLQ95l+pjuyN5XKYjjzOyMcVR89
+E3q5jdmmPEt482JMAuMGYRdHrOyywsvK6E5pr8TLtFpGpiaB268rJapD07FheISH
+0DYcOkojlBWjPHHkFVjFOfMlt2NntMFGD7LBQh13VT8Sk3YrkJxYIwHGlNWve9v2
+uU5Mm31pV4yT66ODnDzaLJMIQASRL3r0Nt8OKWEVAQwF0ZU/D4m8ej6uIySI/RxP
+6zKARhlRNTiWsnbU2yPA5mXxPooqmGmxP4tTi/ItvwKBgQD9RXW7BWzEomSWfSyT
+E+pnqe0MGST+NTRxIUzFe/Ow3NSCuPUgKNVzOhZczH+AcEyQAwmHuj9r+0vd8yjI
+PwQp5vXiBZglJIoUQhnm5puMXzSLzWZkfsNxi4j7gIbBYmXbQoI/+7C7O1plAccL
+lbtDWuQox1xJF33sQhF9f3ZZhwKBgQD8cpwtYR7kyPN+tAG6oRbppUCM8BbAEQWE
+5RNqvRuxfUjLvaBZPvLT4J+CW/gzkzTuwSI7F0nzlWGcF/TElM4wUXq9GqNgcZ0T
+htbs+aHhfytJLyYefQNCf6ULVM77pVd4zgzY+QHSi5rxQgVNdpQavwaULa95SSjX
+Bsqj1UuWxwKBgQDcVmxo6vxISRsHTRjVT5My4kMmrk1flnvsG9NFT2OfL0719uDS
+PJQN7a/8xa/61jfVZb8JxH9eer3y9pM5OpFtvs+U9db6IUK7AxKzrVYPldgJ9ASr
+UxjHFGR0oMkbPnZsfP0Bmv6StL0ceKJosre6jj1GOMJRmE1ll8jNjHEyywKBgALs
+dOCVqlzt8tv5y7dUnEZScp/vO+Q3jj/Ow13OGN8CW3B4nr3J29gWVuKUnBhE0S0e
+sX3LtECM71d2c5A/RPAMUYaVI2U/i5kpS53s+jH5Xg/36tIZkosXnVq3PbpuXMf6
+Yu20XJAKq921bQhLokV5BuN6b/jQnxd2baxeEQULAoGBAL2JfhyxIYXcTXz6z5/o
+Qr6dJohashb77QHmbc2WHhx+LUdSjZhtfkpQcAyK/tpvK3fWntDVBY1YxiHPi+SS
+vqt716FwV68xoa8MLxQfkEs29A6ZGY9MMnc20hmpwm7mBb2bwffiqlZMLonqkTMZ
+PrTXloWroWm6vAmanEQ/Ru2I
+-----END PRIVATE KEY-----
+"
 
-This document outlines the essential API keys required for the CCTV Job Connect application to function correctly. These keys must be stored in an environment file (e.g., `.env.local`) at the root of the project.
+# Google Maps (Ensure this Key is enabled for dodo-beta domain)
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyBOm9kvA-1Ne3nl3GBL45dYXj8w_nwH6Ko
 
-**IMPORTANT NOTE ON CASHFREE PRODUCTS:** For regulatory compliance in India, this marketplace application must use Cashfree's **Marketplace Settlement** feature (also known as "Accounts" or "Easy Split"). This ensures that funds from Job Givers are held in a regulated account managed by Cashfree, not directly in the platform's bank account. You must enable this feature in your Cashfree dashboard. The integration will use the `Payment Gateway` credentials for collecting funds and the `Payouts` credentials for splitting the funds after job completion.
+# Cashfree (Currently TEST keys - Update to PROD when ready)
+CASHFREE_PAYMENTS_CLIENT_ID=TEST10789459c9709ea1989304ccd77e95498701
+CASHFREE_PAYMENTS_CLIENT_SECRET=cfsk_ma_test_e7c68c0be2913b1e6f6c1309d3adcf6f_c7f1d512
+CASHFREE_PAYOUTS_CLIENT_ID=CF10789459D5ADRNV4U4NC739RIECG
+CASHFREE_PAYOUTS_CLIENT_SECRET=cfsk_ma_test_574abcb682bcce2cd4bb9e81b96653fc_a94c89a2
+CASHFREE_CLIENT_ID=CF10789459D5AE14N4U4NC739RIECG
+CASHFREE_CLIENT_SECRET=cfsk_ma_test_43ba99135c214f7e5c43b43660de8ff9_ea6adba6
 
----
+# Tools
+BREVO_API_KEY=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
+NEXT_PUBLIC_GA_ID=G-B46YNTH6E2
 
-## 1. Firebase API Keys
+# Sentry
+NEXT_PUBLIC_SENTRY_DSN=https://80804373cc5c48b160dc622c548d35cd@o4510628917805056.ingest.us.sentry.io/4510628926455808
 
-These keys connect the Next.js application to your Firebase project, enabling Authentication, Firestore Database, and other client-side Firebase services.
-
-You can get these from your Firebase project settings:
-1.  Go to the [Firebase Console](https://console.firebase.google.com/).
-2.  Select your project.
-3.  Click the gear icon next to "Project Overview" and select **Project settings**.
-4.  In the "General" tab, scroll down to the "Your apps" section.
-5.  Select your web app and copy the configuration values.
-
-```env
-# .env.local
-
-NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSy..."
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
-NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id"
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your-sender-id"
-NEXT_PUBLIC_FIREBASE_APP_ID="1:your-app-id:web:..."
-
-# This is the VAPID key for Firebase Cloud Messaging (Push Notifications)
-# Find this in your Firebase Project Settings -> Cloud Messaging tab -> Web configuration
-NEXT_PUBLIC_FIREBASE_VAPID_KEY="your-web-push-certificate-key-pair"
-```
-
----
-
-## 2. Google Maps API Key
-
-This key is required for the interactive map features, including address selection and location-based services.
-
-You can get this from the [Google Cloud Console](https://console.cloud.google.com/):
-1.  Go to "APIs & Services" > "Credentials".
-2.  Create a new API key or use an existing one.
-3.  **Important:** Ensure you have enabled the **Maps JavaScript API**, **Places API**, and **Geocoding API** for this key.
-4.  It is highly recommended to restrict this key to your application's domain to prevent unauthorized use.
-
-```env
-# .env.local
-
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="AIzaSy..."
-```
-
----
-
-## 3. Gemini API Key (for Genkit)
-
-This key enables all the Generative AI features in the application, which are powered by Google's Gemini models through Genkit.
-
-You can get this from [Google AI Studio](https://aistudio.google.com/app/apikey):
-1.  Click "Create API key" and follow the instructions.
-
-```env
-# .env.local
-
-GEMINI_API_KEY="AIzaSy..."
-```
-
----
-
-## 4. Cashfree API Keys
-
-The application is set up to use three separate products from Cashfree. Each product has its own set of API keys.
-
-**Important:** These keys are secrets and should **NOT** be prefixed with `NEXT_PUBLIC_`. They are used in server-side flows.
-
-### 4.1 Cashfree Verification Suite (Secure ID)
-
-Used for Aadhar verification of Installers during onboarding.
-*   **Path:** **Developers > API Keys > Verification Suite**
-
-```env
-# .env.local
-
-# For Installer KYC Verification (Aadhar OTP)
-CASHFREE_CLIENT_ID="your_verification_suite_client_id"
-CASHFREE_CLIENT_SECRET="your_verification_suite_client_secret"
-```
-
-### 4.2 Cashfree Payment Gateway
-
-Used to collect payments from Job Givers into the Marketplace Settlement account. The `CLIENT_SECRET` is also used to verify incoming webhooks.
-*   **Path:** **Developers > API Keys > Payment Gateway**
-
-```env
-# .env.local
-
-# For collecting payments from Job Givers
-CASHFREE_PAYMENTS_CLIENT_ID="your_payment_gateway_client_id"
-CASHFREE_PAYMENTS_CLIENT_SECRET="your_payment_gateway_client_secret"
-```
-
-### 4.3 Cashfree Payouts
-
-Used to disburse funds from the Marketplace Settlement account to the Installer and the platform (as commission).
-*   **Path:** **Developers > API Keys > Payouts**
-
-```env
-# .env.local
-
-# For sending payouts to Installers
-CASHFREE_PAYOUTS_CLIENT_ID="your_payouts_client_id"
-CASHFREE_PAYOUTS_CLIENT_SECRET="your_payouts_client_secret"
-```
+# Gemini AI
+GEMINI_API_KEY=AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE
+GOOGLE_GENAI_API_KEY=AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE
+GOOGLE_API_KEY=AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE
