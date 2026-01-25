@@ -9,32 +9,46 @@ runConfig:
 env:
   # Firebase Configuration
   - variable: FIREBASE_PROJECT_ID
-    value: studio-1890574003-16f26
+    value: dodo-beta
   - variable: FIREBASE_CLIENT_EMAIL
-    value: firebase-adminsdk-fbsvc@studio-1890574003-16f26.iam.gserviceaccount.com
+    value: firebase-adminsdk-fbsvc@dodo-beta.iam.gserviceaccount.com
   - variable: FIREBASE_PRIVATE_KEY
     secret: firebase-private-key
   
   # Google Services
   - variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-    value: AIzaSyDyz5Ku7bukk2NX_03-05fowrh11GEtCbQ
+    value: AIzaSyBOm9kvA-1Ne3nl3GBL45dYXj8w_nwH6Ko
   - variable: GEMINI_API_KEY
-    value: AIzaSyCg6OjGn9jmxzd-hbe8RGJA3vOqlBL8soY
-  
-  # Cashfree Payment Gateway
+    value: AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE
+
+  # Cashfree (Currently TEST keys - Update to PROD when ready)
   - variable: CASHFREE_PAYMENTS_CLIENT_ID
-    value: TEST108295432c02e6166e285ab80d8f34592801
-  - variable: CASHFREE_PAYOUTS_CLIENT_SECRET
-    secret: cashfree-payouts-secret
+    value: TEST10789459c9709ea1989304ccd77e95498701
+  - variable: CASHFREE_PAYMENTS_CLIENT_SECRET
+    secret: cashfree-payments-secret # Assumes you have a secret named this
   
-  # Cashfree Payouts
   - variable: CASHFREE_PAYOUTS_CLIENT_ID
-    value: CF10829543D41GSOB0ISBS73B3NE3G
-  - variable: CASHFREE_SECRET_KEY
-    secret: cashfree-secret-key
-  
-  # Cashfree Secure ID (KYC)
+    value: CF10789459D5ADRNV4U4NC739RIECG
+  - variable: CASHFREE_PAYOUTS_CLIENT_SECRET
+    secret: cashfree-payouts-secret # Assumes you have a secret named this
+
   - variable: CASHFREE_CLIENT_ID
-    value: CF10829543D41H0F30ISBS73B3NE40
+    value: CF10789459D5AE14N4U4NC739RIECG
   - variable: CASHFREE_CLIENT_SECRET
-    secret: cashfree-client-secret
+    secret: cashfree-client-secret # Assumes you have a secret named this
+
+  # Tools
+  - variable: BREVO_API_KEY
+    secret: brevo-api-key # Assumes you have a secret named this
+  - variable: NEXT_PUBLIC_GA_ID
+    value: G-B46YNTH6E2
+
+  # Sentry
+  - variable: NEXT_PUBLIC_SENTRY_DSN
+    value: https://80804373cc5c48b160dc622c548d35cd@o4510628917805056.ingest.us.sentry.io/4510628926455808
+
+  # Gemini AI (Redundant with top-level GEMINI_API_KEY, but included for completeness)
+  - variable: GOOGLE_GENAI_API_KEY
+    value: AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE
+  - variable: GOOGLE_API_KEY
+    value: AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE
