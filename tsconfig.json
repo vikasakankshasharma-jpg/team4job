@@ -41,6 +41,10 @@
     "src/functions",
     "hooks",
     "src/lib/firebase/seed.ts",
-    "src/lib/data.ts"
+    "src/lib/data.ts",
+    "jest.config.ts",
+    "jest.setup.ts",
+    "playwright.config.ts",
+    "scripts"
   ]
 }

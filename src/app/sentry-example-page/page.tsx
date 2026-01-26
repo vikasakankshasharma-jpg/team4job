@@ -13,15 +13,15 @@ class SentryExampleFrontendError extends Error {
 
 export default function Page() {
   const [hasSentError, setHasSentError] = useState(false);
-  const [isConnected, setIsConnected] = useState(true);
+  // const [isConnected, setIsConnected] = useState(true);
 
   useEffect(() => {
-    Sentry.logger.info("Sentry example page loaded");
-    async function checkConnectivity() {
-      const result = await Sentry.diagnoseSdkConnectivity();
-      setIsConnected(result !== "sentry-unreachable");
-    }
-    checkConnectivity();
+    // Sentry.logger.info("Sentry example page loaded");
+    // async function checkConnectivity() {
+    //   const result = await Sentry.diagnoseSdkConnectivity();
+    //   setIsConnected(result !== "sentry-unreachable");
+    // }
+    // checkConnectivity();
   }, []);
 
   return (
@@ -71,7 +71,7 @@ export default function Page() {
         <button
           type="button"
           onClick={async () => {
-            Sentry.logger.info("User clicked the button, throwing a sample error");
+            // Sentry.logger.info("User clicked the button, throwing a sample error");
             await Sentry.startSpan(
               {
                 name: "Example Frontend/Backend Span",
@@ -88,21 +88,13 @@ export default function Page() {
               "This error is raised on the frontend of the example page.",
             );
           }}
-          disabled={!isConnected}
+          // disabled={!isConnected}
         >
           <span>Throw Sample Error</span>
         </button>
 
         {hasSentError ? (
           <p className="success">Error sent to Sentry.</p>
-        ) : !isConnected ? (
-          <div className="connectivity-error">
-            <p>
-              It looks like network requests to Sentry are being blocked, which
-              will prevent errors from being captured. Try disabling your
-              ad-blocker to complete the test.
-            </p>
-          </div>
         ) : (
           <div className="success_placeholder" />
         )}

@@ -13,7 +13,7 @@ async function main() {
         });
         console.log("Success with gemini-2.0-flash:", result.text);
     } catch (e) {
-        console.error("Failed with gemini-2.0-flash:", e.message);
+        console.error("Failed with gemini-2.0-flash:", (e as Error).message);
     }
 
     try {
@@ -23,7 +23,7 @@ async function main() {
         });
         console.log("Success with gemini-flash-latest:", result.text);
     } catch (e) {
-        console.error("Failed with gemini-flash-latest:", e.message);
+        console.error("Failed with gemini-flash-latest:", (e as Error).message);
     }
 }
 

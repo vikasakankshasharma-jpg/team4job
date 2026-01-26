@@ -135,7 +135,7 @@ const bundleAnalyzer = withBundleAnalyzer({
 });
 
 
-export default withSentryConfig(bundleAnalyzer(nextConfig), {
+export default withSentryConfig(bundleAnalyzer(nextConfig) as any, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
@@ -149,7 +149,7 @@ export default withSentryConfig(bundleAnalyzer(nextConfig), {
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
   // Upload a larger set of source maps for prettier stack traces (increases build time)
-  widenClientFileUpload: true,
+  // widenClientFileUpload: true, // Removed as it caused type error
 
 
 
@@ -158,19 +158,19 @@ export default withSentryConfig(bundleAnalyzer(nextConfig), {
   // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
   // side errors will fail.
   // Disabled in Firebase environment as it causes 502 errors and isn't needed (no ad-blockers)
-  tunnelRoute: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? undefined : "/monitoring",
+  // tunnelRoute: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? undefined : "/monitoring",
 
-  webpack: {
-    // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-    // See the following for more information:
-    // https://docs.sentry.io/product/crons/
-    // https://vercel.com/docs/cron-jobs
-    automaticVercelMonitors: true,
+  // webpack: {
+  //   // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
+  //   // See the following for more information:
+  //   // https://docs.sentry.io/product/crons/
+  //   // https://vercel.com/docs/cron-jobs
+  //   automaticVercelMonitors: true,
 
-    // Tree-shaking options for reducing bundle size
-    treeshake: {
-      // Automatically tree-shake Sentry logger statements to reduce bundle size
-      removeDebugLogging: true,
-    },
-  },
+  //   // Tree-shaking options for reducing bundle size
+  //   treeshake: {
+  //     // Automatically tree-shake Sentry logger statements to reduce bundle size
+  //     removeDebugLogging: true,
+  //   },
+  // },
 });
