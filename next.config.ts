@@ -125,6 +125,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  turbopack: {},
 };
 
 
