@@ -4,23 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev -H 0.0.0.0 -p 8080",
-    "dev:webpack": "next dev --experimental-turbo=false",
-    "dev:idx": "next dev -H 0.0.0.0 -p 8080",
-    "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
-    "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
-    "build": "next build --webpack",
-    "start": "next start",
-    "lint": "eslint src",
-    "typecheck": "tsc --noEmit",
-    "db:seed": "tsx src/lib/firebase/seed.ts",
-    "db:cleanup": "tsx src/lib/firebase/cleanup-test-data.ts",
-    "postinstall": "patch-package",
-    "test:e2e": "playwright test tests/e2e",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed",
-    "test:smoke": "playwright test tests/e2e/smoke.spec.ts",
-    "test:full": "playwright test tests/e2e/complete-transaction-cycle.spec.ts"
+    "dev": "bash scripts/dev-idx-safe.sh",
+    "dev:idx": "bash scripts/dev-idx-safe.sh"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.25.0",
