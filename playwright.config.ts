@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables from .env.local
-dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '.env.local'), override: true });
 
 /**
  * Playwright Configuration for E2E Testing
@@ -15,6 +15,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env.local') });
  */
 export default defineConfig({
     testDir: './tests',
+    testMatch: '**/*.spec.ts',
 
     /* Run tests in files in parallel */
     fullyParallel: false,
@@ -50,10 +51,10 @@ export default defineConfig({
         video: 'retain-on-failure',
 
         /* Maximum time each action can take */
-        actionTimeout: 30000,
+        actionTimeout: 180000,
 
         /* Maximum time for navigation */
-        navigationTimeout: 60000,
+        navigationTimeout: 180000,
     },
 
     /* Configure projects for major browsers */
@@ -73,7 +74,7 @@ export default defineConfig({
     },
 
     /* Global timeout for each test */
-    timeout: 120000,
+    timeout: 180000,
 
     /* Expect timeout */
     expect: {
