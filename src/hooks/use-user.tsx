@@ -11,6 +11,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useAuth, useFirestore } from "@/lib/firebase/client-provider";
 import { toDate } from "@/lib/utils";
+import { setAuthTokenAction, clearAuthTokenAction } from "@/app/actions/auth.actions";
 
 // Re-export firebase hooks for convenience
 export { useAuth, useFirestore, useFirebase, useStorage } from "@/lib/firebase/client-provider";
@@ -135,6 +136,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isLoggingOut.current) return;
 
       if (firebaseUser) {
+        // Sync token to cookie for server-side fetching
+        try {
+          const token = await firebaseUser.getIdToken();
+          await setAuthTokenAction(token);
+        } catch (e) {
+          console.error('[useUser] Failed to sync token to cookie:', e);
+        }
+
         setHasAuthUser(true);
         setLoading(true);
         const userDocRef = doc(db, "users", firebaseUser.uid);
@@ -171,6 +180,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         return () => unsubscribeDoc();
       } else {
+        // Clear token cookie
+        await clearAuthTokenAction();
         setHasAuthUser(false);
         updateUserState(null);
         setLoading(false);

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useMemo } from 'react';
-import { app, auth, db, storage } from './client';
+import { app, auth, db, storage } from '@/infrastructure/firebase/client';
 import { FirebaseApp } from 'firebase/app';
 import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';

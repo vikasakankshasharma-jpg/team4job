@@ -1,19 +1,23 @@
+// app/api/cashfree/payouts/add-beneficiary/route.ts - REFACTORED
 
 import { NextRequest, NextResponse } from 'next/server';
-
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
+import { logger } from '@/infrastructure/logger';
 import { User } from '@/lib/types';
 import axios from 'axios';
 
-// Switch to sandbox for beta testing (zero cost)
-// Production: 'https://payout-api.cashfree.com/payouts'
+export const dynamic = 'force-dynamic';
+
+// Cashfree Payouts API (sandbox for beta)
 const CASHFREE_API_BASE = 'https://payout-gamma.cashfree.com/payouts';
 
-// Function to get the bearer token from Cashfree
+/**
+ * Get Cashfree bearer token for payouts API
+ */
 async function getCashfreeBearerToken(): Promise<string> {
   const response = await axios.post(
     `${CASHFREE_API_BASE}/auth`,
-    {}, // Empty body for client credentials grant
+    {},
     {
       headers: {
         'Content-Type': 'application/json',
@@ -25,20 +29,25 @@ async function getCashfreeBearerToken(): Promise<string> {
   if (response.data?.data?.token) {
     return response.data.data.token;
   }
-  throw new Error('Failed to authenticate with Cashfree Payouts.');
+  throw new Error('Failed to authenticate with Cashfree Payouts');
 }
 
-export const dynamic = 'force-dynamic';
-
+/**
+ * Add beneficiary account to Cashfree for payouts
+ * ✅ REFACTORED: Uses infrastructure logger and Firebase
+ */
 export async function POST(req: NextRequest) {
   try {
     const { userId, accountHolderName, accountNumber, ifsc } = await req.json();
 
     if (!userId || !accountHolderName || !accountNumber || !ifsc) {
-      return NextResponse.json({ error: 'Missing required beneficiary details' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing required beneficiary details' },
+        { status: 400 }
+      );
     }
 
-    // 1. Fetch user details from Firestore
+    // Fetch user details
     const db = getAdminDb();
     const userRef = db.collection('users').doc(userId);
     const userSnap = await userRef.get();
@@ -48,13 +57,13 @@ export async function POST(req: NextRequest) {
     }
     const user = userSnap.data() as User;
 
-    // 2. Generate a unique beneficiary ID
+    // Generate unique beneficiary ID
     const beneficiaryId = `INSTALLER_${userId.slice(0, 8)}_${Date.now()}`;
 
-    // 3. Authenticate with Cashfree to get a bearer token
+    // Authenticate with Cashfree
     const token = await getCashfreeBearerToken();
 
-    // 4. Prepare the beneficiary payload for Cashfree
+    // Prepare beneficiary payload
     const beneficiaryPayload = {
       beneId: beneficiaryId,
       name: accountHolderName,
@@ -62,22 +71,22 @@ export async function POST(req: NextRequest) {
       phone: user.mobile,
       bankAccount: accountNumber,
       ifsc: ifsc,
-      address1: user.address.street || "Not Provided",
+      address1: user.address.street || 'Not Provided',
     };
 
-    // 5. Make the API call to Cashfree to add the beneficiary
+    // Make API call to Cashfree
     await axios.post(
       `${CASHFREE_API_BASE}/beneficiaries`,
       beneficiaryPayload,
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       }
     );
 
-    // 6. If successful, store the beneficiaryId and masked account number in our DB
+    // Store beneficiary info in database
     const lastFourDigits = accountNumber.slice(-4);
     const maskedAccountNumber = `**** **** ${lastFourDigits}`;
 
@@ -88,12 +97,18 @@ export async function POST(req: NextRequest) {
       'payouts.ifsc': ifsc,
     });
 
-    // 7. Return success to the frontend
-    return NextResponse.json({ success: true, beneficiaryId });
+    logger.info('Beneficiary added to Cashfree', {
+      userId,
+      beneficiaryId,
+    });
 
+    return NextResponse.json({ success: true, beneficiaryId });
   } catch (error: any) {
-    console.error('Error adding Cashfree beneficiary:', error.response?.data || error.message);
-    const errorMessage = error.response?.data?.message || 'Failed to add beneficiary.';
+    logger.error('Failed to add Cash free beneficiary', error, {
+      metadata: error.response?.data,
+    });
+    const errorMessage =
+      error.response?.data?.message || 'Failed to add beneficiary';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

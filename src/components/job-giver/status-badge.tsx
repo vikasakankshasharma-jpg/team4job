@@ -84,6 +84,73 @@ const statusConfig = {
         color: 'bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/30',
         emoji: '⏹️',
     },
+    // Lowercase fallback mapping
+    'open': {
+        description: 'Installers can submit bids until the deadline',
+        nextStep: 'Review bids after deadline',
+        color: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30',
+        emoji: '🔵',
+    },
+    'bidding closed': {
+        description: 'Bidding deadline has passed',
+        nextStep: 'Review bids and award job',
+        color: 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/30',
+        emoji: '⏸️',
+    },
+    'bid_accepted': {
+        description: 'Job awarded to installer, awaiting acceptance',
+        nextStep: 'Installer must accept within deadline',
+        color: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30',
+        emoji: '🟡',
+    },
+    'awarded': {
+        description: 'Job awarded to installer, awaiting acceptance',
+        nextStep: 'Installer must accept within deadline',
+        color: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30',
+        emoji: '🟡',
+    },
+    'in_progress': {
+        description: 'Work is actively ongoing',
+        nextStep: 'Monitor progress and communicate',
+        color: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/30',
+        emoji: '🟣',
+    },
+    'funded': {
+        description: 'Installer accepted, payment required',
+        nextStep: 'Wait for work to start',
+        color: 'bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/30',
+        emoji: '💰',
+    },
+    'work_submitted': {
+        description: 'Installer submitted work for review',
+        nextStep: 'Review and approve payment release',
+        color: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/30',
+        emoji: '👀',
+    },
+    'completed': {
+        description: 'Job successfully completed',
+        nextStep: 'Leave a review for the installer',
+        color: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30',
+        emoji: '✅',
+    },
+    'cancelled': {
+        description: 'Job was cancelled',
+        nextStep: 'Refund processed if applicable',
+        color: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30',
+        emoji: '❌',
+    },
+    'unbid': {
+        description: 'No bids received by deadline',
+        nextStep: 'Repost or promote the job',
+        color: 'bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/30',
+        emoji: '⭕',
+    },
+    'disputed': {
+        description: 'Dispute raised, under admin review',
+        nextStep: 'Wait for admin resolution',
+        color: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30',
+        emoji: '⚠️',
+    },
 };
 
 interface StatusBadgeProps {

@@ -32,7 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus } from "lucide-react";
 import React from "react";
 import { getAuth } from "firebase/auth";
-import axios from "axios";
+
 
 const teamMemberSchema = z.object({
   name: z.string().min(2, "Name is required."),
@@ -62,9 +62,19 @@ export function TeamManagementCard({ onTeamMemberAdded }: { onTeamMemberAdded: (
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error("Not authenticated");
 
-      await axios.post('/api/admin/create-user', values, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(values)
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create team member");
+      }
       toast({
         title: "Team Member Added",
         description: `${values.name} has been added to the team as a ${values.role}.`,

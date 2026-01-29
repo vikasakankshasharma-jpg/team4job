@@ -178,7 +178,7 @@ export interface Milestone {
   title: string;
   description: string;
   amount: number;
-  status: 'Pending' | 'Funded' | 'Released'; // 'Funded' means allocated from main escrow
+  status: 'pending' | 'funded' | 'released'; // 'funded' means allocated from main escrow
   createdAt: number;
 }
 
@@ -195,7 +195,7 @@ export type Job = {
   address: Address;
   travelTip?: number;
   isGstInvoiceRequired: boolean;
-  status: 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid' | 'Pending Funding' | 'Pending Confirmation' | 'Disputed' | 'Needs Assistance' | 'Cancellation Proposed';
+  status: 'draft' | 'open' | 'bid_accepted' | 'funded' | 'in_progress' | 'work_submitted' | 'completed' | 'disputed' | 'cancelled' | 'unbid' | 'Open for Bidding' | 'Bidding Closed' | 'Awarded' | 'In Progress' | 'Completed' | 'Cancelled' | 'Unbid' | 'Pending Funding' | 'Pending Confirmation' | 'Disputed' | 'Needs Assistance' | 'Cancellation Proposed';
   deadline: Date | Timestamp;
   jobStartDate?: Date | Timestamp;
   isUrgent?: boolean;
@@ -341,7 +341,7 @@ export type Transaction = {
   jobGiverFee: number; // The fee charged to the job giver
   totalPaidByGiver: number; // The total amount charged to the job giver (amount + jobGiverFee + travelTip)
   payoutToInstaller: number; // The net amount paid out to the installer (amount - commission + travelTip)
-  status: 'Initiated' | 'Funded' | 'Failed' | 'Released' | 'Refunded' | 'Disputed';
+  status: 'initiated' | 'funded' | 'released' | 'refunded' | 'failed' | 'disputed';
   paymentGatewayOrderId?: string;
   paymentGatewaySessionId?: string;
   payoutTransferId?: string;

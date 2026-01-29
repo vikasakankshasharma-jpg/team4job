@@ -79,7 +79,9 @@ export function AdminDashboardView() {
             const unsubTx = onSnapshot(query(transactionsRef, limit(200)), (snap) => {
                 const txs = snap.docs.map(d => d.data() as Transaction);
                 setTransactions(txs);
-                const released = txs.filter(t => t.status === 'Released').reduce((acc, t) => acc + (t.payoutToInstaller || 0), 0);
+                const total = txs.reduce((acc, t) => acc + t.amount, 0);
+                const released = txs.filter(t => t.status === 'released').reduce((acc, t) => acc + (t.payoutToInstaller || 0), 0);
+                const commission = txs.reduce((acc, t) => acc + (t.commission || 0), 0);
                 setStats(prev => ({ ...prev, totalValueReleased: released }));
             });
             unsubscribeFuncs.push(unsubTx);
@@ -148,9 +150,10 @@ export function AdminDashboardView() {
             };
         }).reverse();
 
-        (transactions || []).forEach(t => {
-            if (t.status === 'Released' && t.releasedAt) {
+        transactions.forEach(t => {
+            if (t.status === 'released' && t.releasedAt) {
                 const date = toDate(t.releasedAt);
+                const month = format(date, 'MMM');
                 const monthStr = format(date, 'MMM yyyy');
                 const monthData = months.find(m => m.fullName === monthStr);
                 if (monthData) {

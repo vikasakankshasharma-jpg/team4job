@@ -45,12 +45,12 @@ export function SaveTemplateDialog({
         setSaving(true);
 
         try {
-            await saveTemplate(db, user.id, {
-                name: templateName.trim(),
-                category,
-                fields: draftData,
-                useCount: 0,
-            });
+            await saveTemplate(
+                db,
+                user.id,
+                { ...draftData, jobCategory: category } as any,
+                templateName.trim()
+            );
 
             toast({
                 title: 'Template saved!',

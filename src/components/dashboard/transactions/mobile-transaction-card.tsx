@@ -17,10 +17,10 @@ export function MobileTransactionCard({ transaction }: MobileTransactionCardProp
 
     const getStatusVariant = (status: Transaction['status']) => {
         switch (status) {
-            case 'Released': return 'success';
-            case 'Funded': return 'info';
-            case 'Refunded': return 'secondary';
-            case 'Failed': return 'destructive';
+            case 'released': return 'success';
+            case 'funded': return 'info';
+            case 'refunded': return 'secondary';
+            case 'failed': return 'destructive';
             default: return 'outline';
         }
     };
@@ -33,7 +33,7 @@ export function MobileTransactionCard({ transaction }: MobileTransactionCardProp
                         <div className="text-xs font-mono text-muted-foreground">
                             {transaction.id}
                         </div>
-                        <Link href={`/dashboard/jobs/${transaction.jobId}`} className="font-medium hover:underline block line-clamp-1">
+                        <Link href={`/dashboard/jobs/${transaction.jobId}`} className="font-medium hover:underline block line-clamp-1 py-1 -my-1">
                             {transaction.jobTitle}
                         </Link>
                     </div>

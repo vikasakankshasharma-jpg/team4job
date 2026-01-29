@@ -1,6 +1,7 @@
 import { collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { Firestore } from "firebase/firestore";
 import { Job } from "@/lib/types";
+import { toDate } from "@/lib/utils";
 
 export interface SpendingInsights {
     currentMonthSpend: number;
@@ -24,39 +25,35 @@ export async function calculateSpendingInsights(
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        // Fetch completed jobs this month
-        const completedThisMonthQuery = query(
+        // Fetch all jobs for the user once to avoid multiple composite queries/indexes
+        const allJobsQuery = query(
             collection(db, "jobs"),
-            where("jobGiverId", "==", userId),
-            where("status", "==", "Completed"),
-            where("completionTimestamp", ">=", Timestamp.fromDate(startOfMonth))
+            where("jobGiverId", "==", userId)
         );
 
-        const completedSnapshot = await getDocs(completedThisMonthQuery);
-        const completedJobs = completedSnapshot.docs.map(doc => ({
+        const allSnapshot = await getDocs(allJobsQuery);
+        const allJobs = allSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
         } as Job));
 
+        // 1. Filter completed jobs this month
+        const completedJobs = allJobs.filter(job =>
+            job.status === "Completed" &&
+            job.completionTimestamp &&
+            toDate(job.completionTimestamp) >= startOfMonth
+        );
+
         // Calculate current month spend
         const currentMonthSpend = completedJobs.reduce((sum, job) => {
-            // Use awarded bid amount
             const amount = job.bids?.find(b => b.installerId === job.awardedInstallerId)?.amount || 0;
             return sum + amount;
         }, 0);
 
-        // Fetch active jobs (In Progress, Pending Confirmation)
-        const activeJobsQuery = query(
-            collection(db, "jobs"),
-            where("jobGiverId", "==", userId),
-            where("status", "in", ["In Progress", "Pending Confirmation", "Pending Funding"])
+        // 2. Filter active jobs (In Progress, Pending Confirmation, Pending Funding)
+        const activeJobs = allJobs.filter(job =>
+            ["In Progress", "Pending Confirmation", "Pending Funding"].includes(job.status)
         );
-
-        const activeSnapshot = await getDocs(activeJobsQuery);
-        const activeJobs = activeSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        } as Job));
 
         // Calculate projected spend (current + active jobs)
         const activeJobsAmount = activeJobs.reduce((sum, job) => {
@@ -66,19 +63,12 @@ export async function calculateSpendingInsights(
 
         const projectedMonthSpend = currentMonthSpend + activeJobsAmount;
 
-        // Calculate average cost per job (last 30 days)
-        const last30DaysQuery = query(
-            collection(db, "jobs"),
-            where("jobGiverId", "==", userId),
-            where("status", "==", "Completed"),
-            where("completionTimestamp", ">=", Timestamp.fromDate(thirtyDaysAgo))
+        // 3. Filter average cost per job (last 30 days)
+        const last30DaysJobs = allJobs.filter(job =>
+            job.status === "Completed" &&
+            job.completionTimestamp &&
+            toDate(job.completionTimestamp) >= thirtyDaysAgo
         );
-
-        const last30DaysSnapshot = await getDocs(last30DaysQuery);
-        const last30DaysJobs = last30DaysSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        } as Job));
 
         const avgCostPerJob =
             last30DaysJobs.length > 0

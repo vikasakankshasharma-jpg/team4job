@@ -12,7 +12,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Send, User as UserIcon, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
-import { moderateMessage } from "@/ai/flows/moderate-message";
+
+import { moderateContentAction } from "@/app/actions/ai.actions";
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from "@/hooks/use-toast";
 
@@ -137,10 +138,12 @@ export default function ChatClient() {
         try {
             // A. Moderation Check (Phase 13 Integration)
             // Call Server Action
-            const modResult = await moderateMessage({ message: inputText, userId: user.id, limitType: "ai_chat" });
+            // A. Moderation Check (Phase 13 Integration)
+            // Call Server Action
+            const modRes = await moderateContentAction({ content: inputText, userId: user.id, limitType: "ai_chat" });
 
-            if (modResult.isFlagged) {
-                setModerationWarning(modResult.reason || "Message flagged as unsafe.");
+            if (modRes.success && modRes.data?.isFlagged) {
+                setModerationWarning(modRes.data.reason || "Message flagged as unsafe.");
                 setIsSending(false);
                 return; // BLOCK SEND
             }

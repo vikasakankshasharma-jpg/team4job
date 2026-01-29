@@ -1,5 +1,4 @@
 
-'use server';
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
@@ -13,6 +12,7 @@ const ModerateMessageInputSchema = z.object({
 // Fallback Regex Patterns
 const PHONE_REGEX = /(\+\d{1,3}[- ]?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}|\d{10}/;
 const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+// Wrapper removed to prefer direct flow export
 export type ModerateMessageInput = z.infer<typeof ModerateMessageInputSchema>;
 
 export const ModerateMessageOutputSchema = z.object({
@@ -21,9 +21,7 @@ export const ModerateMessageOutputSchema = z.object({
 });
 export type ModerateMessageOutput = z.infer<typeof ModerateMessageOutputSchema>;
 
-export async function moderateMessage(input: ModerateMessageInput): Promise<ModerateMessageOutput> {
-    return moderateMessageFlow(input);
-}
+
 
 const moderateMessagePrompt = ai.definePrompt({
     name: 'moderateMessagePrompt',
@@ -48,7 +46,7 @@ const moderateMessagePrompt = ai.definePrompt({
 // Lazy import to avoid circular dependencies or server-init issues if not needed
 const getRateLimit = async () => (await import('@/lib/services/rate-limit')).checkRateLimit;
 
-const moderateMessageFlow = ai.defineFlow(
+export const moderateMessageFlow = ai.defineFlow(
     {
         name: 'moderateMessageFlow',
         inputSchema: ModerateMessageInputSchema,

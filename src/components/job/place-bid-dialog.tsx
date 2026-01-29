@@ -10,7 +10,6 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -21,23 +20,34 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore } from "@/lib/firebase/client-provider";
 import { Loader2, Sparkles } from "lucide-react";
 import { Job, User, PlatformSettings } from "@/lib/types";
-import { collection, addDoc, doc, collectionGroup, query, where, getCountFromServer } from "firebase/firestore";
-import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
-import { logActivity } from "@/lib/activity-logger";
+import { aiAssistedBidCreationAction } from "@/app/actions/ai.actions";
 import { toDate } from "@/lib/utils";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
+import { placeBidAction } from "@/app/actions/bid.actions";
 
-// Helper from original file
-const getRefId = (ref: User | any): string => {
-    if (!ref) return '';
-    if (typeof ref === 'string') return ref;
-    if ('id' in ref) return ref.id;
-    return '';
-};
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+    FormDescription,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+
+const bidSchema = z.object({
+    amount: z.coerce.number().min(1, "Bid amount must be at least ₹1"),
+    estimatedDuration: z.coerce.number().min(1, "Duration must be at least 1"),
+    durationUnit: z.enum(["Hours", "Days"]),
+    coverLetter: z.string().min(10, "Cover letter must be at least 10 characters"),
+});
 
 export function PlaceBidDialog({
     job,
@@ -54,31 +64,51 @@ export function PlaceBidDialog({
     onOpenChange: (open: boolean) => void,
     platformSettings: PlatformSettings | null
 }) {
-    const [amount, setAmount] = React.useState<number>(0);
-    const [coverLetter, setCoverLetter] = React.useState("");
-    const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [aiLoading, setAiLoading] = React.useState(false);
-
-    // Phase 10: Bid Duration
-    const [estimatedDuration, setEstimatedDuration] = React.useState<number>(1);
-    const [durationUnit, setDurationUnit] = React.useState<'Hours' | 'Days'>('Days');
-
     const { toast } = useToast();
-    const db = useFirestore();
+
+    const form = useForm<z.infer<typeof bidSchema>>({
+        resolver: zodResolver(bidSchema),
+        defaultValues: {
+            amount: 0,
+            estimatedDuration: 1,
+            durationUnit: "Days",
+            coverLetter: "",
+        },
+    });
+
+    const { isSubmitting } = form.formState;
+
+    // Reset form when dialog opens
+    React.useEffect(() => {
+        if (open) {
+            form.reset({
+                amount: 0,
+                estimatedDuration: 1,
+                durationUnit: "Days",
+                coverLetter: "",
+            });
+        }
+    }, [open, form]);
 
     const handleAiAssist = async () => {
+        const currentLetter = form.getValues("coverLetter");
         setAiLoading(true);
         try {
-            const result = await aiAssistedBidCreation({
+            const result = await aiAssistedBidCreationAction({
                 jobDescription: job.description,
                 installerSkills: user.installerProfile?.skills?.join(", ") || "",
                 installerExperience: "General",
-                bidContext: coverLetter,
+                bidContext: currentLetter,
                 userId: user.id
             });
-            setCoverLetter(result.bidProposal);
-            toast({ title: "AI Draft Generated", description: "You can edit the proposal before sending." });
-        } catch (error) {
+            if (result.success && result.data) {
+                form.setValue("coverLetter", result.data.bidProposal, { shouldValidate: true });
+                toast({ title: "AI Draft Generated", description: "You can edit the proposal before sending." });
+            } else {
+                throw new Error(result.error || "AI failed to generate a proposal.");
+            }
+        } catch (error: any) {
             console.error(error);
             toast({ title: "AI Generation Failed", description: "Could not generate draft.", variant: "destructive" });
         } finally {
@@ -86,16 +116,7 @@ export function PlaceBidDialog({
         }
     };
 
-    const handleSubmit = async () => {
-        if (amount <= 0) {
-            toast({ title: "Invalid Amount", description: "Please enter a valid bid amount.", variant: "destructive" });
-            return;
-        }
-        if (!coverLetter.trim()) {
-            toast({ title: "Cover Letter Required", description: "Please explain why you are a good fit.", variant: "destructive" });
-            return;
-        }
-
+    async function onSubmit(values: z.infer<typeof bidSchema>) {
         if (!user.isMobileVerified) {
             toast({ title: "Verification Required", description: "Please verify your mobile number to place bids.", variant: "destructive" });
             return;
@@ -114,76 +135,29 @@ export function PlaceBidDialog({
             }
         }
 
-        const hasActiveSubscription = user.subscription && user.subscription.expiresAt && toDate(user.subscription.expiresAt) > new Date();
-
-        if (!hasActiveSubscription) {
-            try {
-                const limit = platformSettings?.freeBidsForNewInstallers || 5;
-                const bidsQuery = query(collectionGroup(db, 'bids'), where('installerId', '==', user.id));
-                const snapshot = await getCountFromServer(bidsQuery);
-                const count = snapshot.data().count;
-
-                if (count >= limit) {
-                    toast({
-                        title: "Free Bid Limit Reached",
-                        description: `You have used ${count}/${limit} free bids. Please upgrade to a Pro Plan to continue bidding.`,
-                        variant: "destructive",
-                        action: <Link href="/dashboard/subscription-plans" className={buttonVariants({ variant: "default", size: "sm" })}>Upgrade</Link>
-                    });
-                    return;
-                }
-            } catch (error) {
-                console.error("Failed to check bid limits:", error);
-            }
-        }
-
-        setIsSubmitting(true);
         try {
-            const bidsRef = collection(db, "jobs", job.id, "bids");
-
-            const newBid: any = {
-                installer: doc(db, "users", user.id),
-                amount: Number(amount),
-                coverLetter: coverLetter,
-                timestamp: new Date(),
-                installerId: user.id,
-                estimatedDuration: Number(estimatedDuration),
-                durationUnit: durationUnit
-            };
-
-            await addDoc(bidsRef, newBid);
-
-            const jobGiverId = job.jobGiverId || getRefId(job.jobGiver);
-            if (jobGiverId) {
-                await logActivity(db, {
-                    userId: jobGiverId,
-                    type: 'bid_received',
-                    title: 'New Bid Received',
-                    description: `New bid of ₹${amount} for ${job.title}`,
-                    link: `/dashboard/jobs/${job.id}`,
-                    relatedId: job.id
-                });
-            }
-
-            await logActivity(db, {
-                userId: user.id,
-                type: 'bid_placed',
-                title: 'Bid Placed',
-                description: `You bid ₹${amount} on ${job.title}`,
-                link: `/dashboard/jobs/${job.id}`,
-                relatedId: job.id
+            const result = await placeBidAction(job.id, user.id, 'Installer', {
+                jobId: job.id,
+                amount: values.amount,
+                coverLetter: values.coverLetter,
+                estimatedDuration: values.estimatedDuration,
+                durationUnit: values.durationUnit
             });
 
-            toast({ title: "Bid Placed!", description: "The Job Giver has been notified." });
-            onBidSubmit();
-            onOpenChange(false);
+            if (result.success) {
+                toast({ title: "Bid Placed!", description: "The Job Giver has been notified." });
+                onBidSubmit();
+                onOpenChange(false);
+            } else {
+                throw new Error(result.error);
+            }
         } catch (error: any) {
             console.error("Bid submission failed:", error);
             toast({ title: "Bid Failed", description: error.message || "Could not place bid.", variant: "destructive" });
-        } finally {
-            setIsSubmitting(false);
         }
-    };
+    }
+
+    const currentAmount = form.watch("amount");
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -192,88 +166,117 @@ export function PlaceBidDialog({
                     <DialogTitle>Place a Bid</DialogTitle>
                     <DialogDescription>Submit your offer for &quot;{job.title}&quot;.</DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label>Bid Amount (₹)</Label>
-                        <Input
-                            type="number"
-                            name="bidAmount"
-                            placeholder="e.g. 5000"
-                            value={amount || ''}
-                            onChange={e => setAmount(Number(e.target.value))}
-                            className="h-12 text-lg"
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                        <FormField
+                            control={form.control}
+                            name="amount"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Bid Amount (₹)</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" placeholder="e.g. 5000" {...field} className="text-lg" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Estimated Duration</Label>
-                            <Input
-                                type="number"
-                                min={1}
-                                value={estimatedDuration}
-                                onChange={e => setEstimatedDuration(Number(e.target.value))}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Unit</Label>
-                            <Select value={durationUnit} onValueChange={(val: any) => setDurationUnit(val)}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Hours">Hours</SelectItem>
-                                    <SelectItem value="Days">Days</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    {amount > 0 && (
-                        <div className="rounded-md bg-muted p-3 text-sm">
-                            <div className="flex justify-between text-muted-foreground">
-                                <span>Platform Commission (5%):</span>
-                                <span>-₹{Math.ceil(amount * 0.05)}</span>
-                            </div>
-                            <Separator className="my-1" />
-                            <div className="flex justify-between font-medium text-foreground">
-                                <span>You Receive (Net):</span>
-                                <span className="text-green-600">₹{amount - Math.ceil(amount * 0.05)}</span>
-                            </div>
-                            <p className="mt-2 text-xs text-muted-foreground">
-                                * Payout is processed upon job completion.
-                            </p>
-                        </div>
-                    )}
 
-                    <div className="space-y-2">
-                        <Label>Cover Letter</Label>
-                        <div className="relative">
-                            <Textarea
-                                name="coverLetter"
-                                placeholder="I have the right tools and 5 years experience..."
-                                value={coverLetter}
-                                onChange={e => setCoverLetter(e.target.value)}
-                                className="min-h-[100px]"
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="estimatedDuration"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Estimated Duration</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" min={1} {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="absolute bottom-2 right-2 h-6 text-xs text-purple-600 hover:bg-purple-50"
-                                onClick={handleAiAssist}
-                                disabled={aiLoading}
-                            >
-                                {aiLoading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Sparkles className="mr-1 h-3 w-3" />}
-                                AI Draft
-                            </Button>
+                            <FormField
+                                control={form.control}
+                                name="durationUnit"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Unit</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Unit" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="Hours">Hours</SelectItem>
+                                                <SelectItem value="Days">Days</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleSubmit} disabled={isSubmitting} data-testid="submit-bid-button">
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Place Bid
-                    </Button>
-                </DialogFooter>
+
+                        {currentAmount > 0 && (
+                            <div className="rounded-md bg-muted p-3 text-sm" role="status" aria-live="polite">
+                                <div className="flex justify-between text-muted-foreground">
+                                    <span>Platform Commission (5%):</span>
+                                    <span>-₹{Math.ceil(currentAmount * 0.05)}</span>
+                                </div>
+                                <Separator className="my-1" />
+                                <div className="flex justify-between font-medium text-foreground">
+                                    <span>You Receive (Net):</span>
+                                    <span className="text-green-600">₹{currentAmount - Math.ceil(currentAmount * 0.05)}</span>
+                                </div>
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                    * Payout is processed upon job completion.
+                                </p>
+                            </div>
+                        )}
+
+                        <FormField
+                            control={form.control}
+                            name="coverLetter"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Cover Letter</FormLabel>
+                                    <div className="relative">
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="I have the right tools and 5 years experience..."
+                                                className="min-h-[100px]"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="absolute bottom-2 right-2 h-6 text-xs text-purple-600 hover:bg-purple-50"
+                                            onClick={handleAiAssist}
+                                            disabled={aiLoading}
+                                            aria-label="Generate AI Draft for Cover Letter"
+                                        >
+                                            {aiLoading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Sparkles className="mr-1 h-3 w-3" />}
+                                            AI Draft
+                                        </Button>
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                            <Button type="submit" disabled={isSubmitting} data-testid="submit-bid-button">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Place Bid
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
             </DialogContent>
         </Dialog>
     );

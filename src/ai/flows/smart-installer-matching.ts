@@ -1,5 +1,5 @@
 
-'use server';
+// 'use server'; removed to fix invalid export error
 
 /**
  * @fileOverview This file defines an AI-powered flow for matching Job Givers with suitable installers based on skills, location, availability, and ratings.
@@ -9,8 +9,8 @@
  * - SmartInstallerMatchingOutput - The return type for the smartInstallerMatching function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const SmartInstallerMatchingInputSchema = z.object({
   jobDescription: z.string().describe('Detailed description of the job requirements.'),
@@ -42,8 +42,8 @@ export async function smartInstallerMatching(input: SmartInstallerMatchingInput)
 
 const smartInstallerMatchingPrompt = ai.definePrompt({
   name: 'smartInstallerMatchingPrompt',
-  input: {schema: SmartInstallerMatchingInputSchema},
-  output: {schema: SmartInstallerMatchingOutputSchema},
+  input: { schema: SmartInstallerMatchingInputSchema },
+  output: { schema: SmartInstallerMatchingOutputSchema },
   prompt: `You are an AI assistant designed to match job givers with suitable installers.
 
   Given the following job details, identify the best installer matches from your database.  Consider skills, location, availability, and ratings to find the most qualified candidates. Provide a match score (0-1) to rank candidates and a justification for each selection.
@@ -64,7 +64,7 @@ const smartInstallerMatchingFlow = ai.defineFlow(
     outputSchema: SmartInstallerMatchingOutputSchema,
   },
   async input => {
-    const {output} = await smartInstallerMatchingPrompt(input);
+    const { output } = await smartInstallerMatchingPrompt(input);
     return output!;
   }
 );

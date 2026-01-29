@@ -1,11 +1,14 @@
+// app/api/cashfree/payouts/request-transfer/route.ts - REFACTORED
 
 import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
+import { getAdminDb, getAdminAuth } from '@/infrastructure/firebase/admin';
+import { logger } from '@/infrastructure/logger';
 import { User, Transaction, PlatformSettings } from '@/lib/types';
 import axios from 'axios';
 
-// Use 'https://payout-api.cashfree.com' for production
+export const dynamic = 'force-dynamic';
+
 const CASHFREE_API_BASE = 'https://payout-gamma.cashfree.com/payouts';
 
 async function getCashfreeBearerToken(): Promise<string> {
@@ -23,36 +26,44 @@ async function getCashfreeBearerToken(): Promise<string> {
   if (response.data?.data?.token) {
     return response.data.data.token;
   }
-  throw new Error('Failed to authenticate with Cashfree Payouts.');
+  throw new Error('Failed to authenticate with Cashfree Payouts');
 }
 
 /**
- * This route is intended for admin-initiated transfers like refunds.
- * Payouts to installers are handled by /api/escrow/release-funds
+ * Admin route for transfers (refunds/payouts)
+ * ✅ REFACTORED: Uses infrastructure logger and Firebase
+ * 
+ * Note: Normal installer payouts use /api/escrow/release-funds
+ * This is for admin-initiated transfers like refunds
  */
-export const dynamic = 'force-dynamic';
-
 export async function POST(req: NextRequest) {
   try {
     const db = getAdminDb();
     const adminAuth = getAdminAuth();
-    // 1. Verify Authentication & Admin Role
+
+    // 1. Verify authentication & admin role
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized: Missing token' },
+        { status: 401 }
+      );
     }
     const idToken = authHeader.split('Bearer ')[1];
 
-    // Verify token using adminAuth
+    // Verify token
     let decodedToken;
     try {
       decodedToken = await adminAuth.verifyIdToken(idToken);
     } catch (e) {
-      console.error('Token verification failed:', e);
-      return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
+      logger.error('Token verification failed', e);
+      return NextResponse.json(
+        { error: 'Unauthorized: Invalid token' },
+        { status: 401 }
+      );
     }
 
-    // Check for Admin Role
+    // Check for admin role
     if (decodedToken.admin === true || decodedToken.role === 'Admin') {
       // Authorized
     } else {
@@ -60,22 +71,31 @@ export async function POST(req: NextRequest) {
       const userDoc = await userRef.get();
       const userData = userDoc.data() as User;
       if (!userData || !userData.roles.includes('Admin')) {
-        return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+        return NextResponse.json(
+          { error: 'Forbidden: Admin access required' },
+          { status: 403 }
+        );
       }
     }
 
-    // Auth Check Complete
-
+    // 2. Parse request
     const { transactionId, transferType, userId } = await req.json();
 
     if (!transactionId || !transferType || !userId) {
-      return NextResponse.json({ error: 'Missing required parameters (transactionId, transferType, userId)' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing required parameters (transactionId, transferType, userId)' },
+        { status: 400 }
+      );
     }
 
     if (transferType !== 'refund' && transferType !== 'release_payout') {
-      return NextResponse.json({ error: 'Only refund or release_payout transfers are supported.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Only refund or release_payout transfers are supported' },
+        { status: 400 }
+      );
     }
 
+    // 3. Get transaction
     const transactionRef = db.collection('transactions').doc(transactionId);
     const transactionSnap = await transactionRef.get();
 
@@ -84,56 +104,57 @@ export async function POST(req: NextRequest) {
     }
     const transaction = transactionSnap.data() as Transaction;
 
-    // Validation: Ensure the user matches the expected recipient
-    const expectedRecipientId = transferType === 'refund' ? transaction.payerId : transaction.payeeId;
+    // 4. Validate recipient
+    const expectedRecipientId =
+      transferType === 'refund' ? transaction.payerId : transaction.payeeId;
 
     if (userId !== expectedRecipientId) {
-      return NextResponse.json({ error: 'User ID does not match the expected recipient.' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'User ID does not match the expected recipient' },
+        { status: 403 }
+      );
     }
 
-    if (transaction.status !== 'Funded' && transaction.status !== 'Disputed') {
-      return NextResponse.json({ error: `Cannot process transfer for transaction status: ${transaction.status}` }, { status: 400 });
+    if (transaction.status !== 'funded' && transaction.status !== 'disputed') {
+      return NextResponse.json(
+        { error: `Cannot process transfer for transaction status: ${transaction.status}` },
+        { status: 400 }
+      );
     }
 
+    // 5. Get recipient details
     const userSnap = await db.collection('users').doc(userId).get();
-
-    // For Refunds:
-    // Cashfree can refund to source (no beneficiary needed usually), but we previously used standard transfer.
-    // For Release Payout (Installer):
-    // We DEFINITELY need a beneficiaryId.
-
     const recipientUser = userSnap.data() as User;
+
     if (!recipientUser?.payouts?.beneficiaryId) {
-      return NextResponse.json({ error: 'Recipient does not have a beneficiary account set up.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Recipient does not have a beneficiary account set up' },
+        { status: 400 }
+      );
     }
 
-    const token = await getCashfreeBearerToken();
-
-    const amount = transaction.amount; // Simple full amount for now. 
-    // Ideally for 'release_payout', we should deduct commission.
-    // BUT this is an Admin Override / Dispute Resolution action. 
-    // Usually admin releases FULL amount to installer if they won the dispute? Or minus commission?
-    // Let's assume standard logic: Deduct commission if it's a Payout. Full amount if it's a Refund (to giver).
-
-    let transferAmount = amount;
+    // 6. Calculate transfer amount
+    let transferAmount = transaction.amount;
     if (transferType === 'release_payout') {
-      // Fetch commission rate from platform settings
-      let commissionRate = 0.10; // Default fallback
+      // Deduct commission for payouts
+      let commissionRate = 0.1; // Default fallback
       try {
         const settingsRef = db.collection('platform_settings').doc('fees');
         const settingsSnap = await settingsRef.get();
         if (settingsSnap.exists) {
           const settings = settingsSnap.data() as PlatformSettings;
-          commissionRate = settings.installerCommissionRate || 0.10;
+          commissionRate = settings.installerCommissionRate || 0.1;
         }
       } catch (settingsError) {
-        console.error('Failed to fetch commission rate, using default 10%:', settingsError);
+        logger.warn('Failed to fetch commission rate, using default 10%', { error: settingsError });
       }
 
-      const commission = transaction.commission || (amount * commissionRate);
-      transferAmount = amount - commission;
+      const commission = transaction.commission || transaction.amount * commissionRate;
+      transferAmount = transaction.amount - commission;
     }
 
+    // 7. Request transfer from Cashfree
+    const token = await getCashfreeBearerToken();
     const transferId = `${transferType === 'refund' ? 'REFUND' : 'PAYOUT'}_${transaction.id}_${Date.now()}`;
 
     const transferPayload = {
@@ -148,22 +169,31 @@ export async function POST(req: NextRequest) {
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       }
     );
 
+    // 8. Update transaction status
     await transactionRef.update({
       refundTransferId: transferId,
-      status: 'Refunded', // Optimistically update, will be confirmed by webhook
+      status: 'refunded',
       refundedAt: Timestamp.now() as any,
     });
 
-    return NextResponse.json({ success: true, transferId });
+    logger.adminAction(decodedToken.uid, 'TRANSFER_REQUESTED', transactionId, {
+      transferId,
+      transferType,
+      amount: transferAmount,
+    });
 
+    return NextResponse.json({ success: true, transferId });
   } catch (error: any) {
-    console.error('Error processing transfer request:', error.response?.data || error.message);
-    const errorMessage = error.response?.data?.message || 'Failed to request transfer.';
+    logger.error('Transfer request failed', error, {
+      metadata: error.response?.data,
+    });
+    const errorMessage =
+      error.response?.data?.message || 'Failed to request transfer';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

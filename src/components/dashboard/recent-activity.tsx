@@ -32,15 +32,17 @@ export function RecentActivity() {
         const q = query(
             activitiesRef,
             where('userId', '==', user.id),
-            orderBy('timestamp', 'desc'),
-            limit(10)
+            limit(50) // Get more to ensure we have enough for display after sort
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const newActivities = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Activity[];
+            const newActivities = snapshot.docs
+                .map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }))
+                .sort((a, b) => toDate((b as any).timestamp).getTime() - toDate((a as any).timestamp).getTime())
+                .slice(0, 10) as Activity[];
 
             setActivities(newActivities);
             setLoading(false);

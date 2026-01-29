@@ -39,11 +39,11 @@ import { CheckCircle2, Loader2, ShieldCheck, Camera, Upload, Eye, EyeOff } from 
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { User, PlatformSettings } from "@/lib/types";
 import {
-  initiateAadharVerification,
-  confirmAadharVerification,
-  ConfirmAadharOutput,
-} from "@/ai/flows/aadhar-verification";
-import { verifyPan } from "@/ai/flows/pan-verification";
+  initiateAadharVerificationAction,
+  confirmAadharVerificationAction,
+  verifyPanAction
+} from "@/app/actions/ai.actions";
+import { type ConfirmAadharOutput } from "@/domains/ai/ai.types";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AddressForm } from "@/components/ui/address-form";
@@ -486,16 +486,16 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       return;
     }
     try {
-      const result = await initiateAadharVerification({ aadharNumber });
-      if (result.success) {
-        setVerificationId(result.verificationId);
+      const result = await initiateAadharVerificationAction({ aadharNumber });
+      if (result.success && result.data) {
+        setVerificationId(result.data.verificationId);
         setVerificationSubStep("enterOtp");
         toast({
           title: "OTP Sent!",
-          description: result.message,
+          description: result.data.message,
         });
       } else {
-        setError(result.message);
+        setError(result.error || "Failed to initiate verification");
       }
     } catch (e: any) {
       setError(e.message || "An unexpected error occurred. Please try again.");
@@ -516,8 +516,8 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
     }
 
     try {
-      const result = await confirmAadharVerification({ verificationId, otp: otp || "" });
-      if (result.isVerified && result.kycData) {
+      const result = await confirmAadharVerificationAction({ verificationId, otp: otp || "" });
+      if (result.success && result.data && result.data.isVerified) {
         // Instead of finishing here, move to PAN step
         setVerificationSubStep("enterPan");
         toast({
@@ -525,7 +525,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           description: "Please enter your PAN details to complete verification.",
         });
       } else {
-        setError(result.message);
+        setError(result.data?.message || result.error || "Verification failed");
       }
     } catch (e: any) {
       setError(e.message || "An unexpected error occurred. Please try again.");
@@ -547,16 +547,16 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
     }
 
     try {
-      const result = await verifyPan({ pan: pan });
-      if (result.isValid) {
+      const result = await verifyPanAction({ pan: pan });
+      if (result.success && result.data && result.data.isValid) {
         setVerificationSubStep("verified");
         toast({
           title: "PAN Verified!",
-          description: result.message,
+          description: result.data.message,
         });
         setCurrentStep("photo");
       } else {
-        setError(result.message);
+        setError(result.data?.message || result.error || "PAN verification failed");
       }
     } catch (e: any) {
       setError(e.message || "PAN verification failed.");

@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles, Lock, Zap } from "lucide-react";
 import { User, Job } from "@/lib/types";
-import { recommendJobs, RecommendJobsOutput } from "@/ai/flows/recommend-jobs";
+import { recommendJobsAction } from "@/app/actions/ai.actions";
+import { type RecommendJobsOutput } from "@/domains/ai/ai.types";
 import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
 import { useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/ui/empty-state";
+import Link from 'next/link';
 
 import { toDate } from '@/lib/utils';
 
@@ -59,14 +61,16 @@ export function RecommendedJobs({ user }: RecommendedJobsProps) {
             }));
 
             // 2. Call AI
-            const results = await recommendJobs({
+            const actionResult = await recommendJobsAction({
                 installerSkills: user.installerProfile?.skills || [],
                 installerLocation: user.pincodes?.residential || '',
                 jobs: aiInputJobs
             });
 
-            setRecommendations(results.recommendations);
-            setAvailableJobs(jobs);
+            if (actionResult.success && actionResult.data) {
+                setRecommendations(actionResult.data.recommendations);
+                setAvailableJobs(jobs);
+            }
 
         } catch (e) {
             console.error("Failed to fetch recommendations", e);
@@ -129,21 +133,23 @@ export function RecommendedJobs({ user }: RecommendedJobsProps) {
                             const job = availableJobs.find(j => j.id === rec.jobId);
                             if (!job) return null;
                             return (
-                                <div key={rec.jobId} className="p-3 bg-white dark:bg-slate-950 rounded-lg border shadow-sm hover:shadow-md transition-all cursor-pointer" onClick={() => router.push(`/dashboard/jobs/${rec.jobId}`)}>
-                                    <div className="flex justify-between items-start mb-1">
-                                        <h4 className="font-semibold text-sm line-clamp-1">{job.title}</h4>
-                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
-                                            {rec.score}% Match
-                                        </Badge>
+                                <Link key={rec.jobId} href={`/dashboard/jobs/${rec.jobId}`} className="block">
+                                    <div className="p-3 bg-white dark:bg-slate-950 rounded-lg border shadow-sm hover:shadow-md transition-all cursor-pointer">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <h4 className="font-semibold text-sm line-clamp-1">{job.title}</h4>
+                                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                                                {rec.score}% Match
+                                            </Badge>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                                            {rec.reason}
+                                        </p>
+                                        <div className="flex gap-2 text-xs text-slate-500">
+                                            <span>📍 {job.location}</span>
+                                            <span>💰 ₹{job.priceEstimate ? `${job.priceEstimate.min} - ${job.priceEstimate.max}` : 'Budget TBD'}</span>
+                                        </div>
                                     </div>
-                                    <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                                        {rec.reason}
-                                    </p>
-                                    <div className="flex gap-2 text-xs text-slate-500">
-                                        <span>📍 {job.location}</span>
-                                        <span>💰 ₹{job.priceEstimate ? `${job.priceEstimate.min} - ${job.priceEstimate.max}` : 'Budget TBD'}</span>
-                                    </div>
-                                </div>
+                                </Link>
                             )
                         })}
                     </div>

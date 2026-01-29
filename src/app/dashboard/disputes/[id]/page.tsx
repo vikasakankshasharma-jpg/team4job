@@ -260,7 +260,7 @@ export default function DisputeDetailPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast({ title: "Refund Initiated", description: "The refund to the Job Giver has been processed." });
-      setTransaction(prev => prev ? { ...prev, status: 'Refunded' } : null);
+      setTransaction(prev => prev ? { ...prev, status: 'refunded' } : null);
     } catch (error: any) {
       toast({ title: "Refund Failed", description: error.response?.data?.error || "Could not process refund.", variant: "destructive" });
     } finally {
@@ -294,7 +294,7 @@ export default function DisputeDetailPage() {
         adminNotes: 'Manual Admin Release'
       });
       toast({ title: "Funds Released", description: "The payment has been released to the installer.", variant: "default" });
-      setTransaction(prev => prev ? { ...prev, status: 'Released' } : null);
+      setTransaction(prev => prev ? { ...prev, status: 'released' } : null);
     } catch (error: any) {
       toast({ title: "Release Failed", description: error.response?.data?.error || "Could not release funds.", variant: "destructive" });
     } finally {
@@ -308,8 +308,8 @@ export default function DisputeDetailPage() {
     if (!transaction) return;
     setIsUpdatingStatus(true);
     try {
-      await updateDoc(doc(db, "transactions", transaction.id), { status: 'Disputed' });
-      setTransaction(prev => prev ? { ...prev, status: 'Disputed' } : null);
+      await updateDoc(doc(db, "transactions", transaction.id), { status: 'disputed' });
+      setTransaction(prev => prev ? { ...prev, status: 'disputed' } : null);
       toast({ title: "Payment Frozen", description: "Escrow funds are now locked until dispute resolution." });
     } catch (error) {
       toast({ title: "Operation Failed", variant: "destructive" });
@@ -322,8 +322,8 @@ export default function DisputeDetailPage() {
     if (!transaction) return;
     setIsUpdatingStatus(true);
     try {
-      await updateDoc(doc(db, "transactions", transaction.id), { status: 'Funded' });
-      setTransaction(prev => prev ? { ...prev, status: 'Funded' } : null);
+      await updateDoc(doc(db, "transactions", transaction.id), { status: 'funded' });
+      setTransaction(prev => prev ? { ...prev, status: 'funded' } : null);
       toast({ title: "Payment Unfrozen", description: "Funds returned to active Escrow state." });
     } catch (error) {
       toast({ title: "Operation Failed", variant: "destructive" });
@@ -537,7 +537,7 @@ export default function DisputeDetailPage() {
                           <Button variant="destructive" onClick={async () => {
                             // Option A: Cancel Job (Refund Giver)
                             // Logic: 1. Refund logic (if funded). 2. Job status -> Cancelled. 3. Dispute -> Resolved.
-                            if (transaction?.status === 'Funded') {
+                            if (transaction?.status === 'funded') {
                               await handleRefund();
                             }
                             await handleUpdateDispute({ status: 'Resolved', resolvedAt: new Date(), resolution: 'Job Cancelled & Refunded' });
@@ -556,7 +556,7 @@ export default function DisputeDetailPage() {
                           </Button>
                           <Button className="bg-green-600 hover:bg-green-700" onClick={async () => {
                             // Option B: Complete Job (Pay Installer)
-                            if (transaction?.status === 'Funded') {
+                            if (transaction?.status === 'funded') {
                               await handleReleaseFunds();
                             }
                             await handleUpdateDispute({ status: 'Resolved', resolvedAt: new Date(), resolution: 'Job Completed & Funds Released' });
@@ -577,9 +577,9 @@ export default function DisputeDetailPage() {
                       </DialogContent>
                     </Dialog>
                   )}
-                  {isAdmin && (transaction?.status === 'Funded' || transaction?.status === 'Disputed') && (
+                  {isAdmin && (transaction?.status === 'funded' || transaction?.status === 'disputed') && (
                     <>
-                      {transaction.status === 'Funded' ? (
+                      {transaction.status === 'funded' ? (
                         <Button variant="outline" className="w-full text-orange-600 border-orange-600" onClick={handleFreezePayment} disabled={isUpdatingStatus}>
                           <Shield className="mr-2 h-4 w-4" />
                           Freeze Payment (Lock Escrow)
@@ -591,11 +591,11 @@ export default function DisputeDetailPage() {
                         </Button>
                       )}
 
-                      <Button variant="destructive" className="w-full" onClick={handleRefund} disabled={isRefunding || isReleasing || transaction.status === 'Disputed'}>
+                      <Button variant="destructive" className="w-full" onClick={handleRefund} disabled={isRefunding || isReleasing || transaction.status === 'disputed'}>
                         {isRefunding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
                         Refund to Job Giver
                       </Button>
-                      <Button variant="success" className="w-full" onClick={handleReleaseFunds} disabled={isReleasing || isRefunding || transaction.status === 'Disputed'}>
+                      <Button variant="success" className="w-full" onClick={handleReleaseFunds} disabled={isReleasing || isRefunding || transaction.status === 'disputed'}>
                         {isReleasing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Award className="mr-2 h-4 w-4" />}
                         Release Funds to Installer
                       </Button>

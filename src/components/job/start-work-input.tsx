@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { Job, User } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { getAuth } from "firebase/auth";
-import axios from "axios";
+
 
 export function StartWorkInput({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
     const [otp, setOtp] = React.useState("");
@@ -19,19 +19,17 @@ export function StartWorkInput({ job, user, onJobUpdate }: { job: Job, user: Use
         if (!otp || otp.length < 6) return;
         setIsLoading(true);
         try {
-            const auth = getAuth();
-            const token = await auth.currentUser?.getIdToken();
-            await axios.post('/api/jobs/start-work', {
-                jobId: job.id,
-                userId: user.id,
-                otp: otp
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { startWorkAction } = await import("@/app/actions/job.actions");
+            const res = await startWorkAction(job.id, user.id, otp);
+
+            if (!res.success) {
+                throw new Error(res.error || "Failed to start work");
+            }
+
             toast({ title: "Work Started", description: "You have officially started the job." });
             onJobUpdate({ workStartedAt: new Date() as any });
         } catch (error: any) {
-            toast({ title: "Error", description: "Invalid Start Code.", variant: "destructive" });
+            toast({ title: "Error", description: error.message || "Invalid Start Code.", variant: "destructive" });
         } finally {
             setIsLoading(false);
         }

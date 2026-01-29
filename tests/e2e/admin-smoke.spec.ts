@@ -8,14 +8,24 @@ import { test, expect, Page } from '@playwright/test';
 test.describe('Admin System Smoke Tests', () => {
 
     const loginAsAdmin = async (page: Page) => {
-        const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'vikasakankshasharma@gmail.com';
+        console.log('Starting Admin Login...');
+        const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'vikasakankshasharma_v3@gmail.com';
         const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Vks2bhdj@9229';
 
+        console.log(`Navigating to login page...`);
         await page.goto('http://localhost:3006/login');
-        await page.fill('input[type="email"]', ADMIN_EMAIL);
+        await page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
+        console.log('Waiting for email input visibility...');
+        await page.waitForSelector('input[name="identifier"]', { state: 'visible', timeout: 10000 });
+        console.log('Filling email...');
+        await page.fill('input[name="identifier"]', ADMIN_EMAIL);
+        console.log('Filling password...');
         await page.fill('input[type="password"]', ADMIN_PASSWORD);
+        console.log('Clicking submit...');
         await page.click('button[type="submit"]');
-        await page.waitForURL('**/dashboard*', { timeout: 20000 });
+        console.log('Waiting for dashboard redirect...');
+        await page.waitForURL('**/dashboard*', { timeout: 60000 });
+        console.log('Redirect successful!');
     };
 
     test('Admin dashboard loads successfully', async ({ page }) => {

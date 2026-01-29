@@ -90,7 +90,7 @@ function DisputeCard({ dispute, involvedUsers }: { dispute: Dispute, involvedUse
 export default function DisputesClient() {
     const router = useRouter();
     const { user, isAdmin, loading: userLoading } = useUser();
-    const { db } = useFirebase();
+    // const { db } = useFirebase(); // Unused
     const [disputes, setDisputes] = useState<Dispute[]>([]);
     const [involvedUsers, setInvolvedUsers] = useState<Record<string, User>>({});
     const [loading, setLoading] = useState(true);
@@ -129,75 +129,33 @@ export default function DisputesClient() {
     }, [setHelp, isAdmin]);
 
     const fetchDisputes = useCallback(async () => {
-        if (!user || !db) return;
+        if (!user) return;
         setLoading(true);
-        const disputesRef = collection(db, "disputes");
 
         try {
-            let disputesData: Dispute[] = [];
-
-            if (isAdmin) {
-                const q = query(disputesRef);
-                const snapshot = await getDocs(q);
-                disputesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dispute));
-            } else {
-                // Fetch disputes separately for each condition to avoid OR query security rule issues
-                const disputeMap = new Map<string, Dispute>();
-
-                // Query 1: Where user is the requester
-                const q1 = query(disputesRef, where("requesterId", "==", user.id));
-                const snapshot1 = await getDocs(q1);
-                snapshot1.docs.forEach(doc => {
-                    disputeMap.set(doc.id, { id: doc.id, ...doc.data() } as Dispute);
-                });
-
-                // Query 2: Where user is the job giver
-                const q2 = query(disputesRef, where("parties.jobGiverId", "==", user.id));
-                const snapshot2 = await getDocs(q2);
-                snapshot2.docs.forEach(doc => {
-                    disputeMap.set(doc.id, { id: doc.id, ...doc.data() } as Dispute);
-                });
-
-                // Query 3: Where user is the installer
-                const q3 = query(disputesRef, where("parties.installerId", "==", user.id));
-                const snapshot3 = await getDocs(q3);
-                snapshot3.docs.forEach(doc => {
-                    disputeMap.set(doc.id, { id: doc.id, ...doc.data() } as Dispute);
-                });
-
-                disputesData = Array.from(disputeMap.values());
-            }
-
-            const userIds = new Set<string>();
-            disputesData.forEach(d => {
-                userIds.add(d.requesterId);
-                if (d.parties?.jobGiverId) userIds.add(d.parties.jobGiverId);
-                if (d.parties?.installerId) userIds.add(d.parties.installerId);
+            // @ts-ignore
+            const token = await user.getIdToken();
+            const response = await fetch('/api/disputes/my-disputes', {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            if (userIds.size > 0) {
-                const usersQuery = query(collection(db, 'users'), where('__name__', 'in', Array.from(userIds)));
-                const usersSnapshot = await getDocs(usersQuery);
-                const usersMap = usersSnapshot.docs.reduce((acc, doc) => {
-                    acc[doc.id] = { id: doc.id, ...doc.data() } as User;
-                    return acc;
-                }, {} as Record<string, User>);
-                setInvolvedUsers(usersMap);
+            if (response.ok) {
+                const data = await response.json();
+                setDisputes(data.disputes || []);
+                setInvolvedUsers(data.involvedUsers || {});
             }
-
-            setDisputes(disputesData.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime()));
         } catch (error) {
             console.error("Error fetching disputes:", error);
         } finally {
             setLoading(false);
         }
-    }, [user, isAdmin, db]);
+    }, [user]);
 
     useEffect(() => {
-        if (!userLoading && user && db) {
+        if (!userLoading && user) {
             fetchDisputes();
         }
-    }, [userLoading, user, db, fetchDisputes]);
+    }, [userLoading, user, fetchDisputes]);
 
     const handleFilterChange = (filterName: keyof typeof filters, value: string) => {
         setFilters(prev => ({ ...prev, [filterName]: value }));

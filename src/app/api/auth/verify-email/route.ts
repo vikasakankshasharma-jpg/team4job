@@ -1,7 +1,7 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { sendServerEmail } from '@/lib/server-email';
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
+import { logger } from '@/infrastructure/logger';
 import { Timestamp } from 'firebase-admin/firestore';
 import { verifyEmailSchema } from '@/lib/validations/auth';
 import { z } from 'zod';
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
                     <p style="color: #666; font-size: 14px;">This code will expire in 10 minutes.</p>
                 </div>`
             );
+            logger.info('Email verification OTP sent', { email });
 
             return NextResponse.json({ success: true, message: 'OTP sent successfully' });
         }
@@ -86,13 +87,14 @@ export async function POST(req: NextRequest) {
 
             // Success: Clean up
             await docRef.delete();
+            logger.info('Email verified successfully', { email });
             return NextResponse.json({ success: true, message: 'Email verified successfully' });
         }
 
         return NextResponse.json({ success: false, message: 'Invalid action' }, { status: 400 });
 
     } catch (error: any) {
-        console.error('Email Verification API Error:', error);
+        logger.error('Email verification failed', { error });
         return NextResponse.json({ success: false, message: error.message || 'Internal server error' }, { status: 500 });
     }
 }

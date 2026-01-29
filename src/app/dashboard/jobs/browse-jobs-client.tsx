@@ -39,12 +39,10 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useHelp } from "@/hooks/use-help";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
 import { allSkills } from "@/lib/data";
 import type { Job, User } from "@/lib/types";
 import { useRouter, useSearchParams } from "next/navigation";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import type { DocumentReference } from "firebase/firestore";
 import { MapPin, Bell } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
 import { JobCardSkeletonGrid } from "@/components/skeletons/job-card-skeleton";
@@ -75,7 +73,6 @@ const getLocationParts = (
 
 export default function BrowseJobsClient() {
   const { user, role } = useUser();
-  const { db } = useFirebase();
   const router = useRouter();
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -168,55 +165,24 @@ export default function BrowseJobsClient() {
   }, [role, router, loading]);
 
   const fetchJobs = React.useCallback(async () => {
-    if (!db) return;
-
     setLoading(true);
 
     try {
-      // Fetch both "Open for Bidding" and "Unbid" jobs
-      const openJobsQuery = query(
-        collection(db, 'jobs'),
-        where('status', 'in', ['Open for Bidding', 'Unbid'])
-      );
-      const jobSnapshot = await getDocs(openJobsQuery);
+      const { listOpenJobsAction } = await import("@/app/actions/job.actions");
+      const res = await listOpenJobsAction();
 
-      const userIds = new Set<string>();
-      jobSnapshot.docs.forEach(doc => {
-        const jobGiverRef = doc.data().jobGiver as DocumentReference;
-        if (jobGiverRef?.id) {
-          userIds.add(jobGiverRef.id);
-        }
-      });
-
-      if (userIds.size > 0) {
-        const usersQuery = query(
-          collection(db, 'public_profiles'),
-          where('__name__', 'in', Array.from(userIds))
-        );
-        const usersSnapshot = await getDocs(usersQuery);
-        const userMap = new Map(
-          usersSnapshot.docs.map(doc => [doc.id, doc.data() as User])
-        );
-
-        const jobList = jobSnapshot.docs.map(doc => {
-          const jobData = doc.data() as Job;
-          const jobGiverId = (jobData.jobGiver as DocumentReference)?.id;
-          return {
-            ...jobData,
-            jobGiver: userMap.get(jobGiverId) || jobData.jobGiver
-          };
-        });
-        setJobs(jobList);
-      } else {
-        setJobs([]);
+      if (!res.success || !res.data) {
+        throw new Error(res.error || 'Failed to fetch jobs');
       }
+
+      setJobs(res.data);
     } catch (error) {
       console.error('Error fetching jobs:', error);
       setJobs([]);
     } finally {
       setLoading(false);
     }
-  }, [db]);
+  }, []);
 
   React.useEffect(() => {
     fetchJobs();

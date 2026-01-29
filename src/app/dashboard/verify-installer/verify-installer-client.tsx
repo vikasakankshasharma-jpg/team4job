@@ -27,8 +27,11 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { ShieldCheck, Loader2 } from "lucide-react";
-import { initiateAadharVerification, confirmAadharVerification } from "@/ai/flows/aadhar-verification";
-import { verifyGst } from "@/ai/flows/gst-verification";
+import {
+  initiateAadharVerificationAction,
+  confirmAadharVerificationAction,
+  verifyGstAction
+} from "@/app/actions/ai.actions";
 import { useRouter } from "next/navigation";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -108,14 +111,15 @@ export default function VerifyInstallerClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await initiateAadharVerification(values);
-      if (result.success) {
-        setVerificationId(result.verificationId);
+      const result = await initiateAadharVerificationAction(values);
+      if (result.success && result.data) {
+        setVerificationId(result.data.verificationId);
         setStep("enterOtp");
-        toast({ title: "OTP Sent", description: result.message });
+        toast({ title: "OTP Sent", description: result.data.message });
       } else {
-        setError(result.message);
-        toast({ title: "Error", description: result.message, variant: "destructive" });
+        const errorMsg = result.error || "Failed to initiate verification";
+        setError(errorMsg);
+        toast({ title: "Error", description: errorMsg, variant: "destructive" });
       }
     } catch (e: any) {
       setError(e.message || "An unexpected error occurred. Please try again.");
@@ -130,13 +134,14 @@ export default function VerifyInstallerClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await confirmAadharVerification({ ...values, verificationId });
-      if (result.isVerified) {
+      const result = await confirmAadharVerificationAction({ ...values, verificationId });
+      if (result.success && result.data && result.data.isVerified) {
         setStep("selectSkills");
         toast({ title: "Verification Successful", description: "Please select your skills to complete the process.", variant: "default" });
       } else {
-        setError(result.message);
-        toast({ title: "Verification Failed", description: result.message, variant: "destructive" });
+        const errorMsg = result.data?.message || result.error || "Verification failed";
+        setError(errorMsg);
+        toast({ title: "Verification Failed", description: errorMsg, variant: "destructive" });
       }
     } catch (e: any) {
       setError(e.message || "An unexpected error occurred. Please try again.");
@@ -170,13 +175,14 @@ export default function VerifyInstallerClient() {
     try {
       if (values.gstNumber && process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true') {
         try {
-          const gstResult = await verifyGst({ gstin: values.gstNumber });
-          if (!gstResult.isValid) {
-            toast({ title: "GST Verification Failed", description: gstResult.message, variant: "destructive" });
+          const result = await verifyGstAction({ gstin: values.gstNumber });
+          if (!result.success || !result.data?.isValid) {
+            const errorMsg = result.data?.message || result.error || "GST verification failed";
+            toast({ title: "GST Verification Failed", description: errorMsg, variant: "destructive" });
             setIsLoading(false);
             return;
           }
-          toast({ title: "GST Verified!", description: `Business: ${gstResult.legalName || 'Verified'}` });
+          toast({ title: "GST Verified!", description: `Business: ${result.data.legalName || 'Verified'}` });
         } catch (e) {
           console.error("GST Check Error", e);
           // Block if API enabled and failed
@@ -274,14 +280,15 @@ export default function VerifyInstallerClient() {
 
                 if (isAutomated) {
                   try {
-                    const result = await initiateAadharVerification(values);
-                    if (result.success) {
-                      setVerificationId(result.verificationId);
+                    const result = await initiateAadharVerificationAction(values);
+                    if (result.success && result.data) {
+                      setVerificationId(result.data.verificationId);
                       setStep("enterOtp");
-                      toast({ title: "OTP Sent", description: result.message });
+                      toast({ title: "OTP Sent", description: result.data.message });
                     } else {
-                      setError(result.message);
-                      toast({ title: "Error", description: result.message, variant: "destructive" });
+                      const errorMsg = result.error || "Failed to initiate verification";
+                      setError(errorMsg);
+                      toast({ title: "Error", description: errorMsg, variant: "destructive" });
                     }
                   } catch (e: any) {
                     setError(e.message || "An unexpected error occurred.");

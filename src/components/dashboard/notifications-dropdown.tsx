@@ -95,8 +95,7 @@ export function NotificationsDropdown() {
                 const txQuery = query(
                     collection(db, 'transactions'),
                     where(role === 'Job Giver' ? 'payerId' : 'payeeId', '==', user.id),
-                    orderBy('createdAt', 'desc'),
-                    limit(5)
+                    limit(20) // Get more to ensure we have recent ones after client-side sort
                 );
                 const txSnap = await getDocs(txQuery);
                 txSnap.forEach(txDoc => {
