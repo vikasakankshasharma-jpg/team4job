@@ -202,7 +202,7 @@ export function DashboardSidebar() {
               <DialogHeader>
                 <DialogTitle>Contact Support</DialogTitle>
                 <DialogDescription>
-                  Choose how you'd like to get in touch with our team.
+                  Choose how you&apos;d like to get in touch with our team.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">

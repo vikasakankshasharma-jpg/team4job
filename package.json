@@ -8,8 +8,12 @@
     "dev:idx": "bash scripts/dev-idx-safe.sh",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "test:e2e": "playwright test"
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:smoke": "playwright test tests/e2e/smoke.spec.ts tests/e2e/admin-smoke.spec.ts",
+    "test:regression": "playwright test tests/e2e --grep-invert 'smoke'",
+    "test:edge-cases": "playwright test tests/e2e/edge-cases.spec.ts"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.25.0",
