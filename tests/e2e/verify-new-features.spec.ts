@@ -8,7 +8,7 @@ test.describe('Job Giver Enhancements Verification', () => {
         // 1. Login as Job Giver
         console.log('Logging in...');
         await page.goto('/login');
-        await page.fill('input[type="email"]', TEST_ACCOUNTS.jobGiver.email);
+        await page.fill('input[name="identifier"]', TEST_ACCOUNTS.jobGiver.email);
         await page.fill('input[type="password"]', TEST_ACCOUNTS.jobGiver.password);
         await page.getByRole('button', { name: /Log In/i }).click();
         await page.waitForURL(/\/dashboard/);

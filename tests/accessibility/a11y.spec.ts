@@ -40,7 +40,7 @@ test.describe('Accessibility Tests', () => {
     test('Dashboard should not have accessibility violations', async ({ page }) => {
         // Login first
         await page.goto('/login');
-        await page.fill('input[type="email"]', 'installer@example.com');
+        await page.fill('input[name="identifier"]', 'installer@example.com');
         await page.fill('input[type="password"]', 'Test@1234');
         await page.click('button[type="submit"]');
         await page.waitForURL(/\/dashboard.*/, { timeout: 60000 });
@@ -80,7 +80,7 @@ test.describe('Accessibility Tests', () => {
     test('Form inputs should have labels', async ({ page }) => {
         await page.goto('/login');
 
-        const inputs = await page.locator('input[type="email"], input[type="password"]').all();
+        const inputs = await page.locator('input[name="identifier"], input[type="password"]').all();
 
         for (const input of inputs) {
             const hasLabel = await input.evaluate((el) => {

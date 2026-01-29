@@ -37,7 +37,7 @@ test.describe('Visual Regression Tests', () => {
 
     test('Installer dashboard should match baseline', async ({ page }) => {
         await page.goto('/login');
-        await page.fill('input[type="email"]', 'installer@example.com');
+        await page.fill('input[name="identifier"]', 'installer@example.com');
         await page.fill('input[type="password"]', 'Vikas@129229');
         await page.click('button[type="submit"]');
         await page.waitForURL(/\/dashboard/);
@@ -54,7 +54,7 @@ test.describe('Visual Regression Tests', () => {
 
     test('Job Giver dashboard should match baseline', async ({ page }) => {
         await page.goto('/login');
-        await page.fill('input[type="email"]', 'jobgiver@example.com');
+        await page.fill('input[name="identifier"]', 'jobgiver@example.com');
         await page.fill('input[type="password"]', 'Vikas@129229');
         await page.click('button[type="submit"]');
         await page.waitForURL(/\/dashboard/);
@@ -71,7 +71,7 @@ test.describe('Visual Regression Tests', () => {
 
     test('Job listing page should match baseline', async ({ page }) => {
         await page.goto('/login');
-        await page.fill('input[type="email"]', 'installer@example.com');
+        await page.fill('input[name="identifier"]', 'installer@example.com');
         await page.fill('input[type="password"]', 'Vikas@129229');
         await page.click('button[type="submit"]');
         await page.waitForURL(/\/dashboard/);
@@ -100,7 +100,7 @@ test.describe('Visual Regression Tests', () => {
         await page.setViewportSize({ width: 375, height: 667 });
 
         await page.goto('/login');
-        await page.fill('input[type="email"]', 'installer@example.com');
+        await page.fill('input[name="identifier"]', 'installer@example.com');
         await page.fill('input[type="password"]', 'Vikas@129229');
         await page.click('button[type="submit"]');
         await page.waitForURL(/\/dashboard/);
