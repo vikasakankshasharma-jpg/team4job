@@ -52,22 +52,22 @@ test.describe('Edge Case Tests', () => {
             await page.goto('/login');
             await page.click('[data-testid="login-submit-btn"]');
 
-            await expect(page.locator('[data-testid="email-error"]')).toContainText('Please enter a valid email address.', { timeout: 10000 });
+            await expect(page.locator('[data-testid="email-error"]')).toContainText('Please enter a valid email address or 10-digit mobile number.', { timeout: 10000 });
             await expect(page.locator('[data-testid="password-error"]')).toContainText('Password cannot be empty.', { timeout: 10000 });
         });
 
         test('Login with invalid email format', async ({ page }) => {
             await page.goto('/login');
-            await page.fill('input[type="email"]', 'invalid-email@');
+            await page.fill('input[name="identifier"]', 'invalid-email@');
             await page.fill('input[type="password"]', 'password123');
             await page.getByTestId('login-submit-btn').click();
 
-            await expect(page.locator('[data-testid="email-error"]')).toContainText('Please enter a valid email address.', { timeout: 10000 });
+            await expect(page.locator('[data-testid="email-error"]')).toContainText('Please enter a valid email address or 10-digit mobile number.', { timeout: 10000 });
         });
 
         test('Login with wrong credentials', async ({ page }) => {
             await page.goto('/login');
-            await page.fill('input[type="email"]', 'wrong@example.com');
+            await page.fill('input[name="identifier"]', 'wrong@example.com');
             await page.fill('input[type="password"]', 'wrongpassword');
             await page.getByTestId('login-submit-btn').click();
 
@@ -79,13 +79,13 @@ test.describe('Edge Case Tests', () => {
             await page.goto('/login');
 
             for (let i = 0; i < 3; i++) {
-                await page.fill('input[type="email"]', 'wrong@example.com');
+                await page.fill('input[name="identifier"]', 'wrong@example.com');
                 await page.fill('input[type="password"]', 'wrongpassword');
                 await helper.form.clickButton('Log In');
                 await page.waitForTimeout(1000);
             }
 
-            await expect(page.locator('input[type="email"]')).toBeVisible();
+            await expect(page.locator('input[name="identifier"]')).toBeVisible();
         });
 
         test('Session persistence after page reload', async ({ page }) => {

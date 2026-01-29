@@ -11,7 +11,7 @@ test.describe('Notification System', () => {
     test.beforeEach(async ({ page }) => {
         // Login
         await page.goto('/login');
-        await page.fill('input[type="email"]', email);
+        await page.fill('input[name="identifier"]', email);
         await page.fill('input[type="password"]', password);
         await page.click('button[type="submit"]'); // Adjust selector if needed
         await page.waitForURL(/\/dashboard/);

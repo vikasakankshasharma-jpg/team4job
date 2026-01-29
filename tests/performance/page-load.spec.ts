@@ -29,7 +29,7 @@ test.describe('Performance Benchmarks', () => {
     test('Dashboard should load within 4 seconds', async ({ page }) => {
         // Login first
         await page.goto('/login');
-        await page.fill('input[type="email"]', TEST_ACCOUNTS.installer.email);
+        await page.fill('input[name="identifier"]', TEST_ACCOUNTS.installer.email);
         await page.fill('input[type="password"]', TEST_ACCOUNTS.installer.password);
         await page.click('button[type="submit"]');
 
@@ -46,7 +46,7 @@ test.describe('Performance Benchmarks', () => {
     test('Job detail page should load within 3.5 seconds', async ({ page }) => {
         // Login and navigate to a job
         await page.goto('/login');
-        await page.fill('input[type="email"]', TEST_ACCOUNTS.installer.email);
+        await page.fill('input[name="identifier"]', TEST_ACCOUNTS.installer.email);
         await page.fill('input[type="password"]', TEST_ACCOUNTS.installer.password);
         await page.click('button[type="submit"]');
         await page.waitForURL(/\/dashboard/);

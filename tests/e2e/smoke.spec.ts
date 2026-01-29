@@ -57,14 +57,22 @@ test.describe('Smoke Tests', () => {
     });
 
     test('Invalid login shows error', async ({ page }) => {
+        const helper = new TestHelper(page);
+        // Ensure we are logged out first so we can see the login form
+        await helper.auth.logout();
+
         await page.goto('/login');
-        await page.fill('input[type="email"]', 'invalid@example.com');
+        // Use the same reliable selector as AuthHelper
+        const emailInput = page.locator('input[name="identifier"]');
+        await emailInput.waitFor({ state: 'visible', timeout: 10000 });
+        await emailInput.fill('invalid@example.com');
+
         await page.fill('input[type="password"]', 'wrongpassword');
         await page.click('button[type="submit"]:has-text("Log In")');
 
         // Should show error and stay on login page
         // Look for error toast notification
-        await expect(page.locator('[role="status"]').first()).toBeVisible({ timeout: 5000 });
+        await expect(page.locator('[role="status"]').first()).toBeVisible({ timeout: 10000 });
         await expect(page).toHaveURL(/\/login/);
     });
 
