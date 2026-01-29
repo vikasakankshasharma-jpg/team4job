@@ -184,94 +184,89 @@ export async function getInvoiceDataAction(jobId: string, userId: string, type?:
         }
 
         if (jobData.awardedInstallerId) {
-
-            const serializeStart = Date.now();
-            const result = {
-                success: true,
-                data: JSON.parse(JSON.stringify({
-                    job: expandedJob,
-                    transaction
-                })),
-                debugLog
-            };
-            log(`Serialization completed in ${Date.now() - serializeStart}ms`);
-            log(`Total execution time: ${Date.now() - startTime}ms`);
-            log(`====== END getInvoiceDataAction SUCCESS ======`);
-
-            return result;
-        } catch (error: any) {
-            log(`ERROR: ${error.message}`);
-            log(`ERROR Stack: ${error.stack}`);
-            log(`====== END getInvoiceDataAction ERROR ======`);
-            logger.error('Error fetching invoice data', error);
-            return { success: false, error: error.message, debugLog };
+            const installerSnap = await db.collection('users').doc(jobData.awardedInstallerId).get();
+            if (installerSnap.exists) {
+                expandedJob.awardedInstaller = { id: installerSnap.id, ...installerSnap.data() } as any;
+            }
         }
+
+        return {
+            success: true,
+            data: JSON.parse(JSON.stringify({
+                job: expandedJob,
+                transaction
+            }))
+        };
+    } catch (error: any) {
+        console.error('Error in getInvoiceDataAction:', error);
+        return { success: false, error: error.message };
     }
+}
 
 export async function listJobsForJobGiverAction(userId: string): Promise<{ success: boolean; data: any[]; error?: string }> {
-        try {
-            const jobs = await jobService.listJobsForJobGiver(userId);
-            return { success: true, data: JSON.parse(JSON.stringify(jobs)) };
-        } catch (error: any) {
-            return { success: false, data: [], error: error.message || 'Failed to list jobs' };
-        }
+    try {
+        const jobs = await jobService.listJobsForJobGiver(userId);
+        return { success: true, data: JSON.parse(JSON.stringify(jobs)) };
+    } catch (error: any) {
+        return { success: false, data: [], error: error.message || 'Failed to list jobs' };
     }
+}
 
-    export async function listOpenJobsAction(filters?: any): Promise<{ success: boolean; data: any[]; error?: string }> {
-        try {
-            const jobs = await jobService.listOpenJobs(filters);
-            return { success: true, data: JSON.parse(JSON.stringify(jobs)) };
-        } catch (error: any) {
-            return { success: false, data: [], error: error.message || 'Failed to list open jobs' };
-        }
+export async function listOpenJobsAction(filters?: any): Promise<{ success: boolean; data: any[]; error?: string }> {
+    try {
+        const jobs = await jobService.listOpenJobs(filters);
+        return { success: true, data: JSON.parse(JSON.stringify(jobs)) };
+    } catch (error: any) {
+        return { success: false, data: [], error: error.message || 'Failed to list open jobs' };
     }
+}
 
-    export async function startWorkAction(jobId: string, userId: string, otp: string): Promise<{ success: boolean; error?: string }> {
-        try {
-            await jobService.startWork(jobId, userId, otp);
-            revalidatePath(`/dashboard/jobs/${jobId}`);
-            return { success: true };
-        } catch (error: any) {
-            return { success: false, error: error.message || 'Failed to start work' };
-        }
+export async function startWorkAction(jobId: string, userId: string, otp: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        await jobService.startWork(jobId, userId, otp);
+        revalidatePath(`/dashboard/jobs/${jobId}`);
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message || 'Failed to start work' };
     }
+}
 
-    export async function rescheduleJobAction(
-        jobId: string,
-        userId: string,
-        action: 'propose' | 'accept' | 'reject' | 'dismiss',
-        proposedDate?: string
-    ) {
-        try {
-            await jobService.rescheduleJob(jobId, userId, action, proposedDate ? new Date(proposedDate) : undefined);
-            revalidatePath(`/dashboard/jobs/${jobId}`);
-            return { success: true };
-        } catch (error: any) {
-            return { success: false, error: error.message };
-        }
+export async function rescheduleJobAction(
+    jobId: string,
+    userId: string,
+    action: 'propose' | 'accept' | 'reject' | 'dismiss',
+    proposedDate?: string
+) {
+    try {
+        await jobService.rescheduleJob(jobId, userId, action, proposedDate ? new Date(proposedDate) : undefined);
+        revalidatePath(`/dashboard/jobs/${jobId}`);
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
     }
+}
 
-    export async function promoteJobAction(
-        jobId: string,
-        userId: string,
-        travelTip: number,
-        deadline: string
-    ) {
-        try {
-            await jobService.promoteJob(jobId, userId, travelTip, new Date(deadline));
-            revalidatePath(`/dashboard/jobs/${jobId}`);
-            return { success: true };
-        } catch (error: any) {
-            return { success: false, error: error.message };
-        }
+export async function promoteJobAction(
+    jobId: string,
+    userId: string,
+    travelTip: number,
+    deadline: string
+) {
+    try {
+        await jobService.promoteJob(jobId, userId, travelTip, new Date(deadline));
+        revalidatePath(`/dashboard/jobs/${jobId}`);
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
     }
+}
 
-    export async function batchJobAction(userId: string, jobIds: string[], action: 'archive' | 'delete') {
-        try {
-            await jobService.batchAction(userId, jobIds, action);
-            revalidatePath('/dashboard/posted-jobs');
-            return { success: true };
-        } catch (error: any) {
-            return { success: false, error: error.message };
-        }
+export async function batchJobAction(userId: string, jobIds: string[], action: 'archive' | 'delete') {
+    try {
+        await jobService.batchAction(userId, jobIds, action);
+        revalidatePath('/dashboard/posted-jobs');
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
     }
+}
