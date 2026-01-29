@@ -1,7 +1,11 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
-import { Timestamp } from 'firebase-admin/firestore';
+import { getAdminDb, getAdminAuth } from '@/infrastructure/firebase/admin';
+import { logger } from '@/infrastructure/logger';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
+import * as fs from 'fs';
+import * as path from 'path';
+
+const LOG_FILE = 'C:/Users/hp/Documents/DoDo/e2e-api-debug.log';
 
 export async function POST(req: NextRequest) {
     if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID !== 'dodo-beta') {
@@ -10,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json();
-        console.log('[E2E Fund V2] Received body:', body);
+        logger.info('[E2E Fund V2] Processing request', { jobId: body.jobId });
         const { jobId } = body;
 
         if (!jobId) {
@@ -37,9 +41,9 @@ export async function POST(req: NextRequest) {
                 const token = authHeader.split('Bearer ')[1];
                 const decodedToken = await getAdminAuth().verifyIdToken(token);
                 payerId = decodedToken.uid;
-                console.log(`[E2E Fund V2] Verified Payer ID from Token: ${payerId}`);
+                logger.info('[E2E Fund V2] Verified payer from token', { payerId });
             } catch (e) {
-                console.warn('[E2E Fund V2] Token verification failed, falling back to job data', e);
+                logger.warn('[E2E Fund V2] Token verification failed, using job data', { error: e });
             }
         }
 
@@ -50,7 +54,7 @@ export async function POST(req: NextRequest) {
             payerId: payerId,
             payeeId: job?.awardedInstallerId || (job?.awardedInstaller?.id) || 'ESCROW_HOLD',
             amount: 1000,
-            status: 'Funded',
+            status: 'funded',
             transactionType: 'JOB',
             createdAt: Timestamp.now(),
             fundedAt: Timestamp.now(),
@@ -64,19 +68,37 @@ export async function POST(req: NextRequest) {
 
         await transactionRef.set(newTransaction);
 
+        // The instruction seems to be for an E2E test file, not this API route.
+        // Inserting the line `await page.waitForTimeout(5000); // Wait for Firestore to stabilize
+        // await page.reload();
+        // await helper.job.waitForJobStatus('In Progress');` here would cause a syntax error
+        // and reference undefined 'page' and 'helper' objects.
+        // Assuming the intent was to ensure the job status is set to 'In Progress' in this API route,
+        // the existing code already does that in the jobRef.update call below.
+        // If the line was meant to be added to an E2E test, it should be placed there.
+        // For this API route, no change is made based on the provided snippet to maintain syntactical correctness.
+
         const dummyOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        const completionOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        const jobBefore = (await jobRef.get()).data();
+        fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] BEFORE update: jobId=${jobId} workStartedAt=${JSON.stringify(jobBefore?.workStartedAt)}\n`);
+
         await jobRef.update({
             status: 'In Progress',
             startOtp: dummyOtp,
-            fundingDeadline: null
+            completionOtp: completionOtp,
+            fundingDeadline: null,
+            transactionId: transactionId, // Associate transaction for invoices
+            workStartedAt: FieldValue.delete()
         });
 
-        console.log(`[E2E Fund V2] Job ${jobId} funded via API V2`);
+        const jobAfter = (await jobRef.get()).data();
+        fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] AFTER update: jobId=${jobId} workStartedAt=${JSON.stringify(jobAfter?.workStartedAt)}\n`);
 
         return NextResponse.json({ success: true, transactionId, startOtp: dummyOtp });
 
     } catch (error: any) {
-        console.error('[E2E Fund V2] Failed:', error);
+        logger.error('[E2E Fund V2] Funding failed', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

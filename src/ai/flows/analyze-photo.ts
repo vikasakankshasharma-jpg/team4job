@@ -1,5 +1,5 @@
 
-'use server';
+// 'use server'; removed to fix invalid export error
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';

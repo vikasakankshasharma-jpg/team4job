@@ -30,7 +30,7 @@ export function MilestoneList({ job, user, isJobGiver, onRelease }: MilestoneLis
                                 <h4 className="font-semibold text-gray-900">{milestone.title}</h4>
                                 <p className="text-sm text-gray-500">{milestone.description}</p>
                                 <div className="mt-2 flex items-center space-x-2">
-                                    <Badge variant={milestone.status === 'Released' ? 'default' : 'secondary'}>
+                                    <Badge variant={milestone.status === 'released' ? 'default' : 'secondary'}>
                                         {milestone.status}
                                     </Badge>
                                     <span className="text-sm font-medium text-gray-700">
@@ -39,20 +39,20 @@ export function MilestoneList({ job, user, isJobGiver, onRelease }: MilestoneLis
                                 </div>
                             </div>
 
-                            {isJobGiver && milestone.status === 'Funded' && (
+                            {isJobGiver && milestone.status === 'funded' && (
                                 <Button size="sm" onClick={() => onRelease(milestone.id)} className="w-full sm:w-auto">
                                     <CheckCircle className="h-4 w-4 mr-2" />
                                     Release Payment
                                 </Button>
                             )}
 
-                            {milestone.status === 'Released' && (
+                            {milestone.status === 'released' && (
                                 <div className="flex items-center text-green-600 text-sm font-medium">
                                     <CheckCircle className="h-4 w-4 mr-1" />
                                     Paid
                                 </div>
                             )}
-                            {milestone.status === 'Pending' && (
+                            {milestone.status === 'pending' && (
                                 <div className="flex items-center text-gray-400 text-sm font-medium">
                                     <Clock className="h-4 w-4 mr-1" />
                                     Pending

@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { useToast } from "@/hooks/use-toast";
-import { rewardTopPerformers } from "@/ai/flows/reward-top-performers";
+import { rewardTopPerformersAction } from "@/app/actions/ai.actions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { type ChartConfig } from "@/components/ui/chart";
 
@@ -70,17 +70,17 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
     const handleRunAutomation = async () => {
         setIsLoading(true);
         try {
-            const result = await rewardTopPerformers({});
-            if (result.success) {
+            const result = await rewardTopPerformersAction({});
+            if (result.success && result.data && result.data.success) {
                 toast({
                     title: "Automation Complete!",
-                    description: result.summary,
+                    description: result.data.summary,
                     variant: 'default',
                 });
             } else {
                 toast({
                     title: "Automation Failed",
-                    description: result.summary,
+                    description: result.data?.summary || result.error || "Grant rewards failed",
                     variant: 'destructive',
                 });
             }
@@ -489,18 +489,18 @@ function DisputeResolutionReport({ disputes }: { disputes: Dispute[] }) {
 function FinancialSummaryCard({ transactions }: { transactions: Transaction[] }) {
     const summary = useMemo(() => {
         return transactions.reduce((acc, t) => {
-            if (t.status === 'Released') {
+            if (t.status === 'released') {
                 acc.totalReleased += t.payoutToInstaller;
                 acc.platformRevenue += t.commission + t.jobGiverFee;
                 acc.payoutsCount++;
             }
-            if (t.status === 'Funded') {
+            if (t.status === 'funded') {
                 acc.fundsHeld += t.totalPaidByGiver;
             }
-            if (t.status === 'Funded' || t.status === 'Released') {
+            if (t.status === 'funded' || t.status === 'released') {
                 acc.totalVolume += t.totalPaidByGiver;
             }
-            if (t.status === 'Refunded') {
+            if (t.status === 'refunded') {
                 acc.refundsCount++;
             }
             return acc;

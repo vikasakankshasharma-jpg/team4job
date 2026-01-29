@@ -1,4 +1,4 @@
-'use server';
+// 'use server'; removed to fix invalid export error
 
 /**
  * @fileOverview This file defines a Genkit flow for suggesting relevant skills based on a job title and description.
@@ -10,8 +10,8 @@
  * - `SuggestSkillsOutput`: The output type for the `suggestSkills` function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const SuggestSkillsInputSchema = z.object({
   jobTitle: z.string().describe('The title of the job.'),
@@ -30,8 +30,8 @@ export async function suggestSkills(input: SuggestSkillsInput): Promise<SuggestS
 
 const suggestSkillsPrompt = ai.definePrompt({
   name: 'suggestSkillsPrompt',
-  input: {schema: SuggestSkillsInputSchema},
-  output: {schema: SuggestSkillsOutputSchema},
+  input: { schema: SuggestSkillsInputSchema },
+  output: { schema: SuggestSkillsOutputSchema },
   prompt: `You are an expert in the CCTV and security installation industry.
   Based on the provided job title and description, identify and suggest a list of 5-7 relevant technical skills required to complete the job.
   Focus on specific, industry-standard terms.
@@ -50,7 +50,7 @@ const suggestSkillsFlow = ai.defineFlow(
     outputSchema: SuggestSkillsOutputSchema,
   },
   async input => {
-    const {output} = await suggestSkillsPrompt(input);
+    const { output } = await suggestSkillsPrompt(input);
     return output!;
   }
 );

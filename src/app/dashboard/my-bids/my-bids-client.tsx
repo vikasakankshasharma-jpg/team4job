@@ -188,52 +188,40 @@ export default function MyBidsClient() {
   }, [role, userLoading, router]);
 
   const fetchMyBids = useCallback(async () => {
-    if (!user || !role || role !== 'Installer' || !db) return;
+    if (!user || !role || role !== 'Installer') return;
     setLoading(true);
     try {
-      // Use Collection Group Query to find bids across all jobs
-      // Requires 'installerId' to be present on the bid document
-      const bidsQuery = query(collectionGroup(db, 'bids'), where('installerId', '==', user.id));
-      const bidsSnapshot = await getDocs(bidsQuery);
+      const response = await fetch(`/api/bids/my-bids?userId=${user.id}`);
+      if (!response.ok) throw new Error('Failed to fetch bids');
 
-      const fetchedBids: (Bid & { jobId: string; id: string })[] = [];
-      const jobIds = new Set<string>();
+      const data = await response.json();
 
-      bidsSnapshot.forEach(docSnap => {
-        const bidData = docSnap.data() as Bid;
-        // The parent of a bid is the job
-        // Path: jobs/{jobId}/bids/{bidId}
-        // docSnap.ref.parent.parent?.id should be jobId
-        const jobId = docSnap.ref.parent.parent?.id;
+      // The API returns bids with embedded job data
+      // We need to separate them to match the state structure if needed, 
+      // or just use the returned structure.
+      // Based on previous analysis, the API returns:
+      // { bids: [ { ...bid, job: { ...jobData } } ] }
 
-        if (jobId) {
-          fetchedBids.push({ ...bidData, id: docSnap.id, jobId });
-          jobIds.add(jobId);
+      const fetchedBids = data.bids;
+
+      // Extract unique jobs from the bids for the jobs state
+      // The API returns job data inside the bid object
+      const uniqueJobsMap = new Map<string, Job>();
+      fetchedBids.forEach((bid: any) => {
+        if (bid.job) {
+          uniqueJobsMap.set(bid.job.id, bid.job);
         }
       });
 
-      // Fetch all related jobs efficiently
-      const fetchedJobs: Job[] = [];
-      // Firestore 'in' query supports max 10/30 items. If we have many, we might need to batch or fetch individually.
-      // For now, assume < 30 active bids. Or use Promise.all(getDoc)
-
-      const jobPromises = Array.from(jobIds).map(id => getDoc(doc(db, 'jobs', id)));
-      const jobSnaps = await Promise.all(jobPromises);
-
-      jobSnaps.forEach(snap => {
-        if (snap.exists()) {
-          fetchedJobs.push({ id: snap.id, ...snap.data() } as Job);
-        }
-      });
-
-      setJobs(fetchedJobs);
       setBids(fetchedBids);
+      setJobs(Array.from(uniqueJobsMap.values()));
     } catch (error) {
       console.error("Failed to fetch bids and jobs:", error);
+      toast({ title: "Error", description: "Failed to load your bids. Please refresh.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  }, [user, role, db]);
+  }, [user, role, toast]);
 
   React.useEffect(() => {
     if (!userLoading) {
@@ -242,6 +230,11 @@ export default function MyBidsClient() {
   }, [fetchMyBids, userLoading]);
 
   const handleWithdrawBid = async (bidId: string, jobId: string) => {
+    // Note: Technically this should also be an API call (DELETE /api/bids/[id])
+    // But for now we kept the hybrid approach stable in recent steps.
+    // However, since we are doing a "complete" pass, let's look for an API route or keep using Firebase if the API isn't ready.
+    // I haven't created a withdraw-bid API yet. I'll stick to Firebase for the ACTION to keep it "Hybrid" and stable like posted-jobs.
+    // But I need to make sure imports like deleteDoc are still there.
     if (!db) return;
     try {
       await deleteDoc(doc(db, "jobs", jobId, "bids", bidId));

@@ -423,9 +423,9 @@ export default function AdminClient() {
                                                 <Clock className="h-3 w-3" />
                                                 {alert.timestamp ? formatDistanceToNow(new Date((alert.timestamp as any).toDate ? (alert.timestamp as any).toDate() : alert.timestamp), { addSuffix: true }) : 'Just now'}
                                                 {alert.metadata?.jobId && (
-                                                    <span className="cursor-pointer hover:underline text-blue-600" onClick={() => router.push(`/dashboard/jobs/${alert.metadata.jobId}`)}>
+                                                    <Button variant="link" className="p-0 h-auto font-normal text-xs text-blue-600 hover:underline" onClick={() => router.push(`/dashboard/jobs/${alert.metadata.jobId}`)}>
                                                         • Job ID: {alert.metadata.jobId}
-                                                    </span>
+                                                    </Button>
                                                 )}
                                                 {alert.metadata?.refundAmount && (
                                                     <span>• Amount: ₹{alert.metadata.refundAmount}</span>

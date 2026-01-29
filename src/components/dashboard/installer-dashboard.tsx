@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo, useEffect } from "react";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,8 +21,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
-import { Transaction } from "@/lib/types";
-import { collection, query, where, doc, getCountFromServer, limit, onSnapshot } from "firebase/firestore";
 import { toDate } from "@/lib/utils";
 import { format, subMonths } from "date-fns";
 import dynamic from "next/dynamic";
@@ -30,87 +28,23 @@ import { StatCard } from "@/components/dashboard/cards/stat-card";
 import { RecommendedJobs } from "@/components/dashboard/recommended-jobs";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
+import { InstallerStats } from "@/domains/jobs/job.types";
+import { Transaction } from "@/lib/types";
 
 const InstallerEarningsChart = dynamic(() => import("@/components/dashboard/charts/installer-earnings-chart").then(mod => mod.InstallerEarningsChart), { ssr: false });
 
-export function InstallerDashboard() {
+export function InstallerDashboard({ stats, transactions, loading = false }: {
+    stats: InstallerStats,
+    transactions: Transaction[],
+    loading?: boolean
+}) {
     const { user } = useUser();
-    const { db } = useFirebase();
     const { setHelp } = useHelp();
-    const [stats, setStats] = React.useState({ openJobs: 0, myBids: 0, jobsWon: 0 });
-    const [loading, setLoading] = React.useState(true);
 
     const isVerified = user?.installerProfile?.verified;
 
-    const [transactions, setTransactions] = React.useState<Transaction[]>([]);
-
-    React.useEffect(() => {
-        const unsubscribeFuncs: (() => void)[] = [];
-
-        async function setupListeners() {
-            if (!user || !db) return;
-
-            setLoading(true);
-            try {
-                const jobsRef = collection(db, "jobs");
-                const installerDocRef = doc(db, 'users', user.id);
-
-                // 1. Open Jobs Count (Keep as one-time fetch to save reads)
-                const openJobsQuery = query(jobsRef, where('status', '==', 'Open for Bidding'));
-                getCountFromServer(openJobsQuery).then(snap => {
-                    setStats(prev => ({ ...prev, openJobs: snap.data().count }));
-                });
-
-                // 2. My Bids Listener
-                const myBidsQuery = query(jobsRef, where('bidderIds', 'array-contains', user.id));
-                const unsubBids = onSnapshot(myBidsQuery, (snapshot) => {
-                    setStats(prev => ({
-                        ...prev,
-                        myBids: snapshot.size
-                    }));
-                });
-                unsubscribeFuncs.push(unsubBids);
-
-                // 3. My Awarded Jobs Listener
-                const myAwardedQuery = query(jobsRef, where('awardedInstaller', '==', installerDocRef));
-                const unsubAwarded = onSnapshot(myAwardedQuery, (snapshot) => {
-                    setStats(prev => ({
-                        ...prev,
-                        jobsWon: snapshot.size
-                    }));
-                });
-                unsubscribeFuncs.push(unsubAwarded);
-
-                // 4. Transactions Listener
-                const transactionsQuery = query(
-                    collection(db, "transactions"),
-                    where("payeeId", "==", user.id),
-                    limit(100)
-                );
-                const unsubTx = onSnapshot(transactionsQuery, (snapshot) => {
-                    const txs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Transaction));
-                    setTransactions(txs);
-                });
-                unsubscribeFuncs.push(unsubTx);
-
-                setLoading(false);
-
-            } catch (error) {
-                console.error("Error setting up InstallerDashboard listeners:", error);
-                setLoading(false);
-            }
-        }
-
-        setupListeners();
-
-        return () => {
-            unsubscribeFuncs.forEach(unsub => unsub());
-        };
-
-    }, [user, db]);
-
-    // Process Data for Earnings Chart (Last 6 Months - Realized Only)
-    const earningsData = React.useMemo(() => {
+    // Process Data for Earnings Chart (Last 6 Months - Released Only)
+    const earningsData = useMemo(() => {
         const months = Array.from({ length: 6 }).map((_, i) => {
             const d = subMonths(new Date(), i);
             return {
@@ -122,7 +56,7 @@ export function InstallerDashboard() {
         }).reverse();
 
         transactions.forEach(t => {
-            if (t.status === 'Released' && t.releasedAt) {
+            if (t.status === 'released' && t.releasedAt) {
                 const date = toDate(t.releasedAt);
                 const monthStr = format(date, 'MMM yyyy');
                 const monthData = months.find(m => m.fullName === monthStr);
@@ -135,15 +69,15 @@ export function InstallerDashboard() {
     }, [transactions]);
 
     const totalEarnings = transactions
-        .filter(t => t.status === 'Released')
+        .filter(t => t.status === 'released')
         .reduce((acc, t) => acc + (t.payoutToInstaller || 0), 0);
 
-    const projectedEarnings = transactions
-        .filter(t => t.status === 'Funded')
+    const pendingPayments = transactions
+        .filter(t => t.status === 'funded')
         .reduce((acc, t) => acc + (t.payoutToInstaller || 0), 0);
 
 
-    React.useEffect(() => {
+    useEffect(() => {
         setHelp({
             title: 'Installer Dashboard Guide',
             content: (
@@ -255,7 +189,7 @@ export function InstallerDashboard() {
                             <Clock className="h-8 w-8 text-blue-700 dark:text-blue-400" />
                         </div>
                         <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Projected Earnings</p>
-                        <h3 className="text-4xl font-bold mt-2 text-blue-800 dark:text-blue-300">₹{projectedEarnings.toLocaleString()}</h3>
+                        <h3 className="text-4xl font-bold mt-2 text-blue-800 dark:text-blue-300">₹{pendingPayments.toLocaleString()}</h3>
                         <p className="text-xs text-muted-foreground mt-2">Funds currently Locked</p>
                     </Card>
                 </div>

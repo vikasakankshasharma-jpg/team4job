@@ -4,17 +4,17 @@
 
 export const TEST_ACCOUNTS = {
     jobGiver: {
-        email: 'giver_vip@team4job.com',
+        email: 'giver_vip_v3@team4job.com',
         password: 'Test@1234',
         role: 'Job Giver',
     },
     installer: {
-        email: 'installer_pro@team4job.com',
+        email: 'installer_pro_v3@team4job.com',
         password: 'Test@1234',
         role: 'Installer',
     },
     admin: {
-        email: 'vikasakankshasharma@gmail.com',
+        email: 'vikasakankshasharma_v3@gmail.com',
         password: 'Vks2bhdj@9229',
         role: 'Admin',
     },

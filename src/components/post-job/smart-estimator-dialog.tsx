@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Sparkles, Check, AlertTriangle, Info } from "lucide-react";
-import { generatePriceEstimate } from "@/ai/actions";
-import { type GeneratePriceEstimateOutput } from "@/ai/flows/generate-price-estimate-schema";
+import { generatePriceEstimateAction } from "@/app/actions/ai.actions";
+import { type GeneratePriceEstimateOutput } from "@/domains/ai/ai.types";
 import { toast } from "@/hooks/use-toast";
 
 interface SmartEstimatorDialogProps {
@@ -53,12 +53,16 @@ export function SmartEstimatorDialog({
         setLoading(true);
         setError(null);
         try {
-            const output = await generatePriceEstimate({
+            const result = await generatePriceEstimateAction({
                 jobTitle: jobDetails.title,
                 jobDescription: jobDetails.description,
                 jobCategory: jobDetails.category
             });
-            setResult(output);
+            if (result.success && result.data) {
+                setResult(result.data);
+            } else {
+                throw new Error(result.error);
+            }
         } catch (err) {
             console.error(err);
             setError("Failed to generate estimate. Please try again.");

@@ -12,6 +12,9 @@ import { arrayUnion, doc, deleteField, runTransaction, collection, query, where,
 import { sendNotification } from "@/lib/notifications";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirebase } from "@/hooks/use-user";
+import { getAuth } from "firebase/auth";
+import axios from "axios";
+import { acceptJobAction } from "@/app/actions/job.actions";
 
 import {
     AlertDialog,
@@ -143,76 +146,22 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
     const processAcceptance = async () => {
         setIsLoading(true);
         try {
-            if (!db) throw new Error("Database connection unavailable");
+            const result = await acceptJobAction(job.id, user.id);
 
-            // Zombie Bidder Protection (Round 6 Fix)
-            const isSubscribed = user.subscription && toDate(user.subscription.expiresAt) > new Date();
-            if (!isSubscribed) {
-                toast({
-                    title: "Subscription Expired",
-                    description: "Your subscription has expired. You must renew to accept this job.",
-                    variant: "destructive",
-                });
-                return;
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to accept job');
             }
 
-            const jobRef = doc(db, 'jobs', job.id);
-            const fundingDeadline = new Date();
-            fundingDeadline.setHours(fundingDeadline.getHours() + 48);
+            toast({ title: "Job Accepted!", description: "You have successfully accepted the job. Please wait for funding." });
 
-            await runTransaction(db, async (transaction) => {
-                const jobDoc = await transaction.get(jobRef);
-                if (!jobDoc.exists()) {
-                    throw new Error("Job does not exist!");
-                }
-                const jobData = jobDoc.data() as Job;
-
-                // Validation: Ensure job is still in 'Awarded' state
-                if (jobData.status !== 'Awarded') {
-                    throw new Error(`This job is no longer available for acceptance. Status: ${jobData.status}`);
-                }
-
-                // Verify the current user is indeed the awarded installer
-                if (jobData.awardedInstaller?.id !== user.id) {
-                    throw new Error("You are not the awarded installer for this job.");
-                }
-
-                // Accept Current Job
-                transaction.update(jobRef, {
-                    // awardedInstaller is already set, so strictly speaking we don't need to update it,
-                    // but keeping it doesn't hurt.
-                    status: "Pending Funding",
-                    selectedInstallers: [],
-                    acceptanceDeadline: deleteField(),
-                    fundingDeadline: fundingDeadline,
-                });
-            });
-
-            const updateLocal = {
-                awardedInstaller: doc(db, 'users', user.id),
-                status: "Pending Funding" as const,
-                selectedInstallers: [],
-                acceptanceDeadline: deleteField(),
-                fundingDeadline: fundingDeadline,
-            };
-            await onJobUpdate(updateLocal as any);
-
-
-            if ((job.jobGiver as User)?.email) {
-                await sendNotification(
-                    (job.jobGiver as User).email,
-                    "Job Accepted!",
-                    `Installer ${user.name} has accepted your job "${job.title}". Please proceed to funding to start the work.`
-                );
-            }
-
-            toast({ title: "Job Accepted!", description: "You have successfully accepted the job." });
+            // Force status update locally if needed for UI smoothness
+            // onJobUpdate({ status: 'Pending Funding' }); 
 
         } catch (e: any) {
-            console.error("InstallerAcceptanceSection: Transaction failed", e);
+            console.error("InstallerAcceptanceSection: Acceptance failed", e);
             toast({
                 title: "Acceptance Failed",
-                description: e.message || "Could not accept job. It may have been taken.",
+                description: e.message || "Could not accept job.",
                 variant: "destructive"
             });
         } finally {

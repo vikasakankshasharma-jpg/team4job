@@ -16,7 +16,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, RefreshCw, Star } from "lucide-react";
+import { PlusCircle, Loader2, RefreshCw, Star, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import {
   Table,
@@ -26,7 +26,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -46,68 +45,57 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { MoreHorizontal } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation";
-import { Job, User } from "@/lib/types";
-import { getStatusVariant, toDate, getRefId } from "@/lib/utils";
-import { useUser, useFirebase } from "@/hooks/use-user";
-import React from "react";
+import { Job } from "@/lib/types";
+import { toDate, getRefId } from "@/lib/utils";
+import { useUser, useAuth } from "@/hooks/use-user";
+import { useState, useEffect } from "react";
 import { useHelp } from "@/hooks/use-help";
-import { collection, getDocs, query, where, doc, getDoc, updateDoc } from "firebase/firestore";
-import type { DocumentReference } from "firebase/firestore";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Briefcase, Archive, RefreshCw as RefreshIcon, Inbox, Check } from "lucide-react";
+import { Briefcase, Archive, Inbox } from "lucide-react";
 import { StatusBadge } from "@/components/job-giver/status-badge";
 import { EnhancedEmptyState } from "@/components/job-giver/enhanced-empty-state";
 import { BulkActionsToolbar } from "@/components/posted-jobs/bulk-actions-toolbar";
 import { AdvancedFilters, type JobFilters } from "@/components/posted-jobs/advanced-filters";
-import { Checkbox } from "@/components/ui/checkbox";
-import { writeBatch, deleteDoc } from "firebase/firestore";
 import { MobileJobCard } from "@/components/posted-jobs/mobile-job-card";
-
-
-
-
-const statusDescriptions: Record<string, string> = {
-  "Open for Bidding": "The job is live and installers can place bids.",
-  "Bidding Closed": "The bidding deadline has passed. You can now review bids and award the job.",
-  "Awarded": "You have awarded the job to an installer. Waiting for them to accept.",
-  "In Progress": "The installer has accepted the job and work is underway.",
-  "Completed": "The job has been successfully completed and paid for.",
-  "Cancelled": "This job has been cancelled.",
-  "Unbid": "The bidding deadline passed with no bids received.",
-  "Pending Funding": "The installer has accepted; awaiting your payment to start the job."
-};
+import { useMyJobs } from "@/hooks/use-my-jobs";
 
 function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () => void }) {
-  const { db } = useFirebase();
+  const { user } = useUser();
+  const auth = useAuth();
   const { toast } = useToast();
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [tip, setTip] = React.useState(0);
-  const [newDeadline, setNewDeadline] = React.useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [tip, setTip] = useState(0);
+  const [newDeadline, setNewDeadline] = useState('');
 
   const handlePromote = async () => {
     if (!tip || tip <= 0 || !newDeadline) {
       toast({ title: "Invalid Input", description: "Please enter a valid tip amount and a new deadline.", variant: "destructive" });
       return;
     }
+
+    if (!user) return;
+
     setIsLoading(true);
     try {
-      const jobRef = doc(db, 'jobs', job.id);
-      await updateDoc(jobRef, {
-        travelTip: tip,
-        deadline: new Date(newDeadline),
-        status: 'Open for Bidding',
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error("Not authenticated");
+      const response = await fetch(`/api/jobs/${job.id}/promote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ travelTip: tip, deadline: newDeadline })
       });
+
+      if (!response.ok) throw new Error('Failed to promote job');
+
       toast({ title: "Job Promoted!", description: "Your job is now open for bidding to a wider audience.", variant: "default" });
       onJobPromoted();
       setIsOpen(false);
@@ -327,95 +315,24 @@ export default function PostedJobsClient() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "active";
   const { user, role, loading: userLoading } = useUser();
-  const { db } = useFirebase();
+  const auth = useAuth();
   const router = useRouter();
   const { setHelp } = useHelp();
   const { toast } = useToast();
-  const [jobs, setJobs] = React.useState<Job[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [selectedJobIds, setSelectedJobIds] = React.useState<string[]>([]);
-  const [filters, setFilters] = React.useState<JobFilters>({});
 
-  React.useEffect(() => {
+  // Use new hook
+  const { jobs, loading: jobsLoading, refetch } = useMyJobs();
+
+  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
+  const [filters, setFilters] = useState<JobFilters>({});
+
+  useEffect(() => {
     if (!userLoading && user && (user.roles.includes('Admin') || role === 'Installer')) {
       router.push('/dashboard');
     }
   }, [user, userLoading, router, role]);
 
-  const fetchJobs = React.useCallback(async () => {
-    if (!db || !user || role !== 'Job Giver') {
-      setLoading(false);
-      return;
-    };
-
-    setLoading(true);
-    try {
-      console.log('PostedJobsClient: Starting fetchJobs...');
-      const userJobsQuery = query(collection(db, 'jobs'), where('jobGiverId', '==', user.id));
-      const jobSnapshot = await getDocs(userJobsQuery);
-      console.log('PostedJobsClient: Fetched jobs count:', jobSnapshot.size);
-
-      const jobsData = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
-
-      const userRefs = new Map<string, DocumentReference>();
-      jobsData.forEach(job => {
-        const awardedInstallerId = getRefId(job.awardedInstaller);
-        if (awardedInstallerId) userRefs.set(awardedInstallerId, doc(db, 'users', awardedInstallerId));
-
-        (job.bids || []).forEach(bid => {
-          const installerId = getRefId(bid.installer);
-          if (installerId) userRefs.set(installerId, doc(db, 'users', installerId));
-        });
-      });
-
-      const usersMap = new Map<string, User>();
-      if (userRefs.size > 0) {
-        const userRefArray = Array.from(userRefs.keys());
-        for (let i = 0; i < userRefArray.length; i += 30) {
-          const chunk = userRefArray.slice(i, i + 30);
-          if (chunk.length > 0) {
-            // Query public_profiles instead of users collection to avoid permission errors
-            const usersQuery = query(collection(db, 'public_profiles'), where('__name__', 'in', chunk));
-            const userDocs = await getDocs(usersQuery);
-            userDocs.forEach(docSnap => {
-              if (docSnap.exists()) {
-                usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User);
-              }
-            });
-          }
-        }
-      }
-
-      const populatedJobs = jobsData.map(job => {
-        const awardedInstallerId = getRefId(job.awardedInstaller);
-        return {
-          ...job,
-          awardedInstaller: awardedInstallerId ? usersMap.get(awardedInstallerId) || job.awardedInstaller : undefined,
-          bids: (job.bids || []).map(bid => {
-            const installerId = getRefId(bid.installer);
-            return {
-              ...bid,
-              installer: installerId ? usersMap.get(installerId) || bid.installer : bid.installer,
-            }
-          }),
-        };
-      });
-
-      setJobs(populatedJobs);
-    } catch (error) {
-      console.error("Error fetching posted jobs:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, role, db]);
-
-  React.useEffect(() => {
-    if (!userLoading && db && user) {
-      fetchJobs();
-    }
-  }, [userLoading, db, user, fetchJobs]);
-
-  React.useEffect(() => {
+  useEffect(() => {
     setHelp({
       title: 'My Posted Jobs Guide',
       content: (
@@ -446,46 +363,35 @@ export default function PostedJobsClient() {
     });
   }, [setHelp]);
 
-  // Batch operations
-  const handleBulkArchive = async () => {
-    if (!db || selectedJobIds.length === 0) return;
+  const handleBulkAction = async (action: 'archive' | 'delete') => {
+    if (selectedJobIds.length === 0 || !user) return;
 
     try {
-      const batch = writeBatch(db);
-      selectedJobIds.forEach(jobId => {
-        const jobRef = doc(db, 'jobs', jobId);
-        batch.update(jobRef, { status: 'Cancelled' });
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error("Not authenticated");
+
+      const response = await fetch('/api/jobs/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action, jobIds: selectedJobIds })
       });
 
-      await batch.commit();
-      toast({ title: "Success", description: `${selectedJobIds.length} job(s) archived.` });
+      if (!response.ok) throw new Error(`Failed to ${action} jobs`);
+
+      toast({ title: "Success", description: `${selectedJobIds.length} job(s) ${action}d.` });
       setSelectedJobIds([]);
-      fetchJobs();
+      refetch();
     } catch (error) {
-      console.error("Bulk archive error:", error);
-      toast({ title: "Error", description: "Failed to archive jobs.", variant: "destructive" });
+      console.error(`Bulk ${action} error:`, error);
+      toast({ title: "Error", description: `Failed to ${action} jobs.`, variant: "destructive" });
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (!db || selectedJobIds.length === 0) return;
-
-    try {
-      const batch = writeBatch(db);
-      selectedJobIds.forEach(jobId => {
-        const jobRef = doc(db, 'jobs', jobId);
-        batch.delete(jobRef);
-      });
-
-      await batch.commit();
-      toast({ title: "Success", description: `${selectedJobIds.length} job(s) deleted permanently.` });
-      setSelectedJobIds([]);
-      fetchJobs();
-    } catch (error) {
-      console.error("Bulk delete error:", error);
-      toast({ title: "Error", description: "Failed to delete jobs.", variant: "destructive" });
-    }
-  };
+  const handleBulkArchive = () => handleBulkAction('archive');
+  const handleBulkDelete = () => handleBulkAction('delete');
 
   // Filter logic
   const applyFilters = (jobsList: Job[]) => {
@@ -537,11 +443,11 @@ export default function PostedJobsClient() {
     );
   }
 
-  const activeJobs = applyFilters(jobs.filter(job => !['Completed', 'Cancelled', 'Unbid'].includes(job.status))).sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
-  const unbidJobs = applyFilters(jobs.filter(job => job.status === 'Unbid')).sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
-  const archivedJobs = applyFilters(jobs.filter(job => job.status === 'Completed' || job.status === 'Cancelled')).sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+  // Use jobs from hook
+  const activeJobs = applyFilters(jobs.filter(job => !['completed', 'cancelled', 'unbid'].includes(job.status.toLowerCase()))).sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
 
-  const pageTitle = tab === 'active' ? `My Active Jobs (${activeJobs.length})` : tab === 'unbid' ? `Unbid Jobs (${unbidJobs.length})` : `Archived Jobs (${archivedJobs.length})`;
+  const unbidJobs = applyFilters(jobs.filter(job => job.status.toLowerCase() === 'unbid')).sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+  const archivedJobs = applyFilters(jobs.filter(job => ['completed', 'cancelled'].includes(job.status.toLowerCase()))).sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
 
   // Get categories for filter dropdown
   const categories = Array.from(new Set(jobs.map(j => j.jobCategory).filter(Boolean)));
@@ -578,8 +484,8 @@ export default function PostedJobsClient() {
             title="My Active Jobs"
             description="Manage your job postings and review bids from installers."
             footerText={`You have ${activeJobs.length} active jobs.`}
-            loading={loading}
-            onUpdate={fetchJobs}
+            loading={jobsLoading}
+            onUpdate={refetch}
           />
         </TabsContent>
         <TabsContent value="unbid">
@@ -588,8 +494,8 @@ export default function PostedJobsClient() {
             title="Unbid Jobs"
             description="Jobs that received no bids. You can repost or promote them."
             footerText={`You have ${unbidJobs.length} unbid jobs requiring attention.`}
-            loading={loading}
-            onUpdate={fetchJobs}
+            loading={jobsLoading}
+            onUpdate={refetch}
           />
         </TabsContent>
         <TabsContent value="archived">
@@ -598,8 +504,8 @@ export default function PostedJobsClient() {
             title="My Archived Jobs"
             description="A history of your completed or cancelled projects."
             footerText={`You have ${archivedJobs.length} archived jobs.`}
-            loading={loading}
-            onUpdate={fetchJobs}
+            loading={jobsLoading}
+            onUpdate={refetch}
           />
         </TabsContent>
       </Tabs>
@@ -614,4 +520,3 @@ export default function PostedJobsClient() {
     </>
   )
 }
-

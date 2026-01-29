@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useState, useEffect, useMemo } from "react";
+import { useUser } from "@/hooks/use-user";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -20,8 +20,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useHelp } from "@/hooks/use-help";
-import { Job, Transaction } from "@/lib/types";
-import { collection, query, where, doc, onSnapshot, or, and } from "firebase/firestore";
 import { toDate } from "@/lib/utils";
 import { format, subMonths } from "date-fns";
 import dynamic from "next/dynamic";
@@ -32,106 +30,22 @@ import { RecommendedInstallersCard } from "@/components/dashboard/recommended-in
 import { SpendingInsightsCard } from "@/components/dashboard/spending-insights-card";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
+import { JobGiverStats } from "@/domains/jobs/job.types";
+import { Transaction } from "@/lib/types";
 
 const SpendingHistoryChart = dynamic(() => import("@/components/dashboard/charts/job-giver-charts").then(mod => mod.SpendingHistoryChart), { ssr: false });
 const JobStatusChart = dynamic(() => import("@/components/dashboard/charts/job-giver-charts").then(mod => mod.JobStatusChart), { ssr: false });
 
-
-export function JobGiverDashboard() {
+export function JobGiverDashboard({ stats, transactions, loading = false }: {
+    stats: JobGiverStats,
+    transactions: Transaction[],
+    loading?: boolean
+}) {
     const { user } = useUser();
-    const { db } = useFirebase();
     const { setHelp } = useHelp();
-    const [stats, setStats] = React.useState<{ activeJobs: number, completedJobs: number, totalBids: number, openDisputes: number, cancelledJobs: number, transactions: Transaction[] }>({ activeJobs: 0, completedJobs: 0, totalBids: 0, openDisputes: 0, cancelledJobs: 0, transactions: [] });
-    const [loading, setLoading] = React.useState(true);
-
-    React.useEffect(() => {
-        const unsubscribeFuncs: (() => void)[] = [];
-
-        async function setupListeners() {
-            if (!user || !db) return;
-            setLoading(true);
-
-            try {
-                const userDocRef = doc(db, 'users', user.id);
-
-                // 1. My Jobs Listener
-                const myJobsQuery = query(collection(db, "jobs"), where('jobGiver', '==', userDocRef));
-                const unsubJobs = onSnapshot(myJobsQuery, (snapshot) => {
-                    const myJobs = snapshot.docs.map(doc => doc.data() as Job);
-
-                    let active = 0;
-                    let completed = 0;
-                    let bids = 0;
-                    let cancelled = 0;
-
-                    myJobs.forEach(job => {
-                        if (job.status === 'Completed') completed++;
-                        else if (job.status === 'Cancelled') cancelled++;
-                        else active++;
-
-                        bids += (job.bids || []).length;
-                    });
-
-                    setStats(prev => ({
-                        ...prev,
-                        activeJobs: active,
-                        completedJobs: completed,
-                        cancelledJobs: cancelled,
-                        totalBids: bids
-                    }));
-                });
-                unsubscribeFuncs.push(unsubJobs);
-
-                // 2. Disputes Listener
-                const disputesQuery = query(
-                    collection(db, "disputes"),
-                    and(
-                        where('status', '==', 'Open'),
-                        or(
-                            where('parties.jobGiverId', '==', user.id),
-                            where('parties.installerId', '==', user.id)
-                        )
-                    )
-                );
-                const unsubDisputes = onSnapshot(disputesQuery, (snapshot) => {
-                    setStats(prev => ({
-                        ...prev,
-                        openDisputes: snapshot.size
-                    }));
-                });
-                unsubscribeFuncs.push(unsubDisputes);
-
-                // 3. Transactions Listener
-                const transactionsQuery = query(
-                    collection(db, "transactions"),
-                    where("payerId", "==", user.id)
-                );
-                const unsubTx = onSnapshot(transactionsQuery, (snapshot) => {
-                    const myTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
-                    setStats(prev => ({
-                        ...prev,
-                        transactions: myTransactions
-                    }));
-                });
-                unsubscribeFuncs.push(unsubTx);
-
-                setLoading(false);
-            } catch (error) {
-                console.error("Error setting up JobGiverDashboard listeners:", error);
-                setLoading(false);
-            }
-        }
-
-        setupListeners();
-
-        return () => {
-            unsubscribeFuncs.forEach(unsub => unsub());
-        };
-
-    }, [user, db]);
 
     // Process Data for Spending Chart (Last 6 Months - Released Only)
-    const { spendingData, jobStatusData, totalSpent, fundsInEscrow } = React.useMemo(() => {
+    const { spendingData, jobStatusData, totalSpent, fundsInEscrow } = useMemo(() => {
         const months = Array.from({ length: 6 }).map((_, i) => {
             const d = subMonths(new Date(), i);
             return {
@@ -141,9 +55,9 @@ export function JobGiverDashboard() {
             };
         }).reverse();
 
-        const transactions = stats.transactions || [];
-        transactions.forEach(t => {
-            if (t.status === 'Released' && t.releasedAt) {
+        const txList = transactions || [];
+        txList.forEach(t => {
+            if (t.status === 'released' && t.releasedAt) {
                 const date = toDate(t.releasedAt);
                 const monthStr = format(date, 'MMM yyyy');
                 const monthData = months.find(m => m.fullName === monthStr);
@@ -153,12 +67,12 @@ export function JobGiverDashboard() {
             }
         });
 
-        const totalSpent = transactions
-            .filter(t => t.status === 'Released')
+        const totalSpent = txList
+            .filter(t => t.status === 'released')
             .reduce((acc, t) => acc + (t.totalPaidByGiver || 0), 0);
 
-        const fundsInEscrow = transactions
-            .filter(t => t.status === 'Funded')
+        const fundsInEscrow = txList
+            .filter(t => t.status === 'funded')
             .reduce((acc, t) => acc + (t.totalPaidByGiver || 0), 0);
 
         const jobStatusData = [
@@ -168,9 +82,9 @@ export function JobGiverDashboard() {
         ].filter(d => d.value > 0);
 
         return { spendingData: months, jobStatusData, totalSpent, fundsInEscrow };
-    }, [stats]);
+    }, [stats, transactions]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         setHelp({
             title: 'Job Giver Dashboard Guide',
             content: (

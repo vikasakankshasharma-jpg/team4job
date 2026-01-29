@@ -1,5 +1,7 @@
 
-'use server';
+
+// 'use server'; removed to fix invalid export error
+
 
 /**
  * @fileOverview An AI-powered assistant for installers to craft effective bids.

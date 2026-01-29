@@ -1,5 +1,5 @@
 
-'use server';
+// 'use server'; removed to fix invalid export error
 
 /**
  * @fileOverview Grants a 30-day Pro Installer subscription to a user.

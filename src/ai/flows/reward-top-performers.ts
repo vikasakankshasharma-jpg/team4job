@@ -1,5 +1,5 @@
 
-'use server';
+// 'use server'; removed to fix invalid export error
 
 /**
  * @fileOverview This flow automates rewarding the top 3 monthly installers.

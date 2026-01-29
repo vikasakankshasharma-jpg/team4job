@@ -1,4 +1,4 @@
-'use server';
+// 'use server'; removed to fix invalid export error
 
 /**
  * @fileOverview This file defines a Genkit flow for generating compelling job descriptions from a job title.
@@ -10,8 +10,8 @@
  * - `GenerateJobDescriptionOutput`: The output type for the `generateJobDescription` function (a job description string).
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const GenerateJobDescriptionInputSchema = z.object({
   jobTitle: z.string().describe('The title of the job.'),
@@ -29,8 +29,8 @@ export async function generateJobDescription(input: GenerateJobDescriptionInput)
 
 const generateJobDescriptionPrompt = ai.definePrompt({
   name: 'generateJobDescriptionPrompt',
-  input: {schema: GenerateJobDescriptionInputSchema},
-  output: {schema: GenerateJobDescriptionOutputSchema},
+  input: { schema: GenerateJobDescriptionInputSchema },
+  output: { schema: GenerateJobDescriptionOutputSchema },
   prompt: `You are an expert in writing job descriptions that attract qualified candidates.
   Based on the job title provided, create a detailed and compelling job description.
   The description should be approximately 150-250 words and should include information about the responsibilities, required skills, and benefits of the job. Make it sound exciting and professional.
@@ -46,7 +46,7 @@ const generateJobDescriptionFlow = ai.defineFlow(
     outputSchema: GenerateJobDescriptionOutputSchema,
   },
   async input => {
-    const {output} = await generateJobDescriptionPrompt(input);
+    const { output } = await generateJobDescriptionPrompt(input);
     return output!;
   }
 );

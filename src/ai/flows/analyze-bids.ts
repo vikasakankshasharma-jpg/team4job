@@ -1,5 +1,5 @@
 
-'use server';
+// 'use server'; removed to fix invalid export error
 
 /**
  * @fileOverview An AI-powered flow to analyze job bids anonymously and provide recommendations.

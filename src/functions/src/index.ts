@@ -1,5 +1,5 @@
 
-'use server';
+// Firebase Functions entry point (No 'use server' allowed)
 
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";

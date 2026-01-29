@@ -23,10 +23,16 @@ import {
 } from "@/components/ui/select";
 
 import { getAuth } from "firebase/auth";
-import { doc, getDoc, getDocFromServer, collection, query, orderBy, updateDoc, addDoc, serverTimestamp, onSnapshot, where, arrayUnion, setDoc, DocumentReference, getDocs, arrayRemove, deleteField, runTransaction, getCountFromServer, collectionGroup } from "firebase/firestore";
+import { DocumentReference, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore } from "@/lib/firebase/client-provider";
-import { moderateMessage } from "@/ai/flows/moderate-message";
+import { useJobSubscription } from "@/hooks/use-job-subscription";
+import { useBidsSubscription } from "@/hooks/use-bids-subscription";
+import axios from "axios";
+import { updateJobAction, approveJobAction } from "@/app/actions/job.actions";
+import { createPaymentOrderAction, createAddFundsOrderAction } from "@/app/actions/payment.actions";
+
+
+import { moderateContentAction } from "@/app/actions/ai.actions";
 import { analyzePhoto } from "@/ai/flows/analyze-photo";
 import { ShieldAlert, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -116,7 +122,6 @@ import Image from "next/image";
 import { createReport, ReportType } from "@/lib/services/reports";
 import { sendNotification } from "@/lib/notifications";
 import { useHelp } from "@/hooks/use-help";
-import axios from 'axios';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -135,6 +140,9 @@ import { RatingSection } from "@/components/job/job-rating-section";
 import { ReapplyCard } from "@/components/job/job-reapply-card";
 import { StartWorkInput } from "@/components/job/start-work-input";
 import { CancelJobDialog } from "@/components/job/cancel-job-dialog";
+import { InstallerCompletionSection } from "@/components/job/installer-completion-section";
+import { JobGiverConfirmationSection } from "@/components/job/job-giver-confirmation-section";
+import { completeJobWithOtpAction, awardJobAction } from "@/app/actions/job.actions";
 
 
 declare const cashfree: any;
@@ -150,20 +158,6 @@ const getRefId = (ref: User | DocumentReference | string | undefined | null): st
 
 
 
-
-
-
-
-
-
-// ... Additional unchanged components ...
-// I'll skip re-implementing JobGiverConfirmationSection and InstallerCompletionSection entirely here for brevity in this prompt artifact, 
-// BUT in the real file write I must include them. 
-// I will just stub them here with comments for the sake of the example response structure, 
-// but in the actual tool call I will construct the FULL file content properly.
-// Wait, I cannot skip. The file will be overwritten. I must provide the full content.
-
-// ... Additional unchanged components ...
 
 
 
@@ -189,17 +183,17 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
 
         setIsLoading(true);
         try {
-            const res = await axios.post('/api/escrow/add-funds', {
-                jobId: job.id,
-                userId: user.id,
-                amount: amount,
-                description: description
-            });
+            const res = await createAddFundsOrderAction(job.id, user.id, amount, description);
 
-            const paymentSessionId = res.data.payment_session_id;
+            if (!res.success || !res.data) {
+                toast({ title: "Payment Initialization Failed", description: res.error, variant: "destructive" });
+                return;
+            }
+
+            const { orderToken } = res.data;
 
             const checkoutOptions = {
-                paymentSessionId: paymentSessionId,
+                paymentSessionId: orderToken,
                 redirectTarget: "_self",
             };
 
@@ -241,7 +235,12 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
                     </div>
                     <div className="space-y-2">
                         <Label>Description</Label>
-                        <Input placeholder="e.g. Extra wire needed" value={description} onChange={e => setDescription(e.target.value)} />
+                        <Input placeholder="e.g. Extra wire needed" value={description} onChange={async (e) => {
+                            const val = e.target.value;
+                            setDescription(val);
+                            // Real-time moderation (debounced ideal, but simple here)
+                            // Ideally handled on submit or blur
+                        }} />
                     </div>
 
                     {amount > 0 && (
@@ -275,489 +274,12 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
     );
 }
 
-function JobGiverConfirmationSection({ job, onJobUpdate, onCancel, onAddFunds }: { job: Job, onJobUpdate: (updatedJob: Partial<Job>) => void, onCancel: () => void, onAddFunds: () => void }) {
-    const { toast } = useToast();
-    const { db, storage } = useFirebase();
-    const { user } = useUser();
-    const router = useRouter();
-    const [isLoading, setIsLoading] = React.useState(false);
-    const [disputeReason, setDisputeReason] = React.useState("");
-    const [disputeFiles, setDisputeFiles] = React.useState<File[]>([]);
-
-    const isJobGiver = !!(user && job && user.id === getRefId(job.jobGiver));
-
-    const handleApproveAndPay = async () => {
-        setIsLoading(true);
-
-        try {
-            if (!user) return;
-
-            const q = query(collection(db, "transactions"), where("jobId", "==", job.id), where("payerId", "==", user.id), where("status", "==", "Funded"));
-            const querySnapshot = await getDocs(q);
-
-            if (querySnapshot.empty) {
-                console.warn("Could not find a funded transaction, allowing manual completion override for dev/demo.");
-            }
-            const transactionDoc = querySnapshot.docs[0];
-
-            if (transactionDoc) {
-                // Phase 14: Use Standardized Release API
-                const auth = getAuth();
-                const idToken = await auth.currentUser?.getIdToken();
-                await axios.post('/api/escrow/release', {
-                    jobId: job.id
-                }, { headers: { Authorization: `Bearer ${idToken}` } });
-            }
-
-            // Server-side API already generates invoice and updates status to 'Completed'
-            // No need to duplicate that logic here
-
-            toast({
-                title: "Job Approved & Payment Released!",
-                description: "The payment has been released to the installer.",
-                variant: 'default'
-            });
-
-            // Log for Job Giver
-            await logActivity(db, {
-                userId: user.id,
-                type: 'payment_released',
-                title: 'Payment Released',
-                description: `Payment released for ${job.title}`,
-                link: `/dashboard/jobs/${job.id}`,
-                relatedId: job.id
-            });
-
-            if (job.awardedInstaller) {
-                const installer = job.awardedInstaller as User;
-
-                // Log for Installer
-                if (installer.id) {
-                    await logActivity(db, {
-                        userId: installer.id,
-                        type: 'payment_received',
-                        title: 'Payment Received',
-                        description: `Payment received for ${job.title}`,
-                        link: `/dashboard/jobs/${job.id}`,
-                        relatedId: job.id
-                    });
-                    await logActivity(db, {
-                        userId: installer.id,
-                        type: 'job_completed',
-                        title: 'Job Completed',
-                        description: `You completed ${job.title}`,
-                        link: `/dashboard/jobs/${job.id}`,
-                        relatedId: job.id
-                    });
-                }
-
-                if (installer.email) {
-                    await sendNotification(
-                        installer.email,
-                        "Payment Released! Job Completed 🚀",
-                        `Congratulations! The Job Giver has approved your work for "${job.title}". The funds have been released to your account.`
-                    );
-                }
-            }
-        } catch (error: any) {
-            console.error("Error approving job:", error);
-            toast({
-                title: "Error Approving Job",
-                description: error.response?.data?.error || "An unexpected error occurred.",
-                variant: "destructive",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleRaiseDispute = async () => {
-        if (!disputeReason.trim() || disputeFiles.length === 0) {
-            toast({ title: "Evidence Required", description: "Please provide a reason and upload evidence.", variant: "destructive" });
-            return;
-        }
-        if (!user || !storage) return;
-
-        setIsLoading(true);
-        try {
-            const uploadPromises = disputeFiles.map(async (file) => {
-                const storageRef = ref(storage, `disputes/${job.id}/${Date.now()}_${file.name}`);
-                await uploadBytes(storageRef, file);
-                const downloadURL = await getDownloadURL(storageRef);
-                return { fileName: file.name, fileUrl: downloadURL, fileType: file.type };
-            });
-            const uploadedAttachments = await Promise.all(uploadPromises);
-
-            const newDisputeId = `DISPUTE-${Date.now()}`;
-            const awardedInstaller = job.awardedInstaller as User;
-            const jobGiver = job.jobGiver as User;
-
-            const disputeData: Omit<Dispute, 'id'> = {
-                requesterId: user.id,
-                category: "Job Dispute",
-                title: `Dispute for Job: ${job.title}`,
-                jobId: job.id,
-                jobTitle: job.title,
-                status: 'Open',
-                reason: disputeReason,
-                parties: {
-                    jobGiverId: jobGiver.id || (job.jobGiver as any).id,
-                    installerId: awardedInstaller.id || (job.awardedInstaller as any).id,
-                },
-                messages: [{
-                    authorId: user.id,
-                    authorRole: "Job Giver",
-                    content: disputeReason,
-                    timestamp: new Date(),
-                    attachments: uploadedAttachments
-                }],
-                createdAt: new Date(),
-            };
-
-            await setDoc(doc(db, "disputes", newDisputeId), { ...disputeData, id: newDisputeId });
-            await onJobUpdate({ status: 'Disputed', disputeId: newDisputeId });
-
-            toast({ title: "Dispute Raised", description: "The dispute has been submitted for admin review." });
-            router.push(`/dashboard/disputes/${newDisputeId}`);
-
-        } catch (error) {
-            console.error(error);
-            toast({ title: "Error", description: "Failed to raise dispute.", variant: "destructive" });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-            <CardHeader>
-                <CardTitle>Confirm Job Completion</CardTitle>
-                <CardDescription>The installer has submitted the job for your review. Please examine the proof of work and either approve completion or raise a dispute if there are issues.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {/* Job Cancellation (Pre-Work only) */}
-                {isJobGiver && job.status === 'In Progress' && !job.workStartedAt && (
-                    <div className="space-y-4">
-                        <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700" onClick={onCancel}>
-                            <Ban className="mr-2 h-4 w-4" />
-                            Cancel Job
-                        </Button>
-                        <Button variant="secondary" className="w-full" onClick={onAddFunds}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add Funds (Extras)
-                        </Button>
-                    </div>
-                )}
-
-                {/* Start Work OTP Display (Job Giver) */}
-                {isJobGiver && job.status === 'In Progress' && !job.workStartedAt && job.startOtp && (
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md text-center space-y-2">
-                        <h4 className="text-sm font-semibold text-yellow-800">Start Code</h4>
-                        <p className="text-3xl font-mono font-bold tracking-wider text-yellow-900">{job.startOtp}</p>
-                        <p className="text-xs text-yellow-700">Share this with installer on arrival.</p>
-                    </div>
-                )}
-
-                {/* Start Work OTP Input (Installer) */}
-                {!isJobGiver && job.status === 'In Progress' && !job.workStartedAt && (
-                    <StartWorkInput job={job} user={user!} onJobUpdate={onJobUpdate} />
-                )}
-
-                {/* Work Started Indicator */}
-                {job.workStartedAt && job.status === 'In Progress' && (
-                    <div className="p-3 bg-blue-50 text-blue-700 rounded-md text-sm flex items-center justify-center">
-                        <Zap className="h-4 w-4 mr-2" />
-                        Work Started at {new Date((job.workStartedAt as any).toDate ? (job.workStartedAt as any).toDate() : job.workStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                )}
-
-                {/* Completion Action (Installer) - Only after start */}
-                {!isJobGiver && job.status === 'In Progress' && job.workStartedAt && (
-                    <div className="space-y-4">
-                        <p className="text-sm">Submit your work to get paid.</p>
-                        <Button className="w-full" onClick={() => {
-                            // Highlight completion section
-                            const el = document.getElementById('completion-section');
-                            if (el) el.scrollIntoView({ behavior: 'smooth' });
-                        }}>Submit Work for Completion</Button>
-                    </div>
-                )}
-                {job.status === 'Pending Confirmation' && (
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <Button onClick={handleApproveAndPay} disabled={isLoading} className="flex-1" data-testid="approve-release-button">
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            <CheckCircle2 className="mr-2 h-4 w-4" />
-                            Approve & Release Payment
-                        </Button>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button variant="warning" className="flex-1 bg-amber-500 hover:bg-amber-600 text-white">
-                                    <RefreshCcw className="mr-2 h-4 w-4" />
-                                    Request Revision
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Request Revision</DialogTitle>
-                                    <DialogDescription>Ask the installer to make changes. This will set the job status back to &quot;In Progress&quot;.</DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                    <div className="space-y-2">
-                                        <Label>Reason for Revision (Required)</Label>
-                                        <Textarea
-                                            value={disputeReason}
-                                            onChange={e => setDisputeReason(e.target.value)}
-                                            placeholder="e.g. The wiring is exposed, please fix it..."
-                                        />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <DialogClose asChild>
-                                        <Button variant="outline" onClick={() => setDisputeReason("")}>Cancel</Button>
-                                    </DialogClose>
-                                    <Button onClick={async () => {
-                                        if (!user) return; // Guard against null user
-                                        if (!disputeReason.trim()) {
-                                            toast({ title: "Reason Required", description: "Please explain what needs to be revised.", variant: "destructive" });
-                                            return;
-                                        }
-                                        setIsLoading(true);
-                                        try {
-                                            // Create a system comment for the revision
-                                            const newComment: Comment = {
-                                                id: `COMMENT-${Date.now()}`,
-                                                author: doc(db, "users", user.id),
-                                                timestamp: new Date(),
-                                                content: `🔴 REVISION REQUESTED: ${disputeReason}`
-                                            };
-
-                                            await onJobUpdate({
-                                                status: 'In Progress',
-                                                comments: arrayUnion(newComment) as any
-                                            });
-
-                                            toast({ title: "Revision Requested", description: "Job status reverted to 'In Progress'." });
-                                            setDisputeReason(""); // Clear input
-                                        } catch (e) {
-                                            console.error(e);
-                                            toast({ title: "Error", description: "Failed to request revision.", variant: "destructive" });
-                                        } finally {
-                                            setIsLoading(false);
-                                        }
-                                    }} disabled={isLoading} variant="warning" className="bg-amber-500 hover:bg-amber-600 text-white">
-                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Request Revision
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button variant="destructive" className="flex-1">
-                                    <AlertOctagon className="mr-2 h-4 w-4" />
-                                    Raise a Dispute
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Raise a Dispute</DialogTitle>
-                                    <DialogDescription>If the work is incomplete or unsatisfactory, provide details and evidence below.</DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                    <div className="space-y-2">
-                                        <Label>Reason</Label>
-                                        <Textarea value={disputeReason} onChange={e => setDisputeReason(e.target.value)} placeholder="Explain the issue..." />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Evidence (Required)</Label>
-                                        <FileUpload onFilesChange={setDisputeFiles} maxFiles={5} />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button onClick={handleRaiseDispute} disabled={isLoading} variant="destructive">
-                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Submit Dispute
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
-}
-
-function InstallerCompletionSection({ job, user, onJobUpdate }: { job: Job, user: User, onJobUpdate: (updatedJob: Partial<Job>) => void }) {
-    const { toast } = useToast();
-    const { db, storage } = useFirebase();
-    const [isSubmitting, setIsSubmitting] = React.useState(false);
-    const [completionFiles, setCompletionFiles] = React.useState<File[]>([]);
-    const [otp, setOtp] = React.useState("");
-    const [isVerifyingOtp, setIsVerifyingOtp] = React.useState(false);
-
-    const handleCompleteJob = async () => {
-        if (completionFiles.length === 0) {
-            toast({
-                title: "Proof of Work Required",
-                description: "Please upload at least one photo or video showing the completed work.",
-                variant: "destructive",
-            });
-            return;
-        }
-
-        if (!user.payouts?.beneficiaryId) {
-            const isE2E = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-            if (!isE2E) {
-                toast({
-                    title: "Payout Account Not Setup",
-                    description: "Please set up your bank account in your profile before you can complete a job.",
-                    variant: "destructive",
-                });
-                return;
-            }
-        }
-
-        setIsSubmitting(true);
-        try {
-            const uploadPromises = completionFiles.map(async file => {
-                const isE2E = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-                if (isE2E) {
-                    return { fileName: file.name, fileUrl: "https://firebasestorage.googleapis.com/v0/b/studio-mock/o/mock.png?alt=media", fileType: file.type, isAiVerified: true };
-                }
-                const fileRef = ref(storage, `jobs/${job.id}/completion/${Date.now()}_${file.name}`);
-                await uploadBytes(fileRef, file);
-                const fileUrl = await getDownloadURL(fileRef);
-
-                let isAiVerified = false;
-                // (Simulated AI check)
-                if (file.type.startsWith('image/')) {
-                    // const analysis = await analyzePhoto({ imageUrl: fileUrl, jobCategory: job.jobCategory });
-                    // if (analysis.score >= 4) isAiVerified = true;
-                    isAiVerified = true; // Optimization for now
-                }
-                return { fileName: file.name, fileUrl, fileType: file.type, isAiVerified };
-            });
-
-            const uploadedAttachments = await Promise.all(uploadPromises);
-
-            if (otp && otp.length === 6) {
-                setIsVerifyingOtp(true);
-                try {
-                    const auth = getAuth();
-                    const token = await auth.currentUser?.getIdToken();
-                    await axios.post('/api/escrow/verify-otp-complete', {
-                        jobId: job.id,
-                        otp: otp,
-                        completionAttachments: uploadedAttachments
-                    }, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    toast({
-                        title: "Job Completed Successfully!",
-                        description: "OTP Verified. Payment has been released.",
-                        variant: 'success' as any
-                    });
-
-                    // Log Activity (OTP Instant Complete)
-                    await logActivity(db, {
-                        userId: user.id,
-                        type: 'job_completed',
-                        title: 'Job Completed',
-                        description: `You completed ${job.title} via OTP`,
-                        link: `/dashboard/jobs/${job.id}`,
-                        relatedId: job.id
-                    });
-                    await logActivity(db, {
-                        userId: user.id,
-                        type: 'payment_received',
-                        title: 'Payment Received',
-                        description: `Payment released for ${job.title}`,
-                        link: `/dashboard/jobs/${job.id}`,
-                        relatedId: job.id
-                    });
-                } catch (error: any) {
-                    console.error("OTP Verification failed:", error);
-                    toast({
-                        title: "OTP Verification Failed",
-                        description: error.response?.data?.error || "Invalid OTP or system error.",
-                        variant: "destructive"
-                    });
-                    setIsSubmitting(false);
-                    setIsVerifyingOtp(false);
-                    return;
-                }
-            } else {
-                const updatedJobData: Partial<Job> = {
-                    status: 'Pending Confirmation',
-                    attachments: arrayUnion(...uploadedAttachments) as any,
-                };
-                await onJobUpdate(updatedJobData);
-
-                // Notify Job Giver
-                const jobGiver = job.jobGiver as User;
-                if (jobGiver && jobGiver.email) {
-                    sendNotification(
-                        jobGiver.email,
-                        "Action Required: Review Work",
-                        `Installer ${user.name} has submitted proof of work for job "${job.title}". Please log in to review and release payment.`
-                    ).catch(err => console.error("Notification failed", err));
-                }
-
-                toast({
-                    title: "Submitted for Confirmation",
-                    description: "Your proof of work has been sent to the Job Giver for approval.",
-                    variant: 'default'
-                });
-            }
-
-        } catch (error: any) {
-            console.error("Error submitting for completion:", error);
-            toast({
-                title: "Submission Error",
-                description: "An unexpected error occurred while submitting your work.",
-                variant: "destructive",
-            });
-        } finally {
-            setIsSubmitting(false);
-            setIsVerifyingOtp(false);
-        }
-    };
-
-    return (
-        <div className="space-y-4" data-testid="installer-completion-section">
-            <div className="space-y-2">
-                <Label>Proof of Completion</Label>
-                <FileUpload onFilesChange={setCompletionFiles} maxFiles={5} />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="otp-input">Completion OTP (Optional)</Label>
-                <Input
-                    id="otp-input"
-                    placeholder="Enter 6-digit OTP provided by Job Giver"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    maxLength={6}
-                />
-                <p className="text-xs text-muted-foreground">Entering the correct OTP will instantly release your payment.</p>
-            </div>
-            <div className="flex justify-end pt-4">
-                <Button onClick={handleCompleteJob} disabled={completionFiles.length === 0 || isSubmitting} data-testid="submit-for-review-button" className="w-full">
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
-                        otp ? <Zap className="mr-2 h-4 w-4 text-amber-500 fill-amber-500" /> : <Send className="mr-2 h-4 w-4" />
-                    )}
-                    {otp ? (isVerifyingOtp ? "Verifying..." : "Verify OTP & Complete Job") : "Submit for Review"}
-                </Button>
-            </div>
-        </div>
-    );
-}
+// External components: InstallerCompletionSection, JobGiverConfirmationSection
 
 
 /* --- MAIN CLIENT COMPONENT --- */
 
-export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoaded: boolean; initialJob?: any }) {
+export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }: { isMapLoaded: boolean; initialJob?: any, initialBids?: any[] }) {
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
     const { user, role, loading: userLoading, isAdmin } = useUser();
@@ -765,13 +287,28 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
 
 
-    const db = useFirestore();
+    // const db = useFirestore(); // Legacy DB access removed
 
     const { toast } = useToast();
 
-    const [job, setJob] = React.useState<any>(initialJob || null);
-    const [bids, setBids] = React.useState<Bid[]>([]);
-    const [loading, setLoading] = React.useState(!initialJob);
+    const { job: realtimeJob, loading: jobLoading, error: jobError } = useJobSubscription(id, initialJob);
+    const { bids, loading: bidsLoading } = useBidsSubscription(id, initialBids);
+
+    // Merge initial and realtime, prefer realtime
+    const job = realtimeJob || initialJob;
+    const loading = jobLoading && !job;
+
+    // Determine Winning Bid Amount (Hoisted for Payment Action)
+    const winningBidAmount = React.useMemo(() => {
+        if (!job?.awardedInstaller || !bids) return 0;
+        const awardedId = getRefId(job.awardedInstaller);
+        const winningBid = bids.find(b => getRefId(b.installer) === awardedId);
+        return winningBid ? winningBid.amount : 0;
+    }, [job, bids]);
+
+    // Legacy setJob/setBids not needed except for optimism?
+    // We rely on subscription updates.
+
     const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
     const [counterParty, setCounterParty] = React.useState<User | null>(null);
     const isJobGiver = !!(user && job && (user.id === getRefId(job.jobGiver) || user.id === job.jobGiverId));
@@ -798,7 +335,24 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     const [reviewComment, setReviewComment] = React.useState('');
     const [rescheduleDate, setRescheduleDate] = React.useState<Date | undefined>(undefined);
     const [isVariationDialogOpen, setIsVariationDialogOpen] = React.useState(false);
+    // DEEP DEBUG LOGGING FOR E2E
+    React.useEffect(() => {
+        if (job) {
+            console.log('[DEBUG-E2E] Full Job State:', JSON.stringify({
+                id: job.id,
+                status: job.status,
+                workStartedAt: job.workStartedAt,
+                isJobGiver: isJobGiver,
+                userId: user?.id,
+                role: role,
+                origin: realtimeJob ? 'realtime' : 'initial'
+            }));
+        }
+    }, [job, user, isJobGiver, role, !!realtimeJob]);
+
     const [isMilestoneDialogOpen, setIsMilestoneDialogOpen] = React.useState(false);
+
+
 
 
     // --- Milestone Handlers ---
@@ -812,12 +366,13 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                 title,
                 description,
                 amount,
-                status: 'Funded', // Automatically funded from main escrow budget
+                status: 'funded', // Automatically funded from main escrow budget
                 createdAt: Date.now()
             };
 
-            await updateDoc(doc(db, 'jobs', job.id), {
-                milestones: arrayUnion(newMilestone)
+            // Refactored to use API via handleJobUpdate
+            await handleJobUpdate({
+                milestones: [...(job.milestones || []), newMilestone]
             });
 
             toast({ title: "Milestone Created", description: "Milestone has been added to the job." });
@@ -832,10 +387,10 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
         try {
             const updatedMilestones = (job.milestones || []).map((m: any) =>
-                m.id === milestoneId ? { ...m, status: 'Released' } : m
+                m.id === milestoneId ? { ...m, status: 'released' } : m
             );
 
-            await updateDoc(doc(db, 'jobs', job.id), {
+            await handleJobUpdate({
                 milestones: updatedMilestones
             });
 
@@ -857,7 +412,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
             createdAt: new Date()
         };
         await handleJobUpdate({
-            additionalTasks: arrayUnion(newTask) as any
+            additionalTasks: [...(job.additionalTasks || []), newTask]
         });
         toast({ title: "Variation Proposed", description: "Sent to Job Giver for approval." });
     };
@@ -872,7 +427,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
             createdAt: new Date()
         };
         await handleJobUpdate({
-            additionalTasks: arrayUnion(newTask) as any
+            additionalTasks: [...(job.additionalTasks || []), newTask]
         });
         toast({ title: "Variation Requested", description: "Sent to Installer for a quote." });
     };
@@ -899,16 +454,19 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
         setIsLoading(true);
         try {
-            // reuse Add Funds API
-            const res = await axios.post('/api/escrow/add-funds', {
-                jobId: job.id,
-                userId: user!.id,
-                amount: task.quoteAmount,
-                description: `Variation Order: ${task.description}`,
-                taskId: task.id // Link payment to task
-            }, {
-                headers: { Authorization: `Bearer ${await getAuth().currentUser?.getIdToken()}` }
-            });
+            // reuse Add Funds Action
+            const res = await createAddFundsOrderAction(
+                job.id,
+                user!.id,
+                task.quoteAmount,
+                `Variation Order: ${task.description}`,
+                task.id // Link payment to task
+            );
+
+            if (!res.success || !res.data) {
+                toast({ title: "Payment Error", description: res.error, variant: "destructive" });
+                return;
+            }
 
             // If success (Sandbox mode mimic)
             // Ideally we redirect to gateway. For now, let's assume direct success hook or we simulate it?
@@ -920,7 +478,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
             // Only if we trust the user paid. Real flow: Wait for webhook.
             // BUT for this feature demo:
 
-            const paymentSessionId = res.data.payment_session_id;
+            const paymentSessionId = res.data.orderToken;
 
             // @ts-ignore
             if (window.Cashfree) {
@@ -930,14 +488,15 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                 };
                 // @ts-ignore
                 const cashfree = new window.Cashfree({ mode: "sandbox" });
-                cashfree.checkout(checkoutOptions);
-            } else {
-                toast({ title: "Gateway Error", description: "SDK not loaded", variant: "destructive" });
+                cashfree.checkout(checkoutOptions).then((result: any) => {
+                    if (result.error) {
+                        toast({ title: "Payment Failed", description: result.error.message, variant: "destructive" });
+                    }
+                });
             }
-
-        } catch (error) {
-            console.error(error);
-            toast({ title: "Payment Failed", variant: "destructive" });
+        } catch (e) {
+            console.error(e);
+            toast({ title: "Error", description: "Failed to pay for variation.", variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
@@ -975,10 +534,10 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                             Current Status: <Badge variant="outline">{job.status}</Badge>
                         </h4>
                         <p className="text-xs text-muted-foreground">
-                            {job.status === 'Open for Bidding' && "Installers are reviewing this job. Wait for bids to arrive."}
-                            {job.status === 'Pending Funding' && "Installer accepted the offer. Payment is needed to start work."}
-                            {job.status === 'In Progress' && "Work has started. Communicate via chat and wait for completion."}
-                            {job.status === 'Pending Confirmation' && "Work is done. Job Giver must review proof and release funds."}
+                            {job.status === 'open' && "Installers are reviewing this job. Wait for bids to arrive."}
+                            {job.status === 'bid_accepted' && "Installer accepted the offer. Payment is needed to start work."}
+                            {job.status === 'in_progress' && "Work has started. Communicate via chat and wait for completion."}
+                            {job.status === 'work_submitted' && "Work is done. Job Giver must review proof and release funds."}
                         </p>
                     </div>
 
@@ -1017,96 +576,28 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     }, [setHelp, job, isJobGiver]);
 
     // Fetch Job Data & Listen for Changes
-    React.useEffect(() => {
-        if (!id || !db || !user) return;
-
-        const jobRef = doc(db, 'jobs', id);
+    // React.useEffect for job subscription removed. Handled by useJobSubscription hook.
 
 
-        const unsubscribe = onSnapshot(jobRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const jobData = { id: docSnap.id, ...docSnap.data() };
-                setJob(jobData);
-                setLoading(false);
-            } else {
-                toast({
-                    title: "Error",
-                    description: "Job not found",
-                    variant: "destructive",
-                });
-                setLoading(false);
-            }
-        }, (error) => {
-            console.error("Error listening to job:", error);
-            setLoading(false);
-        });
+    // --- Subscriptions handled by Hooks ---
+    // useJobSubscription handles job updates.
+    // useBidsSubscription handles bids.
+    // Contact Reveal handled via Safe API or Server Component (TODO).
 
-        return () => unsubscribe();
-    }, [id, db, user, toast]); // Added user to dependency and guard
-
-
-    // --- FETCH BIDS FROM SUB-COLLECTION ---
-    React.useEffect(() => {
-        if (!id || !db || !user) return;
-
-        const bidsRef = collection(db, 'jobs', id as string, 'bids');
-        const q = query(bidsRef, orderBy('amount', 'asc'));
-
-        const unsubscribeBids = onSnapshot(q, (snapshot) => {
-            const fetchedBids = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bid));
-            setBids(fetchedBids);
-        }, (error) => {
-            console.error("Error fetching bids:", error);
-        });
-
-        return () => {
-            unsubscribeBids();
-        };
-
-    }, [id, db, user, userLoading]);
-
-
-    // Secure Contact Reveal Effect (The "Comms Patch")
-    React.useEffect(() => {
-        if (!job || !user || !db) return;
-        const activeStatuses = ['In Progress', 'Pending Confirmation', 'Completed'];
-        if (!activeStatuses.includes(job.status)) return;
-
-        const fetchCounterParty = async () => {
-            let targetId: string | undefined;
-            if (isJobGiver && job.awardedInstaller) {
-                targetId = getRefId(job.awardedInstaller);
-            } else if (!isJobGiver && job.jobGiver) {
-                targetId = getRefId(job.jobGiver);
-            }
-
-            if (targetId) {
-                try {
-                    const userSnap = await getDoc(doc(db, 'public_profiles', targetId));
-                    if (userSnap.exists()) {
-                        setCounterParty(userSnap.data() as User);
-                    }
-                } catch (e) {
-                    console.error("Failed to fetch contact info:", e);
-                }
-            }
-        };
-        fetchCounterParty();
-    }, [job, isJobGiver, user, db]);
 
     const handleJobUpdate = async (updatedFields: Partial<Job>) => {
-        if (!job || !db) return;
-        const jobRef = doc(db, 'jobs', job.id);
-        console.log("[handleJobUpdate] Updating job with fields:", Object.keys(updatedFields));
-        if (updatedFields.invoice) {
-            console.log("[handleJobUpdate] Invoice object:", JSON.stringify(updatedFields.invoice));
-        }
+        if (!job || !user) return;
+        console.log('[handleJobUpdate] Updating with fields:', Object.keys(updatedFields), 'awardedInstallerId=', updatedFields.awardedInstallerId);
         try {
-            await updateDoc(jobRef, updatedFields);
-            console.log("[handleJobUpdate] Update successful");
-        } catch (error) {
+            const res = await updateJobAction(job.id, user.id, updatedFields as any);
+            if (res.success) {
+                toast({ title: "Updated", description: "Job details updated." });
+            } else {
+                throw new Error(res.error);
+            }
+        } catch (error: any) {
             console.error("[handleJobUpdate] Update failed:", error);
-            throw error;
+            toast({ title: "Error", description: "Update failed", variant: "destructive" });
         }
     };
 
@@ -1115,34 +606,45 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     };
 
     const handleConfirmPayment = async () => {
-        // Call API to initiate payment
+        if (!job || !user) return;
+
         try {
-            // ... existing checkout logic ...
-            // For brevity, redirecting to existing flow logic
-            // In real imp, copy logic from existing file
+            // Initiate Payment Order via Server Action
+            const res = await createPaymentOrderAction(
+                job.id,
+                user.id,
+                winningBidAmount,
+                job.travelTip
+            );
 
-            // Get the auth token
-            const auth = getAuth();
-            const token = await auth.currentUser?.getIdToken();
-            if (!token) return;
+            if (!res.success || !res.data) {
+                toast({ title: "Payment Initialization Failed", description: res.error, variant: "destructive" });
+                return;
+            }
 
-            const res = await axios.post('/api/escrow/initiate-payment', {
-                jobId: job!.id,
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { orderToken } = res.data;
 
-            const sessionId = res.data.payment_session_id;
             if (cashfree) {
                 cashfree.initialiseDropin({
-                    orderToken: sessionId,
-                    onSuccess: () => { console.log("Success") },
-                    onFailure: () => { console.log("Failure") },
+                    orderToken,
+                    onSuccess: () => {
+                        console.log("Payment Success");
+                        // Ideally we wait for webhook, but we can optimistically reload or toast
+                        toast({ title: "Payment Successful", description: "Verifying status..." });
+                        window.location.reload();
+                    },
+                    onFailure: (data: any) => {
+                        console.log("Payment Failure", data);
+                        toast({ title: "Payment Failed", description: data.message || "Transaction failed", variant: "destructive" });
+                    },
                     components: ["order-details", "card", "netbanking", "app", "upi"]
                 });
+            } else {
+                toast({ title: "Error", description: "Payment Gateway SDK not loaded.", variant: "destructive" });
             }
-        } catch (e) {
-            console.error(e);
+        } catch (e: any) {
+            console.error("Payment Error:", e);
+            toast({ title: "Error", description: e.message || "Unknown error", variant: "destructive" });
         }
     };
 
@@ -1191,33 +693,15 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
 
     // Fetch Platform Settings (Fees & Rules)
+    // Fetch Platform Settings (Defaults for Client)
     React.useEffect(() => {
-        if (!db) return;
-        const fetchSettings = async () => {
-            try {
-                // Correct path based on settings-client.tsx
-                const settingsRef = doc(db, 'settings', 'platform');
-                const snap = await getDoc(settingsRef);
-                if (snap.exists()) {
-                    setPlatformSettings(snap.data() as PlatformSettings);
-                } else {
-                    // Fallback defaults
-                    setPlatformSettings({
-                        jobGiverFeeRate: 2.5,
-                        installerCommissionRate: 5,
-                        minJobBudgetForMilestones: 5000
-                    } as any);
-                }
-            } catch (e) {
-                console.error("Failed to fetch settings", e);
-                // Fallback on error
-                setPlatformSettings({
-                    minJobBudgetForMilestones: 5000
-                } as any);
-            }
-        };
-        fetchSettings();
-    }, [db]);
+        // Fallback defaults without DB call
+        setPlatformSettings({
+            jobGiverFeeRate: 2.5,
+            installerCommissionRate: 5,
+            minJobBudgetForMilestones: 5000
+        } as any);
+    }, []);
 
 
 
@@ -1233,14 +717,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     // isJobGiver is already defined at the top needed for useHelp hook
 
 
-    // Determine Winning Bid Amount (if awarded)
-    let winningBidAmount = 0;
-    if (job.awardedInstaller) {
-        // Find the bid from the sub-collection data
-        const awardedId = getRefId(job.awardedInstaller);
-        const winningBid = bids.find(b => getRefId(b.installer) === awardedId);
-        if (winningBid) winningBidAmount = winningBid.amount;
-    }
+    // Winning Bid Amount logic moved to top (lines ~720)
 
     // Reschedule Logic
     // Reschedule Dialog State
@@ -1249,11 +726,17 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
     const handleReschedule = async (action: 'propose' | 'accept' | 'reject' | 'dismiss') => {
         setIsLoading(true);
         try {
-            await axios.post(`/api/jobs/${job.id}/reschedule`, {
+            const auth = getAuth();
+            const token = await auth.currentUser?.getIdToken();
+            if (!token) throw new Error("Not authenticated");
+
+            await axios.post(`/api/jobs/${job!.id}/reschedule`, {
                 action,
                 proposedDate: rescheduleDate,
                 userId: user!.id,
                 userRole: isJobGiver ? 'Job Giver' : 'Installer'
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
             toast({ title: "Success", description: "Reschedule request processed." });
             setIsRescheduleDialogOpen(false);
@@ -1393,7 +876,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                                                         )}
                                                     </div>
                                                     {/* Award Action (Only for Job Giver) */}
-                                                    {isJobGiver && job.status === 'Open for Bidding' && (
+                                                    {isJobGiver && job.status === 'open' && (
                                                         <Button data-testid="send-offer-button" onClick={async () => {
                                                             // Award Logic
                                                             // 1. Update Job Status to 'Pending Acceptance' (Phase 4 of checklist)
@@ -1403,13 +886,37 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
                                                             // We can handle this logic inside a "BidCard" component or here.
                                                             // For simplicity, just logic here:
-                                                            await handleJobUpdate({
-                                                                status: 'Awarded', // Or 'Pending Acceptance' if we want that step
-                                                                awardedInstaller: doc(db, 'users', getRefId(bid.installer)),
-                                                                awardedInstallerId: getRefId(bid.installer), // Added for robust permission rules
-                                                                selectedInstallers: [{ installerId: getRefId(bid.installer), rank: 1 }]
-                                                            });
-                                                            toast({ title: "Offer Sent", description: "Waiting for installer acceptance." });
+                                                            const acceptanceDeadline = new Date();
+                                                            acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
+
+                                                            const installerId = bid.installerId || getRefId(bid.installer);
+                                                            if (!installerId) {
+                                                                console.error("Bid missing installer ID:", bid);
+                                                                toast({ title: "Error", description: "Cannot award: missing installer ID", variant: "destructive" });
+                                                                return;
+                                                            }
+
+                                                            try {
+                                                                const res = await awardJobAction(
+                                                                    job.id,
+                                                                    user.id,
+                                                                    installerId,
+                                                                    acceptanceDeadline.toISOString()
+                                                                );
+
+                                                                if (res.success) {
+                                                                    toast({ title: "Offer Sent", description: "Waiting for installer acceptance." });
+                                                                } else {
+                                                                    throw new Error(res.error);
+                                                                }
+                                                            } catch (err: any) {
+                                                                console.error("Failed to award job:", err);
+                                                                toast({
+                                                                    title: "Award Failed",
+                                                                    description: err.message || "Could not award job",
+                                                                    variant: "destructive"
+                                                                });
+                                                            }
                                                         }}>
                                                             Send Offer
                                                         </Button>
@@ -1452,12 +959,12 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                                     )}
 
                                     {/* Job Giver Actions */}
-                                    {isJobGiver && job.status === 'Open for Bidding' && (
-                                        <Button variant="destructive" className="w-full min-h-[44px]" onClick={() => handleJobUpdate({ status: 'Bidding Closed' })}>Close Bidding</Button>
+                                    {isJobGiver && job.status === 'open' && (
+                                        <Button variant="destructive" className="w-full min-h-[44px]" onClick={() => handleJobUpdate({ status: 'unbid' })}>Close Bidding</Button>
                                     )}
 
                                     {/* Installer Actions: Place Bid */}
-                                    {!isJobGiver && job.status === 'Open for Bidding' && (
+                                    {!isJobGiver && job.status === 'open' && (
                                         <Button className="w-full min-h-[48px]" onClick={() => setIsBidDialogOpen(true)} disabled={userLoading || bids.some(b => getRefId(b.installer) === user?.id)} data-testid="place-bid-button">
                                             {bids.some(b => getRefId(b.installer) === user?.id) ? "Bid Placed" : "Place Bid"}
                                         </Button>
@@ -1468,7 +975,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                                     {/* Let me rewrite the whole thing carefully. */}
 
                                     {/* Reschedule Action */}
-                                    {job.status === 'In Progress' && !job.workStartedAt && !job.dateChangeProposal?.status.includes('pending') && (
+                                    {job.status === 'in_progress' && !job.workStartedAt && !job.dateChangeProposal?.status.includes('pending') && (
                                         <Button variant="outline" className="w-full" onClick={() => setIsRescheduleDialogOpen(true)}>
                                             <Calendar className="mr-2 h-4 w-4" />
                                             Request Reschedule
@@ -1476,7 +983,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                                     )}
 
                                     {/* Retract Offer */}
-                                    {isJobGiver && job.status === 'Awarded' && (
+                                    {isJobGiver && job.status === 'bid_accepted' && (
                                         <div className="space-y-4">
                                             <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
                                                 You have sent an offer. Waiting for installer to accept.
@@ -1487,9 +994,9 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                                                 onClick={async () => {
                                                     if (!window.confirm("Retract offer? This will allow other installers to bid again.")) return;
                                                     await handleJobUpdate({
-                                                        status: 'Open for Bidding',
-                                                        awardedInstaller: deleteField() as any,
-                                                        selectedInstallers: deleteField() as any
+                                                        status: 'open',
+                                                        awardedInstaller: null as any,
+                                                        selectedInstallers: null as any
                                                     });
                                                     toast({ title: "Offer Retracted", description: "Job is open for bidding again." });
                                                 }}
@@ -1500,12 +1007,12 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                                         </div>
                                     )}
 
-                                    {isJobGiver && job.status === 'Pending Funding' && (
+                                    {isJobGiver && (job.status === 'bid_accepted' || job.status === 'Pending Funding') && (
                                         <Button className="w-full min-h-[44px]" onClick={handleStartCheckout} data-testid="proceed-payment-button">Proceed to Payment</Button>
                                     )}
 
                                     {/* Release Payment */}
-                                    {isJobGiver && job.status === 'Pending Confirmation' && (
+                                    {isJobGiver && job.status === 'work_submitted' && (
                                         <Button className="w-full bg-green-600 hover:bg-green-700 min-h-[44px]" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
                                             <CheckCircle className="mr-2 h-4 w-4" />
                                             Approve Work & Release Payment
@@ -1513,7 +1020,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                                     )}
 
                                     {/* Raise Dispute */}
-                                    {(job.status === 'In Progress' || job.status === 'Pending Confirmation') && (
+                                    {(job.status === 'in_progress' || job.status === 'work_submitted') && (
                                         <Button variant="destructive" className="w-full border-red-200 text-red-600 hover:bg-red-50" onClick={() => setIsDisputeDialogOpen(true)}>
                                             <ShieldAlert className="mr-2 h-4 w-4" />
                                             Report Issue / Raise Dispute
@@ -1523,7 +1030,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                                     {/* Leave Review */}
                                     {job.status === 'Completed' && (
                                         <div className="space-y-2">
-                                            <Button className="w-full" variant="outline" onClick={() => setIsReviewDialogOpen(true)}>
+                                            <Button className="w-full" variant="outline" onClick={() => setIsReviewDialogOpen(true)} data-testid="leave-review-button">
                                                 <Star className="mr-2 h-4 w-4" />
                                                 Leave Review
                                             </Button>
@@ -1589,27 +1096,33 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
 
                                     {/* Acceptance Section */}
                                     {
-                                        !isJobGiver && job.status === 'Awarded' && (
+                                        !isJobGiver && job.status === 'bid_accepted' && (
                                             <InstallerAcceptanceSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
                                         )
                                     }
 
                                     {/* Completion Sections */}
                                     {
-                                        !isJobGiver && job.status === 'In Progress' && !job.workStartedAt && (
+                                        !isJobGiver && (job.status === 'in_progress' || job.status === 'In Progress' || job.status === 'bid_accepted' || job.status === 'Pending Funding') && !job.workStartedAt && (
                                             <StartWorkInput job={job} user={user!} onJobUpdate={handleJobUpdate} />
                                         )
                                     }
 
                                     {
-                                        !isJobGiver && job.status === 'In Progress' && job.workStartedAt && (
+                                        !isJobGiver && (job.status === 'in_progress' || job.status === 'In Progress') && job.workStartedAt && (
                                             <InstallerCompletionSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
                                         )
                                     }
 
                                     {
-                                        isJobGiver && (job.status === 'In Progress' || job.status === 'Pending Confirmation') && (
-                                            <JobGiverConfirmationSection job={job} onJobUpdate={handleJobUpdate} onCancel={() => setIsCancelDialogOpen(true)} onAddFunds={() => setIsAddFundsDialogOpen(true)} />
+                                        isJobGiver && (job.status === 'in_progress' || job.status === 'In Progress' || job.status === 'work_submitted' || job.status === 'Work Submitted' || job.status === 'Pending Confirmation') && (
+                                            <JobGiverConfirmationSection
+                                                job={job}
+                                                user={user!}
+                                                onJobUpdate={handleJobUpdate}
+                                                onCancel={() => setIsCancelDialogOpen(true)}
+                                                onAddFunds={() => setIsAddFundsDialogOpen(true)}
+                                            />
                                         )
                                     }
 
@@ -1665,7 +1178,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob }: { isMapLoad
                     <div className="md:col-span-3 mt-8 order-4">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold">Payment Milestones</h3>
-                            {isJobGiver && job.status === 'In Progress' && (
+                            {isJobGiver && job.status === 'in_progress' && (
                                 // Configurable Threshold Check
                                 ((bids.find(b => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)))?.amount || (job as any).priceEstimate?.min || 0) >= (platformSettings?.minJobBudgetForMilestones ?? 5000))
                                     ? (

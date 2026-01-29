@@ -23,7 +23,7 @@ import { useHelp } from "@/hooks/use-help";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import axios from "axios";
+// import axios from "axios"; // Removed
 import { useSearchParams, useRouter } from "next/navigation";
 
 
@@ -197,28 +197,33 @@ export default function BillingClient() {
         throw new Error("You must be logged in to make a purchase.");
       }
 
-      const response = await axios.post('/api/escrow/initiate-payment', {
-        jobId: `SUB-${user.id}-${plan.id}-${Date.now()}`,
-        jobTitle: `Subscription: ${plan.name}`,
-        jobGiverId: user.id, // Payer is the user
-        planId: plan.id, // Explicitly pass plan ID
-        installerId: 'PLATFORM', // Payee is the platform
-        amount: plan.price,
-        travelTip: 0,
-        jobGiverFee: 0,
-      }, {
+      const response = await fetch('/api/escrow/initiate-payment', {
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          jobId: `SUB-${user.id}-${plan.id}-${Date.now()}`,
+          jobTitle: `Subscription: ${plan.name}`,
+          jobGiverId: user.id, // Payer is the user
+          planId: plan.id, // Explicitly pass plan ID
+          installerId: 'PLATFORM', // Payee is the platform
+          amount: plan.price,
+          travelTip: 0,
+          jobGiverFee: 0,
+        })
       });
 
-      if (!response.data.payment_session_id) {
+      const responseData = await response.json();
+
+      if (!responseData.payment_session_id) {
         throw new Error("Could not retrieve payment session ID.");
       }
 
       const redirectUrl = searchParams.get('redirectUrl');
 
-      const cashfree = new (window as any).Cashfree(response.data.payment_session_id);
+      const cashfree = new (window as any).Cashfree(responseData.payment_session_id);
       cashfree.checkout({
         payment_method: "upi",
         onComplete: async (data: any) => {

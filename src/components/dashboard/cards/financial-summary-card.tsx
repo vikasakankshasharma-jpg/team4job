@@ -7,14 +7,14 @@ import { Transaction } from "@/lib/types";
 export function FinancialSummaryCard({ transactions }: { transactions: Transaction[] }) {
     const summary = React.useMemo(() => {
         return transactions.reduce((acc, t) => {
-            if (t.status === 'Released') {
+            if (t.status === 'released') {
                 acc.totalReleased += t.payoutToInstaller;
-                acc.platformRevenue += t.commission + t.jobGiverFee;
+                acc.platformRevenue += (t.commission || 0) + (t.jobGiverFee || 0);
             }
-            if (t.status === 'Funded') {
+            if (t.status === 'funded') {
                 acc.fundsHeld += t.totalPaidByGiver;
             }
-            if (t.status === 'Funded' || t.status === 'Released') {
+            if (t.status === 'funded' || t.status === 'released') {
                 acc.totalVolume += t.totalPaidByGiver;
             }
             return acc;

@@ -11,14 +11,27 @@ export const metadata: Metadata = {
     description: 'Manage your jobs, bids, and transactions',
 };
 
-export default function DashboardPage() {
+import { getUserIdFromSession } from '@/lib/auth-server';
+import { getDashboardStatsAction } from '@/app/actions/dashboard.actions';
+
+export default async function DashboardPage() {
+    const userId = await getUserIdFromSession();
+    let initialData = undefined;
+
+    if (userId) {
+        const result = await getDashboardStatsAction(userId);
+        if (result.success) {
+            initialData = result.data;
+        }
+    }
+
     return (
         <Suspense fallback={
             <div className="flex items-center justify-center h-full">
                 <Loader2 className="h-6 w-6 animate-spin" />
             </div>
         }>
-            <DashboardClient />
+            <DashboardClient initialData={initialData} />
         </Suspense>
     );
 }

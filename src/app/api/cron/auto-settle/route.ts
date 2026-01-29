@@ -1,10 +1,13 @@
+// app/api/cron/auto-settle/route.ts - REFACTORED
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
+import { logger } from '@/infrastructure/logger';
 import { Job, Transaction } from '@/lib/types';
 import axios from 'axios';
 
-// CASHFREE PAYOUTS CONFIG (Same as release-funds)
+export const dynamic = 'force-dynamic';
+
 const CASHFREE_API_BASE = 'https://payout-gamma.cashfree.com/payouts';
 
 async function getCashfreeBearerToken(): Promise<string> {
@@ -22,28 +25,35 @@ async function getCashfreeBearerToken(): Promise<string> {
     return response.data?.data?.token;
 }
 
-export const dynamic = 'force-dynamic';
-
+/**
+ * Auto-settle cron job - Automatically settles jobs after 5 days
+ * ✅ REFACTORED: Uses infrastructure logger and Firebase
+ * 
+ * Triggered by Cloud Scheduler or external cron service
+ */
 export async function GET(req: NextRequest) {
     try {
-        // SECURITY: Verify secret to prevent unauthorized triggers
+        // SECURITY: Verify cron secret
         const authHeader = req.headers.get('Authorization');
         if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+            logger.error('Unauthorized cron attempt');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const now = new Date();
-        const fiveDaysAgo = new Date(now.getTime() - (5 * 24 * 60 * 60 * 1000));
+        const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
 
-        // 1. Find jobs in 'Pending Confirmation' submitted more than 5 days ago
+        // Find jobs in 'Pending Confirmation' submitted >5 days ago
         const db = getAdminDb();
-        const jobsSnap = await db.collection('jobs')
+        const jobsSnap = await db
+            .collection('jobs')
             .where('status', '==', 'Pending Confirmation')
             .where('workSubmittedAt', '<=', fiveDaysAgo)
             .get();
 
         if (jobsSnap.empty) {
-            return NextResponse.json({ message: 'No jobs eligible for auto-settle.' });
+            logger.info('No jobs eligible for auto-settle');
+            return NextResponse.json({ message: 'No jobs eligible for auto-settle' });
         }
 
         const results = [];
@@ -52,25 +62,34 @@ export async function GET(req: NextRequest) {
         for (const jobDoc of jobsSnap.docs) {
             const job = jobDoc.data() as Job;
 
-            // 2. Find the funded transaction for this job
-            const txnSnap = await db.collection('transactions')
+            // Find funded transaction for this job
+            const txnSnap = await db
+                .collection('transactions')
                 .where('jobId', '==', jobDoc.id)
-                .where('status', '==', 'Funded')
+                .where('status', '==', 'funded')
                 .limit(1)
                 .get();
 
             if (txnSnap.empty) {
-                results.push({ jobId: jobDoc.id, status: 'Error', reason: 'No funded transaction found' });
+                results.push({
+                    jobId: jobDoc.id,
+                    status: 'Error',
+                    reason: 'No funded transaction found',
+                });
                 continue;
             }
 
             const txnDoc = txnSnap.docs[0];
             const transaction = txnDoc.data() as Transaction;
 
-            // 3. Trigger Payout (Replicating release-funds logic)
+            // Check installer beneficiary details
             const installerSnap = await db.collection('users').doc(transaction.payeeId).get();
             if (!installerSnap.exists || !installerSnap.data()?.payouts?.beneficiaryId) {
-                results.push({ jobId: jobDoc.id, status: 'Error', reason: 'Missing beneficiary details' });
+                results.push({
+                    jobId: jobDoc.id,
+                    status: 'Error',
+                    reason: 'Missing beneficiary details',
+                });
                 continue;
             }
 
@@ -78,6 +97,7 @@ export async function GET(req: NextRequest) {
             const transferId = `AUTO_SETTLE_${transaction.id}`;
 
             try {
+                // Trigger payout
                 await axios.post(
                     `${CASHFREE_API_BASE}/payouts/standard`,
                     {
@@ -88,35 +108,47 @@ export async function GET(req: NextRequest) {
                     {
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`,
+                            Authorization: `Bearer ${token}`,
                         },
                     }
                 );
 
-                // Update Transaction & Job
+                // Update transaction & job
                 await txnDoc.ref.update({
                     payoutTransferId: transferId,
-                    status: 'Released',
-                    releasedAt: now
+                    status: 'released',
+                    releasedAt: now,
                 });
 
                 await jobDoc.ref.update({
                     status: 'Completed',
                     completionTimestamp: now,
-                    adminNotes: (job.adminNotes || '') + '\n[System] Auto-settled after 5 days of inactivity.'
+                    adminNotes:
+                        (job.adminNotes || '') +
+                        '\n:System] Auto-settled after 5 days of inactivity.',
                 });
 
                 results.push({ jobId: jobDoc.id, status: 'Success', transferId });
 
+                logger.info('Job auto-settled', {
+                    jobId: jobDoc.id,
+                    transferId,
+                    amount: transaction.payoutToInstaller,
+                });
             } catch (err: any) {
                 results.push({ jobId: jobDoc.id, status: 'Failed', error: err.message });
+                logger.error('Auto-settle failed for job', err, { jobId: jobDoc.id });
             }
         }
 
-        return NextResponse.json({ processed: results.length, results });
+        logger.info('Auto-settle cron completed', {
+            processed: results.length,
+            results,
+        });
 
+        return NextResponse.json({ processed: results.length, results });
     } catch (error: any) {
-        console.error('Auto-settle Cron Error:', error);
+        logger.error('Auto-settle cron error', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

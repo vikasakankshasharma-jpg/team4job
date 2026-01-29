@@ -40,10 +40,10 @@ import { MobileTransactionCard } from "@/components/dashboard/transactions/mobil
 
 const getStatusVariant = (status: Transaction['status']) => {
     switch (status) {
-        case 'Released': return 'success';
-        case 'Funded': return 'info';
-        case 'Refunded': return 'secondary';
-        case 'Failed': return 'destructive';
+        case 'released': return 'success';
+        case 'funded': return 'info';
+        case 'refunded': return 'secondary';
+        case 'failed': return 'destructive';
         default: return 'outline';
     }
 };
@@ -55,7 +55,7 @@ const initialFilters = {
 
 export default function TransactionsClient() {
     const { user, isAdmin, loading: userLoading } = useUser();
-    const { db } = useFirebase();
+    // const { db } = useFirebase(); // Unused now
     const router = useRouter();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
@@ -88,58 +88,35 @@ export default function TransactionsClient() {
     }, [isAdmin, userLoading, router]);
 
     const fetchTransactionsAndUsers = useCallback(async () => {
-        if (!db || !user) return;
+        if (!user) return;
         setLoading(true);
 
         try {
-            let transactionsQuery;
-            if (isAdmin) {
-                transactionsQuery = query(collection(db, "transactions"));
-            } else {
-                transactionsQuery = query(collection(db, "transactions"), or(
-                    where("payerId", "==", user.id),
-                    where("payeeId", "==", user.id)
-                ));
-            }
-
-            const transactionsSnapshot = await getDocs(transactionsQuery);
-            const transactionsList = transactionsSnapshot.docs.map(doc => doc.data() as Transaction);
-
-            const userIds = new Set<string>();
-            transactionsList.forEach(t => {
-                userIds.add(t.payerId);
-                if (t.payeeId) userIds.add(t.payeeId);
+            // @ts-ignore
+            const token = await user.getIdToken();
+            const response = await fetch('/api/transactions/history', {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            if (userIds.size > 0) {
-                // Filter out any undefined/null values to prevent "Invalid query" errors
-                const userIdsArray = Array.from(userIds).filter(id => id);
+            if (!response.ok) throw new Error("Failed to fetch history");
 
-                if (userIdsArray.length > 0) {
-                    // Firestore 'in' query supports max 10 values. Chunk queries into batches of 10.
-                    const fetchedUsersMap = new Map<string, User>();
+            const data = await response.json();
 
-                    for (let i = 0; i < userIdsArray.length; i += 10) {
-                        const chunk = userIdsArray.slice(i, i + 10);
-                        const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
-                        const usersSnapshot = await getDocs(usersQuery);
-
-                        usersSnapshot.forEach(doc => {
-                            fetchedUsersMap.set(doc.id, { id: doc.id, ...doc.data() } as User);
-                        });
-                    }
-
-                    setUsersMap(fetchedUsersMap);
-                }
+            // Map users from response
+            const fetchedUsersMap = new Map<string, User>();
+            if (data.users) {
+                // @ts-ignore
+                data.users.forEach((u: any) => fetchedUsersMap.set(u.id, u));
             }
+            setUsersMap(fetchedUsersMap);
+            setTransactions(data.transactions || []);
 
-            setTransactions(transactionsList.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime()));
         } catch (error) {
             console.error("Error fetching transactions:", error);
         } finally {
             setLoading(false);
         }
-    }, [db, user, isAdmin]);
+    }, [user]);
 
     useEffect(() => {
         if (user) {
@@ -150,7 +127,7 @@ export default function TransactionsClient() {
     const enhancedStats = useMemo(() => {
         // Calculate base total volume
         const totalVolume = transactions.reduce((sum, t) => {
-            if (t.status === 'Funded' || t.status === 'Released') {
+            if (t.status === 'funded' || t.status === 'released') {
                 return sum + t.amount;
             }
             return sum;
@@ -158,7 +135,7 @@ export default function TransactionsClient() {
 
         // Calculate total commission (platform revenue)
         const totalCommission = transactions.reduce((sum, t) => {
-            if (t.status === 'Released') {
+            if (t.status === 'released') {
                 return sum + (t.commission || 0) + (t.jobGiverFee || 0);
             }
             return sum;
@@ -166,7 +143,7 @@ export default function TransactionsClient() {
 
         // Calculate refunded amount
         const totalRefunded = transactions.reduce((sum, t) => {
-            if (t.status === 'Refunded') {
+            if (t.status === 'refunded') {
                 return sum + t.amount;
             }
             return sum;
@@ -174,14 +151,14 @@ export default function TransactionsClient() {
 
         // Calculate released and funded amounts
         const totalReleased = transactions.reduce((sum, t) => {
-            if (t.status === 'Released') {
+            if (t.status === 'released') {
                 return sum + t.amount;
             }
             return sum;
         }, 0);
 
         const totalFunded = transactions.reduce((sum, t) => {
-            if (t.status === 'Funded') {
+            if (t.status === 'funded') {
                 return sum + t.amount;
             }
             return sum;
@@ -189,9 +166,9 @@ export default function TransactionsClient() {
 
         // Count transactions
         const totalTransactions = transactions.length;
-        const fundedTransactions = transactions.filter(t => t.status === 'Funded').length;
-        const releasedTransactions = transactions.filter(t => t.status === 'Released').length;
-        const refundedTransactions = transactions.filter(t => t.status === 'Refunded').length;
+        const fundedTransactions = transactions.filter(t => t.status === 'funded').length;
+        const releasedTransactions = transactions.filter(t => t.status === 'released').length;
+        const refundedTransactions = transactions.filter(t => t.status === 'refunded').length;
 
         return {
             totalReleased,
@@ -279,11 +256,11 @@ export default function TransactionsClient() {
     const tabFilteredTransactions = useMemo(() => {
         switch (activeTab) {
             case 'funded':
-                return filteredTransactions.filter(t => t.status === 'Funded');
+                return filteredTransactions.filter(t => t.status === 'funded');
             case 'released':
-                return filteredTransactions.filter(t => t.status === 'Released');
+                return filteredTransactions.filter(t => t.status === 'released');
             case 'refunded':
-                return filteredTransactions.filter(t => t.status === 'Refunded');
+                return filteredTransactions.filter(t => t.status === 'refunded');
             default:
                 return filteredTransactions;
         }
@@ -356,13 +333,13 @@ export default function TransactionsClient() {
                         <TabsList>
                             <TabsTrigger value="all">All ({filteredTransactions.length})</TabsTrigger>
                             <TabsTrigger value="funded">
-                                Funded ({filteredTransactions.filter(t => t.status === 'Funded').length})
+                                Funded ({filteredTransactions.filter(t => t.status === 'funded').length})
                             </TabsTrigger>
                             <TabsTrigger value="released">
-                                Released ({filteredTransactions.filter(t => t.status === 'Released').length})
+                                Released ({filteredTransactions.filter(t => t.status === 'released').length})
                             </TabsTrigger>
                             <TabsTrigger value="refunded">
-                                Refunded ({filteredTransactions.filter(t => t.status === 'Refunded').length})
+                                Refunded ({filteredTransactions.filter(t => t.status === 'refunded').length})
                             </TabsTrigger>
                         </TabsList>
                     </Tabs>

@@ -70,8 +70,10 @@ export default function RootLayout({
           "min-h-screen bg-background font-body antialiased",
           inter.variable
         )}
-        suppressHydrationWarning
       >
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-foreground">
+          Skip to main content
+        </a>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -157,6 +159,6 @@ export default function RootLayout({
         </Script>
         <CookieBanner />
       </body>
-    </html>
+    </html >
   );
 }
