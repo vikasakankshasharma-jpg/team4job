@@ -64,7 +64,7 @@ async function reseedPlatform() {
 
         // --- 2. ADMIN CREATION ---
         console.log("Step 2: Creating Admin User...");
-        const adminEmail = 'vikasakankshasharma@gmail.com';
+        const adminEmail = 'vikasakankshasharma_v3@gmail.com';
         const adminPassword = 'Vks2bhdj@9229'; // Use process.env in real prod, but hardcoded as per prompt
 
         let adminUid;
@@ -76,6 +76,7 @@ async function reseedPlatform() {
                 displayName: "Vikas Admin",
                 emailVerified: true
             });
+            await auth.setCustomUserClaims(adminUid, { roles: ['Admin', 'Job Giver', 'Installer'], role: 'Admin' });
             console.log(`Admin user updated: ${adminUid}`);
         } catch (e: any) {
             if (e.code === 'auth/user-not-found') {
@@ -86,6 +87,7 @@ async function reseedPlatform() {
                     emailVerified: true
                 });
                 adminUid = userRecord.uid;
+                await auth.setCustomUserClaims(adminUid, { roles: ['Admin', 'Job Giver', 'Installer'], role: 'Admin' });
                 console.log(`Created Admin user: ${adminUid}`);
             } else {
                 throw e;
@@ -112,7 +114,7 @@ async function reseedPlatform() {
 
         const personas = [
             {
-                email: 'installer_pro@team4job.com',
+                email: 'installer_pro_v3@team4job.com',
                 name: 'Rajesh Pro Installer',
                 roles: ['Installer'],
                 profile: {
@@ -136,7 +138,7 @@ async function reseedPlatform() {
                 }
             },
             {
-                email: 'installer_new@team4job.com',
+                email: 'installer_new_v3@team4job.com',
                 name: 'Amit New Installer',
                 roles: ['Installer'],
                 profile: {
@@ -149,14 +151,14 @@ async function reseedPlatform() {
                 }
             },
             {
-                email: 'giver_vip@team4job.com',
+                email: 'giver_vip_v3@team4job.com',
                 name: 'Priya VIP Giver',
                 roles: ['Job Giver'],
                 // VIP status is usually implied by history/spend, but we can tag if needed
                 isDummyData: true
             },
             {
-                email: 'giver_new@team4job.com',
+                email: 'giver_new_v3@team4job.com',
                 name: 'Suresh New Giver',
                 roles: ['Job Giver'],
                 isDummyData: true
@@ -173,6 +175,7 @@ async function reseedPlatform() {
                     displayName: p.name,
                     emailVerified: true
                 });
+                await auth.setCustomUserClaims(uid, { roles: p.roles, role: p.roles[0] });
                 console.log(`Updated persona: ${p.email}`);
             } catch (e: any) {
                 if (e.code === 'auth/user-not-found') {
@@ -183,6 +186,7 @@ async function reseedPlatform() {
                         emailVerified: true
                     });
                     uid = userRecord.uid;
+                    await auth.setCustomUserClaims(uid, { roles: p.roles, role: p.roles[0] });
                     console.log(`Created persona: ${p.email}`);
                 } else {
                     throw e;
