@@ -44,7 +44,6 @@ export default async function middleware(request: NextRequest) {
             { status: 429 }
         );
     }
-
     // 2. Auth Check
     if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
         return NextResponse.next();
@@ -54,8 +53,8 @@ export default async function middleware(request: NextRequest) {
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return NextResponse.json(
-            { error: 'Authentication required. Please provide a valid Bearer token.' },
-            { status: 401 }
+             { error: 'Authentication required. Please provide a valid Bearer token.' },
+             { status: 401 }
         );
     }
 
