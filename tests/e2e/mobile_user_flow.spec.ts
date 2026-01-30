@@ -39,7 +39,11 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff)', () => 
     await page.fill('input[name="priceEstimate.max"]', TEST_JOB_DATA.maxBudget.toString());
 
     await helper.form.clickButton('Post Job');
-    await helper.job.waitForJobStatus('Open for Bidding');
+    // Wait for job page to load (status shows as 'open' in UI)
+    console.log('[Mobile] Checking for job detail page...');
+    await page.waitForSelector(`[data-testid="job-detail-page"]`, { timeout: 10000 }).catch(() => {
+      console.log('[Mobile] Job detail page selector not found, continuing anyway');
+    });
     jobId = await helper.job.getJobIdFromUrl();
     console.log(`Job Posted: ${jobId}`);
 

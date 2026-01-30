@@ -5,7 +5,7 @@ import { generateUniqueJobTitle, TIMEOUTS } from '../fixtures/test-data';
 
 const DUAL_ROLE_USER = {
     email: 'dualrole@example.com',
-    password: 'Test@1234'
+    password: 'Vikas@129229'
 };
 
 test.describe('Self-Interaction Guardrails', () => {
