@@ -30,7 +30,7 @@ export async function listMyBidsAction(userId: string) {
         // Implementation logic moved from api/bids/my-bids
         // For simplicity, we'll implement it here or in jobService
         const bids = await jobService.getBidsByInstaller(userId);
-        return { success: true, bids };
+        return { success: true, bids: JSON.parse(JSON.stringify(bids)) };
     } catch (error: any) {
         console.error('listMyBidsAction error:', error);
         return { success: false, error: error.message || 'Failed to list bids' };
@@ -43,7 +43,7 @@ export async function listMyBidsAction(userId: string) {
 export async function getBidsForJobAction(jobId: string, userId: string) {
     try {
         const bids = await jobService.getBidsForJob(jobId, userId);
-        return { success: true, bids };
+        return { success: true, bids: JSON.parse(JSON.stringify(bids)) };
     } catch (error: any) {
         console.error('getBidsForJobAction error:', error);
         return { success: false, error: error.message || 'Failed to fetch bids' };

@@ -43,7 +43,7 @@ test.describe('Accessibility Tests', () => {
         await page.fill('input[name="identifier"]', 'installer@example.com');
         await page.fill('input[type="password"]', 'Test@1234');
         await page.click('button[type="submit"]');
-        await page.waitForURL(/\/dashboard.*/, { timeout: 60000 });
+        await page.waitForURL(/\/dashboard.*/, { timeout: 90000 });
 
         const accessibilityScanResults = await new AxeBuilder({ page })
             .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

@@ -12,7 +12,7 @@ test.describe('Role Switching System', () => {
 
     const DUAL_ROLE_USER = {
         email: 'dualrole@example.com',
-        password: 'Test@1234',
+        password: 'Vikas@129229',
         displayName: 'Dual Role User'
     };
 
