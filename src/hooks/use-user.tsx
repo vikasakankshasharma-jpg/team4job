@@ -215,9 +215,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 2. Handling Private Paths (Auth Check)
     // If not public and no user, needs login
-    // Note: We changed logic to immediate redirect instead of 5s timeout for better UX/security
+    // IMPORTANT: Only redirect if we have NO Firebase auth user AND no firestore user
+    // If hasAuthUser is true but user is null, we're still loading Firestore data
     if (!user && !hasAuthUser) {
       return '/login';
+    }
+
+    // If we have Firebase auth but waiting for Firestore, stay on loader (don't redirect)
+    if (hasAuthUser && !user) {
+      return null; // Keep showing loader while Firestore loads
     }
 
     // 3. Handling Role Protection & Role-Specific Pages
