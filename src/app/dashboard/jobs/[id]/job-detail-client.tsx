@@ -348,7 +348,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                 origin: realtimeJob ? 'realtime' : 'initial'
             }));
         }
-    }, [job, user, isJobGiver, role, !!realtimeJob]);
+    }, [job, user, isJobGiver, role, realtimeJob]);
 
     const [isMilestoneDialogOpen, setIsMilestoneDialogOpen] = React.useState(false);
 
