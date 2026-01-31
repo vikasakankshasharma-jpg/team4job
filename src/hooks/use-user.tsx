@@ -332,7 +332,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = useMemo(() => ({
     user, role, isAdmin, loading,
     setUser, setRole, logout, login
-  }), [user, role, isAdmin, loading, setRole, logout, login]);
+  }), [user, role, isAdmin, loading, setUser, setRole, logout, login]);
 
 
   // RENDER LOGIC:

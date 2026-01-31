@@ -139,8 +139,8 @@ function DirectAwardInput({ control }: { control: Control<any> }) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedInstaller, setSelectedInstaller] = useState<User | null>(null);
 
-  const debouncedCheck = useCallback(
-    debounce(async (id: string) => {
+  const debouncedCheck = useMemo(
+    () => debounce(async (id: string) => {
       if (!id) {
         setSelectedInstaller(null);
         setIsLoading(false);
