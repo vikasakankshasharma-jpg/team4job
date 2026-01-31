@@ -914,7 +914,8 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
 
       <div className="mx-auto w-64 h-64 bg-muted rounded-full overflow-hidden relative flex items-center justify-center">
         {photo ? (
-          <Image src={photo} alt="Profile preview" fill className="object-cover" />
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={photo} alt="Profile preview" className="object-cover w-full h-full" />
         ) : (
           <>
             <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
@@ -932,8 +933,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                     size="sm"
                     className="mt-4"
                     onClick={() => {
-                      setPhoto(PlaceHolderImages[0].imageUrl);
-                      form.setValue('realAvatarUrl', PlaceHolderImages[0].imageUrl);
+                      const testImage = `data:image/svg+xml;utf8,${encodeURIComponent(PlaceHolderImages[0].imageUrl)}`;
+                      setPhoto(testImage);
+                      form.setValue('realAvatarUrl', testImage);
                     }}
                   >
                     Use Test Photo

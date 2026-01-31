@@ -13,7 +13,11 @@ import { GA_TRACKING_ID } from '@/lib/analytics';
 import { WebVitalsReporter } from "@/components/dashboard/analytics/web-vitals";
 import CookieBanner from "@/components/gdpr/cookie-banner";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: 'swap',
+});
 
 
 export const metadata: Metadata = {

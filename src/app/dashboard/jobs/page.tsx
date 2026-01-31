@@ -3,7 +3,7 @@ import React, { Suspense } from 'react';
 import { Loader2 } from "lucide-react";
 import BrowseJobsClient from './browse-jobs-client';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default function BrowseJobsPage() {
     return (

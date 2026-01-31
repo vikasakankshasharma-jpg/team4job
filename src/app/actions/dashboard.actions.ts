@@ -11,32 +11,36 @@ export async function getDashboardStatsAction(userId: string) {
     try {
         const db = getAdminDb();
 
-        // 1. Fetch recent transactions
-        const transactionsSnapshot = await db.collection('transactions')
-            .where('payeeId', '==', userId)
-            .orderBy('createdAt', 'desc')
-            .limit(10)
-            .get();
+        // Fetch data in parallel
+        const [transactionsSnapshot, installerJobsSnapshot, jobGiverJobsSnapshot] = await Promise.all([
+            db.collection('transactions')
+                .where('payeeId', '==', userId)
+                .orderBy('createdAt', 'desc')
+                .limit(10)
+                .get(),
+            db.collection('jobs')
+                .where('installerId', '==', userId)
+                .get(),
+            db.collection('jobs')
+                .where('jobGiverId', '==', userId)
+                .get()
+        ]);
 
         const transactions = transactionsSnapshot.docs.map(doc => {
             const data = doc.data();
+            const mapDate = (d: any) => d?.toDate?.() || d;
             return {
                 id: doc.id,
                 ...data,
-                createdAt: (data.createdAt as any)?.toDate?.() || data.createdAt,
-                updatedAt: (data.updatedAt as any)?.toDate?.() || data.updatedAt,
-                releasedAt: (data.releasedAt as any)?.toDate?.() || data.releasedAt,
-                processedAt: (data.processedAt as any)?.toDate?.() || data.processedAt,
-                fundedAt: (data.fundedAt as any)?.toDate?.() || data.fundedAt,
-                failedAt: (data.failedAt as any)?.toDate?.() || data.failedAt,
-                refundedAt: (data.refundedAt as any)?.toDate?.() || data.refundedAt,
+                createdAt: mapDate(data.createdAt),
+                updatedAt: mapDate(data.updatedAt),
+                releasedAt: mapDate(data.releasedAt),
+                processedAt: mapDate(data.processedAt),
+                fundedAt: mapDate(data.fundedAt),
+                failedAt: mapDate(data.failedAt),
+                refundedAt: mapDate(data.refundedAt),
             };
         }) as unknown as Transaction[];
-
-        // 2. Aggregate Installer Stats
-        const installerJobsSnapshot = await db.collection('jobs')
-            .where('installerId', '==', userId)
-            .get();
 
         const installerStats = {
             projectedEarnings: 0,
@@ -56,11 +60,6 @@ export async function getDashboardStatsAction(userId: string) {
                 installerStats.totalEarnings += (data.finalAmount || 0);
             }
         });
-
-        // 3. Aggregate Job Giver Stats
-        const jobGiverJobsSnapshot = await db.collection('jobs')
-            .where('jobGiverId', '==', userId)
-            .get();
 
         const jobGiverStats = {
             activeJobs: 0,
