@@ -27,7 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Zap, Loader2, UserPlus, ShieldCheck } from "lucide-react";
 import { generateJobDescriptionAction, generatePriceEstimateAction } from "@/app/actions/ai.actions";
 import { useToast } from "@/hooks/use-toast";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { cn, toDate } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import { useRouter, useSearchParams } from "next/navigation";
