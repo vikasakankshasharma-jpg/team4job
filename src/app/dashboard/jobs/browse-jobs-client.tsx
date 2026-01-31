@@ -47,6 +47,7 @@ import { MapPin, Bell } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
 import { JobCardSkeletonGrid } from "@/components/skeletons/job-card-skeleton";
 import { JobFilters } from "@/components/jobs/job-filters";
+import { listOpenJobsAction } from "@/app/actions/job.actions";
 import dynamic from "next/dynamic";
 
 const SaveSearchDialog = dynamic(
@@ -168,7 +169,6 @@ export default function BrowseJobsClient() {
     setLoading(true);
 
     try {
-      const { listOpenJobsAction } = await import("@/app/actions/job.actions");
       const res = await listOpenJobsAction();
 
       if (!res.success || !res.data) {

@@ -1,5 +1,7 @@
 
 import { Button } from "@/components/ui/button";
+
+export const dynamic = 'force-static';
 import Link from "next/link";
 import { ArrowRight, Bot, ShieldCheck, CreditCard } from "lucide-react";
 import { Logo } from "@/components/icons";
