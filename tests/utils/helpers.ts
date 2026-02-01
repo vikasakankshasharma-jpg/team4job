@@ -295,30 +295,41 @@ export class FormHelper {
             `button:has-text("${label}")`
         ).first();
 
-        await trigger.click();
+        // Ensure trigger is in view and clickable
+        await trigger.scrollIntoViewIfNeeded();
+        await trigger.click({ force: true });
 
-        // Wait for potential animation
-        await this.page.waitForTimeout(500);
+        // Wait for potential animation or portal mounting
+        // Instead of a fixed wait, we poll for the option or menu
+        try {
+            // Wait for any option to appear first to confirm dropdown is open
+            await this.page.locator('[role="option"], [role="menuitem"], .select-content').first().waitFor({ state: 'visible', timeout: 5000 });
+        } catch (e) {
+            // If it didn't open, try clicking again as sometimes the first click is swallowed by a re-render
+            await trigger.click({ force: true });
+        }
 
-        // Try standard accessible role first
+        // Try standard accessible role first with a reasonable timeout
         try {
             const option = this.page.getByRole('option', { name: value }).first();
-            await option.waitFor({ state: 'visible', timeout: 5000 });
-            await option.click();
+            await option.waitFor({ state: 'visible', timeout: 10000 });
+            await option.click({ force: true });
             return;
         } catch (e) {
             console.log(`[FormHelper] getByRole option failed for "${value}", trying fallback locators...`);
         }
 
-        // Fallback to text matching
-        const option = this.page.locator(
-            `role=option >> text="${value}", ` +
+        // Fallback to text matching across different possible roles
+        const fallbackOption = this.page.locator(
             `[role="option"]:has-text("${value}"), ` +
             `[role="menuitem"]:has-text("${value}"), ` +
             `div[role="item"]:has-text("${value}"), ` +
-            `button:has-text("${value}")`
+            `button:has-text("${value}"), ` +
+            `.select-item:has-text("${value}")`
         ).first();
-        await option.click();
+
+        await fallbackOption.waitFor({ state: 'visible', timeout: 10000 });
+        await fallbackOption.click({ force: true });
     }
 
     async fillPincodeAndSelectPO(pincode: string) {

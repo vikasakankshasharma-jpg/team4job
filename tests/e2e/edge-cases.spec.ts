@@ -9,7 +9,7 @@ function generateUniqueJobTitle(base: string = 'Edge Case Job') {
 }
 
 test.describe('Edge Case Tests', () => {
-    test.setTimeout(180000); // 180 seconds per test for unstable environments
+    test.setTimeout(90000); // 90 seconds per test to prevent CI hangs while allowing for retries
 
     test.beforeEach(async ({ page }) => {
         // Mock Pincode API
@@ -202,7 +202,7 @@ test.describe('Edge Case Tests', () => {
             await helper.auth.loginAsJobGiver();
             await helper.nav.goToPostJob();
 
-            const specialTitle = 'Job Title !@#$%';
+            const specialTitle = generateUniqueJobTitle('Job Title !@#$%');
 
             await helper.form.selectDropdown('Job Category', TEST_JOB_DATA.category);
             await page.fill('[data-testid="job-title-input"]', specialTitle);

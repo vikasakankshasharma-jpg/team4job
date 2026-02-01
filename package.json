@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:smoke": "playwright test tests/e2e/smoke.spec.ts tests/e2e/admin-smoke.spec.ts",
-    "test:regression": "playwright test tests/e2e --grep-invert 'smoke'",
+    "test:regression": "playwright test tests/e2e --grep-invert 'smoke|edge-cases'",
     "test:edge-cases": "playwright test tests/e2e/edge-cases.spec.ts"
   },
   "dependencies": {
