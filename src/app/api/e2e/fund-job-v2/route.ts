@@ -5,7 +5,9 @@ import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const LOG_FILE = 'C:/Users/hp/Documents/DoDo/e2e-api-debug.log';
+import * as os from 'os';
+
+const LOG_FILE = path.join(os.tmpdir(), 'e2e-api-debug.log');
 
 export async function POST(req: NextRequest) {
     if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID !== 'dodo-beta') {
