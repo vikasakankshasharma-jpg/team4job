@@ -291,7 +291,7 @@ export class FormHelper {
             `label:has-text("${label}") ~ button, ` +
             `label:has-text("${label}") + div button, ` +
             `[data-testid*="${label.toLowerCase().replace(/\s/g, '-')}"] select-trigger, ` +
-            `[data-testid*="${label.toLowerCase().replace(/\s/g, '-')}"] ,` +
+            `[data-testid*="${label.toLowerCase().replace(/\s/g, '-')}"], ` +
             `button:has-text("${label}")`
         ).first();
 

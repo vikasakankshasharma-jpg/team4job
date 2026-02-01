@@ -24,7 +24,7 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
 
     /* Retry on CI only */
-    retries: process.env.CI ? 2 : 0,
+    retries: process.env.CI ? 1 : 0,
 
     /* Opt out of parallel tests on CI. */
     workers: process.env.CI ? 2 : 1,
@@ -51,10 +51,10 @@ export default defineConfig({
         video: 'retain-on-failure',
 
         /* Maximum time each action can take */
-        actionTimeout: 180000,
+        actionTimeout: 60000,
 
         /* Maximum time for navigation */
-        navigationTimeout: 180000,
+        navigationTimeout: 60000,
     },
 
     /* Configure projects for major browsers */
@@ -74,10 +74,10 @@ export default defineConfig({
     },
 
     /* Global timeout for each test */
-    timeout: 180000,
+    timeout: 90000,
 
     /* Expect timeout */
     expect: {
-        timeout: 20000,
+        timeout: 15000,
     },
 });

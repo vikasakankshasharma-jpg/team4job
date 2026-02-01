@@ -140,10 +140,14 @@ jobs:
 
   # Job 4: Full E2E Tests
   e2e-tests:
-    name: Full E2E Tests
+    name: Full E2E Tests (Shard ${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
     needs: smoke-tests
-    timeout-minutes: 60
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     
     steps:
       - name: Checkout code
@@ -187,7 +191,7 @@ jobs:
           echo "CASHFREE_PAYMENTS_CLIENT_SECRET=$CASHFREE_PAYMENTS_CLIENT_SECRET" >> $GITHUB_ENV
 
       - name: Run Regression Suite
-        run: npm run test:regression
+        run: npx playwright test tests/e2e --grep-invert 'smoke' --shard=${{ matrix.shard }}/${{ strategy.job-total }}
         env:
           CI: true
 
@@ -195,7 +199,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: e2e-test-report
+          name: e2e-test-report-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/
@@ -203,10 +207,14 @@ jobs:
 
   # Job 5: Edge Case Tests
   edge-case-tests:
-    name: Edge Case Tests
+    name: Edge Case Tests (Shard ${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
     needs: smoke-tests
-    timeout-minutes: 45
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     
     steps:
       - name: Checkout code
@@ -246,7 +254,7 @@ jobs:
           echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" >> $GITHUB_ENV
 
       - name: Run edge case tests
-        run: npm run test:edge-cases
+        run: npx playwright test tests/e2e/edge-cases.spec.ts --shard=${{ matrix.shard }}/${{ strategy.job-total }}
         env:
           CI: true
 
@@ -254,7 +262,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: edge-case-test-report
+          name: edge-case-test-report-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/
