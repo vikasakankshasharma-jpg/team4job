@@ -297,16 +297,30 @@ export class FormHelper {
 
         // Ensure trigger is in view and clickable
         await trigger.scrollIntoViewIfNeeded();
-        await trigger.click({ force: true });
+        // Create a robust open loop
+        let isOpen = false;
+        for (let i = 0; i < 3; i++) {
+            try {
+                // Check if already open (sometimes previous actions leave it open)
+                if (await this.page.locator('[role="option"], [role="menuitem"], .select-content').first().isVisible()) {
+                    isOpen = true;
+                    break;
+                }
 
-        // Wait for potential animation or portal mounting
-        // Instead of a fixed wait, we poll for the option or menu
-        try {
-            // Wait for any option to appear first to confirm dropdown is open
-            await this.page.locator('[role="option"], [role="menuitem"], .select-content').first().waitFor({ state: 'visible', timeout: 5000 });
-        } catch (e) {
-            // If it didn't open, try clicking again as sometimes the first click is swallowed by a re-render
-            await trigger.click({ force: true });
+                await trigger.click({ force: true });
+                // Short wait for animation/mounting
+                await this.page.locator('[role="option"], [role="menuitem"], .select-content').first().waitFor({ state: 'visible', timeout: 2000 });
+                isOpen = true;
+                break;
+            } catch (e) {
+                console.log(`[FormHelper] Dropdown trigger click attempt ${i + 1} failed to open menu for "${label}".`);
+                await this.page.waitForTimeout(500);
+            }
+        }
+
+        if (!isOpen) {
+            console.log('[FormHelper] Force dispatching click event as fallback...');
+            await trigger.dispatchEvent('click');
         }
 
         // Try standard accessible role first with a reasonable timeout
