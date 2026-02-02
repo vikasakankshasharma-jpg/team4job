@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, setPersistence, inMemoryPersistence } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth'; // Changed to browserLocalPersistence
 import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -22,15 +22,17 @@ try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
     auth = getAuth(app);
-    // In CI/E2E, disable persistence to avoid IndexedDB security errors and flakes
+    // In CI/E2E, use browserLocalPersistence (localStorage) to avoid IndexedDB security errors
+    // but still maintain auth state across page reloads (which inMemoryPersistence fails to do).
     if (process.env.NEXT_PUBLIC_IS_CI === 'true') {
-        setPersistence(auth, inMemoryPersistence).catch(console.warn);
+        setPersistence(auth, browserLocalPersistence).catch(console.warn);
     }
 
     // Logic to handle Firestore persistence
     if (process.env.NEXT_PUBLIC_IS_CI === 'true') {
         try {
-            // First try to initialize with memory cache
+            // Firestore: Use memory cache to avoid IndexedDB errors.
+            // We don't generally need offline persistence for E2E tests.
             db = initializeFirestore(app, { localCache: memoryLocalCache() });
         } catch (e) {
             // If already initialized, use existing instance
