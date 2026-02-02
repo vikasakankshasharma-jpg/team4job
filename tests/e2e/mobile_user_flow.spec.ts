@@ -16,11 +16,29 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff)', () => 
     let jobId: string;
 
     // ---------- Login as Job Giver ----------
+    // ---------- Login as Job Giver ----------
+    // Register handler for potential "Resume Draft" dialog from previous runs
+    await page.addLocatorHandler(
+      page.getByRole('dialog', { name: 'Resume your draft?' }),
+      async () => {
+        console.log('[Mobile] Draft dialog detected, clicking Discard...');
+        await page.getByRole('button', { name: 'Discard' }).click();
+      }
+    );
+
     await helper.auth.loginAsJobGiver();
     await expect(page.locator('text=Active Jobs').first()).toBeVisible();
 
     // ---------- Post a Job ----------
     await helper.nav.goToPostJob();
+
+    // Check for "Resume Draft" dialog and discard if present - Handled by addLocatorHandler
+    // const resumeDialog = page.getByRole('dialog', { name: 'Resume your draft?' });
+    // if (await resumeDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
+    //  console.log('[Mobile] Draft found, discarding...');
+    //  await page.getByRole('button', { name: 'Discard' }).click();
+    //  await resumeDialog.waitFor({ state: 'hidden' });
+    // }
 
     await helper.form.selectDropdown('Category', TEST_JOB_DATA.category);
     await helper.form.fillInput('Job Title', uniqueJobTitle);
