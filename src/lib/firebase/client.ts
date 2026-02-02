@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getAuth, setPersistence, inMemoryPersistence } from 'firebase/auth';
+import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -20,8 +20,26 @@ let storage: any;
 
 try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
     auth = getAuth(app);
-    db = getFirestore(app);
+    // In CI/E2E, disable persistence to avoid IndexedDB security errors and flakes
+    if (process.env.NEXT_PUBLIC_IS_CI === 'true') {
+        setPersistence(auth, inMemoryPersistence).catch(console.warn);
+    }
+
+    // Logic to handle Firestore persistence
+    if (process.env.NEXT_PUBLIC_IS_CI === 'true') {
+        try {
+            // First try to initialize with memory cache
+            db = initializeFirestore(app, { localCache: memoryLocalCache() });
+        } catch (e) {
+            // If already initialized, use existing instance
+            db = getFirestore(app);
+        }
+    } else {
+        db = getFirestore(app);
+    }
+
     storage = getStorage(app);
 } catch (error) {
     console.warn("Firebase initialization skipped (expected during build/CI):", error);
