@@ -5,7 +5,7 @@ import { test, expect, Page } from '@playwright/test';
  * Verifies critical admin features including audit logging and RBAC
  */
 
-test.describe('Admin System Smoke Tests', () => {
+test.describe('Admin System Smoke Tests @smoke', () => {
 
     const loginAsAdmin = async (page: Page) => {
         console.log('Starting Admin Login...');
