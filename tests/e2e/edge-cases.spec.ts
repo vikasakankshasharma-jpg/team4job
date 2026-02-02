@@ -8,7 +8,7 @@ function generateUniqueJobTitle(base: string = 'Edge Case Job') {
     return `${base} ${Math.random().toString(36).substring(7)}`;
 }
 
-test.describe('Edge Case Tests', () => {
+test.describe('Edge Case Tests @edge', () => {
     test.setTimeout(90000); // 90 seconds per test to prevent CI hangs while allowing for retries
 
     test.beforeEach(async ({ page }) => {

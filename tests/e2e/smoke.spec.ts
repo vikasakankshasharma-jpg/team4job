@@ -6,7 +6,7 @@ import { TEST_ACCOUNTS } from '../fixtures/test-data';
  * Smoke Tests - Quick validation of critical functionality
  */
 
-test.describe('Smoke Tests', () => {
+test.describe('Smoke Tests @smoke', () => {
     test('User can login as Job Giver', async ({ page }) => {
         const helper = new TestHelper(page);
 
