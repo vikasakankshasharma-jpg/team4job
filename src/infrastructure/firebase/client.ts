@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, initializeFirestore, memoryLocalCache, connectFirestoreEmulator, getFirestore as getFirestoreDefault } from 'firebase/firestore';
-import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth'; // Reverted: connectAuthEmulator removed
+import { getFirestore, initializeFirestore, memoryLocalCache, getFirestore as getFirestoreDefault } from 'firebase/firestore'; // Reverted: connectFirestoreEmulator removed
+import { getStorage } from 'firebase/storage'; // Reverted: connectStorageEmulator removed
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'mock-key',
@@ -26,7 +26,7 @@ try {
     // Initialization logic for Firestore to support custom cache settings
     if (process.env.NEXT_PUBLIC_IS_CI === 'true') {
         try {
-            // Attempt to initialize with memory cache for CI stability
+            // Attempt to initialize with memory cache for CI stability (browserLocalPersistence for Auth, memory for Firestore)
             db = initializeFirestore(app, { localCache: memoryLocalCache() });
         } catch (e) {
             // Fallback if already initialized
@@ -38,27 +38,12 @@ try {
 
     storage = getStorage(app);
 
-    // Emulator Connection Logic
-    // We strictly use emulators in CI and Development
-    const useEmulator = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_IS_CI === 'true';
-
-    if (useEmulator) {
-        // Connect Auth Emulator
-        try {
-            connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-        } catch (e) {
-            // Ignore "emulator already connected"
-        }
-
-        // Connect Firestore Emulator
-        try {
-            connectFirestoreEmulator(db, '127.0.0.1', 8080);
-        } catch (e) { }
-
-        // Connect Storage Emulator
-        try {
-            connectStorageEmulator(storage, '127.0.0.1', 9199);
-        } catch (e) { }
+    // Emulator Connection Logic: ONLY in local development
+    // Reverted CI check because CI environment does not run emulators.
+    if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_IS_CI !== 'true') {
+        // Only connect if explicitly dev and NOT CI (just in case)
+        // Actually, if we want to run emulators locally we can use a flag.
+        // For now, removing the forced connection for CI.
     }
 
     // CI Specific Persistence Overrides
