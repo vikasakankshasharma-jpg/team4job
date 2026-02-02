@@ -47,8 +47,18 @@ test.describe('Secured Variation Orders', () => {
 
         await helper.form.fillInput('Job Work Start Date & Time', startDate);
         await page.click('button:has-text("Post Job")');
-        // Toast might be missed due to rapid redirect, so wait for URL
-        await page.waitForURL(/\/dashboard\/jobs\/JOB-/);
+        // Check for navigation OR error message
+        try {
+            await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 15000 });
+        } catch (e) {
+            // Check if error message is present
+            const errorMsg = await page.locator('.text-red-500').first().textContent().catch(() => null);
+            if (errorMsg) {
+                console.error("Post Job Failed with validation error:", errorMsg);
+                throw new Error(`Post Job validation failed: ${errorMsg}`);
+            }
+            throw e;
+        }
 
         jobId = await helper.job.getJobIdFromUrl();
         console.log(`Created Job: ${jobId}`);
