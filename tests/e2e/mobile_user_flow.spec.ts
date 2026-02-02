@@ -72,7 +72,8 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff)', () => 
 
     // Ensure dialog is fully stable
     await expect(bidBtn).toBeVisible();
-    await bidBtn.click(); // Try normal click first
+    await bidBtn.scrollIntoViewIfNeeded();
+    await bidBtn.click({ force: true }); // Try normal click first
 
     await helper.form.waitForToast('Bid Placed!');
 
