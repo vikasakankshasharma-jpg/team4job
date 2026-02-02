@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth'; // Changed to browserLocalPersistence
-import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { getAuth, setPersistence, browserLocalPersistence, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, initializeFirestore, memoryLocalCache, connectFirestoreEmulator, getFirestore as getFirestoreDefault } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'mock-key',
@@ -22,27 +22,51 @@ try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
     auth = getAuth(app);
-    // In CI/E2E, use browserLocalPersistence (localStorage) to avoid IndexedDB security errors
-    // but still maintain auth state across page reloads (which inMemoryPersistence fails to do).
-    if (process.env.NEXT_PUBLIC_IS_CI === 'true') {
-        setPersistence(auth, browserLocalPersistence).catch(console.warn);
-    }
 
-    // Logic to handle Firestore persistence
+    // Initialization logic for Firestore to support custom cache settings
     if (process.env.NEXT_PUBLIC_IS_CI === 'true') {
         try {
-            // Firestore: Use memory cache to avoid IndexedDB errors.
-            // We don't generally need offline persistence for E2E tests.
+            // Attempt to initialize with memory cache for CI stability
             db = initializeFirestore(app, { localCache: memoryLocalCache() });
         } catch (e) {
-            // If already initialized, use existing instance
-            db = getFirestore(app);
+            // Fallback if already initialized
+            db = getFirestoreDefault(app);
         }
     } else {
-        db = getFirestore(app);
+        db = getFirestoreDefault(app);
     }
 
     storage = getStorage(app);
+
+    // Emulator Connection Logic
+    // We strictly use emulators in CI and Development
+    const useEmulator = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_IS_CI === 'true';
+
+    if (useEmulator) {
+        // Connect Auth Emulator
+        try {
+            connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+        } catch (e) {
+            // Ignore "emulator already connected"
+        }
+
+        // Connect Firestore Emulator
+        try {
+            connectFirestoreEmulator(db, '127.0.0.1', 8080);
+        } catch (e) { }
+
+        // Connect Storage Emulator
+        try {
+            connectStorageEmulator(storage, '127.0.0.1', 9199);
+        } catch (e) { }
+    }
+
+    // CI Specific Persistence Overrides
+    if (process.env.NEXT_PUBLIC_IS_CI === 'true') {
+        // Use browserLocalPersistence (localStorage) instead of IndexedDB to avoid flakes
+        setPersistence(auth, browserLocalPersistence).catch(console.warn);
+    }
+
 } catch (error) {
     console.warn("Firebase initialization skipped (expected during build/CI):", error);
     const mockApp = { name: '[DEFAULT]', options: firebaseConfig, automaticDataCollectionEnabled: false };

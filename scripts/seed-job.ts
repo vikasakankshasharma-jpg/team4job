@@ -51,6 +51,10 @@ async function seedJob() {
 
         await jobRef.set(jobData);
 
+        // 1.1 Add Bid to Subcollection (Required for Client SDK Subscription)
+        const bidRef = jobRef.collection('bids').doc(mockBid.id);
+        await bidRef.set(mockBid);
+
         // 2. Fund Job (Transaction)
         const transactionId = `TXN-${jobId}`;
         const transactionRef = db.collection('transactions').doc(transactionId);
