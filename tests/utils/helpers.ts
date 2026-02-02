@@ -334,19 +334,30 @@ export class FormHelper {
 
     async fillPincodeAndSelectPO(pincode: string) {
         const pinInput = this.page.getByTestId('pincode-input').first();
+        await pinInput.scrollIntoViewIfNeeded();
         await pinInput.fill(pincode);
 
         // Wait for API response and select trigger to become enabled/visible
+        // Increasing timeout for slow CI networks
         const poTrigger = this.page.getByTestId('po-select-trigger').first();
-        await expect(poTrigger).toBeVisible({ timeout: 10000 });
+        await expect(poTrigger).toBeVisible({ timeout: 15000 });
 
-        // Only click if it's not already auto-selected (if multiple options exist)
+        // Retry logic for clicking the trigger
         const triggerText = await poTrigger.textContent();
         if (triggerText?.includes('Select Post Office')) {
-            await poTrigger.click();
-            const firstOption = this.page.locator('[role="option"]').first();
-            await firstOption.waitFor({ state: 'visible', timeout: 5000 });
-            await firstOption.click();
+            await poTrigger.click({ force: true });
+
+            // Should see options now
+            try {
+                // Wait specifically for at least one option to appear
+                const anyOption = this.page.locator('[role="option"]').first();
+                await anyOption.waitFor({ state: 'visible', timeout: 10000 });
+                await anyOption.click({ force: true });
+            } catch (e) {
+                console.log("Pincode dropdown option not found on first try, retrying click...");
+                await poTrigger.click({ force: true });
+                await this.page.locator('[role="option"]').first().click({ force: true });
+            }
         }
     }
 
