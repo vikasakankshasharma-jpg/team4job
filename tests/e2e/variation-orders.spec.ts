@@ -11,8 +11,13 @@ test.describe('Secured Variation Orders', () => {
     const jobGiverEmail = 'giver_variation@example.com';
 
     test('Full Variation Order Cycle', async ({ page }) => {
+        await page.addInitScript(() => {
+            (window as any).__DISABLE_AUTO_SAVE__ = true;
+        });
+        await page.setViewportSize({ width: 1280, height: 1000 });
         test.setTimeout(120000); // 2 minutes
         const helper = new TestHelper(page);
+        await helper.mockExternalAPIs();
 
         // 1. Job Giver Creates Job
         await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
@@ -21,8 +26,13 @@ test.describe('Secured Variation Orders', () => {
         await helper.form.fillTextarea('Job Description', 'A simple job for testing variations. Must be at least 50 chars long to pass validation.');
         await helper.form.fillPincodeAndSelectPO('110001'); // Delhi
         await helper.form.selectDropdown('Category', 'New Installation'); // Valid category
-        // Use simpler labels that partial match works better with, or are exact matches on the form
-        await helper.form.fillInput('Required Skills', 'Cabling, Drilling');
+        await page.waitForTimeout(500);
+
+        // Use simpler labels and clear first
+        const skillsInput = page.locator('[data-testid="skills-input"], input[placeholder*="Skills"]');
+        await skillsInput.scrollIntoViewIfNeeded();
+        await skillsInput.clear();
+        await skillsInput.fill('Cabling, Drilling');
 
         // Address Details (using testid support in helper: 'House' -> 'house-input')
         await helper.form.fillInput('House', 'Flat 101, Tech Park');
@@ -76,9 +86,14 @@ test.describe('Secured Variation Orders', () => {
         // Role already ensured
         // await helper.auth.ensureRole('Installer'); 
 
+        console.log('[E2E] Clicking Place Bid button...');
         await page.click('button:has-text("Place Bid")');
-        await page.fill('input[name="bidAmount"]', '500');
-        await page.fill('textarea[name="coverLetter"]', 'I am the best installer for this job.');
+        console.log('[E2E] Checking for bid amount input...');
+        // Use label based selector for better stability
+        const bidInput = page.getByLabel('Bid Amount (₹)');
+        await expect(bidInput).toBeVisible({ timeout: 10000 });
+        await bidInput.fill('500');
+        await page.getByRole('textbox', { name: 'Cover Letter' }).fill('I am the best installer for this job.');
         await page.click('div[role="dialog"] button:has-text("Place Bid")');
         await expect(page.locator('text=Bid Placed')).toBeVisible();
         await helper.auth.logout();

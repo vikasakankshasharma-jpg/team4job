@@ -39,6 +39,7 @@ interface BudgetTemplateSelectorProps {
 }
 
 export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTemplateSelectorProps) {
+    console.log(`[BudgetTemplateSelector] Rendered with currentValues: ${currentValues?.min} - ${currentValues?.max}`);
     const { user } = useUser();
     const { db } = useFirebase();
     const [templates, setTemplates] = useState<BudgetTemplate[]>([]);
@@ -116,7 +117,7 @@ export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTempla
                     if (template) onSelect(template);
                 }
             }}>
-                <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectTrigger className="w-[180px] h-8 text-xs" data-testid="budget-template-trigger">
                     <SelectValue placeholder="Load Budget..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -170,7 +171,7 @@ export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTempla
                                 onChange={(e) => setNewTemplateName(e.target.value)}
                             />
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-muted-foreground" data-testid="budget-range-display">
                             <span className="font-medium">Range:</span> ₹{currentValues?.min} - ₹{currentValues?.max}
                         </div>
                     </div>

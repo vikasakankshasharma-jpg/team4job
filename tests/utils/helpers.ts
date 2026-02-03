@@ -260,6 +260,7 @@ export class FormHelper {
             `input[name*="${label.toLowerCase().replace(/\s/g, '')}"]`
         ).first();
         await input.fill(value);
+        await input.blur(); // Trigger change/validation events
     }
 
     async fillTextarea(label: string, value: string) {
@@ -350,27 +351,61 @@ export class FormHelper {
         const pinInput = this.page.getByTestId('pincode-input').first();
         await pinInput.scrollIntoViewIfNeeded();
         await pinInput.fill(pincode);
+        await pinInput.blur(); // Ensure change event fires
+
+        // Wait for Loading spinner to disappear
+        await expect(this.page.locator('.animate-spin')).not.toBeVisible({ timeout: 10000 }).catch(() => { });
 
         // Wait for API response and select trigger to become enabled/visible
         // Increasing timeout for slow CI networks
-        const poTrigger = this.page.getByTestId('po-select-trigger').first();
-        await expect(poTrigger).toBeVisible({ timeout: 15000 });
+        const poTrigger = this.page.locator('[data-testid="po-select-trigger"], button[role="combobox"]:has-text("Select Post Office")').first();
+        await expect(poTrigger).toBeVisible({ timeout: 20000 });
+
+        // Wait for City input to be populated (indicates API success)
+        console.log('[FormHelper] Waiting for location data to load...');
+        const cityInput = this.page.locator('[data-testid="city-input"]');
+        await expect(cityInput).not.toHaveValue('', { timeout: 15000 });
+
+        const triggerText = await poTrigger.textContent();
+        if (triggerText && !triggerText.includes('Select Post Office') && triggerText.trim().length > 0) {
+            console.log("[FormHelper] Post Office already selected:", triggerText);
+            return;
+        }
 
         // Retry logic for clicking the trigger
-        const triggerText = await poTrigger.textContent();
-        if (triggerText?.includes('Select Post Office')) {
-            await poTrigger.click({ force: true });
-
-            // Should see options now
+        const maxRetries = 3;
+        for (let i = 0; i < maxRetries; i++) {
             try {
-                // Wait specifically for at least one option to appear
-                const anyOption = this.page.locator('[role="option"]').first();
-                await anyOption.waitFor({ state: 'visible', timeout: 10000 });
-                await anyOption.click({ force: true });
-            } catch (e) {
-                console.log("Pincode dropdown option not found on first try, retrying click...");
                 await poTrigger.click({ force: true });
-                await this.page.locator('[role="option"]').first().click({ force: true });
+                console.log("[FormHelper] Pincode dropdown clicked, waiting for options...");
+
+                // Wait for OPTION to be visible
+                const option = this.page.locator('[data-testid="po-select-item"], [role="option"]').first();
+                await option.waitFor({ state: 'visible', timeout: 8000 });
+
+                const optionText = await option.textContent();
+                console.log(`[FormHelper] Clicking post office option: ${optionText}`);
+                await option.click({ force: true });
+
+                // Wait for dropdown to close
+                await expect(this.page.locator('[role="option"]')).not.toBeVisible({ timeout: 5000 }).catch(() => { });
+                return; // Success
+            } catch (e) {
+                console.log(`[FormHelper] Pincode dropdown attempt ${i + 1} failed, trying keyboard fallback...`);
+                // Keyboard fallback
+                await poTrigger.focus();
+                await this.page.keyboard.press('ArrowDown');
+                await this.page.keyboard.press('Enter');
+
+                // Check if selected
+                const afterKeyboard = await poTrigger.textContent();
+                if (afterKeyboard && !afterKeyboard.includes('Select Post Office')) {
+                    console.log("[FormHelper] Pincode selected via keyboard.");
+                    return;
+                }
+
+                if (i === maxRetries - 1) throw e;
+                await this.page.waitForTimeout(1000);
             }
         }
     }
@@ -612,6 +647,30 @@ export class TestHelper {
         this.debug = new DebugHelper(page);
         // Auto-enable console logging for debugging
         this.debug.logConsoleErrors();
+    }
+
+    async mockExternalAPIs() {
+        console.log('[TestHelper] Mocking external APIs (Pincode, etc)...');
+        // Mock Pincode API
+        // Mock Pincode API - Broad pattern
+        await this.page.route('**/*pincode/*', async route => {
+            const url = route.request().url();
+            const pincode = url.split('/').pop();
+            console.log(`[Mock] Intercepted Pincode request: ${pincode}`);
+
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify([{
+                    Message: "Number of post office(s) found: 2",
+                    Status: "Success",
+                    PostOffice: [
+                        { Name: "Connaught Place", Description: null, BranchType: "Head Post Office", DeliveryStatus: "Delivery", Circle: "Delhi", District: "Central Delhi", Division: "New Delhi Central", Region: "Delhi", Block: "New Delhi", State: "Delhi", Country: "India", Pincode: "110001" },
+                        { Name: "Sansad Marg", Description: null, BranchType: "Sub Post Office", DeliveryStatus: "Non-Delivery", Circle: "Delhi", District: "Central Delhi", Division: "New Delhi Central", Region: "Delhi", Block: "New Delhi", State: "Delhi", Country: "India", Pincode: "110001" }
+                    ]
+                }])
+            });
+        });
     }
 
     async acceptCookies() {

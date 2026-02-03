@@ -41,6 +41,11 @@ export function useAutoSave(
             return;
         }
 
+        // Allow disabling auto-save via window property for testing
+        if (typeof window !== 'undefined' && (window as any).__DISABLE_AUTO_SAVE__) {
+            return;
+        }
+
         const draftData = getDraftData();
 
         // Check if there's actually any data to save

@@ -259,6 +259,9 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     },
   });
 
+  const watchedMin = useWatch({ control: form.control, name: "priceEstimate.min" }) || 0;
+  const watchedMax = useWatch({ control: form.control, name: "priceEstimate.max" }) || 0;
+
   const repostJobId = searchParams.get('repostJobId');
   const editJobId = searchParams.get('editJobId');
   const directAwardParam = searchParams.get('directAwardInstallerId');
@@ -282,7 +285,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       isGstInvoiceRequired: form.getValues('isGstInvoiceRequired'),
     }),
     {
-      enabled: !isEditMode && !isSubmitted && !repostJobId,
+      enabled: !isEditMode && !isSubmitted && !repostJobId && process.env.NEXT_PUBLIC_IS_CI !== 'true',
       onSave: (id) => setDraftId(id),
     }
   );
@@ -800,6 +803,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                           placeholder="e.g., Install 8 IP Cameras for an Office"
                           {...field}
                           data-testid="job-title-input"
+                          id="job-title-input-field"
                           className="h-12 md:h-10 text-base md:text-sm"
                         />
                       </FormControl>
@@ -1009,8 +1013,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                       toast({ title: "Budget Applied", description: `Applied "${template.name}" range.` });
                     }}
                     currentValues={{
-                      min: form.watch('priceEstimate.min') || 0,
-                      max: form.watch('priceEstimate.max') || 0
+                      min: watchedMin,
+                      max: watchedMax
                     }}
                   />
                 </div>
@@ -1164,6 +1168,6 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
           }
         }}
       />
-    </div>
+    </div >
   );
 }

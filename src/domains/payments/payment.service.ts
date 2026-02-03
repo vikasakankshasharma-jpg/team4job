@@ -29,18 +29,28 @@ export class PaymentService {
                 jobId: data.jobId,
                 payerId: data.userId,
                 amount: data.amount,
-                travelTip: data.travelTip,
+                travelTip: data.travelTip || 0,
                 commission,
                 jobGiverFee,
                 totalPaidByGiver,
                 payoutToInstaller: data.amount - commission + (data.travelTip || 0),
                 status: 'initiated',
                 transactionType: data.transactionType || 'JOB',
-                relatedTaskId: data.taskId,
-                description: data.description,
+                relatedTaskId: data.taskId || undefined,
+                description: data.description || undefined,
                 paymentGatewayOrderId: orderId,
                 createdAt: Timestamp.now() as any,
             };
+
+            // Remove any remaining undefined keys (belt and suspenders)
+            Object.keys(transaction).forEach(key => {
+                if ((transaction as any)[key] === undefined) {
+                    console.log(`[DEBUG] Removing undefined key from transaction: ${key}`);
+                    delete (transaction as any)[key];
+                }
+            });
+
+            console.log('[DEBUG] Final Transaction before Firestore:', JSON.stringify(transaction, null, 2));
 
             const db = getAdminDb();
             const tranRef = await db.collection(COLLECTIONS.TRANSACTIONS).add(transaction);
