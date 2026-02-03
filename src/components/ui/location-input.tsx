@@ -167,7 +167,7 @@ export function LocationInput({ name, label, placeholder, description, control, 
                     </SelectTrigger>
                     <SelectContent>
                         {postOffices.map((po) => (
-                            <SelectItem key={po.Name} value={po.Name}>
+                            <SelectItem key={po.Name} value={po.Name} data-testid="po-select-item">
                                 {po.Name}
                             </SelectItem>
                         ))}
