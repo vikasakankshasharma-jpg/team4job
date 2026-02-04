@@ -220,7 +220,10 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center h-24"><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></TableCell>
+                    <TableCell colSpan={6} className="text-center h-24">
+                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                      <span className="sr-only">Loading jobs...</span>
+                    </TableCell>
                   </TableRow>
                 ) : jobs.length > 0 ? jobs.map(job => (
                   <TableRow key={job.id}>
@@ -311,7 +314,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
   )
 }
 
-export default function PostedJobsClient() {
+export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] }) {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "active";
   const { user, role, loading: userLoading } = useUser();
@@ -320,8 +323,9 @@ export default function PostedJobsClient() {
   const { setHelp } = useHelp();
   const { toast } = useToast();
 
-  // Use new hook
-  const { jobs, loading: jobsLoading, refetch } = useMyJobs();
+  // Use new hook with initial data
+  // casting initialJobs to any to bypass potential type mismatch during refactor if any, ensuring Job[] match
+  const { jobs, loading: jobsLoading, refetch } = useMyJobs(initialJobs);
 
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<JobFilters>({});

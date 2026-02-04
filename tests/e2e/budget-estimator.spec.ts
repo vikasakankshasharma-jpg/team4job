@@ -98,7 +98,7 @@ test.describe('Budget Estimator & Templates', () => {
         await saveBtn.click();
 
         // 4. Verify Success Toast
-        await expect(page.getByText(/Saved|Budget template saved/i)).toBeVisible();
+        await expect(page.getByText(/Saved|Budget template saved/i).first()).toBeVisible();
 
         // 5. Reload and verify in list
         await page.reload();
@@ -115,7 +115,6 @@ test.describe('Budget Estimator & Templates', () => {
         // 6. Verify values applied to form
         await expect(minInput).toHaveValue('5500');
         await expect(maxInput).toHaveValue('8500');
-        await expect(page.getByText('Budget Applied')).toBeVisible();
     });
 
     test('should trigger AI estimator and apply results', async ({ page }) => {

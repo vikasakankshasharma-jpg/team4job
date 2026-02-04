@@ -1,9 +1,7 @@
-// domains/payments/payment.service.ts
 
 import { cashfreeClient } from './cashfree.client';
 import { CreatePaymentOrderInput, Transaction, PaymentStatus } from './payment.types';
-import { getAdminDb } from '@/infrastructure/firebase/admin';
-import { COLLECTIONS } from '@/infrastructure/firebase/firestore';
+import { paymentRepository } from './payment.repository';
 import { logger } from '@/infrastructure/logger';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -25,7 +23,7 @@ export class PaymentService {
             const totalPaidByGiver = data.amount + jobGiverFee + (data.travelTip || 0);
 
             // Create transaction record
-            const transaction: Partial<Transaction> = {
+            const transactionData: Partial<Transaction> = {
                 jobId: data.jobId,
                 payerId: data.userId,
                 amount: data.amount,
@@ -43,17 +41,15 @@ export class PaymentService {
             };
 
             // Remove any remaining undefined keys (belt and suspenders)
-            Object.keys(transaction).forEach(key => {
-                if ((transaction as any)[key] === undefined) {
-                    console.log(`[DEBUG] Removing undefined key from transaction: ${key}`);
-                    delete (transaction as any)[key];
+            Object.keys(transactionData).forEach(key => {
+                if ((transactionData as any)[key] === undefined) {
+                    delete (transactionData as any)[key];
                 }
             });
 
-            console.log('[DEBUG] Final Transaction before Firestore:', JSON.stringify(transaction, null, 2));
+            console.log('[DEBUG] Final Transaction before Repository:', JSON.stringify(transactionData, null, 2));
 
-            const db = getAdminDb();
-            const tranRef = await db.collection(COLLECTIONS.TRANSACTIONS).add(transaction);
+            const transactionId = await paymentRepository.create(transactionData);
 
             logger.userActivity(data.userId, 'payment_initiated', {
                 jobId: data.jobId,
@@ -70,7 +66,7 @@ export class PaymentService {
             });
 
             // Update transaction with order token
-            await tranRef.update({
+            await paymentRepository.update(transactionId, {
                 paymentGatewaySessionId: order.orderToken,
             });
 
@@ -87,29 +83,22 @@ export class PaymentService {
     async verifyPayment(orderId: string): Promise<void> {
         try {
             // Verify with Cashfree
-            const verification = await cashfreeClient.verifyPayment(orderId);
+            await cashfreeClient.verifyPayment(orderId);
 
-            // Update transaction status
-            const db = getAdminDb();
-            const snapshot = await db
-                .collection(COLLECTIONS.TRANSACTIONS)
-                .where('paymentGatewayOrderId', '==', orderId)
-                .limit(1)
-                .get();
+            // Find transaction
+            const transactionResult = await paymentRepository.findByOrderId(orderId);
 
-            if (snapshot.empty) {
+            if (!transactionResult) {
                 throw new Error('Transaction not found');
             }
 
-            const tranDoc = snapshot.docs[0];
-            await tranDoc.ref.update({
+            await paymentRepository.update(transactionResult.id, {
                 status: 'funded',
                 fundedAt: Timestamp.now() as any,
             });
 
-            const transaction = tranDoc.data() as Transaction;
-            logger.userActivity(transaction.payerId, 'payment_verified', {
-                jobId: transaction.jobId,
+            logger.userActivity(transactionResult.data.payerId, 'payment_verified', {
+                jobId: transactionResult.data.jobId,
                 orderId
             });
         } catch (error) {
@@ -123,21 +112,12 @@ export class PaymentService {
      */
     async releaseFunds(jobId: string, installerId: string): Promise<void> {
         try {
-            const db = getAdminDb();
+            const transactions = await paymentRepository.findByJobId(jobId);
+            const transaction = transactions.find(t => t.status === 'funded');
 
-            // Find transaction using only jobId to avoid composite index
-            const snapshot = await db
-                .collection(COLLECTIONS.TRANSACTIONS)
-                .where('jobId', '==', jobId)
-                .get();
-
-            const tranDoc = snapshot.docs.find(doc => doc.data().status === 'funded');
-
-            if (!tranDoc) {
+            if (!transaction) {
                 throw new Error('No funded transaction found for this job');
             }
-
-            const transaction = tranDoc.data() as Transaction;
 
             // Create payout
             const transferId = `transfer_${jobId}_${Date.now()}`;
@@ -148,7 +128,7 @@ export class PaymentService {
             });
 
             // Update transaction
-            await tranDoc.ref.update({
+            await paymentRepository.update(transaction.id, {
                 status: 'released',
                 releasedAt: Timestamp.now() as any,
                 payoutTransferId: transferId,
@@ -169,21 +149,12 @@ export class PaymentService {
      */
     async processRefund(jobId: string, reason: string): Promise<void> {
         try {
-            const db = getAdminDb();
+            const transactions = await paymentRepository.findByJobId(jobId);
+            const transaction = transactions.find(t => ['funded', 'initiated'].includes(t.status));
 
-            // Find transaction using only jobId to avoid composite index
-            const snapshot = await db
-                .collection(COLLECTIONS.TRANSACTIONS)
-                .where('jobId', '==', jobId)
-                .get();
-
-            const tranDoc = snapshot.docs.find(doc => ['funded', 'initiated'].includes(doc.data().status));
-
-            if (!tranDoc) {
+            if (!transaction) {
                 throw new Error('No refundable transaction found');
             }
-
-            const transaction = tranDoc.data() as Transaction;
 
             // Process refund
             const refundId = `refund_${jobId}_${Date.now()}`;
@@ -194,7 +165,7 @@ export class PaymentService {
             });
 
             // Update transaction
-            await tranDoc.ref.update({
+            await paymentRepository.update(transaction.id, {
                 status: 'refunded',
                 refundedAt: Timestamp.now() as any,
                 refundTransferId: refundId,
@@ -213,17 +184,14 @@ export class PaymentService {
      */
     async getTransactionHistory(userId: string): Promise<Transaction[]> {
         try {
-            const db = getAdminDb();
-            const payerSnap = await db.collection(COLLECTIONS.TRANSACTIONS)
-                .where('payerId', '==', userId)
-                .get();
-            const payeeSnap = await db.collection(COLLECTIONS.TRANSACTIONS)
-                .where('payeeId', '==', userId)
-                .get();
+            const [payerTransactions, payeeTransactions] = await Promise.all([
+                paymentRepository.findByPayerId(userId),
+                paymentRepository.findByPayeeId(userId)
+            ]);
 
             const txMap = new Map<string, Transaction>();
-            payerSnap.docs.forEach(d => txMap.set(d.id, { id: d.id, ...d.data() } as Transaction));
-            payeeSnap.docs.forEach(d => txMap.set(d.id, { id: d.id, ...d.data() } as Transaction));
+            payerTransactions.forEach(t => txMap.set(t.id, t));
+            payeeTransactions.forEach(t => txMap.set(t.id, t));
 
             return Array.from(txMap.values());
         } catch (error) {
@@ -234,10 +202,7 @@ export class PaymentService {
 
     async getTransaction(transactionId: string): Promise<Transaction | null> {
         try {
-            const db = getAdminDb();
-            const doc = await db.collection(COLLECTIONS.TRANSACTIONS).doc(transactionId).get();
-            if (!doc.exists) return null;
-            return { id: doc.id, ...doc.data() } as Transaction;
+            return await paymentRepository.findById(transactionId);
         } catch (error) {
             logger.error('Failed to fetch transaction', error, { transactionId });
             throw error;

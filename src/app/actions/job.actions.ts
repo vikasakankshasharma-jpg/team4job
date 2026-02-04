@@ -4,10 +4,11 @@ import { jobService } from '@/domains/jobs/job.service';
 import { userService } from '@/domains/users/user.service';
 import { CreateJobInput } from '@/domains/jobs/job.types';
 import { startWorkSchema } from '@/lib/validations/jobs';
-import { logger } from '@/infrastructure/logger';
+
 import { Role, Job } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
+import { logger } from '@/lib/system-logger';
 
 /**
  * Server Action to create a new job
@@ -28,9 +29,18 @@ export async function createJobAction(
         revalidatePath('/dashboard/jobs');
         revalidatePath('/dashboard/posted-jobs');
 
+        // Log Business Event
+        await logger.business({
+            eventType: 'JOB_POSTED',
+            actorId: userId,
+            entityId: jobId,
+            entityType: 'JOB',
+            metadata: { title: data.title, category: data.jobCategory }
+        });
+
         return { success: true, jobId };
     } catch (error: any) {
-        console.error('[Action] createJobAction failed:', error);
+        await logger.error(error, { action: 'createJobAction', data }, { id: userId, role: userRole });
         return {
             success: false,
             error: error.message || 'Failed to create job',
@@ -87,10 +97,19 @@ export async function updateJobAction(jobId: string, userId: string, data: Parti
 export async function awardJobAction(jobId: string, userId: string, installerId: string, acceptanceDeadline: string): Promise<{ success: boolean; error?: string }> {
     try {
         await jobService.awardJob(jobId, userId, installerId, new Date(acceptanceDeadline));
+
+        await logger.business({
+            eventType: 'BID_ACCEPTED',
+            actorId: userId,
+            entityId: jobId,
+            entityType: 'JOB',
+            metadata: { installerId, deadline: acceptanceDeadline }
+        });
+
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
     } catch (error: any) {
-        console.error('[Action] awardJobAction failed:', error);
+        await logger.error(error, { action: 'awardJobAction', jobId, installerId }, { id: userId, role: 'Job Giver' });
         return { success: false, error: error.message || 'Failed to award job' };
     }
 }
@@ -267,6 +286,71 @@ export async function batchJobAction(userId: string, jobIds: string[], action: '
         revalidatePath('/dashboard/posted-jobs');
         return { success: true };
     } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function raiseDisputeAction(
+    jobId: string,
+    userId: string,
+    reason: string,
+    description: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        // Direct DB Access or via Service. Using Service pattern for consistency.
+        // Assuming jobService has (or will have) raiseDispute.
+        // For now, let's implement the logic here using adminDb if service is missing, 
+        // OR better: use updateJobAction logic as base.
+
+        const db = getAdminDb();
+        const jobRef = db.collection('jobs').doc(jobId);
+
+        // 1. Check Job
+        const doc = await jobRef.get();
+        if (!doc.exists) throw new Error("Job not found");
+        const job = doc.data() as Job;
+
+        // 2. Validate Actor
+        if (job.jobGiverId !== userId && job.awardedInstallerId !== userId) {
+            throw new Error("Unauthorized to dispute this job");
+        }
+
+        // 3. Create Dispute Record
+        const disputeRef = db.collection('disputes').doc();
+        await disputeRef.set({
+            id: disputeRef.id,
+            jobId,
+            jobTitle: job.title,
+            requesterId: userId,
+            reason,
+            title: `Dispute: ${reason}`,
+            description,
+            status: 'Open',
+            createdAt: new Date(),
+            parties: {
+                jobGiverId: job.jobGiverId,
+                installerId: job.awardedInstallerId
+            }
+        });
+
+        // 4. Update Job Status
+        await jobRef.update({
+            status: 'disputed', // or 'Disputed'
+            disputeId: disputeRef.id
+        });
+
+        await logger.business({
+            eventType: 'DISPUTE_RAISED',
+            actorId: userId,
+            entityId: disputeRef.id,
+            entityType: 'DISPUTE',
+            metadata: { jobId, reason }
+        });
+
+        revalidatePath(`/dashboard/jobs/${jobId}`);
+        return { success: true };
+    } catch (error: any) {
+        await logger.error(error, { action: 'raiseDisputeAction', jobId, reason }, { id: userId, role: 'unknown' });
         return { success: false, error: error.message };
     }
 }

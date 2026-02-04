@@ -18,21 +18,28 @@ import { EmptyState } from "@/components/ui/empty-state";
 
 // ...
 
-export function RecentActivity() {
+export function RecentActivity({ initialActivities = [] }: { initialActivities?: Activity[] }) {
     const { user, role } = useUser();
     const { db } = useFirebase();
-    const [activities, setActivities] = useState<Activity[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [activities, setActivities] = useState<Activity[]>(initialActivities);
+    const [loading, setLoading] = useState(initialActivities.length === 0);
 
     useEffect(() => {
         if (!user || !db) return;
-        setLoading(true);
+        // If we have initial data, we aren't loading, but we still want live updates.
+        // However, for optimization, we might skip live updates or delay them.
+        // For now, let's keep live updates but set loading to false immediately if we have data.
+        if (initialActivities.length > 0) {
+            setLoading(false);
+        } else {
+            setLoading(true);
+        }
 
         const activitiesRef = collection(db, 'activities');
         const q = query(
             activitiesRef,
             where('userId', '==', user.id),
-            limit(50) // Get more to ensure we have enough for display after sort
+            limit(50)
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -52,7 +59,7 @@ export function RecentActivity() {
         });
 
         return () => unsubscribe();
-    }, [user, db]);
+    }, [user, db, initialActivities.length]); // Dependence on length to avoid reset loop
 
     if (loading) {
         return (

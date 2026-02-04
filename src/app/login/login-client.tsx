@@ -10,15 +10,21 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm } from "@/components/auth/login-form";
-import { SignUpWrapper } from "@/components/auth/signup-wrapper";
+// Dynamic import for SignUpWrapper to reduce initial bundle size (avoid loading Maps)
+import dynamic from 'next/dynamic';
 import { Logo } from "@/components/icons";
+
+const SignUpWrapper = dynamic(() => import('@/components/auth/signup-wrapper').then(mod => mod.SignUpWrapper), {
+  loading: () => <div className="h-96 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>,
+  ssr: false // Client-side interaction mostly
+});
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { HelpDialog } from "@/components/help-dialog";
 import { Button } from "@/components/ui/button";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, Loader2 } from "lucide-react";
 import { useHelp } from "@/hooks/use-help";
 
 export default function LoginClient() {
@@ -80,7 +86,7 @@ export default function LoginClient() {
           <ThemeToggle />
         </div>
       </header>
-      <main className="flex-grow flex items-center justify-center w-full">
+      <main id="main-content" className="flex-grow flex items-center justify-center w-full">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-md">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Log In</TabsTrigger>

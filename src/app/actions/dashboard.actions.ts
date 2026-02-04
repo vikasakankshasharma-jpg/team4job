@@ -12,7 +12,7 @@ export async function getDashboardStatsAction(userId: string) {
         const db = getAdminDb();
 
         // Fetch data in parallel
-        const [transactionsSnapshot, installerJobsSnapshot, jobGiverJobsSnapshot] = await Promise.all([
+        const [transactionsSnapshot, installerJobsSnapshot, jobGiverJobsSnapshot, quickMetrics] = await Promise.all([
             db.collection('transactions')
                 .where('payeeId', '==', userId)
                 .orderBy('createdAt', 'desc')
@@ -23,7 +23,8 @@ export async function getDashboardStatsAction(userId: string) {
                 .get(),
             db.collection('jobs')
                 .where('jobGiverId', '==', userId)
-                .get()
+                .get(),
+            jobService.getQuickMetrics(userId)
         ]);
 
         const transactions = transactionsSnapshot.docs.map(doc => {
@@ -81,7 +82,8 @@ export async function getDashboardStatsAction(userId: string) {
             data: {
                 transactions,
                 installerStats,
-                jobGiverStats
+                jobGiverStats,
+                quickMetrics
             }
         };
 

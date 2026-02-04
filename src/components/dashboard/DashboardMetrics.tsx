@@ -1,19 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useFirebase } from "@/hooks/use-user";
 import { QuickMetricCard } from "./quick-metric-card";
 import { Target, Clock, Star, Users } from "lucide-react";
-import { collection, query, where, getDocs, Timestamp } from "firebase/firestore";
-import { Job, User } from "@/lib/types";
+import { User } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-
-interface DashboardMetricsProps {
-    userId: string;
-    user: User;
-}
 
 interface QuickMetrics {
     avgBidsPerJob: number;
@@ -22,91 +13,14 @@ interface QuickMetrics {
     favoriteInstallers: number;
 }
 
-export function DashboardMetrics({ userId, user }: DashboardMetricsProps) {
-    const { db } = useFirebase();
+interface DashboardMetricsProps {
+    userId: string;
+    user: User;
+    metrics?: QuickMetrics;
+}
+
+export function DashboardMetrics({ userId, user, metrics }: DashboardMetricsProps) {
     const router = useRouter();
-    const [metrics, setMetrics] = useState<QuickMetrics | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchMetrics = async () => {
-            if (!db) return;
-
-            try {
-                setLoading(true);
-
-                // Calculate date 90 days ago
-                const ninetyDaysAgo = new Date();
-                ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-
-                // Query jobs from last 90 days
-                const jobsQuery = query(
-                    collection(db, "jobs"),
-                    where("jobGiverId", "==", userId),
-                    where("postedAt", ">=", Timestamp.fromDate(ninetyDaysAgo))
-                );
-
-                const jobsSnapshot = await getDocs(jobsQuery);
-                const jobs = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
-
-                // Calculate metrics with ZERO date-fns usage
-                let calculatedMetrics: QuickMetrics = {
-                    avgBidsPerJob: 0,
-                    avgTimeToFirstBid: "No data",
-                    pendingReviews: 0,
-                    favoriteInstallers: 0
-                };
-
-                try {
-                    calculatedMetrics = calculateMetricsSimple(jobs, user);
-                } catch (calcError) {
-                    console.error("Critical error in calculateMetrics, using defaults:", calcError);
-                }
-                setMetrics(calculatedMetrics);
-            } catch (error) {
-                console.error("Error fetching quick metrics:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchMetrics();
-    }, [db, userId, user]);
-
-    const calculateMetricsSimple = (jobs: Job[], currentUser: User): QuickMetrics => {
-        // 1. Average Bids Per Job
-        const jobsWithBids = jobs.filter(job => job.bids && job.bids.length > 0);
-        const totalBids = jobsWithBids.reduce((sum, job) => sum + (job.bids?.length || 0), 0);
-        const avgBidsPerJob = jobsWithBids.length > 0 ? totalBids / jobsWithBids.length : 0;
-
-        // 2. Average Time to First Bid - SIMPLIFIED, NO DATE FORMATTING
-        let avgTimeToFirstBid = "~";
-
-        // 3. Pending Reviews (Completed jobs without ratings)
-        const pendingReviews = jobs.filter(
-            job => job.status === "Completed" && !job.installerReview
-        ).length;
-
-        // 4. Favorite Installers Count
-        const favoriteInstallers = currentUser.favoriteInstallerIds?.length || 0;
-
-        return {
-            avgBidsPerJob: Math.round(avgBidsPerJob * 10) / 10,
-            avgTimeToFirstBid,
-            pendingReviews,
-            favoriteInstallers,
-        };
-    };
-
-    if (loading) {
-        return (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                {[1, 2, 3, 4].map(i => (
-                    <Skeleton key={i} className="h-32" />
-                ))}
-            </div>
-        );
-    }
 
     if (!metrics) return null;
 

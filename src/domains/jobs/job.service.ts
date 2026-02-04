@@ -604,6 +604,60 @@ export class JobService {
         }
         return count;
     }
+
+    /**
+     * Get Quick Metrics for Dashboard (Last 90 Days)
+     */
+    async getQuickMetrics(userId: string): Promise<{
+        avgBidsPerJob: number;
+        avgTimeToFirstBid: string;
+        pendingReviews: number;
+        favoriteInstallers: number;
+    }> {
+        // Calculate date 90 days ago
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+        const jobs = await jobRepository.fetchByJobGiverSince(userId, ninetyDaysAgo);
+
+        // 1. Average Bids Per Job
+        const jobsWithBids = jobs.filter(job => job.bids && job.bids.length > 0);
+        const totalBids = jobsWithBids.reduce((sum, job) => sum + (job.bids?.length || 0), 0);
+        const avgBidsPerJob = jobsWithBids.length > 0 ? Number((totalBids / jobsWithBids.length).toFixed(1)) : 0;
+
+        // 2. Average Time to First Bid
+        const avgTimeToFirstBid = "~";
+
+        // 3. Pending Reviews (Completed jobs without ratings)
+        const pendingReviews = jobs.filter(
+            job => (job.status === "Completed" || job.status === "completed") && !job.installerReview
+        ).length;
+
+        // 4. Favorite Installers - This should be fetched via User Domain, returning 0 as placeholder for service isolation
+        const favoriteInstallers = 0;
+
+        return {
+            avgBidsPerJob,
+            avgTimeToFirstBid,
+            pendingReviews,
+            favoriteInstallers
+        };
+    }
+    /**
+     * Get unique installer IDs that a job giver has worked with (completed jobs)
+     */
+    async getRelatedInstallerIds(userId: string): Promise<string[]> {
+        const jobs = await jobRepository.fetchCompletedJobsForJobGiver(userId);
+        const installerIds = new Set<string>();
+
+        jobs.forEach(job => {
+            if (job.awardedInstallerId) {
+                installerIds.add(job.awardedInstallerId);
+            }
+        });
+
+        return Array.from(installerIds);
+    }
 }
 
 export const jobService = new JobService();

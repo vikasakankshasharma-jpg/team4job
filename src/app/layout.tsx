@@ -12,6 +12,7 @@ import Script from 'next/script';
 import { GA_TRACKING_ID } from '@/lib/analytics';
 import { WebVitalsReporter } from "@/components/dashboard/analytics/web-vitals";
 import CookieBanner from "@/components/gdpr/cookie-banner";
+import { SystemStatusBanner } from "@/components/layout/system-status-banner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -88,6 +89,7 @@ export default function RootLayout({
             <UserProvider>
               <Providers>
                 <WebVitalsReporter />
+                <SystemStatusBanner />
                 {children}
               </Providers>
             </UserProvider>
