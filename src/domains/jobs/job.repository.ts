@@ -84,6 +84,44 @@ export class JobRepository {
     }
 
     /**
+     * Get completed jobs for a job giver (for finding related installers)
+     */
+    async fetchCompletedJobsForJobGiver(jobGiverId: string): Promise<Job[]> {
+        try {
+            const db = getAdminDb();
+            const snapshot = await db
+                .collection(COLLECTIONS.JOBS)
+                .where('jobGiverId', '==', jobGiverId)
+                .where('status', 'in', ['Completed', 'completed']) // Handle case sensitivity
+                .get();
+
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+        } catch (error) {
+            logger.error('Failed to fetch completed jobs', error, { userId: jobGiverId });
+            throw error;
+        }
+    }
+
+    /**
+     * Get jobs for a job giver filtered by date
+     */
+    async fetchByJobGiverSince(jobGiverId: string, sinceDate: Date): Promise<Job[]> {
+        try {
+            const db = getAdminDb();
+            const snapshot = await db
+                .collection(COLLECTIONS.JOBS)
+                .where('jobGiverId', '==', jobGiverId)
+                .where('postedAt', '>=', Timestamp.fromDate(sinceDate))
+                .get();
+
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+        } catch (error) {
+            logger.error('Failed to fetch jobs by job giver since date', error, { userId: jobGiverId });
+            throw error;
+        }
+    }
+
+    /**
      * Get open jobs (public browsing)
      */
     async fetchOpen(filters?: JobFilters, limit = 50): Promise<Job[]> {

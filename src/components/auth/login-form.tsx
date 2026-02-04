@@ -164,7 +164,6 @@ export function LoginForm() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent z-10"
                     onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4 text-muted-foreground" aria-hidden="true" />

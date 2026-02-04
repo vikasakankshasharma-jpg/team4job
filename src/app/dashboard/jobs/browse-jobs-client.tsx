@@ -72,11 +72,11 @@ const getLocationParts = (
   return { city: null, state: null };
 };
 
-export default function BrowseJobsClient() {
+export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] }) {
   const { user, role } = useUser();
   const router = useRouter();
-  const [jobs, setJobs] = React.useState<Job[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [jobs, setJobs] = React.useState<Job[]>(initialJobs || []);
+  const [loading, setLoading] = React.useState(!initialJobs);
   const { searchQuery } = useSearch();
   const { setHelp } = useHelp();
   const searchParams = useSearchParams();
@@ -185,8 +185,10 @@ export default function BrowseJobsClient() {
   }, []);
 
   React.useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+    if (!initialJobs) {
+      fetchJobs();
+    }
+  }, [fetchJobs, initialJobs]);
 
   React.useEffect(() => {
     setHelp({

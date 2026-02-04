@@ -23,7 +23,7 @@ import { Loader2, Star, Heart, UserX, Briefcase, Medal, Gem, Award, Search, User
 import { useUser, useFirebase } from '@/hooks/use-user';
 import { User, Job } from '@/lib/types';
 import { getRefId } from '@/lib/utils';
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import type { DocumentReference } from 'firebase/firestore';
 import { useHelp } from '@/hooks/use-help';
 import { Input } from '@/components/ui/input';
@@ -175,11 +175,11 @@ const InstallerCard = ({
 };
 
 
-export default function MyInstallersClient() {
+export default function MyInstallersClient({ initialInstallers }: { initialInstallers?: User[] }) {
   const { user, setUser, role } = useUser();
   const { db } = useFirebase();
-  const [loading, setLoading] = useState(true);
-  const [installers, setInstallers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(!initialInstallers);
+  const [installers, setInstallers] = useState<User[]>(initialInstallers || []);
   const [search, setSearch] = useState('');
   const { setHelp } = useHelp();
   const [selectedInstaller, setSelectedInstaller] = useState<User | null>(null);
@@ -214,51 +214,31 @@ export default function MyInstallersClient() {
   }, [setHelp]);
 
   const fetchRelatedInstallers = useCallback(async () => {
-    if (!db || !user) return;
+    if (!user) return;
     setLoading(true);
 
-    // Get all jobs posted by the current user that are completed
-    const jobsQuery = query(
-      collection(db, 'jobs'),
-      where('jobGiver', '==', doc(db, 'users', user.id)),
-      where('status', '==', 'Completed')
-    );
-    const jobsSnapshot = await getDocs(jobsQuery);
+    try {
+      const { getRelatedInstallersAction } = await import('@/app/actions/user.actions');
+      const res = await getRelatedInstallersAction(user.id);
 
-    const hiredInstallerIds = new Set<string>();
-
-    jobsSnapshot.docs.forEach(jobDoc => {
-      const jobData = jobDoc.data() as Job;
-      const awardedId = getRefId(jobData.awardedInstaller);
-      if (awardedId) hiredInstallerIds.add(awardedId);
-    });
-
-    // Also include manually favorited/blocked installers so they always appear in their respective lists
-    (user.favoriteInstallerIds || []).forEach(id => hiredInstallerIds.add(id));
-    (user.blockedInstallerIds || []).forEach(id => hiredInstallerIds.add(id));
-
-    const installerIdArray = Array.from(hiredInstallerIds);
-    const fetchedInstallers: User[] = [];
-
-    if (installerIdArray.length > 0) {
-      for (let i = 0; i < installerIdArray.length; i += 30) {
-        const chunk = installerIdArray.slice(i, i + 30);
-        const installersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
-        const installersSnapshot = await getDocs(installersQuery);
-        installersSnapshot.forEach(doc => {
-          fetchedInstallers.push({ id: doc.id, ...doc.data() } as User);
-        });
+      if (res.success && res.installers) {
+        setInstallers(res.installers);
+      } else {
+        console.error("Failed to fetch installers:", res.error);
       }
+    } catch (err) {
+      console.error("Error in fetchRelatedInstallers:", err);
+    } finally {
+      setLoading(false);
     }
-
-    setInstallers(fetchedInstallers);
-    setLoading(false);
-
-  }, [db, user]);
+  }, [user]);
 
   useEffect(() => {
-    fetchRelatedInstallers();
-  }, [db, user, fetchRelatedInstallers]);
+    // Only fetch client-side if we DO NOT have initial data
+    if (!initialInstallers && user) {
+      fetchRelatedInstallers();
+    }
+  }, [db, user, fetchRelatedInstallers, initialInstallers]);
 
   // Phase 11: Fetch metrics for all installers
   useEffect(() => {

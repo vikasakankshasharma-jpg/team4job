@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { jobClientService } from '@/domains/jobs/job.client.service';
 import { Job } from '@/lib/types'; // Using UI types for now, or ensure domain/jobs/job.types match
 import { useToast } from './use-toast';
 
@@ -15,12 +14,13 @@ export function useJobSubscription(jobId: string, initialData?: Job | null) {
     useEffect(() => {
         if (!jobId) return;
 
-        setLoading(true);
-        const unsubscribe = onSnapshot(
-            doc(db, 'jobs', jobId),
-            (docSnapshot) => {
-                if (docSnapshot.exists()) {
-                    setJob({ id: docSnapshot.id, ...docSnapshot.data() } as Job);
+        if (!job && !initialData) setLoading(true); // Only show loader if we don't have data
+
+        const unsubscribe = jobClientService.subscribeToJob(
+            jobId,
+            (updatedJob) => {
+                if (updatedJob) {
+                    setJob(updatedJob);
                     setError(null);
                 } else {
                     setJob(null);
@@ -29,7 +29,6 @@ export function useJobSubscription(jobId: string, initialData?: Job | null) {
                 setLoading(false);
             },
             (err) => {
-                console.error('Error in job subscription:', err);
                 setError(err);
                 setLoading(false);
                 toast({

@@ -9,10 +9,11 @@ interface UseMyJobsReturn {
     refetch: () => Promise<void>;
 }
 
-export function useMyJobs(): UseMyJobsReturn {
+export function useMyJobs(initialData?: Job[]): UseMyJobsReturn {
     const { user, role } = useUser();
-    const [jobs, setJobs] = useState<Job[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [jobs, setJobs] = useState<Job[]>(initialData || []);
+    // If we have initial data, we are not loading initially
+    const [loading, setLoading] = useState(!initialData);
     const [error, setError] = useState<string | null>(null);
 
     const fetchJobs = useCallback(async () => {
@@ -41,10 +42,10 @@ export function useMyJobs(): UseMyJobsReturn {
     }, [user, role]);
 
     useEffect(() => {
-        if (user) {
+        if (user && !initialData) {
             fetchJobs();
         }
-    }, [user, fetchJobs]);
+    }, [user, fetchJobs, initialData]);
 
     return { jobs, loading, error, refetch: fetchJobs };
 }

@@ -173,9 +173,9 @@ export function LocationInput({ name, label, placeholder, description, control, 
                         ))}
                     </SelectContent>
                 </Select>
-                <Input value={city} placeholder="City / District" disabled className="bg-muted/50 h-11" data-testid="city-input" />
-                <Input value={state} placeholder="State" disabled className="bg-muted/50 h-11" data-testid="state-input" />
-                <Input value={country} placeholder="Country" disabled className="bg-muted/50 h-11" data-testid="country-input" />
+                <Input value={city} placeholder="City / District" readOnly className="bg-muted/50 h-11 pointer-events-none" tabIndex={-1} data-testid="city-input" />
+                <Input value={state} placeholder="State" readOnly className="bg-muted/50 h-11 pointer-events-none" tabIndex={-1} data-testid="state-input" />
+                <Input value={country} placeholder="Country" readOnly className="bg-muted/50 h-11 pointer-events-none" tabIndex={-1} data-testid="country-input" />
             </div>
             {description && !fieldState.error && <FormDescription>{description}</FormDescription>}
             <FormMessage data-testid="pincode-error">{fieldState.error?.message || error}</FormMessage>

@@ -1,11 +1,7 @@
-
-"use client";
-
 import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MobileBottomNav } from '@/components/navigation/mobile-bottom-nav';
-import { SearchProvider } from '@/hooks/use-search';
-import { Providers } from "@/components/providers";
+import { DashboardProviders } from '@/components/dashboard/dashboard-providers';
 
 export default function DashboardLayout({
   children,
@@ -13,7 +9,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SearchProvider>
+    <DashboardProviders>
       <div className="flex min-h-screen w-full flex-row bg-muted/40 overflow-x-hidden">
         <DashboardSidebar />
         <div className="flex flex-1 flex-col sm:ml-14 min-w-0">
@@ -24,6 +20,6 @@ export default function DashboardLayout({
         </div>
       </div>
       <MobileBottomNav />
-    </SearchProvider>
+    </DashboardProviders>
   );
 }

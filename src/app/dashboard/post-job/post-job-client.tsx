@@ -57,6 +57,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { jobCategoryTemplates } from "@/lib/job-category-templates";
 import { VoiceInput } from "@/components/ui/voice-input";
 import { useAutoSave } from "@/hooks/use-auto-save";
+import { useFeatureFlag } from "@/lib/feature-flags-client";
 import { DraftRecoveryDialog } from "@/components/post-job/draft-recovery-dialog";
 import { TemplateSelector } from "@/components/post-job/template-selector";
 import { SaveTemplateDialog } from "@/components/post-job/save-template-dialog";
@@ -227,6 +228,9 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const { setHelp } = useHelp();
   const [isProcessing, setIsProcessing] = React.useState(false);
 
+  // Feature Flags
+  const { isEnabled: isAiEnabled } = useFeatureFlag('ENABLE_AI_GENERATION');
+
   // Draft & Template state
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [loadedDraft, setLoadedDraft] = useState<JobDraft | null>(null);
@@ -268,22 +272,24 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const isEditMode = !!editJobId;
 
   // Auto-save hook
-  const { saveStatus, draftId, saveNow, setDraftId } = useAutoSave(
-    () => ({
-      title: form.getValues('jobTitle'),
-      description: form.getValues('jobDescription'),
-      jobCategory: form.getValues('jobCategory'),
-      skills: form.getValues('skills')?.split(',').map(s => s.trim()),
-      budget: form.getValues('priceEstimate'),
-      location: form.getValues('address.cityPincode'),
-      address: form.getValues('address'),
-      fullAddress: form.getValues('address.fullAddress'),
+  const getDraftData = () => ({
+    title: form.getValues('jobTitle'),
+    description: form.getValues('jobDescription'),
+    jobCategory: form.getValues('jobCategory'),
+    skills: form.getValues('skills')?.split(',').map(s => s.trim()),
+    budget: form.getValues('priceEstimate'),
+    location: form.getValues('address.cityPincode'),
+    address: form.getValues('address'),
+    fullAddress: form.getValues('address.fullAddress'),
 
-      jobStartDate: form.getValues('jobStartDate') ? new Date(form.getValues('jobStartDate')) : undefined,
-      travelTip: form.getValues('travelTip'),
-      directAwardInstallerId: form.getValues('directAwardInstallerId'),
-      isGstInvoiceRequired: form.getValues('isGstInvoiceRequired'),
-    }),
+    jobStartDate: form.getValues('jobStartDate') ? new Date(form.getValues('jobStartDate')) : undefined,
+    travelTip: form.getValues('travelTip'),
+    directAwardInstallerId: form.getValues('directAwardInstallerId'),
+    isGstInvoiceRequired: form.getValues('isGstInvoiceRequired'),
+  });
+
+  const { saveStatus, draftId, saveNow, setDraftId } = useAutoSave(
+    getDraftData,
     {
       enabled: !isEditMode && !isSubmitted && !repostJobId && process.env.NEXT_PUBLIC_IS_CI !== 'true',
       onSave: (id) => setDraftId(id),
@@ -450,9 +456,9 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         <div className="space-y-4 text-sm">
           <p>Follow these steps to create a job listing and attract the best installers.</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Budget:</span> Provide a realistic budget range. Use the &quot;AI Suggest&quot; button to get a fair market estimate based on your job details.</li>
+            <li><span className="font-semibold">Budget:</span> Provide a realistic budget range. {isAiEnabled && "Use the \"AI Suggest\" button to get a fair market estimate based on your job details."}</li>
             <li><span className="font-semibold">Job Category:</span> Selecting the right category is crucial. This determines the checklist installers must agree to when bidding.</li>
-            <li><span className="font-semibold">AI-Powered Fields:</span> Use the &quot;AI Generate&quot; button next to the description to get a head start based on your job title.</li>
+            {isAiEnabled && <li><span className="font-semibold">AI-Powered Fields:</span> Use the &quot;AI Generate&quot; button next to the description to get a head start based on your job title.</li>}
             <li><span className="font-semibold">Location & Address:</span> Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.</li>
             <li><span className="font-semibold">Attachments:</span> Upload site photos, floor plans, or any other relevant documents to give installers a better understanding of the job.</li>
             {!isEditMode && <li><span className="font-semibold">Direct Award (Optional):</span> If you already know an installer on our platform, you can enter their public ID here to send them a private request to bid on this job.</li>}

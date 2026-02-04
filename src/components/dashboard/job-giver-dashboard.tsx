@@ -36,10 +36,11 @@ import { Transaction } from "@/lib/types";
 const SpendingHistoryChart = dynamic(() => import("@/components/dashboard/charts/job-giver-charts").then(mod => mod.SpendingHistoryChart), { ssr: false });
 const JobStatusChart = dynamic(() => import("@/components/dashboard/charts/job-giver-charts").then(mod => mod.JobStatusChart), { ssr: false });
 
-export function JobGiverDashboard({ stats, transactions, loading = false }: {
+export function JobGiverDashboard({ stats, transactions, loading = false, quickMetrics }: {
     stats: JobGiverStats,
     transactions: Transaction[],
-    loading?: boolean
+    loading?: boolean,
+    quickMetrics?: any
 }) {
     const { user } = useUser();
     const { setHelp } = useHelp();
@@ -127,7 +128,7 @@ export function JobGiverDashboard({ stats, transactions, loading = false }: {
             </div>
 
             {/* Phase 11: Quick Metrics Row */}
-            {user && <DashboardMetrics userId={user.id} user={user} />}
+            {user && <DashboardMetrics userId={user.id} user={user} metrics={quickMetrics} />}
 
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                 <StatCard

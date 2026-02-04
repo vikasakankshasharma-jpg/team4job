@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { jobClientService } from '@/domains/jobs/job.client.service';
 import { Bid } from '@/lib/types';
 
 export function useBidsSubscription(jobId: string, initialData?: Bid[]) {
@@ -16,18 +15,17 @@ export function useBidsSubscription(jobId: string, initialData?: Bid[]) {
             return;
         }
 
-        const bidsRef = collection(db, 'jobs', jobId, 'bids');
-        const q = query(bidsRef, orderBy('amount', 'asc'));
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const fetchedBids = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bid));
-            setBids(fetchedBids);
-            setLoading(false);
-        }, (err) => {
-            console.error("Error fetching bids:", err);
-            setError(err);
-            setLoading(false);
-        });
+        const unsubscribe = jobClientService.subscribeToBids(
+            jobId,
+            (fetchedBids) => {
+                setBids(fetchedBids as Bid[]); // Cast to Bid[] as service returns any[] for now or I should update service types
+                setLoading(false);
+            },
+            (err) => {
+                setError(err);
+                setLoading(false);
+            }
+        );
 
         return () => unsubscribe();
     }, [jobId]);

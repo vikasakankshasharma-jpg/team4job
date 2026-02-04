@@ -83,7 +83,7 @@ export function TemplateSelector({
                 Quick Start from Template
             </label>
             <Select onValueChange={handleValueChange} disabled={disabled}>
-                <SelectTrigger>
+                <SelectTrigger aria-label="Load a job template">
                     <SelectValue placeholder="Load from template..." />
                 </SelectTrigger>
                 <SelectContent>

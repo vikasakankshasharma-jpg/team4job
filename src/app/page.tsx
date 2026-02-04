@@ -53,7 +53,7 @@ export default function Home() {
         </nav>
       </header>
 
-      <main className="flex-grow">
+      <main id="main-content" className="flex-grow">
         <section className="py-20 md:py-32">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <Badge variant="outline" className="text-sm py-1 px-4 border-primary/50 text-primary mb-6">

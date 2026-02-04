@@ -31,6 +31,10 @@ export interface User {
     verificationStatus?: 'Pending' | 'Verified' | 'Rejected';
     portfolio?: PortfolioItem[];
 
+    // List Management
+    favoriteInstallerIds?: string[];
+    blockedInstallerIds?: string[];
+
     // Metadata
     createdAt?: Date | Timestamp;
     updatedAt?: Date | Timestamp;

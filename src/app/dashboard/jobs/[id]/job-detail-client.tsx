@@ -27,6 +27,7 @@ import { DocumentReference, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useJobSubscription } from "@/hooks/use-job-subscription";
 import { useBidsSubscription } from "@/hooks/use-bids-subscription";
+import { useFeatureFlag } from "@/lib/feature-flags-client";
 import axios from "axios";
 import { updateJobAction, approveJobAction } from "@/app/actions/job.actions";
 import { createPaymentOrderAction, createAddFundsOrderAction } from "@/app/actions/payment.actions";
@@ -142,7 +143,10 @@ import { StartWorkInput } from "@/components/job/start-work-input";
 import { CancelJobDialog } from "@/components/job/cancel-job-dialog";
 import { InstallerCompletionSection } from "@/components/job/installer-completion-section";
 import { JobGiverConfirmationSection } from "@/components/job/job-giver-confirmation-section";
+import { ReleasePaymentDialog } from "@/components/job/release-payment-dialog";
+import { DisputeDialog } from "@/components/job/dispute-dialog";
 import { completeJobWithOtpAction, awardJobAction } from "@/app/actions/job.actions";
+import { JobTimeline } from "@/components/job/job-timeline";
 
 
 declare const cashfree: any;
@@ -335,6 +339,10 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     const [reviewComment, setReviewComment] = React.useState('');
     const [rescheduleDate, setRescheduleDate] = React.useState<Date | undefined>(undefined);
     const [isVariationDialogOpen, setIsVariationDialogOpen] = React.useState(false);
+
+    // Feature Flags
+    const { isEnabled: isPaymentsEnabled } = useFeatureFlag('ENABLE_PAYMENTS');
+    const { isEnabled: isDisputesEnabled } = useFeatureFlag('ENABLE_DISPUTES_V2');
     // DEEP DEBUG LOGGING FOR E2E
     React.useEffect(() => {
         if (job) {
@@ -810,8 +818,17 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                 {/* Debug Logs */}
 
 
+
+
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold overflow-wrap-anywhere" data-testid="job-title">{job.title}</h1>
-                <Badge variant="outline" className="w-fit" data-testid="job-status-badge" data-status={job.status}>{job.status}</Badge>
+                <div className="flex flex-col gap-4 mt-2">
+                    <Badge variant="outline" className="w-fit" data-testid="job-status-badge" data-status={job.status}>{job.status}</Badge>
+                    <Card>
+                        <CardContent className="pt-6 pb-2">
+                            <JobTimeline status={job.status} userRole={isJobGiver ? 'Job Giver' : 'Installer'} />
+                        </CardContent>
+                    </Card>
+                </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
                     <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-2 lg:order-1">
@@ -1008,23 +1025,37 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                     )}
 
                                     {isJobGiver && (job.status === 'bid_accepted' || job.status === 'Pending Funding') && (
-                                        <Button className="w-full min-h-[44px]" onClick={handleStartCheckout} data-testid="proceed-payment-button">Proceed to Payment</Button>
+                                        isPaymentsEnabled ? (
+                                            <Button className="w-full min-h-[44px]" onClick={handleStartCheckout} data-testid="proceed-payment-button">Proceed to Payment</Button>
+                                        ) : (
+                                            <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground text-center">
+                                                Payments are currently disabled.
+                                            </div>
+                                        )
                                     )}
 
                                     {/* Release Payment */}
                                     {isJobGiver && job.status === 'work_submitted' && (
-                                        <Button className="w-full bg-green-600 hover:bg-green-700 min-h-[44px]" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
-                                            <CheckCircle className="mr-2 h-4 w-4" />
-                                            Approve Work & Release Payment
-                                        </Button>
+                                        isPaymentsEnabled ? (
+                                            <Button className="w-full bg-green-600 hover:bg-green-700 min-h-[44px]" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
+                                                <CheckCircle className="mr-2 h-4 w-4" />
+                                                Approve Work & Release Payment
+                                            </Button>
+                                        ) : (
+                                            <Button className="w-full" variant="outline" disabled>
+                                                Payment System Offline
+                                            </Button>
+                                        )
                                     )}
 
                                     {/* Raise Dispute */}
                                     {(job.status === 'in_progress' || job.status === 'work_submitted') && (
-                                        <Button variant="destructive" className="w-full border-red-200 text-red-600 hover:bg-red-50" onClick={() => setIsDisputeDialogOpen(true)}>
-                                            <ShieldAlert className="mr-2 h-4 w-4" />
-                                            Report Issue / Raise Dispute
-                                        </Button>
+                                        isDisputesEnabled ? (
+                                            <Button variant="destructive" className="w-full border-red-200 text-red-600 hover:bg-red-50" onClick={() => setIsDisputeDialogOpen(true)}>
+                                                <ShieldAlert className="mr-2 h-4 w-4" />
+                                                Report Issue / Raise Dispute
+                                            </Button>
+                                        ) : null
                                     )}
 
                                     {/* Leave Review */}
@@ -1258,6 +1289,30 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                 open={isAddFundsDialogOpen}
                                 onOpenChange={setIsAddFundsDialogOpen}
                                 platformSettings={platformSettings}
+                            />
+                        )
+                    }
+
+                    {
+                        isJobGiver && user && isPaymentsEnabled && (
+                            <ReleasePaymentDialog
+                                job={job}
+                                user={user}
+                                open={isReleaseDialogOpen}
+                                onOpenChange={setIsReleaseDialogOpen}
+                                onSuccess={() => window.location.reload()}
+                            />
+                        )
+                    }
+
+                    {
+                        (job.status === 'in_progress' || job.status === 'work_submitted' || job.status === 'completed') && user && isDisputesEnabled && (
+                            <DisputeDialog
+                                job={job}
+                                user={user}
+                                open={isDisputeDialogOpen}
+                                onOpenChange={setIsDisputeDialogOpen}
+                                onSuccess={() => window.location.reload()}
                             />
                         )
                     }

@@ -77,6 +77,7 @@ export function VoiceInput({ onTranscript, isProcessing = false, className }: Vo
                         className={cn("rounded-full transition-all duration-300", isListening && "animate-pulse ring-2 ring-red-400 ring-offset-2", className)}
                         onClick={toggleListening}
                         disabled={isProcessing}
+                        aria-label={isListening ? "Stop Listening" : "Speak to Auto-Fill"}
                     >
                         {isProcessing ? (
                             <Loader2 className="h-4 w-4 animate-spin" />

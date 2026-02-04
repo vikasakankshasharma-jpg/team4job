@@ -1,4 +1,7 @@
+"use client";
+
 import React from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, ArrowRight, Clock } from 'lucide-react';

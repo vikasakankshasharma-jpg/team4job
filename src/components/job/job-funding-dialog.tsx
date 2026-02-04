@@ -68,7 +68,7 @@ export function FundingBreakdownDialog({
                     </div>
                     <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-md text-xs text-blue-700 dark:text-blue-300">
                         <ShieldCheck className="h-3 w-3 inline mr-1" />
-                        Funds are held in <strong>Secure and Lock Payment</strong> until you approve the work.
+                        Funds are held in <strong>Secure Escrow</strong> until you approve the work. Only when you say "Job Done" do we release the money.
                     </div>
                 </div>
                 <DialogFooter>
