@@ -34,6 +34,7 @@ import { UserNav } from "@/components/user-nav";
 import { useUser } from "@/hooks/use-user";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../theme-toggle";
+import { LanguageToggle } from "../layout/language-toggle";
 import { HelpDialog } from "../help-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useSearch } from "@/hooks/use-search";
@@ -279,6 +280,7 @@ export function HeaderClient() {
                         <span className="sr-only">Help</span>
                     </Button>
                 </HelpDialog>
+                <LanguageToggle />
                 <ThemeToggle />
                 <NotificationBell />
                 <UserNav />

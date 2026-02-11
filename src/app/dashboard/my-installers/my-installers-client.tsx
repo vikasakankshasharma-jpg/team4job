@@ -38,6 +38,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SmartSearch } from '@/components/ui/smart-search';
 import Fuse from 'fuse.js';
+import { useTranslations } from 'next-intl';
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-5 w-5 text-yellow-700" />,
@@ -69,6 +70,8 @@ const InstallerCard = ({
   onHireAgain: () => void,
   onManageTags: () => void
 }) => {
+  const t = useTranslations('myInstallers');
+  const tInstallers = useTranslations('installers');
   const isFavorite = user.favoriteInstallerIds?.includes(installer.id);
   const isBlocked = user.blockedInstallerIds?.includes(installer.id);
 
@@ -83,8 +86,12 @@ const InstallerCard = ({
           <div className="flex-1">
             <CardTitle className="text-lg"><span className="hover:underline text-primary">{installer.name}</span></CardTitle>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {installer.installerProfile && tierIcons[installer.installerProfile.tier]}
-              <span>{installer.installerProfile?.tier} Tier</span>
+              {installer.installerProfile && (
+                <>
+                  {tierIcons[installer.installerProfile.tier]}
+                  <span>{tInstallers('tier', { tier: installer.installerProfile.tier as string })}</span>
+                </>
+              )}
               {installer.installerProfile?.verified && <ShieldCheck className="h-4 w-4 text-green-600" />}
             </div>
           </div>
@@ -92,37 +99,37 @@ const InstallerCard = ({
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground flex items-center gap-1"><Star className="h-4 w-4" /> Platform Rating</span>
+          <span className="text-muted-foreground flex items-center gap-1"><Star className="h-4 w-4" /> {t('platformRating')}</span>
           <span className="font-semibold">{installer.installerProfile?.rating.toFixed(1)} ({installer.installerProfile?.reviews})</span>
         </div>
 
         {/* Phase 11: Performance Metrics */}
         {metrics && metrics.jobsCompleted > 0 && (
           <div className="border-t pt-3 space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground">Your Relationship</p>
+            <p className="text-xs font-semibold text-muted-foreground">{t('yourRelationship')}</p>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Briefcase className="h-3 w-3" />
-                <span>{metrics.jobsCompleted} jobs</span>
+                <span>{t('jobsCompleted', { count: metrics.jobsCompleted })}</span>
               </div>
               <div className="flex items-center gap-1 text-muted-foreground">
                 <IndianRupee className="h-3 w-3" />
-                <span>₹{metrics.totalSpent.toLocaleString()}</span>
+                <span>{t('spent', { amount: metrics.totalSpent.toLocaleString() })}</span>
               </div>
               {metrics.avgRatingFromYou > 0 && (
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                  <span>{metrics.avgRatingFromYou.toFixed(1)} from you</span>
+                  <span>{t('ratingFromYou', { rating: metrics.avgRatingFromYou.toFixed(1) })}</span>
                 </div>
               )}
               <div className="flex items-center gap-1 text-green-600">
                 <Clock className="h-3 w-3" />
-                <span>{metrics.onTimePercentage}% on-time</span>
+                <span>{t('onTime', { percentage: metrics.onTimePercentage })}</span>
               </div>
             </div>
             {metrics.lastHiredDate && (
               <p className="text-xs text-muted-foreground">
-                Last hired: {formatDistanceToNow(metrics.lastHiredDate)} ago
+                {t('lastHired', { time: formatDistanceToNow(metrics.lastHiredDate as Date) })}
               </p>
             )}
           </div>
@@ -142,7 +149,7 @@ const InstallerCard = ({
         )}
 
         <div className="pt-2">
-          <p className="text-xs font-semibold text-muted-foreground mb-1">Top Skills</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-1">{tInstallers('topSkills')}</p>
           <div className="flex flex-wrap gap-1">
             {(installer.installerProfile?.skills || []).slice(0, 3).map(skill => (
               <Badge key={skill} variant="secondary" className="capitalize text-xs">{skill}</Badge>
@@ -155,18 +162,18 @@ const InstallerCard = ({
       <CardContent className="space-y-2" onClick={(e) => e.stopPropagation()}>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="flex-1" onClick={onInvite}>
-            <Mail className="mr-2 h-4 w-4" /> Invite
+            <Mail className="mr-2 h-4 w-4" /> {t('invite')}
           </Button>
           <Button size="sm" className="flex-1" onClick={onHireAgain}>
-            <Zap className="mr-2 h-4 w-4" /> Hire Again
+            <Zap className="mr-2 h-4 w-4" /> {t('hireAgain')}
           </Button>
         </div>
         <div className="flex gap-2">
           <Button variant={isFavorite ? 'default' : 'outline'} size="sm" className="flex-1" onClick={() => onUpdate(installer.id, isFavorite ? 'unfavorite' : 'favorite')}>
-            <Heart className="mr-2 h-4 w-4" /> {isFavorite ? 'Favorited' : 'Favorite'}
+            <Heart className="mr-2 h-4 w-4" /> {isFavorite ? tInstallers('favorited') : tInstallers('favorite')}
           </Button>
           <Button variant="outline" size="sm" className="flex-1" onClick={onManageTags}>
-            <Tag className="mr-2 h-4 w-4" /> Tags
+            <Tag className="mr-2 h-4 w-4" /> {t('tags')}
           </Button>
         </div>
       </CardContent>
@@ -176,6 +183,9 @@ const InstallerCard = ({
 
 
 export default function MyInstallersClient({ initialInstallers }: { initialInstallers?: User[] }) {
+  const t = useTranslations('myInstallers');
+  const tInstallers = useTranslations('installers');
+  const tCommon = useTranslations('common');
   const { user, setUser, role } = useUser();
   const { db } = useFirebase();
   const [loading, setLoading] = useState(!initialInstallers);
@@ -199,19 +209,19 @@ export default function MyInstallersClient({ initialInstallers }: { initialInsta
 
   useEffect(() => {
     setHelp({
-      title: 'My Installers',
+      title: t('guide.title'),
       content: (
         <div className="space-y-4 text-sm">
-          <p>This is your personal CRM for managing installers you&apos;ve worked with on the platform.</p>
+          <p>{t('guide.content')}</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Previously Hired:</span> A list of all installers who have completed jobs for you. This is your primary network.</li>
-            <li><span className="font-semibold">Favorites:</span> From your &quot;Previously Hired&quot; list, you can add installers to this curated list for quick access when you want to use the &quot;Direct Award&quot; feature.</li>
-            <li><span className="font-semibold">Blocked:</span> Add installers from your &quot;Previously Hired&quot; list here to prevent them from seeing or bidding on your future public jobs.</li>
+            <li><span className="font-semibold">{t('guide.hiredLabel')}</span> {t('guide.hiredDesc')}</li>
+            <li><span className="font-semibold">{t('guide.favoritesLabel')}</span> {t('guide.favoritesDesc')}</li>
+            <li><span className="font-semibold">{t('guide.blockedLabel')}</span> {t('guide.blockedDesc')}</li>
           </ul>
         </div>
       ),
     });
-  }, [setHelp]);
+  }, [setHelp, t]);
 
   const fetchRelatedInstallers = useCallback(async () => {
     if (!user) return;
@@ -362,18 +372,18 @@ export default function MyInstallersClient({ initialInstallers }: { initialInsta
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <CardTitle className="text-2xl">My Installers</CardTitle>
-            <CardDescription>Manage your network of previously hired, favorite, and blocked installers.</CardDescription>
+            <CardTitle className="text-2xl">{t('title')}</CardTitle>
+            <CardDescription>{t('description')}</CardDescription>
           </div>
           <div className="flex gap-2">
             {/* Phase 11: Tag Filter */}
             {allTags.length > 0 && (
               <Select value={selectedTag} onValueChange={setSelectedTag}>
                 <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Filter by tag" />
+                  <SelectValue placeholder={t('filterByTag')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Tags</SelectItem>
+                  <SelectItem value="all">{t('allTags')}</SelectItem>
                   {allTags.map(tag => (
                     <SelectItem key={tag} value={tag}>{tag}</SelectItem>
                   ))}
@@ -382,7 +392,7 @@ export default function MyInstallersClient({ initialInstallers }: { initialInsta
             )}
 
             <SmartSearch
-              placeholder="Search by name or skill..."
+              placeholder={tInstallers('searchPlaceholder')}
               onSearch={(query) => setSearch(query)}
               suggestions={searchSuggestions}
               enableHistory
@@ -394,18 +404,18 @@ export default function MyInstallersClient({ initialInstallers }: { initialInsta
       <CardContent>
         <Tabs defaultValue="hired">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="hired"><Briefcase className="mr-2 h-4 w-4" />Hired</TabsTrigger>
-            <TabsTrigger value="favorites"><Heart className="mr-2 h-4 w-4" />Favorites</TabsTrigger>
-            <TabsTrigger value="blocked"><UserX className="mr-2 h-4 w-4" />Blocked</TabsTrigger>
+            <TabsTrigger value="hired"><Briefcase className="mr-2 h-4 w-4" />{t('tabs.hired')}</TabsTrigger>
+            <TabsTrigger value="favorites"><Heart className="mr-2 h-4 w-4" />{t('tabs.favorites')}</TabsTrigger>
+            <TabsTrigger value="blocked"><UserX className="mr-2 h-4 w-4" />{t('tabs.blocked')}</TabsTrigger>
           </TabsList>
           <TabsContent value="hired" className="pt-6">
-            {renderTabContent(hired, "You haven't hired any installers yet.")}
+            {renderTabContent(hired, t('empty.hired'))}
           </TabsContent>
           <TabsContent value="favorites" className="pt-6">
-            {renderTabContent(favorites, "You haven't added any installers to your favorites.")}
+            {renderTabContent(favorites, t('empty.favorites'))}
           </TabsContent>
           <TabsContent value="blocked" className="pt-6">
-            {renderTabContent(blocked, "Your blocked list is empty.")}
+            {renderTabContent(blocked, t('empty.blocked'))}
           </TabsContent>
         </Tabs>
       </CardContent>

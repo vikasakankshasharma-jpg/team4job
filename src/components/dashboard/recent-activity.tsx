@@ -15,6 +15,8 @@ import { Activity } from "@/lib/types";
 import { onSnapshot } from "firebase/firestore";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useTranslations, useLocale } from 'next-intl';
+import { hi } from 'date-fns/locale';
 
 // ...
 
@@ -23,6 +25,9 @@ export function RecentActivity({ initialActivities = [] }: { initialActivities?:
     const { db } = useFirebase();
     const [activities, setActivities] = useState<Activity[]>(initialActivities);
     const [loading, setLoading] = useState(initialActivities.length === 0);
+    const t = useTranslations('dashboard');
+    const locale = useLocale();
+    const dateLocale = locale === 'hi' ? hi : undefined;
 
     useEffect(() => {
         if (!user || !db) return;
@@ -64,8 +69,8 @@ export function RecentActivity({ initialActivities = [] }: { initialActivities?:
     if (loading) {
         return (
             <Card className="col-span-1 md:col-span-2 lg:col-span-1">
-                <CardHeader><CardTitle>Recent Activity</CardTitle></CardHeader>
-                <CardContent><div className="h-[300px] flex items-center justify-center text-muted-foreground">Loading...</div></CardContent>
+                <CardHeader><CardTitle>{t('recentActivityTitle')}</CardTitle></CardHeader>
+                <CardContent><div className="h-[300px] flex items-center justify-center text-muted-foreground">{t('loading')}</div></CardContent>
             </Card>
         )
     }
@@ -75,9 +80,9 @@ export function RecentActivity({ initialActivities = [] }: { initialActivities?:
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <ActivityIcon className="h-5 w-5 text-primary" />
-                    Recent Activity
+                    {t('recentActivityTitle')}
                 </CardTitle>
-                <CardDescription>Your latest actions and updates.</CardDescription>
+                <CardDescription>{t('recentActivityDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-[300px] pr-4">
@@ -105,7 +110,7 @@ export function RecentActivity({ initialActivities = [] }: { initialActivities?:
                                         </span>
                                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                                             <Clock className="h-3 w-3" />
-                                            {formatDistanceToNow(toDate(item.timestamp), { addSuffix: true })}
+                                            {formatDistanceToNow(toDate(item.timestamp), { addSuffix: true, locale: dateLocale })}
                                         </span>
                                     </div>
                                 </div>
@@ -114,8 +119,8 @@ export function RecentActivity({ initialActivities = [] }: { initialActivities?:
                     ) : (
                         <EmptyState
                             icon={ActivityIcon}
-                            title="No recent activity"
-                            description="Your recent jobs and transactions will appear here."
+                            title={t('noRecentActivity')}
+                            description={t('noRecentActivityDesc')}
                             className="border-0 min-h-[250px] shadow-none"
                         />
                     )}

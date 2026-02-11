@@ -19,7 +19,7 @@ env:
   - variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
     value: AIzaSyBOm9kvA-1Ne3nl3GBL45dYXj8w_nwH6Ko
   - variable: GEMINI_API_KEY
-    value: AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE
+    value: AIzaSyAPZYz5SY2sefNo9Zocra23sR-wbfZ4doo
 
   # Cashfree (Currently TEST keys - Update to PROD when ready)
   - variable: CASHFREE_PAYMENTS_CLIENT_ID
@@ -49,6 +49,6 @@ env:
 
   # Gemini AI (Redundant with top-level GEMINI_API_KEY, but included for completeness)
   - variable: GOOGLE_GENAI_API_KEY
-    value: AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE
+    value: AIzaSyAPZYz5SY2sefNo9Zocra23sR-wbfZ4doo
   - variable: GOOGLE_API_KEY
-    value: AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE
+    value: AIzaSyAPZYz5SY2sefNo9Zocra23sR-wbfZ4doo

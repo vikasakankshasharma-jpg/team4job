@@ -75,6 +75,37 @@ export class UserRepository {
     }
 
     /**
+     * Fetch installers with pagination support (for public_profiles collection)
+     * @param limit - Number of installers to fetch
+     * @param lastMemberSince - Cursor for pagination (memberSince timestamp of last item)
+     * @param verified - Filter by verified status
+     */
+    async fetchInstallers(limit = 50, lastMemberSince?: Date, verified = true): Promise<User[]> {
+        try {
+            const db = getAdminDb();
+            let query = db
+                .collection(COLLECTIONS.PUBLIC_PROFILES)
+                .where('roles', 'array-contains', 'Installer');
+
+            if (verified) {
+                query = query.where('installerProfile.verified', '==', true);
+            }
+
+            query = query.orderBy('memberSince', 'desc');
+
+            if (lastMemberSince) {
+                query = query.startAfter(Timestamp.fromDate(lastMemberSince));
+            }
+
+            const snapshot = await query.limit(limit).get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+        } catch (error) {
+            logger.error('Failed to fetch installers', error, { limit, lastMemberSince });
+            throw error;
+        }
+    }
+
+    /**
      * Fetch public profiles for a list of user IDs
      */
     async fetchPublicProfiles(userIds: string[]): Promise<Map<string, any>> {

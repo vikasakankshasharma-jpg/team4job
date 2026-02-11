@@ -1,7 +1,8 @@
 
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Card,
     CardContent,
@@ -14,7 +15,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Users, Briefcase, IndianRupee, PieChart, Download, Award, Star, Calendar, Medal, Bot, HardDriveDownload, MessageSquare, ShieldCheck, Clock } from "lucide-react";
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadialBar, RadialBarChart, PolarGrid, PolarAngleAxis } from "recharts";
 import { User, Job, SubscriptionPlan, Transaction, Dispute } from "@/lib/types";
-import { collection, getDocs, query, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, query, doc, updateDoc, where, Timestamp, orderBy, limit } from "firebase/firestore";
 import { toDate, exportToCsv, calculateMonthlyPerformance, RankedInstaller } from "@/lib/utils";
 import { format, startOfMonth, subMonths, getMonth, getYear, differenceInMilliseconds } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,9 @@ import { useToast } from "@/hooks/use-toast";
 import { rewardTopPerformersAction } from "@/app/actions/ai.actions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { type ChartConfig } from "@/components/ui/chart";
+import { ReportsSkeleton } from "@/components/skeletons/reports-skeleton";
+import { GlobalErrorBoundary } from "@/components/dashboard/error-boundary";
+import { useTranslations } from "next-intl";
 
 
 interface KpiCardProps {
@@ -60,6 +64,7 @@ const tierIcons: Record<string, React.ReactNode> = {
 };
 
 function TopPerformersCard({ installers }: { installers: User[] }) {
+    const t = useTranslations('admin.reports');
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -73,22 +78,22 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
             const result = await rewardTopPerformersAction({});
             if (result.success && result.data && result.data.success) {
                 toast({
-                    title: "Automation Complete!",
+                    title: t('topPerformers.automation.complete'),
                     description: result.data.summary,
                     variant: 'default',
                 });
             } else {
                 toast({
-                    title: "Automation Failed",
-                    description: result.data?.summary || result.error || "Grant rewards failed",
+                    title: t('topPerformers.automation.failed'),
+                    description: result.data?.summary || result.error || t('topPerformers.automation.errorDesc'),
                     variant: 'destructive',
                 });
             }
         } catch (error: any) {
             console.error("Failed to run automation:", error);
             toast({
-                title: "Automation Error",
-                description: error.message || "Could not grant rewards. Please try again.",
+                title: t('topPerformers.automation.error'),
+                description: error.message || t('topPerformers.automation.errorDesc'),
                 variant: "destructive"
             });
         } finally {
@@ -103,12 +108,12 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
             <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <CardTitle>Top Performers Report</CardTitle>
-                        <CardDescription>Installers ranked by performance for {lastMonthName}.</CardDescription>
+                        <CardTitle>{t('topPerformers.title')}</CardTitle>
+                        <CardDescription>{t('topPerformers.description', { month: lastMonthName })}</CardDescription>
                     </div>
                     <Button onClick={handleRunAutomation} disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-                        Run Monthly Reward Automation
+                        {t('topPerformers.runAutomation')}
                     </Button>
                 </div>
             </CardHeader>
@@ -117,10 +122,10 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Rank</TableHead>
-                                <TableHead>Installer</TableHead>
-                                <TableHead>Monthly Points</TableHead>
-                                <TableHead>Rating</TableHead>
+                                <TableHead>{t('topPerformers.rank')}</TableHead>
+                                <TableHead>{t('topPerformers.installer')}</TableHead>
+                                <TableHead>{t('topPerformers.points')}</TableHead>
+                                <TableHead>{t('topPerformers.rating')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -137,7 +142,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                                                 <p className="font-medium">{installer.name}</p>
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                     {tierIcons[installer.installerProfile?.tier || 'Bronze']}
-                                                    <span>{installer.installerProfile?.tier} Tier</span>
+                                                    <span>{installer.installerProfile?.tier} {t('topPerformers.tier')}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -155,7 +160,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                     </Table>
                 </div>
                 {rankedInstallers.length === 0 && (
-                    <p className="text-center py-8 text-muted-foreground">Not enough data to generate performance report.</p>
+                    <p className="text-center py-8 text-muted-foreground">{t('topPerformers.empty')}</p>
                 )}
             </CardContent>
         </Card>
@@ -163,6 +168,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
 }
 
 function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
+    const t = useTranslations('admin.reports');
     const { toast } = useToast();
     const [selectedState, setSelectedState] = useState<string>('all');
     const [selectedCity, setSelectedCity] = useState<string>('all');
@@ -233,8 +239,8 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
     const handleDownload = () => {
         if (filteredInstallers.length === 0) {
             toast({
-                title: "Export Failed",
-                description: "No data to export for the current filter.",
+                title: t('leaderboard.exportFailed'),
+                description: t('leaderboard.exportFailedDesc'),
                 variant: "destructive"
             });
             return;
@@ -271,33 +277,33 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
             <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <CardTitle>All-Time Reputation Leaderboard</CardTitle>
-                        <CardDescription>Top installers by total reputation points, with geographic filters.</CardDescription>
+                        <CardTitle>{t('leaderboard.title')}</CardTitle>
+                        <CardDescription>{t('leaderboard.description')}</CardDescription>
                     </div>
                     <Button onClick={handleDownload} variant="outline" size="sm">
                         <Download className="mr-2 h-4 w-4" />
-                        Download Report
+                        {t('leaderboard.download')}
                     </Button>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
                     <Select value={selectedState} onValueChange={setSelectedState}>
-                        <SelectTrigger><SelectValue placeholder="Filter by State" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t('leaderboard.filterState')} /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All States</SelectItem>
+                            <SelectItem value="all">{t('leaderboard.allStates')}</SelectItem>
                             {locationData.states.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     <Select value={selectedCity} onValueChange={setSelectedCity} disabled={selectedState === 'all'}>
-                        <SelectTrigger><SelectValue placeholder="Filter by City" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t('leaderboard.filterCity')} /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Cities</SelectItem>
+                            <SelectItem value="all">{t('leaderboard.allCities')}</SelectItem>
                             {citiesForState.map(city => <SelectItem key={city} value={city}>{city}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     <Select value={selectedPincode} onValueChange={setSelectedPincode} disabled={selectedCity === 'all'}>
-                        <SelectTrigger><SelectValue placeholder="Filter by Pincode" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t('leaderboard.filterPincode')} /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Pincodes</SelectItem>
+                            <SelectItem value="all">{t('leaderboard.allPincodes')}</SelectItem>
                             {pincodesForCity.map(pincode => <SelectItem key={pincode} value={pincode}>{pincode}</SelectItem>)}
                         </SelectContent>
                     </Select>
@@ -312,12 +318,12 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
                             <YAxis type="category" dataKey="name" width={80} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                             <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} />
                             <Legend />
-                            <Bar dataKey="installerProfile.points" name="Total Points" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                            <Bar dataKey="installerProfile.points" name={t('leaderboard.totalPoints')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 ) : (
                     <div className="flex items-center justify-center h-[350px]">
-                        <p className="text-muted-foreground">No installers found for the selected filters.</p>
+                        <p className="text-muted-foreground">{t('leaderboard.empty')}</p>
                     </div>
                 )}
             </CardContent>
@@ -326,6 +332,7 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
 }
 
 function DataExportCard({ users, jobs, transactions, disputes }: { users: User[], jobs: Job[], transactions: Transaction[], disputes: Dispute[] }) {
+    const t = useTranslations('admin.reports');
     const { toast } = useToast();
     const [exporting, setExporting] = useState<string | null>(null);
 
@@ -363,14 +370,14 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
             }
 
             if (data.length === 0) {
-                toast({ title: "No Data", description: `There is no data to export for ${dataType}.`, variant: "destructive" });
+                toast({ title: t('export.noData'), description: t('export.noDataDesc', { type: dataType }), variant: "destructive" });
                 return;
             }
             exportToCsv(filename, data);
-            toast({ title: "Export Successful", description: `${data.length} records exported for ${dataType}.` });
+            toast({ title: t('export.success'), description: t('export.successDesc', { count: data.length, type: dataType }) });
         } catch (error) {
             console.error(`Failed to export ${dataType}:`, error);
-            toast({ title: "Export Failed", description: "An error occurred during the export.", variant: "destructive" });
+            toast({ title: t('export.failed'), description: t('export.failedDesc'), variant: "destructive" });
         } finally {
             setExporting(null);
         }
@@ -379,15 +386,15 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
     const ExportButton = ({ type }: { type: 'users' | 'jobs' | 'transactions' | 'disputes' }) => (
         <Button onClick={() => handleExport(type)} disabled={!!exporting}>
             {exporting === type ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-            Export All {type.charAt(0).toUpperCase() + type.slice(1)}
+            {t(`export.${type}`)}
         </Button>
     );
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><HardDriveDownload /> Data Export</CardTitle>
-                <CardDescription>Download a full CSV backup of your platform&apos;s core data collections.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><HardDriveDownload /> {t('export.title')}</CardTitle>
+                <CardDescription>{t('export.description')}</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <ExportButton type="users" />
@@ -400,6 +407,7 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
 }
 
 function DisputeResolutionReport({ disputes }: { disputes: Dispute[] }) {
+    const t = useTranslations('admin.reports');
     const report = useMemo(() => {
         const totalDisputes = disputes.length;
         if (totalDisputes === 0) return null;
@@ -433,10 +441,10 @@ function DisputeResolutionReport({ disputes }: { disputes: Dispute[] }) {
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>Dispute Resolution Report</CardTitle>
+                    <CardTitle>{t('disputes.title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex items-center justify-center h-[300px]">
-                    <p className="text-muted-foreground">No dispute data available.</p>
+                    <p className="text-muted-foreground">{t('disputes.empty')}</p>
                 </CardContent>
             </Card>
         );
@@ -453,31 +461,31 @@ function DisputeResolutionReport({ disputes }: { disputes: Dispute[] }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Dispute Resolution Report</CardTitle>
-                <CardDescription>An overview of support ticket performance.</CardDescription>
+                <CardTitle>{t('disputes.title')}</CardTitle>
+                <CardDescription>{t('disputes.description')}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6 md:grid-cols-2">
                 <div className="grid grid-cols-2 gap-4">
                     <Card className="flex flex-col items-center justify-center p-4 text-center">
                         <ShieldCheck className="h-6 w-6 mb-2 text-green-600" />
                         <p className="text-2xl font-bold">{report.resolutionRate.toFixed(0)}%</p>
-                        <p className="text-sm text-muted-foreground">Resolution Rate</p>
+                        <p className="text-sm text-muted-foreground">{t('disputes.resolutionRate')}</p>
                     </Card>
                     <Card className="flex flex-col items-center justify-center p-4 text-center">
                         <Clock className="h-6 w-6 mb-2 text-amber-500" />
                         <p className="text-2xl font-bold">{report.avgResolutionTimeDays.toFixed(1)}</p>
-                        <p className="text-sm text-muted-foreground">Avg. Days to Resolve</p>
+                        <p className="text-sm text-muted-foreground">{t('disputes.avgDays')}</p>
                     </Card>
                 </div>
                 <div>
-                    <h4 className="text-sm font-medium mb-2">Disputes by Category</h4>
+                    <h4 className="text-sm font-medium mb-2">{t('disputes.byCategory')}</h4>
                     <ResponsiveContainer width="100%" height={150}>
                         <BarChart data={report.categoryData} layout="vertical" margin={{ left: 20 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                             <XAxis type="number" />
                             <YAxis type="category" dataKey="name" width={100} fontSize={12} tickLine={false} axisLine={false} />
                             <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} />
-                            <Bar dataKey="value" name="Count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                            <Bar dataKey="value" name={t('disputes.count')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
@@ -487,6 +495,7 @@ function DisputeResolutionReport({ disputes }: { disputes: Dispute[] }) {
 }
 
 function FinancialSummaryCard({ transactions }: { transactions: Transaction[] }) {
+    const t = useTranslations('admin.reports');
     const summary = useMemo(() => {
         return transactions.reduce((acc, t) => {
             if (t.status === 'released') {
@@ -517,28 +526,28 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
     return (
         <Card className="col-span-full">
             <CardHeader>
-                <CardTitle>Financial Summary</CardTitle>
-                <CardDescription>A real-time overview of financial activities on the platform.</CardDescription>
+                <CardTitle>{t('financial.title')}</CardTitle>
+                <CardDescription>{t('financial.description')}</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
                 <Card className="p-4">
-                    <p className="text-sm font-medium">Total Volume</p>
+                    <p className="text-sm font-medium">{t('financial.volume')}</p>
                     <p className="text-2xl font-bold">₹{summary.totalVolume.toLocaleString()}</p>
                 </Card>
                 <Card className="p-4">
-                    <p className="text-sm font-medium">Platform Revenue</p>
+                    <p className="text-sm font-medium">{t('financial.revenue')}</p>
                     <p className="text-2xl font-bold text-green-600">₹{summary.platformRevenue.toLocaleString()}</p>
                 </Card>
                 <Card className="p-4">
-                    <p className="text-sm font-medium">Funds Released</p>
+                    <p className="text-sm font-medium">{t('financial.released')}</p>
                     <p className="text-2xl font-bold">₹{summary.totalReleased.toLocaleString()}</p>
                 </Card>
                 <Card className="p-4">
-                    <p className="text-sm font-medium">Funds Held</p>
+                    <p className="text-sm font-medium">{t('financial.held')}</p>
                     <p className="text-2xl font-bold">₹{summary.fundsHeld.toLocaleString()}</p>
                 </Card>
                 <Card className="p-4">
-                    <p className="text-sm font-medium">Refunds Processed</p>
+                    <p className="text-sm font-medium">{t('financial.refunds')}</p>
                     <p className="text-2xl font-bold">{summary.refundsCount}</p>
                 </Card>
             </CardContent>
@@ -548,45 +557,98 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
 
 
 export default function ReportsClient() {
+    const t = useTranslations('admin.reports');
     const { isAdmin, loading: userLoading } = useUser();
     const { db } = useFirebase();
     const router = useRouter();
-    const [users, setUsers] = React.useState<User[]>([]);
-    const [jobs, setJobs] = React.useState<Job[]>([]);
-    const [transactions, setTransactions] = React.useState<Transaction[]>([]);
-    const [disputes, setDisputes] = React.useState<Dispute[]>([]);
-    const [loading, setLoading] = React.useState(true);
+    const queryClient = useQueryClient();
+
+    // React Query Hooks
+    const { data: userData = { users: [], installers: [] }, isLoading: usersLoading } = useQuery({
+        queryKey: ['reports-users', isAdmin],
+        queryFn: async () => {
+            if (!db || !isAdmin) return { users: [], installers: [] };
+            const usersSnap = await getDocs(query(collection(db, 'users'), limit(1000)));
+            const users = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as User);
+            return {
+                users,
+                installers: users.filter(u => u.roles.includes('Installer'))
+            };
+        },
+        enabled: !!db && !!isAdmin,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+
+    const { data: jobs = [], isLoading: jobsLoading } = useQuery({
+        queryKey: ['reports-jobs', isAdmin],
+        queryFn: async () => {
+            if (!db || !isAdmin) return [];
+            const ninetyDaysAgo = new Date();
+            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+            const timestampFilter = Timestamp.fromDate(ninetyDaysAgo);
+
+            const jobsSnap = await getDocs(query(
+                collection(db, "jobs"),
+                where('postedAt', '>=', timestampFilter),
+                orderBy('postedAt', 'desc'),
+                limit(500)
+            ));
+            return jobsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Job);
+        },
+        enabled: !!db && !!isAdmin,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
+        queryKey: ['reports-transactions', isAdmin],
+        queryFn: async () => {
+            if (!db || !isAdmin) return [];
+            const ninetyDaysAgo = new Date();
+            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+            const timestampFilter = Timestamp.fromDate(ninetyDaysAgo);
+
+            const txSnap = await getDocs(query(
+                collection(db, "transactions"),
+                where('createdAt', '>=', timestampFilter),
+                orderBy('createdAt', 'desc'),
+                limit(500)
+            ));
+            return txSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Transaction);
+        },
+        enabled: !!db && !!isAdmin,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: disputes = [], isLoading: disputesLoading } = useQuery({
+        queryKey: ['reports-disputes', isAdmin],
+        queryFn: async () => {
+            if (!db || !isAdmin) return [];
+            const ninetyDaysAgo = new Date();
+            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+            const timestampFilter = Timestamp.fromDate(ninetyDaysAgo);
+
+            const dSnap = await getDocs(query(
+                collection(db, "disputes"),
+                where('createdAt', '>=', timestampFilter),
+                orderBy('createdAt', 'desc'),
+                limit(200)
+            ));
+            return dSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Dispute);
+        },
+        enabled: !!db && !!isAdmin,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const loading = usersLoading || jobsLoading || transactionsLoading || disputesLoading;
+    const users = userData.users;
+    const installers = userData.installers;
+    const lastFetchTime = 0; // Removed manual tracking, relied on Query staleness
 
     useEffect(() => {
         if (!userLoading && !isAdmin) {
             router.push('/dashboard');
         }
     }, [isAdmin, userLoading, router]);
-
-    const fetchData = React.useCallback(async () => {
-        if (!db || !isAdmin) return;
-        setLoading(true);
-        try {
-            const [usersSnapshot, jobsSnapshot, transactionsSnapshot, disputesSnapshot] = await Promise.all([
-                getDocs(query(collection(db, "users"))),
-                getDocs(query(collection(db, "jobs"))),
-                getDocs(query(collection(db, "transactions"))),
-                getDocs(query(collection(db, "disputes"))),
-            ]);
-            setUsers(usersSnapshot.docs.map(doc => doc.data() as User));
-            setJobs(jobsSnapshot.docs.map(doc => doc.data() as Job));
-            setTransactions(transactionsSnapshot.docs.map(doc => doc.data() as Transaction));
-            setDisputes(disputesSnapshot.docs.map(doc => doc.data() as Dispute));
-        } catch (error) {
-            console.error("Error fetching report data:", error);
-        } finally {
-            setLoading(false);
-        }
-    }, [db, isAdmin]);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
 
 
     const reportData = useMemo(() => {
@@ -644,11 +706,7 @@ export default function ReportsClient() {
     }, [users, jobs]);
 
     if (userLoading || !isAdmin || loading) {
-        return (
-            <div className="flex h-48 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        );
+        return <ReportsSkeleton />;
     }
 
     if (!reportData) {
@@ -658,68 +716,97 @@ export default function ReportsClient() {
     const { totalUsers, installerCount, jobGiverCount, totalJobs, fillRate, userGrowthData, jobStatusData, allInstallers } = reportData;
 
     return (
-        <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
-            <CardHeader className="p-0">
-                <CardTitle>Platform Reports</CardTitle>
-                <CardDescription>An overview of key metrics and trends across the platform.</CardDescription>
-            </CardHeader>
-
-            <FinancialSummaryCard transactions={transactions} />
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <KpiCard title="Total Users" value={totalUsers} description={`${installerCount} Installers, ${jobGiverCount} Job Givers`} icon={Users} iconBgColor="bg-blue-500" />
-                <KpiCard title="Total Jobs" value={totalJobs} description="All jobs created on the platform" icon={Briefcase} iconBgColor="bg-purple-500" />
-                <KpiCard title="Job Fill Rate" value={`${fillRate.toFixed(1)}%`} description="Of jobs posted are completed" icon={PieChart} iconBgColor="bg-amber-500" />
-            </div>
-
-            <DataExportCard users={users} jobs={jobs} transactions={transactions} disputes={disputes} />
-
-            <div className="grid gap-6 lg:grid-cols-2">
-                <TopPerformersCard installers={allInstallers} />
-                <AllTimeLeaderboardCard installers={allInstallers} />
-            </div>
-
-            <DisputeResolutionReport disputes={disputes} />
-
-            <div className="grid gap-6 lg:grid-cols-2">
-                <Card>
+        <GlobalErrorBoundary>
+            <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
+                <Card className="col-span-full">
                     <CardHeader>
-                        <CardTitle>User Growth</CardTitle>
-                        <CardDescription>New users registered in the last 6 months.</CardDescription>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div>
+                                <CardTitle>{t('title')}</CardTitle>
+                                <CardDescription>
+                                    {t('description')}
+                                    {lastFetchTime > 0 && (
+                                        <span className="text-xs ml-2">
+                                            {t('updated', { time: format(new Date(lastFetchTime), 'h:mm a') })}
+                                        </span>
+                                    )}
+                                </CardDescription>
+                            </div>
+                            <Button
+                                onClick={() => {
+                                    queryClient.invalidateQueries({ queryKey: ['reports-users'] });
+                                    queryClient.invalidateQueries({ queryKey: ['reports-jobs'] });
+                                    queryClient.invalidateQueries({ queryKey: ['reports-transactions'] });
+                                    queryClient.invalidateQueries({ queryKey: ['reports-disputes'] });
+                                }}
+                                disabled={loading}
+                                variant="outline"
+                                size="sm"
+                            >
+                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Clock className="mr-2 h-4 w-4" />}
+                                {t('refresh')}
+                            </Button>
+                        </div>
                     </CardHeader>
-                    <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <AreaChart data={userGrowthData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Area type="monotone" dataKey="Installers" stackId="1" stroke="#8884d8" fill="#8884d8" />
-                                <Area type="monotone" dataKey="Job Givers" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Job Status Distribution</CardTitle>
-                        <CardDescription>Current status of all jobs on the platform.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={jobStatusData} layout="vertical" margin={{ left: 20 }}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis type="number" />
-                                <YAxis type="category" dataKey="name" width={120} />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="value" name="Number of Jobs" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
+
+                <FinancialSummaryCard transactions={transactions} />
+
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <KpiCard title={t('kpi.totalUsers')} value={totalUsers} description={t('kpi.usersDesc', { installers: installerCount, givers: jobGiverCount })} icon={Users} iconBgColor="bg-blue-500" />
+                    <KpiCard title={t('kpi.totalJobs')} value={totalJobs} description={t('kpi.jobsDesc')} icon={Briefcase} iconBgColor="bg-purple-500" />
+                    <KpiCard title={t('kpi.fillRate')} value={`${fillRate.toFixed(1)}%`} description={t('kpi.fillRateDesc')} icon={PieChart} iconBgColor="bg-amber-500" />
+                </div>
+
+                <DataExportCard users={users} jobs={jobs} transactions={transactions} disputes={disputes} />
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <TopPerformersCard installers={allInstallers} />
+                    <AllTimeLeaderboardCard installers={allInstallers} />
+                </div>
+
+                <DisputeResolutionReport disputes={disputes} />
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('charts.userGrowth')}</CardTitle>
+                            <CardDescription>{t('charts.userGrowthDesc')}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <AreaChart data={userGrowthData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Area type="monotone" dataKey="Installers" stackId="1" stroke="#8884d8" fill="#8884d8" />
+                                    <Area type="monotone" dataKey="Job Givers" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('charts.jobStatus')}</CardTitle>
+                            <CardDescription>{t('charts.jobStatusDesc')}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={jobStatusData} layout="vertical" margin={{ left: 20 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis type="number" />
+                                    <YAxis type="category" dataKey="name" width={120} />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="value" name={t('charts.numberOfJobs')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
-        </div>
+        </GlobalErrorBoundary>
     );
 }

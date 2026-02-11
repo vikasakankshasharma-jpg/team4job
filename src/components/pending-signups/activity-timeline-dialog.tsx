@@ -7,6 +7,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Phone, Mail, MessageSquare, FileText, CheckCircle2, Clock } from "lucide-react";
@@ -43,6 +44,7 @@ export function ActivityTimelineDialog({
     activities,
     userName = "User",
 }: ActivityTimelineDialogProps) {
+    const t = useTranslations("admin.pendingSignups.dialogs.timeline");
     const sortedActivities = [...activities].sort((a, b) => {
         const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : a.timestamp.toMillis();
         const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : b.timestamp.toMillis();
@@ -58,16 +60,16 @@ export function ActivityTimelineDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
-                    <DialogTitle>Activity Timeline</DialogTitle>
+                    <DialogTitle>{t("title")}</DialogTitle>
                     <DialogDescription>
-                        Complete contact history for {userName}
+                        {t("description", { name: userName })}
                     </DialogDescription>
                 </DialogHeader>
 
                 <ScrollArea className="h-[400px] pr-4">
                     {sortedActivities.length === 0 ? (
                         <div className="text-center text-muted-foreground py-8">
-                            No activity recorded yet
+                            {t("empty")}
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -89,7 +91,7 @@ export function ActivityTimelineDialog({
                                                         {activity.action.replace('_', ' ')}
                                                     </p>
                                                     <p className="text-sm text-muted-foreground">
-                                                        by {activity.adminName}
+                                                        {t("by", { name: activity.adminName })}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -112,13 +114,13 @@ export function ActivityTimelineDialog({
 
                                             {activity.nextAction && (
                                                 <p className="text-sm text-primary">
-                                                    → Next: {activity.nextAction}
+                                                    → {t("next", { action: activity.nextAction })}
                                                 </p>
                                             )}
 
                                             {activity.followUpScheduled && (
                                                 <p className="text-sm text-orange-600">
-                                                    📅 Follow-up: {toDate(activity.followUpScheduled).toLocaleString()}
+                                                    📅 {t("followUp", { date: toDate(activity.followUpScheduled).toLocaleString() })}
                                                 </p>
                                             )}
                                         </div>

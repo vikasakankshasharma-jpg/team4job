@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,6 +15,7 @@ import { format } from 'date-fns';
 
 export default function NotificationCenterClient() {
     const { notifications, unreadCount, markAsRead, markAllAsRead, preferences, updatePreferences, loading } = useNotifications();
+    const t = useTranslations('notifications');
     const [activeTab, setActiveTab] = useState("all");
 
     const filteredNotifications = activeTab === "all"
@@ -30,8 +32,8 @@ export default function NotificationCenterClient() {
         <div className="space-y-6 max-w-4xl mx-auto p-4 md:p-6 pb-20 md:pb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Notifications</h1>
-                    <p className="text-sm md:text-base text-muted-foreground">Stay updated on your jobs and account activity.</p>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('title')}</h1>
+                    <p className="text-sm md:text-base text-muted-foreground">{t('description')}</p>
                 </div>
                 {unreadCount > 0 && (
                     <Button
@@ -40,22 +42,22 @@ export default function NotificationCenterClient() {
                         onClick={() => markAllAsRead()}
                         className="w-full sm:w-auto"
                     >
-                        Mark all as read
+                        {t('markAllRead')}
                     </Button>
                 )}
             </div>
 
             <Tabs defaultValue="all" onValueChange={setActiveTab} className="space-y-4">
                 <TabsList className="w-full grid grid-cols-3">
-                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="all">{t('tabs.all')}</TabsTrigger>
                     <TabsTrigger value="unread">
-                        <span className="hidden sm:inline">Unread</span>
+                        <span className="hidden sm:inline">{t('tabs.unread')}</span>
                         <span className="sm:hidden">📬</span>
                         {unreadCount > 0 && <span className="ml-1">({unreadCount})</span>}
                     </TabsTrigger>
                     <TabsTrigger value="settings" className="flex items-center justify-center gap-2">
                         <Settings className="h-3 w-3" />
-                        <span className="hidden sm:inline">Preferences</span>
+                        <span className="hidden sm:inline">{t('tabs.preferences')}</span>
                     </TabsTrigger>
                 </TabsList>
 
@@ -78,7 +80,7 @@ export default function NotificationCenterClient() {
                                 notifications={filteredNotifications}
                                 onMarkAsRead={markAsRead}
                                 className="h-[400px] md:h-[600px]"
-                                emptyMessage="You have no unread notifications."
+                                emptyMessage={t('emptyUnread')}
                             />
                         </CardContent>
                     </Card>
@@ -87,18 +89,18 @@ export default function NotificationCenterClient() {
                 <TabsContent value="settings">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Notification Preferences</CardTitle>
-                            <CardDescription>Manage how you want to be notified.</CardDescription>
+                            <CardTitle>{t('preferences.title')}</CardTitle>
+                            <CardDescription>{t('preferences.description')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-8">
 
                             {/* Global Channels */}
                             <div className="space-y-4">
-                                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Channels</h3>
+                                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('preferences.channels.title')}</h3>
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
-                                        <Label className="text-base">In-App Notifications</Label>
-                                        <p className="text-sm text-muted-foreground">Receive alerts within the platform</p>
+                                        <Label className="text-base">{t('preferences.channels.inApp')}</Label>
+                                        <p className="text-sm text-muted-foreground">{t('preferences.channels.inAppDesc')}</p>
                                     </div>
                                     <Switch
                                         checked={preferences?.channels.inApp ?? true}
@@ -108,8 +110,8 @@ export default function NotificationCenterClient() {
                                 <Separator />
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
-                                        <Label className="text-base">Email Notifications</Label>
-                                        <p className="text-sm text-muted-foreground">Receive digests and important updates via email</p>
+                                        <Label className="text-base">{t('preferences.channels.email')}</Label>
+                                        <p className="text-sm text-muted-foreground">{t('preferences.channels.emailDesc')}</p>
                                     </div>
                                     <Switch
                                         checked={preferences?.channels.email ?? true}
@@ -120,23 +122,23 @@ export default function NotificationCenterClient() {
 
                             {/* Categories */}
                             <div className="space-y-4">
-                                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Categories</h3>
+                                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('preferences.categories.title')}</h3>
                                 <div className="grid gap-4">
                                     <CategoryToggle
-                                        label="Bidding Activity"
-                                        desc="New bids, bid updates, shortlists"
+                                        label={t('preferences.categories.bidding')}
+                                        desc={t('preferences.categories.biddingDesc')}
                                         checked={preferences?.categories.bidding.enabled ?? true}
                                         onChange={(c) => updatePreferences(preferences?.userId!, { categories: { ...preferences?.categories!, bidding: { ...preferences?.categories.bidding!, enabled: c } } })}
                                     />
                                     <CategoryToggle
-                                        label="Payments & finance"
-                                        desc="Invoices, payment success/failure"
+                                        label={t('preferences.categories.payments')}
+                                        desc={t('preferences.categories.paymentsDesc')}
                                         checked={preferences?.categories.payments.enabled ?? true}
                                         onChange={(c) => updatePreferences(preferences?.userId!, { categories: { ...preferences?.categories!, payments: { ...preferences?.categories.payments!, enabled: c } } })}
                                     />
                                     <CategoryToggle
-                                        label="Job Updates"
-                                        desc="Status changes, work submissions, deadlines"
+                                        label={t('preferences.categories.jobs')}
+                                        desc={t('preferences.categories.jobsDesc')}
                                         checked={preferences?.categories.deadlines.enabled ?? true}
                                         onChange={(c) => updatePreferences(preferences?.userId!, { categories: { ...preferences?.categories!, deadlines: { ...preferences?.categories.deadlines!, enabled: c } } })}
                                     />
@@ -145,11 +147,11 @@ export default function NotificationCenterClient() {
 
                             {/* Quiet Hours */}
                             <div className="space-y-4">
-                                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Quiet Hours</h3>
+                                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('preferences.quietHours.title')}</h3>
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
-                                        <Label className="text-base">Enable Quiet Hours</Label>
-                                        <p className="text-sm text-muted-foreground">Pause notifications during night time</p>
+                                        <Label className="text-base">{t('preferences.quietHours.enable')}</Label>
+                                        <p className="text-sm text-muted-foreground">{t('preferences.quietHours.enableDesc')}</p>
                                     </div>
                                     <Switch
                                         checked={preferences?.quietHours.enabled ?? false}
@@ -159,7 +161,7 @@ export default function NotificationCenterClient() {
                                 {preferences?.quietHours.enabled && (
                                     <div className="flex items-center gap-4 mt-2">
                                         <div className="grid gap-1.5">
-                                            <Label htmlFor="start-time">Start Time</Label>
+                                            <Label htmlFor="start-time">{t('preferences.quietHours.startTime')}</Label>
                                             <input
                                                 type="time"
                                                 id="start-time"
@@ -169,7 +171,7 @@ export default function NotificationCenterClient() {
                                             />
                                         </div>
                                         <div className="grid gap-1.5">
-                                            <Label htmlFor="end-time">End Time</Label>
+                                            <Label htmlFor="end-time">{t('preferences.quietHours.endTime')}</Label>
                                             <input
                                                 type="time"
                                                 id="end-time"

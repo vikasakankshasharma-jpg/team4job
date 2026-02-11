@@ -14,6 +14,7 @@ import { Settings, FileText, Sparkles } from 'lucide-react';
 import { JobTemplate, getTemplates } from '@/lib/api/drafts';
 import { useFirebase, useUser } from '@/hooks/use-user';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslations } from 'next-intl';
 
 interface TemplateSelectorProps {
     onTemplateSelect: (template: JobTemplate) => void;
@@ -28,6 +29,7 @@ export function TemplateSelector({
 }: TemplateSelectorProps) {
     const { user } = useUser();
     const { db } = useFirebase();
+    const tJob = useTranslations('job');
     const [templates, setTemplates] = useState<JobTemplate[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -68,9 +70,9 @@ export function TemplateSelector({
         return (
             <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
                 <FileText className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                <p>No templates yet</p>
+                <p>{tJob('noTemplates')}</p>
                 <p className="text-xs mt-1">
-                    Save this job as a template to reuse later
+                    {tJob('saveAsTemplateHelp')}
                 </p>
             </div>
         );
@@ -80,11 +82,11 @@ export function TemplateSelector({
         <div className="space-y-2">
             <label className="text-sm font-medium flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
-                Quick Start from Template
+                {tJob('quickStart')}
             </label>
             <Select onValueChange={handleValueChange} disabled={disabled}>
-                <SelectTrigger aria-label="Load a job template">
-                    <SelectValue placeholder="Load from template..." />
+                <SelectTrigger aria-label={tJob('loadFromTemplate')}>
+                    <SelectValue placeholder={tJob('loadFromTemplate')} />
                 </SelectTrigger>
                 <SelectContent>
                     {templates.map((template) => (
@@ -97,7 +99,7 @@ export function TemplateSelector({
                                     </Badge>
                                     {template.useCount > 0 && (
                                         <span className="text-xs text-muted-foreground">
-                                            Used {template.useCount}×
+                                            {tJob('usedCount', { count: template.useCount })}
                                         </span>
                                     )}
                                 </div>
@@ -108,7 +110,7 @@ export function TemplateSelector({
                     <SelectItem value="manage">
                         <div className="flex items-center gap-2 text-primary">
                             <Settings className="w-4 h-4" />
-                            Manage Templates
+                            {tJob('manageTemplates')}
                         </div>
                     </SelectItem>
                 </SelectContent>

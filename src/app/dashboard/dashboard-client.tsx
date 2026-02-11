@@ -7,16 +7,20 @@ import { Role } from "@/lib/types";
 import dynamic from "next/dynamic";
 
 const AdminDashboardView = dynamic(() => import("@/components/dashboard/admin-dashboard-view").then(mod => mod.AdminDashboardView), {
-  loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />
+  loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />,
+  ssr: false
 });
 const SupportTeamDashboard = dynamic(() => import("@/components/dashboard/support-dashboard").then(mod => mod.SupportTeamDashboard), {
-  loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />
+  loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />,
+  ssr: false
 });
 const InstallerDashboard = dynamic(() => import("@/components/dashboard/installer-dashboard").then(mod => mod.InstallerDashboard), {
-  loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />
+  loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />,
+  ssr: false
 });
 const JobGiverDashboard = dynamic(() => import("@/components/dashboard/job-giver-dashboard").then(mod => mod.JobGiverDashboard), {
-  loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />
+  loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />,
+  ssr: false
 });
 
 import { JobGiverStats, InstallerStats } from "@/domains/jobs/job.types";
@@ -52,7 +56,7 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
       case "Installer":
         return (
           <InstallerDashboard
-            stats={initialData?.installerStats || { openJobs: 0, myBids: 0, jobsWon: 0, projectedEarnings: 0, totalEarnings: 0 }}
+            stats={initialData?.installerStats || { openJobs: 0, myBids: 0, jobsWon: 0, projectedEarnings: 0, totalEarnings: 0, activeJobs: 0, completedJobs: 0 }}
             transactions={initialData?.transactions || []}
             loading={!initialData}
           />

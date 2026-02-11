@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 // import axios from "axios"; // Removed
 import { useSearchParams, useRouter } from "next/navigation";
-
+import { useTranslations } from "next-intl";
 
 declare const cashfree: any;
 
@@ -33,12 +33,13 @@ function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () =
   const { user } = useUser();
   const { db } = useFirebase();
   const { toast } = useToast();
+  const t = useTranslations('billing');
   const [couponCode, setCouponCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRedeem = async () => {
     if (!couponCode.trim()) {
-      toast({ title: "Please enter a coupon code.", variant: "destructive" });
+      toast({ title: t('pleaseEnterCode'), variant: "destructive" });
       return;
     }
     if (!db || !user) return;
@@ -48,7 +49,7 @@ function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () =
     const couponSnap = await getDoc(couponRef);
 
     if (!couponSnap.exists()) {
-      toast({ title: "Invalid Coupon Code", description: "The code you entered does not exist.", variant: "destructive" });
+      toast({ title: t('invalidCode'), description: t('codeNotExist'), variant: "destructive" });
       setIsLoading(false);
       return;
     }
@@ -57,7 +58,7 @@ function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () =
     const now = new Date();
 
     if (!coupon.isActive || toDate(coupon.validUntil) < now || toDate(coupon.validFrom) > now) {
-      toast({ title: "Coupon Not Valid", description: "This coupon is either inactive or expired.", variant: "destructive" });
+      toast({ title: t('codeNotValid'), description: t('codeExpired'), variant: "destructive" });
       setIsLoading(false);
       return;
     }
@@ -68,7 +69,7 @@ function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () =
     const userRole = userRoles.includes('Installer') ? 'Installer' : 'Job Giver';
 
     if (coupon.applicableToRole !== 'Any' && coupon.applicableToRole !== userRole) {
-      toast({ title: "Coupon Not Applicable", description: `This coupon is only valid for ${coupon.applicableToRole}s.`, variant: "destructive" });
+      toast({ title: t('codeNotApplicable'), description: t('codeRoleError', { role: coupon.applicableToRole }), variant: "destructive" });
       setIsLoading(false);
       return;
     }
@@ -86,8 +87,8 @@ function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () =
 
     onSubscriptionUpdate();
     toast({
-      title: "Coupon Redeemed!",
-      description: `Your subscription has been extended by ${coupon.durationDays} days.`,
+      title: t('codeRedeemed'),
+      description: t('codeRedeemedDesc', { days: coupon.durationDays }),
       variant: "default"
     });
     setCouponCode('');
@@ -97,13 +98,13 @@ function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () =
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Ticket className="h-5 w-5" /> Redeem a Coupon</CardTitle>
-        <CardDescription>Have a coupon code? Enter it here to extend your subscription or get premium features.</CardDescription>
+        <CardTitle className="flex items-center gap-2"><Ticket className="h-5 w-5" /> {t('redeemCardTitle')}</CardTitle>
+        <CardDescription>{t('redeemCardDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col sm:flex-row gap-2">
           <Input
-            placeholder="Enter Coupon Code"
+            placeholder={t('enterCode')}
             value={couponCode}
             onChange={(e) => setCouponCode(e.target.value)}
             disabled={isLoading}
@@ -111,7 +112,7 @@ function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () =
           />
           <Button onClick={handleRedeem} disabled={isLoading} className="w-full sm:w-auto">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Redeem
+            {t('redeem')}
           </Button>
         </div>
       </CardContent>
@@ -129,6 +130,7 @@ export default function BillingClient() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations('billing');
 
   const fetchPlans = useCallback(async () => {
     if (!db || !role) return;
@@ -171,19 +173,19 @@ export default function BillingClient() {
 
   useEffect(() => {
     setHelp({
-      title: "Subscription & Billing",
+      title: t('helpTitle'),
       content: (
         <div className="space-y-4 text-sm">
-          <p>This is your central hub for managing your platform subscription.</p>
+          <p>{t('helpContent')}</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Current Plan:</span> View your active subscription and its expiry date. All new users start with a free trial.</li>
-            <li><span className="font-semibold">Available Plans:</span> Browse and purchase subscription plans tailored for your role to unlock premium features.</li>
-            <li><span className="font-semibold">Redeem Coupon:</span> If you have a promotional coupon, enter it here to activate or extend your subscription.</li>
+            <li><span className="font-semibold">{t('currentPlan')}</span> {t('currentPlanDesc')}</li>
+            <li><span className="font-semibold">{t('availablePlans')}</span> {t('availablePlansHelpDesc')}</li>
+            <li><span className="font-semibold">{t('redeemCoupon')}</span> {t('redeemCouponDesc')}</li>
           </ul>
         </div>
       )
     });
-  }, [setHelp]);
+  }, [setHelp, t]);
 
   const handlePurchase = async (plan: SubscriptionPlan) => {
     if (!user || !db) return;
@@ -194,7 +196,7 @@ export default function BillingClient() {
       const token = await auth.currentUser?.getIdToken();
 
       if (!token) {
-        throw new Error("You must be logged in to make a purchase.");
+        throw new Error(t('loginRequired'));
       }
 
       const response = await fetch('/api/escrow/initiate-payment', {
@@ -218,7 +220,7 @@ export default function BillingClient() {
       const responseData = await response.json();
 
       if (!responseData.payment_session_id) {
-        throw new Error("Could not retrieve payment session ID.");
+        throw new Error(t('sessionError'));
       }
 
       const redirectUrl = searchParams.get('redirectUrl');
@@ -229,8 +231,8 @@ export default function BillingClient() {
         onComplete: async (data: any) => {
           if (data.order && data.order.status === 'PAID') {
             toast({
-              title: "Payment Successful",
-              description: "Your subscription is being activated. Please wait...",
+              title: t('paymentSuccess'),
+              description: t('paymentSuccessDesc'),
               variant: "default",
             });
             // We do NOT update the DB here. We wait for the webhook.
@@ -246,14 +248,14 @@ export default function BillingClient() {
             }, 3000);
 
           } else {
-            throw new Error("Payment was not successful.");
+            throw new Error(t('paymentFailedDesc'));
           }
         },
         onError: (errorData: any) => {
           console.error("Cashfree onError:", errorData);
           toast({
-            title: "Payment Failed",
-            description: errorData.error.message || "The payment could not be completed.",
+            title: t('paymentFailed'),
+            description: errorData.error.message || t('paymentFailedDesc'),
             variant: "destructive",
           });
         },
@@ -261,8 +263,8 @@ export default function BillingClient() {
 
     } catch (error: any) {
       toast({
-        title: "Failed to Initiate Payment",
-        description: error.response?.data?.error || "An unexpected error occurred.",
+        title: t('initiateFailed'),
+        description: error.response?.data?.error || t('error'),
         variant: "destructive",
       });
     } finally {
@@ -276,8 +278,8 @@ export default function BillingClient() {
     <div className="grid gap-8 max-w-full overflow-x-hidden px-4">
       <Card>
         <CardHeader>
-          <CardTitle>My Subscription</CardTitle>
-          <CardDescription>View your current plan and manage your subscription.</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent>
           {userLoading ? <Skeleton className="h-10 w-1/2" /> : (
@@ -286,13 +288,13 @@ export default function BillingClient() {
                 <div>
                   <p className="text-lg font-semibold">{user.subscription?.planName}</p>
                   <p className="text-sm text-muted-foreground">
-                    Expires on {format(toDate(user.subscription!.expiresAt), "PPP")} ({formatDistanceToNowStrict(toDate(user.subscription!.expiresAt), { addSuffix: true })})
+                    {t('expiresOn')} {format(toDate(user.subscription!.expiresAt), "PPP")} ({formatDistanceToNowStrict(toDate(user.subscription!.expiresAt), { addSuffix: true })})
                   </p>
                 </div>
-                <Badge variant="success"><CheckCircle2 className="h-4 w-4 mr-2" />Active</Badge>
+                <Badge variant="success"><CheckCircle2 className="h-4 w-4 mr-2" />{t('active')}</Badge>
               </div>
             ) : (
-              <p className="text-muted-foreground">You do not have an active subscription.</p>
+              <p className="text-muted-foreground">{t('noSubscription')}</p>
             )
           )}
         </CardContent>
@@ -301,27 +303,27 @@ export default function BillingClient() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Available Plans</CardTitle>
-            <CardDescription>Upgrade your account to unlock more features.</CardDescription>
+            <CardTitle>{t('availablePlans')}</CardTitle>
+            <CardDescription>{t('availablePlansDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {loading ? <Skeleton className="h-32 w-full" /> : (
               plans.map(plan => (
                 <Card key={plan.id} className="p-4">
                   <CardTitle className="text-lg mb-2">{plan.name}</CardTitle>
-                  <p className="text-2xl font-bold mb-2">₹{plan.price.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">/ year</span></p>
+                  <p className="text-2xl font-bold mb-2">₹{plan.price.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">{t('year')}</span></p>
                   <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside mb-4">
                     {plan.features.map(f => <li key={f}>{f}</li>)}
                   </ul>
                   <Button className="w-full" onClick={() => handlePurchase(plan)} disabled={isPurchasing === plan.id}>
                     {isPurchasing === plan.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Subscribe
+                    {t('subscribe')}
                   </Button>
                 </Card>
               ))
             )}
             {plans.length === 0 && !loading && (
-              <p className="text-muted-foreground text-center py-8">No subscription plans are currently available for your role.</p>
+              <p className="text-muted-foreground text-center py-8">{t('noPlans')}</p>
             )}
           </CardContent>
         </Card>

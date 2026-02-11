@@ -2,10 +2,10 @@
 
 import { jobService } from '@/domains/jobs/job.service';
 import { userService } from '@/domains/users/user.service';
-import { CreateJobInput } from '@/domains/jobs/job.types';
+import { CreateJobInput, JobFilters } from '@/domains/jobs/job.types';
 import { startWorkSchema } from '@/lib/validations/jobs';
 
-import { Role, Job } from '@/lib/types';
+import { Role, Job, JobAttachment, Transaction, User } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { logger } from '@/lib/system-logger';
@@ -51,7 +51,7 @@ export async function createJobAction(
 /**
  * Server Action to get job details for editing
  */
-export async function getJobForEditAction(jobId: string, userId: string): Promise<{ success: boolean; job?: any; error?: string }> {
+export async function getJobForEditAction(jobId: string, userId: string): Promise<{ success: boolean; job?: Job; error?: string }> {
     try {
         const job = await jobService.getJobById(jobId, userId);
 
@@ -74,7 +74,7 @@ export async function updateJobAction(jobId: string, userId: string, data: Parti
     try {
         // Map CreateJobInput back to Job partial
         // Note: In a real app, we might want a specific UpdateJobInput type
-        const updates: any = { ...data };
+        const updates: Partial<Job> = { ...data };
 
         await jobService.updateJob(jobId, userId, updates);
 
@@ -150,7 +150,7 @@ export async function completeJobWithOtpAction(
     jobId: string,
     userId: string,
     otp: string,
-    attachments: any[]
+    attachments: JobAttachment[]
 ): Promise<{ success: boolean; error?: string }> {
     try {
         await jobService.completeJobWithOtp(jobId, userId, otp, attachments);
@@ -168,7 +168,12 @@ export async function completeJobWithOtpAction(
 // }
 
 
-export async function getInvoiceDataAction(jobId: string, userId: string, type?: string): Promise<{ success: boolean; data?: any; error?: string }> {
+type InvoiceData = {
+    job: Job & { jobGiver?: User; awardedInstaller?: User };
+    transaction: Transaction | null;
+};
+
+export async function getInvoiceDataAction(jobId: string, userId: string, type?: string): Promise<{ success: boolean; data?: InvoiceData; error?: string }> {
     try {
         const db = getAdminDb();
         const jobDoc = await db.collection('jobs').doc(jobId).get();
@@ -198,14 +203,14 @@ export async function getInvoiceDataAction(jobId: string, userId: string, type?:
         if (jobData.jobGiverId) {
             const giverSnap = await db.collection('users').doc(jobData.jobGiverId).get();
             if (giverSnap.exists) {
-                expandedJob.jobGiver = { id: giverSnap.id, ...giverSnap.data() } as any;
+                expandedJob.jobGiver = { id: giverSnap.id, ...giverSnap.data() } as User;
             }
         }
 
         if (jobData.awardedInstallerId) {
             const installerSnap = await db.collection('users').doc(jobData.awardedInstallerId).get();
             if (installerSnap.exists) {
-                expandedJob.awardedInstaller = { id: installerSnap.id, ...installerSnap.data() } as any;
+                expandedJob.awardedInstaller = { id: installerSnap.id, ...installerSnap.data() } as User;
             }
         }
 
@@ -222,18 +227,18 @@ export async function getInvoiceDataAction(jobId: string, userId: string, type?:
     }
 }
 
-export async function listJobsForJobGiverAction(userId: string): Promise<{ success: boolean; data: any[]; error?: string }> {
+export async function listJobsForJobGiverAction(userId: string, limit = 50, lastPostedAt?: string): Promise<{ success: boolean; data: Job[]; error?: string }> {
     try {
-        const jobs = await jobService.listJobsForJobGiver(userId);
+        const jobs = await jobService.listJobsForJobGiver(userId, limit, lastPostedAt ? new Date(lastPostedAt) : undefined);
         return { success: true, data: JSON.parse(JSON.stringify(jobs)) };
     } catch (error: any) {
         return { success: false, data: [], error: error.message || 'Failed to list jobs' };
     }
 }
 
-export async function listOpenJobsAction(filters?: any): Promise<{ success: boolean; data: any[]; error?: string }> {
+export async function listOpenJobsAction(filters?: JobFilters, limit = 50, lastPostedAt?: string): Promise<{ success: boolean; data: Job[]; error?: string }> {
     try {
-        const jobs = await jobService.listOpenJobs(filters);
+        const jobs = await jobService.listOpenJobs(filters, limit, lastPostedAt ? new Date(lastPostedAt) : undefined);
         return { success: true, data: JSON.parse(JSON.stringify(jobs)) };
     } catch (error: any) {
         return { success: false, data: [], error: error.message || 'Failed to list open jobs' };

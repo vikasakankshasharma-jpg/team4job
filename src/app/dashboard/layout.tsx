@@ -2,6 +2,7 @@ import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MobileBottomNav } from '@/components/navigation/mobile-bottom-nav';
 import { DashboardProviders } from '@/components/dashboard/dashboard-providers';
+import { BetaFeedbackButton } from '@/components/dashboard/beta-feedback-button';
 
 export default function DashboardLayout({
   children,
@@ -19,6 +20,7 @@ export default function DashboardLayout({
           </main>
         </div>
       </div>
+      <BetaFeedbackButton />
       <MobileBottomNav />
     </DashboardProviders>
   );

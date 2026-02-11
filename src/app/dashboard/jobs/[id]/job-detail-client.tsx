@@ -147,6 +147,7 @@ import { ReleasePaymentDialog } from "@/components/job/release-payment-dialog";
 import { DisputeDialog } from "@/components/job/dispute-dialog";
 import { completeJobWithOtpAction, awardJobAction } from "@/app/actions/job.actions";
 import { JobTimeline } from "@/components/job/job-timeline";
+import { useTranslations } from 'next-intl';
 
 
 declare const cashfree: any;
@@ -173,6 +174,8 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
     const [description, setDescription] = React.useState("");
     const [isLoading, setIsLoading] = React.useState(false);
     const { toast } = useToast();
+    const t = useTranslations('jobDetail');
+    const tCommon = useTranslations('common');
 
     // Calculate Fees
     const jobGiverFeeRate = platformSettings?.jobGiverFeeRate || 2.5; // Default 2.5%
@@ -181,7 +184,7 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
 
     const handleAddFunds = async () => {
         if (amount <= 0 || !description.trim()) {
-            toast({ title: "Invalid Input", description: "Please enter amount and description.", variant: "destructive" });
+            toast({ title: tCommon('invalidInput'), description: t('notifications.enterAmountAndDesc'), variant: "destructive" });
             return;
         }
 
@@ -190,7 +193,7 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
             const res = await createAddFundsOrderAction(job.id, user.id, amount, description);
 
             if (!res.success || !res.data) {
-                toast({ title: "Payment Initialization Failed", description: res.error, variant: "destructive" });
+                toast({ title: t('notifications.paymentGenericError'), description: res.error, variant: "destructive" });
                 return;
             }
 
@@ -207,19 +210,19 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
                 const cashfree = new window.Cashfree({ mode: "sandbox" }); // or production
                 cashfree.checkout(checkoutOptions).then((result: any) => {
                     if (result.error) {
-                        toast({ title: "Payment Failed", description: result.error.message, variant: "destructive" });
+                        toast({ title: t('notifications.paymentFailed'), description: result.error.message, variant: "destructive" });
                     }
                     if (result.redirect) {
 
                     }
                 });
             } else {
-                toast({ title: "Error", description: "Payment Gateway not loaded.", variant: "destructive" });
+                toast({ title: tCommon('error'), description: t('notifications.gatewayNotLoaded'), variant: "destructive" });
             }
 
         } catch (error: any) {
             console.error("Add Funds Failed:", error);
-            toast({ title: "Error", description: "Failed to initiate payment.", variant: "destructive" });
+            toast({ title: tCommon('error'), description: t('notifications.initFailed'), variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
@@ -229,17 +232,17 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Add Extra Funds</DialogTitle>
-                    <DialogDescription>Add funds to the escrow for extra tasks or materials.</DialogDescription>
+                    <DialogTitle>{t('addExtraFunds')}</DialogTitle>
+                    <DialogDescription>{t('addFundsDesc')}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label>Amount (₹)</Label>
+                        <Label>{t('amountRupee')}</Label>
                         <Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} />
                     </div>
                     <div className="space-y-2">
-                        <Label>Description</Label>
-                        <Input placeholder="e.g. Extra wire needed" value={description} onChange={async (e) => {
+                        <Label>{t('description')}</Label>
+                        <Input placeholder={t('notifications.exampleDesc')} value={description} onChange={async (e) => {
                             const val = e.target.value;
                             setDescription(val);
                             // Real-time moderation (debounced ideal, but simple here)
@@ -250,16 +253,16 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
                     {amount > 0 && (
                         <div className="bg-muted p-3 rounded-md text-sm space-y-1">
                             <div className="flex justify-between">
-                                <span>Base Amount:</span>
+                                <span>{t('baseAmount')}:</span>
                                 <span>₹{amount}</span>
                             </div>
                             <div className="flex justify-between text-muted-foreground">
-                                <span>Processing Fee ({jobGiverFeeRate}%):</span>
+                                <span>{t('processingFee')} ({jobGiverFeeRate}%):</span>
                                 <span>₹{fee}</span>
                             </div>
                             <Separator className="my-1" />
                             <div className="flex justify-between font-bold">
-                                <span>Total Payable:</span>
+                                <span>{t('totalPayable')}:</span>
                                 <span>₹{total}</span>
                             </div>
                         </div>
@@ -267,10 +270,10 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
 
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>{tCommon('cancel')}</Button>
                     <Button onClick={handleAddFunds} disabled={isLoading}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Pay ₹{total || 0}
+                        {t('payAmount', { amount: total || 0 })}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -288,6 +291,9 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     const router = useRouter();
     const { user, role, loading: userLoading, isAdmin } = useUser();
     const isInstaller = role === 'Installer';
+    const t = useTranslations('jobDetail');
+    const tCommon = useTranslations('common');
+    const tJob = useTranslations('job');
 
 
 
@@ -378,15 +384,14 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                 createdAt: Date.now()
             };
 
-            // Refactored to use API via handleJobUpdate
             await handleJobUpdate({
                 milestones: [...(job.milestones || []), newMilestone]
             });
 
-            toast({ title: "Milestone Created", description: "Milestone has been added to the job." });
+            toast({ title: t('notifications.milestoneCreated'), description: t('notifications.milestoneCreatedDesc') });
         } catch (error) {
             console.error("Error creating milestone:", error);
-            toast({ title: "Error", description: "Failed to create milestone", variant: "destructive" });
+            toast({ title: tCommon('error'), description: t('notifications.milestoneGenericError'), variant: "destructive" });
         }
     };
 
@@ -402,10 +407,10 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                 milestones: updatedMilestones
             });
 
-            toast({ title: "Payment Released", description: "Milestone payment released to installer." });
+            toast({ title: t('paymentReleased'), description: t('notifications.paymentReleased') });
         } catch (error) {
             console.error("Error releasing milestone:", error);
-            toast({ title: "Error", description: "Failed to release milestone", variant: "destructive" });
+            toast({ title: tCommon('error'), description: t('notifications.paymentGenericError'), variant: "destructive" });
         }
     };
 
@@ -422,7 +427,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
         await handleJobUpdate({
             additionalTasks: [...(job.additionalTasks || []), newTask]
         });
-        toast({ title: "Variation Proposed", description: "Sent to Job Giver for approval." });
+        toast({ title: t('notifications.variationProposed'), description: t('notifications.variationProposedDesc') });
     };
 
     const handleRequestVariation = async (description: string) => {
@@ -437,11 +442,11 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
         await handleJobUpdate({
             additionalTasks: [...(job.additionalTasks || []), newTask]
         });
-        toast({ title: "Variation Requested", description: "Sent to Installer for a quote." });
+        toast({ title: t('notifications.variationRequested'), description: t('notifications.variationRequestedDesc') });
     };
 
     const handleQuoteVariation = async (task: AdditionalTask) => {
-        const quote = prompt("Enter quote amount (₹):");
+        const quote = prompt(t('notifications.enterQuoteAmount'));
         if (!quote || isNaN(Number(quote))) return;
 
         const amount = Number(quote);
@@ -453,12 +458,12 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
         }) || [];
 
         await handleJobUpdate({ additionalTasks: updatedTasks });
-        toast({ title: "Quote Submitted", description: "Job Giver notified." });
+        toast({ title: t('notifications.quoteSubmitted'), description: t('notifications.quoteSubmittedDesc') });
     };
 
     const handlePayForVariation = async (task: AdditionalTask) => {
         if (!task.quoteAmount) return;
-        if (!confirm(`Confirm payment of ₹${task.quoteAmount} for "${task.description}"?`)) return;
+        if (!confirm(t('notifications.confirmVariationPayment', { amount: task.quoteAmount, description: task.description }))) return;
 
         setIsLoading(true);
         try {
@@ -472,7 +477,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             );
 
             if (!res.success || !res.data) {
-                toast({ title: "Payment Error", description: res.error, variant: "destructive" });
+                toast({ title: t('notifications.paymentGenericError'), description: res.error, variant: "destructive" });
                 return;
             }
 
@@ -498,20 +503,20 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                 const cashfree = new window.Cashfree({ mode: "sandbox" });
                 cashfree.checkout(checkoutOptions).then((result: any) => {
                     if (result.error) {
-                        toast({ title: "Payment Failed", description: result.error.message, variant: "destructive" });
+                        toast({ title: t('notifications.paymentFailed'), description: result.error.message, variant: "destructive" });
                     }
                 });
             }
         } catch (e) {
             console.error(e);
-            toast({ title: "Error", description: "Failed to pay for variation.", variant: "destructive" });
+            toast({ title: tCommon('error'), description: t('notifications.paymentGenericError'), variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleDeclineVariation = async (task: AdditionalTask) => {
-        if (!confirm("Decline this variation order?")) return;
+        if (!confirm(t('notifications.variationDeclineConfirm'))) return;
         const updatedTasks = job.additionalTasks?.map((t: AdditionalTask) => {
             if (t.id === task.id) {
                 return { ...t, status: 'declined' };
@@ -519,7 +524,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             return t;
         }) || [];
         await handleJobUpdate({ additionalTasks: updatedTasks });
-        toast({ title: "Variation Declined" });
+        toast({ title: t('notifications.variationDeclined') });
     };
 
 
@@ -539,40 +544,40 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     <div className="bg-muted/50 p-4 rounded-md border">
                         <h4 className="font-semibold text-sm flex items-center gap-2 mb-2">
                             <Zap className="h-4 w-4 text-amber-500" />
-                            Current Status: <Badge variant="outline">{job.status}</Badge>
+                            {t('currentStatus')}: <Badge variant="outline">{job.status}</Badge>
                         </h4>
                         <p className="text-xs text-muted-foreground">
-                            {job.status === 'open' && "Installers are reviewing this job. Wait for bids to arrive."}
-                            {job.status === 'bid_accepted' && "Installer accepted the offer. Payment is needed to start work."}
-                            {job.status === 'in_progress' && "Work has started. Communicate via chat and wait for completion."}
-                            {job.status === 'work_submitted' && "Work is done. Job Giver must review proof and release funds."}
+                            {job.status === 'open' && tJob('guideOpen')}
+                            {job.status === 'bid_accepted' && tJob('guideBidAccepted')}
+                            {job.status === 'in_progress' && tJob('guideInProgress')}
+                            {job.status === 'work_submitted' && tJob('guideWorkSubmitted')}
                         </p>
                     </div>
 
                     <div className="space-y-2">
-                        <h4 className="font-semibold text-sm border-b pb-1">How it Works (Execution Flow)</h4>
+                        <h4 className="font-semibold text-sm border-b pb-1">{tJob('howItWorks')}</h4>
                         {isJobGiver ? (
                             <ul className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
                                 <li>
-                                    <strong>Review & Award:</strong> Check incoming bids in the &apos;Bids&apos; section. Click &apos;Send Offer&apos; to hire the best installer.
+                                    <strong>{tJob('reviewAward')}:</strong> {tJob('reviewAwardDesc')}
                                 </li>
                                 <li>
-                                    <strong>Secure Funding:</strong> Once they accept, click &apos;Pay & Start&apos;. Funds are held safely in Escrow.
+                                    <strong>{tJob('secureFunding')}:</strong> {tJob('secureFundingDesc')}
                                 </li>
                                 <li>
-                                    <strong>Approve Work:</strong> When the job is done, review the photos. Click &apos;Approve&apos; to release the payment.
+                                    <strong>{tJob('approveWork')}:</strong> {tJob('approveWorkDesc')}
                                 </li>
                             </ul>
                         ) : (
                             <ul className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
                                 <li>
-                                    <strong>Place Bid:</strong> Submit your best quote. It&apos;s hidden from other installers (Blind Bidding).
+                                    <strong>{tJob('placeBid')}:</strong> {tJob('placeBidDesc')}
                                 </li>
                                 <li>
-                                    <strong>Wait for Award:</strong> If selected, you&apos;ll receive an offer to Accept.
+                                    <strong>{tJob('waitAward')}:</strong> {tJob('waitAwardDesc')}
                                 </li>
                                 <li>
-                                    <strong>Submit Work:</strong> After finishing the job, upload proof in the &apos;Files&apos; tab and click &apos;Submit for Review&apos;.
+                                    <strong>{tJob('submitWork')}:</strong> {tJob('submitWorkDesc')}
                                 </li>
                             </ul>
                         )}
@@ -581,7 +586,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             )
         });
         return () => setHelp({ title: null, content: null });
-    }, [setHelp, job, isJobGiver]);
+    }, [setHelp, job, isJobGiver, t, tJob]);
 
     // Fetch Job Data & Listen for Changes
     // React.useEffect for job subscription removed. Handled by useJobSubscription hook.
@@ -599,13 +604,13 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
         try {
             const res = await updateJobAction(job.id, user.id, updatedFields as any);
             if (res.success) {
-                toast({ title: "Updated", description: "Job details updated." });
+                toast({ title: tCommon('updated'), description: t('notifications.jobUpdated') });
             } else {
                 throw new Error(res.error);
             }
         } catch (error: any) {
             console.error("[handleJobUpdate] Update failed:", error);
-            toast({ title: "Error", description: "Update failed", variant: "destructive" });
+            toast({ title: tCommon('error'), description: t('notifications.updateFailed'), variant: "destructive" });
         }
     };
 
@@ -626,7 +631,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             );
 
             if (!res.success || !res.data) {
-                toast({ title: "Payment Initialization Failed", description: res.error, variant: "destructive" });
+                toast({ title: t('notifications.paymentGenericError'), description: res.error, variant: "destructive" });
                 return;
             }
 
@@ -638,21 +643,21 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     onSuccess: () => {
                         console.log("Payment Success");
                         // Ideally we wait for webhook, but we can optimistically reload or toast
-                        toast({ title: "Payment Successful", description: "Verifying status..." });
+                        toast({ title: t('notifications.paymentSuccess'), description: t('notifications.paymentVerifying') });
                         window.location.reload();
                     },
                     onFailure: (data: any) => {
                         console.log("Payment Failure", data);
-                        toast({ title: "Payment Failed", description: data.message || "Transaction failed", variant: "destructive" });
+                        toast({ title: t('notifications.paymentFailed'), description: data.message || "Transaction failed", variant: "destructive" });
                     },
                     components: ["order-details", "card", "netbanking", "app", "upi"]
                 });
             } else {
-                toast({ title: "Error", description: "Payment Gateway SDK not loaded.", variant: "destructive" });
+                toast({ title: tCommon('error'), description: t('notifications.gatewayNotLoaded'), variant: "destructive" });
             }
         } catch (e: any) {
             console.error("Payment Error:", e);
-            toast({ title: "Error", description: e.message || "Unknown error", variant: "destructive" });
+            toast({ title: tCommon('error'), description: e.message || "Unknown error", variant: "destructive" });
         }
     };
 
@@ -718,7 +723,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     }
 
     if (!job) {
-        return <div className="p-8 text-center">Job not found.</div>;
+        return <div className="p-8 text-center">{t('jobNotFound')}</div>;
     }
 
     // Determine Role View
@@ -746,11 +751,11 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            toast({ title: "Success", description: "Reschedule request processed." });
+            toast({ title: tCommon('success'), description: t('notifications.rescheduleProcessed') });
             setIsRescheduleDialogOpen(false);
             window.location.reload(); // Refresh to show new state
         } catch (error: any) {
-            toast({ title: "Error", description: error.response?.data?.error || "Failed to process reschedule." });
+            toast({ title: tCommon('error'), description: error.response?.data?.error || t('notifications.rescheduleFailed') });
         } finally {
             setIsLoading(false);
         }
@@ -767,16 +772,19 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                             {job.dateChangeProposal.status === 'rejected' ? <XCircle className="h-5 w-5" /> : <Calendar className="h-5 w-5" />}
                             <div>
                                 <p className="font-semibold">
-                                    {job.dateChangeProposal.status === 'rejected' ? "Reschedule Request Rejected" : "Reschedule Request"}
+                                    {job.dateChangeProposal.status === 'rejected' ? t('rescheduleRejected') : t('rescheduleRequest')}
                                 </p>
                                 <p className="text-sm">
                                     {job.dateChangeProposal.status === 'rejected' ? (
                                         <span>
-                                            The other party rejected the new date. The job proceeds on <span className="font-bold">{job.jobStartDate ? new Date((job.jobStartDate as any).toDate ? (job.jobStartDate as any).toDate() : job.jobStartDate).toLocaleDateString() : 'Original Date'}</span>.
+                                            {t('otherPartyRejected', { date: job.jobStartDate ? new Date((job.jobStartDate as any).toDate ? (job.jobStartDate as any).toDate() : job.jobStartDate).toLocaleDateString() : 'Original Date' })}
                                         </span>
                                     ) : (
                                         <span>
-                                            {job.dateChangeProposal.proposedBy} proposed to move job to <span className="font-bold">{new Date((job.dateChangeProposal.newDate as any).toDate ? (job.dateChangeProposal.newDate as any).toDate() : job.dateChangeProposal.newDate).toLocaleDateString()}</span>
+                                            {t('proposedMoveJob', {
+                                                user: job.dateChangeProposal.proposedBy,
+                                                date: new Date((job.dateChangeProposal.newDate as any).toDate ? (job.dateChangeProposal.newDate as any).toDate() : job.dateChangeProposal.newDate).toLocaleDateString()
+                                            })}
                                         </span>
                                     )}
                                 </p>
@@ -789,11 +797,11 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                 {((job.dateChangeProposal.proposedBy === 'Job Giver' && !isJobGiver) ||
                                     (job.dateChangeProposal.proposedBy === 'Installer' && isJobGiver)) ? (
                                     <div className="flex gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => handleReschedule('reject')} disabled={isLoading}>Reject</Button>
-                                        <Button size="sm" onClick={() => handleReschedule('accept')} disabled={isLoading}>Accept New Date</Button>
+                                        <Button size="sm" variant="outline" onClick={() => handleReschedule('reject')} disabled={isLoading}>{tCommon('decline')}</Button>
+                                        <Button size="sm" onClick={() => handleReschedule('accept')} disabled={isLoading}>{t('acceptNewDate')}</Button>
                                     </div>
                                 ) : (
-                                    <div className="text-xs text-blue-600 italic">Waiting for response...</div>
+                                    <div className="text-xs text-blue-600 italic">{t('waitingResponse')}</div>
                                 )}
                             </>
                         )}
@@ -804,11 +812,11 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                 {/* If Job Giver was rejected, show Cancel Hint? */}
                                 {isJobGiver && (
                                     <Button size="sm" variant="destructive" onClick={() => setIsCancelDialogOpen(true)}>
-                                        Cancel Job
+                                        {tCommon('cancel')}
                                     </Button>
                                 )}
                                 <Button size="sm" variant="outline" onClick={() => handleReschedule('dismiss')} disabled={isLoading}>
-                                    Dismiss
+                                    {t('dismiss')}
                                 </Button>
                             </div>
                         )}
@@ -833,7 +841,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
                     <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-2 lg:order-1">
                         <Card>
-                            <CardHeader><CardTitle>Description</CardTitle></CardHeader>
+                            <CardHeader><CardTitle>{t('description')}</CardTitle></CardHeader>
                             <CardContent>
                                 <p className="whitespace-pre-line mb-4 overflow-wrap-anywhere">{job.description}</p>
 
@@ -842,7 +850,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                     <div className="space-y-2">
                                         <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                             <Paperclip className="h-4 w-4" />
-                                            Attachments ({job.attachments.length})
+                                            {t('attachments')} ({job.attachments.length})
                                         </h4>
                                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                                             {job.attachments.map((file: any, idx: number) => (
@@ -876,9 +884,9 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
                         {/* Bids Section */}
                         <Card id="bids-section">
-                            <CardHeader><CardTitle>Bids ({bids.length})</CardTitle></CardHeader>
+                            <CardHeader><CardTitle>{tJob('bidsTab')} ({bids.length})</CardTitle></CardHeader>
                             <CardContent>
-                                {bids.length === 0 ? <p className="text-muted-foreground">No bids yet.</p> : (
+                                {bids.length === 0 ? <p className="text-muted-foreground">{t('noBidsYet')}</p> : (
                                     <div className="space-y-4">
                                         {bids.map(bid => (
                                             <Card key={bid.id} data-testid="bid-card-wrapper">
@@ -889,7 +897,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                         </p>
                                                         <p className="text-sm text-muted-foreground">{formatDistanceToNow(toDate(bid.timestamp))} ago</p>
                                                         {(!isJobGiver && user?.id !== getRefId(bid.installer)) && (
-                                                            <p className="text-[10px] text-muted-foreground italic">Bid amount hidden</p>
+                                                            <p className="text-[10px] text-muted-foreground italic">{t('bidAmountHidden')}</p>
                                                         )}
                                                     </div>
                                                     {/* Award Action (Only for Job Giver) */}
@@ -909,7 +917,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                             const installerId = bid.installerId || getRefId(bid.installer);
                                                             if (!installerId) {
                                                                 console.error("Bid missing installer ID:", bid);
-                                                                toast({ title: "Error", description: "Cannot award: missing installer ID", variant: "destructive" });
+                                                                toast({ title: tCommon('error'), description: "Cannot award: missing installer ID", variant: "destructive" });
                                                                 return;
                                                             }
 
@@ -922,20 +930,20 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                                 );
 
                                                                 if (res.success) {
-                                                                    toast({ title: "Offer Sent", description: "Waiting for installer acceptance." });
+                                                                    toast({ title: t('offerSent'), description: t('waitingAcceptance') });
                                                                 } else {
                                                                     throw new Error(res.error);
                                                                 }
                                                             } catch (err: any) {
                                                                 console.error("Failed to award job:", err);
                                                                 toast({
-                                                                    title: "Award Failed",
+                                                                    title: t('awardFailed'),
                                                                     description: err.message || "Could not award job",
                                                                     variant: "destructive"
                                                                 });
                                                             }
                                                         }}>
-                                                            Send Offer
+                                                            {t('sendOffer')}
                                                         </Button>
                                                     )}
                                                 </CardContent>
@@ -951,7 +959,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                         }}
                                                     >
                                                         <MessageSquare className="h-3 w-3 mr-1" />
-                                                        Ask Question / Chat
+                                                        {t('askQuestionChat')}
                                                     </Button>
                                                 </CardFooter>
                                             </Card>
@@ -965,25 +973,25 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     <div className="space-y-4 sm:space-y-6 order-1 lg:order-2 lg:sticky lg:top-24 h-fit">
                         {/* Actions Panel */}
                         <Card data-testid="actions-panel">
-                            <CardHeader><CardTitle>Actions</CardTitle></CardHeader>
+                            <CardHeader><CardTitle>{t('actions')}</CardTitle></CardHeader>
                             <CardContent className="space-y-4">
                                 <div className={cn("space-y-4", userLoading && "opacity-50 pointer-events-none")}>
                                     {userLoading && (
                                         <div className="flex items-center justify-center py-2 text-xs text-muted-foreground animate-pulse">
                                             <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                                            Syncing permissions...
+                                            {t('syncingPermissions')}
                                         </div>
                                     )}
 
                                     {/* Job Giver Actions */}
                                     {isJobGiver && job.status === 'open' && (
-                                        <Button variant="destructive" className="w-full min-h-[44px]" onClick={() => handleJobUpdate({ status: 'unbid' })}>Close Bidding</Button>
+                                        <Button variant="destructive" className="w-full min-h-[44px]" onClick={() => handleJobUpdate({ status: 'unbid' })}>{t('closeBidding')}</Button>
                                     )}
 
                                     {/* Installer Actions: Place Bid */}
                                     {!isJobGiver && job.status === 'open' && (
                                         <Button className="w-full min-h-[48px]" onClick={() => setIsBidDialogOpen(true)} disabled={userLoading || bids.some(b => getRefId(b.installer) === user?.id)} data-testid="place-bid-button">
-                                            {bids.some(b => getRefId(b.installer) === user?.id) ? "Bid Placed" : "Place Bid"}
+                                            {bids.some(b => getRefId(b.installer) === user?.id) ? t('bidPlaced') : t('placeBid')}
                                         </Button>
                                     )}
 
@@ -995,7 +1003,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                     {job.status === 'in_progress' && !job.workStartedAt && !job.dateChangeProposal?.status.includes('pending') && (
                                         <Button variant="outline" className="w-full" onClick={() => setIsRescheduleDialogOpen(true)}>
                                             <Calendar className="mr-2 h-4 w-4" />
-                                            Request Reschedule
+                                            {t('requestReschedule')}
                                         </Button>
                                     )}
 
@@ -1003,7 +1011,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                     {isJobGiver && job.status === 'bid_accepted' && (
                                         <div className="space-y-4">
                                             <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
-                                                You have sent an offer. Waiting for installer to accept.
+                                                {t('offerSentMsg')}
                                             </div>
                                             <Button
                                                 variant="outline"
@@ -1015,21 +1023,21 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                         awardedInstaller: null as any,
                                                         selectedInstallers: null as any
                                                     });
-                                                    toast({ title: "Offer Retracted", description: "Job is open for bidding again." });
+                                                    toast({ title: t('offerRetracted'), description: t('offerRetractedDesc') });
                                                 }}
                                             >
                                                 <UserX className="mr-2 h-4 w-4" />
-                                                Retract Offer
+                                                {t('retractOffer')}
                                             </Button>
                                         </div>
                                     )}
 
                                     {isJobGiver && (job.status === 'bid_accepted' || job.status === 'Pending Funding') && (
                                         isPaymentsEnabled ? (
-                                            <Button className="w-full min-h-[44px]" onClick={handleStartCheckout} data-testid="proceed-payment-button">Proceed to Payment</Button>
+                                            <Button className="w-full min-h-[44px]" onClick={handleStartCheckout} data-testid="proceed-payment-button">{t('proceedToPayment')}</Button>
                                         ) : (
                                             <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground text-center">
-                                                Payments are currently disabled.
+                                                {t('paymentsDisabled')}
                                             </div>
                                         )
                                     )}
@@ -1039,11 +1047,11 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         isPaymentsEnabled ? (
                                             <Button className="w-full bg-green-600 hover:bg-green-700 min-h-[44px]" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
                                                 <CheckCircle className="mr-2 h-4 w-4" />
-                                                Approve Work & Release Payment
+                                                {t('approveWorkRelease')}
                                             </Button>
                                         ) : (
                                             <Button className="w-full" variant="outline" disabled>
-                                                Payment System Offline
+                                                {t('paymentSystemOffline')}
                                             </Button>
                                         )
                                     )}
@@ -1053,7 +1061,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         isDisputesEnabled ? (
                                             <Button variant="destructive" className="w-full border-red-200 text-red-600 hover:bg-red-50" onClick={() => setIsDisputeDialogOpen(true)}>
                                                 <ShieldAlert className="mr-2 h-4 w-4" />
-                                                Report Issue / Raise Dispute
+                                                {t('reportIssueDispute')}
                                             </Button>
                                         ) : null
                                     )}
@@ -1063,7 +1071,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         <div className="space-y-2">
                                             <Button className="w-full" variant="outline" onClick={() => setIsReviewDialogOpen(true)} data-testid="leave-review-button">
                                                 <Star className="mr-2 h-4 w-4" />
-                                                Leave Review
+                                                {t('leaveReview')}
                                             </Button>
 
                                             <Button
@@ -1073,7 +1081,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                 data-testid="download-invoice-button"
                                             >
                                                 <FileText className="mr-2 h-4 w-4" />
-                                                Download Service Invoice
+                                                {t('downloadServiceInvoice')}
                                             </Button>
 
                                             <Button
@@ -1083,7 +1091,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                 data-testid="download-platform-invoice-button"
                                             >
                                                 <FileText className="mr-2 h-4 w-4" />
-                                                Download Platform Receipt
+                                                {t('downloadPlatformReceipt')}
                                             </Button>
                                         </div>
                                     )}
@@ -1095,7 +1103,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                 <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-3 text-white">
                                                     <h4 className="font-bold text-sm flex items-center">
                                                         <ShieldCheck className="h-4 w-4 mr-2" />
-                                                        Verified Identity
+                                                        {t('verifiedIdentity')}
                                                     </h4>
                                                 </div>
                                                 <div className="p-4 bg-background flex items-center gap-4">
@@ -1105,16 +1113,16 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                     </Avatar>
                                                     <div>
                                                         <p className="font-bold text-lg leading-none">{counterParty.name}</p>
-                                                        <p className="text-sm text-muted-foreground">{isJobGiver ? "Installer" : "Job Giver"}</p>
+                                                        <p className="text-sm text-muted-foreground">{isJobGiver ? t('installer') : t('jobGiver')}</p>
                                                         <div className="flex items-center gap-1 mt-1 text-xs text-green-600 font-medium">
                                                             <CheckCircle2 className="h-3 w-3" />
-                                                            Background Checked
+                                                            {t('backgroundChecked')}
                                                         </div>
                                                     </div>
                                                 </div>
                                                 {counterParty.mobile && (
                                                     <div className="bg-blue-50 p-3 border-t border-blue-100 flex items-center justify-between">
-                                                        <span className="text-xs text-blue-700 font-semibold">Mobile Contact</span>
+                                                        <span className="text-xs text-blue-700 font-semibold">{t('mobileContact')}</span>
                                                         <a href={`tel:${counterParty.mobile}`} className="text-sm font-bold text-blue-900 flex items-center hover:underline">
                                                             <Phone className="h-3 w-3 mr-1" />
                                                             {counterParty.mobile}
@@ -1182,10 +1190,10 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     <div className="md:col-span-3 mt-8 order-3">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between">
-                                <CardTitle>Variation Orders (Add Work)</CardTitle>
+                                <CardTitle>{t('variationOrders')}</CardTitle>
                                 <Button onClick={() => setIsVariationDialogOpen(true)} variant="outline" size="sm" data-testid="propose-variation-button">
                                     <Plus className="h-4 w-4 mr-2" />
-                                    {isJobGiver ? "Request Variation" : "Propose Variation"}
+                                    {isJobGiver ? t('requestVariation') : t('proposeVariation')}
                                 </Button>
                             </CardHeader>
                             <CardContent>
@@ -1208,18 +1216,18 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     {/* Milestones Section */}
                     <div className="md:col-span-3 mt-8 order-4">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold">Payment Milestones</h3>
+                            <h3 className="text-lg font-semibold">{t('paymentMilestones')}</h3>
                             {isJobGiver && job.status === 'in_progress' && (
                                 // Configurable Threshold Check
                                 ((bids.find(b => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)))?.amount || (job as any).priceEstimate?.min || 0) >= (platformSettings?.minJobBudgetForMilestones ?? 5000))
                                     ? (
                                         <Button onClick={() => setIsMilestoneDialogOpen(true)} variant="outline" size="sm" data-testid="add-milestone-button">
                                             <Plus className="h-4 w-4 mr-2" />
-                                            Add Milestone
+                                            {t('addMilestone')}
                                         </Button>
                                     ) : (
-                                        <div className="text-xs text-muted-foreground italic" title={`Milestones are only available for jobs over ₹${platformSettings?.minJobBudgetForMilestones ?? 5000}`}>
-                                            Milestones unavailable for small jobs
+                                        <div className="text-xs text-muted-foreground italic" title={t('milestonesSmallJobTooltip', { amount: platformSettings?.minJobBudgetForMilestones ?? 5000 })}>
+                                            {t('milestonesSmallJob')}
                                         </div>
                                     )
                             )}
@@ -1321,13 +1329,13 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     <Dialog open={isRescheduleDialogOpen} onOpenChange={setIsRescheduleDialogOpen}>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Propose New Date</DialogTitle>
+                                <DialogTitle>{t('proposeNewDate')}</DialogTitle>
                                 <DialogDescription>
-                                    Ask the other party to reschedule the job. They must accept for the date to change.
+                                    {t('proposeNewDateDesc')}
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="py-4">
-                                <Label>New Date</Label>
+                                <Label>{t('newDate')}</Label>
                                 <Input
                                     type="date"
                                     onChange={(e) => setRescheduleDate(e.target.valueAsDate || undefined)}
@@ -1335,8 +1343,8 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                 />
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsRescheduleDialogOpen(false)}>Cancel</Button>
-                                <Button onClick={() => handleReschedule('propose')} disabled={!rescheduleDate || isLoading}>Send Proposal</Button>
+                                <Button variant="outline" onClick={() => setIsRescheduleDialogOpen(false)}>{tCommon('cancel')}</Button>
+                                <Button onClick={() => handleReschedule('propose')} disabled={!rescheduleDate || isLoading}>{t('sendProposal')}</Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>

@@ -78,9 +78,9 @@ export class JobService {
     /**
      * Get jobs for job giver dashboard
      */
-    async listJobsForJobGiver(userId: string): Promise<Job[]> {
+    async listJobsForJobGiver(userId: string, limit = 50, lastPostedAt?: Date): Promise<Job[]> {
         try {
-            return await jobRepository.fetchByJobGiver(userId);
+            return await jobRepository.fetchByJobGiver(userId, limit);
         } catch (error) {
             logger.error('Failed to list jobs for job giver', error, { userId });
             throw error;
@@ -120,9 +120,9 @@ export class JobService {
     /**
      * Get open jobs for browsing (installer view)
      */
-    async listOpenJobs(filters?: JobFilters): Promise<Job[]> {
+    async listOpenJobs(filters?: JobFilters, limit = 50, lastPostedAt?: Date): Promise<Job[]> {
         try {
-            return await jobRepository.fetchOpen(filters);
+            return await jobRepository.fetchOpen(filters, limit, lastPostedAt);
         } catch (error) {
             logger.error('Failed to list open jobs', error);
             throw error;

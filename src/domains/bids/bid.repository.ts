@@ -55,6 +55,44 @@ export class BidRepository {
     }
 
     /**
+     * Get all bids by an installer with pagination using collectionGroup
+     * @param installerId - The installer user ID
+     * @param limit - Number of bids per page (default 50)
+     * @param lastTimestamp - Cursor for pagination (timestamp of last bid)
+     */
+    async fetchBidsByInstaller(installerId: string, limit = 50, lastTimestamp?: Date): Promise<Bid[]> {
+        try {
+            const db = getAdminDb();
+
+            // Use collectionGroup to query across all job subcollections
+            let query = db
+                .collectionGroup('bids')
+                .where('installerId', '==', installerId)
+                .orderBy('timestamp', 'desc');
+
+            if (lastTimestamp) {
+                query = query.startAfter(Timestamp.fromDate(lastTimestamp));
+            }
+
+            const snapshot = await query.limit(limit).get();
+
+            // Extract bids with jobId from document path
+            return snapshot.docs.map(doc => {
+                // doc.ref.parent.parent gives us the job document
+                const jobId = doc.ref.parent.parent?.id || '';
+                return {
+                    id: doc.id,
+                    jobId,
+                    ...doc.data()
+                } as Bid & { jobId: string };
+            });
+        } catch (error) {
+            logger.error('Failed to fetch bids by installer', error, { metadata: { installerId, limit, lastTimestamp } });
+            throw error;
+        }
+    }
+
+    /**
      * Delete a bid
      */
     async delete(jobId: string, bidId: string): Promise<void> {

@@ -11,12 +11,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Download, FileSpreadsheet, FileText, File } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslations } from "next-intl";
 
 interface ExportButtonProps {
     data: any[];
     filename: string;
     formats?: ("csv" | "json" | "excel")[];
     disabled?: boolean;
+    label?: string;
 }
 
 export function ExportButton({
@@ -24,14 +26,16 @@ export function ExportButton({
     filename,
     formats = ["csv", "json"],
     disabled = false,
+    label,
 }: ExportButtonProps) {
     const { toast } = useToast();
+    const t = useTranslations('admin.components.export');
 
     const exportToCSV = () => {
         if (!data || data.length === 0) {
             toast({
-                title: "No data to export",
-                description: "There is no data available to export",
+                title: t('noDataTitle'),
+                description: t('noDataDesc'),
                 variant: "destructive",
             });
             return;
@@ -60,13 +64,13 @@ export function ExportButton({
             link.click();
 
             toast({
-                title: "Export successful",
-                description: `Exported ${data.length} rows to CSV`,
+                title: t('successTitle'),
+                description: t('successDesc', { count: data.length, format: 'CSV' }),
             });
         } catch (error) {
             toast({
-                title: "Export failed",
-                description: "Failed to export data to CSV",
+                title: t('failTitle'),
+                description: t('failDesc', { format: 'CSV' }),
                 variant: "destructive",
             });
         }
@@ -75,8 +79,8 @@ export function ExportButton({
     const exportToJSON = () => {
         if (!data || data.length === 0) {
             toast({
-                title: "No data to export",
-                description: "There is no data available to export",
+                title: t('noDataTitle'),
+                description: t('noDataDesc'),
                 variant: "destructive",
             });
             return;
@@ -91,13 +95,13 @@ export function ExportButton({
             link.click();
 
             toast({
-                title: "Export successful",
-                description: `Exported ${data.length} rows to JSON`,
+                title: t('successTitle'),
+                description: t('successDesc', { count: data.length, format: 'JSON' }),
             });
         } catch (error) {
             toast({
-                title: "Export failed",
-                description: "Failed to export data to JSON",
+                title: t('failTitle'),
+                description: t('failDesc', { format: 'JSON' }),
                 variant: "destructive",
             });
         }
@@ -108,31 +112,32 @@ export function ExportButton({
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" disabled={disabled || !data || data.length === 0}>
                     <Download className="h-4 w-4 mr-2" />
-                    Export
+                    {label || t('button')}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Export Format</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('format')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {formats.includes("csv") && (
                     <DropdownMenuItem onClick={exportToCSV}>
                         <FileSpreadsheet className="h-4 w-4 mr-2" />
-                        Export as CSV
+                        {t('csv')}
                     </DropdownMenuItem>
                 )}
                 {formats.includes("json") && (
                     <DropdownMenuItem onClick={exportToJSON}>
                         <FileText className="h-4 w-4 mr-2" />
-                        Export as JSON
+                        {t('json')}
                     </DropdownMenuItem>
                 )}
                 {formats.includes("excel") && (
-                    <DropdownMenuItem onClick={() => toast({ title: "Coming soon", description: "Excel export will be available soon" })}>
+                    <DropdownMenuItem onClick={() => toast({ title: t('comingSoonTitle'), description: t('comingSoonDesc') })}>
                         <File className="h-4 w-4 mr-2" />
-                        Export as Excel
+                        {t('excel')}
                     </DropdownMenuItem>
                 )}
             </DropdownMenuContent>
         </DropdownMenu>
     );
 }
+

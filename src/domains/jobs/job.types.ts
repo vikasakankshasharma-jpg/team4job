@@ -210,6 +210,8 @@ export interface InstallerStats {
     openJobs: number;
     myBids: number;
     jobsWon: number;
+    activeJobs: number;
+    completedJobs: number;
     projectedEarnings?: number;
     totalEarnings?: number;
 }

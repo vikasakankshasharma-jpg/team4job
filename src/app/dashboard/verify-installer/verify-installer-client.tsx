@@ -39,28 +39,14 @@ import { useHelp } from "@/hooks/use-help";
 import { allSkills } from "@/lib/data";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { User } from "@/lib/types";
-
-const aadharSchema = z.object({
-  aadharNumber: z.string().length(12, { message: "Aadhar number must be 12 digits." }),
-});
-
-const otpSchema = z.object({
-  otp: z.string().length(6, { message: "OTP must be 6 digits." }),
-});
-
-const skillsSchema = z.object({
-  skills: z.array(z.string()).min(1, { message: "Please select at least one skill." }),
-});
-
-const businessSchema = z.object({
-  shopPhotoUrl: z.string().optional(),
-  gstNumber: z.string().optional(),
-});
+import { useTranslations } from "next-intl";
 
 type VerificationStep = "enterAadhar" | "enterOtp" | "selectSkills" | "enterBusinessProof" | "verified";
 
 export default function VerifyInstallerClient() {
   const { toast } = useToast();
+  const tError = useTranslations('errors');
+  const t = useTranslations('admin.verifyInstaller');
   const { user, setUser, setRole, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const router = useRouter();
@@ -70,21 +56,39 @@ export default function VerifyInstallerClient() {
   const [error, setError] = useState<string | null>(null);
   const { setHelp } = useHelp();
 
+  // Zod schemas moved inside to use translations
+  const aadharSchema = z.object({
+    aadharNumber: z.string().length(12, { message: t('steps.aadhar.validation') }),
+  });
+
+  const otpSchema = z.object({
+    otp: z.string().length(6, { message: t('steps.otp.validation') }),
+  });
+
+  const skillsSchema = z.object({
+    skills: z.array(z.string()).min(1, { message: t('steps.skills.validation') }),
+  });
+
+  const businessSchema = z.object({
+    shopPhotoUrl: z.string().optional(),
+    gstNumber: z.string().optional(),
+  });
+
   useEffect(() => {
     setHelp({
-      title: "Become a Verified Installer",
+      title: t('help.title'),
       content: (
         <div className="space-y-4 text-sm">
-          <p>This secure process verifies your identity and adds the &quot;Installer&quot; role to your profile.</p>
+          <p>{t('help.contentIntro')}</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Aadhar OTP:</span> First, enter your 12-digit Aadhar number. You&apos;ll receive an OTP on your linked mobile. For testing purposes, use Aadhar number <strong className="text-primary">999999990019</strong> and OTP <strong className="text-primary">123456</strong>.</li>
-            <li><span className="font-semibold">Select Skills:</span> After successful verification, choose the skills you specialize in. This is crucial for getting matched with the right jobs.</li>
+            <li><span className="font-semibold">{t('help.itemAadhar')}</span> {t('help.itemAadharDesc')}</li>
+            <li><span className="font-semibold">{t('help.itemSkills')}</span> {t('help.itemSkillsDesc')}</li>
           </ul>
-          <p>Once completed, you&apos;ll be able to switch to your Installer role and start bidding on jobs.</p>
+          <p>{t('help.contentOutro')}</p>
         </div>
       )
     });
-  }, [setHelp]);
+  }, [setHelp, t]);
 
   const aadharForm = useForm<z.infer<typeof aadharSchema>>({
     resolver: zodResolver(aadharSchema),
@@ -115,15 +119,15 @@ export default function VerifyInstallerClient() {
       if (result.success && result.data) {
         setVerificationId(result.data.verificationId);
         setStep("enterOtp");
-        toast({ title: "OTP Sent", description: result.data.message });
+        toast({ title: t('alerts.otpSent'), description: result.data.message });
       } else {
-        const errorMsg = result.error || "Failed to initiate verification";
+        const errorMsg = tError(result.error || 'serverError') || t('alerts.failedToInitiate');
         setError(errorMsg);
-        toast({ title: "Error", description: errorMsg, variant: "destructive" });
+        toast({ title: t('alerts.error'), description: errorMsg, variant: "destructive" });
       }
     } catch (e: any) {
-      setError(e.message || "An unexpected error occurred. Please try again.");
-      toast({ title: "Error", description: e.message || "An unexpected error occurred.", variant: "destructive" });
+      setError(tError(e.message) || t('alerts.unexpectedError'));
+      toast({ title: t('alerts.error'), description: tError(e.message) || t('alerts.unexpectedError'), variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -137,15 +141,15 @@ export default function VerifyInstallerClient() {
       const result = await confirmAadharVerificationAction({ ...values, verificationId });
       if (result.success && result.data && result.data.isVerified) {
         setStep("selectSkills");
-        toast({ title: "Verification Successful", description: "Please select your skills to complete the process.", variant: "default" });
+        toast({ title: t('alerts.verificationSuccess'), description: t('alerts.verificationSuccessDesc'), variant: "default" });
       } else {
-        const errorMsg = result.data?.message || result.error || "Verification failed";
+        const errorMsg = result.data?.message || tError(result.error || 'serverError') || t('alerts.verificationFailed');
         setError(errorMsg);
-        toast({ title: "Verification Failed", description: errorMsg, variant: "destructive" });
+        toast({ title: t('alerts.verificationFailed'), description: errorMsg, variant: "destructive" });
       }
     } catch (e: any) {
-      setError(e.message || "An unexpected error occurred. Please try again.");
-      toast({ title: "Error", description: e.message || "An unexpected error occurred.", variant: "destructive" });
+      setError(e.message || t('alerts.unexpectedError'));
+      toast({ title: t('alerts.error'), description: tError(e.message) || t('alerts.unexpectedError'), variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -154,11 +158,11 @@ export default function VerifyInstallerClient() {
   async function onSkillsSubmit(values: z.infer<typeof skillsSchema>) {
     setIsLoading(true);
     try {
-      toast({ title: "Skills Saved!", description: "One last step: add business proof to get 'Pro' status (optional).", variant: "default" });
+      toast({ title: t('alerts.skillsSaved'), description: t('alerts.skillsSavedDesc'), variant: "default" });
       setStep("enterBusinessProof");
     } catch (error) {
       console.error("Error saving skills:", error);
-      toast({ title: "Error", description: "Failed to save skills. Please try again.", variant: "destructive" });
+      toast({ title: t('alerts.error'), description: t('alerts.updateError'), variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -177,16 +181,16 @@ export default function VerifyInstallerClient() {
         try {
           const result = await verifyGstAction({ gstin: values.gstNumber });
           if (!result.success || !result.data?.isValid) {
-            const errorMsg = result.data?.message || result.error || "GST verification failed";
-            toast({ title: "GST Verification Failed", description: errorMsg, variant: "destructive" });
+            const errorMsg = result.data?.message || tError(result.error || 'serverError') || t('alerts.gstCheckError');
+            toast({ title: t('alerts.verificationFailed'), description: errorMsg, variant: "destructive" });
             setIsLoading(false);
             return;
           }
-          toast({ title: "GST Verified!", description: `Business: ${result.data.legalName || 'Verified'}` });
+          toast({ title: t('alerts.gstVerified'), description: `Business: ${result.data.legalName || 'Verified'}` });
         } catch (e) {
           console.error("GST Check Error", e);
           // Block if API enabled and failed
-          toast({ title: "Verification Error", description: "Could not verify GSTIN. Please check or try again.", variant: "destructive" });
+          toast({ title: t('alerts.error'), description: t('alerts.gstCheckError'), variant: "destructive" });
           setIsLoading(false);
           return;
         }
@@ -226,16 +230,16 @@ export default function VerifyInstallerClient() {
 
       const isAutomated = process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true';
       toast({
-        title: isAutomated ? "Installer Profile Activated!" : "Profile Submitted!",
+        title: isAutomated ? t('alerts.profileActivated') : t('alerts.profileSubmitted'),
         description: isAutomated
-          ? "Congrats! You are now a verified Installer."
-          : "Your installer profile is pending manual verification. You will be notified once approved.",
+          ? t('alerts.profileActivatedDesc')
+          : t('alerts.profileSubmittedDesc'),
         variant: "default"
       });
       router.push('/dashboard/profile');
     } catch (error) {
       console.error("Error finalizing installer profile:", error);
-      toast({ title: "Error", description: "Failed to create installer profile. Please try again.", variant: "destructive" });
+      toast({ title: t('alerts.error'), description: t('alerts.updateError'), variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -254,18 +258,18 @@ export default function VerifyInstallerClient() {
     <div className="mx-auto max-w-xl">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><ShieldCheck /> Become a Verified Installer</CardTitle>
+          <CardTitle className="flex items-center gap-2"><ShieldCheck /> {t('title')}</CardTitle>
           <CardDescription>
-            {step === 'enterAadhar' && "Verify your identity using Aadhar to create an installer profile."}
-            {step === 'enterOtp' && "An OTP has been sent to your Aadhar-linked mobile number. Enter it below."}
-            {step === 'selectSkills' && "Verification complete! Now, select your skills to finish setting up your installer profile."}
-            {step === 'enterBusinessProof' && "Optional: Add business details for 'Pro' status. Freelancers can also reach Pro status later by maintaining high ratings."}
+            {step === 'enterAadhar' && t('description.enterAadhar')}
+            {step === 'enterOtp' && t('description.enterOtp')}
+            {step === 'selectSkills' && t('description.selectSkills')}
+            {step === 'enterBusinessProof' && t('description.enterBusinessProof')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
             <Alert variant="destructive" className="mb-4">
-              <AlertTitle>Error</AlertTitle>
+              <AlertTitle>{t('alerts.error')}</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -284,15 +288,15 @@ export default function VerifyInstallerClient() {
                     if (result.success && result.data) {
                       setVerificationId(result.data.verificationId);
                       setStep("enterOtp");
-                      toast({ title: "OTP Sent", description: result.data.message });
+                      toast({ title: t('alerts.otpSent'), description: result.data.message });
                     } else {
-                      const errorMsg = result.error || "Failed to initiate verification";
+                      const errorMsg = tError(result.error || 'serverError') || t('alerts.failedToInitiate');
                       setError(errorMsg);
-                      toast({ title: "Error", description: errorMsg, variant: "destructive" });
+                      toast({ title: t('alerts.error'), description: errorMsg, variant: "destructive" });
                     }
                   } catch (e: any) {
-                    setError(e.message || "An unexpected error occurred.");
-                    toast({ title: "Error", description: e.message, variant: "destructive" });
+                    setError(tError(e.message) || t('alerts.unexpectedError'));
+                    toast({ title: t('alerts.error'), description: tError(e.message), variant: "destructive" });
                   } finally {
                     setIsLoading(false);
                   }
@@ -300,7 +304,7 @@ export default function VerifyInstallerClient() {
                   // Manual Mode
                   setVerificationId(`MANUAL_${Date.now()}`);
                   setStep("enterOtp");
-                  toast({ title: "Details Recorded", description: "Please confirm your details." });
+                  toast({ title: t('alerts.detailsRecorded'), description: t('alerts.detailsRecordedDesc') });
                   setIsLoading(false);
                 }
               })} className="space-y-8">
@@ -309,14 +313,14 @@ export default function VerifyInstallerClient() {
                   name="aadharNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Aadhar Number</FormLabel>
+                      <FormLabel>{t('steps.aadhar.label')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your 12-digit Aadhar number" {...field} />
+                        <Input placeholder={t('steps.aadhar.placeholder')} {...field} />
                       </FormControl>
                       <FormDescription>
                         {process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true'
-                          ? "An OTP will be sent to your linked mobile number."
-                          : "This will be manually verified by our team."}
+                          ? t('steps.aadhar.helperTextApi')
+                          : t('steps.aadhar.helperTextManual')}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -324,7 +328,7 @@ export default function VerifyInstallerClient() {
                 />
                 <Button type="submit" disabled={isLoading} className="w-full">
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true' ? "Send OTP" : "Next"}
+                  {process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true' ? t('steps.aadhar.buttonApi') : t('steps.aadhar.buttonNext')}
                 </Button>
               </form>
             </Form>
@@ -339,33 +343,33 @@ export default function VerifyInstallerClient() {
                     name="otp"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>One-Time Password (OTP)</FormLabel>
+                        <FormLabel>{t('steps.otp.label')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter the 6-digit OTP" {...field} />
+                          <Input placeholder={t('steps.otp.placeholder')} {...field} />
                         </FormControl>
-                        <FormDescription>Enter the OTP sent to your mobile.</FormDescription>
+                        <FormDescription>{t('steps.otp.description')}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <Button type="submit" disabled={isLoading} className="w-full">
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Verify
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {t('steps.otp.button')}
                   </Button>
                 </form>
               </Form>
             ) : (
               <div className="space-y-6">
                 <div className="bg-muted p-4 rounded-md">
-                  <h3 className="font-medium mb-2">Confirm Submission</h3>
+                  <h3 className="font-medium mb-2">{t('steps.otp.manualTitle')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Since automated verification is currently disabled for maintenance, your details will be submitted for manual review by our admin team.
+                    {t('steps.otp.manualDesc')}
                   </p>
                 </div>
                 <Button onClick={() => {
                   setStep("selectSkills");
-                  toast({ title: "Submitted", description: "Proceeding to skills selection." });
+                  toast({ title: t('steps.otp.manualToastTitle'), description: t('steps.otp.manualToastDesc') });
                 }} className="w-full">
-                  Confirm & Continue
+                  {t('steps.otp.manualButton')}
                 </Button>
               </div>
             )
@@ -380,8 +384,8 @@ export default function VerifyInstallerClient() {
                   render={() => (
                     <FormItem>
                       <div className="mb-4">
-                        <h3 className="font-medium">Select Your Skills</h3>
-                        <p className="text-sm text-muted-foreground">Choose all that apply. This helps in matching you with the right jobs.</p>
+                        <h3 className="font-medium">{t('steps.skills.title')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('steps.skills.subtitle')}</p>
                       </div>
                       <div className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
                         {allSkills.map((skill) => (
@@ -423,7 +427,7 @@ export default function VerifyInstallerClient() {
                   )}
                 />
                 <Button type="submit" disabled={isLoading} className="w-full">
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Next: Business Proof
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {t('steps.skills.button')}
                 </Button>
               </form>
             </Form>
@@ -437,9 +441,9 @@ export default function VerifyInstallerClient() {
                   name="gstNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>GST Number (Optional)</FormLabel>
+                      <FormLabel>{t('steps.business.gstLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your 15-digit GSTIN" {...field} />
+                        <Input placeholder={t('steps.business.gstPlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -450,18 +454,18 @@ export default function VerifyInstallerClient() {
                   name="shopPhotoUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Shop/Business Photo URL (Optional)</FormLabel>
+                      <FormLabel>{t('steps.business.photoLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter a URL to your shop photo" {...field} />
+                        <Input placeholder={t('steps.business.photoPlaceholder')} {...field} />
                       </FormControl>
-                      <FormDescription>Proof of physical shop enhances trust with Job Givers.</FormDescription>
+                      <FormDescription>{t('steps.business.photoHelper')}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <div className="flex gap-4">
                   <Button type="submit" disabled={isLoading} className="w-full">
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Finish & Get Pro
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {t('steps.business.buttonFinish')}
                   </Button>
                   <Button
                     type="button"
@@ -470,7 +474,7 @@ export default function VerifyInstallerClient() {
                     disabled={isLoading}
                     className="w-full"
                   >
-                    Skip & Start as Freelancer
+                    {t('steps.business.buttonSkip')}
                   </Button>
                 </div>
               </form>

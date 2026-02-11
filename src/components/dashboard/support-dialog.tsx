@@ -16,8 +16,12 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTranslations } from "next-intl";
+
 
 export function SupportDialog() {
+    const t = useTranslations('dashboard.support');
+
     return (
         <Dialog>
             <Tooltip>
@@ -27,17 +31,17 @@ export function SupportDialog() {
                             className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                         >
                             <Headphones className="h-5 w-5" />
-                            <span className="sr-only">Support</span>
+                            <span className="sr-only">{t('srOnly')}</span>
                         </button>
                     </DialogTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="right">Contact Support</TooltipContent>
+                <TooltipContent side="right">{t('tooltip')}</TooltipContent>
             </Tooltip>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Contact Support</DialogTitle>
+                    <DialogTitle>{t('title')}</DialogTitle>
                     <DialogDescription>
-                        Choose how you&apos;d like to get in touch with our team.
+                        {t('description')}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -46,8 +50,8 @@ export function SupportDialog() {
                             <Phone className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1">
-                            <p className="font-medium">Phone Support</p>
-                            <p className="text-sm text-muted-foreground">Available Mon-Fri, 9am-6pm</p>
+                            <p className="font-medium">{t('phoneLabel')}</p>
+                            <p className="text-sm text-muted-foreground">{t('phoneDesc')}</p>
                         </div>
                         <a href="tel:9587980007" className={cn(buttonVariants({ variant: "outline" }))}>
                             9587980007
@@ -58,11 +62,11 @@ export function SupportDialog() {
                             <Mail className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1">
-                            <p className="font-medium">Email Support</p>
-                            <p className="text-sm text-muted-foreground">Typical response time: 24h</p>
+                            <p className="font-medium">{t('emailLabel')}</p>
+                            <p className="text-sm text-muted-foreground">{t('emailDesc')}</p>
                         </div>
                         <a href="mailto:support@team4job.com" className={cn(buttonVariants({ variant: "outline" }))}>
-                            Email Us
+                            {t('emailButton')}
                         </a>
                     </div>
                 </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@/hooks/use-user";
+import { useTranslations } from "next-intl";
 import { useFirestore } from "@/lib/firebase/client-provider";
 import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import type { PendingSignup } from "@/lib/types";
@@ -52,6 +53,7 @@ import {
 
 export default function PendingSignupsClient() {
     const { user, isAdmin } = useUser();
+    const t = useTranslations("admin.pendingSignups");
     const db = useFirestore();
     const { toast } = useToast();
 
@@ -298,12 +300,12 @@ export default function PendingSignupsClient() {
         <div className="space-y-6">
             <div className="flex flex-row items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Pending Signups CRM</h1>
-                    <p className="text-muted-foreground">Manage and follow up with incomplete signups</p>
+                    <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+                    <p className="text-muted-foreground">{t("description")}</p>
                 </div>
                 <Button onClick={fetchSignups} variant="outline" size="sm" className="gap-2">
                     <RefreshCw className="h-4 w-4" />
-                    Refresh Data
+                    {t("refresh")}
                 </Button>
             </div>
 
@@ -311,7 +313,7 @@ export default function PendingSignupsClient() {
             <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-7">
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Total Pending</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t("stats.total")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.total}</div>
@@ -320,7 +322,7 @@ export default function PendingSignupsClient() {
 
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">New Leads</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t("stats.new")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.new}</div>
@@ -329,7 +331,7 @@ export default function PendingSignupsClient() {
 
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Contacted</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t("stats.contacted")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.contacted}</div>
@@ -338,7 +340,7 @@ export default function PendingSignupsClient() {
 
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Follow-Ups</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t("stats.followUp")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.followUp}</div>
@@ -347,7 +349,7 @@ export default function PendingSignupsClient() {
 
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Today&apos;s Queue</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t("stats.today")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-orange-600">{stats.today}</div>
@@ -356,7 +358,7 @@ export default function PendingSignupsClient() {
 
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Overdue</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t("stats.overdue")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-600">{stats.overdue}</div>
@@ -365,7 +367,7 @@ export default function PendingSignupsClient() {
 
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Denied</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t("stats.denied")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-gray-500">{stats.denied}</div>
@@ -376,17 +378,17 @@ export default function PendingSignupsClient() {
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
-                    <TabsTrigger value="all">All ({filteredSignups.length})</TabsTrigger>
+                    <TabsTrigger value="all">{t("tabs.all")} ({filteredSignups.length})</TabsTrigger>
                     <TabsTrigger value="today">
-                        Today&apos;s Follow-Ups ({stats.today})
+                        {t("tabs.today")} ({stats.today})
                         {stats.today > 0 && <Badge className="ml-2 bg-orange-500">{stats.today}</Badge>}
                     </TabsTrigger>
                     <TabsTrigger value="overdue">
-                        Overdue ({stats.overdue})
+                        {t("tabs.overdue")} ({stats.overdue})
                         {stats.overdue > 0 && <Badge className="ml-2 bg-red-500">{stats.overdue}</Badge>}
                     </TabsTrigger>
                     <TabsTrigger value="high_priority">
-                        High Priority
+                        {t("tabs.highPriority")}
                     </TabsTrigger>
                 </TabsList>
 
@@ -395,7 +397,7 @@ export default function PendingSignupsClient() {
                     <div className="flex flex-col gap-4 md:flex-row md:items-end">
                         <div className="flex-1">
                             <Input
-                                placeholder="Search by mobile, email, or name..."
+                                placeholder={t("filters.searchPlaceholder")}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -403,38 +405,38 @@ export default function PendingSignupsClient() {
 
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Status" />
+                                <SelectValue placeholder={t("filters.status")} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="contacted">Contacted</SelectItem>
-                                <SelectItem value="follow_up">Follow-Up</SelectItem>
-                                <SelectItem value="busy">Busy</SelectItem>
-                                <SelectItem value="denied">Denied</SelectItem>
+                                <SelectItem value="all">{t("filters.allStatuses")}</SelectItem>
+                                <SelectItem value="new">{t("badges.status.new")}</SelectItem>
+                                <SelectItem value="contacted">{t("badges.status.contacted")}</SelectItem>
+                                <SelectItem value="follow_up">{t("badges.status.follow_up")}</SelectItem>
+                                <SelectItem value="busy">{t("badges.status.busy")}</SelectItem>
+                                <SelectItem value="denied">{t("badges.status.denied")}</SelectItem>
                             </SelectContent>
                         </Select>
 
                         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                             <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Priority" />
+                                <SelectValue placeholder={t("filters.priority")} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Priorities</SelectItem>
-                                <SelectItem value="high">High</SelectItem>
-                                <SelectItem value="medium">Medium</SelectItem>
-                                <SelectItem value="low">Low</SelectItem>
+                                <SelectItem value="all">{t("filters.allPriorities")}</SelectItem>
+                                <SelectItem value="high">{t("badges.priority.high")}</SelectItem>
+                                <SelectItem value="medium">{t("badges.priority.medium")}</SelectItem>
+                                <SelectItem value="low">{t("badges.priority.low")}</SelectItem>
                             </SelectContent>
                         </Select>
 
                         <Select value={roleFilter} onValueChange={setRoleFilter}>
                             <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Role" />
+                                <SelectValue placeholder={t("filters.role")} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Roles</SelectItem>
-                                <SelectItem value="Installer">Installer</SelectItem>
-                                <SelectItem value="Job Giver">Job Giver</SelectItem>
+                                <SelectItem value="all">{t("filters.allRoles")}</SelectItem>
+                                <SelectItem value="Installer">{t("filters.installer")}</SelectItem>
+                                <SelectItem value="Job Giver">{t("filters.jobGiver")}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -444,14 +446,14 @@ export default function PendingSignupsClient() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Contact</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Priority</TableHead>
-                                    <TableHead>Role</TableHead>
-                                    <TableHead>Follow-Up</TableHead>
-                                    <TableHead>Last Active</TableHead>
-                                    <TableHead>Attempts</TableHead>
-                                    <TableHead>Actions</TableHead>
+                                    <TableHead>{t("table.contact")}</TableHead>
+                                    <TableHead>{t("table.status")}</TableHead>
+                                    <TableHead>{t("table.priority")}</TableHead>
+                                    <TableHead>{t("table.role")}</TableHead>
+                                    <TableHead>{t("table.followUp")}</TableHead>
+                                    <TableHead>{t("table.lastActive")}</TableHead>
+                                    <TableHead>{t("table.attempts")}</TableHead>
+                                    <TableHead>{t("table.actions")}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -547,7 +549,7 @@ export default function PendingSignupsClient() {
                                                             </Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                            <DropdownMenuLabel>{t("table.actions")}</DropdownMenuLabel>
                                                             <DropdownMenuSeparator />
                                                             <DropdownMenuItem
                                                                 onClick={() => {
@@ -556,7 +558,7 @@ export default function PendingSignupsClient() {
                                                                 }}
                                                             >
                                                                 <Calendar className="mr-2 h-4 w-4" />
-                                                                Schedule Follow-Up
+                                                                {t("actions.schedule")}
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem
                                                                 onClick={() => {
@@ -565,7 +567,7 @@ export default function PendingSignupsClient() {
                                                                 }}
                                                             >
                                                                 <XCircle className="mr-2 h-4 w-4" />
-                                                                Mark as Denied
+                                                                {t("actions.markDenied")}
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem
                                                                 onClick={() => {
@@ -574,21 +576,21 @@ export default function PendingSignupsClient() {
                                                                 }}
                                                             >
                                                                 <History className="mr-2 h-4 w-4" />
-                                                                View Activity Timeline
+                                                                {t("actions.viewTimeline")}
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
-                                                            <DropdownMenuLabel>Set Priority</DropdownMenuLabel>
+                                                            <DropdownMenuLabel>{t("actions.setPriority")}</DropdownMenuLabel>
                                                             <DropdownMenuItem onClick={() => handleSetPriority(signup, "high")}>
                                                                 <Star className="mr-2 h-4 w-4 text-red-500" />
-                                                                High Priority
+                                                                {t("badges.priority.high")} ({t("stats.highPriority")})
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem onClick={() => handleSetPriority(signup, "medium")}>
                                                                 <Star className="mr-2 h-4 w-4 text-yellow-500" />
-                                                                Medium Priority
+                                                                {t("badges.priority.medium")}
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem onClick={() => handleSetPriority(signup, "low")}>
                                                                 <Star className="mr-2 h-4 w-4 text-gray-500" />
-                                                                Low Priority
+                                                                {t("badges.priority.low")}
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>

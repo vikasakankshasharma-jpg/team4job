@@ -43,6 +43,9 @@ import { Search } from "lucide-react";
 
 
 
+import { useTranslations } from "next-intl";
+
+
 
 interface BidItemProps {
   bid: Bid & { jobId: string; id: string };
@@ -52,6 +55,8 @@ interface BidItemProps {
 }
 
 function MyBidRow({ bid, job, user, onWithdraw }: BidItemProps) {
+  const t = useTranslations('myBids');
+  const tCommon = useTranslations('common');
   const timeAgo = formatDistanceToNow(toDate(bid.timestamp), { addSuffix: true });
   const myBidStatus = getMyBidStatus(job, user);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -59,7 +64,7 @@ function MyBidRow({ bid, job, user, onWithdraw }: BidItemProps) {
   const canWithdraw = job.status === 'Open for Bidding';
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to withdraw this bid?")) return;
+    if (!confirm(t('withdrawConfirm'))) return;
     setIsDeleting(true);
     await onWithdraw(bid.id, bid.jobId);
     setIsDeleting(false);
@@ -84,7 +89,7 @@ function MyBidRow({ bid, job, user, onWithdraw }: BidItemProps) {
             {bid.amount.toLocaleString()}
           </div>
         ) : (
-          <span className="text-muted-foreground">Direct Award</span>
+          <span className="text-muted-foreground">{t('directAward')}</span>
         )}
       </TableCell>
       <TableCell className="hidden md:table-cell">{timeAgo}</TableCell>
@@ -98,13 +103,13 @@ function MyBidRow({ bid, job, user, onWithdraw }: BidItemProps) {
         {pointsEarned !== null ? (
           <div className="flex items-center justify-end gap-1 font-semibold text-green-600">
             <Award className="h-4 w-4" />
-            +{pointsEarned} pts
+            +{pointsEarned} {t('pts')}
           </div>
         ) : (
           canWithdraw ? (
             <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-              <span className="ml-1 hidden sm:inline">Withdraw</span>
+              <span className="ml-1 hidden sm:inline">{t('withdraw')}</span>
             </Button>
           ) : (
             <span className="text-muted-foreground">—</span>
@@ -116,6 +121,7 @@ function MyBidRow({ bid, job, user, onWithdraw }: BidItemProps) {
 }
 
 function MyBidCard({ bid, job, user, onWithdraw }: BidItemProps) {
+  const t = useTranslations('myBids');
   const router = useRouter();
   const myBidStatus = getMyBidStatus(job, user);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -123,7 +129,7 @@ function MyBidCard({ bid, job, user, onWithdraw }: BidItemProps) {
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Are you sure you want to withdraw this bid?")) return;
+    if (!confirm(t('withdrawConfirm'))) return;
     setIsDeleting(true);
     await onWithdraw(bid.id, bid.jobId);
     setIsDeleting(false);
@@ -151,22 +157,24 @@ function MyBidCard({ bid, job, user, onWithdraw }: BidItemProps) {
       </CardHeader>
       <CardContent className="text-sm space-y-3">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Your Bid</span>
+          <span className="text-muted-foreground">{t('yourBidLabel')}</span>
           <span className="font-semibold flex items-center gap-1"><IndianRupee className="h-4 w-4" />{bid.amount.toLocaleString()}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Job Status</span>
+          <span className="text-muted-foreground">{t('jobStatus')}</span>
           <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
         </div>
       </CardContent>
       <CardFooter className="text-xs text-muted-foreground">
-        Bid placed {formatDistanceToNow(toDate(bid.timestamp), { addSuffix: true })}
+        {t('bidPlacedAgo', { timeAgo: formatDistanceToNow(toDate(bid.timestamp), { addSuffix: true }) })}
       </CardFooter>
     </Card>
   );
 }
 
 export default function MyBidsClient() {
+  const t = useTranslations('myBids');
+  const tCommon = useTranslations('common');
   const { user, role, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const searchParams = useSearchParams();
@@ -179,6 +187,8 @@ export default function MyBidsClient() {
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [bids, setBids] = React.useState<(Bid & { jobId: string; id: string })[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [loadMoreLoading, setLoadMoreLoading] = React.useState(false);
+  const [hasMore, setHasMore] = React.useState(true);
   const [view, setView] = React.useState<'list' | 'grid'>('list');
 
   useEffect(() => {
@@ -187,25 +197,48 @@ export default function MyBidsClient() {
     }
   }, [role, userLoading, router]);
 
-  const fetchMyBids = useCallback(async () => {
+  const fetchMyBids = useCallback(async (isLoadMore = false) => {
     if (!user || !role || role !== 'Installer') return;
-    setLoading(true);
+
+    if (isLoadMore) {
+      setLoadMoreLoading(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
-      const response = await fetch(`/api/bids/my-bids?userId=${user.id}`);
+      let lastTimestamp: string | undefined = undefined;
+      if (isLoadMore && bids.length > 0) {
+        const lastBid = bids[bids.length - 1];
+        const timestamp = toDate(lastBid.timestamp);
+        if (!isNaN(timestamp.getTime())) {
+          lastTimestamp = timestamp.toISOString();
+        }
+      }
+
+      const params = new URLSearchParams({
+        userId: user.id,
+        limit: '50',
+        ...(lastTimestamp && { lastTimestamp })
+      });
+
+      const response = await fetch(`/api/bids/my-bids?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch bids');
 
       const data = await response.json();
-
-      // The API returns bids with embedded job data
-      // We need to separate them to match the state structure if needed, 
-      // or just use the returned structure.
-      // Based on previous analysis, the API returns:
-      // { bids: [ { ...bid, job: { ...jobData } } ] }
-
       const fetchedBids = data.bids;
 
-      // Extract unique jobs from the bids for the jobs state
-      // The API returns job data inside the bid object
+      if (isLoadMore) {
+        setBids(prev => {
+          const existingIds = new Set(prev.map(b => b.id));
+          const unique = fetchedBids.filter((b: any) => !existingIds.has(b.id));
+          return [...prev, ...unique];
+        });
+      } else {
+        setBids(fetchedBids);
+      }
+
+      // Update jobs map
       const uniqueJobsMap = new Map<string, Job>();
       fetchedBids.forEach((bid: any) => {
         if (bid.job) {
@@ -213,15 +246,29 @@ export default function MyBidsClient() {
         }
       });
 
-      setBids(fetchedBids);
-      setJobs(Array.from(uniqueJobsMap.values()));
+      if (isLoadMore) {
+        setJobs(prev => {
+          const combined = new Map<string, Job>();
+          prev.forEach(job => combined.set(job.id, job));
+          uniqueJobsMap.forEach((job, id) => combined.set(id, job));
+          return Array.from(combined.values());
+        });
+      } else {
+        setJobs(Array.from(uniqueJobsMap.values()));
+      }
+
+      setHasMore(data.hasMore !== false && fetchedBids.length === 50);
     } catch (error) {
       console.error("Failed to fetch bids and jobs:", error);
-      toast({ title: "Error", description: "Failed to load your bids. Please refresh.", variant: "destructive" });
+      toast({ title: tCommon('errors.generic'), description: t('withdrawError'), variant: "destructive" });
     } finally {
-      setLoading(false);
+      if (isLoadMore) {
+        setLoadMoreLoading(false);
+      } else {
+        setLoading(false);
+      }
     }
-  }, [user, role, toast]);
+  }, [user, role, toast, t, tCommon, bids]);
 
   React.useEffect(() => {
     if (!userLoading) {
@@ -230,40 +277,35 @@ export default function MyBidsClient() {
   }, [fetchMyBids, userLoading]);
 
   const handleWithdrawBid = async (bidId: string, jobId: string) => {
-    // Note: Technically this should also be an API call (DELETE /api/bids/[id])
-    // But for now we kept the hybrid approach stable in recent steps.
-    // However, since we are doing a "complete" pass, let's look for an API route or keep using Firebase if the API isn't ready.
-    // I haven't created a withdraw-bid API yet. I'll stick to Firebase for the ACTION to keep it "Hybrid" and stable like posted-jobs.
-    // But I need to make sure imports like deleteDoc are still there.
     if (!db) return;
     try {
       await deleteDoc(doc(db, "jobs", jobId, "bids", bidId));
-      toast({ title: "Bid Withdrawn", description: "Your bid has been removed." });
+      toast({ title: t('bidWithdrawn'), description: t('bidWithdrawnDesc') });
       // Refresh list locally
       setBids(prev => prev.filter(b => b.id !== bidId));
     } catch (error) {
       console.error("Failed to withdraw:", error);
-      toast({ title: "Error", description: "Could not withdraw bid.", variant: "destructive" });
+      toast({ title: tCommon('errors.generic'), description: t('withdrawError'), variant: "destructive" });
     }
   }
 
   useEffect(() => {
     setHelp({
-      title: 'My Bids Guide',
+      title: t('guide.title'),
       content: (
         <div className="space-y-4 text-sm">
-          <p>This page tracks every job you have bid on. Use the filter to see jobs with a specific status.</p>
+          <p>{t('guide.content')}</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Bidded:</span> You have placed a bid, but the job is still open for other installers to bid on.</li>
-            <li><span className="font-semibold">Awarded:</span> Congratulations! The Job Giver has selected you. You must accept the job to proceed.</li>
-            <li><span className="font-semibold">In Progress:</span> You have accepted the job and can now communicate with the Job Giver.</li>
-            <li><span className="font-semibold">Completed & Won:</span> The job is finished and you have been paid. You&apos;ll see any reputation points you earned here.</li>
-            <li><span className="font-semibold">Not Selected:</span> The Job Giver chose another installer for this project.</li>
+            <li><span className="font-semibold">{t('guide.biddedTitle')}</span> {t('guide.biddedDesc')}</li>
+            <li><span className="font-semibold">{t('guide.awardedTitle')}</span> {t('guide.awardedDesc')}</li>
+            <li><span className="font-semibold">{t('guide.inProgressTitle')}</span> {t('guide.inProgressDesc')}</li>
+            <li><span className="font-semibold">{t('guide.completedTitle')}</span> {t('guide.completedDesc')}</li>
+            <li><span className="font-semibold">{t('guide.notSelectedTitle')}</span> {t('guide.notSelectedDesc')}</li>
           </ul>
         </div>
       )
     });
-  }, [setHelp]);
+  }, [setHelp, t]);
 
   const handleFilterChange = (newStatus: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -305,9 +347,17 @@ export default function MyBidsClient() {
     );
   }
 
-  const pageTitle = statusFilter === 'All' ? 'My Bids' : `${statusFilter} Bids`;
-  const pageDescription = statusFilter === 'All' ? 'A history of all bids you have placed.' : `A list of your bids that are ${statusFilter.toLowerCase()}.`;
-  const bidStatuses = ["All", "Bidded", "Awarded to You", "In Progress", "Completed & Won", "Not Selected", "Cancelled"];
+  const pageTitle = statusFilter === 'All' ? t('title') : t('titleFiltered', { status: statusFilter });
+  const pageDescription = statusFilter === 'All' ? t('description') : t('descriptionFiltered', { status: statusFilter.toLowerCase() });
+  const bidStatuses = [
+    t('statuses.all'),
+    t('statuses.bidded'),
+    t('statuses.awarded'),
+    t('statuses.inProgress'),
+    t('statuses.completed'),
+    t('statuses.notSelected'),
+    t('statuses.cancelled')
+  ];
 
   return (
     <div className="max-w-full overflow-x-hidden px-4 sm:px-6 grid flex-1 items-start gap-4 sm:gap-6 md:gap-8">
@@ -330,12 +380,12 @@ export default function MyBidsClient() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="default" className="h-10 min-h-[44px] gap-2 flex-1 sm:flex-none">
                   <ListFilter className="h-4 w-4" />
-                  <span className="sm:whitespace-nowrap">Filter</span>
+                  <span className="sm:whitespace-nowrap">{tCommon('filter')}</span>
                   {statusFilter !== 'All' && <Badge variant="secondary" className="rounded-full h-6 w-6 p-0 flex items-center justify-center text-xs">1</Badge>}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-64">
-                <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('filterByStatus')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={statusFilter} onValueChange={handleFilterChange}>
                   {bidStatuses.map(status => (
@@ -347,7 +397,7 @@ export default function MyBidsClient() {
             {statusFilter !== 'All' && (
               <Button variant="ghost" size="default" onClick={clearFilters} className="min-h-[44px]">
                 <X className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Clear</span>
+                <span className="hidden sm:inline">{t('clear')}</span>
               </Button>
             )}
           </div>
@@ -357,12 +407,12 @@ export default function MyBidsClient() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Job Title</TableHead>
-                  <TableHead>Your Bid</TableHead>
-                  <TableHead className="hidden md:table-cell">Placed</TableHead>
-                  <TableHead>Job Status</TableHead>
-                  <TableHead>My Bid Status</TableHead>
-                  <TableHead className="text-right">Points Earned</TableHead>
+                  <TableHead>{t('jobTitle')}</TableHead>
+                  <TableHead>{t('yourBid')}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t('placed')}</TableHead>
+                  <TableHead>{t('jobStatus')}</TableHead>
+                  <TableHead>{t('myBidStatus')}</TableHead>
+                  <TableHead className="text-right">{t('pointsEarned')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -370,7 +420,7 @@ export default function MyBidsClient() {
                   <TableRow>
                     <TableCell colSpan={6} className="h-64 text-center text-muted-foreground">
                       <Loader2 className="h-6 w-6 animate-spin inline-block mr-2" />
-                      Loading your bids...
+                      {tCommon('loading')}
                     </TableCell>
                   </TableRow>
                 ) : filteredBids.length > 0 ? (
@@ -384,16 +434,16 @@ export default function MyBidsClient() {
                     <TableCell colSpan={6} className="h-96">
                       <EmptyState
                         icon={Search}
-                        title="No bids found"
+                        title={t('noBidsFound')}
                         description={
                           statusFilter !== 'All'
-                            ? `You have no bids with status "${statusFilter}".`
-                            : "You haven't placed any bids yet. Browse open jobs to find your next project."
+                            ? t('noBidsStatus', { status: statusFilter })
+                            : t('noBidsYet')
                         }
                         action={
                           <Button asChild>
                             <Link href="/dashboard/jobs">
-                              Browse Open Jobs
+                              {t('browseOpenJobs')}
                             </Link>
                           </Button>
                         }
@@ -418,16 +468,16 @@ export default function MyBidsClient() {
                 <div className="col-span-full">
                   <EmptyState
                     icon={Search}
-                    title="No bids found"
+                    title={t('noBidsFound')}
                     description={
                       statusFilter !== 'All'
-                        ? `You have no bids with status "${statusFilter}".`
-                        : "You haven't placed any bids yet. Browse open jobs to find your next project."
+                        ? t('noBidsStatus', { status: statusFilter })
+                        : t('noBidsYet')
                     }
                     action={
                       <Button asChild>
                         <Link href="/dashboard/jobs">
-                          Browse Open Jobs
+                          {t('browseOpenJobs')}
                         </Link>
                       </Button>
                     }
@@ -437,10 +487,21 @@ export default function MyBidsClient() {
             </div>
           )}
         </CardContent>
-        <CardFooter>
-          <div className="text-xs text-muted-foreground">
-            Showing <strong>{filteredBids.length}</strong> of your <strong>{bids.length}</strong> total bids.
+        <CardFooter className="flex-col space-y-4 pt-6">
+          <div className="text-xs text-muted-foreground w-full text-center">
+            {t('showingBids', { count: filteredBids.length, total: bids.length })}
           </div>
+          {!loading && hasMore && filteredBids.length > 0 && statusFilter === 'All' && (
+            <Button
+              variant="outline"
+              onClick={() => fetchMyBids(true)}
+              disabled={loadMoreLoading}
+              className="w-full sm:w-auto min-w-[200px]"
+            >
+              {loadMoreLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t('loadMore')}
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </div>

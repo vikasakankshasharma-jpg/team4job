@@ -16,6 +16,7 @@ import { Bookmark, Loader2 } from 'lucide-react';
 import { JobDraft, saveTemplate } from '@/lib/api/drafts';
 import { useFirebase, useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from 'next-intl';
 
 interface SaveTemplateDialogProps {
     open: boolean;
@@ -33,6 +34,10 @@ export function SaveTemplateDialog({
     const { user } = useUser();
     const { db } = useFirebase();
     const { toast } = useToast();
+    const tJob = useTranslations('job');
+    const tCommon = useTranslations('common');
+    const tSuccess = useTranslations('success');
+    const tError = useTranslations('errors');
 
     const [templateName, setTemplateName] = useState('');
     const [saving, setSaving] = useState(false);
@@ -53,8 +58,8 @@ export function SaveTemplateDialog({
             );
 
             toast({
-                title: 'Template saved!',
-                description: `"${templateName}" is now available for quick use.`,
+                title: tSuccess('templateSaved'),
+                description: tSuccess('templateSavedDesc', { name: templateName.trim() }),
             });
 
             setTemplateName('');
@@ -62,8 +67,8 @@ export function SaveTemplateDialog({
         } catch (error) {
             console.error('Error saving template:', error);
             toast({
-                title: 'Failed to save template',
-                description: 'Please try again.',
+                title: tError('saveFailed'), // Added to errors namespace previously in my head, checking...
+                description: tError('generic'),
                 variant: 'destructive',
             });
         } finally {
@@ -77,35 +82,35 @@ export function SaveTemplateDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Bookmark className="h-5 w-5 text-primary" />
-                        Save as Template
+                        {tJob('saveAsTemplate')}
                     </DialogTitle>
                     <DialogDescription>
-                        Create a reusable template from this job posting.
+                        {tJob('saveTemplateDesc')}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="template-name">Template Name</Label>
+                        <Label htmlFor="template-name">{tJob('templateName')}</Label>
                         <Input
                             id="template-name"
-                            placeholder="e.g., Monthly Office Maintenance"
+                            placeholder={tJob('templateNamePlaceholder')}
                             value={templateName}
                             onChange={(e) => setTemplateName(e.target.value)}
                             disabled={saving}
                         />
                         <p className="text-xs text-muted-foreground">
-                            Choose a descriptive name to easily identify this template later.
+                            {tJob('templateNameDesc')}
                         </p>
                     </div>
 
                     <div className="rounded-lg border bg-muted/50 p-3 space-y-1 text-sm">
-                        <div className="font-medium">What will be saved:</div>
+                        <div className="font-medium">{tJob('whatIsSaved')}</div>
                         <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                            <li>Job title and description</li>
-                            <li>Category and skills</li>
-                            <li>Budget range</li>
-                            <li>Travel tip amount</li>
+                            <li>{tJob('savedItemTitleDesc')}</li>
+                            <li>{tJob('savedItemCatSkills')}</li>
+                            <li>{tJob('savedItemBudget')}</li>
+                            <li>{tJob('savedItemTip')}</li>
                         </ul>
                     </div>
                 </div>
@@ -117,7 +122,7 @@ export function SaveTemplateDialog({
                         onClick={() => onOpenChange(false)}
                         disabled={saving}
                     >
-                        Cancel
+                        {tCommon('cancel')}
                     </Button>
                     <Button
                         type="button"
@@ -125,7 +130,7 @@ export function SaveTemplateDialog({
                         disabled={!templateName.trim() || saving}
                     >
                         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Template
+                        {tJob('saveAsTemplate')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

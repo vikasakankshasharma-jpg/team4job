@@ -32,6 +32,7 @@ import { doc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useHelp } from "@/hooks/use-help";
 import { FileUpload } from "@/components/ui/file-upload";
+import { useTranslations } from "next-intl";
 
 const disputeSchema = z.object({
     category: z.enum(["Billing Inquiry", "Technical Support", "Skill Request", "General Question"]),
@@ -46,23 +47,32 @@ export default function CreateDisputeClient() {
     const { db, storage } = useFirebase();
     const router = useRouter();
     const { setHelp } = useHelp();
+    const t = useTranslations('disputes');
+    const tCommon = useTranslations('common');
+
+    const disputeSchema = z.object({
+        category: z.enum(["Billing Inquiry", "Technical Support", "Skill Request", "General Question"]),
+        title: z.string().min(10, { message: t('validation.titleMinLength') }),
+        reason: z.string().min(25, { message: t('validation.descriptionMinLength') }),
+        attachments: z.array(z.instanceof(File)).optional(),
+    });
 
     React.useEffect(() => {
         setHelp({
-            title: "Create Support Ticket",
+            title: t('createGuide.title'),
             content: (
                 <div className="space-y-4 text-sm">
-                    <p>Use this form to create a new support ticket for issues not related to a specific job.</p>
+                    <p>{t('createGuide.content')}</p>
                     <ul className="list-disc space-y-2 pl-5">
-                        <li><span className="font-semibold">Category:</span> Choose the most relevant category for your issue.</li>
-                        <li><span className="font-semibold">Subject:</span> Provide a short, clear summary of your issue.</li>
-                        <li><span className="font-semibold">Description:</span> Describe your problem in detail.</li>
-                        <li><span className="font-semibold">Attachments:</span> Upload any relevant photos or videos as proof.</li>
+                        <li><span className="font-semibold">{t('createGuide.categoryLabel')}</span> {t('createGuide.categoryDesc')}</li>
+                        <li><span className="font-semibold">{t('createGuide.subjectLabel')}</span> {t('createGuide.subjectDesc')}</li>
+                        <li><span className="font-semibold">{t('createGuide.descriptionLabel')}</span> {t('createGuide.descriptionDesc')}</li>
+                        <li><span className="font-semibold">{t('createGuide.attachmentsLabel')}</span> {t('createGuide.attachmentsDesc')}</li>
                     </ul>
                 </div>
             )
         })
-    }, [setHelp]);
+    }, [setHelp, t]);
 
     useEffect(() => {
         if (!userLoading && isAdmin) {
@@ -82,7 +92,7 @@ export default function CreateDisputeClient() {
 
     async function onSubmit(values: z.infer<typeof disputeSchema>) {
         if (!user || !db || !storage) {
-            toast({ title: "Error", description: "Authentication details are missing. Please log in again.", variant: "destructive" });
+            toast({ title: "Error", description: t('validation.authError'), variant: "destructive" });
             return;
         }
 
@@ -119,8 +129,8 @@ export default function CreateDisputeClient() {
         await setDoc(doc(db, "disputes", newDisputeId), disputeData);
 
         toast({
-            title: "Support Ticket Created",
-            description: "An admin will review your request shortly.",
+            title: t('ticketCreated'),
+            description: t('ticketCreatedDesc'),
         });
 
         router.push(`/dashboard/disputes/${newDisputeId}`);
@@ -137,15 +147,15 @@ export default function CreateDisputeClient() {
     return (
         <div className="mx-auto grid max-w-2xl flex-1 auto-rows-max gap-4">
             <h1 className="text-xl font-semibold tracking-tight">
-                Create New Support Ticket
+                {t('createTicketPage')}
             </h1>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Ticket Details</CardTitle>
+                            <CardTitle>{t('ticketDetails')}</CardTitle>
                             <CardDescription>
-                                Please provide as much detail as possible so we can assist you.
+                                {t('ticketDetailsDesc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -154,17 +164,18 @@ export default function CreateDisputeClient() {
                                 name="category"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Category</FormLabel>
+                                        <FormLabel>{t('category')}</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select a category for your request" />
+                                                    <SelectValue placeholder={t('categoryPlaceholder')} />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {["Billing Inquiry", "Technical Support", "Skill Request", "General Question"].map(cat => (
-                                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                                ))}
+                                                <SelectItem value="Billing Inquiry">{t('categoryBillingInquiry')}</SelectItem>
+                                                <SelectItem value="Technical Support">{t('categoryTechnicalSupport')}</SelectItem>
+                                                <SelectItem value="Skill Request">{t('categorySkillRequest')}</SelectItem>
+                                                <SelectItem value="General Question">{t('categoryGeneralQuestion')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -176,10 +187,10 @@ export default function CreateDisputeClient() {
                                 name="title"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Subject</FormLabel>
+                                        <FormLabel>{t('subject')}</FormLabel>
                                         <FormControl>
                                             <Input
-                                                placeholder="e.g., Question about platform commission"
+                                                placeholder={t('subjectPlaceholder')}
                                                 {...field}
                                             />
                                         </FormControl>
@@ -192,10 +203,10 @@ export default function CreateDisputeClient() {
                                 name="reason"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Description</FormLabel>
+                                        <FormLabel>{t('description')}</FormLabel>
                                         <FormControl>
                                             <Textarea
-                                                placeholder="Describe your issue or question in detail..."
+                                                placeholder={t('descriptionPlaceholder')}
                                                 className="min-h-48"
                                                 {...field}
                                             />
@@ -209,14 +220,14 @@ export default function CreateDisputeClient() {
                                 name="attachments"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Photo/Video Proof</FormLabel>
+                                        <FormLabel>{t('photoVideoProof')}</FormLabel>
                                         <FormControl>
                                             <FileUpload
                                                 onFilesChange={(files) => field.onChange(files)}
                                                 maxFiles={5}
                                             />
                                         </FormControl>
-                                        <FormDescription>Upload any relevant photos or videos as evidence (max 5 files).</FormDescription>
+                                        <FormDescription>{t('uploadDescription')}</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -225,11 +236,11 @@ export default function CreateDisputeClient() {
                     </Card>
                     <div className="flex items-center justify-end gap-2">
                         <Button variant="outline" type="button" onClick={() => router.back()}>
-                            Cancel
+                            {tCommon('cancel')}
                         </Button>
                         <Button type="submit" disabled={form.formState.isSubmitting}>
                             {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Submit Ticket
+                            {t('submitTicket')}
                         </Button>
                     </div>
                 </form>

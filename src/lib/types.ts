@@ -60,6 +60,10 @@ export type User = {
     accountNumberMasked?: string;
     ifsc?: string;
   };
+  savedJobs?: string[]; // Array of Job IDs
+  blockedUserIds?: string[]; // IDs of users blocked by this user
+  blockedByUserIds?: string[]; // IDs of users who have blocked this user
+  preferredLanguage?: 'en' | 'hi'; // User's preferred UI language
   fcmTokens?: string[];
   favoriteInstallerIds?: string[];
   blockedInstallerIds?: string[];
@@ -214,6 +218,14 @@ export type Job = {
   disqualifiedInstallerIds?: string[];
   awardedInstaller?: User | DocumentReference;
   awardedInstallerId?: string; // Added for redundancy and robust querying
+  structuredRequirements?: Record<string, any>; // Stores raw answers from Fixed Question Flow (e.g. { camera_count: "3-4", location: "shop" })
+  // Language metadata for user content
+  description_original?: {
+    text: string;
+    language: 'en' | 'hi' | 'hinglish';
+  };
+  description_compiled_en?: string | null; // AI-generated English version
+  description_compiled_hi?: string | null; // (Future) AI-generated Hindi version
   selectedInstallers?: { installerId: string, rank: number }[];
   directAwardInstallerId?: string; // ID of the installer this job was directly sent to
   rating?: number;
@@ -528,3 +540,16 @@ export interface Activity {
   read: boolean;
   relatedId?: string; // Job ID, Transaction ID, etc.
 }
+
+export type BetaFeedback = {
+  id: string;
+  userId: string;
+  userName?: string;
+  role?: string;
+  rating: number; // 1-5
+  category: 'Feature Request' | 'Bug Report' | 'Improvement' | 'Other';
+  message: string;
+  createdAt: Date | Timestamp;
+  status: 'new' | 'reviewed' | 'resolved';
+  adminNotes?: string;
+};

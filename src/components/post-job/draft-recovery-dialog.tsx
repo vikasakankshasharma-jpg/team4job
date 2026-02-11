@@ -14,6 +14,7 @@ import { FileText, Trash2 } from 'lucide-react';
 import { JobDraft } from '@/lib/api/drafts';
 import { toDate } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslations } from 'next-intl';
 
 interface DraftRecoveryDialogProps {
     open: boolean;
@@ -30,6 +31,9 @@ export function DraftRecoveryDialog({
     onDiscard,
     onCancel,
 }: DraftRecoveryDialogProps) {
+    const tJob = useTranslations('job');
+    const tCommon = useTranslations('common');
+
     if (!draft) return null;
 
     const timeAgo = formatDistanceToNow(toDate(draft.lastSaved), {
@@ -42,27 +46,27 @@ export function DraftRecoveryDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <FileText className="h-5 w-5 text-primary" />
-                        Resume your draft?
+                        {tJob('draftRecoveryTitle')}
                     </DialogTitle>
                     <DialogDescription>
-                        You have an unsaved job post from <strong>{timeAgo}</strong>.
+                        {tJob('draftRecoveryDesc', { timeAgo })}
                     </DialogDescription>
                 </DialogHeader>
 
                 {draft.title && (
                     <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
-                        <div className="text-sm font-medium">Draft Preview:</div>
+                        <div className="text-sm font-medium">{tJob('draftPreview')}</div>
                         <div className="text-sm">
-                            <strong>Title:</strong> {draft.title}
+                            <strong>{tJob('title')}:</strong> {draft.title}
                         </div>
                         {draft.jobCategory && (
                             <div className="text-sm">
-                                <strong>Category:</strong> {draft.jobCategory}
+                                <strong>{tJob('category')}:</strong> {draft.jobCategory}
                             </div>
                         )}
                         {draft.budget && (
                             <div className="text-sm">
-                                <strong>Budget:</strong> ₹{draft.budget.min.toLocaleString()} - ₹
+                                <strong>{tJob('budget')}:</strong> ₹{draft.budget.min.toLocaleString()} - ₹
                                 {draft.budget.max.toLocaleString()}
                             </div>
                         )}
@@ -76,7 +80,7 @@ export function DraftRecoveryDialog({
                         onClick={onCancel}
                         className="flex-1"
                     >
-                        Cancel
+                        {tCommon('cancel')}
                     </Button>
                     <Button
                         type="button"
@@ -85,7 +89,7 @@ export function DraftRecoveryDialog({
                         className="flex-1"
                     >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Discard
+                        {tJob('discard')}
                     </Button>
                     <Button
                         type="button"
@@ -93,7 +97,7 @@ export function DraftRecoveryDialog({
                         className="flex-1"
                     >
                         <FileText className="mr-2 h-4 w-4" />
-                        Resume Draft
+                        {tJob('resumeDraft')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

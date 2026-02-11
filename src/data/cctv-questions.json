@@ -1,0 +1,137 @@
+{
+    "category": "CCTV",
+    "questions": [
+        {
+            "id": "location_type",
+            "label": "Where do you need the CCTV installed?",
+            "options": [
+                {
+                    "value": "Home",
+                    "label": "Home"
+                },
+                {
+                    "value": "Shop",
+                    "label": "Shop"
+                },
+                {
+                    "value": "Office",
+                    "label": "Office"
+                },
+                {
+                    "value": "Warehouse",
+                    "label": "Warehouse"
+                },
+                {
+                    "value": "Other",
+                    "label": "Other"
+                }
+            ]
+        },
+        {
+            "id": "camera_count",
+            "label": "How many cameras do you need?",
+            "options": [
+                {
+                    "value": "1-2",
+                    "label": "1-2 Cameras"
+                },
+                {
+                    "value": "3-4",
+                    "label": "3-4 Cameras"
+                },
+                {
+                    "value": "5-8",
+                    "label": "5-8 Cameras"
+                },
+                {
+                    "value": "8+",
+                    "label": "8+ Cameras"
+                },
+                {
+                    "value": "NotSure",
+                    "label": "Not Sure"
+                }
+            ]
+        },
+        {
+            "id": "camera_area",
+            "label": "Do you need Indoor cameras, Outdoor cameras, or Both?",
+            "options": [
+                {
+                    "value": "Indoor",
+                    "label": "Indoor Only"
+                },
+                {
+                    "value": "Outdoor",
+                    "label": "Outdoor Only"
+                },
+                {
+                    "value": "Both",
+                    "label": "Both Indoor & Outdoor"
+                },
+                {
+                    "value": "InstallerSuggest",
+                    "label": "Let Installer Suggest"
+                }
+            ]
+        },
+        {
+            "id": "wiring_status",
+            "label": "What represents the current wiring status?",
+            "options": [
+                {
+                    "value": "Available",
+                    "label": "Wiring is already available"
+                },
+                {
+                    "value": "Needed",
+                    "label": "New wiring is needed"
+                },
+                {
+                    "value": "NotSure",
+                    "label": "Not Sure"
+                }
+            ]
+        },
+        {
+            "id": "viewing_requirement",
+            "label": "How do you want to view the footage?",
+            "options": [
+                {
+                    "value": "Mobile",
+                    "label": "Mobile Phone (Remote View)"
+                },
+                {
+                    "value": "Monitor",
+                    "label": "TV / Monitor (Local View)"
+                },
+                {
+                    "value": "Both",
+                    "label": "Both Mobile & Monitor"
+                },
+                {
+                    "value": "NotSure",
+                    "label": "Not Sure"
+                }
+            ]
+        },
+        {
+            "id": "urgency",
+            "label": "When do you need this done?",
+            "options": [
+                {
+                    "value": "Immediate",
+                    "label": "Today / Tomorrow"
+                },
+                {
+                    "value": "Standard",
+                    "label": "Within 1-2 Days"
+                },
+                {
+                    "value": "Flexible",
+                    "label": "Flexible"
+                }
+            ]
+        }
+    ]
+}

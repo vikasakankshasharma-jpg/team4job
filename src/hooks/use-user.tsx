@@ -9,12 +9,12 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
-import { useAuth, useFirestore } from "@/lib/firebase/client-provider";
+import { useFirestore, useFirebase } from "@/lib/firebase/client-provider";
 import { toDate } from "@/lib/utils";
 import { setAuthTokenAction, clearAuthTokenAction } from "@/app/actions/auth.actions";
 
 // Re-export firebase hooks for convenience
-export { useAuth, useFirestore, useFirebase, useStorage } from "@/lib/firebase/client-provider";
+export { useFirestore, useFirebase, useStorage } from "@/lib/firebase/client-provider";
 
 // --- Types ---
 type Role = "Job Giver" | "Installer" | "Admin" | "Support Team";
@@ -55,7 +55,7 @@ const isPublicPath = (path: string) => {
 };
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const auth = useAuth();
+  const { auth } = useFirebase();
   const db = useFirestore();
 
   const [user, setUser] = useState<User | null>(null);

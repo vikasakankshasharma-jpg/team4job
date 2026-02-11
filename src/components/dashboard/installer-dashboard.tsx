@@ -2,6 +2,7 @@
 
 import React, { useMemo, useEffect } from "react";
 import { useUser, useFirebase } from "@/hooks/use-user";
+import { useTranslations } from 'next-intl';
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -30,6 +31,7 @@ import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
 import { InstallerStats } from "@/domains/jobs/job.types";
 import { Transaction } from "@/lib/types";
+import { TRANSACTION_STATUS } from "@/lib/constants/statuses";
 
 const InstallerEarningsChart = dynamic(() => import("@/components/dashboard/charts/installer-earnings-chart").then(mod => mod.InstallerEarningsChart), { ssr: false });
 
@@ -40,6 +42,7 @@ export function InstallerDashboard({ stats, transactions, loading = false }: {
 }) {
     const { user } = useUser();
     const { setHelp } = useHelp();
+    const t = useTranslations('dashboard');
 
     const isVerified = user?.installerProfile?.verified;
 
@@ -56,7 +59,7 @@ export function InstallerDashboard({ stats, transactions, loading = false }: {
         }).reverse();
 
         transactions.forEach(t => {
-            if (t.status === 'released' && t.releasedAt) {
+            if (t.status === TRANSACTION_STATUS.RELEASED && t.releasedAt) {
                 const date = toDate(t.releasedAt);
                 const monthStr = format(date, 'MMM yyyy');
                 const monthData = months.find(m => m.fullName === monthStr);
@@ -69,47 +72,47 @@ export function InstallerDashboard({ stats, transactions, loading = false }: {
     }, [transactions]);
 
     const totalEarnings = transactions
-        .filter(t => t.status === 'released')
+        .filter(t => t.status === TRANSACTION_STATUS.RELEASED)
         .reduce((acc, t) => acc + (t.payoutToInstaller || 0), 0);
 
     const pendingPayments = transactions
-        .filter(t => t.status === 'funded')
+        .filter(t => t.status === TRANSACTION_STATUS.FUNDED)
         .reduce((acc, t) => acc + (t.payoutToInstaller || 0), 0);
 
 
     useEffect(() => {
         setHelp({
-            title: 'Installer Dashboard Guide',
+            title: t('installerGuide.title'),
             content: (
                 <div className="space-y-4 text-sm">
-                    <p>Welcome to your Dashboard! This is your central hub for managing your work on the platform.</p>
+                    <p>{t('installerGuide.welcome')}</p>
                     <ul className="list-disc space-y-2 pl-5">
                         <li>
-                            <span className="font-semibold">Open Jobs:</span> This shows the total number of jobs currently available for bidding. Click it to find your next opportunity.
+                            <span className="font-semibold">{t('installerGuide.openJobsLabel')}</span> {t('installerGuide.openJobsDesc')}
                         </li>
                         <li>
-                            <span className="font-semibold">My Bids:</span> Tracks all the jobs you&apos;ve bid on and their current status (Bidded, Awarded, etc.). Click to see your bidding history.
+                            <span className="font-semibold">{t('installerGuide.myBidsLabel')}</span> {t('installerGuide.myBidsDesc')}
                         </li>
                         <li>
-                            <span className="font-semibold">Jobs Won:</span> Displays the number of jobs you&apos;ve won that are currently active or in progress.
+                            <span className="font-semibold">{t('installerGuide.jobsWonLabel')}</span> {t('installerGuide.jobsWonDesc')}
                         </li>
                         <li>
-                            <span className="font-semibold">Projected Earnings:</span> The total value of jobs currently in the &quot;Funded&quot; (Locked) state that you are working on.
+                            <span className="font-semibold">{t('installerGuide.projectedEarningsLabel')}</span> {t('installerGuide.projectedEarningsDesc')}
                         </li>
                         {!isVerified && (
                             <li>
-                                <span className="font-semibold">Verification:</span> Complete your Aadhar verification to become a trusted installer and increase your chances of winning jobs.
+                                <span className="font-semibold">{t('installerGuide.verificationLabel')}</span> {t('installerGuide.verificationDesc')}
                             </li>
                         )}
                         <li>
-                            <span className="font-semibold">Find Your Next Project:</span> A quick link to jump directly to the job browsing page.
+                            <span className="font-semibold">{t('installerGuide.findProjectLabel')}</span> {t('installerGuide.findProjectDesc')}
                         </li>
                     </ul>
-                    <p>Use the navigation on the left to access other sections like your Profile, where you can track your reputation and skills.</p>
+                    <p>{t('installerGuide.bottomText')}</p>
                 </div>
             )
         });
-    }, [setHelp, isVerified]);
+    }, [setHelp, t, isVerified]);
 
     if (loading) {
         return <DashboardSkeleton />
@@ -118,7 +121,7 @@ export function InstallerDashboard({ stats, transactions, loading = false }: {
     return (
         <>
             <div className="flex items-center mb-8">
-                <h1 className="text-lg font-semibold md:text-2xl">Welcome, {user?.name}!</h1>
+                <h1 className="text-lg font-semibold md:text-2xl">{t('welcomeUser', { name: user?.name || 'User' })}</h1>
             </div>
             {user?.roles.includes('Installer') && !isVerified && (
                 <Card className="mb-8 bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800">
@@ -127,14 +130,14 @@ export function InstallerDashboard({ stats, transactions, loading = false }: {
                             <ShieldCheck className="h-6 w-6 text-yellow-600 dark:text-yellow-300" />
                         </div>
                         <div>
-                            <CardTitle>Become a Verified Installer</CardTitle>
-                            <CardDescription>Complete Aadhar verification to build trust and get more jobs.</CardDescription>
+                            <CardTitle>{t('verifyInstaller')}</CardTitle>
+                            <CardDescription>{t('verifyInstallerDesc')}</CardDescription>
                         </div>
                     </CardHeader>
                     <CardContent>
                         <Button asChild>
                             <Link href="/dashboard/verify-installer">
-                                Verify Now <ArrowRight className="ml-2 h-4 w-4" />
+                                {t('verifyNow')} <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
                     </CardContent>
@@ -142,27 +145,27 @@ export function InstallerDashboard({ stats, transactions, loading = false }: {
             )}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <StatCard
-                    title="Open Jobs"
+                    title={t('openJobs')}
                     value={stats.openJobs}
-                    description="Jobs currently accepting bids"
+                    description={t('openJobsDesc')}
                     icon={Briefcase}
                     href="/dashboard/jobs"
                     iconBgColor="bg-blue-100 dark:bg-blue-900"
                     iconColor="text-blue-600 dark:text-blue-300"
                 />
                 <StatCard
-                    title="My Bids"
+                    title={t('myBids')}
                     value={stats.myBids}
-                    description="Your bids and awarded jobs"
+                    description={t('myBidsDesc')}
                     icon={Target}
                     href="/dashboard/my-bids"
                     iconBgColor="bg-purple-100 dark:bg-purple-900"
                     iconColor="text-purple-600 dark:text-purple-300"
                 />
                 <StatCard
-                    title="Jobs Won"
+                    title={t('jobsWon')}
                     value={stats.jobsWon}
-                    description="Total jobs awarded to you"
+                    description={t('jobsWonDesc')}
                     icon={UserCheck}
                     href="/dashboard/my-bids?status=Awarded"
                     iconBgColor="bg-green-100 dark:bg-green-900"
@@ -179,18 +182,18 @@ export function InstallerDashboard({ stats, transactions, loading = false }: {
                         <div className="p-4 rounded-full bg-green-200 dark:bg-green-900 mb-4">
                             <IndianRupee className="h-8 w-8 text-green-700 dark:text-green-400" />
                         </div>
-                        <p className="text-sm font-medium text-green-600 dark:text-green-400">Total Earnings</p>
+                        <p className="text-sm font-medium text-green-600 dark:text-green-400">{t('totalEarnings')}</p>
                         <h3 className="text-4xl font-bold mt-2 text-green-800 dark:text-green-300">₹{totalEarnings.toLocaleString()}</h3>
-                        <p className="text-xs text-muted-foreground mt-2">Lifetime payout processed</p>
+                        <p className="text-xs text-muted-foreground mt-2">{t('totalEarningsDesc')}</p>
                     </Card>
 
                     <Card className="flex flex-col justify-center items-center text-center p-6 bg-blue-50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900 flex-1">
                         <div className="p-4 rounded-full bg-blue-200 dark:bg-blue-900 mb-4">
                             <Clock className="h-8 w-8 text-blue-700 dark:text-blue-400" />
                         </div>
-                        <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Projected Earnings</p>
+                        <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{t('projectedEarnings')}</p>
                         <h3 className="text-4xl font-bold mt-2 text-blue-800 dark:text-blue-300">₹{pendingPayments.toLocaleString()}</h3>
-                        <p className="text-xs text-muted-foreground mt-2">Funds currently Locked</p>
+                        <p className="text-xs text-muted-foreground mt-2">{t('projectedEarningsDesc')}</p>
                     </Card>
                 </div>
             </div>
@@ -202,15 +205,15 @@ export function InstallerDashboard({ stats, transactions, loading = false }: {
                 <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <Card data-tour="find-project-card">
                         <CardHeader>
-                            <CardTitle>Find Your Next Project</CardTitle>
+                            <CardTitle>{t('findNextProject')}</CardTitle>
                             <CardDescription>
-                                Browse hundreds of CCTV installation jobs and place your bid.
+                                {t('findNextProjectDesc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Button asChild>
                                 <Link href="/dashboard/jobs">
-                                    Browse Jobs <ArrowRight className="ml-2 h-4 w-4" />
+                                    {t('browseJobs')} <ArrowRight className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>
                         </CardContent>
@@ -220,15 +223,15 @@ export function InstallerDashboard({ stats, transactions, loading = false }: {
 
                     <Card data-tour="manage-profile-card">
                         <CardHeader>
-                            <CardTitle>Manage Your Profile</CardTitle>
+                            <CardTitle>{t('manageProfile')}</CardTitle>
                             <CardDescription>
-                                Keep your skills and reputation up-to-date to attract more Job Givers.
+                                {t('manageProfileDesc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Button asChild variant="secondary">
                                 <Link href="/dashboard/profile">
-                                    Go to Profile <ArrowRight className="ml-2 h-4 w-4" />
+                                    {t('goToProfile')} <ArrowRight className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>
                         </CardContent>

@@ -50,7 +50,7 @@ import {
 import { useSearchParams, useRouter } from "next/navigation";
 import { Job } from "@/lib/types";
 import { toDate, getRefId } from "@/lib/utils";
-import { useUser, useAuth } from "@/hooks/use-user";
+import { useUser, useFirebase } from "@/hooks/use-user";
 import { useState, useEffect } from "react";
 import { useHelp } from "@/hooks/use-help";
 import { Label } from "@/components/ui/label";
@@ -63,11 +63,15 @@ import { BulkActionsToolbar } from "@/components/posted-jobs/bulk-actions-toolba
 import { AdvancedFilters, type JobFilters } from "@/components/posted-jobs/advanced-filters";
 import { MobileJobCard } from "@/components/posted-jobs/mobile-job-card";
 import { useMyJobs } from "@/hooks/use-my-jobs";
+import { useTranslations } from 'next-intl';
 
 function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () => void }) {
   const { user } = useUser();
-  const auth = useAuth();
+  const { auth } = useFirebase();
   const { toast } = useToast();
+  const tJob = useTranslations('job');
+  const tCommon = useTranslations('common');
+
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [tip, setTip] = useState(0);
@@ -75,7 +79,11 @@ function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () 
 
   const handlePromote = async () => {
     if (!tip || tip <= 0 || !newDeadline) {
-      toast({ title: "Invalid Input", description: "Please enter a valid tip amount and a new deadline.", variant: "destructive" });
+      toast({
+        title: tJob('invalidInput'),
+        description: tJob('invalidInputDesc'),
+        variant: "destructive"
+      });
       return;
     }
 
@@ -96,12 +104,20 @@ function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () 
 
       if (!response.ok) throw new Error('Failed to promote job');
 
-      toast({ title: "Job Promoted!", description: "Your job is now open for bidding to a wider audience.", variant: "default" });
+      toast({
+        title: tJob('jobPromoted'),
+        description: tJob('jobPromotedDesc'),
+        variant: "default"
+      });
       onJobPromoted();
       setIsOpen(false);
     } catch (error) {
       console.error("Error promoting job:", error);
-      toast({ title: "Error", description: "Could not promote the job. Please try again.", variant: "destructive" });
+      toast({
+        title: tCommon('error'),
+        description: tJob('promoteFailed'),
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -112,19 +128,19 @@ function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () 
       <DialogTrigger asChild>
         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-primary focus:bg-primary/10 focus:text-primary">
           <Star className="mr-2 h-4 w-4" />
-          Promote & Re-list
+          {tJob('promoteAndRelist')}
         </DropdownMenuItem>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Promote Unbid Job</DialogTitle>
+          <DialogTitle>{tJob('promoteUnbidJob')}</DialogTitle>
           <DialogDescription>
-            Attract more installers by offering a travel tip and re-listing the job. This tip is commission-free for the installer.
+            {tJob('promoteUnbidJobDesc')}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="tip-amount">Travel Tip (₹)</Label>
+            <Label htmlFor="tip-amount">{tJob('travelTipAmount')}</Label>
             <Input
               id="tip-amount"
               type="number"
@@ -132,10 +148,10 @@ function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () 
               value={tip}
               onChange={(e) => setTip(Number(e.target.value))}
             />
-            <p className="text-xs text-muted-foreground">This amount will be added to the total cost and paid directly to the installer.</p>
+            <p className="text-xs text-muted-foreground">{tJob('travelTipHelp')}</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="new-deadline">New Bidding Deadline</Label>
+            <Label htmlFor="new-deadline">{tJob('newBiddingDeadline')}</Label>
             <Input
               id="new-deadline"
               type="date"
@@ -147,11 +163,11 @@ function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () 
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" disabled={isLoading}>Cancel</Button>
+            <Button variant="outline" disabled={isLoading}>{tCommon('cancel')}</Button>
           </DialogClose>
           <Button onClick={handlePromote} disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Promote & Re-list Job
+            {tJob('promoteAndRelistJob')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -160,6 +176,8 @@ function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () 
 }
 
 function PostedJobsTable({ jobs, title, description, footerText, loading, onUpdate }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean, onUpdate: () => void }) {
+  const tJob = useTranslations('job');
+  const tCommon = useTranslations('common');
 
   const getJobType = (job: Job) => {
     if (!job.awardedInstaller) return 'N/A';
@@ -167,22 +185,22 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
     const awardedInstallerId = getRefId(job.awardedInstaller);
 
     if (!job.bids || job.bids.length === 0) {
-      if (awardedInstallerId) return 'Direct';
+      if (awardedInstallerId) return tJob('jobTypeDirect');
       return 'N/A';
     }
 
     const bidderIds = (job.bids || []).map(b => getRefId(b.installer));
 
-    return bidderIds.includes(awardedInstallerId) ? 'Bidding' : 'Direct';
+    return bidderIds.includes(awardedInstallerId) ? tJob('jobTypeBidding') : tJob('jobTypeDirect');
   };
 
   const getActionsForJob = (job: Job) => {
     const actions = [
-      <DropdownMenuItem key="view" asChild><Link href={`/dashboard/jobs/${job.id}`}>View Details</Link></DropdownMenuItem>
+      <DropdownMenuItem key="view" asChild><Link href={`/dashboard/jobs/${job.id}`}>{tJob('viewDetails')}</Link></DropdownMenuItem>
     ];
 
     if (job.status === 'Unbid' || job.status === 'Cancelled') {
-      actions.push(<DropdownMenuItem key="repost" asChild><Link href={`/dashboard/post-job?repostJobId=${job.id}`}><RefreshCw className="mr-2 h-4 w-4" />Repost Job</Link></DropdownMenuItem>);
+      actions.push(<DropdownMenuItem key="repost" asChild><Link href={`/dashboard/post-job?repostJobId=${job.id}`}><RefreshCw className="mr-2 h-4 w-4" />{tJob('repostJob')}</Link></DropdownMenuItem>);
     }
 
     if (job.status === 'Unbid') {
@@ -207,13 +225,13 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Job Title</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Bids</TableHead>
-                  <TableHead className="hidden md:table-cell">Job Type</TableHead>
-                  <TableHead className="hidden md:table-cell">Posted On</TableHead>
+                  <TableHead>{tJob('title')}</TableHead>
+                  <TableHead>{tCommon('status')}</TableHead>
+                  <TableHead className="hidden md:table-cell">{tJob('bids')}</TableHead>
+                  <TableHead className="hidden md:table-cell">{tCommon('type')}</TableHead>
+                  <TableHead className="hidden md:table-cell">{tJob('postedOn')}</TableHead>
                   <TableHead>
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">{tCommon('actions')}</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -222,7 +240,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
                   <TableRow>
                     <TableCell colSpan={6} className="text-center h-24">
                       <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                      <span className="sr-only">Loading jobs...</span>
+                      <span className="sr-only">{tCommon('loading')}</span>
                     </TableCell>
                   </TableRow>
                 ) : jobs.length > 0 ? jobs.map(job => (
@@ -244,11 +262,11 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
                         <DropdownMenuTrigger asChild>
                           <Button aria-haspopup="true" size="icon" variant="ghost">
                             <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
+                            <span className="sr-only">{tCommon('toggleMenu')}</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuLabel>{tCommon('actions')}</DropdownMenuLabel>
                           {getActionsForJob(job)}
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -258,18 +276,22 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
                   <TableRow>
                     <TableCell colSpan={6} className="h-64 p-8">
                       <EnhancedEmptyState
-                        icon={title.includes('Archived') ? Archive : title.includes('Unbid') ? Inbox : Briefcase}
-                        title={title.includes('Active') ? "No active jobs yet" : title.includes('Unbid') ? "No unbid jobs" : "No archived jobs"}
+                        icon={title.toLowerCase().includes('archived') ? Archive : title.toLowerCase().includes('unbid') ? Inbox : Briefcase}
+                        title={
+                          title.toLowerCase().includes('active') ? tJob('noActiveJobs') :
+                            title.toLowerCase().includes('unbid') ? tJob('noUnbidJobs') :
+                              tJob('noArchivedJobs')
+                        }
                         description={
-                          title.includes('Active')
-                            ? "Start by creating your first job posting to find qualified installers."
-                            : title.includes('Unbid')
-                              ? "All your jobs have received bids. Great work!"
-                              : "Completed and cancelled jobs will appear here."
+                          title.toLowerCase().includes('active')
+                            ? tJob('noActiveJobsDesc')
+                            : title.toLowerCase().includes('unbid')
+                              ? tJob('noUnbidJobsDesc')
+                              : tJob('noArchivedJobsDesc')
                         }
                         action={
-                          title.includes('Active') ? {
-                            label: "Post Your First Job",
+                          title.toLowerCase().includes('active') ? {
+                            label: tJob('postFirstJob'),
                             onClick: () => window.location.href = '/dashboard/post-job',
                             variant: 'default' as const
                           } : undefined
@@ -296,9 +318,17 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
             ) : (
               <EnhancedEmptyState
                 icon={Briefcase}
-                title={title.includes('Active') ? "No active jobs" : title.includes('Unbid') ? "No unbid jobs" : "No jobs"}
-                description={title.includes('Active') ? "Start by creating your first job posting." : "All jobs have received bids!"}
-                action={title.includes('Active') ? { label: "Post Job", onClick: () => window.location.href = '/dashboard/post-job' } : undefined}
+                title={
+                  title.toLowerCase().includes('active') ? tJob('noActiveJobs') :
+                    title.toLowerCase().includes('unbid') ? tJob('noUnbidJobs') :
+                      tJob('noArchivedJobs')
+                }
+                description={
+                  title.toLowerCase().includes('active')
+                    ? tJob('noActiveJobsDesc')
+                    : tJob('noUnbidJobsDesc')
+                }
+                action={title.toLowerCase().includes('active') ? { label: tJob('postNewJob'), onClick: () => window.location.href = '/dashboard/post-job' } : undefined}
                 className="border-0 shadow-none"
               />
             )}
@@ -318,14 +348,14 @@ export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] 
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "active";
   const { user, role, loading: userLoading } = useUser();
-  const auth = useAuth();
+  const { auth } = useFirebase();
   const router = useRouter();
   const { setHelp } = useHelp();
   const { toast } = useToast();
+  const tJob = useTranslations('job');
+  const tCommon = useTranslations('common');
 
-  // Use new hook with initial data
-  // casting initialJobs to any to bypass potential type mismatch during refactor if any, ensuring Job[] match
-  const { jobs, loading: jobsLoading, refetch } = useMyJobs(initialJobs);
+  const { jobs, loading: jobsLoading, refetch, loadMore, hasMore, loadMoreLoading } = useMyJobs(initialJobs);
 
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<JobFilters>({});
@@ -338,34 +368,34 @@ export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] 
 
   useEffect(() => {
     setHelp({
-      title: 'My Posted Jobs Guide',
+      title: tJob('guideTitle'),
       content: (
         <div className="space-y-4 text-sm">
-          <p>This page lists all the jobs you have created. It&apos;s split into three tabs:</p>
+          <p>{tJob('guidePart1')}</p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <span className="font-semibold">Active:</span> Shows all jobs that are currently open for bidding, in progress, or waiting for your action. This is where you&apos;ll manage ongoing projects.
+              <span className="font-semibold">{tCommon('active')}:</span> {tJob('guideActive')}
             </li>
             <li>
-              <span className="font-semibold">Unbid:</span> Jobs that received no bids. From here you can choose to repost the job as is, or promote it with a travel tip to attract more installers.
+              <span className="font-semibold">Unbid:</span> {tJob('guideUnbid')}
             </li>
             <li>
-              <span className="font-semibold">Archived:</span> Shows all your jobs that have been completed or cancelled. This is your history of past jobs.
+              <span className="font-semibold">{tCommon('archived')}:</span> {tJob('guideArchived')}
             </li>
             <li>
-              <span className="font-semibold">Job Type:</span> This column shows how a job was awarded. &quot;Bidding&quot; means you chose from bids, while &quot;Direct&quot; means you awarded it directly to an installer.
+              <span className="font-semibold">{tCommon('type')}:</span> {tJob('guideType')}
             </li>
             <li>
-              <span className="font-semibold">Actions:</span> Use the actions menu (three dots) on each job row to view its details, re-post a cancelled/un-bid job, or promote an un-bid job to a wider audience.
+              <span className="font-semibold">{tCommon('actions')}:</span> {tJob('guideActions')}
             </li>
           </ul>
           <p>
-            Click on any job title to go to its detail page, where you can review bids from installers. You can also use the &quot;Post New Job&quot; button to quickly create a new listing.
+            {tJob('guideFooter')}
           </p>
         </div>
       )
     });
-  }, [setHelp]);
+  }, [setHelp, tJob, tCommon]);
 
   const handleBulkAction = async (action: 'archive' | 'delete') => {
     if (selectedJobIds.length === 0 || !user) return;
@@ -385,12 +415,19 @@ export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] 
 
       if (!response.ok) throw new Error(`Failed to ${action} jobs`);
 
-      toast({ title: "Success", description: `${selectedJobIds.length} job(s) ${action}d.` });
+      toast({
+        title: tCommon('success'),
+        description: tCommon('bulkActionSuccess', { count: selectedJobIds.length, action })
+      });
       setSelectedJobIds([]);
       refetch();
     } catch (error) {
       console.error(`Bulk ${action} error:`, error);
-      toast({ title: "Error", description: `Failed to ${action} jobs.`, variant: "destructive" });
+      toast({
+        title: tCommon('error'),
+        description: tCommon('bulkActionError', { action }),
+        variant: "destructive"
+      });
     }
   };
 
@@ -456,19 +493,21 @@ export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] 
   // Get categories for filter dropdown
   const categories = Array.from(new Set(jobs.map(j => j.jobCategory).filter(Boolean)));
 
+  const showLoadMore = hasMore && !filters.search && !filters.category && !filters.dateFrom && !filters.dateTo && !filters.budgetMin && !filters.budgetMax;
+
   return (
     <>
       <Tabs defaultValue={tab} className="w-full">
         <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
           <TabsList className="h-auto flex-wrap justify-start w-full sm:w-auto grid-cols-1 sm:grid-cols-3">
-            <TabsTrigger value="active" className="flex-1 sm:flex-none">Active ({activeJobs.length})</TabsTrigger>
-            <TabsTrigger value="unbid" className="flex-1 sm:flex-none">Unbid ({unbidJobs.length})</TabsTrigger>
-            <TabsTrigger value="archived" className="flex-1 sm:flex-none">Archived ({archivedJobs.length})</TabsTrigger>
+            <TabsTrigger value="active" className="flex-1 sm:flex-none">{tCommon('active')} ({activeJobs.length})</TabsTrigger>
+            <TabsTrigger value="unbid" className="flex-1 sm:flex-none">{tCommon('unbid')} ({unbidJobs.length})</TabsTrigger>
+            <TabsTrigger value="archived" className="flex-1 sm:flex-none">{tCommon('archived')} ({archivedJobs.length})</TabsTrigger>
           </TabsList>
           <Button asChild>
             <Link href="/dashboard/post-job">
               <PlusCircle className="mr-2 h-4 w-4" />
-              Post New Job
+              {tJob('postNewJob')}
             </Link>
           </Button>
         </div>
@@ -482,35 +521,69 @@ export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] 
           />
         </div>
 
-        <TabsContent value="active">
+        <TabsContent value="active" className="space-y-4">
           <PostedJobsTable
             jobs={activeJobs}
-            title="My Active Jobs"
-            description="Manage your job postings and review bids from installers."
-            footerText={`You have ${activeJobs.length} active jobs.`}
+            title={tJob('myActiveJobs')}
+            description={tJob('activeJobsDesc')}
+            footerText={tJob('activeJobsFooter', { count: activeJobs.length })}
             loading={jobsLoading}
             onUpdate={refetch}
           />
+          {showLoadMore && (
+            <div className="flex justify-center mt-8 pb-4">
+              <Button
+                variant="outline"
+                onClick={loadMore}
+                disabled={loadMoreLoading}
+                className="w-full sm:w-auto min-w-[200px]"
+              >
+                {loadMoreLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {tCommon('loadMore')}
+              </Button>
+            </div>
+          )}
         </TabsContent>
-        <TabsContent value="unbid">
+        <TabsContent value="unbid" className="space-y-4">
           <PostedJobsTable
             jobs={unbidJobs}
-            title="Unbid Jobs"
-            description="Jobs that received no bids. You can repost or promote them."
-            footerText={`You have ${unbidJobs.length} unbid jobs requiring attention.`}
+            title={tJob('unbidJobs')}
+            description={tJob('unbidJobsDesc')}
+            footerText={tJob('unbidJobsFooter', { count: unbidJobs.length })}
             loading={jobsLoading}
             onUpdate={refetch}
           />
+          {showLoadMore && (
+            <div className="flex justify-center mt-8 pb-4">
+              <Button
+                variant="outline"
+                onClick={loadMore}
+                disabled={loadMoreLoading}
+                className="w-full sm:w-auto min-w-[200px]"
+              >
+                {loadMoreLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {tCommon('loadMore')}
+              </Button>
+            </div>
+          )}
         </TabsContent>
-        <TabsContent value="archived">
+        <TabsContent value="archived" className="space-y-4">
           <PostedJobsTable
             jobs={archivedJobs}
-            title="My Archived Jobs"
-            description="A history of your completed or cancelled projects."
-            footerText={`You have ${archivedJobs.length} archived jobs.`}
+            title={tJob('myArchivedJobs')}
+            description={tJob('archivedJobsDesc')}
+            footerText={tJob('archivedJobsFooter', { count: archivedJobs.length })}
             loading={jobsLoading}
             onUpdate={refetch}
           />
+          {showLoadMore && (
+            <div className="flex justify-center">
+              <Button variant="outline" onClick={loadMore} disabled={loadMoreLoading}>
+                {loadMoreLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {tCommon('loadMore')}
+              </Button>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 

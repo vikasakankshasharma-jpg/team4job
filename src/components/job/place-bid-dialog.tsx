@@ -25,6 +25,7 @@ import { Job, User, PlatformSettings } from "@/lib/types";
 import { aiAssistedBidCreationAction } from "@/app/actions/ai.actions";
 import { toDate } from "@/lib/utils";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Separator } from "@/components/ui/separator";
 import { placeBidAction } from "@/app/actions/bid.actions";
 
@@ -66,6 +67,7 @@ export function PlaceBidDialog({
 }) {
     const [aiLoading, setAiLoading] = React.useState(false);
     const { toast } = useToast();
+    const tError = useTranslations('errors');
 
     const form = useForm<z.infer<typeof bidSchema>>({
         resolver: zodResolver(bidSchema),
@@ -110,7 +112,7 @@ export function PlaceBidDialog({
             }
         } catch (error: any) {
             console.error(error);
-            toast({ title: "AI Generation Failed", description: "Could not generate draft.", variant: "destructive" });
+            toast({ title: "AI Generation Failed", description: tError(error.message) || "Could not generate draft.", variant: "destructive" });
         } finally {
             setAiLoading(false);
         }
@@ -153,7 +155,7 @@ export function PlaceBidDialog({
             }
         } catch (error: any) {
             console.error("Bid submission failed:", error);
-            toast({ title: "Bid Failed", description: error.message || "Could not place bid.", variant: "destructive" });
+            toast({ title: "Bid Failed", description: tError(error.message) || "Could not place bid.", variant: "destructive" });
         }
     }
 

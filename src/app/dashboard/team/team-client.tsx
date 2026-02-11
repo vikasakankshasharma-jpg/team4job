@@ -39,7 +39,11 @@ import { TeamManagementCard } from "@/components/team-management-card";
 import Link from "next/link";
 
 
+import { useTranslations } from 'next-intl';
+
 export default function TeamClient() {
+  const t = useTranslations('team');
+  const tCommon = useTranslations('common');
   const { user, isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const router = useRouter();
@@ -51,25 +55,25 @@ export default function TeamClient() {
 
   React.useEffect(() => {
     setHelp({
-      title: "Team Management",
+      title: t('title'),
       content: (
         <div className="space-y-4 text-sm">
-          <p>This page is where you, as a primary admin, can manage your administrative team.</p>
+          <p>{t('description')}</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Add Team Member:</span> Use the form to create a new Admin or Support Team user. They will be sent an email to log in with the temporary password you set.</li>
-            <li><span className="font-semibold">Roles & Permissions:</span>
+            <li><span className="font-semibold">{t('guide.addMember')}</span> {t('guide.addMemberDesc')}</li>
+            <li><span className="font-semibold">{t('guide.rolesPermissions')}</span>
               <ul className="list-disc space-y-1 pl-5 mt-1">
-                <li><span className="font-semibold">Admin:</span> Full platform access - can manage users, jobs, transactions, settings, team members, and resolve disputes.</li>
-                <li><span className="font-semibold">Support Team:</span> Limited access - can view users, jobs, and transactions (read-only), manage disputes, and provide customer support.</li>
+                <li><span className="font-semibold">{t('guide.admin')}</span> {t('guide.adminDesc')}</li>
+                <li><span className="font-semibold">{t('guide.support')}</span> {t('guide.supportDesc')}</li>
               </ul>
             </li>
-            <li><span className="font-semibold">Security Note:</span> Support Team members cannot access platform settings, financial configurations, or team management. They focus on dispute resolution and customer service.</li>
-            <li><span className="font-semibold">Manage Accounts:</span> View team member details by clicking their name. Account deletion must be handled in the Firebase Console for security reasons.</li>
+            <li><span className="font-semibold">{t('guide.securityNote')}</span> {t('guide.securityNoteDesc')}</li>
+            <li><span className="font-semibold">{t('guide.manageAccounts')}</span> {t('guide.manageAccountsDesc')}</li>
           </ul>
         </div>
       )
     })
-  }, [setHelp]);
+  }, [setHelp, t]);
 
   const fetchTeamMembers = useCallback(async () => {
     if (!db) return;
@@ -128,20 +132,20 @@ export default function TeamClient() {
   const filterConfig: Filter[] = [
     {
       id: 'search',
-      label: 'Search',
+      label: tCommon('search'),
       type: 'search',
-      placeholder: 'Search by name or email...',
+      placeholder: t('searchPlaceholder'),
       value: searchQuery,
       onChange: setSearchQuery,
     },
     {
       id: 'role',
-      label: 'Role',
+      label: t('table.role'),
       type: 'select',
       options: [
-        { label: 'All Roles', value: 'all' },
-        { label: 'Admin', value: 'Admin' },
-        { label: 'Support Team', value: 'Support Team' },
+        { label: t('roles.all'), value: 'all' },
+        { label: t('roles.admin'), value: 'Admin' },
+        { label: t('roles.support'), value: 'Support Team' },
       ],
       value: roleFilter,
       onChange: setRoleFilter,
@@ -166,22 +170,22 @@ export default function TeamClient() {
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
-          title="Total Members"
+          title={t('stats.totalMembers')}
           value={stats.totalMembers}
           icon={Users}
-          description="All team members"
+          description={t('stats.allMembers')}
         />
         <StatCard
-          title="Admins"
+          title={t('stats.admins')}
           value={stats.admins}
           icon={Shield}
-          description="Full platform access"
+          description={t('stats.fullAccess')}
         />
         <StatCard
-          title="Support Team"
+          title={t('stats.supportTeam')}
           value={stats.support}
           icon={Headset}
-          description="Customer support"
+          description={t('stats.customerSupport')}
         />
       </div>
 
@@ -193,10 +197,10 @@ export default function TeamClient() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <UserCog />
-                Current Team Members
+                {t('currentMembers')}
               </CardTitle>
               <CardDescription>
-                {filteredTeamMembers.length} members shown • Administrative and support staff
+                {t('membersShown', { count: filteredTeamMembers.length })}
               </CardDescription>
             </div>
             <ExportButton
@@ -215,12 +219,12 @@ export default function TeamClient() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Date Added</TableHead>
+                <TableHead>{t('table.name')}</TableHead>
+                <TableHead>{t('table.email')}</TableHead>
+                <TableHead>{t('table.role')}</TableHead>
+                <TableHead>{t('table.dateAdded')}</TableHead>
                 <TableHead>
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{tCommon('actions')}</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -242,10 +246,10 @@ export default function TeamClient() {
                       <div className="flex flex-wrap gap-1">
                         {teamMember.roles.map(r => {
                           if (r === 'Admin') {
-                            return <Badge key={r} variant="default" className="bg-red-600">Admin</Badge>
+                            return <Badge key={r} variant="default" className="bg-red-600">{t('roles.admin')}</Badge>
                           }
                           if (r === 'Support Team') {
-                            return <Badge key={r} variant="secondary" className="bg-blue-600 text-white">Support Team</Badge>
+                            return <Badge key={r} variant="secondary" className="bg-blue-600 text-white">{t('roles.support')}</Badge>
                           }
                           return null;
                         })}
@@ -266,10 +270,10 @@ export default function TeamClient() {
                   <TableCell colSpan={5} className="h-24">
                     <AdminEmptyState
                       icon={Inbox}
-                      title="No team members found"
-                      description="No members match your current filters"
+                      title={t('noMembersFound')}
+                      description={t('noMembersMatch')}
                       action={{
-                        label: 'Reset Filters',
+                        label: tCommon('resetFilters'),
                         onClick: clearFilters,
                       }}
                     />

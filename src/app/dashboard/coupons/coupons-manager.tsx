@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -68,26 +67,28 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-
-const couponSchema = z.object({
-  code: z.string().min(3, "Code must be at least 3 characters.").toUpperCase(),
-  description: z.string().min(10, "Description must be at least 10 characters."),
-  planId: z.string().min(1, "Plan ID is required."),
-  durationDays: z.coerce.number().min(1, "Duration must be at least 1 day."),
-  applicableToRole: z.enum(['Installer', 'Job Giver', 'Any']),
-  validFrom: z.date({ required_error: "Start date is required." }),
-  validUntil: z.date({ required_error: "End date is required." }),
-  isActive: z.boolean(),
-}).refine(data => data.validUntil > data.validFrom, {
-  message: "End date must be after start date.",
-  path: ["validUntil"],
-});
+import { useTranslations } from "next-intl";
 
 function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void }) {
+  const t = useTranslations('admin.coupons');
   const { toast } = useToast();
   const { db } = useFirebase();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const couponSchema = z.object({
+    code: z.string().min(3, "Code must be at least 3 characters.").toUpperCase(),
+    description: z.string().min(10, "Description must be at least 10 characters."),
+    planId: z.string().min(1, "Plan ID is required."),
+    durationDays: z.coerce.number().min(1, "Duration must be at least 1 day."),
+    applicableToRole: z.enum(['Installer', 'Job Giver', 'Any']),
+    validFrom: z.date({ required_error: "Start date is required." }),
+    validUntil: z.date({ required_error: "End date is required." }),
+    isActive: z.boolean(),
+  }).refine(data => data.validUntil > data.validFrom, {
+    message: "End date must be after start date.",
+    path: ["validUntil"],
+  });
 
   const form = useForm<z.infer<typeof couponSchema>>({
     resolver: zodResolver(couponSchema),
@@ -114,21 +115,21 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
     try {
       await setDoc(couponRef, values, { merge: true });
       toast({
-        title: coupon ? "Coupon Updated" : "Coupon Created",
-        description: `Coupon code "${values.code}" has been saved.`,
+        title: coupon ? t('toasts.updated') : t('toasts.created'),
+        description: t('toasts.saved', { code: values.code }),
       });
       onSave();
       setIsOpen(false);
     } catch (e) {
       console.error(e);
-      toast({ title: "Error", description: "Failed to save coupon.", variant: "destructive" });
+      toast({ title: t('toasts.error'), description: t('toasts.failed'), variant: "destructive" });
     }
     setIsSubmitting(false);
   }
 
-  const triggerText = coupon ? "Edit Coupon" : "Create New Coupon";
+  const triggerText = coupon ? t('form.editTitle') : t('form.createTitle');
   const TriggerButton = coupon
-    ? <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Edit</DropdownMenuItem>
+    ? <DropdownMenuItem onSelect={(e) => e.preventDefault()}>{t('actions.edit')}</DropdownMenuItem>
     : <Button><PlusCircle className="mr-2 h-4 w-4" />{triggerText}</Button>;
 
   return (
@@ -140,7 +141,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
         <DialogHeader>
           <DialogTitle>{triggerText}</DialogTitle>
           <DialogDescription>
-            {coupon ? "Edit the details of this coupon." : "Create a new promotional coupon for users."}
+            {coupon ? t('form.editDesc') : t('form.createDesc')}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -150,7 +151,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
               name="code"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Coupon Code</FormLabel>
+                  <FormLabel>{t('form.code')}</FormLabel>
                   <FormControl>
                     <Input placeholder="WELCOME2024" {...field} onChange={e => field.onChange(e.target.value.toUpperCase())} disabled={!!coupon} />
                   </FormControl>
@@ -163,7 +164,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t('form.description')}</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., 30-day Pro Installer Plan" {...field} />
                   </FormControl>
@@ -177,7 +178,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
                 name="planId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Plan ID</FormLabel>
+                    <FormLabel>{t('form.planId')}</FormLabel>
                     <FormControl>
                       <Input placeholder="pro-installer-annual" {...field} />
                     </FormControl>
@@ -190,7 +191,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
                 name="durationDays"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Duration (Days)</FormLabel>
+                    <FormLabel>{t('form.duration')}</FormLabel>
                     <FormControl>
                       <Input type="number" {...field} />
                     </FormControl>
@@ -204,15 +205,15 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
               name="applicableToRole"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Applicable To</FormLabel>
+                  <FormLabel>{t('form.role')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Any">Any Role</SelectItem>
-                      <SelectItem value="Installer">Installer Only</SelectItem>
-                      <SelectItem value="Job Giver">Job Giver Only</SelectItem>
+                      <SelectItem value="Any">{t('form.roles.any')}</SelectItem>
+                      <SelectItem value="Installer">{t('form.roles.installer')}</SelectItem>
+                      <SelectItem value="Job Giver">{t('form.roles.jobGiver')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -225,12 +226,12 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
                 name="validFrom"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Valid From</FormLabel>
+                    <FormLabel>{t('form.validFrom')}</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button variant={"outline"}>
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            {field.value ? format(field.value, "PPP") : <span>{t('form.pickDate')}</span>}
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
@@ -247,12 +248,12 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
                 name="validUntil"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Valid Until</FormLabel>
+                    <FormLabel>{t('form.validUntil')}</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button variant={"outline"}>
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            {field.value ? format(field.value, "PPP") : <span>{t('form.pickDate')}</span>}
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
@@ -271,9 +272,9 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                   <div className="space-y-0.5">
-                    <FormLabel>Active</FormLabel>
+                    <FormLabel>{t('form.isActive')}</FormLabel>
                     <FormDescription>
-                      Users can only redeem active coupons.
+                      {t('form.isActiveDesc')}
                     </FormDescription>
                   </div>
                   <FormControl>
@@ -287,10 +288,10 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
             />
 
             <DialogFooter>
-              <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
+              <DialogClose asChild><Button type="button" variant="ghost">{t('form.cancel')}</Button></DialogClose>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Coupon
+                {t('form.save')}
               </Button>
             </DialogFooter>
           </form>
@@ -301,16 +302,17 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
 }
 
 export default function CouponsManager({ coupons, onDataChange }: { coupons: Coupon[], onDataChange: () => void }) {
+  const t = useTranslations('admin.coupons');
   const { db } = useFirebase();
   const { toast } = useToast();
   const [view, setView] = React.useState<'list' | 'grid'>('list');
 
   const handleDelete = async (code: string) => {
-    if (!window.confirm(`Are you sure you want to delete coupon "${code}"? This cannot be undone.`)) return;
+    if (!window.confirm(t('confirmDelete', { code }))) return;
     if (!db) return;
 
     await deleteDoc(doc(db, "coupons", code));
-    toast({ title: "Coupon Deleted", description: `Coupon "${code}" has been permanently deleted.` });
+    toast({ title: t('toasts.deleted'), description: t('toasts.deletedDesc', { code }), variant: "destructive" });
     onDataChange();
   }
 
@@ -319,8 +321,8 @@ export default function CouponsManager({ coupons, onDataChange }: { coupons: Cou
     const newStatus = !coupon.isActive;
     await updateDoc(doc(db, "coupons", coupon.code), { isActive: newStatus });
     toast({
-      title: "Coupon Status Updated",
-      description: `Coupon "${coupon.code}" is now ${newStatus ? 'active' : 'inactive'}.`,
+      title: t('toasts.statusUpdated'),
+      description: t('toasts.statusUpdatedDesc', { code: coupon.code, status: newStatus ? t('status.active') : "Inactive" }),
     });
     onDataChange();
   }
@@ -338,6 +340,10 @@ export default function CouponsManager({ coupons, onDataChange }: { coupons: Cou
 
   const CouponCard = ({ coupon }: { coupon: Coupon }) => {
     const status = getCouponStatus(coupon);
+    let statusLabel: string = status;
+    if (status === 'Active') statusLabel = t('status.active');
+    if (status === 'Scheduled') statusLabel = t('status.scheduled');
+    if (status === 'Expired') statusLabel = t('status.expired');
 
     return (
       <Card>
@@ -345,24 +351,26 @@ export default function CouponsManager({ coupons, onDataChange }: { coupons: Cou
           <div className="flex justify-between items-start">
             <CardTitle className="font-mono">{coupon.code}</CardTitle>
             <Badge variant={status === 'Active' ? 'success' : status === 'Scheduled' ? 'info' : 'destructive'}>
-              {status}
+              {statusLabel}
             </Badge>
           </div>
           <CardDescription>{coupon.description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Duration</span>
-            <span>{coupon.durationDays} days</span>
+            <span className="text-muted-foreground">{t('table.duration')}</span>
+            <span>{t('days', { count: coupon.durationDays })}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Role</span>
+            <span className="text-muted-foreground">{t('table.role')}</span>
             <Badge variant={coupon.applicableToRole === 'Any' ? 'secondary' : 'outline'}>
-              {coupon.applicableToRole}
+              {coupon.applicableToRole === 'Any' && t('form.roles.any')}
+              {coupon.applicableToRole === 'Installer' && t('form.roles.installer')}
+              {coupon.applicableToRole === 'Job Giver' && t('form.roles.jobGiver')}
             </Badge>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Validity</span>
+            <span className="text-muted-foreground">{t('table.validity')}</span>
             <span>{format(toDate(coupon.validFrom), "PP")} - {format(toDate(coupon.validUntil), "PP")}</span>
           </div>
         </CardContent>
@@ -371,18 +379,18 @@ export default function CouponsManager({ coupons, onDataChange }: { coupons: Cou
             <DropdownMenuTrigger asChild>
               <Button aria-haspopup="true" variant="outline" className="w-full">
                 <MoreHorizontal className="mr-2 h-4 w-4" />
-                Actions
+                {t('table.actions')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('table.actions')}</DropdownMenuLabel>
               <CouponForm coupon={coupon} onSave={onDataChange} />
               <DropdownMenuItem onClick={() => handleToggleActive(coupon)}>
-                {coupon.isActive ? "Deactivate" : "Activate"}
+                {coupon.isActive ? t('actions.deactivate') : t('actions.activate')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleDelete(coupon.code)} className="text-destructive">
-                Delete
+                {t('actions.delete')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -395,9 +403,9 @@ export default function CouponsManager({ coupons, onDataChange }: { coupons: Cou
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Coupon Management</CardTitle>
+          <CardTitle>{t('title')}</CardTitle>
           <CardDescription>
-            Create and manage promotional coupon codes for your users.
+            {t('description')}
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">
@@ -417,33 +425,40 @@ export default function CouponsManager({ coupons, onDataChange }: { coupons: Cou
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Validity</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead><span className="sr-only">Actions</span></TableHead>
+                <TableHead>{t('table.code')}</TableHead>
+                <TableHead>{t('table.description')}</TableHead>
+                <TableHead>{t('table.role')}</TableHead>
+                <TableHead>{t('table.duration')}</TableHead>
+                <TableHead>{t('table.validity')}</TableHead>
+                <TableHead>{t('table.status')}</TableHead>
+                <TableHead><span className="sr-only">{t('table.actions')}</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {coupons.length > 0 ? (
                 coupons.map((coupon) => {
                   const status = getCouponStatus(coupon);
+                  let statusLabel: string = status;
+                  if (status === 'Active') statusLabel = t('status.active');
+                  if (status === 'Scheduled') statusLabel = t('status.scheduled');
+                  if (status === 'Expired') statusLabel = t('status.expired');
+
                   return (
                     <TableRow key={coupon.code}>
                       <TableCell className="font-mono font-semibold">{coupon.code}</TableCell>
                       <TableCell>{coupon.description}</TableCell>
                       <TableCell>
                         <Badge variant={coupon.applicableToRole === 'Any' ? 'secondary' : 'outline'}>
-                          {coupon.applicableToRole}
+                          {coupon.applicableToRole === 'Any' && t('form.roles.any')}
+                          {coupon.applicableToRole === 'Installer' && t('form.roles.installer')}
+                          {coupon.applicableToRole === 'Job Giver' && t('form.roles.jobGiver')}
                         </Badge>
                       </TableCell>
-                      <TableCell>{coupon.durationDays} days</TableCell>
+                      <TableCell>{t('days', { count: coupon.durationDays })}</TableCell>
                       <TableCell>{format(toDate(coupon.validFrom), "PP")} - {format(toDate(coupon.validUntil), "PP")}</TableCell>
                       <TableCell>
                         <Badge variant={status === 'Active' ? 'success' : status === 'Scheduled' ? 'info' : 'destructive'}>
-                          {status}
+                          {statusLabel}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -455,14 +470,14 @@ export default function CouponsManager({ coupons, onDataChange }: { coupons: Cou
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuLabel>{t('table.actions')}</DropdownMenuLabel>
                             <CouponForm coupon={coupon} onSave={onDataChange} />
                             <DropdownMenuItem onClick={() => handleToggleActive(coupon)}>
-                              {coupon.isActive ? "Deactivate" : "Activate"}
+                              {coupon.isActive ? t('actions.deactivate') : t('actions.activate')}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleDelete(coupon.code)} className="text-destructive">
-                              Delete
+                              {t('actions.delete')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -473,7 +488,7 @@ export default function CouponsManager({ coupons, onDataChange }: { coupons: Cou
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center">
-                    No coupons found. Create your first one to get started.
+                    {t('emptyCreate')}
                   </TableCell>
                 </TableRow>
               )}
@@ -485,7 +500,7 @@ export default function CouponsManager({ coupons, onDataChange }: { coupons: Cou
               coupons.map((coupon) => <CouponCard key={coupon.code} coupon={coupon} />)
             ) : (
               <div className="col-span-full text-center py-10 text-muted-foreground">
-                No coupons found.
+                {t('empty')}
               </div>
             )}
           </div>

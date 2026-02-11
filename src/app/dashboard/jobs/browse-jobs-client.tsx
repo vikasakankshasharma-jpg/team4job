@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ListFilter, X } from "lucide-react";
+import { ListFilter, X, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +49,8 @@ import { JobCardSkeletonGrid } from "@/components/skeletons/job-card-skeleton";
 import { JobFilters } from "@/components/jobs/job-filters";
 import { listOpenJobsAction } from "@/app/actions/job.actions";
 import dynamic from "next/dynamic";
+import { useTranslations } from 'next-intl';
+import { toDate } from "@/lib/utils";
 
 const SaveSearchDialog = dynamic(
   () => import("@/components/jobs/save-search-dialog").then((mod) => mod.SaveSearchDialog),
@@ -74,155 +76,129 @@ const getLocationParts = (
 
 export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] }) {
   const { user, role } = useUser();
-  const router = useRouter();
-  const [jobs, setJobs] = React.useState<Job[]>(initialJobs || []);
-  const [loading, setLoading] = React.useState(!initialJobs);
-  const { searchQuery } = useSearch();
   const { setHelp } = useHelp();
+  const router = useRouter();
+  const tJob = useTranslations('job');
+  const tCommon = useTranslations('common');
+  const { searchQuery, setSearchQuery } = useSearch();
   const searchParams = useSearchParams();
-
-  // Initialize state from URL parameters
-  const [budget, setBudget] = React.useState([
-    Number(searchParams.get("min") || 0),
-    Number(searchParams.get("max") || 150000)
-  ]);
-
-  const [selectedSkills, setSelectedSkills] = React.useState<string[]>(
-    searchParams.get("skills")?.split(",").filter(Boolean) || []
-  );
-
+  const [budget, setBudget] = React.useState([0, 150000]);
+  const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
   const [recommendedPincodeFilter, setRecommendedPincodeFilter] = React.useState("all");
 
-  // Sync Search Query from URL on mount
+  const [jobs, setJobs] = React.useState<Job[]>(initialJobs || []);
+  // Pagination State
+  const [loading, setLoading] = React.useState(false);
+  const [loadMoreLoading, setLoadMoreLoading] = React.useState(false);
+  const [hasMore, setHasMore] = React.useState(true); // Assuming initial load might have more if 50 returned
+
+  // Keep jobs in a ref to avoid fetchJobs dependency on state
+  const jobsRef = React.useRef<Job[]>(jobs);
   React.useEffect(() => {
-    const q = searchParams.get("q");
-    if (q && q !== searchQuery) {
-      // We only set this if it's different to avoid loops, though context usually handles strict equality
-      // Accessing setSearchQuery from hook, assuming it's stable
+    jobsRef.current = jobs;
+  }, [jobs]);
+
+  const fetchJobs = React.useCallback(async (isLoadMore = false) => {
+    if (isLoadMore) {
+      setLoadMoreLoading(true);
+    } else {
+      setLoading(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount to hydrate context
-
-  // Need to get setSearchQuery from useSearch to hydrate it
-  const { setSearchQuery: setGlobalSearch } = useSearch();
-  React.useEffect(() => {
-    const q = searchParams.get("q");
-    if (q) {
-      setGlobalSearch(q);
-    }
-  }, [setGlobalSearch, searchParams]);
-  // Actually, separate effect for hydration is safer.
-
-  // Debounced URL updates
-  React.useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    let hasChanges = false;
-
-    // Budget
-    const min = budget[0];
-    const max = budget[1];
-    if (min > 0) { params.set("min", min.toString()); hasChanges = true; }
-    else if (params.has("min")) { params.delete("min"); hasChanges = true; }
-
-    if (max < 150000) { params.set("max", max.toString()); hasChanges = true; }
-    else if (params.has("max")) { params.delete("max"); hasChanges = true; }
-
-    // Skills
-    if (selectedSkills.length > 0) {
-      const skillsStr = selectedSkills.join(",");
-      if (params.get("skills") !== skillsStr) {
-        params.set("skills", skillsStr);
-        hasChanges = true;
-      }
-    } else if (params.has("skills")) {
-      params.delete("skills");
-      hasChanges = true;
-    }
-
-    // Search Query
-    if (searchQuery) {
-      if (params.get("q") !== searchQuery) {
-        params.set("q", searchQuery);
-        hasChanges = true;
-      }
-    } else if (params.has("q")) {
-      params.delete("q");
-      hasChanges = true;
-    }
-
-    if (hasChanges) {
-      const timeoutId = setTimeout(() => {
-        router.replace(`?${params.toString()}`, { scroll: false });
-      }, 500);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [budget, selectedSkills, searchQuery, router, searchParams]);
-
-  React.useEffect(() => {
-    if (loading) return;
-    if (role === 'Admin' || role === 'Job Giver') {
-      router.push('/dashboard');
-    }
-  }, [role, router, loading]);
-
-  const fetchJobs = React.useCallback(async () => {
-    setLoading(true);
 
     try {
-      const res = await listOpenJobsAction();
+      // Determine cursor using ref
+      let lastPostedAt: string | undefined = undefined;
+      const currentJobs = jobsRef.current;
+      if (isLoadMore && currentJobs.length > 0) {
+        const lastJob = currentJobs[currentJobs.length - 1];
+        // Handle Date/Timestamp/String conversion safely
+        const dateObj = toDate(lastJob.postedAt);
+        if (dateObj) {
+          lastPostedAt = dateObj.toISOString();
+        }
+      }
+
+      const res = await listOpenJobsAction(undefined, 50, lastPostedAt);
 
       if (!res.success || !res.data) {
         throw new Error(res.error || 'Failed to fetch jobs');
       }
 
-      setJobs(res.data);
+      const newJobs = res.data;
+
+      if (isLoadMore) {
+        setJobs(prev => {
+          // Deduplicate just in case
+          const existingIds = new Set(prev.map(j => j.id));
+          const uniqueNewJobs = newJobs.filter(j => !existingIds.has(j.id));
+          return [...prev, ...uniqueNewJobs];
+        });
+      } else {
+        setJobs(newJobs);
+      }
+
+      // Check if we reached end
+      if (newJobs.length < 50) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+
     } catch (error) {
       console.error('Error fetching jobs:', error);
-      setJobs([]);
+      if (!isLoadMore) setJobs([]);
     } finally {
-      setLoading(false);
+      if (isLoadMore) {
+        setLoadMoreLoading(false);
+      } else {
+        setLoading(false);
+      }
     }
-  }, []);
+  }, []); // Stable dependencies
 
   React.useEffect(() => {
-    if (!initialJobs) {
-      fetchJobs();
+    // Only fetch initial if distinct from server-provided initialJobs or if valid to refetch
+    if (!initialJobs || initialJobs.length === 0) {
+      fetchJobs(false);
+    } else {
+      // If initialJobs provided, set hasMore based on count
+      if (initialJobs.length < 50) setHasMore(false);
     }
-  }, [fetchJobs, initialJobs]);
+  }, [initialJobs, fetchJobs]);
 
   React.useEffect(() => {
     setHelp({
-      title: 'Browse Jobs Guide',
+      title: tJob('browseJobsGuideTitle'),
       content: (
         <div className="space-y-4 text-sm">
-          <p>This page is where you find new projects. Here&apos;s how to use the tools to your advantage:</p>
+          <p>{tJob('browseJobsGuidePart1')}</p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <span className="font-semibold">Search by Pincode:</span> Use the search bar at the top right to find jobs in a specific area. This helps you find work close to home.
+              <span className="font-semibold">{tJob('pincodeSearch')}:</span> {tJob('pincodeSearchDesc')}
             </li>
             <li>
-              <span className="font-semibold">Filter Menu:</span> Click the &quot;Filter&quot; button to open a menu with more powerful options:
+              <span className="font-semibold">{tJob('filterMenu')}:</span> {tJob('filterMenuDesc')}
               <ul className="list-disc space-y-1 pl-5 mt-1">
                 <li>
-                  <span className="font-semibold">Budget Range:</span> Drag the slider to only see jobs that match your expected pay.
+                  <span className="font-semibold">{tJob('budgetRange')}:</span> {tJob('budgetRangeDesc')}
                 </li>
                 <li>
-                  <span className="font-semibold">Skills:</span> Select one or more skills to narrow down jobs that match your expertise (e.g., &quot;IP Cameras&quot;, &quot;Access Control&quot;).
+                  <span className="font-semibold">{tJob('skills')}:</span> {tJob('skillsFilterDesc')}
                 </li>
               </ul>
             </li>
             <li>
-              <span className="font-semibold">Clear Filters:</span> If you have any filters active, a &quot;Clear&quot; button will appear. Click it to reset your search and see all available jobs again.
+              <span className="font-semibold">{tJob('clearFilters')}:</span> {tJob('clearFiltersDesc')}
             </li>
             <li>
-              <span className="font-semibold">Recommended Tab:</span> This tab includes &quot;Unbid&quot; jobs in your area, giving you a second chance at opportunities you may have missed.
+              <span className="font-semibold">{tJob('recommendedTab')}:</span> {tJob('recommendedTabDesc')}
             </li>
           </ul>
-          <p>Each job card gives you a quick summary. Click &quot;View Job &amp; Bid&quot; to see the full details and place your offer.</p>
+          <p>{tJob('browseJobsGuideFooter')}</p>
         </div>
       )
     });
-  }, [setHelp]);
+  }, [setHelp, tJob]);
 
   const filterJobs = (jobsToFilter: Job[]) => {
     return jobsToFilter.filter((job) => {
@@ -376,7 +352,7 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
   if (role === 'Admin' || role === 'Job Giver') {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Redirecting...</p>
+        <p className="text-muted-foreground">{tCommon('loading')}</p>
       </div>
     );
   }
@@ -389,7 +365,7 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
         <aside className="hidden lg:block w-72 flex-shrink-0 sticky top-20">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle>Filters</CardTitle>
+              <CardTitle>{tCommon('filters')}</CardTitle>
               <SaveSearchDialog
                 currentFilters={{
                   query: searchQuery,
@@ -419,7 +395,7 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
               <TabsList className="w-full sm:w-auto h-auto p-1">
                 <TabsTrigger value="nearby" className="flex-1 sm:flex-none gap-2 min-h-[44px]">
                   <MapPin className="h-4 w-4" />
-                  Near You
+                  {tJob('nearYou')}
                   {filteredRecommendedJobs.length > 0 && (
                     <Badge variant="secondary" className="ml-1 rounded-full">
                       {filteredRecommendedJobs.length}
@@ -427,14 +403,14 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="saved" className="flex-1 sm:flex-none gap-2 min-h-[44px]">
-                  Saved
+                  {tJob('saved')}
                   {user?.bookmarks && user.bookmarks.length > 0 && (
                     <Badge variant="secondary" className="ml-1 rounded-full">
                       {user.bookmarks.filter(id => jobs.find(j => j.id === id)).length}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="all" className="flex-1 sm:flex-none min-h-[44px]">Browse All</TabsTrigger>
+                <TabsTrigger value="all" className="flex-1 sm:flex-none min-h-[44px]">{tJob('browseAll')}</TabsTrigger>
               </TabsList>
 
               <div className="ml-auto flex items-center gap-2 lg:hidden">
@@ -456,7 +432,7 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                     <Button variant="outline" size="default" className="h-10 min-h-[44px] gap-2 flex-1 sm:flex-none">
                       <ListFilter className="h-4 w-4" />
                       <span className="sm:whitespace-nowrap">
-                        Filter
+                        {tCommon('filter')}
                       </span>
                       {activeFiltersCount > 0 && (
                         <Badge
@@ -469,7 +445,7 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-80 p-4">
-                    <DropdownMenuLabel>Filter by</DropdownMenuLabel>
+                    <DropdownMenuLabel>{tCommon('filterBy')}</DropdownMenuLabel>
                     <DropdownMenuSeparator className="-mx-4 mb-4" />
                     <JobFilters
                       budget={budget}
@@ -484,7 +460,7 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                 {activeFiltersCount > 0 && (
                   <Button variant="ghost" size="default" onClick={clearFilters} className="min-h-[44px]">
                     <X className="h-4 w-4 mr-1" />
-                    <span className="hidden sm:inline">Clear</span>
+                    <span className="hidden sm:inline">{tCommon('clear')}</span>
                   </Button>
                 )}
               </div>
@@ -493,9 +469,9 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
             <TabsContent value="all" className="m-0">
               <Card className="max-w-full overflow-hidden border-none shadow-none sm:border sm:shadow-sm bg-transparent sm:bg-card">
                 <CardHeader className="px-0 sm:px-6">
-                  <CardTitle className="overflow-wrap-anywhere">Available Jobs</CardTitle>
+                  <CardTitle className="overflow-wrap-anywhere">{tJob('availableJobs')}</CardTitle>
                   <CardDescription className="overflow-wrap-anywhere">
-                    Find your next project. Browse open jobs and submit your bid.
+                    {tJob('availableJobsDesc')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 sm:px-6">
@@ -511,18 +487,28 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                       {filteredJobs.length === 0 && (
                         <div className="text-center py-10">
                           <p className="text-muted-foreground overflow-wrap-anywhere px-4">
-                            No jobs found matching your criteria.
+                            {tJob('noJobsFound')}
                           </p>
                         </div>
                       )}
                     </>
                   )}
                 </CardContent>
-                <CardFooter className="px-0 sm:px-6">
-                  <div className="text-xs text-muted-foreground overflow-wrap-anywhere">
-                    Showing <strong>{filteredJobs.length}</strong> of{" "}
-                    <strong>{openForBiddingJobs.length}</strong> open jobs
+                <CardFooter className="px-0 sm:px-6 flex flex-col gap-4">
+                  <div className="text-xs text-muted-foreground overflow-wrap-anywhere w-full text-center">
+                    {tJob('showingJobsOf', { count: filteredJobs.length, total: jobs.filter(job => job.status === 'Open for Bidding' || job.status === 'Unbid').length })}
                   </div>
+                  {hasMore && (
+                    <Button
+                      variant="outline"
+                      onClick={() => fetchJobs(true)}
+                      disabled={loadMoreLoading}
+                      className="w-full sm:w-auto min-w-[200px]"
+                    >
+                      {loadMoreLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      {tCommon('seeMore')}
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             </TabsContent>
@@ -534,10 +520,10 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                     <div className="flex-1 min-w-0">
                       <CardTitle className="overflow-wrap-anywhere flex items-center gap-2">
                         <MapPin className="h-5 w-5 text-primary" />
-                        Near You
+                        {tJob('nearYou')}
                       </CardTitle>
                       <CardDescription className="overflow-wrap-anywhere">
-                        Jobs in your pincodes plus <Badge variant="outline" className="mx-1 text-xs">Unbid</Badge> opportunities in your city
+                        {tJob('unbidOppPincode').replace('{unbid}', 'Unbid')}
                       </CardDescription>
                     </div>
                     {user && user.pincodes?.office && (
@@ -546,15 +532,15 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                         onValueChange={setRecommendedPincodeFilter}
                       >
                         <SelectTrigger className="w-full sm:w-[240px] min-h-[44px]">
-                          <SelectValue placeholder="Filter by pincode..." />
+                          <SelectValue placeholder={tJob('filterByPincode')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all" className="min-h-[44px]">All My Pincodes</SelectItem>
+                          <SelectItem value="all" className="min-h-[44px]">{tJob('allMyPincodes')}</SelectItem>
                           <SelectItem value="residential" className="min-h-[44px]">
-                            Residential: {user?.pincodes?.residential || 'N/A'}
+                            {tJob('residential')}: {user?.pincodes?.residential || 'N/A'}
                           </SelectItem>
                           <SelectItem value="office" className="min-h-[44px]">
-                            Office: {user?.pincodes?.office || 'N/A'}
+                            {tJob('office')}: {user?.pincodes?.office || 'N/A'}
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -574,12 +560,12 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                       {filteredRecommendedJobs.length === 0 && (
                         <div className="text-center py-10">
                           <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                          <p className="text-lg font-semibold mb-2">No nearby jobs right now</p>
+                          <p className="text-lg font-semibold mb-2">{tJob('noNearbyJobs')}</p>
                           <p className="text-muted-foreground overflow-wrap-anywhere px-4 mb-4">
-                            Check back soon, or browse all jobs to find opportunities in other areas.
+                            {tJob('noNearbyJobsDesc')}
                           </p>
                           <Button onClick={() => handleTabChange('all')} variant="outline">
-                            Browse All Jobs
+                            {tJob('browseAll')}
                           </Button>
                         </div>
                       )}
@@ -588,7 +574,7 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                 </CardContent>
                 <CardFooter className="px-0 sm:px-6">
                   <div className="text-xs text-muted-foreground overflow-wrap-anywhere">
-                    Showing <strong>{filteredRecommendedJobs.length}</strong> nearby jobs
+                    {tJob('showingNearbyCount', { count: filteredRecommendedJobs.length })}
                   </div>
                 </CardFooter>
               </Card>
@@ -597,9 +583,9 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
             <TabsContent value="saved" className="m-0">
               <Card className="max-w-full overflow-hidden border-none shadow-none sm:border sm:shadow-sm bg-transparent sm:bg-card">
                 <CardHeader className="px-0 sm:px-6">
-                  <CardTitle className="overflow-wrap-anywhere">Saved Jobs</CardTitle>
+                  <CardTitle className="overflow-wrap-anywhere">{tJob('savedJobs')}</CardTitle>
                   <CardDescription className="overflow-wrap-anywhere">
-                    Jobs you have bookmarked for later.
+                    {tJob('savedJobsDesc')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 sm:px-6">
@@ -615,7 +601,7 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                       {jobs.filter(job => user?.bookmarks?.includes(job.id)).length === 0 && (
                         <div className="text-center py-10">
                           <p className="text-muted-foreground overflow-wrap-anywhere px-4">
-                            You haven&apos;t saved any jobs yet.
+                            {tJob('noSavedJobs')}
                           </p>
                         </div>
                       )}
