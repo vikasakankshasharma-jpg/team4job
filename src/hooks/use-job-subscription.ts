@@ -40,7 +40,7 @@ export function useJobSubscription(jobId: string, initialData?: Job | null) {
         );
 
         return () => unsubscribe();
-    }, [jobId, toast]);
+    }, [jobId, toast, initialData]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return { job, loading, error };
 }

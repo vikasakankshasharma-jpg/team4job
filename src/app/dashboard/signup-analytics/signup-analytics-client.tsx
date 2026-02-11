@@ -11,7 +11,8 @@ import {
     OutreachEffectiveness,
 } from "@/lib/signup-analytics";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, FunnelChart, Funnel, LabelList, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { useTranslations } from "next-intl";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -19,6 +20,7 @@ export default function SignupAnalyticsClient() {
     const { isAdmin } = useUser();
     const db = useFirestore();
     const { toast } = useToast();
+    const t = useTranslations('admin.signupAnalytics');
 
     const [loading, setLoading] = useState(true);
     const [funnelData, setFunnelData] = useState<SignupFunnelData | null>(null);
@@ -40,8 +42,8 @@ export default function SignupAnalyticsClient() {
             } catch (error) {
                 console.error("Error fetching analytics:", error);
                 toast({
-                    title: "Error",
-                    description: "Failed to load analytics data",
+                    title: t('error'),
+                    description: t('loadingError'),
                     variant: "destructive",
                 });
             } finally {
@@ -50,12 +52,12 @@ export default function SignupAnalyticsClient() {
         }
 
         fetchAnalytics();
-    }, [db, isAdmin, toast]);
+    }, [db, isAdmin, toast, t]);
 
     if (!isAdmin) {
         return (
             <div className="flex items-center justify-center h-96">
-                <p className="text-muted-foreground">Access denied. Admin only.</p>
+                <p className="text-muted-foreground">{t('accessDenied')}</p>
             </div>
         );
     }
@@ -70,85 +72,84 @@ export default function SignupAnalyticsClient() {
 
     // Prepare funnel chart data
     const funnelChartData = [
-        { name: 'Started', value: funnelData.totalStarted, fill: COLORS[0] },
-        { name: 'Step 1', value: funnelData.step1Complete, fill: COLORS[1] },
-        { name: 'Step 2', value: funnelData.step2Complete, fill: COLORS[2] },
-        { name: 'Step 3', value: funnelData.step3Complete, fill: COLORS[3] },
-        { name: 'Converted', value: funnelData.totalConverted, fill: COLORS[4] },
+        { name: t('funnel.stages.started'), value: funnelData.totalStarted, fill: COLORS[0] },
+        { name: t('funnel.stages.step1'), value: funnelData.step1Complete, fill: COLORS[1] },
+        { name: t('funnel.stages.step2'), value: funnelData.step2Complete, fill: COLORS[2] },
+        { name: t('funnel.stages.step3'), value: funnelData.step3Complete, fill: COLORS[3] },
+        { name: t('funnel.stages.converted'), value: funnelData.totalConverted, fill: COLORS[4] },
     ];
 
     // Prepare outreach comparison data
     const outreachChartData = [
         {
-            name: 'Contacted',
-            'Conversion Rate': outreachData.contacted.conversionRate,
-            Total: outreachData.contacted.total,
+            name: t('outreach.labels.contacted'),
+            [t('outreach.labels.conversionRate')]: outreachData.contacted.conversionRate,
+            [t('outreach.labels.total')]: outreachData.contacted.total,
         },
         {
-            name: 'Not Contacted',
-            'Conversion Rate': outreachData.nonContacted.conversionRate,
-            Total: outreachData.nonContacted.total,
+            name: t('outreach.labels.notContacted'),
+            [t('outreach.labels.conversionRate')]: outreachData.nonContacted.conversionRate,
+            [t('outreach.labels.total')]: outreachData.nonContacted.total,
         },
     ];
 
-    // Prepare role distribution data
-    const roleChartData = [
-        { name: 'Installers', value: roleDistribution.Installer },
-        { name: 'Job Givers', value: roleDistribution['Job Giver'] },
-        { name: 'Unknown', value: roleDistribution.unknown },
-    ];
+    const getbiggestDropOffLabel = () => {
+        const stepKey = Object.entries(funnelData.dropRates).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+        const stepNum = stepKey.replace('step', '');
+        return `${t('cards.step')} ${stepNum}`;
+    }
 
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold tracking-tight">Signup Analytics</h1>
-                <p className="text-muted-foreground">Conversion funnel and outreach effectiveness metrics</p>
+                <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
+                <p className="text-muted-foreground">{t('description')}</p>
             </div>
 
             {/* Key Metrics */}
             <div className="grid gap-4 md:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Started</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('cards.totalStarted')}</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{funnelData.totalStarted}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Signup attempts</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t('cards.attempts')}</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('cards.conversionRate')}</CardTitle>
                         <Target className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{funnelData.conversionRate.toFixed(1)}%</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {funnelData.totalConverted} converted
+                            {funnelData.totalConverted} {t('cards.converted')}
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Biggest Drop-Off</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('cards.biggestDropOff')}</CardTitle>
                         <TrendingDown className="h-4 w-4 text-destructive" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            Step {Object.entries(funnelData.dropRates).reduce((a, b) => a[1] > b[1] ? a : b)[0].replace('step', '')}
+                            {getbiggestDropOffLabel()}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {Math.max(...Object.values(funnelData.dropRates)).toFixed(1)}% drop rate
+                            {Math.max(...Object.values(funnelData.dropRates)).toFixed(1)}% {t('cards.dropRate')}
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Outreach Impact</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('cards.outreachImpact')}</CardTitle>
                         <TrendingUp className="h-4 w-4 text-green-600" />
                     </CardHeader>
                     <CardContent>
@@ -156,7 +157,7 @@ export default function SignupAnalyticsClient() {
                             {outreachData.improvement >= 0 ? '+' : ''}{outreachData.improvement.toFixed(1)}%
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {outreachData.improvement >= 0 ? 'Improvement' : 'Decrease'}
+                            {outreachData.improvement >= 0 ? t('cards.improvement') : t('cards.decrease')}
                         </p>
                     </CardContent>
                 </Card>
@@ -165,8 +166,8 @@ export default function SignupAnalyticsClient() {
             {/* Funnel Visualization */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Signup Funnel</CardTitle>
-                    <CardDescription>User drop-off at each step of the signup process</CardDescription>
+                    <CardTitle>{t('funnel.title')}</CardTitle>
+                    <CardDescription>{t('funnel.description')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ResponsiveContainer width="100%" height={400}>
@@ -187,24 +188,24 @@ export default function SignupAnalyticsClient() {
                     {/* Drop rates */}
                     <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="text-center">
-                            <p className="text-sm font-medium">Step 1</p>
+                            <p className="text-sm font-medium">{t('funnel.stages.step1')}</p>
                             <p className="text-2xl font-bold text-destructive">{funnelData.dropRates.step1.toFixed(1)}%</p>
-                            <p className="text-xs text-muted-foreground">drop rate</p>
+                            <p className="text-xs text-muted-foreground">{t('cards.dropRate')}</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-sm font-medium">Step 2</p>
+                            <p className="text-sm font-medium">{t('funnel.stages.step2')}</p>
                             <p className="text-2xl font-bold text-destructive">{funnelData.dropRates.step2.toFixed(1)}%</p>
-                            <p className="text-xs text-muted-foreground">drop rate</p>
+                            <p className="text-xs text-muted-foreground">{t('cards.dropRate')}</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-sm font-medium">Step 3</p>
+                            <p className="text-sm font-medium">{t('funnel.stages.step3')}</p>
                             <p className="text-2xl font-bold text-destructive">{funnelData.dropRates.step3.toFixed(1)}%</p>
-                            <p className="text-xs text-muted-foreground">drop rate</p>
+                            <p className="text-xs text-muted-foreground">{t('cards.dropRate')}</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-sm font-medium">Step 4</p>
+                            <p className="text-sm font-medium">{t('cards.step')} 4</p>
                             <p className="text-2xl font-bold text-destructive">{funnelData.dropRates.step4.toFixed(1)}%</p>
-                            <p className="text-xs text-muted-foreground">drop rate</p>
+                            <p className="text-xs text-muted-foreground">{t('cards.dropRate')}</p>
                         </div>
                     </div>
                 </CardContent>
@@ -213,8 +214,8 @@ export default function SignupAnalyticsClient() {
             {/* Outreach Effectiveness */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Outreach Effectiveness</CardTitle>
-                    <CardDescription>Conversion rate comparison: contacted vs non-contacted users</CardDescription>
+                    <CardTitle>{t('outreach.title')}</CardTitle>
+                    <CardDescription>{t('outreach.description')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
@@ -224,21 +225,21 @@ export default function SignupAnalyticsClient() {
                             <YAxis />
                             <Tooltip />
                             <Legend />
-                            <Bar dataKey="Conversion Rate" fill="#82ca9d" />
+                            <Bar dataKey={t('outreach.labels.conversionRate')} fill="#82ca9d" />
                         </BarChart>
                     </ResponsiveContainer>
 
                     <div className="mt-4 grid grid-cols-2 gap-4">
                         <div className="border rounded-lg p-4">
-                            <h4 className="font-semibold mb-2">Contacted Users</h4>
-                            <p className="text-sm text-muted-foreground">Total: {outreachData.contacted.total}</p>
-                            <p className="text-sm text-muted-foreground">Converted: {outreachData.contacted.converted}</p>
+                            <h4 className="font-semibold mb-2">{t('outreach.contacted')}</h4>
+                            <p className="text-sm text-muted-foreground">{t('outreach.stats.total', { count: outreachData.contacted.total })}</p>
+                            <p className="text-sm text-muted-foreground">{t('outreach.stats.converted', { count: outreachData.contacted.converted })}</p>
                             <p className="text-2xl font-bold mt-2">{outreachData.contacted.conversionRate.toFixed(1)}%</p>
                         </div>
                         <div className="border rounded-lg p-4">
-                            <h4 className="font-semibold mb-2">Non-Contacted Users</h4>
-                            <p className="text-sm text-muted-foreground">Total: {outreachData.nonContacted.total}</p>
-                            <p className="text-sm text-muted-foreground">Converted: {outreachData.nonContacted.converted}</p>
+                            <h4 className="font-semibold mb-2">{t('outreach.nonContacted')}</h4>
+                            <p className="text-sm text-muted-foreground">{t('outreach.stats.total', { count: outreachData.nonContacted.total })}</p>
+                            <p className="text-sm text-muted-foreground">{t('outreach.stats.converted', { count: outreachData.nonContacted.converted })}</p>
                             <p className="text-2xl font-bold mt-2">{outreachData.nonContacted.conversionRate.toFixed(1)}%</p>
                         </div>
                     </div>
@@ -248,21 +249,21 @@ export default function SignupAnalyticsClient() {
             {/* Role Distribution */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Role Distribution</CardTitle>
-                    <CardDescription>Breakdown of pending signups by role</CardDescription>
+                    <CardTitle>{t('roles.title')}</CardTitle>
+                    <CardDescription>{t('roles.description')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-3 gap-4">
                         <div className="text-center border rounded-lg p-4">
-                            <p className="text-sm font-medium">Installers</p>
+                            <p className="text-sm font-medium">{t('roles.installer')}</p>
                             <p className="text-3xl font-bold mt-2">{roleDistribution.Installer}</p>
                         </div>
                         <div className="text-center border rounded-lg p-4">
-                            <p className="text-sm font-medium">Job Givers</p>
+                            <p className="text-sm font-medium">{t('roles.jobGiver')}</p>
                             <p className="text-3xl font-bold mt-2">{roleDistribution['Job Giver']}</p>
                         </div>
                         <div className="text-center border rounded-lg p-4">
-                            <p className="text-sm font-medium">Unknown</p>
+                            <p className="text-sm font-medium">{t('roles.unknown')}</p>
                             <p className="text-3xl font-bold mt-2">{roleDistribution.unknown}</p>
                         </div>
                     </div>

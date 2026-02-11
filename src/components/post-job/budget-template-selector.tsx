@@ -30,8 +30,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from 'next-intl';
 
 interface BudgetTemplateSelectorProps {
     onSelect: (template: BudgetTemplate) => void;
@@ -39,9 +40,14 @@ interface BudgetTemplateSelectorProps {
 }
 
 export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTemplateSelectorProps) {
-    console.log(`[BudgetTemplateSelector] Rendered with currentValues: ${currentValues?.min} - ${currentValues?.max}`);
     const { user } = useUser();
     const { db } = useFirebase();
+    const { toast } = useToast();
+    const tJob = useTranslations('job');
+    const tCommon = useTranslations('common');
+    const tSuccess = useTranslations('success');
+    const tError = useTranslations('errors');
+
     const [templates, setTemplates] = useState<BudgetTemplate[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -83,12 +89,19 @@ export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTempla
                 frequency: 'fixed' // Default for now
             });
 
-            toast({ title: "Template Saved", description: "Budget range saved for future use." });
+            toast({
+                title: tSuccess('templateSaved'),
+                description: tSuccess('templateSavedDesc', { name: newTemplateName })
+            });
             setNewTemplateName("");
             setIsSaveOpen(false);
             loadTemplates();
         } catch (error) {
-            toast({ title: "Error", description: "Failed to save template.", variant: "destructive" });
+            toast({
+                title: tCommon('error'),
+                description: tError('saveFailed'),
+                variant: "destructive"
+            });
         } finally {
             setIsSaving(false);
         }
@@ -99,9 +112,13 @@ export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTempla
         try {
             await deleteTemplate(db, user.id, id);
             setTemplates(prev => prev.filter(t => t.id !== id));
-            toast({ title: "Template Deleted" });
+            toast({ title: tJob('templateDeleted') });
         } catch (error) {
-            toast({ title: "Error", description: "Failed to delete template.", variant: "destructive" });
+            toast({
+                title: tCommon('error'),
+                description: tError('deleteFailed'),
+                variant: "destructive"
+            });
         }
     };
 
@@ -118,11 +135,11 @@ export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTempla
                 }
             }}>
                 <SelectTrigger className="w-[180px] h-8 text-xs" data-testid="budget-template-trigger">
-                    <SelectValue placeholder="Load Budget..." />
+                    <SelectValue placeholder={tJob('loadBudget')} />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectGroup>
-                        <SelectLabel>Saved Budgets</SelectLabel>
+                        <SelectLabel>{tJob('savedBudgets')}</SelectLabel>
                         {templates.map((t) => (
                             <SelectItem key={t.id} value={t.id} className="text-xs">
                                 <span>{t.name}</span>
@@ -132,20 +149,20 @@ export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTempla
                             </SelectItem>
                         ))}
                         {templates.length === 0 && (
-                            <div className="p-2 text-[10px] text-muted-foreground text-center">No saved budgets</div>
+                            <div className="p-2 text-[10px] text-muted-foreground text-center">{tJob('noSavedBudgets')}</div>
                         )}
                     </SelectGroup>
                     <SelectSeparator />
                     <SelectGroup>
                         <SelectItem value="save_new" className="text-xs font-medium text-primary">
                             <div className="flex items-center gap-2">
-                                <Plus className="h-3 w-3" /> Save Selection
+                                <Plus className="h-3 w-3" /> {tJob('saveSelection')}
                             </div>
                         </SelectItem>
                         {templates.length > 0 && (
                             <SelectItem value="manage" className="text-xs">
                                 <div className="flex items-center gap-2">
-                                    <Settings className="h-3 w-3" /> Manage List
+                                    <Settings className="h-3 w-3" /> {tJob('manageList')}
                                 </div>
                             </SelectItem>
                         )}
@@ -157,28 +174,28 @@ export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTempla
             <Dialog open={isSaveOpen} onOpenChange={setIsSaveOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Save Budget Template</DialogTitle>
+                        <DialogTitle>{tJob('saveBudgetTemplate')}</DialogTitle>
                         <DialogDescription>
-                            Save this price range to quickly use it later.
+                            {tJob('saveBudgetTemplateDesc')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label>Template Name</Label>
+                            <Label>{tJob('templateName')}</Label>
                             <Input
-                                placeholder="e.g. Standard 4-Camera Install"
+                                placeholder={tJob('templateNamePlaceholder')}
                                 value={newTemplateName}
                                 onChange={(e) => setNewTemplateName(e.target.value)}
                             />
                         </div>
                         <div className="text-sm text-muted-foreground" data-testid="budget-range-display">
-                            <span className="font-medium">Range:</span> ₹{currentValues?.min} - ₹{currentValues?.max}
+                            <span className="font-medium">{tJob('budget')}:</span> ₹{currentValues?.min} - ₹{currentValues?.max}
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsSaveOpen(false)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => setIsSaveOpen(false)}>{tCommon('cancel')}</Button>
                         <Button onClick={handleSaveTemplate} disabled={!newTemplateName || isSaving}>
-                            {isSaving ? "Saving..." : "Save Template"}
+                            {isSaving ? tCommon('saving') : tJob('saveAsTemplate')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -188,7 +205,7 @@ export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTempla
             <Dialog open={isManageOpen} onOpenChange={setIsManageOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Manage Budget Templates</DialogTitle>
+                        <DialogTitle>{tJob('manageBudgetTemplates')}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                         {templates.map((t) => (

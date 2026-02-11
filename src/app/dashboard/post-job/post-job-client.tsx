@@ -4,6 +4,7 @@
 
 import { useForm, useWatch, Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,28 +71,28 @@ import { CreateJobInput } from "@/domains/jobs/job.types";
 import { Badge } from "@/components/ui/badge";
 
 const addressSchema = z.object({
-  house: z.string().min(3, "Please enter a valid house/building detail."),
-  street: z.string().min(3, "Please enter a valid street/area."),
+  house: z.string().min(3, "address.houseReq"),
+  street: z.string().min(3, "address.streetReq"),
   landmark: z.string().optional(),
-  cityPincode: z.string().min(8, "Please select a pincode and post office."),
-  fullAddress: z.string().min(10, { message: "Please set a precise location on the map." }),
+  cityPincode: z.string().min(8, "address.pincodeReq"),
+  fullAddress: z.string().min(10, { message: "address.locationReq" }),
 });
 
 const jobSchema = z.object({
   jobTitle: z
     .string()
-    .min(10, { message: "Job title must be at least 10 characters." }),
+    .min(10, { message: "validation.titleMin" }),
   jobDescription: z
     .string()
-    .min(50, { message: "Description must be at least 50 characters." }),
-  jobCategory: z.string().min(1, { message: "Please select a job category." }),
-  skills: z.string().min(1, { message: "Please provide at least one skill." }),
+    .min(50, { message: "validation.descMin" }),
+  jobCategory: z.string().min(1, { message: "validation.categoryReq" }),
+  skills: z.string().min(1, { message: "validation.skillsReq" }),
   travelTip: z.coerce.number().optional(),
   isGstInvoiceRequired: z.boolean().default(false),
   address: addressSchema,
   priceEstimate: z.object({
-    min: z.coerce.number().min(1, "Budget must be positive"),
-    max: z.coerce.number().min(1, "Budget must be positive"),
+    min: z.coerce.number().min(1, "validation.budgetPos"),
+    max: z.coerce.number().min(1, "validation.budgetPos"),
   }).optional(),
   deadline: z.string().refine((val) => {
     if (!val) return true; // Allow empty if direct awarding
@@ -99,9 +100,9 @@ const jobSchema = z.object({
     today.setHours(0, 0, 0, 0);
     return new Date(val) >= today;
   }, {
-    message: "Deadline cannot be in the past.",
+    message: "validation.deadlinePast",
   }).or(z.literal("")),
-  jobStartDate: z.string().min(1, { message: "Please select a job start date." }),
+  jobStartDate: z.string().min(1, { message: "validation.startDateReq" }),
   attachments: z.array(z.instanceof(File)).optional(),
   directAwardInstallerId: z.string().optional(),
 }).refine(data => {
@@ -110,19 +111,19 @@ const jobSchema = z.object({
   }
   return true;
 }, {
-  message: "A budget is required for a direct award.",
+  message: "validation.budgetReqDirect",
   path: ["priceEstimate.min"],
 }).refine(data => {
   if (data.directAwardInstallerId) return true;
   return data.deadline !== "";
 }, {
-  message: "Bidding deadline is required for public jobs.",
+  message: "validation.deadlineReqPublic",
   path: ["deadline"],
 }).refine(data => {
   if (!data.deadline || !data.jobStartDate) return true;
   return new Date(data.jobStartDate) >= new Date(data.deadline);
 }, {
-  message: "Job start date cannot be before the bidding deadline.",
+  message: "validation.startDateBeforeDeadline",
   path: ["jobStartDate"],
 }).refine(data => {
   if (data.priceEstimate && data.priceEstimate.max > 0) {
@@ -130,13 +131,19 @@ const jobSchema = z.object({
   }
   return true;
 }, {
-  message: "Maximum budget cannot be less than minimum budget.",
+  message: "validation.maxBudgetLow",
   path: ["priceEstimate.max"],
-});
+}).and(z.object({
+  verifyDetails: z.literal(true, {
+    errorMap: () => ({ message: "validation.verifyReq" }),
+  }),
+}));
 
 
 function DirectAwardInput({ control }: { control: Control<any> }) {
   const { db } = useFirebase();
+  const tJob = useTranslations('job');
+  const tError = useTranslations('errors');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedInstaller, setSelectedInstaller] = useState<User | null>(null);
 
@@ -182,10 +189,10 @@ function DirectAwardInput({ control }: { control: Control<any> }) {
       name="directAwardInstallerId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Installer&apos;s Public ID (Optional)</FormLabel>
+          <FormLabel>{tJob('installerId')}</FormLabel>
           <FormControl>
             <Input
-              placeholder="Paste installer's public ID here..."
+              placeholder={tJob('installerIdPlaceholder')}
               {...field}
               onChange={(e) => {
                 field.onChange(e);
@@ -194,9 +201,9 @@ function DirectAwardInput({ control }: { control: Control<any> }) {
             />
           </FormControl>
           <FormDescription>
-            To send a private job request to a specific installer, paste their ID here. Public bidding will be disabled.
+            {tJob('installerIdDesc')}
           </FormDescription>
-          {isLoading && <p className="text-sm text-muted-foreground">Verifying ID...</p>}
+          {isLoading && <p className="text-sm text-muted-foreground">{tJob('verifyingId')}</p>}
           {selectedInstaller && !isLoading && (
             <div className="flex items-center gap-2 p-2 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
               <Avatar className="h-9 w-9">
@@ -205,7 +212,7 @@ function DirectAwardInput({ control }: { control: Control<any> }) {
               </Avatar>
               <div>
                 <p className="font-semibold text-sm">{selectedInstaller.name}</p>
-                <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-green-600" /> Verified Installer</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-green-600" /> {tJob('verifiedInstaller')}</p>
               </div>
             </div>
           )}
@@ -227,6 +234,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const [mapCenter, setMapCenter] = React.useState<{ lat: number, lng: number } | null>(null);
   const { setHelp } = useHelp();
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const tJob = useTranslations('job');
+  const tCommon = useTranslations('common');
+  const tSuccess = useTranslations('success');
+  const tError = useTranslations('errors');
 
   // Feature Flags
   const { isEnabled: isAiEnabled } = useFeatureFlag('ENABLE_AI_GENERATION');
@@ -237,9 +248,41 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
   const [showSmartEstimator, setShowSmartEstimator] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [isPostConfirmDialogOpen, setIsPostConfirmDialogOpen] = useState(false);
+  const [pendingValues, setPendingValues] = useState<z.infer<typeof jobSchema> | null>(null);
+
+  const tValidation = useTranslations('validation');
+
+  // Custom resolver to translate Zod errors
+  const translatedResolver = useCallback(async (data: any, context: any, options: any) => {
+    const resolver = zodResolver(jobSchema);
+    const result = await resolver(data, context, options);
+
+    if (Object.keys(result.errors).length > 0) {
+      const translatedErrors: any = {};
+      Object.keys(result.errors).forEach((key) => {
+        const error = (result.errors as Record<string, any>)[key];
+        if (error && error.message) {
+          // Check if message is a translation key (contains dot or starts with validation/address)
+          const messageKey = error.message as string;
+          // Check if it's one of our known keys
+          if (messageKey.startsWith('validation.') || messageKey.startsWith('address.')) {
+            const [ns, k] = messageKey.split('.');
+            translatedErrors[key] = { ...error, message: ns === 'address' ? tJob(k) : tValidation(k) }; // Assumption: address keys in job, validation keys in validation
+          } else {
+            translatedErrors[key] = error;
+          }
+        }
+      });
+      return { ...result, errors: translatedErrors };
+    }
+    return result;
+  }, [tJob, tValidation]);
+
 
   const form = useForm<z.infer<typeof jobSchema>>({
-    resolver: zodResolver(jobSchema),
+    resolver: translatedResolver as any, // Cast to any to avoid complex typing issues with custom resolver wrapper
     mode: "onChange",
     defaultValues: {
       jobTitle: "",
@@ -260,6 +303,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       attachments: [],
       directAwardInstallerId: "",
       priceEstimate: { min: 0, max: 0 },
+      verifyDetails: undefined, // undefined so it defaults to unchecked
     },
   });
 
@@ -356,10 +400,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     setDraftId(loadedDraft.id);
     setShowDraftDialog(false);
     toast({
-      title: 'Draft loaded',
-      description: 'Your previous work has been restored.',
+      title: tSuccess('draftLoaded'),
+      description: tSuccess('draftLoadedDesc'),
     });
-  }, [loadedDraft, form, setDraftId, toast]);
+  }, [loadedDraft, form, setDraftId, toast, tSuccess]);
 
   const handleDiscardDraft = useCallback(async () => {
     if (!loadedDraft || !user || !db) return;
@@ -367,10 +411,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     await deleteDraft(db, user.id, loadedDraft.id);
     setShowDraftDialog(false);
     toast({
-      title: 'Draft discarded',
-      description: 'Starting with a fresh form.',
+      title: tSuccess('draftDiscarded'),
+      description: tSuccess('draftDiscardedDesc'),
     });
-  }, [loadedDraft, user, db, toast]);
+  }, [loadedDraft, user, db, toast, tSuccess]);
 
   // Handle template selection
   const handleTemplateSelect = useCallback(async (template: JobTemplate) => {
@@ -394,10 +438,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     await incrementTemplateUsage(db, user.id, template.id);
 
     toast({
-      title: 'Template loaded',
-      description: `"${template.name}" has been applied.`,
+      title: tSuccess('templateLoaded'),
+      description: tSuccess('templateLoadedDesc', { name: template.name }),
     });
-  }, [user, db, form, toast]);
+  }, [user, db, form, toast, tSuccess]);
 
   React.useEffect(() => {
     async function prefillForm() {
@@ -412,8 +456,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
 
           if (isEditMode && jobData.status !== 'Open for Bidding' && jobData.status !== 'open') { // Handle both cases
             toast({
-              title: "Modification Restricted",
-              description: "This job cannot be edited because it is already processed or awarded.",
+              title: tError('modificationRestricted'),
+              description: tError('modificationRestrictedDesc'),
               variant: "destructive",
             });
             router.push(`/dashboard/jobs/${jobId}`);
@@ -428,45 +472,45 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
             isGstInvoiceRequired: jobData.isGstInvoiceRequired,
             address: jobData.address,
             travelTip: jobData.travelTip || 0,
-            deadline: isEditMode && jobData.deadline ? format(new Date(jobData.deadline), "yyyy-MM-dd") : "",
-            jobStartDate: isEditMode && jobData.jobStartDate ? format(new Date(jobData.jobStartDate), "yyyy-MM-dd") : "",
+            deadline: isEditMode && jobData.deadline ? format(toDate(jobData.deadline), "yyyy-MM-dd") : "",
+            jobStartDate: isEditMode && jobData.jobStartDate ? format(toDate(jobData.jobStartDate), "yyyy-MM-dd") : "",
             directAwardInstallerId: "", // Never prefill direct award
             priceEstimate: jobData.priceEstimate
           });
 
-          const toastTitle = isEditMode ? "Editing Job" : "Re-posting Job";
+          const toastTitle = isEditMode ? tJob('editJob') : tJob('repostJob');
           const toastDescription = isEditMode
-            ? "You are now editing an existing job posting."
-            : "Job details have been pre-filled. Please set a new deadline.";
+            ? tJob('editJobDesc')
+            : tJob('repostJobDesc');
 
           toast({ title: toastTitle, description: toastDescription });
         } else {
-          toast({ title: "Error", description: "Could not find the original job to load.", variant: "destructive" });
+          toast({ title: tCommon('error'), description: tError('loadJobFailed'), variant: "destructive" });
         }
         setIsProcessing(false);
       }
     }
     prefillForm();
-  }, [editJobId, repostJobId, user, form, toast, isEditMode, router]);
+  }, [editJobId, repostJobId, user, form, toast, isEditMode, router, tCommon, tError, tJob]);
 
   React.useEffect(() => {
     setHelp({
-      title: isEditMode ? "Edit Job" : "Post a New Job",
+      title: isEditMode ? tJob('editHelpTitle') : tJob('helpTitle'),
       content: (
         <div className="space-y-4 text-sm">
-          <p>Follow these steps to create a job listing and attract the best installers.</p>
+          <p>{tJob('helpIntro')}</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Budget:</span> Provide a realistic budget range. {isAiEnabled && "Use the \"AI Suggest\" button to get a fair market estimate based on your job details."}</li>
-            <li><span className="font-semibold">Job Category:</span> Selecting the right category is crucial. This determines the checklist installers must agree to when bidding.</li>
-            {isAiEnabled && <li><span className="font-semibold">AI-Powered Fields:</span> Use the &quot;AI Generate&quot; button next to the description to get a head start based on your job title.</li>}
-            <li><span className="font-semibold">Location & Address:</span> Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.</li>
-            <li><span className="font-semibold">Attachments:</span> Upload site photos, floor plans, or any other relevant documents to give installers a better understanding of the job.</li>
-            {!isEditMode && <li><span className="font-semibold">Direct Award (Optional):</span> If you already know an installer on our platform, you can enter their public ID here to send them a private request to bid on this job.</li>}
+            <li><span className="font-semibold">{tJob('helpBudget')}:</span> {tJob('helpBudgetDesc', { aiText: isAiEnabled ? tJob('helpAiSuggest') : '' })}</li>
+            <li><span className="font-semibold">{tJob('helpCategory')}:</span> {tJob('helpCategoryDesc')}</li>
+            {isAiEnabled && <li><span className="font-semibold">{tJob('helpAiFields')}:</span> {tJob('helpAiFieldsDesc')}</li>}
+            <li><span className="font-semibold">{tJob('helpLocation')}:</span> {tJob('helpLocationDesc')}</li>
+            <li><span className="font-semibold">{tJob('helpAttachments')}:</span> {tJob('helpAttachmentsDesc')}</li>
+            {!isEditMode && <li><span className="font-semibold">{tJob('helpDirectAward')}:</span> {tJob('helpDirectAwardDesc')}</li>}
           </ul>
         </div>
       )
     })
-  }, [setHelp, isEditMode]);
+  }, [setHelp, isEditMode, isAiEnabled, tJob]);
 
   useEffect(() => {
     if (!userLoading && role !== 'Job Giver') {
@@ -489,8 +533,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
 
     if (!titleToUse || titleToUse.length < 10) {
       toast({
-        title: "Invalid Job Title",
-        description: "Please enter a job title (at least 10 characters) first.",
+        title: tError('invalidTitle'),
+        description: tError('invalidTitleDesc'),
         variant: "destructive",
       });
       return;
@@ -504,8 +548,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         form.setValue("skills", result.data.suggestedSkills.join(', '), { shouldValidate: true });
 
         toast({
-          title: "AI Suggestions Added!",
-          description: "Description and skills have been auto-filled.",
+          title: tSuccess('aiSuggestionsAdded'),
+          description: tSuccess('aiSuggestionsAddedDesc'),
         });
       } else {
         throw new Error(result.error);
@@ -513,8 +557,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     } catch (error) {
       console.error("Error generating job details:", error);
       toast({
-        title: "Generation Failed",
-        description: "There was an error generating details. Please try again.",
+        title: tError('generationFailed'),
+        description: tError((error as any).message) || tError('generationFailedDesc'),
         variant: "destructive",
       });
     } finally {
@@ -534,8 +578,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const handleEstimatePrice = async () => {
     if (!canEstimatePrice) {
       toast({
-        title: "More Details Required",
-        description: "Please fill in the Job Title, Category, and a detailed Description before asking for a price estimate.",
+        title: tError('moreDetailsRequired'),
+        description: tError('moreDetailsRequiredDesc'),
         variant: "destructive"
       });
       return;
@@ -557,8 +601,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         }
 
         toast({
-          title: "Budget Estimated!",
-          description: `AI suggests a range of ₹${estimate.min} - ₹${estimate.max}.`,
+          title: tSuccess('budgetEstimated'),
+          description: tSuccess('budgetEstimatedDesc', { min: estimate.min, max: estimate.max }),
           variant: "default"
         });
       } else {
@@ -567,8 +611,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     } catch (error) {
       console.error("Error estimating price:", error);
       toast({
-        title: "Estimation Failed",
-        description: "Could not generate a price estimate. Please try again later.",
+        title: tError('estimationFailed'),
+        description: tError((error as any).message) || tError('estimationFailedDesc'),
         variant: "destructive"
       });
     } finally {
@@ -577,10 +621,26 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   };
 
   async function onSubmit(values: z.infer<typeof jobSchema>) {
+    setPendingValues(values);
+    if (isEditMode) {
+      setIsConfirmDialogOpen(true);
+    } else {
+      setIsPostConfirmDialogOpen(true);
+    }
+  }
+
+  async function handleFinalSubmit() {
+    const values = pendingValues;
+    if (!values) return;
+
     console.log("Form submission started with values:", values);
 
+    // Close dialogs
+    setIsConfirmDialogOpen(false);
+    setIsPostConfirmDialogOpen(false);
+
     if (!user || !storage) { // Removed db requirement
-      toast({ title: "Error", description: "You must be logged in to post a job.", variant: "destructive" });
+      toast({ title: tCommon('error'), description: tError('loginRequired'), variant: "destructive" });
       return;
     }
 
@@ -607,7 +667,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       }
     } catch (uploadError) {
       console.error("Upload failed", uploadError);
-      toast({ title: "Upload Failed", description: "Failed to upload attachments.", variant: "destructive" });
+      toast({ title: tCommon('uploadFailed'), description: tCommon('uploadFailedDesc'), variant: "destructive" });
       setIsProcessing(false);
       return;
     }
@@ -642,7 +702,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         result = await updateJobAction(editJobId, user.id, jobInput);
 
         if (result.success) {
-          toast({ title: "Job Updated Successfully!", description: "Your job posting has been updated." });
+          toast({ title: tSuccess('jobUpdated'), description: tSuccess('jobUpdatedDesc') });
           router.push(`/dashboard/jobs/${editJobId}`);
         } else {
           throw new Error(result.error);
@@ -655,8 +715,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         if (result.success && result.jobId) {
           setIsSubmitted(true);
           toast({
-            title: repostJobId ? "Job Re-posted Successfully!" : "Job Posted Successfully!",
-            description: `Your job is now live.`,
+            title: repostJobId ? tSuccess('jobReposted') : tSuccess('jobPosted'),
+            description: tSuccess('jobLive'),
           });
           form.reset();
           router.push(`/dashboard/jobs/${result.jobId}`);
@@ -667,8 +727,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     } catch (error: any) {
       console.error("Error processing job:", error);
       toast({
-        title: "Failed to post job",
-        description: error.message || "An error occurred.",
+        title: tError('postFailed'),
+        description: error.message || tCommon('error'),
         variant: "destructive",
       });
     } finally {
@@ -689,7 +749,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     return null;
   }
 
-  const buttonText = isEditMode ? 'Save Changes' : (repostJobId ? 'Re-post Job' : 'Post Job');
+  const buttonText = isEditMode ? tJob('saveChanges') : (repostJobId ? tJob('repostJob') : tJob('postJob'));
 
   const handleSubmitClick = async () => {
     console.log("HandleSubmitClick triggered");
@@ -706,8 +766,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       }
 
       toast({
-        title: "Please check the form",
-        description: "There are missing or invalid fields that require your attention.",
+        title: tCommon('checkForm'),
+        description: tCommon('checkFormDesc'),
         variant: "destructive",
       });
     })();
@@ -717,7 +777,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     <div className="mx-auto grid max-w-4xl flex-1 auto-rows-max gap-4 px-4 max-w-full overflow-x-hidden">
       <div className="flex items-center gap-4">
         <h1 className="text-xl font-semibold tracking-tight break-words">
-          {isEditMode ? 'Edit Job' : (repostJobId ? 'Re-post Job' : 'Post a New Job')}
+          {isEditMode ? tJob('editJob') : (repostJobId ? tJob('repostJob') : tJob('postJob'))}
         </h1>
         {isProcessing && <Loader2 className="h-5 w-5 animate-spin" />}
       </div>
@@ -727,13 +787,13 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Job Details</CardTitle>
+                  <CardTitle>{tJob('jobDetails')}</CardTitle>
                   <CardDescription>
                     {isEditMode
-                      ? "Update the details of your job posting."
+                      ? tJob('editJobDesc')
                       : (repostJobId
-                        ? "Review and update the job details, then set a new deadline to re-list it."
-                        : "Fill in the details for your job posting. Use the AI generator for a quick start.")
+                        ? tJob('repostJobDesc')
+                        : tJob('postJobDesc'))
                     }
                   </CardDescription>
                 </div>
@@ -743,19 +803,19 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     {saveStatus === 'saving' && (
                       <>
                         <Loader className="h-4 w-4 animate-spin" />
-                        <span>Saving...</span>
+                        <span>{tCommon('saving')}</span>
                       </>
                     )}
                     {saveStatus === 'saved' && (
                       <>
                         <Check className="h-4 w-4 text-green-600" />
-                        <span className="text-green-600">Saved</span>
+                        <span className="text-green-600">{tCommon('saved')}</span>
                       </>
                     )}
                     {saveStatus === 'idle' && draftId && (
                       <>
                         <Save className="h-4 w-4" />
-                        <span>Draft auto-saved</span>
+                        <span>{tCommon('draftAutoSaved')}</span>
                       </>
                     )}
                   </div>
@@ -775,11 +835,11 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 name="jobCategory"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Job Category</FormLabel>
+                    <FormLabel>{tJob('category')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="job-category-select" className="h-12 md:h-10 text-base md:text-sm">
-                          <SelectValue placeholder="Select a category for your job" />
+                          <SelectValue placeholder={tJob('categoryPlaceholder')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -791,7 +851,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      This helps installers understand the scope of work.
+                      {tJob('categoryDesc')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -802,11 +862,11 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 name="jobTitle"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Job Title</FormLabel>
+                    <FormLabel>{tJob('title')}</FormLabel>
                     <div className="flex gap-2">
                       <FormControl>
                         <Input
-                          placeholder="e.g., Install 8 IP Cameras for an Office"
+                          placeholder={tJob('titlePlaceholder')}
                           {...field}
                           data-testid="job-title-input"
                           id="job-title-input-field"
@@ -825,7 +885,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center justify-between">
-                      <FormLabel>Job Description</FormLabel>
+                      <FormLabel>{tJob('description')}</FormLabel>
                       <Button
                         type="button"
                         variant="ghost"
@@ -837,12 +897,12 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                         ) : (
                           <Zap className="mr-2 h-4 w-4" />
                         )}
-                        AI Generate
+                        {tJob('aiGenerate')}
                       </Button>
                     </div>
                     <FormControl>
                       <Textarea
-                        placeholder="Describe the project requirements, scope, and any important details..."
+                        placeholder={tJob('descriptionPlaceholder')}
                         className={cn("min-h-32 text-base md:text-sm", isGenerating && "opacity-50")}
                         {...field}
                         data-testid="job-description-input"
@@ -858,19 +918,19 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center justify-between">
-                      <FormLabel>Required Skills</FormLabel>
+                      <FormLabel>{tJob('skills')}</FormLabel>
                       {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                     </div>
                     <FormControl>
                       <Input
-                        placeholder="e.g., IP Cameras, NVR Setup, Cabling"
+                        placeholder={tJob('skillsPlaceholder')}
                         className={cn(isGenerating && "opacity-50", "h-12 md:h-10 text-base md:text-sm")}
                         {...field}
                         data-testid="skills-input"
                       />
                     </FormControl>
                     <FormDescription>
-                      Enter a comma-separated list of skills.
+                      {tJob('skillsDesc')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -889,10 +949,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>
-                        GST Invoice Required
+                        {tJob('gstInvoice')}
                       </FormLabel>
                       <FormDescription>
-                        Select this if you are a business and require a GST invoice for this job.
+                        {tJob('gstInvoiceDesc')}
                       </FormDescription>
                     </div>
                   </FormItem>
@@ -904,14 +964,14 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="attachments"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Attachments</FormLabel>
+                      <FormLabel>{tJob('attachments')}</FormLabel>
                       <FormControl>
                         <FileUpload
                           onFilesChange={(files) => field.onChange(files)}
                           maxFiles={5}
                         />
                       </FormControl>
-                      <FormDescription>Upload site photos, floor plans, or other relevant documents (max 5 files).</FormDescription>
+                      <FormDescription>{tJob('attachmentsDesc')}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -935,11 +995,11 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="deadline"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Bidding Deadline</FormLabel>
+                      <FormLabel>{tJob('deadline')}</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardInstallerId} data-testid="job-deadline-input" />
                       </FormControl>
-                      <FormDescription>Not applicable for direct awards.</FormDescription>
+                      <FormDescription>{tJob('deadlineDesc')}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -949,7 +1009,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="jobStartDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Job Work Start Date & Time</FormLabel>
+                      <FormLabel>{tJob('startDate')}</FormLabel>
                       <FormControl>
                         {/* Phase 12: Upgrade to datetime-local to capture hour precision */}
                         <Input
@@ -972,12 +1032,12 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="travelTip"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Travel Tip (₹, Optional)</FormLabel>
+                      <FormLabel>{tJob('travelTip')}</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="e.g., 500" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Attract more bids by offering a commission-free travel tip.
+                        {tJob('travelTipDesc')}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -990,9 +1050,9 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Budget</CardTitle>
+                  <CardTitle>{tJob('budget')}</CardTitle>
                   <CardDescription>
-                    {directAwardInstallerId ? "Set the budget you are offering for this private job." : "Provide an estimated budget range to attract relevant bids."}
+                    {directAwardInstallerId ? tJob('budgetDirectDesc') : tJob('budgetDesc')}
                   </CardDescription>
                 </div>
                 <Button
@@ -1004,7 +1064,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   className="gap-2 text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/30"
                 >
                   <Sparkles className="h-4 w-4" />
-                  AI Estimate
+                  {tJob('aiEstimate')}
                 </Button>
               </div>
             </CardHeader>
@@ -1016,7 +1076,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     onSelect={(template) => {
                       form.setValue('priceEstimate.min', template.min, { shouldValidate: true });
                       form.setValue('priceEstimate.max', template.max, { shouldValidate: true });
-                      toast({ title: "Budget Applied", description: `Applied "${template.name}" range.` });
+                      toast({ title: tJob('budgetApplied'), description: tJob('budgetAppliedDesc', { name: template.name }) });
                     }}
                     currentValues={{
                       min: watchedMin,
@@ -1032,7 +1092,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="priceEstimate.min"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{directAwardInstallerId ? 'Offered Budget (₹)' : 'Minimum Budget (₹)'}</FormLabel>
+                      <FormLabel>{directAwardInstallerId ? tJob('offeredBudget') : tJob('minBudget')}</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="e.g. 8000" {...field} data-testid="min-budget-input" />
                       </FormControl>
@@ -1040,21 +1100,19 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     </FormItem>
                   )}
                 />
-                {!directAwardInstallerId && (
-                  <FormField
-                    control={form.control}
-                    name="priceEstimate.max"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Maximum Budget (₹, Optional)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g. 12000" {...field} data-testid="max-budget-input" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+                <FormField
+                  control={form.control}
+                  name="priceEstimate.max"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{tJob('maxBudget')}</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="e.g. 12000" {...field} data-testid="max-budget-input" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </CardContent>
           </Card>
@@ -1063,10 +1121,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <UserPlus className="h-5 w-5" />
-                  Direct Request (Optional)
+                  {tJob('directRequest')}
                 </CardTitle>
                 <CardDescription>
-                  Know an installer you trust? Send a private request for them to bid on this job.
+                  {tJob('directRequestDesc')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1074,6 +1132,30 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
               </CardContent>
             </Card>
           )}
+
+          <div className="rounded-lg border p-4 bg-muted/30">
+            <FormField
+              control={form.control}
+              name="verifyDetails"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      {tJob('verifyDetails')}
+                    </FormLabel>
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
+          </div>
+
           <div className="flex items-center justify-between">
             <div>
               {/* Save as Template Button */}
@@ -1086,47 +1168,63 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   disabled={isProcessing}
                 >
                   <Bookmark className="mr-2 h-4 w-4" />
-                  Save as Template
+                  {tJob('saveAsTemplate')}
                 </Button>
               )}
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" type="button" onClick={() => router.back()}>
-                Cancel
+                {tCommon('cancel')}
               </Button>
               {isEditMode ? (
-                <AlertDialog>
+                <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
                   <AlertDialogTrigger asChild>
                     <Button type="button" disabled={isProcessing || isGenerating}>
                       {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Save Changes
+                      {tJob('saveChanges')}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure you want to save changes?</AlertDialogTitle>
+                      <AlertDialogTitle>{tJob('saveChangesTitle')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Editing a live job will remove all existing bids to ensure fairness. Previous bidders will be notified and will need to bid again on the updated job details. This action cannot be undone.
+                        {tJob('saveChangesDesc')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleSubmitClick}>
-                        {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirm & Save"}
+                      <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
+                      <AlertDialogAction onClick={(e) => { e.preventDefault(); handleFinalSubmit(); }}>
+                        {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : tJob('confirmAndSave')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
               ) : (
-                <Button
-                  type="button"
-                  disabled={isProcessing || isGenerating}
-                  onClick={handleSubmitClick}
-                  data-testid="post-job-button"
-                >
-                  {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {repostJobId ? 'Re-post Job' : 'Post Job'}
-                </Button>
+                <AlertDialog open={isPostConfirmDialogOpen} onOpenChange={setIsPostConfirmDialogOpen}>
+                  <Button
+                    type="button"
+                    disabled={isProcessing || isGenerating}
+                    onClick={handleSubmitClick}
+                    data-testid="post-job-button"
+                  >
+                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {repostJobId ? tJob('repostJob') : tJob('postJob')}
+                  </Button>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{tJob('confirmPostTitle')}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {tJob('confirmPostDesc')}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
+                      <AlertDialogAction onClick={(e) => { e.preventDefault(); handleFinalSubmit(); }}>
+                        {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : tJob('confirmAndSave')}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
             </div>
           </div>

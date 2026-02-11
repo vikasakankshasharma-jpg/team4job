@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import {
   Card,
@@ -10,14 +9,14 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm } from "@/components/auth/login-form";
-// Dynamic import for SignUpWrapper to reduce initial bundle size (avoid loading Maps)
 import dynamic from 'next/dynamic';
 import { Logo } from "@/components/icons";
 
 const SignUpWrapper = dynamic(() => import('@/components/auth/signup-wrapper').then(mod => mod.SignUpWrapper), {
   loading: () => <div className="h-96 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>,
-  ssr: false // Client-side interaction mostly
+  ssr: false
 });
+
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
@@ -26,32 +25,33 @@ import { HelpDialog } from "@/components/help-dialog";
 import { Button } from "@/components/ui/button";
 import { HelpCircle, Loader2 } from "lucide-react";
 import { useHelp } from "@/hooks/use-help";
+import { useTranslations } from 'next-intl';
+import { LanguageToggle } from "@/components/layout/language-toggle";
 
 export default function LoginClient() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  //... rest of the component content
+  const t = useTranslations('auth');
 
-  // Safe handling of searchParams - prevents 500 error on direct navigation
   const initialTab = searchParams?.get("tab") ?? "login";
   const [activeTab, setActiveTab] = useState(initialTab);
   const { setHelp } = useHelp();
 
   useEffect(() => {
     setHelp({
-      title: "Login & Sign Up",
+      title: t('helpTitle'),
       content: (
         <div className="space-y-4 text-sm">
-          <p>Welcome to CCTV Job Connect! Here you can access your account or create a new one.</p>
+          <p>{t('helpContent')}</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Log In:</span> If you already have an account, enter your email and password to access your dashboard.</li>
-            <li><span className="font-semibold">Sign Up:</span> New here? Click the &quot;Sign Up&quot; tab to begin. You&apos;ll choose whether you want to hire professionals or find work as an installer.</li>
+            <li><span className="font-semibold">{t('helpLoginLabel')}</span> {t('helpLoginText')}</li>
+            <li><span className="font-semibold">{t('helpSignupLabel')}</span> {t('helpSignupText')}</li>
           </ul>
         </div>
       ),
     });
-  }, [setHelp]);
+  }, [setHelp, t]);
 
   useEffect(() => {
     const tabFromUrl = searchParams?.get("tab") ?? "login";
@@ -73,31 +73,32 @@ export default function LoginClient() {
         <div className="flex-1 flex justify-start">
           <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
             <Logo className="h-7 w-7" />
-            <span>CCTV Job Connect</span>
+            <span>{t('brandName')}</span>
           </Link>
         </div>
         <div className="flex-1 flex justify-end items-center gap-2">
           <HelpDialog>
             <Button variant="outline" size="icon">
               <HelpCircle className="h-5 w-5" />
-              <span className="sr-only">Help</span>
+              <span className="sr-only">{t('help')}</span>
             </Button>
           </HelpDialog>
+          <LanguageToggle />
           <ThemeToggle />
         </div>
       </header>
       <main id="main-content" className="flex-grow flex items-center justify-center w-full">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-md">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Log In</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="login">{t('loginTab')}</TabsTrigger>
+            <TabsTrigger value="signup">{t('signupTab')}</TabsTrigger>
           </TabsList>
           <TabsContent value="login">
             <Card>
               <CardHeader>
-                <CardTitle>Log In</CardTitle>
+                <CardTitle>{t('loginTitle')}</CardTitle>
                 <CardDescription>
-                  Enter your credentials to access your dashboard.
+                  {t('loginDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -108,9 +109,9 @@ export default function LoginClient() {
           <TabsContent value="signup">
             <Card>
               <CardHeader>
-                <CardTitle>Create an Account</CardTitle>
+                <CardTitle>{t('signupTitle')}</CardTitle>
                 <CardDescription>
-                  Choose your role and fill in your details to get started.
+                  {t('signupDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -123,6 +124,3 @@ export default function LoginClient() {
     </div>
   );
 }
-
-
-

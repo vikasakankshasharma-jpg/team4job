@@ -38,6 +38,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { CheckCircle2, Loader2, ShieldCheck, Camera, Upload, Eye, EyeOff } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { User, PlatformSettings } from "@/lib/types";
+import { useTranslations } from "next-intl";
 import {
   initiateAadharVerificationAction,
   confirmAadharVerificationAction,
@@ -61,7 +62,7 @@ import {
   getAuth
 } from "firebase/auth";
 import { initializeApp, getApps } from "firebase/app";
-import { useAuth, useFirestore, useFirebase } from "@/lib/firebase/client-provider";
+import { useFirestore, useFirebase } from "@/lib/firebase/client-provider";
 import { useHelp } from "@/hooks/use-help";
 import { allSkills } from "@/lib/data";
 import { trackSignupProgress, markSignupComplete } from "@/lib/signup-tracker";
@@ -104,10 +105,12 @@ const formSchema = z.object({
 export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; referredBy?: string }) {
   const router = useRouter();
   const { login } = useUser();
-  const auth = useAuth();
+  const { auth } = useFirebase();
   const db = useFirestore();
   const { toast } = useToast();
   const { setHelp } = useHelp();
+  const tError = useTranslations('errors');
+  const tAuth = useTranslations('auth');
 
   const [currentStep, setCurrentStep] = useState<"role" | "details" | "photo" | "verification" | "skills">("role");
   const [verificationSubStep, setVerificationSubStep] = useState<"enterAadhar" | "enterOtp" | "enterPan" | "verified">("enterAadhar");
@@ -195,7 +198,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       toast({ title: "OTP Sent", description: "Please check your mobile for the verification code." });
     } catch (error: any) {
       console.error("SMS Error:", error);
-      toast({ title: "Error", description: error.message || "Could not send OTP.", variant: "destructive" });
+      toast({ title: "Error", description: tError(error.message) || "Could not send OTP.", variant: "destructive" });
       if (recaptchaVerifierRef.current) recaptchaVerifierRef.current.clear();
     } finally {
       setIsLoading(false);
@@ -439,11 +442,11 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       setHasCameraPermission(false);
       toast({
         variant: "destructive",
-        title: "Camera Access Denied",
-        description: "Please enable camera permissions in your browser settings to take a photo.",
+        title: tAuth('cameraAccessDenied'),
+        description: tAuth('cameraAccessDeniedDesc'),
       });
     }
-  }, [toast]);
+  }, [toast, tAuth]);
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
@@ -481,7 +484,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
     setIsLoading(true);
     const aadharNumber = form.getValues("aadhar");
     if (!aadharNumber) {
-      setError("Aadhar number is required.");
+      setError(tError('aadharRequired'));
       setIsLoading(false);
       return;
     }
@@ -491,14 +494,14 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         setVerificationId(result.data.verificationId);
         setVerificationSubStep("enterOtp");
         toast({
-          title: "OTP Sent!",
+          title: tAuth('otpLabel'),
           description: result.data.message,
         });
       } else {
-        setError(result.error || "Failed to initiate verification");
+        setError(tError(result.error || 'serverError') || "Failed to initiate verification");
       }
     } catch (e: any) {
-      setError(e.message || "An unexpected error occurred. Please try again.");
+      setError(tError(e.message) || "An unexpected error occurred. Please try again.");
       console.error(e);
     } finally {
       setIsLoading(false);
@@ -510,7 +513,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
     setIsLoading(true);
     const otp = form.getValues("otp");
     if (!otp || otp.length !== 6) {
-      setError("Please enter a valid 6-digit OTP.");
+      setError(tError('invalidOtp'));
       setIsLoading(false);
       return;
     }
@@ -521,14 +524,14 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         // Instead of finishing here, move to PAN step
         setVerificationSubStep("enterPan");
         toast({
-          title: "Aadhar Verified!",
-          description: "Please enter your PAN details to complete verification.",
+          title: tAuth('verifyAadhar'),
+          description: tAuth('verifyPan'),
         });
       } else {
-        setError(result.data?.message || result.error || "Verification failed");
+        setError(result.data?.message || tError(result.error || 'serverError') || "Verification failed");
       }
     } catch (e: any) {
-      setError(e.message || "An unexpected error occurred. Please try again.");
+      setError(tError(e.message) || "An unexpected error occurred. Please try again.");
       console.error(e);
     } finally {
       setIsLoading(false);
@@ -541,7 +544,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
     setIsLoading(true);
     const pan = form.getValues("pan");
     if (!pan || pan.length !== 10) {
-      setError("Please enter a valid 10-character PAN.");
+      setError(tError('invalidPan'));
       setIsLoading(false);
       return;
     }
@@ -551,15 +554,15 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       if (result.success && result.data && result.data.isValid) {
         setVerificationSubStep("verified");
         toast({
-          title: "PAN Verified!",
+          title: tAuth('verifyPan'),
           description: result.data.message,
         });
         setCurrentStep("photo");
       } else {
-        setError(result.data?.message || result.error || "PAN verification failed");
+        setError(result.data?.message || tError(result.error || 'serverError') || "PAN verification failed");
       }
     } catch (e: any) {
-      setError(e.message || "PAN verification failed.");
+      setError(tError(e.message) || "PAN verification failed.");
     } finally {
       setIsLoading(false);
     }
@@ -700,7 +703,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         form.setError("email", { type: "manual", message: "This email is already registered." });
       } else {
         console.error("Signup failed:", error);
-        toast({ title: "Sign Up Failed", description: error.message, variant: "destructive" });
+        toast({ title: "Sign Up Failed", description: tError(error.message), variant: "destructive" });
       }
       setCurrentStep("details");
     } finally {
@@ -802,12 +805,12 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                       aria-label="Send OTP to Aadhar number"
                     >
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Send OTP
+                      {tAuth('verifyOtp')}
                     </Button>
                   )}
                 </div>
-                {!isAutomatedKycEnabled && <FormDescription>Enter your 12-digit Aadhar number.</FormDescription>}
-                {isAutomatedKycEnabled && <FormDescription>For testing, use Aadhaar: <strong>999999990019</strong></FormDescription>}
+                {!isAutomatedKycEnabled && <FormDescription>{tAuth('aadharDesc')}</FormDescription>}
+                {isAutomatedKycEnabled && <FormDescription>{tAuth('testAadharDesc')}</FormDescription>}
                 <FormMessage />
               </FormItem>
             )}
@@ -823,11 +826,11 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                   <div className="flex gap-2">
                     <FormControl>
                       <Input
-                        placeholder="Enter 6-digit OTP"
+                        placeholder={tAuth('otpLabel')}
                         {...field}
                         maxLength={6}
                         className="h-11"
-                        aria-label="OTP"
+                        aria-label={tAuth('otpLabel')}
                       />
                     </FormControl>
                     <Button
@@ -837,10 +840,10 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                       className="h-11"
                     >
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Verify OTP
+                      {tAuth('verifyOtp')}
                     </Button>
                   </div>
-                  <FormDescription>For testing, use any 6-digit OTP, e.g., <strong>123456</strong>.</FormDescription>
+                  <FormDescription>{tAuth('testOtpDesc')}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -856,11 +859,11 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                 <div className="flex gap-2">
                   <FormControl>
                     <Input
-                      placeholder="ABCDE1234F"
+                      placeholder={tAuth('panLabel')}
                       {...field}
                       maxLength={10}
                       className="uppercase h-11"
-                      aria-label="PAN Number"
+                      aria-label={tAuth('panLabel')}
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                     />
                   </FormControl>
@@ -872,11 +875,11 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                       className="h-11"
                     >
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Verify PAN
+                      {tAuth('verifyPan')}
                     </Button>
                   )}
                 </div>
-                <FormDescription>For testing, use any valid PAN format e.g., <strong>ABCDE1234F</strong>.</FormDescription>
+                <FormDescription>{tAuth('testPanDesc')}</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -890,17 +893,17 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
               onClick={() => {
                 setVerificationSubStep("verified");
                 toast({
-                  title: "Details Submitted",
-                  description: "Your KYC details have been recorded for manual review.",
+                  title: tAuth('detailsSubmitted'),
+                  description: tAuth('manualVerificationDesc'),
                 });
                 setCurrentStep("photo");
               }}
             >
-              Submit for Manual Verification
+              {tAuth('submitManual')}
             </Button>
           )}
 
-          <Button variant="outline" onClick={() => setCurrentStep('role')} className="w-full h-11">Back</Button>
+          <Button variant="outline" onClick={() => setCurrentStep('role')} className="w-full h-11">{tAuth('back')}</Button>
         </div>
       )
     }
@@ -909,13 +912,13 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
 
   const renderPhotoStep = () => (
     <div className="space-y-4">
-      <h3 className="font-semibold">{role === 'Job Giver' ? 'Step 2: Add a Profile Photo' : 'Step 3: Profile Photo & Video KYC'}</h3>
-      <p className="text-sm text-muted-foreground">{role === 'Job Giver' ? 'A real photo increases trust.' : 'This photo will be used for your Virtual ID Card. Please ensure good lighting and a plain background.'}</p>
+      <h3 className="font-semibold">{tAuth('stepPhoto')}</h3>
+      <p className="text-sm text-muted-foreground">{tAuth('profilePhotoDesc')}</p>
 
       <div className="mx-auto w-64 h-64 bg-muted rounded-full overflow-hidden relative flex items-center justify-center">
         {photo ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={photo} alt="Profile preview" className="object-cover w-full h-full" />
+          <img src={photo} alt={tAuth('profilePreview')} className="object-cover w-full h-full" />
         ) : (
           <>
             <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
@@ -938,7 +941,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
                       form.setValue('realAvatarUrl', testImage);
                     }}
                   >
-                    Use Test Photo
+                    {tAuth('useTestPhoto')}
                   </Button>
                 )}
               </div>
@@ -949,18 +952,18 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
 
       <div className="flex gap-2">
         {photo ? (
-          <Button variant="outline" onClick={() => { setPhoto(null); startCamera(); }} className="w-full h-11" aria-label="Retake photo">Retake Photo</Button>
+          <Button variant="outline" onClick={() => { setPhoto(null); startCamera(); }} className="w-full h-11" aria-label={tAuth('retakePhoto')}>{tAuth('retakePhoto')}</Button>
         ) : (
-          <Button onClick={handleCapture} disabled={!hasCameraPermission} className="w-full h-11" aria-label="Capture photo">
+          <Button onClick={handleCapture} disabled={!hasCameraPermission} className="w-full h-11" aria-label={tAuth('capturePhoto')}>
             <Camera className="mr-2 h-4 w-4" />
-            Capture
+            {tAuth('capturePhoto')}
           </Button>
         )}
       </div>
 
       <div className="flex gap-2">
-        <Button variant="outline" onClick={() => setCurrentStep(role === 'Job Giver' ? 'role' : 'verification')} className="w-full h-11">Back</Button>
-        <Button onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'details')} className="w-full h-11" disabled={!photo}>Next</Button>
+        <Button variant="outline" onClick={() => setCurrentStep(role === 'Job Giver' ? 'role' : 'verification')} className="w-full h-11">{tAuth('back')}</Button>
+        <Button onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'details')} className="w-full h-11" disabled={!photo}>{tAuth('next')}</Button>
       </div>
       <canvas ref={canvasRef} className="hidden"></canvas>
     </div >
@@ -968,8 +971,8 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
 
   const renderSkillsStep = () => (
     <div className="space-y-4">
-      <h3 className="font-semibold">Step 3: Select Your Skills</h3>
-      <p className="text-sm text-muted-foreground">Choose the services you offer. This will help Job Givers find you for relevant projects.</p>
+      <h3 className="font-semibold">{tAuth('stepSkills')}</h3>
+      <p className="text-sm text-muted-foreground">{tAuth('skillsDesc')}</p>
 
       <FormField
         control={form.control}
@@ -1090,16 +1093,16 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
               </FormControl>
               {!isMobileVerified && (
                 <Button type="button" onClick={handleSendMobileOtp} disabled={isLoading} variant="secondary" className="h-11">
-                  Verify
+                  {tAuth('verify')}
                 </Button>
               )}
               {isMobileVerified && (
                 <Button type="button" disabled variant="ghost" className="text-green-600">
-                  <CheckCircle2 className="mr-2 h-4 w-4" /> Verified
+                  <CheckCircle2 className="mr-2 h-4 w-4" /> {tAuth('verified')}
                 </Button>
               )}
             </div>
-            <FormDescription>Verified mobile number will be your registered ID.</FormDescription>
+            <FormDescription>{tAuth('mobileVerifiedId')}</FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -1109,16 +1112,16 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         name="password"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Password</FormLabel>
+            <FormLabel>{tAuth('passwordLabel')}</FormLabel>
             <FormControl>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder={tAuth('passwordPlaceholder')}
                   {...field}
                   className="h-11 pr-10"
                   autoComplete="new-password"
-                  aria-label="Password"
+                  aria-label={tAuth('passwordLabel')}
                 />
                 <Button
                   type="button"
@@ -1144,16 +1147,16 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         name="confirmPassword"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Confirm Password</FormLabel>
+            <FormLabel>{tAuth('confirmPasswordLabel')}</FormLabel>
             <FormControl>
               <div className="relative">
                 <Input
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder={tAuth('passwordPlaceholder')}
                   {...field}
                   className="h-11 pr-10"
                   autoComplete="new-password"
-                  aria-label="Confirm Password"
+                  aria-label={tAuth('confirmPasswordLabel')}
                 />
                 <Button
                   type="button"
@@ -1197,7 +1200,10 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             </FormControl>
             <div className="space-y-1 leading-none">
               <FormLabel>
-                I agree to the <Link href="/terms" target="_blank" className="underline text-primary">Terms of Service</Link> and <Link href="/privacy" target="_blank" className="underline text-primary">Privacy Policy</Link>.
+                {tAuth.rich('iAgreeToLabel', {
+                  terms: (chunks) => <Link href="/terms" target="_blank" className="underline text-primary">{tAuth('termsOfService')}</Link>,
+                  privacy: (chunks) => <Link href="/privacy" target="_blank" className="underline text-primary">{tAuth('privacyPolicy')}</Link>
+                })}
               </FormLabel>
               <FormMessage />
             </div>
@@ -1217,10 +1223,10 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         )}
       />
       <div className="flex gap-2">
-        <Button variant="outline" onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'photo')} className="w-full h-11">Back</Button>
+        <Button variant="outline" onClick={() => setCurrentStep(role === 'Installer' ? 'skills' : 'photo')} className="w-full h-11">{tAuth('back')}</Button>
         <Button type="submit" className="w-full h-11" disabled={isLoading || !isMobileVerified || !isEmailVerified}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {(!isMobileVerified || !isEmailVerified) ? "Verify Mobile & Email to Continue" : "Create Account"}
+          {(!isMobileVerified || !isEmailVerified) ? tAuth('verifyBothToContinue') : tAuth('createAccount')}
         </Button>
       </div>
     </div>
@@ -1241,12 +1247,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       <Dialog open={isOtpDialogOpen} onOpenChange={setIsOtpDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{verificationType === 'mobile' ? 'Verify Mobile Number' : 'Verify Email Address'}</DialogTitle>
+            <DialogTitle>{verificationType === 'mobile' ? tAuth('verifyMobileTitle') : tAuth('verifyEmailTitle')}</DialogTitle>
             <DialogDescription>
-              {verificationType === 'mobile'
-                ? `Enter the 6-digit code sent to ${form.getValues('mobile')}`
-                : `Enter the 6-digit code sent to ${form.getValues('email')}`
-              }
+              {tAuth('enterCodeSentTo', { target: verificationType === 'mobile' ? form.getValues('mobile') : form.getValues('email') })}
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center space-x-2">
@@ -1262,14 +1265,14 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             </div>
           </div>
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsOtpDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsOtpDialogOpen(false)}>{tAuth('cancel')}</Button>
             <Button
               type="button"
               onClick={verificationType === 'mobile' ? handleVerifyMobileOtp : handleVerifyEmailOtp}
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirm
+              {tAuth('confirm')}
             </Button>
           </div>
         </DialogContent>

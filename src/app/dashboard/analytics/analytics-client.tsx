@@ -20,8 +20,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
+import { useTranslations } from "next-intl";
+
 export default function AnalyticsClient() {
     const { user } = useUser();
+    const t = useTranslations('analytics');
+    const tCommon = useTranslations('common');
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -46,15 +50,15 @@ export default function AnalyticsClient() {
         } catch (error) {
             console.error("Failed to load analytics:", error);
             toast({
-                title: "Error",
-                description: "Failed to load analytics data",
+                title: tCommon('error'),
+                description: t('loadError'),
                 variant: "destructive",
             });
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [user?.id, toast]);
+    }, [user?.id, toast, t, tCommon]);
 
     useEffect(() => {
         setLoading(true);
@@ -71,22 +75,22 @@ export default function AnalyticsClient() {
             const current = spendingTrends[spendingTrends.length - 1].amount;
             const previous = spendingTrends[spendingTrends.length - 2].amount;
             if (current > previous * 1.1) {
-                result.push({ title: "Spending Increasing", insight: "Your spending has increased by over 10% compared to last month.", type: 'warning' } as const);
+                result.push({ title: t('insights.spendingIncreasing'), insight: t('insights.spendingIncreasingDesc'), type: 'warning' } as const);
             } else if (current < previous * 0.9) {
-                result.push({ title: "Budget Optimized", insight: "You spent significantly less this month than last month.", type: 'success' } as const);
+                result.push({ title: t('insights.budgetOptimized'), insight: t('insights.budgetOptimizedDesc'), type: 'success' } as const);
             }
         }
 
         // 2. Hiring Velocity
         if (summary.activeJobs > 3) {
-            result.push({ title: "High Hiring Volume", insight: "You have multiple active jobs. Consider scheduling interviews in batches.", type: 'info' } as const);
+            result.push({ title: t('insights.highHiringVolume'), insight: t('insights.highHiringVolumeDesc'), type: 'info' } as const);
         }
 
         // 3. Unrated Jobs
         // We don't have this data explicitly in summary, but if we had it, we'd add it here.
 
         return result;
-    }, [summary, spendingTrends]);
+    }, [summary, spendingTrends, t]);
 
 
     const handleExport = () => {
@@ -110,16 +114,16 @@ export default function AnalyticsClient() {
         document.body.removeChild(link);
 
         toast({
-            title: "Export Complete",
-            description: "Your analytics report has been downloaded.",
+            title: t('exportComplete'),
+            description: t('exportCompleteDesc'),
         });
     };
 
     const handleRefresh = () => {
         loadData();
         toast({
-            title: "Refreshing",
-            description: "Loading latest analytics data...",
+            title: t('refreshing'),
+            description: t('refreshingDesc'),
         });
     };
 
@@ -140,9 +144,9 @@ export default function AnalyticsClient() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="space-y-1">
-                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('title')}</h1>
                     <p className="text-sm md:text-base text-muted-foreground">
-                        Insights into your hiring performance and spending
+                        {t('description')}
                     </p>
                 </div>
                 <div className="flex gap-2">
@@ -153,7 +157,7 @@ export default function AnalyticsClient() {
                         disabled={loading || refreshing}
                     >
                         <RefreshCw className={cn("mr-2 h-4 w-4", refreshing && "animate-spin")} />
-                        Refresh
+                        {t('refresh')}
                     </Button>
                     <Button
                         variant="outline"
@@ -162,7 +166,7 @@ export default function AnalyticsClient() {
                         disabled={loading}
                     >
                         <Download className="mr-2 h-4 w-4" />
-                        <span className="hidden sm:inline">Export</span>
+                        <span className="hidden sm:inline">{t('export')}</span>
                     </Button>
                 </div>
             </div>
@@ -204,14 +208,14 @@ export default function AnalyticsClient() {
             {!loading && summary && summary.totalJobs === 0 && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>No Data Yet</CardTitle>
+                        <CardTitle>{t('noData')}</CardTitle>
                         <CardDescription>
-                            Post your first job to start seeing analytics and insights!
+                            {t('noDataDesc')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button onClick={() => window.location.href = '/dashboard/post-job'}>
-                            Post Your First Job
+                            {t('postFirstJob')}
                         </Button>
                     </CardContent>
                 </Card>

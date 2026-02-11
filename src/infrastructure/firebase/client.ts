@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth'; // Reverted: connectAuthEmulator removed
-import { getFirestore, initializeFirestore, memoryLocalCache, getFirestore as getFirestoreDefault } from 'firebase/firestore'; // Reverted: connectFirestoreEmulator removed
-import { getStorage } from 'firebase/storage'; // Reverted: connectStorageEmulator removed
+import { getAuth, setPersistence, browserLocalPersistence, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, initializeFirestore, memoryLocalCache, getFirestore as getFirestoreDefault, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'mock-key',
@@ -38,12 +38,21 @@ try {
 
     storage = getStorage(app);
 
-    // Emulator Connection Logic: ONLY in local development
-    // Reverted CI check because CI environment does not run emulators.
-    if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_IS_CI !== 'true') {
-        // Only connect if explicitly dev and NOT CI (just in case)
-        // Actually, if we want to run emulators locally we can use a flag.
-        // For now, removing the forced connection for CI.
+    // Emulator Connection Logic
+    if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+        console.log('🔴 Connecting to Firebase Emulators...');
+
+        // Connect Auth Emulator
+        // Note: No trailing slash for auth URL usually, but let's follow standard port
+        connectAuthEmulator(auth, "http://localhost:9099");
+
+        // Connect Firestore Emulator
+        connectFirestoreEmulator(db, 'localhost', 8080);
+
+        // Connect Storage Emulator (Optional, but good practice)
+        connectStorageEmulator(storage, 'localhost', 9199);
+
+        console.log('✅ Connected to Firebase Emulators');
     }
 
     // CI Specific Persistence Overrides

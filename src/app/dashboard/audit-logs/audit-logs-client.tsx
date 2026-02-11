@@ -12,6 +12,7 @@ import { StatCard, FilterBar, ExportButton, AdminEmptyState } from "@/components
 import type { Filter } from "@/components/admin";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface AdminActionLog {
     id: string;
@@ -55,13 +56,8 @@ const targetIcons = {
     blacklist: Shield,
 };
 
-function getActionLabel(actionType: string): string {
-    return actionType.split('_').map(word =>
-        word.charAt(0) + word.slice(1).toLowerCase()
-    ).join(' ');
-}
-
 export default function AuditLogsClient() {
+    const t = useTranslations('admin.auditLogs');
     const { user, isAdmin, loading: userLoading } = useUser();
     const { db } = useFirebase();
     const router = useRouter();
@@ -69,6 +65,17 @@ export default function AuditLogsClient() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [actionFilter, setActionFilter] = useState('all');
+
+    // Helper to get translated action label
+    const getActionLabel = React.useCallback((actionType: string) => {
+        try {
+            return t(`actions.${actionType}`);
+        } catch (e) {
+            return actionType.split('_').map(word =>
+                word.charAt(0) + word.slice(1).toLowerCase()
+            ).join(' ');
+        }
+    }, [t]);
 
     // Authorization Guard
     useEffect(() => {
@@ -131,12 +138,12 @@ export default function AuditLogsClient() {
 
     // Export data
     const exportData = filteredLogs.map(log => ({
-        'Timestamp': format(log.timestamp.toDate(), 'yyyy-MM-dd HH:mm:ss'),
-        'Admin': log.adminName,
-        'Email': log.adminEmail,
-        'Action': getActionLabel(log.actionType),
+        [t('table.timestamp')]: format(log.timestamp.toDate(), 'yyyy-MM-dd HH:mm:ss'),
+        [t('table.admin')]: log.adminName,
+        'Email': log.adminEmail, // Keeping email as is or could translate key
+        [t('table.action')]: getActionLabel(log.actionType),
         'Target Type': log.targetType,
-        'Target Name': log.targetName || '',
+        [t('table.target')]: log.targetName || '',
         'Target ID': log.targetId || '',
     }));
 
@@ -147,18 +154,18 @@ export default function AuditLogsClient() {
     const filterConfig: Filter[] = [
         {
             id: 'search',
-            label: 'Search',
+            label: t('filters.searchLabel'),
             type: 'search',
-            placeholder: 'Search by admin, action, or target...',
+            placeholder: t('filters.searchPlaceholder'),
             value: searchQuery,
             onChange: setSearchQuery,
         },
         {
             id: 'actionType',
-            label: 'Action Type',
+            label: t('filters.actionTypeLabel'),
             type: 'select',
             options: actionTypes.map(a => ({
-                label: a === 'all' ? 'All Actions' : getActionLabel(a),
+                label: a === 'all' ? t('filters.allActions') : getActionLabel(a),
                 value: a
             })),
             value: actionFilter,
@@ -184,22 +191,22 @@ export default function AuditLogsClient() {
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-3">
                 <StatCard
-                    title="Total Actions"
+                    title={t('stats.total')}
                     value={stats.totalActions}
                     icon={Activity}
-                    description="Last 100 actions"
+                    description={t('stats.totalDesc')}
                 />
                 <StatCard
-                    title="Today"
+                    title={t('stats.today')}
                     value={stats.todayActions}
                     icon={Calendar}
-                    description="Actions performed today"
+                    description={t('stats.todayDesc')}
                 />
                 <StatCard
-                    title="This Week"
+                    title={t('stats.week')}
                     value={stats.weekActions}
                     icon={Calendar}
-                    description="Last 7 days"
+                    description={t('stats.weekDesc')}
                 />
             </div>
 
@@ -210,10 +217,10 @@ export default function AuditLogsClient() {
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <Shield className="h-5 w-5" />
-                                Admin Audit Log
+                                {t('title')}
                             </CardTitle>
                             <CardDescription>
-                                {filteredLogs.length} actions shown • Chronological record of all admin actions
+                                {t('description', { count: filteredLogs.length })}
                             </CardDescription>
                         </div>
                         <ExportButton
@@ -233,11 +240,11 @@ export default function AuditLogsClient() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Timestamp</TableHead>
-                                    <TableHead>Admin</TableHead>
-                                    <TableHead>Action</TableHead>
-                                    <TableHead>Target</TableHead>
-                                    <TableHead>Details</TableHead>
+                                    <TableHead>{t('table.timestamp')}</TableHead>
+                                    <TableHead>{t('table.admin')}</TableHead>
+                                    <TableHead>{t('table.action')}</TableHead>
+                                    <TableHead>{t('table.target')}</TableHead>
+                                    <TableHead>{t('table.details')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -252,10 +259,10 @@ export default function AuditLogsClient() {
                                         <TableCell colSpan={5} className="h-24">
                                             <AdminEmptyState
                                                 icon={Inbox}
-                                                title="No audit logs found"
-                                                description="No admin actions match your current filters"
+                                                title={t('empty.title')}
+                                                description={t('empty.description')}
                                                 action={{
-                                                    label: 'Reset Filters',
+                                                    label: t('filters.searchLabel'), // fallback or reset label
                                                     onClick: clearFilters,
                                                 }}
                                             />
@@ -308,7 +315,7 @@ export default function AuditLogsClient() {
                                                                     href={getTargetLink(log.targetType, log.targetId)}
                                                                     className="text-xs text-blue-600 hover:underline"
                                                                 >
-                                                                    View {log.targetType}
+                                                                    {t('helper.viewTarget', { target: log.targetType })}
                                                                 </Link>
                                                             )}
                                                         </div>
@@ -326,7 +333,7 @@ export default function AuditLogsClient() {
                                                             ))}
                                                         </div>
                                                     ) : (
-                                                        <span className="text-xs text-muted-foreground">No additional details</span>
+                                                        <span className="text-xs text-muted-foreground">{t('helper.noDetails')}</span>
                                                     )}
                                                 </TableCell>
                                             </TableRow>
@@ -366,3 +373,4 @@ function formatValue(value: any): string {
     if (typeof value === 'object') return JSON.stringify(value);
     return String(value);
 }
+

@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { FirebaseClientProvider } from "@/lib/firebase/client-provider";
 import { UserProvider } from "@/hooks/use-user";
 import { Providers } from "@/components/providers";
+import { IntlProvider } from "@/components/providers/intl-provider";
 import Script from 'next/script';
 import { GA_TRACKING_ID } from '@/lib/analytics';
 import { WebVitalsReporter } from "@/components/dashboard/analytics/web-vitals";
@@ -58,13 +59,20 @@ export const viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+// Removed next-intl server imports - handling i18n client-side only
+
+// ... (existing imports)
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Using static locale - language switching handled client-side
+  const locale = 'en';
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         {/* Preconnect to external services for faster loading */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
@@ -85,17 +93,20 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <FirebaseClientProvider>
-            <UserProvider>
-              <Providers>
-                <WebVitalsReporter />
-                <SystemStatusBanner />
-                {children}
-              </Providers>
-            </UserProvider>
-          </FirebaseClientProvider>
+          <IntlProvider>
+            <FirebaseClientProvider>
+              <UserProvider>
+                <Providers>
+                  <WebVitalsReporter />
+                  <SystemStatusBanner />
+                  {children}
+                </Providers>
+              </UserProvider>
+            </FirebaseClientProvider>
+          </IntlProvider>
           <Toaster />
         </ThemeProvider>
+        {/* ... (rest of the file) */}
         {/* Google Analytics - deferred for better performance */}
         {GA_TRACKING_ID && (
           <>

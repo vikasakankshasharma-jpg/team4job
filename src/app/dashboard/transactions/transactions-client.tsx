@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
     Card,
@@ -57,6 +59,7 @@ export default function TransactionsClient() {
     const { user, isAdmin, loading: userLoading } = useUser();
     // const { db } = useFirebase(); // Unused now
     const router = useRouter();
+    const t = useTranslations('transactions');
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState(initialFilters);
@@ -67,19 +70,19 @@ export default function TransactionsClient() {
 
     useEffect(() => {
         setHelp({
-            title: "Transactions",
+            title: t('help.title'),
             content: (
                 <div className="space-y-4 text-sm">
-                    <p>This page provides a detailed audit trail of every financial transaction that occurs on the platform. It&apos;s an essential tool for accounting and tracking revenue.</p>
+                    <p>{t('help.content')}</p>
                     <ul className="list-disc space-y-2 pl-5">
-                        <li><span className="font-semibold">KPI Cards & Date Filters:</span> At the top, you&apos;ll find key performance indicators. Use the date filter to see the total value of funds released to installers over specific periods. &quot;Currently Held&quot; always shows the real-time balance.</li>
-                        <li><span className="font-semibold">Transaction Log:</span> The main table shows a chronological list of all transactions, including payments from Job Givers, payouts to Installers, and any refunds.</li>
-                        <li><span className="font-semibold">Search & Filter:</span> Use the controls to quickly find specific transactions. You can search by Transaction ID, Job ID, or user name, and filter by the transaction status.</li>
+                        <li><span className="font-semibold">{t('help.kpiTitle')}</span> {t('help.kpiContent')}</li>
+                        <li><span className="font-semibold">{t('help.logTitle')}</span> {t('help.logContent')}</li>
+                        <li><span className="font-semibold">{t('help.searchTitle')}</span> {t('help.searchContent')}</li>
                     </ul>
                 </div>
             )
         })
-    }, [setHelp]);
+    }, [setHelp, t]);
 
     useEffect(() => {
         if (!userLoading && !isAdmin) {
@@ -221,15 +224,15 @@ export default function TransactionsClient() {
     const filterConfig: Filter[] = [
         {
             id: 'search',
-            label: 'Search',
+            label: t('filters.search'),
             type: 'search',
-            placeholder: 'Search by ID, Job, or User...',
+            placeholder: t('filters.searchPlaceholder'),
             value: filters.search,
             onChange: (value) => handleFilterChange('search', value),
         },
         {
             id: 'status',
-            label: 'Status',
+            label: t('filters.status'),
             type: 'select',
             options: allStatuses.map(s => ({
                 label: s,
@@ -241,15 +244,15 @@ export default function TransactionsClient() {
     ];
 
     // Export data
-    const exportData = filteredTransactions.map(t => ({
-        'Transaction ID': t.id,
-        'Job ID': t.jobId,
-        'Job Title': t.jobTitle,
-        'From': t.payerName,
-        'To': t.payeeName,
-        'Amount': t.amount,
-        'Status': t.status,
-        'Created': format(toDate(t.createdAt), 'yyyy-MM-dd HH:mm:ss'),
+    const exportData = filteredTransactions.map(txn => ({
+        [t('export.id')]: txn.id,
+        [t('export.jobId')]: txn.jobId,
+        [t('export.jobTitle')]: txn.jobTitle,
+        [t('export.from')]: txn.payerName,
+        [t('export.to')]: txn.payeeName,
+        [t('export.amount')]: txn.amount,
+        [t('export.status')]: txn.status,
+        [t('export.created')]: format(toDate(txn.createdAt), 'yyyy-MM-dd HH:mm:ss'),
     }));
 
     // Tab filtered transactions
@@ -277,34 +280,34 @@ export default function TransactionsClient() {
                 <>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                         <StatCard
-                            title="Total Volume"
+                            title={t('kpi.volume')}
                             value={`₹${enhancedStats.totalVolume.toLocaleString()}`}
                             icon={TrendingUp}
-                            description="All transactions"
+                            description={t('kpi.volumeDesc')}
                         />
                         <StatCard
-                            title="Released"
+                            title={t('kpi.released')}
                             value={`₹${enhancedStats.totalReleased.toLocaleString()}`}
                             icon={CheckCircle2}
-                            description={`${enhancedStats.releasedTransactions} payouts`}
+                            description={t('kpi.releasedDesc', { count: enhancedStats.releasedTransactions })}
                         />
                         <StatCard
-                            title="Held in Escrow"
+                            title={t('kpi.escrow')}
                             value={`₹${enhancedStats.totalFunded.toLocaleString()}`}
                             icon={Hourglass}
-                            description={`${enhancedStats.fundedTransactions} pending`}
+                            description={t('kpi.escrowDesc', { count: enhancedStats.fundedTransactions })}
                         />
                         <StatCard
-                            title="Platform Revenue"
+                            title={t('kpi.revenue')}
                             value={`₹${enhancedStats.totalCommission.toLocaleString()}`}
                             icon={DollarSign}
-                            description="Commissions earned"
+                            description={t('kpi.revenueDesc')}
                         />
                         <StatCard
-                            title="Refunded"
+                            title={t('kpi.refunded')}
                             value={`₹${enhancedStats.totalRefunded.toLocaleString()}`}
                             icon={RefreshCw}
-                            description={`${enhancedStats.refundedTransactions} refunds`}
+                            description={t('kpi.refundedDesc', { count: enhancedStats.refundedTransactions })}
                         />
                     </div>
                 </>
@@ -314,10 +317,10 @@ export default function TransactionsClient() {
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                            <CardTitle>Transactions</CardTitle>
+                            <CardTitle>{t('title')}</CardTitle>
                             <CardDescription>
-                                {isAdmin ? 'All platform transactions' : 'Your transaction history'}
-                                {' '}• {filteredTransactions.length} transactions shown
+                                {isAdmin ? t('adminDescription') : t('description')}
+                                {' '}• {t('shown', { count: filteredTransactions.length })}
                             </CardDescription>
                         </div>
                         <ExportButton
@@ -331,15 +334,15 @@ export default function TransactionsClient() {
                     {/* Tabs */}
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
                         <TabsList>
-                            <TabsTrigger value="all">All ({filteredTransactions.length})</TabsTrigger>
+                            <TabsTrigger value="all">{t('tabs.all')} ({filteredTransactions.length})</TabsTrigger>
                             <TabsTrigger value="funded">
-                                Funded ({filteredTransactions.filter(t => t.status === 'funded').length})
+                                {t('tabs.funded')} ({filteredTransactions.filter(t => t.status === 'funded').length})
                             </TabsTrigger>
                             <TabsTrigger value="released">
-                                Released ({filteredTransactions.filter(t => t.status === 'released').length})
+                                {t('tabs.released')} ({filteredTransactions.filter(t => t.status === 'released').length})
                             </TabsTrigger>
                             <TabsTrigger value="refunded">
-                                Refunded ({filteredTransactions.filter(t => t.status === 'refunded').length})
+                                {t('tabs.refunded')} ({filteredTransactions.filter(t => t.status === 'refunded').length})
                             </TabsTrigger>
                         </TabsList>
                     </Tabs>
@@ -354,12 +357,12 @@ export default function TransactionsClient() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Transaction</TableHead>
-                                    <TableHead>Job</TableHead>
-                                    <TableHead>Parties</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Timestamp</TableHead>
+                                    <TableHead>{t('table.transaction')}</TableHead>
+                                    <TableHead>{t('table.job')}</TableHead>
+                                    <TableHead>{t('table.parties')}</TableHead>
+                                    <TableHead className="text-right">{t('table.amount')}</TableHead>
+                                    <TableHead>{t('table.status')}</TableHead>
+                                    <TableHead>{t('table.timestamp')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -401,10 +404,10 @@ export default function TransactionsClient() {
                                         <TableCell colSpan={6} className="h-24">
                                             <AdminEmptyState
                                                 icon={Inbox}
-                                                title="No transactions found"
-                                                description="No transactions match your current filters"
+                                                title={t('empty.title')}
+                                                description={t('empty.description')}
                                                 action={{
-                                                    label: 'Reset Filters',
+                                                    label: t('filters.reset'),
                                                     onClick: clearFilters,
                                                 }}
                                             />
@@ -428,10 +431,10 @@ export default function TransactionsClient() {
                         ) : (
                             <AdminEmptyState
                                 icon={Inbox}
-                                title="No transactions found"
-                                description="No transactions match your current filters"
+                                title={t('empty.title')}
+                                description={t('empty.description')}
                                 action={{
-                                    label: 'Reset Filters',
+                                    label: t('filters.reset'),
                                     onClick: clearFilters,
                                 }}
                             />

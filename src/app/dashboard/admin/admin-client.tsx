@@ -13,6 +13,8 @@ import { formatDistanceToNow, startOfDay, startOfWeek, startOfMonth, subDays } f
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
+import { useTranslations } from 'next-intl';
+import { JOB_STATUS, TRANSACTION_STATUS, DISPUTE_STATUS, USER_ROLES } from "@/lib/constants/statuses";
 
 interface AdminAlert {
     id: string;
@@ -41,14 +43,15 @@ interface QuickAction {
     variant: 'default' | 'outline';
 }
 
-const quickActions: QuickAction[] = [
-    { label: 'View Users', icon: Users, href: '/dashboard/users', description: 'Manage all platform users', variant: 'outline' },
-    { label: 'All Jobs', icon: Briefcase, href: '/dashboard/all-jobs', description: 'Monitor job postings', variant: 'outline' },
-    { label: 'Disputes', icon: ShieldAlert, href: '/dashboard/disputes', description: 'Resolve disputes', variant: 'outline' },
-    { label: 'Reports', icon: FileText, href: '/dashboard/reports', description: 'View analytics', variant: 'outline' },
-];
 
 export default function AdminClient() {
+    const t = useTranslations('admin');
+    const quickActions: QuickAction[] = [
+        { label: t('viewUsers'), icon: Users, href: '/dashboard/users', description: t('manageUsers'), variant: 'outline' },
+        { label: t('allJobsLabel'), icon: Briefcase, href: '/dashboard/all-jobs', description: t('monitorJobs'), variant: 'outline' },
+        { label: t('disputes'), icon: ShieldAlert, href: '/dashboard/disputes', description: t('resolveDisputes'), variant: 'outline' },
+        { label: t('reports'), icon: FileText, href: '/dashboard/reports', description: t('viewAnalytics'), variant: 'outline' },
+    ];
     const { user, role, loading } = useUser();
     const { db } = useFirebase();
     const router = useRouter();
@@ -74,14 +77,14 @@ export default function AdminClient() {
 
     // 1. Authorization Guard
     React.useEffect(() => {
-        if (!loading && (!user || !user.roles.includes('Admin'))) {
+        if (!loading && (!user || !user.roles.includes(USER_ROLES.ADMIN))) {
             router.push('/dashboard');
         }
     }, [user, loading, router]);
 
     // 2. Fetch Enhanced Metrics
     React.useEffect(() => {
-        if (!db || !user || !user.roles.includes('Admin')) return;
+        if (!db || !user || !user.roles.includes(USER_ROLES.ADMIN)) return;
 
         const fetchMetrics = async () => {
             try {
@@ -94,11 +97,11 @@ export default function AdminClient() {
                 const monthStart = Timestamp.fromDate(startOfMonth(new Date()));
 
                 // Active Jobs
-                const activeJobsQuery = query(jobsColl, where("status", "in", ["In Progress", "Pending Confirmation", "Pending Funding"]));
+                const activeJobsQuery = query(jobsColl, where("status", "in", [JOB_STATUS.IN_PROGRESS, JOB_STATUS.PENDING_CONFIRMATION, JOB_STATUS.PENDING_FUNDING]));
                 const activeJobsSnap = await getCountFromServer(activeJobsQuery);
 
                 // Open Disputes
-                const disputesQuery = query(disputesColl, where("status", "==", "Open"));
+                const disputesQuery = query(disputesColl, where("status", "==", DISPUTE_STATUS.OPEN));
                 const disputesSnap = await getCountFromServer(disputesQuery);
 
                 // Total Users
@@ -117,7 +120,7 @@ export default function AdminClient() {
                 const newJobsWeekSnap = await getCountFromServer(newJobsWeekQuery);
 
                 // Completed Jobs This Week
-                const completedJobsWeekQuery = query(jobsColl, where("status", "==", "Completed"), where("updatedAt", ">=", weekStart));
+                const completedJobsWeekQuery = query(jobsColl, where("status", "==", JOB_STATUS.COMPLETED), where("updatedAt", ">=", weekStart));
                 const completedJobsWeekSnap = await getCountFromServer(completedJobsWeekQuery);
 
                 setMetrics({
@@ -151,7 +154,7 @@ export default function AdminClient() {
 
     // 3. Live Alerts Feed
     React.useEffect(() => {
-        if (!db || !user || !user.roles.includes('Admin')) return;
+        if (!db || !user || !user.roles.includes(USER_ROLES.ADMIN)) return;
 
         const alertsRef = collection(db, 'admin_alerts');
         const q = query(alertsRef, orderBy('timestamp', 'desc'), limit(50));
@@ -189,8 +192,8 @@ export default function AdminClient() {
             updateDoc(doc(db, 'admin_alerts', alert.id), { read: true })
         ));
         toast({
-            title: "Success",
-            description: `Marked ${unreadAlerts.length} alerts as read.`,
+            title: t('success'),
+            description: t('alertsMarkedRead', { count: unreadAlerts.length }),
             variant: "default"
         });
     };
@@ -198,8 +201,8 @@ export default function AdminClient() {
     const handleResolve = async (jobId: string, resolution: 'REFUND' | 'RELEASE' | 'SPLIT', alertId: string, splitPercentage?: number) => {
         if (!user) return;
         const confirmMsg = resolution === 'SPLIT'
-            ? `Are you sure you want to SPLIT funds (50/50 payment & refund) for Job ${jobId}?`
-            : `Are you sure you want to ${resolution} funds for Job ${jobId}? This Action is irreversible.`;
+            ? t('confirmSplit', { id: jobId })
+            : t('confirmAction', { resolution, id: jobId });
 
         if (!window.confirm(confirmMsg)) return;
 
@@ -219,21 +222,21 @@ export default function AdminClient() {
             });
             await markAsRead(alertId);
             toast({
-                title: "Success",
-                description: "Resolution processed successfully.",
+                title: t('success'),
+                description: t('resolutionSuccess'),
                 variant: "default"
             });
         } catch (error) {
             console.error(error);
             toast({
-                title: "Resolution Failed",
-                description: "Failed to process resolution. Check logs.",
+                title: t('resolutionFailed'),
+                description: t('resolutionFailedDesc'),
                 variant: "destructive"
             });
         }
     };
 
-    if (loading || (user && !user.roles.includes('Admin'))) {
+    if (loading || (user && !user.roles.includes(USER_ROLES.ADMIN))) {
         return <div className="flex bg-muted/20 h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
@@ -244,8 +247,8 @@ export default function AdminClient() {
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Admin Command Center</h1>
-                    <p className="text-muted-foreground">Platform health, alerts, and operational metrics.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+                    <p className="text-muted-foreground">{t('description')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Badge
@@ -253,7 +256,7 @@ export default function AdminClient() {
                         className="px-4 py-1 text-sm"
                     >
                         <Activity className="h-3 w-3 mr-1" />
-                        {platformHealth.overall === 'healthy' ? 'All Systems Operational' : 'System Issues Detected'}
+                        {platformHealth.overall === 'healthy' ? t('allSystemsOperational') : t('systemIssuesDetected')}
                     </Badge>
                 </div>
             </div>
@@ -263,9 +266,9 @@ export default function AdminClient() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Zap className="h-5 w-5" />
-                        Quick Actions
+                        {t('quickActions')}
                     </CardTitle>
-                    <CardDescription>Common administrative tasks</CardDescription>
+                    <CardDescription>{t('commonTasks')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -291,32 +294,32 @@ export default function AdminClient() {
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('activeJobs')}</CardTitle>
                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{statsLoading ? "..." : metrics.activeJobs}</div>
-                        <p className="text-xs text-muted-foreground">Currently operational</p>
+                        <p className="text-xs text-muted-foreground">{t('currentlyOperational')}</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Open Disputes</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('openDisputes')}</CardTitle>
                         <ShieldAlert className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-600">{statsLoading ? "..." : metrics.openDisputes}</div>
-                        <p className="text-xs text-muted-foreground">Requiring immediate attention</p>
+                        <p className="text-xs text-muted-foreground">{t('requireAttention')}</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('totalUsers')}</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{statsLoading ? "..." : metrics.totalUsers}</div>
-                        <p className="text-xs text-muted-foreground">Registered on platform</p>
+                        <p className="text-xs text-muted-foreground">{t('registeredPlatform')}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -325,42 +328,42 @@ export default function AdminClient() {
             <div className="grid gap-4 md:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">New Users Today</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('newUsersToday')}</CardTitle>
                         <UserPlus className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{statsLoading ? "..." : metrics.newUsersToday}</div>
-                        <p className="text-xs text-muted-foreground">Since midnight</p>
+                        <p className="text-xs text-muted-foreground">{t('sinceMidnight')}</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Jobs Posted Today</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('jobsPostedToday')}</CardTitle>
                         <Briefcase className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{statsLoading ? "..." : metrics.newJobsToday}</div>
-                        <p className="text-xs text-muted-foreground">In last 24 hours</p>
+                        <p className="text-xs text-muted-foreground">{t('last24Hours')}</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Jobs This Week</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('jobsThisWeek')}</CardTitle>
                         <TrendingUp className="h-4 w-4 text-purple-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{statsLoading ? "..." : metrics.newJobsThisWeek}</div>
-                        <p className="text-xs text-muted-foreground">Posted this week</p>
+                        <p className="text-xs text-muted-foreground">{t('postedThisWeek')}</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Completed This Week</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('completedThisWeek')}</CardTitle>
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{statsLoading ? "..." : metrics.completedJobsThisWeek}</div>
-                        <p className="text-xs text-muted-foreground">Jobs finished</p>
+                        <p className="text-xs text-muted-foreground">{t('jobsFinished')}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -371,12 +374,12 @@ export default function AdminClient() {
                     <div className="flex items-center justify-between flex-wrap gap-4">
                         <div>
                             <CardTitle className="flex items-center gap-2">
-                                Live Safety Alerts
+                                {t('liveSafetyAlerts')}
                                 {unreadCount > 0 && (
-                                    <Badge variant="destructive" className="ml-2">{unreadCount} unread</Badge>
+                                    <Badge variant="destructive" className="ml-2">{t('unread', { count: unreadCount })}</Badge>
                                 )}
                             </CardTitle>
-                            <CardDescription>Real-time log of high-value transactions, disputes, and security events.</CardDescription>
+                            <CardDescription>{t('alertsDescription')}</CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
                             <Select value={alertFilter} onValueChange={(value: any) => setAlertFilter(value)}>
@@ -385,17 +388,17 @@ export default function AdminClient() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="ALL">All Alerts</SelectItem>
-                                    <SelectItem value="UNREAD">Unread Only</SelectItem>
-                                    <SelectItem value="CRITICAL">Critical</SelectItem>
-                                    <SelectItem value="WARNING">Warning</SelectItem>
-                                    <SelectItem value="INFO">Info</SelectItem>
+                                    <SelectItem value="ALL">{t('allAlerts')}</SelectItem>
+                                    <SelectItem value="UNREAD">{t('unreadOnly')}</SelectItem>
+                                    <SelectItem value="CRITICAL">{t('critical')}</SelectItem>
+                                    <SelectItem value="WARNING">{t('warning')}</SelectItem>
+                                    <SelectItem value="INFO">{t('info')}</SelectItem>
                                 </SelectContent>
                             </Select>
                             {unreadCount > 0 && (
                                 <Button variant="outline" size="sm" onClick={markAllAsRead}>
                                     <CheckCircle className="h-4 w-4 mr-1" />
-                                    Mark All Read
+                                    {t('markAllRead')}
                                 </Button>
                             )}
                         </div>
@@ -405,7 +408,7 @@ export default function AdminClient() {
                     <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                         {filteredAlerts.length === 0 ? (
                             <div className="text-center py-8 text-muted-foreground">
-                                {alertFilter === 'ALL' ? 'No alerts recorded. System is quiet.' : `No ${alertFilter.toLowerCase()} alerts found.`}
+                                {alertFilter === 'ALL' ? t('noAlerts') : t('noFilterAlerts', { filter: alertFilter.toLowerCase() })}
                             </div>
                         ) : (
                             filteredAlerts.map(alert => (
@@ -417,18 +420,18 @@ export default function AdminClient() {
                                         <div className="space-y-1">
                                             <p className="text-sm font-medium leading-none">
                                                 {alert.message}
-                                                {alert.read && <span className="ml-2 text-xs text-muted-foreground font-normal">(Read)</span>}
+                                                {alert.read && <span className="ml-2 text-xs text-muted-foreground font-normal">{t('read')}</span>}
                                             </p>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                                                 <Clock className="h-3 w-3" />
-                                                {alert.timestamp ? formatDistanceToNow(new Date((alert.timestamp as any).toDate ? (alert.timestamp as any).toDate() : alert.timestamp), { addSuffix: true }) : 'Just now'}
+                                                {alert.timestamp ? formatDistanceToNow(new Date((alert.timestamp as any).toDate ? (alert.timestamp as any).toDate() : alert.timestamp), { addSuffix: true }) : t('justNow')}
                                                 {alert.metadata?.jobId && (
                                                     <Button variant="link" className="p-0 h-auto font-normal text-xs text-blue-600 hover:underline" onClick={() => router.push(`/dashboard/jobs/${alert.metadata.jobId}`)}>
-                                                        • Job ID: {alert.metadata.jobId}
+                                                        • {t('jobId', { id: alert.metadata.jobId })}
                                                     </Button>
                                                 )}
                                                 {alert.metadata?.refundAmount && (
-                                                    <span>• Amount: ₹{alert.metadata.refundAmount}</span>
+                                                    <span>• {t('amount', { amount: alert.metadata.refundAmount })}</span>
                                                 )}
                                             </div>
                                         </div>
@@ -439,17 +442,17 @@ export default function AdminClient() {
                                                 {alert.metadata?.jobId && (
                                                     <>
                                                         <Button variant="outline" size="sm" className="h-7 text-xs border-green-200 hover:bg-green-50 text-green-700" onClick={() => handleResolve(alert.metadata.jobId, 'RELEASE', alert.id)}>
-                                                            Release
+                                                            {t('release')}
                                                         </Button>
                                                         <Button variant="outline" size="sm" className="h-7 text-xs border-red-200 hover:bg-red-50 text-red-700" onClick={() => handleResolve(alert.metadata.jobId, 'REFUND', alert.id)}>
-                                                            Refund
+                                                            {t('refund')}
                                                         </Button>
                                                         <Button variant="outline" size="sm" className="h-7 text-xs border-blue-200 hover:bg-blue-50 text-blue-700" onClick={() => handleResolve(alert.metadata.jobId, 'SPLIT', alert.id, 50)}>
-                                                            Split 50/50
+                                                            {t('split')}
                                                         </Button>
                                                     </>
                                                 )}
-                                                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => markAsRead(alert.id)}>Mark Read</Button>
+                                                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => markAsRead(alert.id)}>{t('markRead')}</Button>
                                             </div>
                                         </div>
                                     )}

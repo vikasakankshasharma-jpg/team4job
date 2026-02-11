@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useUser } from "@/hooks/use-user";
+import { useTranslations } from 'next-intl';
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -32,6 +33,7 @@ import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
 import { JobGiverStats } from "@/domains/jobs/job.types";
 import { Transaction } from "@/lib/types";
+import { TRANSACTION_STATUS } from "@/lib/constants/statuses";
 
 const SpendingHistoryChart = dynamic(() => import("@/components/dashboard/charts/job-giver-charts").then(mod => mod.SpendingHistoryChart), { ssr: false });
 const JobStatusChart = dynamic(() => import("@/components/dashboard/charts/job-giver-charts").then(mod => mod.JobStatusChart), { ssr: false });
@@ -44,6 +46,9 @@ export function JobGiverDashboard({ stats, transactions, loading = false, quickM
 }) {
     const { user } = useUser();
     const { setHelp } = useHelp();
+    const t = useTranslations('dashboard');
+    const tJob = useTranslations('job');
+    const tCommon = useTranslations('common');
 
     // Process Data for Spending Chart (Last 6 Months - Released Only)
     const { spendingData, jobStatusData, totalSpent, fundsInEscrow } = useMemo(() => {
@@ -58,7 +63,7 @@ export function JobGiverDashboard({ stats, transactions, loading = false, quickM
 
         const txList = transactions || [];
         txList.forEach(t => {
-            if (t.status === 'released' && t.releasedAt) {
+            if (t.status === TRANSACTION_STATUS.RELEASED && t.releasedAt) {
                 const date = toDate(t.releasedAt);
                 const monthStr = format(date, 'MMM yyyy');
                 const monthData = months.find(m => m.fullName === monthStr);
@@ -69,11 +74,11 @@ export function JobGiverDashboard({ stats, transactions, loading = false, quickM
         });
 
         const totalSpent = txList
-            .filter(t => t.status === 'released')
+            .filter(t => t.status === TRANSACTION_STATUS.RELEASED)
             .reduce((acc, t) => acc + (t.totalPaidByGiver || 0), 0);
 
         const fundsInEscrow = txList
-            .filter(t => t.status === 'funded')
+            .filter(t => t.status === TRANSACTION_STATUS.FUNDED)
             .reduce((acc, t) => acc + (t.totalPaidByGiver || 0), 0);
 
         const jobStatusData = [
@@ -87,32 +92,32 @@ export function JobGiverDashboard({ stats, transactions, loading = false, quickM
 
     useEffect(() => {
         setHelp({
-            title: 'Job Giver Dashboard Guide',
+            title: t('jobGiverGuide.title'),
             content: (
                 <div className="space-y-4 text-sm">
-                    <p>Welcome to your Dashboard! This is your control center for hiring and managing installers.</p>
+                    <p>{t('jobGiverGuide.welcome')}</p>
                     <ul className="list-disc space-y-2 pl-5">
                         <li>
-                            <span className="font-semibold">Active Jobs:</span> This shows the number of jobs you&apos;ve posted that are currently open for bidding or in progress. Click to manage them.
+                            <span className="font-semibold">{t('jobGiverGuide.activeJobsLabel')}</span> {t('jobGiverGuide.activeJobsDesc')}
                         </li>
                         <li>
-                            <span className="font-semibold">Funds in Secure Deposit:</span> The total amount you have currently deposited in safe Lock for active jobs.
+                            <span className="font-semibold">{t('jobGiverGuide.fundsEscrowLabel')}</span> {t('jobGiverGuide.fundsInEscrowDesc')}
                         </li>
                         <li>
-                            <span className="font-semibold">Total Bids Received:</span> See the total number of bids submitted across all your job postings.
+                            <span className="font-semibold">{t('jobGiverGuide.totalBidsLabel')}</span> {t('jobGiverGuide.totalBidsDesc')}
                         </li>
                         <li>
-                            <span className="font-semibold">Completed Jobs:</span> View a history of all your successfully completed projects. Click to see your archived jobs.
+                            <span className="font-semibold">{t('jobGiverGuide.completedJobsLabel')}</span> {t('jobGiverGuide.completedJobsDesc')}
                         </li>
                         <li>
-                            <span className="font-semibold">Need an Installer?:</span> A shortcut to post a new job and start receiving bids from professionals.
+                            <span className="font-semibold">{t('jobGiverGuide.needInstallerLabel')}</span> {t('jobGiverGuide.needInstallerDesc')}
                         </li>
                     </ul>
-                    <p>Use the navigation on the left to access other sections, like &quot;My Jobs&quot; to review bids on your active postings.</p>
+                    <p>{t('jobGiverGuide.bottomText')}</p>
                 </div>
             )
         });
-    }, [setHelp]);
+    }, [setHelp, t]);
 
     if (loading) {
         return <DashboardSkeleton />
@@ -121,7 +126,7 @@ export function JobGiverDashboard({ stats, transactions, loading = false, quickM
     return (
         <>
             <div className="flex items-center mb-8">
-                <h1 className="text-lg font-semibold md:text-2xl">Welcome, {user?.name}!</h1>
+                <h1 className="text-lg font-semibold md:text-2xl">{t('welcomeUser', { name: user?.name || 'User' })}</h1>
             </div>
             <div className="mb-6">
                 <ActionRequiredDashboard />
@@ -132,36 +137,36 @@ export function JobGiverDashboard({ stats, transactions, loading = false, quickM
 
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                 <StatCard
-                    title="Active Jobs"
+                    title={t('activeJobs')}
                     value={stats.activeJobs}
-                    description="Jobs not yet completed"
+                    description={t('activeJobsDesc')}
                     icon={Briefcase}
                     href="/dashboard/posted-jobs"
                     iconBgColor="bg-blue-100 dark:bg-blue-900"
                     iconColor="text-blue-600 dark:text-blue-300"
                 />
                 <StatCard
-                    title="Funds in Secure Deposit"
+                    title={t('fundsInEscrow')}
                     value={`₹${fundsInEscrow.toLocaleString()}`}
-                    description="Securely Locked for active jobs"
+                    description={t('fundsInEscrowDesc')}
                     icon={ShieldCheck}
-                    href="/dashboard/posted-jobs" // Or transactions
+                    href="/dashboard/posted-jobs"
                     iconBgColor="bg-encrow-100 dark:bg-indigo-900"
                     iconColor="text-indigo-600 dark:text-indigo-300"
                 />
                 <StatCard
-                    title="Completed Jobs"
+                    title={t('completedJobs')}
                     value={stats.completedJobs}
-                    description="Successfully finished projects"
+                    description={t('completedJobsDesc')}
                     icon={UserCheck}
                     href="/dashboard/posted-jobs?tab=archived"
                     iconBgColor="bg-green-100 dark:bg-green-900"
                     iconColor="text-green-600 dark:text-green-300"
                 />
                 <StatCard
-                    title="Open Disputes"
+                    title={t('openDisputes')}
                     value={stats.openDisputes}
-                    description="Disputes needing resolution"
+                    description={t('openDisputesDesc')}
                     icon={AlertOctagon}
                     href="/dashboard/disputes"
                     iconBgColor="bg-red-100 dark:bg-red-900"
@@ -188,15 +193,15 @@ export function JobGiverDashboard({ stats, transactions, loading = false, quickM
             <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card data-tour="need-installer-card" className="col-span-1">
                     <CardHeader>
-                        <CardTitle>Need an Installer?</CardTitle>
+                        <CardTitle>{t('needInstaller')}</CardTitle>
                         <CardDescription>
-                            Post a job and get bids from verified CCTV professionals.
+                            {t('needInstallerDesc')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button asChild>
                             <Link href="/dashboard/post-job">
-                                <PlusCircle className="mr-2 h-4 w-4" /> Post a New Job
+                                <PlusCircle className="mr-2 h-4 w-4" /> {t('postNewJob')}
                             </Link>
                         </Button>
                     </CardContent>
@@ -206,15 +211,15 @@ export function JobGiverDashboard({ stats, transactions, loading = false, quickM
 
                 <Card data-tour="manage-jobs-card" className="col-span-1">
                     <CardHeader>
-                        <CardTitle>Manage Your Jobs</CardTitle>
+                        <CardTitle>{t('manageJobs')}</CardTitle>
                         <CardDescription>
-                            Review bids, award projects, and manage your active jobs all in one place.
+                            {t('manageJobsDesc')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button asChild variant="secondary">
                             <Link href="/dashboard/posted-jobs">
-                                Go to My Jobs <ArrowRight className="ml-2 h-4 w-4" />
+                                {t('goToMyJobs')} <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
                     </CardContent>

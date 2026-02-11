@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { useUser } from "@/hooks/use-user";
 import { useFirestore } from "@/lib/firebase/client-provider";
 import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, doc, setDoc, getDoc } from "firebase/firestore";
@@ -42,6 +43,8 @@ export default function ChatClient() {
     const db = useFirestore();
     const searchParams = useSearchParams();
     const initialRecipientId = searchParams.get('recipientId');
+    const tError = useTranslations('errors');
+    const t = useTranslations('messages');
 
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -143,7 +146,7 @@ export default function ChatClient() {
             const modRes = await moderateContentAction({ content: inputText, userId: user.id, limitType: "ai_chat" });
 
             if (modRes.success && modRes.data?.isFlagged) {
-                setModerationWarning(modRes.data.reason || "Message flagged as unsafe.");
+                setModerationWarning(modRes.data.reason || t('unsafeContent'));
                 setIsSending(false);
                 return; // BLOCK SEND
             }
@@ -170,7 +173,7 @@ export default function ChatClient() {
             }
 
             if (!currentConvId) {
-                toast({ title: "Error", description: "No recipient selected.", variant: "destructive" });
+                toast({ title: t('title'), description: t('noRecipient'), variant: "destructive" });
                 setIsSending(false);
                 return;
             }
@@ -197,7 +200,7 @@ export default function ChatClient() {
 
         } catch (error) {
             console.error("Send failed", error);
-            toast({ title: "Failed to send", description: "Network error.", variant: "destructive" });
+            toast({ title: t('sendFailed'), description: tError('networkError'), variant: "destructive" });
         } finally {
             setIsSending(false);
         }
@@ -205,9 +208,9 @@ export default function ChatClient() {
 
     // UI Helpers
     const getOtherName = (c: Conversation) => {
-        if (!user) return "User";
+        if (!user) return t('user');
         const otherId = c.participants.find(p => p !== user.id);
-        return c.participantDetails?.[otherId!]?.name || "Unknown User";
+        return c.participantDetails?.[otherId!]?.name || t('unknownUser');
     };
 
     const getOtherAvatar = (c: Conversation) => {
@@ -220,7 +223,7 @@ export default function ChatClient() {
         <div className="flex h-full border rounded-lg overflow-hidden bg-background shadow-sm max-w-full">
             {/* Sidebar (Conversation List) */}
             <div className="w-1/3 border-r bg-muted/10 flex flex-col">
-                <div className="p-4 border-b font-semibold bg-background">Messages</div>
+                <div className="p-4 border-b font-semibold bg-background">{t('title')}</div>
                 <ScrollArea className="flex-1">
                     <div className="space-y-1 p-2">
                         {conversations.map(conv => (
@@ -237,7 +240,7 @@ export default function ChatClient() {
                                 <div className="flex-1 overflow-hidden">
                                     <p className="font-medium truncate">{getOtherName(conv)}</p>
                                     <p className="text-xs text-muted-foreground truncate">
-                                        {conv.lastMessage?.senderId === user?.id ? 'You: ' : ''}
+                                        {conv.lastMessage?.senderId === user?.id ? t('you') : ''}
                                         {conv.lastMessage?.text}
                                     </p>
                                 </div>
@@ -249,12 +252,12 @@ export default function ChatClient() {
                             </button>
                         ))}
                         {conversations.length === 0 && !initialRecipientId && (
-                            <div className="p-4 text-center text-sm text-muted-foreground">No conversations yet.</div>
+                            <div className="p-4 text-center text-sm text-muted-foreground">{t('noConversations')}</div>
                         )}
                         {/* Optimistic "New Chat" Entry */}
                         {!activeConversationId && initialRecipientId && !conversations.find(c => c.participants.includes(initialRecipientId!)) && (
                             <div className="p-3 bg-blue-50 text-blue-800 rounded-md text-sm border border-blue-100 m-2">
-                                New Conversation with Recipient
+                                {t('newConversation')}
                             </div>
                         )}
                     </div>
@@ -274,7 +277,7 @@ export default function ChatClient() {
                                             }`}>
                                             {msg.text}
                                             <div className={`text-[10px] mt-1 opacity-70 ${isMe ? 'text-right' : 'text-left'}`}>
-                                                {msg.createdAt ? formatDistanceToNow(msg.createdAt.toDate ? msg.createdAt.toDate() : new Date(), { addSuffix: true }) : 'Sending...'}
+                                                {msg.createdAt ? formatDistanceToNow(msg.createdAt.toDate ? msg.createdAt.toDate() : new Date(), { addSuffix: true }) : t('sending')}
                                             </div>
                                         </div>
                                     </div>
@@ -295,7 +298,7 @@ export default function ChatClient() {
                                 <Input
                                     value={inputText}
                                     onChange={(e) => setInputText(e.target.value)}
-                                    placeholder="Type a message..."
+                                    placeholder={t('typeMessage')}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                     disabled={isSending}
                                 />
@@ -310,7 +313,7 @@ export default function ChatClient() {
                         <div className="bg-muted p-4 rounded-full mb-4">
                             <Send className="h-8 w-8 opacity-20" />
                         </div>
-                        <p>Select a conversation to start chatting.</p>
+                        <p>{t('selectConversation')}</p>
                     </div>
                 )}
             </div>

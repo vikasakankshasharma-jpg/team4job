@@ -33,60 +33,63 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { toDate } from "@/lib/utils";
+import { useTranslations } from 'next-intl';
 
 type NavItem = {
     href: string;
     icon: React.ForwardRefExoticComponent<any>;
-    label: string;
+    labelKey: string; // Changed from 'label' to 'labelKey'
     tourId?: string;
     premium?: boolean;
 };
 
 const installerNavItems: NavItem[] = [
-    { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
-    { href: "/dashboard/jobs", icon: Briefcase, label: "Browse Jobs", tourId: "all-jobs" },
-    { href: "/dashboard/my-bids", icon: FileText, label: "My Bids", tourId: "my-bids" },
-    { href: "/dashboard/billing", icon: CreditCard, label: "Subscription" },
-    { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
+    { href: "/dashboard", icon: Home, labelKey: "dashboard", tourId: "dashboard-home" },
+    { href: "/dashboard/jobs", icon: Briefcase, labelKey: "browseJobs", tourId: "all-jobs" },
+    { href: "/dashboard/my-bids", icon: FileText, labelKey: "myBids", tourId: "my-bids" },
+    { href: "/dashboard/billing", icon: CreditCard, labelKey: "billing" },
+    { href: "/dashboard/disputes", icon: AlertOctagon, labelKey: "disputes" },
 ];
 
 const jobGiverNavItems: NavItem[] = [
-    { href: "/dashboard", icon: Home, label: "Dashboard", tourId: "dashboard-home" },
-    { href: "/dashboard/installers", icon: Search, label: "Find Installers", tourId: "find-installers", premium: true },
-    { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job", tourId: "post-job" },
-    { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs", tourId: "posted-jobs" },
-    { href: "/dashboard/analytics", icon: TrendingUp, label: "Analytics", tourId: "analytics" },
-    { href: "/dashboard/my-installers", icon: Heart, label: "My Installers", tourId: "my-installers" },
-    { href: "/dashboard/billing", icon: CreditCard, label: "Subscription" },
-    { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
+    { href: "/dashboard", icon: Home, labelKey: "dashboard", tourId: "dashboard-home" },
+    { href: "/dashboard/installers", icon: Search, labelKey: "findInstallers", tourId: "find-installers", premium: true },
+    { href: "/dashboard/post-job", icon: PlusCircle, labelKey: "postJob", tourId: "post-job" },
+    { href: "/dashboard/posted-jobs", icon: Briefcase, labelKey: "myJobs", tourId: "posted-jobs" },
+    { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "analytics", tourId: "analytics" },
+    { href: "/dashboard/my-installers", icon: Heart, labelKey: "myInstallers", tourId: "my-installers" },
+    { href: "/dashboard/billing", icon: CreditCard, labelKey: "billing" },
+    { href: "/dashboard/disputes", icon: AlertOctagon, labelKey: "disputes" },
 ];
 
 const adminNavItems: NavItem[] = [
-    { href: "/dashboard", icon: Home, label: "Dashboard" },
-    { href: "/dashboard/reports", icon: FileText, label: "Reports" },
-    { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
-    { href: "/dashboard/team", icon: UserCog, label: "Team Management" },
-    { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
-    { href: "/dashboard/transactions", icon: IndianRupee, label: "Transactions" },
-    { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-    { href: "/dashboard/audit-logs", icon: FileText, label: "Audit Log" },
-    { href: "/dashboard/pending-signups", icon: UserPlus, label: "Pending Signups" },
-    { href: "/dashboard/signup-analytics", icon: TrendingUp, label: "Signup Analytics" },
-    { href: "/dashboard/admin/system-health", icon: Activity, label: "System Health" },
+    { href: "/dashboard", icon: Home, labelKey: "dashboard" },
+    { href: "/dashboard/reports", icon: FileText, labelKey: "reports" },
+    { href: "/dashboard/users", icon: UsersIcon, labelKey: "users" },
+    { href: "/dashboard/team", icon: UserCog, labelKey: "teamManagement" },
+    { href: "/dashboard/all-jobs", icon: Briefcase, labelKey: "allJobs" },
+    { href: "/dashboard/transactions", icon: IndianRupee, labelKey: "transactions" },
+    { href: "/dashboard/disputes", icon: AlertOctagon, labelKey: "disputes" },
+    { href: "/dashboard/audit-logs", icon: FileText, labelKey: "auditLog" },
+    { href: "/dashboard/pending-signups", icon: UserPlus, labelKey: "pendingSignups" },
+    { href: "/dashboard/signup-analytics", icon: TrendingUp, labelKey: "signupAnalytics" },
+    { href: "/dashboard/admin/system-health", icon: Activity, labelKey: "systemHealth" },
 ];
 
 const supportTeamNavItems: NavItem[] = [
-    { href: "/dashboard", icon: Home, label: "Dashboard" },
-    { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-    { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
-    { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
-    { href: "/dashboard/transactions", icon: IndianRupee, label: "Transactions" },
+    { href: "/dashboard", icon: Home, labelKey: "dashboard" },
+    { href: "/dashboard/disputes", icon: AlertOctagon, labelKey: "disputes" },
+    { href: "/dashboard/users", icon: UsersIcon, labelKey: "users" },
+    { href: "/dashboard/all-jobs", icon: Briefcase, labelKey: "allJobs" },
+    { href: "/dashboard/transactions", icon: IndianRupee, labelKey: "transactions" },
 ];
 
 
 export function SidebarNav() {
     const pathname = usePathname();
     const { user, role } = useUser();
+    const tNav = useTranslations('nav');
+    const tCommon = useTranslations('common');
 
     const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
 
@@ -101,7 +104,6 @@ export function SidebarNav() {
             case "Job Giver":
                 return jobGiverNavItems;
             default:
-                // Render something default or empty if role not loaded yet
                 return [];
         }
     };
@@ -124,6 +126,8 @@ export function SidebarNav() {
 
                 {navItems.map((item) => {
                     const linkPath = item.premium && !isSubscribed ? "/dashboard/billing" : item.href;
+                    const label = tNav(item.labelKey as any);
+
                     return (
                         <Tooltip key={item.href}>
                             <TooltipTrigger asChild>
@@ -135,17 +139,18 @@ export function SidebarNav() {
                                         pathname === '/dashboard' && item.href === '/dashboard' && "bg-accent text-accent-foreground"
                                     )}
                                     data-tour={item.tourId}
+                                    data-testid={`nav-link-${item.labelKey}`}
                                 >
                                     <item.icon className="h-5 w-5" />
                                     {item.premium && !isSubscribed && (
                                         <Zap className="absolute -bottom-1 -right-1 h-4 w-4 fill-amber-400 text-amber-500" />
                                     )}
-                                    <span className="sr-only">{item.label}</span>
+                                    <span className="sr-only">{label}</span>
                                 </Link>
                             </TooltipTrigger>
-                            <TooltipContent side="right">{item.label}{item.premium && !isSubscribed && " (Upgrade)"}</TooltipContent>
+                            <TooltipContent side="right">{label}{item.premium && !isSubscribed && " (Upgrade)"}</TooltipContent>
                         </Tooltip>
-                    )
+                    );
                 })}
             </nav>
             <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
@@ -158,10 +163,10 @@ export function SidebarNav() {
                             )}
                         >
                             <UserIcon className="h-5 w-5" />
-                            <span className="sr-only">Profile</span>
+                            <span className="sr-only">{tNav('profile')}</span>
                         </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Profile</TooltipContent>
+                    <TooltipContent side="right">{tNav('profile')}</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -172,10 +177,10 @@ export function SidebarNav() {
                             )}
                         >
                             <Settings className="h-5 w-5" />
-                            <span className="sr-only">Settings</span>
+                            <span className="sr-only">{tNav('settings')}</span>
                         </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Settings</TooltipContent>
+                    <TooltipContent side="right">{tNav('settings')}</TooltipContent>
                 </Tooltip>
 
                 <SupportDialog />

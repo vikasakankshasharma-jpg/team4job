@@ -1,5 +1,3 @@
-
-
 "use client"
 
 import * as React from "react"
@@ -48,6 +46,7 @@ import { useHelp } from "@/hooks/use-help"
 import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore"
 import type { PlatformSettings, SubscriptionPlan, Coupon, BlacklistEntry } from "@/lib/types"
 import { useFirebase } from "@/hooks/use-user"
+import { useTranslations } from "next-intl"
 import SubscriptionPlansManager from "@/app/dashboard/subscription-plans/subscription-plans-manager"
 import CouponsManager from "@/app/dashboard/coupons/coupons-manager"
 import BlacklistManager from "@/app/dashboard/blacklist/blacklist-manager"
@@ -55,6 +54,7 @@ import { Separator } from "@/components/ui/separator"
 
 function ThemeSelector() {
     const { theme, setTheme } = useTheme()
+    const t = useTranslations('settings')
     const [mounted, setMounted] = React.useState(false)
 
     React.useEffect(() => {
@@ -64,7 +64,7 @@ function ThemeSelector() {
     if (!mounted) {
         return (
             <div className="space-y-2">
-                <Label htmlFor="theme">Theme</Label>
+                <Label htmlFor="theme">{t('theme')}</Label>
                 <Skeleton className="h-10 w-full" />
             </div>
         )
@@ -72,15 +72,15 @@ function ThemeSelector() {
 
     return (
         <div className="space-y-2">
-            <Label htmlFor="theme">Theme</Label>
+            <Label htmlFor="theme">{t('theme')}</Label>
             <Select value={theme} onValueChange={setTheme}>
                 <SelectTrigger id="theme" className="w-full">
-                    <SelectValue placeholder="Select a theme" />
+                    <SelectValue placeholder={t('selectTheme')} />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="system">System</SelectItem>
+                    <SelectItem value="light">{t('light')}</SelectItem>
+                    <SelectItem value="dark">{t('dark')}</SelectItem>
+                    <SelectItem value="system">{t('system')}</SelectItem>
                 </SelectContent>
             </Select>
         </div>
@@ -90,6 +90,7 @@ function ThemeSelector() {
 function PersonalSettingsCard() {
     const { toast } = useToast()
     const { role } = useUser()
+    const t = useTranslations('settings')
     const [deleteConfirmation, setDeleteConfirmation] = React.useState("")
     const isDeleteDisabled = deleteConfirmation !== "Delete"
     const isTeamMember = role === 'Admin' || role === 'Support Team';
@@ -98,8 +99,8 @@ function PersonalSettingsCard() {
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Appearance</CardTitle>
-                    <CardDescription>Customize the look and feel of the application.</CardDescription>
+                    <CardTitle>{t('appearance')}</CardTitle>
+                    <CardDescription>{t('appearanceDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ThemeSelector />
@@ -107,42 +108,42 @@ function PersonalSettingsCard() {
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" /> Notifications</CardTitle>
-                    <CardDescription>Manage how you receive notifications from the platform.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" /> {t('notifications')}</CardTitle>
+                    <CardDescription>{t('notificationsDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div className="space-y-0.5">
-                            <Label>Push Notifications</Label>
+                            <Label>{t('pushNotifications')}</Label>
                             <p className="text-xs text-muted-foreground">
-                                Receive real-time alerts on your device.
+                                {t('pushNotificationsDesc')}
                             </p>
                         </div>
                         <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div className="space-y-0.5">
-                            <Label>New Bids</Label>
+                            <Label>{t('newBids')}</Label>
                             <p className="text-xs text-muted-foreground">
-                                Get notified when an installer bids on your job.
+                                {t('newBidsDesc')}
                             </p>
                         </div>
                         <Switch defaultChecked disabled={role !== 'Job Giver'} />
                     </div>
                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div className="space-y-0.5">
-                            <Label>Job Awarded</Label>
+                            <Label>{t('jobAwarded')}</Label>
                             <p className="text-xs text-muted-foreground">
-                                Get notified when you are awarded a job.
+                                {t('jobAwardedDesc')}
                             </p>
                         </div>
                         <Switch defaultChecked disabled={role !== 'Installer'} />
                     </div>
                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div className="space-y-0.5">
-                            <Label>Dispute Updates</Label>
+                            <Label>{t('disputeUpdates')}</Label>
                             <p className="text-xs text-muted-foreground">
-                                Stay informed about your support tickets.
+                                {t('disputeUpdatesDesc')}
                             </p>
                         </div>
                         <Switch defaultChecked />
@@ -150,51 +151,50 @@ function PersonalSettingsCard() {
                 </CardContent>
                 <CardFooter>
                     <p className="text-xs text-muted-foreground">
-                        More granular notification controls will be available soon.
+                        {t('moreControlsSoon')}
                     </p>
                 </CardFooter>
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle>Account Management</CardTitle>
+                    <CardTitle>{t('accountManagement')}</CardTitle>
                     <CardDescription>
-                        Manage your account settings and data.
+                        {t('accountManagementDesc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between rounded-lg border p-3">
                         <div>
-                            <Label>Change Password</Label>
+                            <Label>{t('changePassword')}</Label>
                             <p className="text-xs text-muted-foreground">
-                                Update your account password.
+                                {t('changePasswordDesc')}
                             </p>
                         </div>
-                        <Button variant="outline">Change Password</Button>
+                        <Button variant="outline">{t('changePassword')}</Button>
                     </div>
                     {!isTeamMember && (
                         <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-3">
                             <div>
-                                <Label className="text-destructive">Delete Account</Label>
+                                <Label className="text-destructive">{t('deleteAccount')}</Label>
                                 <p className="text-xs text-destructive/70">
-                                    Permanently delete your account and all associated data.
+                                    {t('deleteAccountDesc')}
                                 </p>
                             </div>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button variant="destructive">Delete Account</Button>
+                                    <Button variant="destructive">{t('deleteAccount')}</Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogTitle>{t('deleteAccount')}</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            This action cannot be undone. To confirm, please type{" "}
-                                            <span className="font-semibold text-foreground">Delete</span> in the box below.
+                                            {t('deleteConfirmPrompt')}
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <div className="py-2">
                                         <Input
                                             id="delete-confirm"
-                                            placeholder="Type 'Delete' to confirm"
+                                            placeholder={t('deleteConfirmPlaceholder')}
                                             value={deleteConfirmation}
                                             onChange={(e) => setDeleteConfirmation(e.target.value)}
                                         />
@@ -206,13 +206,13 @@ function PersonalSettingsCard() {
                                             onClick={() => {
                                                 if (isDeleteDisabled) return;
                                                 toast({
-                                                    title: "Account Deletion Requested",
-                                                    description: "Your account is scheduled for deletion. This is a simulated action.",
+                                                    title: t('accountDeletionRequested'),
+                                                    description: t('accountDeletionRequestedDesc'),
                                                     variant: "destructive"
                                                 })
                                             }}
                                         >
-                                            Continue
+                                            {t('continue')}
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -246,6 +246,7 @@ const initialSettings: Partial<PlatformSettings> = {
 function MonetizationSettings({ plans, coupons, onDataChange }: { plans: SubscriptionPlan[], coupons: Coupon[], onDataChange: () => void }) {
     const { db } = useFirebase();
     const { toast } = useToast();
+    const t = useTranslations('settings');
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
     const [settings, setSettings] = React.useState<Partial<PlatformSettings>>({});
@@ -294,27 +295,27 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
         <div className="grid gap-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Platform Commission & Fee Rates</CardTitle>
-                    <CardDescription>Configure platform revenue from commissions and job fees.</CardDescription>
+                    <CardTitle>{t('platformCommission')}</CardTitle>
+                    <CardDescription>{t('platformCommissionDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="installerCommissionRate">Installer Commission Rate (%)</Label>
+                            <Label htmlFor="installerCommissionRate">{t('installerCommission')}</Label>
                             <Input id="installerCommissionRate" type="number" value={settings.installerCommissionRate ?? ''} onChange={handleInputChange} min="0" max="100" />
-                            <p className="text-xs text-muted-foreground">The percentage taken from the installer&apos;s earnings for a job.</p>
+                            <p className="text-xs text-muted-foreground">{t('installerCommissionHelp')}</p>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="jobGiverFeeRate">Job Giver Fee Rate (%)</Label>
+                            <Label htmlFor="jobGiverFeeRate">{t('jobGiverFee')}</Label>
                             <Input id="jobGiverFeeRate" type="number" value={settings.jobGiverFeeRate ?? ''} onChange={handleInputChange} min="0" max="100" />
-                            <p className="text-xs text-muted-foreground">A percentage of the job amount charged to the job giver as a convenience fee.</p>
+                            <p className="text-xs text-muted-foreground">{t('jobGiverFeeHelp')}</p>
                         </div>
                     </div>
                 </CardContent>
                 <CardFooter>
                     <Button onClick={handleSave} disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Fees & Commissions
+                        {t('saveFees')}
                     </Button>
                 </CardFooter>
             </Card>
@@ -328,6 +329,7 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
 function UserReputationSettings() {
     const { db } = useFirebase();
     const { toast } = useToast();
+    const t = useTranslations('settings');
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
     const [settings, setSettings] = React.useState<Partial<PlatformSettings>>(initialSettings);
@@ -375,32 +377,32 @@ function UserReputationSettings() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>User &amp; Reputation System</CardTitle>
-                <CardDescription>Define the rules for onboarding, reputation points, and tier thresholds for installers.</CardDescription>
+                <CardTitle>{t('userReputationSystem')}</CardTitle>
+                <CardDescription>{t('userReputationSystemDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div>
-                    <h3 className="mb-4 text-lg font-medium">Growth &amp; Onboarding Strategy</h3>
+                    <h3 className="mb-4 text-lg font-medium">{t('growthStrategy')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-lg border p-4">
                         <div className="space-y-2">
-                            <Label htmlFor="defaultTrialPeriodDays">Default Trial Period (days)</Label>
+                            <Label htmlFor="defaultTrialPeriodDays">{t('trialPeriod')}</Label>
                             <Input id="defaultTrialPeriodDays" type="number" value={settings.defaultTrialPeriodDays} onChange={handleInputChange} min="0" />
                             <p className="text-xs text-muted-foreground">
-                                Free trial for premium plans.
+                                {t('trialPeriodHelp')}
                             </p>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="freeBidsForNewInstallers">Free Bids for New Installers</Label>
+                            <Label htmlFor="freeBidsForNewInstallers">{t('freeBids')}</Label>
                             <Input id="freeBidsForNewInstallers" type="number" value={settings.freeBidsForNewInstallers} onChange={handleInputChange} min="0" />
                             <p className="text-xs text-muted-foreground">
-                                Number of free bids a new installer gets.
+                                {t('freeBidsHelp')}
                             </p>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="freePostsForNewJobGivers">Free Posts for New Job Givers</Label>
+                            <Label htmlFor="freePostsForNewJobGivers">{t('freePosts')}</Label>
                             <Input id="freePostsForNewJobGivers" type="number" value={settings.freePostsForNewJobGivers} onChange={handleInputChange} min="0" />
                             <p className="text-xs text-muted-foreground">
-                                Number of free job posts a new job giver gets.
+                                {t('freePostsHelp')}
                             </p>
                         </div>
                     </div>
@@ -409,26 +411,26 @@ function UserReputationSettings() {
                 <Separator />
 
                 <div>
-                    <h3 className="mb-4 text-lg font-medium">Reputation Point System</h3>
+                    <h3 className="mb-4 text-lg font-medium">{t('reputationPointsSystem')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-lg border p-4">
                         <div className="space-y-2">
-                            <Label htmlFor="pointsForJobCompletion">Points for Job Completion</Label>
+                            <Label htmlFor="pointsForJobCompletion">{t('pointsJobCompletion')}</Label>
                             <Input id="pointsForJobCompletion" type="number" value={settings.pointsForJobCompletion} onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="pointsFor5StarRating">Points for 5-Star Rating</Label>
+                            <Label htmlFor="pointsFor5StarRating">{t('pointsFiveStar')}</Label>
                             <Input id="pointsFor5StarRating" type="number" value={settings.pointsFor5StarRating} onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="pointsFor4StarRating">Points for 4-Star Rating</Label>
+                            <Label htmlFor="pointsFor4StarRating">{t('pointsFourStar')}</Label>
                             <Input id="pointsFor4StarRating" type="number" value={settings.pointsFor4StarRating} onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="penaltyFor1StarRating">Penalty for 1-Star Rating</Label>
+                            <Label htmlFor="penaltyFor1StarRating">{t('penaltyOneStar')}</Label>
                             <Input id="penaltyFor1StarRating" type="number" value={settings.penaltyFor1StarRating} onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="penaltyForDeclinedJob">Penalty for Declined Job</Label>
+                            <Label htmlFor="penaltyForDeclinedJob">{t('penaltyDeclined')}</Label>
                             <Input id="penaltyForDeclinedJob" type="number" value={settings.penaltyForDeclinedJob} onChange={handleInputChange} />
                         </div>
                     </div>
@@ -437,7 +439,7 @@ function UserReputationSettings() {
                 <Separator />
 
                 <div>
-                    <h3 className="mb-4 text-lg font-medium">Reputation Tier Thresholds (Points Required)</h3>
+                    <h3 className="mb-4 text-lg font-medium">{t('tierThresholds')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-lg border p-4">
                         <div className="space-y-2">
                             <Label htmlFor="silverTierPoints" className="flex items-center gap-2"><Medal className="h-4 w-4 text-gray-400" /> Silver</Label>
@@ -457,7 +459,7 @@ function UserReputationSettings() {
             <CardFooter>
                 <Button onClick={handleSave} disabled={isSaving}>
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Reputation Settings
+                    {t('saveReputation')}
                 </Button>
             </CardFooter>
         </Card>
@@ -467,6 +469,7 @@ function UserReputationSettings() {
 function PlatformRulesSettings({ blacklist, onDataChange }: { blacklist: BlacklistEntry[], onDataChange: () => void }) {
     const { db } = useFirebase();
     const { toast } = useToast();
+    const t = useTranslations('settings');
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
     const [settings, setSettings] = React.useState<Partial<PlatformSettings>>(initialSettings);
@@ -519,12 +522,12 @@ function PlatformRulesSettings({ blacklist, onDataChange }: { blacklist: Blackli
         <div className="grid gap-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Job &amp; Content Rules</CardTitle>
-                    <CardDescription>Set global rules for job postings and content on the platform.</CardDescription>
+                    <CardTitle>{t('jobContentRules')}</CardTitle>
+                    <CardDescription>{t('jobContentRulesDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
-                        <Label htmlFor="minJobBudget" className="flex items-center gap-2"><IndianRupee className="h-4 w-4" /> Minimum Job Budget</Label>
+                        <Label htmlFor="minJobBudget" className="flex items-center gap-2"><IndianRupee className="h-4 w-4" /> {t('minJobBudget')}</Label>
                         <div className="flex items-center gap-2">
                             <Input
                                 id="minJobBudget"
@@ -537,25 +540,25 @@ function PlatformRulesSettings({ blacklist, onDataChange }: { blacklist: Blackli
                             <span className="text-muted-foreground">₹</span>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                            The minimum budget required for any new job posting.
+                            {t('minJobBudgetHelp')}
                         </p>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="autoVerifyInstallers" className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Automatic Installer Verification</Label>
+                        <Label htmlFor="autoVerifyInstallers" className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> {t('autoVerify')}</Label>
                         <div className="flex items-center space-x-2">
                             <Switch
                                 id="autoVerifyInstallers"
                                 checked={settings.autoVerifyInstallers}
                                 onCheckedChange={handleSwitchChange}
                             />
-                            <Label htmlFor="autoVerifyInstallers" className="text-sm font-normal">Enable automatic Aadhar verification for new installers.</Label>
+                            <Label htmlFor="autoVerifyInstallers" className="text-sm font-normal">{t('autoVerifyHelp')}</Label>
                         </div>
                     </div>
                 </CardContent>
                 <CardFooter>
                     <Button onClick={handleSave} disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Job Rules
+                        {t('saveRules')}
                     </Button>
                 </CardFooter>
             </Card>
@@ -569,6 +572,7 @@ export default function SettingsClient() {
     const { isAdmin, loading: userLoading } = useUser();
     const { setHelp } = useHelp();
     const { db } = useFirebase();
+    const t = useTranslations('settings');
 
     const [plans, setPlans] = React.useState<SubscriptionPlan[]>([]);
     const [coupons, setCoupons] = React.useState<Coupon[]>([]);
@@ -596,10 +600,10 @@ export default function SettingsClient() {
 
     React.useEffect(() => {
         setHelp({
-            title: "Platform Settings",
+            title: t('platformSettingsHelpTitle'),
             content: (
                 <div className="space-y-4 text-sm">
-                    <p>This is the central control panel for your entire platform. As an admin, you can configure every aspect of the user experience and business logic here.</p>
+                    <p>{t('platformSettingsHelpContent')}</p>
                     {isAdmin ? (
                         <ul className="list-disc space-y-2 pl-5">
                             <li><span className="font-semibold">Monetization:</span> Manage subscription plans, create promotional coupons, and set your platform&apos;s commission rates. This is where you control how your platform makes money.</li>
@@ -618,12 +622,12 @@ export default function SettingsClient() {
                 </div>
             )
         })
-    }, [setHelp, isAdmin]);
+    }, [setHelp, isAdmin, t]);
 
     if (userLoading || loadingData && isAdmin) {
         return (
             <div className="grid gap-6">
-                <h1 className="text-3xl font-bold">Settings</h1>
+                <h1 className="text-3xl font-bold">{t('title')}</h1>
                 <div className="flex h-64 items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
@@ -634,7 +638,7 @@ export default function SettingsClient() {
     if (!isAdmin) {
         return (
             <div className="grid gap-6">
-                <h1 className="text-3xl font-bold">Settings</h1>
+                <h1 className="text-3xl font-bold">{t('title')}</h1>
                 <PersonalSettingsCard />
             </div>
         )
@@ -642,24 +646,24 @@ export default function SettingsClient() {
 
     return (
         <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
-            <h1 className="text-3xl font-bold">Settings</h1>
+            <h1 className="text-3xl font-bold">{t('title')}</h1>
             <Tabs defaultValue="monetization" className="w-full">
                 <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto p-1 bg-muted/50">
                     <TabsTrigger value="monetization" className="flex-shrink-0">
                         <Package className="mr-2 h-4 w-4" />
-                        <span>Monetization</span>
+                        <span>{t('tabMonetization')}</span>
                     </TabsTrigger>
                     <TabsTrigger value="reputation" className="flex-shrink-0">
                         <Gem className="mr-2 h-4 w-4" />
-                        <span>User &amp; Reputation</span>
+                        <span>{t('tabReputation')}</span>
                     </TabsTrigger>
                     <TabsTrigger value="platform" className="flex-shrink-0">
                         <Ban className="mr-2 h-4 w-4" />
-                        <span>Platform Rules</span>
+                        <span>{t('tabPlatform')}</span>
                     </TabsTrigger>
                     <TabsTrigger value="general" className="flex-shrink-0">
                         <SettingsIcon className="mr-2 h-4 w-4" />
-                        <span>General</span>
+                        <span>{t('tabGeneral')}</span>
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="monetization">

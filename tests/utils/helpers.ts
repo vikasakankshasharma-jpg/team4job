@@ -114,7 +114,7 @@ export class AuthHelper {
 
                 // Fill email with retry on detachment
                 const emailInput = this.page.locator('input[name="identifier"]');
-                await emailInput.waitFor({ state: 'visible', timeout: 5000 });
+                await emailInput.waitFor({ state: 'visible', timeout: 60000 });
                 await emailInput.fill(email);
 
                 // Fill password

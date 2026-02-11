@@ -13,7 +13,7 @@ test.describe('Smoke Tests @smoke', () => {
         await helper.auth.loginAsJobGiver();
         await expect(page).toHaveURL(/\/dashboard/);
         // Verify we're on dashboard - look for Job Giver-specific navigation
-        await expect(page.locator('a:has-text("Post a Job")').first()).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('a:has-text("Post a Job")').first()).toBeVisible();
     });
 
     test('User can login as Installer', async ({ page }) => {
@@ -22,7 +22,7 @@ test.describe('Smoke Tests @smoke', () => {
         await helper.auth.loginAsInstaller();
         await expect(page).toHaveURL(/\/dashboard/);
         // Verify we're on dashboard - look for common dashboard elements
-        await expect(page.locator('text=Browse Jobs').first()).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('text=Browse Jobs').first()).toBeVisible();
     });
 
     test('User can login as Admin', async ({ page }) => {
@@ -31,7 +31,7 @@ test.describe('Smoke Tests @smoke', () => {
         await helper.auth.loginAsAdmin();
         await expect(page).toHaveURL(/\/dashboard/);
         // Verify we're on dashboard - look for Admin-specific element
-        await expect(page.locator('a:has-text("All Jobs")').first()).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('a:has-text("All Jobs")').first()).toBeVisible();
     });
 
     test('Job Giver can access Post Job page', async ({ page }) => {
@@ -64,7 +64,7 @@ test.describe('Smoke Tests @smoke', () => {
         await page.goto('/login');
         // Use the same reliable selector as AuthHelper
         const emailInput = page.locator('input[name="identifier"]');
-        await emailInput.waitFor({ state: 'visible', timeout: 10000 });
+        await emailInput.waitFor({ state: 'visible' });
         await emailInput.fill('invalid@example.com');
 
         await page.fill('input[type="password"]', 'wrongpassword');
@@ -72,7 +72,7 @@ test.describe('Smoke Tests @smoke', () => {
 
         // Should show error and stay on login page
         // Look for error toast notification
-        await expect(page.locator('[role="status"]').first()).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('[role="status"]').first()).toBeVisible();
         await expect(page).toHaveURL(/\/login/);
     });
 
@@ -92,7 +92,7 @@ test.describe('Smoke Tests @smoke', () => {
 
         await page.goto('/');
         // Use visual indicator instead of networkidle which is flaky in CI due to analytics/background polling
-        await page.waitForSelector('h1', { state: 'visible', timeout: 30000 });
+        await page.waitForSelector('h1', { state: 'visible' });
         // Short grace period to catch immediate load errors
         await page.waitForTimeout(2000);
 

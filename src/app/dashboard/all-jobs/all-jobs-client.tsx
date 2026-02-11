@@ -2,6 +2,7 @@
 "use client";
 
 import React from "react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -41,8 +42,11 @@ import { Job, User } from "@/lib/types";
 import { getStatusVariant, toDate, cn, exportToCsv } from "@/lib/utils";
 import { useUser, useFirebase } from "@/hooks/use-user";
 import Link from "next/link";
-import { collection, getDocs, query, DocumentReference, getDoc, where, doc } from "firebase/firestore";
+import { collection, getDocs, query, DocumentReference, getDoc, where, doc, limit, startAfter, orderBy, QueryDocumentSnapshot, DocumentData, Timestamp } from "firebase/firestore";
 import { useHelp } from "@/hooks/use-help";
+import { JobListSkeleton } from "@/components/skeletons/job-list-skeleton";
+import { GlobalErrorBoundary } from "@/components/dashboard/error-boundary";
+import { useTranslations } from "next-intl";
 
 const initialFilters = {
   jobId: "",
@@ -76,7 +80,7 @@ const getRefId = (ref: any): string | null => {
   return ref.id || null;
 }
 
-function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) => void }) {
+function JobCard({ job, onRowClick, t }: { job: Job, onRowClick: (jobId: string) => void, t: any }) {
   const jobGiverName = (job.jobGiver as User)?.name || 'N/A';
 
   return (
@@ -90,20 +94,20 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
       </CardHeader>
       <CardContent className="text-sm space-y-3">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Job Giver</span>
+          <span className="text-muted-foreground">{t('table.giver')}</span>
           <span className="font-medium">{jobGiverName}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Bids</span>
+          <span className="text-muted-foreground">{t('table.bids')}</span>
           <span className="font-medium">{(job.bids || []).length}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Job Type</span>
+          <span className="text-muted-foreground">{t('table.type')}</span>
           <span className="font-medium">{getJobType(job)}</span>
         </div>
       </CardContent>
       <CardFooter className="text-xs text-muted-foreground">
-        Posted on {format(toDate(job.postedAt), 'MMM d, yyyy')}
+        {t('table.posted')} {format(toDate(job.postedAt), 'MMM d, yyyy')}
       </CardFooter>
     </Card>
   )
@@ -111,50 +115,48 @@ function JobCard({ job, onRowClick }: { job: Job, onRowClick: (jobId: string) =>
 
 export default function AllJobsClient() {
   const router = useRouter();
-  // ... rest of component
+  const t = useTranslations('admin.allJobs');
   const { user, isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
-  const [jobs, setJobs] = React.useState<Job[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const queryClient = useQueryClient();
   const [filters, setFilters] = React.useState(initialFilters);
   const [allStatuses, setAllStatuses] = React.useState<string[]>([]);
   const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'postedAt', direction: 'descending' });
   const { setHelp } = useHelp();
   const [view, setView] = React.useState<'list' | 'grid'>('list');
   const [activeTab, setActiveTab] = React.useState<string>('all');
+  const [pageSize] = React.useState(25);
 
-  React.useEffect(() => {
-    setHelp({
-      title: "All Jobs",
-      content: (
-        <div className="space-y-4 text-sm">
-          <p>This is the master view of every job ever created on the platform. As an admin, you can monitor all activity from here.</p>
-          <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Comprehensive Filters:</span> Use the filters at the top to narrow down the list by job title, pincode, status, job giver, type (Bidding vs. Direct Award), or date range.</li>
-            <li><span className="font-semibold">Sortable Columns:</span> Click on any column header in the table to sort the jobs. Click again to reverse the order.</li>
-            <li><span className="font-semibold">Export Data:</span> Use the &quot;Export to CSV&quot; button to download the currently filtered list for offline analysis.</li>
-            <li><span className="font-semibold">View Details:</span> Click on any job row to navigate to its detailed view, where you can see all bids, comments, and job-specific information.</li>
-          </ul>
-        </div>
-      )
-    })
-  }, [setHelp]);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status
+  } = useInfiniteQuery({
+    queryKey: ['jobs', isAdmin],
+    queryFn: async ({ pageParam }) => {
+      if (!db || !isAdmin) return { jobs: [], lastDoc: null };
 
-  React.useEffect(() => {
-    if (!userLoading && !isAdmin) {
-      router.push('/dashboard');
-    }
-  }, [user, isAdmin, router, userLoading]);
-
-  React.useEffect(() => {
-    async function fetchJobs() {
-      if (!db || !user || !isAdmin) return;
-
-      setLoading(true);
       const jobsCollection = collection(db, 'jobs');
-      const jobSnapshot = await getDocs(query(jobsCollection));
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      let q = query(
+        jobsCollection,
+        where('postedAt', '>=', Timestamp.fromDate(thirtyDaysAgo)),
+        orderBy('postedAt', 'desc'),
+        limit(pageSize)
+      );
+
+      if (pageParam) {
+        q = query(q, startAfter(pageParam));
+      }
+
+      const jobSnapshot = await getDocs(q);
       const jobList = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Job);
 
+      // Fetch related users logic
       const userRefs = new Map<string, DocumentReference>();
       jobList.forEach(job => {
         const jobGiverId = getRefId(job.jobGiver);
@@ -204,16 +206,51 @@ export default function AllJobsClient() {
         };
       });
 
-      setJobs(populatedJobs);
-      const uniqueStatuses = Array.from(new Set(populatedJobs.map(j => j.status)));
-      setAllStatuses(['all', ...uniqueStatuses.sort()]);
-      setLoading(false);
-    }
+      const lastDoc = jobSnapshot.docs[jobSnapshot.docs.length - 1];
+      return { jobs: populatedJobs, lastDoc };
+    },
+    initialPageParam: null as QueryDocumentSnapshot<DocumentData> | null,
+    getNextPageParam: (lastPage) => lastPage.lastDoc || null,
+    enabled: !!db && !!isAdmin,
+  });
 
-    if (db && user && isAdmin) {
-      fetchJobs();
+  const jobs = React.useMemo(() => data?.pages.flatMap(p => p.jobs) || [], [data]);
+  const loading = status === 'pending';
+  const loadingMore = isFetchingNextPage;
+  const hasMore = hasNextPage;
+
+  React.useEffect(() => {
+    // Populate filter options based on loaded jobs
+    if (jobs.length > 0) {
+      const uniqueStatuses = Array.from(new Set(jobs.map(j => j.status)));
+      setAllStatuses(['all', ...uniqueStatuses.sort()]);
     }
-  }, [user, db, isAdmin]);
+  }, [jobs]);
+
+  React.useEffect(() => {
+    setHelp({
+      title: t('help.title'),
+      content: (
+        <div className="space-y-4 text-sm">
+          <p>{t('help.intro')}</p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li><span className="font-semibold">{t('help.filters')}</span> {t('help.filtersDesc')}</li>
+            <li><span className="font-semibold">{t('help.sort')}</span> {t('help.sortDesc')}</li>
+            <li><span className="font-semibold">{t('help.export')}</span> {t('help.exportDesc')}</li>
+            <li><span className="font-semibold">{t('help.details')}</span> {t('help.detailsDesc')}</li>
+          </ul>
+        </div>
+      )
+    })
+  }, [setHelp, t]);
+
+  React.useEffect(() => {
+    if (!userLoading && !isAdmin) {
+      router.push('/dashboard');
+    }
+  }, [user, isAdmin, router, userLoading]);
+
+
 
 
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
@@ -383,57 +420,57 @@ export default function AllJobsClient() {
   const filterConfig: Filter[] = [
     {
       id: 'jobId',
-      label: 'Job Title',
+      label: t('filters.jobIdLabel'),
       type: 'search',
-      placeholder: 'Filter by Job Title...',
+      placeholder: t('filters.jobIdPlaceholder'),
       value: filters.jobId,
       onChange: (value) => handleFilterChange('jobId', value),
     },
     {
       id: 'status',
-      label: 'Status',
+      label: t('filters.statusLabel'),
       type: 'select',
-      options: allStatuses.map(s => ({ label: s === 'all' ? 'All Statuses' : s, value: s })),
+      options: allStatuses.map(s => ({ label: s === 'all' ? t('filters.allStatuses') : s, value: s })),
       value: filters.status,
       onChange: (value) => handleFilterChange('status', value),
     },
     {
       id: 'jobType',
-      label: 'Type',
+      label: t('filters.typeLabel'),
       type: 'select',
-      options: jobTypes.map(t => ({ label: t === 'all' ? 'All Types' : t, value: t })),
+      options: jobTypes.map(type => ({ label: type === 'all' ? t('filters.allTypes') : type, value: type })),
       value: filters.jobType,
       onChange: (value) => handleFilterChange('jobType', value),
     },
   ];
 
   return (
-    <>
+    <GlobalErrorBoundary>
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard
-          title="Total Jobs"
+          title={t('stats.total')}
           value={stats.totalJobs}
           icon={Briefcase}
-          description="All jobs posted"
+          description={t('stats.totalDesc')}
         />
         <StatCard
-          title="Active"
+          title={t('stats.active')}
           value={stats.activeJobs}
           icon={Clock}
-          description="Open & in progress"
+          description={t('stats.activeDesc')}
         />
         <StatCard
-          title="Completed"
+          title={t('stats.completed')}
           value={stats.completedJobs}
           icon={CheckCircle}
-          description="Successfully finished"
+          description={t('stats.completedDesc')}
         />
         <StatCard
-          title="Disputed"
+          title={t('stats.disputed')}
           value={stats.disputedJobs}
           icon={AlertTriangle}
-          description="Need attention"
+          description={t('stats.disputedDesc')}
         />
       </div>
 
@@ -441,9 +478,9 @@ export default function AllJobsClient() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle>All Jobs</CardTitle>
+              <CardTitle>{t('title')}</CardTitle>
               <CardDescription>
-                {filteredAndSortedJobs.length} jobs shown • {stats.biddingJobs} bidding, {stats.directJobs} direct
+                {t('description', { count: filteredAndSortedJobs.length, bidding: stats.biddingJobs, direct: stats.directJobs })}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -459,152 +496,180 @@ export default function AllJobsClient() {
                 data={exportData}
                 filename={`jobs-${new Date().toISOString().split('T')[0]}`}
                 formats={['csv', 'json']}
+                label={t('buttons.export')}
               />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-            <TabsList>
-              <TabsTrigger value="all">All ({filteredAndSortedJobs.length})</TabsTrigger>
-              <TabsTrigger value="active">Active ({filteredAndSortedJobs.filter(j => j.status === 'Open for Bidding' || j.status === 'In Progress').length})</TabsTrigger>
-              <TabsTrigger value="completed">Completed ({stats.completedJobs})</TabsTrigger>
-              <TabsTrigger value="disputed">Disputed ({stats.disputedJobs})</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {loading ? (
+            <JobListSkeleton />
+          ) : (
+            <>
+              {/* Tabs */}
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+                <TabsList>
+                  <TabsTrigger value="all">{t('tabs.all')} ({filteredAndSortedJobs.length})</TabsTrigger>
+                  <TabsTrigger value="active">{t('tabs.active')} ({filteredAndSortedJobs.filter(j => j.status === 'Open for Bidding' || j.status === 'In Progress').length})</TabsTrigger>
+                  <TabsTrigger value="completed">{t('tabs.completed')} ({stats.completedJobs})</TabsTrigger>
+                  <TabsTrigger value="disputed">{t('tabs.disputed')} ({stats.disputedJobs})</TabsTrigger>
+                </TabsList>
+              </Tabs>
 
-          {/* Filters */}
-          <div className="mb-4">
-            <FilterBar filters={filterConfig} onReset={clearFilters} />
-          </div>
+              {/* Filters */}
+              <div className="mb-4">
+                <FilterBar filters={filterConfig} onReset={clearFilters} resetLabel={t('buttons.reset')} />
+              </div>
 
-          {/* List View */}
-          {view === 'list' && (
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('title')}>
-                      Job Title
-                      {getSortIcon('title')}
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('status')}>
-                      Status
-                      {getSortIcon('status')}
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('jobGiver')}>
-                      Job Giver
-                      {getSortIcon('jobGiver')}
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('bids')}>
-                      Bids
-                      {getSortIcon('bids')}
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('jobType')}>
-                      Job Type
-                      {getSortIcon('jobType')}
-                    </Button>
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <Button variant="ghost" onClick={() => requestSort('postedAt')}>
-                      Posted
-                      {getSortIcon('postedAt')}
-                    </Button>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
-                ) : tabFilteredJobs.length > 0 ? (
-                  tabFilteredJobs.map((job) => (
-                    <TableRow key={job.id} onClick={() => handleRowClick(job.id)} className="cursor-pointer">
-                      <TableCell>
-                        <p className="font-medium">{job.title}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Link href={`/dashboard/users/${(job.jobGiver as User).id}`} className="hover:underline" onClick={e => e.stopPropagation()}>
-                          {(job.jobGiver as User).name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        {(job.bids || []).length}
-                      </TableCell>
-                      <TableCell>
-                        {getJobType(job)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {format(toDate(job.postedAt), 'MMM d, yyyy')}
-                      </TableCell>
+              {/* List View */}
+              {view === 'list' && (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => requestSort('title')}>
+                          {t('table.title')}
+                          {getSortIcon('title')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => requestSort('status')}>
+                          {t('table.status')}
+                          {getSortIcon('status')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => requestSort('jobGiver')}>
+                          {t('table.giver')}
+                          {getSortIcon('jobGiver')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => requestSort('bids')}>
+                          {t('table.bids')}
+                          {getSortIcon('bids')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => requestSort('jobType')}>
+                          {t('table.type')}
+                          {getSortIcon('jobType')}
+                        </Button>
+                      </TableHead>
+                      <TableHead className="text-right">
+                        <Button variant="ghost" onClick={() => requestSort('postedAt')}>
+                          {t('table.posted')}
+                          {getSortIcon('postedAt')}
+                        </Button>
+                      </TableHead>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24">
-                      <AdminEmptyState
-                        icon={Inbox}
-                        title="No jobs found"
-                        description="Try adjusting your filters or search criteria"
-                        action={{
-                          label: 'Reset Filters',
-                          onClick: clearFilters,
-                        }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
-
-          {/* Grid View */}
-          {view === 'grid' && (
-            <div>
-              {loading ? (
-                <AdminEmptyState
-                  icon={Clock}
-                  title="Loading jobs..."
-                  description="Please wait while we fetch all jobs"
-                />
-              ) : tabFilteredJobs.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {tabFilteredJobs.map((job) => (
-                    <JobCard key={job.id} job={job} onRowClick={handleRowClick} />
-                  ))}
-                </div>
-              ) : (
-                <AdminEmptyState
-                  icon={Inbox}
-                  title="No jobs found"
-                  description="Try adjusting your filters or search criteria"
-                  action={{
-                    label: 'Reset Filters',
-                    onClick: clearFilters,
-                  }}
-                />
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                          <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                        </TableCell>
+                      </TableRow>
+                    ) : tabFilteredJobs.length > 0 ? (
+                      tabFilteredJobs.map((job) => (
+                        <TableRow key={job.id} onClick={() => handleRowClick(job.id)} className="cursor-pointer">
+                          <TableCell>
+                            <p className="font-medium">{job.title}</p>
+                            <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Link href={`/dashboard/users/${(job.jobGiver as User).id}`} className="hover:underline" onClick={e => e.stopPropagation()}>
+                              {(job.jobGiver as User).name}
+                            </Link>
+                          </TableCell>
+                          <TableCell>
+                            {(job.bids || []).length}
+                          </TableCell>
+                          <TableCell>
+                            {getJobType(job)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {format(toDate(job.postedAt), 'MMM d, yyyy')}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24">
+                          <AdminEmptyState
+                            icon={Inbox}
+                            title={t('empty.noJobs')}
+                            description={t('empty.tryAdjusting')}
+                            action={{
+                              label: t('buttons.reset'),
+                              onClick: clearFilters,
+                            }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               )}
-            </div>
+
+              {/* Grid View */}
+              {view === 'grid' && (
+                <div>
+                  {loading ? (
+                    <AdminEmptyState
+                      icon={Clock}
+                      title={t('empty.loading')}
+                      description={t('empty.wait')}
+                    />
+                  ) : tabFilteredJobs.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {tabFilteredJobs.map((job) => (
+                        <JobCard key={job.id} job={job} onRowClick={handleRowClick} t={t} />
+                      ))}
+                    </div>
+                  ) : (
+                    <AdminEmptyState
+                      icon={Inbox}
+                      title={t('empty.noJobs')}
+                      description={t('empty.tryAdjusting')}
+                      action={{
+                        label: t('buttons.reset'),
+                        onClick: clearFilters,
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Load More Button */}
+              {!loading && hasMore && tabFilteredJobs.length > 0 && (
+                <div className="flex justify-center mt-6">
+                  <Button
+                    onClick={() => fetchNextPage()}
+                    disabled={loadingMore}
+                    variant="outline"
+                    size="lg"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t('buttons.loadingMore')}
+                      </>
+                    ) : (
+                      `${t('buttons.loadMore')} (${jobs.length})`
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
-    </>
+    </GlobalErrorBoundary>
   );
 }
 

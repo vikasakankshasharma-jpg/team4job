@@ -7,6 +7,7 @@ import { Input } from "./input";
 import { LocationInput } from "./location-input";
 import { Separator } from "./separator";
 import { MapInput } from "./map-input";
+import { useTranslations } from "next-intl";
 
 interface AddressFormProps {
     pincodeName: string;
@@ -30,13 +31,14 @@ export function AddressForm({
     isMapLoaded
 }: AddressFormProps) {
     const { control } = useFormContext();
+    const t = useTranslations("address");
 
     return (
         <div className="space-y-6">
             <LocationInput
                 name={pincodeName}
-                label="Location (Pincode)"
-                placeholder="e.g. 110001"
+                label={t('locationPincode')}
+                placeholder={t('pincodePlaceholder')}
                 control={control}
                 onLocationGeocoded={onLocationGeocoded}
                 isMapLoaded={isMapLoaded}
@@ -45,16 +47,16 @@ export function AddressForm({
             <Separator />
 
             <div className="space-y-2">
-                <FormLabel>Detailed Address</FormLabel>
+                <FormLabel>{t('detailedAddress')}</FormLabel>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                         control={control}
                         name={houseName}
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="text-xs">House / Flat No. & Building</FormLabel>
+                                <FormLabel className="text-xs">{t('houseFlatNo')}</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="e.g., Flat 4B, Sunshine Apartments" {...field} data-testid="house-input" className="h-11" />
+                                    <Input placeholder={t('housePlaceholder')} {...field} data-testid="house-input" className="h-11" aria-label={t('houseFlatNo')} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -65,9 +67,9 @@ export function AddressForm({
                         name={streetName}
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="text-xs">Street, Colony / Area</FormLabel>
+                                <FormLabel className="text-xs">{t('streetColony')}</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="e.g., 12th Main Road, Indiranagar" {...field} data-testid="street-input" className="h-11" />
+                                    <Input placeholder={t('streetPlaceholder')} {...field} data-testid="street-input" className="h-11" aria-label={t('streetColony')} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -79,9 +81,9 @@ export function AddressForm({
                     name={landmarkName}
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-xs">Nearby Landmark (Optional)</FormLabel>
+                            <FormLabel className="text-xs">{t('landmarkOptional')}</FormLabel>
                             <FormControl>
-                                <Input placeholder="e.g., Near City Hospital" {...field} data-testid="landmark-input" className="h-11" />
+                                <Input placeholder={t('landmarkPlaceholder')} {...field} data-testid="landmark-input" className="h-11" aria-label={t('landmarkOptional')} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -90,7 +92,7 @@ export function AddressForm({
             </div>
             <MapInput
                 name={fullAddressName}
-                label="Set Precise Location on Map"
+                label={t('setPreciseLocation')}
                 control={control}
                 center={mapCenter}
                 isMapLoaded={isMapLoaded}

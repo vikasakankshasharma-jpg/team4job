@@ -35,6 +35,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { InstallerProfileModal } from '@/components/installers/installer-profile-modal';
 import { SmartSearch } from '@/components/ui/smart-search';
 import Fuse from 'fuse.js';
+import { useTranslations } from 'next-intl';
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-5 w-5 text-yellow-700" />,
@@ -51,6 +52,7 @@ const initialFilters = {
 };
 
 const InstallerCard = ({ installer, currentUser, onUpdate, onClick }: { installer: User, currentUser: User, onUpdate: (installerId: string, action: 'favorite' | 'unfavorite' | 'block' | 'unblock') => void, onClick: (installer: User) => void }) => {
+  const t = useTranslations('installers');
   const isFavorite = currentUser.favoriteInstallerIds?.includes(installer.id);
   const isBlocked = currentUser.blockedInstallerIds?.includes(installer.id);
 
@@ -74,18 +76,18 @@ const InstallerCard = ({ installer, currentUser, onUpdate, onClick }: { installe
                   <TooltipTrigger asChild>
                     <span onClick={(e) => e.stopPropagation()} className="flex items-center text-xs font-normal text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200 cursor-help flex-shrink-0">
                       <Zap className="h-3 w-3 mr-1" />
-                      Inactive
+                      {t('inactive')}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    This installer hasn&apos;t been online for {Math.floor(daysSinceActive)} days.
+                    {t('inactiveTooltip', { days: Math.floor(daysSinceActive) })}
                   </TooltipContent>
                 </Tooltip>
               )}
             </CardTitle>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {installer.installerProfile && tierIcons[installer.installerProfile.tier]}
-              <span>{installer.installerProfile?.tier} Tier</span>
+              <span>{t('tier', { tier: t(`tier${installer.installerProfile?.tier || 'Bronze'}`) })}</span>
               {installer.installerProfile?.verified && <ShieldCheck className="h-4 w-4 text-green-600" />}
             </div>
           </div>
@@ -93,15 +95,15 @@ const InstallerCard = ({ installer, currentUser, onUpdate, onClick }: { installe
       </CardHeader>
       <CardContent className="space-y-3 text-sm pb-3">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground flex items-center gap-1"><Star className="h-4 w-4" /> Rating</span>
-          <span className="font-semibold">{installer.installerProfile?.rating.toFixed(1)} ({installer.installerProfile?.reviews} reviews)</span>
+          <span className="text-muted-foreground flex items-center gap-1"><Star className="h-4 w-4" /> {t('rating')}</span>
+          <span className="font-semibold">{installer.installerProfile?.rating.toFixed(1)} ({installer.installerProfile?.reviews} {t('reviews')})</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground flex items-center gap-1"><Briefcase className="h-4 w-4" /> Jobs Completed</span>
+          <span className="text-muted-foreground flex items-center gap-1"><Briefcase className="h-4 w-4" /> {t('jobsCompleted')}</span>
           <span className="font-semibold">{installer.installerProfile?.reviews || 0}</span>
         </div>
         <div className="pt-2">
-          <p className="text-xs font-semibold text-muted-foreground mb-1">Top Skills</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-1">{t('topSkills')}</p>
           <div className="flex flex-wrap gap-1">
             {(installer.installerProfile?.skills || []).slice(0, 3).map(skill => (
               <Badge key={skill} variant="secondary" className="capitalize">{skill}</Badge>
@@ -112,10 +114,10 @@ const InstallerCard = ({ installer, currentUser, onUpdate, onClick }: { installe
       <CardFooter>
         <div className="flex gap-2 w-full" onClick={(e) => e.stopPropagation()}>
           <Button variant={isFavorite ? 'default' : 'outline'} size="sm" className="flex-1 min-h-[44px]" onClick={() => onUpdate(installer.id, isFavorite ? 'unfavorite' : 'favorite')}>
-            <Heart className="mr-2 h-4 w-4" /> {isFavorite ? 'Favorited' : 'Favorite'}
+            <Heart className="mr-2 h-4 w-4" /> {isFavorite ? t('favorited') : t('favorite')}
           </Button>
           <Button variant={isBlocked ? 'destructive' : 'outline'} size="sm" className="flex-1 min-h-[44px]" onClick={() => onUpdate(installer.id, isBlocked ? 'unblock' : 'block')}>
-            <UserX className="mr-2 h-4 w-4" /> {isBlocked ? 'Blocked' : 'Block'}
+            <UserX className="mr-2 h-4 w-4" /> {isBlocked ? t('blocked') : t('block')}
           </Button>
         </div>
       </CardFooter>
@@ -124,9 +126,13 @@ const InstallerCard = ({ installer, currentUser, onUpdate, onClick }: { installe
 };
 
 export default function InstallersClient() {
+  const t = useTranslations('installers');
+  const tCommon = useTranslations('common');
   const { user, setUser, role, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const [loading, setLoading] = useState(true);
+  const [loadMoreLoading, setLoadMoreLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [installers, setInstallers] = useState<User[]>([]);
   const [filters, setFilters] = useState(initialFilters);
   const [selectedInstaller, setSelectedInstaller] = useState<User | null>(null);
@@ -151,38 +157,86 @@ export default function InstallersClient() {
 
   useEffect(() => {
     setHelp({
-      title: 'Find Installers',
+      title: t('guide.title'),
       content: (
         <div className="space-y-4 text-sm">
-          <p>This is your directory to discover and vet professional installers on the platform.</p>
+          <p>{t('guide.content')}</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-semibold">Premium Feature:</span> Access to this directory requires an active subscription.</li>
-            <li><span className="font-semibold">Search & Filter:</span> Use the filters to find installers by name, location (pincode), skill set, or reputation tier.</li>
-            <li><span className="font-semibold">Review Profiles:</span> Click on any installer&apos;s name to view their detailed profile, including their full work history and reviews.</li>
-            <li><span className="font-semibold">Favorite & Block:</span> Use the action buttons to add installers to your personal &quot;Favorite&quot; list for future Direct Awards, or &quot;Block&quot; them to prevent them from bidding on your jobs.</li>
+            <li><span className="font-semibold">{t('guide.premiumLabel')}</span> {t('guide.premiumDesc')}</li>
+            <li><span className="font-semibold">{t('guide.searchLabel')}</span> {t('guide.searchDesc')}</li>
+            <li><span className="font-semibold">{t('guide.reviewLabel')}</span> {t('guide.reviewDesc')}</li>
+            <li><span className="font-semibold">{t('guide.actionLabel')}</span> {t('guide.actionDesc')}</li>
           </ul>
         </div>
       ),
     });
-  }, [setHelp]);
+  }, [setHelp, t]);
+
+  // Keep installers in a ref to avoid fetchInstallers dependency on state
+  const installersRef = React.useRef<User[]>(installers);
+  useEffect(() => {
+    installersRef.current = installers;
+  }, [installers]);
+
+  const fetchInstallers = React.useCallback(async (isLoadMore = false) => {
+    if (isLoadMore) {
+      setLoadMoreLoading(true);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const { listInstallersAction } = await import('@/app/actions/user.actions');
+
+      let lastMemberSince: string | undefined = undefined;
+      const currentInstallers = installersRef.current;
+      if (isLoadMore && currentInstallers.length > 0) {
+        const lastInstaller = currentInstallers[currentInstallers.length - 1];
+        const date = toDate(lastInstaller.memberSince);
+        if (!isNaN(date.getTime())) {
+          lastMemberSince = date.toISOString();
+        }
+      }
+
+      const res = await listInstallersAction(50, lastMemberSince, true);
+
+      if (!res.success || !res.data) {
+        throw new Error(res.error || 'Failed to fetch installers');
+      }
+
+      const newInstallers = res.data;
+
+      if (isLoadMore) {
+        setInstallers(prev => {
+          const existingIds = new Set(prev.map(i => i.id));
+          const unique = newInstallers.filter((i: User) => !existingIds.has(i.id));
+          return [...prev, ...unique];
+        });
+      } else {
+        setInstallers(newInstallers);
+      }
+
+      if (newInstallers.length < 50) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+    } catch (error) {
+      console.error('Failed to fetch installers:', error);
+    } finally {
+      if (isLoadMore) {
+        setLoadMoreLoading(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, []); // Stable dependencies
 
   useEffect(() => {
-    if (userLoading) return;
-    const fetchInstallers = async () => {
-      if (!db) return;
-      setLoading(true);
-      const q = query(
-        collection(db, 'public_profiles'),
-        where('roles', 'array-contains', 'Installer'),
-        where('installerProfile.verified', '==', true)
-      );
-      const snapshot = await getDocs(q);
-      const installerList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-      setInstallers(installerList);
-      setLoading(false);
-    };
-    fetchInstallers();
-  }, [db, isSubscribed, userLoading, router]);
+    if (!userLoading) {
+      fetchInstallers(false);
+    }
+  }, [userLoading, fetchInstallers]);
 
   const handleUpdate = async (installerId: string, action: 'favorite' | 'unfavorite' | 'block' | 'unblock') => {
     if (!user || !db) return;
@@ -265,12 +319,12 @@ export default function InstallersClient() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Find Installers</CardTitle>
-        <CardDescription>Browse and filter through all verified installers on the platform.</CardDescription>
+        <CardTitle className="text-2xl">{t('title')}</CardTitle>
+        <CardDescription>{t('description')}</CardDescription>
         <div className="pt-4 flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Phase 11 Enhancement #6: SmartSearch with fuzzy matching */}
           <SmartSearch
-            placeholder="Search by name or skill..."
+            placeholder={t('searchPlaceholder')}
             onSearch={(query) => handleFilterChange('search', query)}
             suggestions={searchSuggestions}
             enableHistory
@@ -278,25 +332,25 @@ export default function InstallersClient() {
             className="h-11"
           />
           <Input
-            placeholder="Filter by pincode..."
+            placeholder={t('pincodePlaceholder')}
             value={filters.pincode}
             onChange={(e) => handleFilterChange('pincode', e.target.value)}
             className="h-11"
           />
           <Select value={filters.tier} onValueChange={(v) => handleFilterChange('tier', v)}>
-            <SelectTrigger className="h-11"><SelectValue placeholder="Filter by tier..." /></SelectTrigger>
+            <SelectTrigger className="h-11"><SelectValue placeholder={t('tierPlaceholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Tiers</SelectItem>
-              <SelectItem value="Platinum">Platinum</SelectItem>
-              <SelectItem value="Gold">Gold</SelectItem>
-              <SelectItem value="Silver">Silver</SelectItem>
-              <SelectItem value="Bronze">Bronze</SelectItem>
+              <SelectItem value="all">{t('allTiers')}</SelectItem>
+              <SelectItem value="Platinum">{t('tierPlatinum')}</SelectItem>
+              <SelectItem value="Gold">{t('tierGold')}</SelectItem>
+              <SelectItem value="Silver">{t('tierSilver')}</SelectItem>
+              <SelectItem value="Bronze">{t('tierBronze')}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filters.skills[0] || 'all'} onValueChange={(v) => handleFilterChange('skills', v === 'all' ? [] : [v])}>
-            <SelectTrigger className="h-11"><SelectValue placeholder="Filter by skill..." /></SelectTrigger>
+            <SelectTrigger className="h-11"><SelectValue placeholder={t('skillPlaceholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Skills</SelectItem>
+              <SelectItem value="all">{t('allSkills')}</SelectItem>
               {allSkills.map(skill => <SelectItem key={skill} value={skill} className="capitalize">{skill}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -319,9 +373,18 @@ export default function InstallersClient() {
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground text-center py-8">No installers found matching your criteria.</p>
+            <p className="text-muted-foreground text-center py-8">{t('noInstallersFound')}</p>
           )}
         </TooltipProvider>
+
+        {!loading && hasMore && filteredInstallers.length > 0 && !filters.search && (
+          <div className="flex justify-center mt-6">
+            <Button variant="outline" onClick={() => fetchInstallers(true)} disabled={loadMoreLoading}>
+              {loadMoreLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {tCommon('loadMore')}
+            </Button>
+          </div>
+        )}
 
         {selectedInstaller && (
           <InstallerProfileModal

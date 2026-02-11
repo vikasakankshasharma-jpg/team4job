@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export interface FilterOption {
     label: string;
@@ -31,9 +32,11 @@ interface FilterBarProps {
     filters: Filter[];
     onReset?: () => void;
     showResetButton?: boolean;
+    resetLabel?: string;
 }
 
-export function FilterBar({ filters, onReset, showResetButton = true }: FilterBarProps) {
+export function FilterBar({ filters, onReset, showResetButton = true, resetLabel }: FilterBarProps) {
+    const t = useTranslations('admin.components.filter');
     const hasActiveFilters = filters.some((f) => f.value && f.value !== "all");
 
     return (
@@ -47,7 +50,7 @@ export function FilterBar({ filters, onReset, showResetButton = true }: FilterBa
                         {filter.type === "search" && (
                             <Input
                                 id={filter.id}
-                                placeholder={filter.placeholder || "Search..."}
+                                placeholder={filter.placeholder || t('searchPlaceholder')}
                                 value={filter.value}
                                 onChange={(e) => filter.onChange(e.target.value)}
                             />
@@ -72,10 +75,11 @@ export function FilterBar({ filters, onReset, showResetButton = true }: FilterBa
                 {showResetButton && hasActiveFilters && onReset && (
                     <Button variant="outline" onClick={onReset} className="shrink-0">
                         <X className="h-4 w-4 mr-2" />
-                        Reset Filters
+                        {resetLabel || t('reset')}
                     </Button>
                 )}
             </div>
         </div>
     );
 }
+

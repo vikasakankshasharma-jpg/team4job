@@ -1,0 +1,93 @@
+﻿
+> nextn@0.1.0 lint
+> eslint .
+
+
+C:\Users\hp\Documents\DoDo\.firebase\dodo-beta\functions\.next\server\chunks\1193.js
+  19:33545  error  Component definition is missing display name  react/display-name
+
+C:\Users\hp\Documents\DoDo\.firebase\dodo-beta\functions\.next\server\chunks\6558.js
+  1:19840  error  Component definition is missing display name  react/display-name
+
+C:\Users\hp\Documents\DoDo\.firebase\dodo-beta\functions\.next\static\chunks\app\dashboard\layout-23dbc1bec1073d31.js
+  1:25124  error  React Hook "N.useState" is called in function "ea" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+
+C:\Users\hp\Documents\DoDo\.firebase\dodo-beta\functions\.next\static\chunks\app\dashboard\profile\page-b361b55700b67d42.js
+  1:12116  error  React Hook "B.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:12136  error  React Hook "B.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:12157  error  React Hook "B.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:14416  error  React Hook "B.useState" is called in function "em" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:14436  error  React Hook "B.useState" is called in function "em" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:15588  error  React Hook "B.useState" is called in function "ex" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:18592  error  React Hook "B.useState" is called in function "eh" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:18607  error  React Hook "B.useEffect" is called in function "eh" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  1:19821  error  React Hook "B.useState" is called in function "ep" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:23309  error  React Hook "B.useState" is called in function "eg" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:23330  error  React Hook "B.useState" is called in function "eg" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:25802  error  React Hook "B.useState" is called in function "ej" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:26174  error  React Hook "B.useEffect" is called in function "ej" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+
+C:\Users\hp\Documents\DoDo\.firebase\dodo-beta\functions\.next\static\chunks\app\dashboard\users\[id]\page-71cf20b84342ca5a.js
+  1:6081  error  React Hook "D.useState" is called in function "ed" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  1:6102  error  React Hook "D.useState" is called in function "ed" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  1:7502  error  React Hook "D.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  1:7523  error  React Hook "D.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  1:7543  error  React Hook "D.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  1:7564  error  React Hook "D.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+
+C:\Users\hp\Documents\DoDo\.firebase\dodo-beta\hosting\_next\static\chunks\app\dashboard\layout-23dbc1bec1073d31.js
+  1:25124  error  React Hook "N.useState" is called in function "ea" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+
+C:\Users\hp\Documents\DoDo\.firebase\dodo-beta\hosting\_next\static\chunks\app\dashboard\profile\page-b361b55700b67d42.js
+  1:12116  error  React Hook "B.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:12136  error  React Hook "B.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:12157  error  React Hook "B.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:14416  error  React Hook "B.useState" is called in function "em" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:14436  error  React Hook "B.useState" is called in function "em" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:15588  error  React Hook "B.useState" is called in function "ex" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:18592  error  React Hook "B.useState" is called in function "eh" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:18607  error  React Hook "B.useEffect" is called in function "eh" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  1:19821  error  React Hook "B.useState" is called in function "ep" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:23309  error  React Hook "B.useState" is called in function "eg" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:23330  error  React Hook "B.useState" is called in function "eg" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:25802  error  React Hook "B.useState" is called in function "ej" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"   react-hooks/rules-of-hooks
+  1:26174  error  React Hook "B.useEffect" is called in function "ej" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+
+C:\Users\hp\Documents\DoDo\.firebase\dodo-beta\hosting\_next\static\chunks\app\dashboard\users\[id]\page-71cf20b84342ca5a.js
+  1:6081  error  React Hook "D.useState" is called in function "ed" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  1:6102  error  React Hook "D.useState" is called in function "ed" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  1:7502  error  React Hook "D.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  1:7523  error  React Hook "D.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  1:7543  error  React Hook "D.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  1:7564  error  React Hook "D.useState" is called in function "ec" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+
+C:\Users\hp\Documents\DoDo\src\app\dashboard\analytics\analytics-client.tsx
+  61:8  warning  React Hook useCallback has missing dependencies: 't' and 'tCommon'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  93:8  warning  React Hook useMemo has a missing dependency: 't'. Either include it or remove the dependency array                      react-hooks/exhaustive-deps
+
+C:\Users\hp\Documents\DoDo\src\app\dashboard\installers\installers-client.tsx
+  232:6  warning  React Hook useEffect has a missing dependency: 'fetchInstallers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\hp\Documents\DoDo\src\app\dashboard\jobs\browse-jobs-client.tsx
+  160:6  warning  React Hook React.useEffect has missing dependencies: 'fetchJobs' and 'initialJobs'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\hp\Documents\DoDo\src\app\dashboard\post-job\post-job-client.tsx
+  494:6  warning  React Hook React.useEffect has missing dependencies: 'tCommon', 'tError', and 'tJob'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\hp\Documents\DoDo\src\app\dashboard\settings\settings-client.tsx
+  625:8  warning  React Hook React.useEffect has a missing dependency: 't'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\hp\Documents\DoDo\src\components\auth\signup-form.tsx
+  449:6  warning  React Hook useCallback has a missing dependency: 'tAuth'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\hp\Documents\DoDo\src\components\dashboard\admin-dashboard-view.tsx
+  120:8  warning  React Hook React.useEffect has a missing dependency: 't'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\hp\Documents\DoDo\src\hooks\use-job-subscription.ts
+  43:8  warning  React Hook useEffect has missing dependencies: 'initialData' and 'job'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\hp\Documents\DoDo\src\hooks\use-my-jobs.ts
+  101:8  warning  React Hook useEffect has a missing dependency: 'fetchJobs'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Γ£û 52 problems (42 errors, 10 warnings)
+

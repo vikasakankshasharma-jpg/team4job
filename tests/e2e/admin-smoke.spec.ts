@@ -1,4 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { TestHelper } from '../utils/helpers';
 
 /**
  * Admin System Smoke Tests
@@ -7,95 +8,55 @@ import { test, expect, Page } from '@playwright/test';
 
 test.describe('Admin System Smoke Tests @smoke', () => {
 
-    const loginAsAdmin = async (page: Page) => {
-        console.log('Starting Admin Login...');
-        const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'vikasakankshasharma_v3@gmail.com';
-        const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Vks2bhdj@9229';
-
-        console.log(`Navigating to login page...`);
-        await page.goto('http://localhost:3006/login');
-        await page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
-        console.log('Waiting for email input visibility...');
-        await page.waitForSelector('input[name="identifier"]', { state: 'visible', timeout: 10000 });
-        console.log('Filling email...');
-        await page.fill('input[name="identifier"]', ADMIN_EMAIL);
-        console.log('Filling password...');
-        await page.fill('input[type="password"]', ADMIN_PASSWORD);
-        console.log('Clicking submit...');
-        await page.click('button[type="submit"]');
-        console.log('Waiting for dashboard redirect...');
-        await page.waitForURL('**/dashboard*', { timeout: 60000 });
-        console.log('Redirect successful!');
-    };
-
     test('Admin dashboard loads successfully', async ({ page }) => {
-        await loginAsAdmin(page);
-        expect(page.url()).toContain('/dashboard');
-        // Quick check for admin-specific element to confirm role
-        await expect(page.locator('text=Admin Audit Log')).toBeVisible({ timeout: 10000 }).catch(() => {
-            console.log('Admin Audit Log link not visible immediately on dashboard');
-        });
+        const helper = new TestHelper(page);
+        await helper.auth.loginAsAdmin();
+
+        // Wait for dashboard to handle multi-role switch or hydration
+        await page.waitForURL(/\/dashboard/, { timeout: 30000 });
+        await page.waitForLoadState('networkidle');
+
+        // Verify "Admin Mode" is visible in the header
+        await expect(page.locator('text=Admin Mode')).toBeVisible({ timeout: 15000 });
+
+        // Verify critical admin links are visible using data-testid
+        await expect(page.getByTestId('nav-link-auditLog')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByTestId('nav-link-teamManagement')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByTestId('nav-link-users')).toBeVisible({ timeout: 15000 });
     });
 
     test('Audit logs page is accessible to admin', async ({ page }) => {
-        await loginAsAdmin(page);
-        await page.goto('http://localhost:3006/dashboard/audit-logs');
+        const helper = new TestHelper(page);
+        await helper.auth.loginAsAdmin();
 
-        // Wait for page to load (spinner to disappear)
-        await page.locator('.animate-spin').waitFor({ state: 'hidden', timeout: 10000 }).catch(() => { });
+        await page.goto('/dashboard/audit-logs');
+        await page.waitForLoadState('networkidle');
 
-        // Check if user has admin role by looking for either h1 or loading spinner
-        const hasH1 = await page.locator('h1').count() > 0;
-        const hasLoadingSpinner = await page.locator('.animate-spin').count() > 0;
+        // Verify page title from en.json "auditLogs.title": "Admin Audit Log"
+        await expect(page.getByRole('heading', { name: 'Admin Audit Log' })).toBeVisible({ timeout: 15000 });
 
-        // Log page content for debugging
-        const bodyText = await page.locator('body').textContent();
-        console.log('Page body text:', bodyText?.substring(0, 200));
-        console.log('Has h1:', hasH1, 'Has spinner:', hasLoadingSpinner);
-
-        if (hasH1) {
-            // User has admin role - verify content
-            await expect(page.locator('h1')).toContainText('Admin Audit Log');
-            await expect(page.locator('text=Total Actions')).toBeVisible();
-            await expect(page.locator('text=Today')).toBeVisible();
-            await expect(page.locator('text=This Week')).toBeVisible();
-        } else {
-            // User lacks admin role - skip test gracefully
-            console.warn('⚠️ Admin user lacks Admin role in Firestore. Run: npm run db:seed');
-            // test.skip(true, 'Admin role not configured in database');
-        }
+        // Verify stats card "auditLogs.stats.total": "Total Actions"
+        await expect(page.locator('text=Total Actions')).toBeVisible({ timeout: 15000 });
     });
 
     test('Team management page shows role badges', async ({ page }) => {
-        await loginAsAdmin(page);
-        await page.goto('http://localhost:3006/dashboard/team');
+        const helper = new TestHelper(page);
+        await helper.auth.loginAsAdmin();
 
-        // Verify page loads
-        await expect(page.locator('text=Team Management')).toBeVisible();
+        await page.goto('/dashboard/team');
+        await page.waitForLoadState('networkidle');
 
-        // Check for Add Team Member button
-        await expect(page.locator('text=Add Team Member')).toBeVisible();
-    });
+        // Verify page loads - "Add Team Member" is currently hardcoded in TeamManagementCard
+        await expect(page.locator('text=Add Team Member')).toBeVisible({ timeout: 15000 });
 
-    test('RBAC: Support team has limited navigation', async ({ page }) => {
-        // This would require a Support Team test account
-        // Placeholder for structure
-
-        // const SUPPORT_EMAIL = process.env.TEST_SUPPORT_EMAIL;
-        // const SUPPORT_PASSWORD = process.env.TEST_SUPPORT_PASSWORD;
-
-        // Login as support team
-        // Verify they DON'T see:
-        // - Reports link
-        // - Team Management link  
-        // - Audit Logs link
-        // - Settings tabs
-
-        // test.skip(true, 'Support team RBAC test requires test account setup');
+        // Verify common team member role indicators
+        // We look for badges which are styled with specific colors
+        await expect(page.locator('.badge, [role="status"]').filter({ hasText: /Admin|Support/ })).first().toBeVisible();
     });
 
     test('Admin can access all sections', async ({ page }) => {
-        await loginAsAdmin(page);
+        const helper = new TestHelper(page);
+        await helper.auth.loginAsAdmin();
 
         const adminOnlyPages = [
             '/dashboard/admin',
@@ -108,7 +69,7 @@ test.describe('Admin System Smoke Tests @smoke', () => {
         ];
 
         for (const path of adminOnlyPages) {
-            await page.goto(`http://localhost:3006${path}`);
+            await page.goto(path);
 
             // Verify no redirect to login or 403
             expect(page.url()).toContain(path);
@@ -131,7 +92,7 @@ test.describe('Build Verification', () => {
         ];
 
         for (const route of publicRoutes) {
-            await page.goto(`http://localhost:3006${route}`);
+            await page.goto(route);
 
             // Verify page loads (no 404)
             const notFoundText = await page.locator('text=/404|not found/i').count();

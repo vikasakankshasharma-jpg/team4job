@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -51,6 +52,8 @@ export function ScheduleFollowUpDialog({
     const [priority, setPriority] = useState<SignupPriority>("medium");
     const [notes, setNotes] = useState("");
     const [nextAction, setNextAction] = useState("Follow up call");
+    const t = useTranslations("admin.pendingSignups.dialogs.schedule");
+    const tPriority = useTranslations("admin.pendingSignups.badges.priority");
 
     const handleSubmit = () => {
         if (!date) return;
@@ -80,16 +83,16 @@ export function ScheduleFollowUpDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Schedule Follow-Up</DialogTitle>
+                    <DialogTitle>{t("title")}</DialogTitle>
                     <DialogDescription>
-                        Schedule a follow-up call with {userName}
+                        {t("description", { name: userName })}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
                     {/* Date Picker */}
                     <div className="grid gap-2">
-                        <Label htmlFor="date">Follow-Up Date</Label>
+                        <Label htmlFor="date">{t("date")}</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
@@ -100,7 +103,7 @@ export function ScheduleFollowUpDialog({
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                    {date ? format(date, "PPP") : <span>{t("pickDate")}</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
@@ -117,7 +120,7 @@ export function ScheduleFollowUpDialog({
 
                     {/* Time */}
                     <div className="grid gap-2">
-                        <Label htmlFor="time">Time</Label>
+                        <Label htmlFor="time">{t("time")}</Label>
                         <Input
                             id="time"
                             type="time"
@@ -128,38 +131,38 @@ export function ScheduleFollowUpDialog({
 
                     {/* Priority */}
                     <div className="grid gap-2">
-                        <Label htmlFor="priority">Priority</Label>
+                        <Label htmlFor="priority">{t("priority")}</Label>
                         <Select value={priority} onValueChange={(v) => setPriority(v as SignupPriority)}>
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="high">High Priority</SelectItem>
-                                <SelectItem value="medium">Medium Priority</SelectItem>
-                                <SelectItem value="low">Low Priority</SelectItem>
+                                <SelectItem value="high">{tPriority("high")}</SelectItem>
+                                <SelectItem value="medium">{tPriority("medium")}</SelectItem>
+                                <SelectItem value="low">{tPriority("low")}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     {/* Next Action */}
                     <div className="grid gap-2">
-                        <Label htmlFor="next-action">Next Action</Label>
+                        <Label htmlFor="next-action">{t("nextAction")}</Label>
                         <Input
                             id="next-action"
                             value={nextAction}
                             onChange={(e) => setNextAction(e.target.value)}
-                            placeholder="e.g., Follow up call, Send pricing info"
+                            placeholder={t("nextActionPlaceholder")}
                         />
                     </div>
 
                     {/* Notes */}
                     <div className="grid gap-2">
-                        <Label htmlFor="notes">Notes</Label>
+                        <Label htmlFor="notes">{t("notes")}</Label>
                         <Textarea
                             id="notes"
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Add any notes about this follow-up..."
+                            placeholder={t("notesPlaceholder")}
                             rows={3}
                         />
                     </div>
@@ -167,10 +170,10 @@ export function ScheduleFollowUpDialog({
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancel
+                        {t("cancel")}
                     </Button>
                     <Button onClick={handleSubmit} disabled={!date}>
-                        Schedule Follow-Up
+                        {t("submit")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

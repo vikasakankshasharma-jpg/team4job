@@ -2,11 +2,13 @@
 
 import { userService } from '@/domains/users/user.service';
 import { revalidatePath } from 'next/cache';
+import { User } from '@/lib/types';
+import { UpdateProfileInput } from '@/domains/users/user.types';
 
 /**
  * Server Action to update user profile
  */
-export async function updateProfileAction(userId: string, data: any) {
+export async function updateProfileAction(userId: string, data: UpdateProfileInput) {
     try {
         await userService.updateProfile(userId, data);
         revalidatePath('/dashboard/profile');
@@ -68,7 +70,7 @@ export async function getRelatedInstallersAction(userId: string) {
         // Or better: use `userService.getPublicProfiles` which calls repo.
 
         const profileMap = await userService.getPublicProfiles(Array.from(allIds));
-        const installers = Array.from(profileMap.values()).map((p: any) => ({ ...p, id: p.id || p.uid }));
+        const installers = Array.from(profileMap.values()).map((p: any) => ({ ...p, id: p.id || p.uid } as User));
         // Ensure ID is present. MyInstallersClient expects User[].
 
         return { success: true, installers: JSON.parse(JSON.stringify(installers)) };
@@ -78,3 +80,24 @@ export async function getRelatedInstallersAction(userId: string) {
         return { success: false, error: error.message || 'Failed to fetch installers' };
     }
 }
+
+/**
+ * Server Action to list installers with pagination
+ * @param limit - Number of installers per page (default 50)
+ * @param lastMemberSince - ISO string of last installer's memberSince for cursor pagination
+ * @param verified - Filter by verified status (default true)
+ */
+export async function listInstallersAction(limit = 50, lastMemberSince?: string, verified = true) {
+    try {
+        const installers = await userService.listInstallersWithPagination(
+            limit,
+            lastMemberSince ? new Date(lastMemberSince) : undefined,
+            verified
+        );
+        return { success: true, data: JSON.parse(JSON.stringify(installers)) };
+    } catch (error: any) {
+        console.error('listInstallersAction error:', error);
+        return { success: false, data: [], error: error.message || 'Failed to list installers' };
+    }
+}
+

@@ -28,6 +28,10 @@ export function SystemStatusBanner() {
             } else {
                 setStatus(null);
             }
+        }, (error) => {
+            // Suppress permission errors in console for cleaner logs (optional)
+            // console.warn("SystemStatusBanner: Failed to fetch status", error);
+            setStatus(null);
         });
     }, [db]);
 

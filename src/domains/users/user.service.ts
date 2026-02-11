@@ -49,6 +49,16 @@ export class UserService {
         return userRepository.queryInstallers(filters);
     }
 
+    /**
+     * List installers with pagination support
+     * @param limit - Number of installers to fetch
+     * @param lastMemberSince - Cursor for pagination
+     * @param verified - Filter by verified status
+     */
+    async listInstallersWithPagination(limit = 50, lastMemberSince?: Date, verified = true): Promise<User[]> {
+        return userRepository.fetchInstallers(limit, lastMemberSince, verified);
+    }
+
     async getPublicProfiles(userIds: string[]): Promise<Map<string, any>> {
         return userRepository.fetchPublicProfiles(userIds);
     }

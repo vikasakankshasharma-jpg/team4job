@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -37,6 +38,7 @@ export function MarkAsDeniedDialog({
     const [reason, setReason] = useState<DenialReason>("not_interested");
     const [customReason, setCustomReason] = useState("");
     const [notes, setNotes] = useState("");
+    const t = useTranslations("admin.pendingSignups.dialogs.deny");
 
     const handleSubmit = () => {
         onDeny({
@@ -53,28 +55,28 @@ export function MarkAsDeniedDialog({
     };
 
     const reasonLabels: Record<DenialReason, string> = {
-        not_interested: "Not Interested",
-        too_expensive: "Too Expensive",
-        found_alternative: "Found Alternative Solution",
-        technical_issues: "Technical Issues",
-        trust_concerns: "Trust/Security Concerns",
-        other: "Other Reason",
+        not_interested: t("reasons.not_interested"),
+        too_expensive: t("reasons.too_expensive"),
+        found_alternative: t("reasons.found_alternative"),
+        technical_issues: t("reasons.technical_issues"),
+        trust_concerns: t("reasons.trust_concerns"),
+        other: t("reasons.other"),
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Mark as Denied</DialogTitle>
+                    <DialogTitle>{t("title")}</DialogTitle>
                     <DialogDescription>
-                        Record why {userName} declined to sign up
+                        {t("description", { name: userName })}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
                     {/* Reason */}
                     <div className="grid gap-2">
-                        <Label htmlFor="reason">Denial Reason</Label>
+                        <Label htmlFor="reason">{t("reason")}</Label>
                         <Select value={reason} onValueChange={(v) => setReason(v as DenialReason)}>
                             <SelectTrigger>
                                 <SelectValue />
@@ -92,12 +94,12 @@ export function MarkAsDeniedDialog({
                     {/* Custom Reason (if "Other") */}
                     {reason === "other" && (
                         <div className="grid gap-2">
-                            <Label htmlFor="custom-reason">Specify Reason</Label>
+                            <Label htmlFor="custom-reason">{t("customReason")}</Label>
                             <Textarea
                                 id="custom-reason"
                                 value={customReason}
                                 onChange={(e) => setCustomReason(e.target.value)}
-                                placeholder="Please specify the reason..."
+                                placeholder={t("customReasonPlaceholder")}
                                 rows={2}
                             />
                         </div>
@@ -105,12 +107,12 @@ export function MarkAsDeniedDialog({
 
                     {/* Notes */}
                     <div className="grid gap-2">
-                        <Label htmlFor="notes">Additional Notes</Label>
+                        <Label htmlFor="notes">{t("notes")}</Label>
                         <Textarea
                             id="notes"
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Add any additional context about why they declined..."
+                            placeholder={t("notesPlaceholder")}
                             rows={4}
                         />
                     </div>
@@ -118,14 +120,14 @@ export function MarkAsDeniedDialog({
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancel
+                        {t("cancel")}
                     </Button>
                     <Button
                         variant="destructive"
                         onClick={handleSubmit}
                         disabled={reason === "other" && !customReason}
                     >
-                        Mark as Denied
+                        {t("submit")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

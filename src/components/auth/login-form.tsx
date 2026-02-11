@@ -21,14 +21,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useTranslations } from "next-intl";
 
 const formSchema = z.object({
   identifier: z.string().refine((val) => {
     const isEmail = z.string().email().safeParse(val).success;
     const isMobile = /^\d{10}$/.test(val);
     return isEmail || isMobile;
-  }, { message: "Please enter a valid email address or 10-digit mobile number." }),
-  password: z.string().min(1, { message: "Password cannot be empty." }),
+  }, { message: "validation.identifierReq" }),
+  password: z.string().min(1, { message: "validation.passwordReq" }),
 });
 
 const MAX_LOGIN_ATTEMPTS = typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 10 : 5;
@@ -38,6 +39,7 @@ export function LoginForm() {
   const router = useRouter();
   const { login, user } = useUser();
   const { toast } = useToast();
+  const t = useTranslations("auth");
   const [isLoading, setIsLoading] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [lockoutUntil, setLockoutUntil] = useState<Date | null>(null);
@@ -102,14 +104,14 @@ export function LoginForm() {
         const newLockoutUntil = new Date(new Date().getTime() + LOCKOUT_DURATION_SECONDS * 1000);
         setLockoutUntil(newLockoutUntil);
         toast({
-          title: "Too Many Failed Attempts",
-          description: `For your security, login has been temporarily disabled. Please try again in ${LOCKOUT_DURATION_SECONDS} seconds.`,
+          title: t('tooManyAttempts'),
+          description: t('lockoutDescription', { seconds: LOCKOUT_DURATION_SECONDS }),
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Login Failed",
-          description: `Invalid credentials. You have ${MAX_LOGIN_ATTEMPTS - newAttemptCount} attempts remaining.`,
+          title: t('loginFailed'),
+          description: t('invalidCredentials', { count: MAX_LOGIN_ATTEMPTS - newAttemptCount }),
           variant: "destructive",
         });
       }
@@ -122,9 +124,9 @@ export function LoginForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" noValidate>
         {lockoutUntil && (
           <Alert variant="destructive">
-            <AlertTitle>Login Locked</AlertTitle>
+            <AlertTitle>{t('loginLocked')}</AlertTitle>
             <AlertDescription>
-              Too many failed login attempts. Please try again in {remainingTime} seconds.
+              {t('lockoutDescription', { seconds: remainingTime })}
             </AlertDescription>
           </Alert>
         )}
@@ -133,11 +135,13 @@ export function LoginForm() {
           name="identifier"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email or Mobile Number</FormLabel>
+              <FormLabel>{t('emailMobileLabel')}</FormLabel>
               <FormControl>
-                <Input placeholder="name@example.com or 9876543210" {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="username" aria-label="Email or Mobile Number" />
+                <Input placeholder={t('emailMobilePlaceholder')} {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="username" aria-label={t('emailMobileLabel')} />
               </FormControl>
-              <FormMessage data-testid="email-error" />
+              <FormMessage data-testid="email-error">
+                {form.formState.errors.identifier?.message && t(form.formState.errors.identifier.message)}
+              </FormMessage>
             </FormItem>
           )}
         />
@@ -146,17 +150,17 @@ export function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>{t('passwordLabel')}</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
+                    placeholder={t('passwordPlaceholder')}
                     {...field}
                     disabled={!!lockoutUntil}
                     className="h-11 pr-12"
                     autoComplete="current-password"
-                    aria-label="Password"
+                    aria-label={t('passwordLabel')}
                   />
                   <Button
                     type="button"
@@ -170,7 +174,7 @@ export function LoginForm() {
                     ) : (
                       <Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                     )}
-                    <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                    <span className="sr-only">{showPassword ? t('hidePassword') : t('showPassword')}</span>
                   </Button>
                 </div>
               </FormControl>

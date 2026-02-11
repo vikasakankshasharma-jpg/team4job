@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -53,6 +52,7 @@ import {
   setDoc,
   deleteDoc,
 } from "firebase/firestore";
+import { useTranslations } from "next-intl";
 
 const blacklistSchema = z.object({
   type: z.enum(["user", "pincode"]),
@@ -62,6 +62,7 @@ const blacklistSchema = z.object({
 });
 
 function AddBlacklistForm({ onSave }: { onSave: () => void }) {
+  const t = useTranslations('admin.blacklist');
   const { db } = useFirebase();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,16 +89,16 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
       if (!db) throw new Error("Firestore not available");
       await setDoc(doc(db, "blacklist", id), { ...newEntry, createdAt: new Date() });
       toast({
-        title: "Entry Added",
-        description: `Successfully blacklisted ${values.type}: ${values.value}.`,
+        title: t('add.success'),
+        description: t('add.successDesc', { type: values.type, value: values.value }),
       });
       form.reset();
       onSave();
     } catch (e) {
       console.error(e);
       toast({
-        title: "Error",
-        description: "Failed to add blacklist entry.",
+        title: t('add.error'),
+        description: t('add.failed'),
         variant: "destructive",
       });
     } finally {
@@ -108,10 +109,9 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Add to Blacklist</CardTitle>
+        <CardTitle>{t('add.title')}</CardTitle>
         <CardDescription>
-          Add a user ID or a pincode to the blacklist to restrict their access
-          or visibility.
+          {t('add.description')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -123,19 +123,19 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>{t('form.type')}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
+                          <SelectValue placeholder={t('form.selectType')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="pincode">Pincode</SelectItem>
+                        <SelectItem value="user">{t('form.types.user')}</SelectItem>
+                        <SelectItem value="pincode">{t('form.types.pincode')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -147,13 +147,13 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
                 name="value"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Value</FormLabel>
+                    <FormLabel>{t('form.value')}</FormLabel>
                     <FormControl>
                       <Input
                         placeholder={
                           form.watch("type") === "user"
-                            ? "Enter User ID"
-                            : "Enter 6-digit Pincode"
+                            ? t('form.enterUserId')
+                            : t('form.enterPincode')
                         }
                         {...field}
                       />
@@ -167,20 +167,20 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
                 name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Applicable To Role</FormLabel>
+                    <FormLabel>{t('form.role')}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select role" />
+                          <SelectValue placeholder={t('form.selectRole')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Any">Any Role</SelectItem>
-                        <SelectItem value="Installer">Installer</SelectItem>
-                        <SelectItem value="Job Giver">Job Giver</SelectItem>
+                        <SelectItem value="Any">{t('form.roles.any')}</SelectItem>
+                        <SelectItem value="Installer">{t('form.roles.installer')}</SelectItem>
+                        <SelectItem value="Job Giver">{t('form.roles.jobGiver')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -193,10 +193,10 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
               name="reason"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Reason</FormLabel>
+                  <FormLabel>{t('form.reason')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Explain why this entry is being added to the blacklist..."
+                      placeholder={t('form.reasonPlaceholder')}
                       {...field}
                     />
                   </FormControl>
@@ -208,7 +208,7 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
               {isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Add Entry
+              {t('add.button')}
             </Button>
           </form>
         </Form>
@@ -218,6 +218,7 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
 }
 
 export default function BlacklistManager({ blacklist, onDataChange }: { blacklist: BlacklistEntry[], onDataChange: () => void }) {
+  const t = useTranslations('admin.blacklist');
   const { db } = useFirebase();
   const { toast } = useToast();
   const [view, setView] = React.useState<'list' | 'grid'>('list');
@@ -225,7 +226,7 @@ export default function BlacklistManager({ blacklist, onDataChange }: { blacklis
   const handleRemove = async (id: string, value: string) => {
     if (
       !window.confirm(
-        `Are you sure you want to remove "${value}" from the blacklist?`
+        t('actions.confirmRemove', { value })
       )
     )
       return;
@@ -233,8 +234,8 @@ export default function BlacklistManager({ blacklist, onDataChange }: { blacklis
     if (!db) return;
     await deleteDoc(doc(db, "blacklist", id));
     toast({
-      title: "Entry Removed",
-      description: `"${value}" has been removed from the blacklist.`,
+      title: t('actions.removed'),
+      description: t('actions.removedDesc', { value }),
     });
     onDataChange();
   };
@@ -246,9 +247,9 @@ export default function BlacklistManager({ blacklist, onDataChange }: { blacklis
       <Card>
         <CardHeader className="sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>Current Blacklist</CardTitle>
+            <CardTitle>{t('title')}</CardTitle>
             <CardDescription>
-              A list of all currently blacklisted users and pincodes.
+              {t('description')}
             </CardDescription>
           </div>
           <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
@@ -265,13 +266,13 @@ export default function BlacklistManager({ blacklist, onDataChange }: { blacklis
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Value</TableHead>
-                  <TableHead>Applied to Role</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Date Added</TableHead>
+                  <TableHead>{t('table.type')}</TableHead>
+                  <TableHead>{t('table.value')}</TableHead>
+                  <TableHead>{t('table.role')}</TableHead>
+                  <TableHead>{t('table.reason')}</TableHead>
+                  <TableHead>{t('table.dateAdded')}</TableHead>
                   <TableHead>
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">{t('table.actions')}</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -281,12 +282,16 @@ export default function BlacklistManager({ blacklist, onDataChange }: { blacklis
                     <TableRow key={entry.id}>
                       <TableCell>
                         <Badge variant="secondary" className="capitalize">
-                          {entry.type}
+                          {entry.type === 'user' ? t('form.types.user') : t('form.types.pincode')}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-mono">{entry.value}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{entry.role}</Badge>
+                        <Badge variant="outline">
+                          {entry.role === 'Any' && t('form.roles.any')}
+                          {entry.role === 'Installer' && t('form.roles.installer')}
+                          {entry.role === 'Job Giver' && t('form.roles.jobGiver')}
+                        </Badge>
                       </TableCell>
                       <TableCell className="max-w-xs truncate">
                         {entry.reason}
@@ -299,7 +304,7 @@ export default function BlacklistManager({ blacklist, onDataChange }: { blacklis
                           variant="ghost"
                           size="icon"
                           onClick={() => handleRemove(entry.id, entry.value)}
-                          title="Remove from blacklist"
+                          title={t('actions.removeTooltip')}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -309,7 +314,7 @@ export default function BlacklistManager({ blacklist, onDataChange }: { blacklis
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      The blacklist is currently empty.
+                      {t('empty')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -323,13 +328,19 @@ export default function BlacklistManager({ blacklist, onDataChange }: { blacklis
                     <CardHeader>
                       <CardTitle className="font-mono text-base">{entry.value}</CardTitle>
                       <CardDescription>
-                        <Badge variant="secondary" className="capitalize mr-2">{entry.type}</Badge>
-                        <Badge variant="outline">{entry.role}</Badge>
+                        <Badge variant="secondary" className="capitalize mr-2">
+                          {entry.type === 'user' ? t('form.types.user') : t('form.types.pincode')}
+                        </Badge>
+                        <Badge variant="outline">
+                          {entry.role === 'Any' && t('form.roles.any')}
+                          {entry.role === 'Installer' && t('form.roles.installer')}
+                          {entry.role === 'Job Giver' && t('form.roles.jobGiver')}
+                        </Badge>
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
                       <p className="text-muted-foreground">{entry.reason}</p>
-                      <p className="text-xs text-muted-foreground">Added on: {format(toDate(entry.createdAt), "PP")}</p>
+                      <p className="text-xs text-muted-foreground">{t('addedOn', { date: format(toDate(entry.createdAt), "PP") })}</p>
                     </CardContent>
                     <CardFooter>
                       <Button
@@ -339,14 +350,14 @@ export default function BlacklistManager({ blacklist, onDataChange }: { blacklis
                         onClick={() => handleRemove(entry.id, entry.value)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Remove
+                        {t('actions.remove')}
                       </Button>
                     </CardFooter>
                   </Card>
                 ))
               ) : (
                 <div className="col-span-full text-center py-10 text-muted-foreground">
-                  The blacklist is currently empty.
+                  {t('empty')}
                 </div>
               )}
             </div>

@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 import type { SignupStatus } from "@/lib/types";
 
 interface StatusBadgeProps {
@@ -6,32 +7,33 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {
+    const t = useTranslations("admin.pendingSignups.badges.status");
     const variants: Record<SignupStatus, { label: string; variant: any; className?: string }> = {
         new: {
-            label: "New Lead",
+            label: t("new"),
             variant: "default",
             className: "bg-blue-500 hover:bg-blue-600",
         },
         contacted: {
-            label: "Contacted",
+            label: t("contacted"),
             variant: "secondary",
         },
         follow_up: {
-            label: "Follow-Up Scheduled",
+            label: t("follow_up"),
             variant: "outline",
             className: "border-orange-500 text-orange-700",
         },
         busy: {
-            label: "Busy - Reschedule",
+            label: t("busy"),
             variant: "outline",
             className: "border-yellow-500 text-yellow-700",
         },
         denied: {
-            label: "Denied",
+            label: t("denied"),
             variant: "destructive",
         },
         converted: {
-            label: "Converted",
+            label: t("converted"),
             variant: "default",
             className: "bg-green-500 hover:bg-green-600",
         },

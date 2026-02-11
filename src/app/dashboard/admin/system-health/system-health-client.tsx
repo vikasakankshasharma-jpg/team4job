@@ -10,6 +10,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Loader2, AlertCircle, Activity, Clock, ServerCrash, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface SystemLog {
     id: string;
@@ -38,6 +39,7 @@ interface StuckJob {
 }
 
 export default function SystemHealthClient() {
+    const t = useTranslations('admin.systemHealth');
     const { user, isAdmin, loading: userLoading } = useUser();
     const { db } = useFirebase();
 
@@ -94,48 +96,48 @@ export default function SystemHealthClient() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold tracking-tight">System Health & Observability</h1>
-            <p className="text-muted-foreground">Real-time pulse of the platform.</p>
+            <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+            <p className="text-muted-foreground">{t('description')}</p>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Stuck Jobs</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('cards.stuckJobs')}</CardTitle>
                         <Clock className="h-4 w-4 text-orange-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stuckJobs.length}</div>
-                        <p className="text-xs text-muted-foreground">Inactive for &gt; 7 days</p>
+                        <p className="text-xs text-muted-foreground">{t('cards.stuckJobsDesc')}</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Recent Errors</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('cards.recentErrors')}</CardTitle>
                         <ServerCrash className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{recentErrors.length}</div>
-                        <p className="text-xs text-muted-foreground">Last 10 events captured</p>
+                        <p className="text-xs text-muted-foreground">{t('cards.recentErrorsDesc')}</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Business Events</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('cards.businessEvents')}</CardTitle>
                         <Activity className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{recentEvents.length}</div>
-                        <p className="text-xs text-muted-foreground">Recent transactions/actions</p>
+                        <p className="text-xs text-muted-foreground">{t('cards.businessEventsDesc')}</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">System Status</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('cards.systemStatus')}</CardTitle>
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-green-600">Operational</div>
-                        <p className="text-xs text-muted-foreground">No outages detected</p>
+                        <div className="text-2xl font-bold text-green-600">{t('cards.operational')}</div>
+                        <p className="text-xs text-muted-foreground">{t('cards.systemStatusDesc')}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -145,13 +147,13 @@ export default function SystemHealthClient() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <ServerCrash className="h-5 w-5 text-red-500" />
-                            Recent System Errors
+                            {t('sections.recentErrors')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
                             {recentErrors.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">No recent errors.</p>
+                                <p className="text-sm text-muted-foreground">{t('empty.noErrors')}</p>
                             ) : (
                                 recentErrors.map(err => (
                                     <div key={err.id} className="flex items-start justify-between border-b pb-2 last:border-0 last:pb-0">
@@ -175,13 +177,13 @@ export default function SystemHealthClient() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Activity className="h-5 w-5 text-blue-500" />
-                            Recent Business Events
+                            {t('sections.recentBusinessEvents')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
                             {recentEvents.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">No events found.</p>
+                                <p className="text-sm text-muted-foreground">{t('empty.noEvents')}</p>
                             ) : (
                                 recentEvents.map(evt => (
                                     <div key={evt.id} className="flex items-start justify-between border-b pb-2 last:border-0 last:pb-0">
@@ -207,27 +209,27 @@ export default function SystemHealthClient() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Clock className="h-5 w-5 text-orange-500" />
-                            Stuck Jobs
+                            {t('sections.stuckJobs')}
                         </CardTitle>
                         <CardDescription>
-                            Jobs active but not updated in 7+ days. Requires attention.
+                            {t('sections.stuckJobsDesc')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Job Title</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Last Updated</TableHead>
-                                    <TableHead>Job Giver</TableHead>
-                                    <TableHead>Action</TableHead>
+                                    <TableHead>{t('table.jobTitle')}</TableHead>
+                                    <TableHead>{t('table.status')}</TableHead>
+                                    <TableHead>{t('table.lastUpdated')}</TableHead>
+                                    <TableHead>{t('table.jobGiver')}</TableHead>
+                                    <TableHead>{t('table.action')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {stuckJobs.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center text-muted-foreground">All active jobs are healthy.</TableCell>
+                                        <TableCell colSpan={5} className="text-center text-muted-foreground">{t('table.allHealthy')}</TableCell>
                                     </TableRow>
                                 ) : (
                                     stuckJobs.map(job => (
@@ -238,7 +240,7 @@ export default function SystemHealthClient() {
                                             <TableCell className="font-mono text-xs">{job.jobGiverId.slice(0, 8)}...</TableCell>
                                             <TableCell>
                                                 <Button size="sm" variant="ghost" asChild>
-                                                    <Link href={`/dashboard/jobs/${job.id}`}>Inspect</Link>
+                                                    <Link href={`/dashboard/jobs/${job.id}`}>{t('table.inspect')}</Link>
                                                 </Button>
                                             </TableCell>
                                         </TableRow>

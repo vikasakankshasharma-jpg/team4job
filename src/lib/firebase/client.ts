@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirestore, initializeFirestore, memoryLocalCache, getFirestore as getFirestoreDefault } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { getAuth, setPersistence, browserLocalPersistence, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, initializeFirestore, memoryLocalCache, getFirestore as getFirestoreDefault, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'mock-key',
@@ -35,6 +35,20 @@ try {
     }
 
     storage = getStorage(app);
+
+    // Connect to Emulators if configured
+    if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
+        // console.log('[Firebase Client] Connecting to Emulators...');
+
+        // Auth Emulator (Port 9099)
+        connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+
+        // Firestore Emulator (Port 8080)
+        connectFirestoreEmulator(db, '127.0.0.1', 8080);
+
+        // Storage Emulator (Port 9199 - Default)
+        connectStorageEmulator(storage, '127.0.0.1', 9199);
+    }
 
     // CI Specific Persistence Overrides
     if (process.env.NEXT_PUBLIC_IS_CI === 'true') {

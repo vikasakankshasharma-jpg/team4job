@@ -12,10 +12,12 @@ import { Loader2, Briefcase, Calendar as CalendarIcon, MapPin, Clock } from "luc
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 export default function CalendarClient() {
     const { user, loading: userLoading } = useUser();
     const { db } = useFirebase();
+    const t = useTranslations('calendar');
     const [jobs, setJobs] = useState<Job[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -96,8 +98,8 @@ export default function CalendarClient() {
         <div className="container mx-auto py-8 max-w-5xl space-y-8 overflow-x-hidden px-4">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Schedule</h1>
-                    <p className="text-muted-foreground">Manage your upcoming jobs and appointments.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+                    <p className="text-muted-foreground">{t('description')}</p>
                 </div>
             </div>
 
@@ -105,7 +107,7 @@ export default function CalendarClient() {
                 {/* Calendar Card */}
                 <Card className="md:col-span-5 h-fit">
                     <CardHeader>
-                        <CardTitle>Calendar</CardTitle>
+                        <CardTitle>{t('calendarTitle')}</CardTitle>
                     </CardHeader>
                     <CardContent className="flex justify-center">
                         <DayPicker
@@ -123,17 +125,17 @@ export default function CalendarClient() {
                 <Card className="md:col-span-7">
                     <CardHeader>
                         <CardTitle>
-                            {selectedDate ? format(selectedDate, 'EEEE, d MMMM yyyy') : 'Select a date'}
+                            {selectedDate ? format(selectedDate, 'EEEE, d MMMM yyyy') : t('selectDate')}
                         </CardTitle>
                         <CardDescription>
-                            {selectedJobs.length} Job{selectedJobs.length !== 1 && 's'} Scheduled
+                            {t('jobsScheduled', { count: selectedJobs.length })}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {selectedJobs.length === 0 ? (
                             <div className="text-center py-12 text-muted-foreground">
                                 <CalendarIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                                <p>No jobs scheduled for this day.</p>
+                                <p>{t('noJobs')}</p>
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -159,12 +161,12 @@ export default function CalendarClient() {
                                             </div>
                                             <div className="text-sm text-muted-foreground flex items-center gap-2">
                                                 <Clock className="h-3 w-3" />
-                                                Start: {format(toDate(job.jobStartDate), 'h:mm a')}
+                                                {t('start')} {format(toDate(job.jobStartDate), 'h:mm a')}
                                             </div>
                                             {/* Phase 10: Show Agred Duration if available */}
                                             {(job as any).agreedDuration && (
                                                 <div className="text-xs font-medium text-amber-600 mt-2 bg-amber-50 inline-block px-2 py-1 rounded">
-                                                    Est. Duration: {(job as any).agreedDuration} {(job as any).agreedDurationUnit || 'Hours'}
+                                                    {t('estDuration')} {(job as any).agreedDuration} {(job as any).agreedDurationUnit || t('hours')}
                                                 </div>
                                             )}
                                         </div>

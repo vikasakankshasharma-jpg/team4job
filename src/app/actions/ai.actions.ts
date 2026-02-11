@@ -1,6 +1,7 @@
 'use server';
 
 import { aiService } from '@/domains/ai/ai.service';
+import { formatFriendlyError } from '@/lib/error-formatting';
 import {
     GenerateJobDescriptionInput,
     GenerateJobDescriptionOutput,
@@ -32,7 +33,7 @@ export async function moderateContentAction(input: ModerateContentInput): Promis
         const result = await aiService.moderateContent(input);
         return { success: true, data: result };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        return { success: false, error: formatFriendlyError(error) };
     }
 }
 
@@ -44,7 +45,7 @@ export async function generateJobDescriptionAction(input: GenerateJobDescription
         const result = await aiService.generateJobDescription(input);
         return { success: true, data: result };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        return { success: false, error: formatFriendlyError(error) };
     }
 }
 
@@ -56,7 +57,7 @@ export async function generatePriceEstimateAction(input: GeneratePriceEstimateIn
         const result = await aiService.generatePriceEstimate(input);
         return { success: true, data: result };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        return { success: false, error: formatFriendlyError(error) };
     }
 }
 
@@ -68,7 +69,7 @@ export async function initiateAadharVerificationAction(input: InitiateAadharInpu
         const result = await aiService.initiateAadharVerification(input);
         return { success: true, data: result };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        return { success: false, error: formatFriendlyError(error) };
     }
 }
 
@@ -80,7 +81,7 @@ export async function confirmAadharVerificationAction(input: ConfirmAadharInput)
         const result = await aiService.confirmAadharVerification(input);
         return { success: true, data: result };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        return { success: false, error: formatFriendlyError(error) };
     }
 }
 
@@ -92,7 +93,7 @@ export async function verifyPanAction(input: VerifyPanInput): Promise<{ success:
         const result = await aiService.verifyPan(input);
         return { success: true, data: result };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        return { success: false, error: formatFriendlyError(error) };
     }
 }
 
@@ -104,7 +105,7 @@ export async function recommendJobsAction(input: RecommendJobsInput): Promise<{ 
         const result = await aiService.recommendJobs(input);
         return { success: true, data: result };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        return { success: false, error: formatFriendlyError(error) };
     }
 }
 
@@ -116,7 +117,7 @@ export async function aiAssistedBidCreationAction(input: AiAssistedBidCreationIn
         const result = await aiService.aiAssistedBidCreation(input);
         return { success: true, data: result };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        return { success: false, error: formatFriendlyError(error) };
     }
 }
 
@@ -128,7 +129,7 @@ export async function verifyGstAction(input: VerifyGstInput): Promise<{ success:
         const result = await aiService.verifyGst(input);
         return { success: true, data: result };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        return { success: false, error: formatFriendlyError(error) };
     }
 }
 
@@ -140,6 +141,6 @@ export async function rewardTopPerformersAction(input: RewardTopPerformersInput)
         const result = await aiService.rewardTopPerformers(input);
         return { success: true, data: result };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        return { success: false, error: formatFriendlyError(error) };
     }
 }

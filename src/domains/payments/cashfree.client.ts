@@ -10,8 +10,8 @@ export class CashfreeClient {
     private environment: 'sandbox' | 'production';
 
     constructor() {
-        this.appId = process.env.CASHFREE_APP_ID || '';
-        this.secretKey = process.env.CASHFREE_SECRET_KEY || '';
+        this.appId = process.env.CASHFREE_PAYMENTS_CLIENT_ID || '';
+        this.secretKey = process.env.CASHFREE_PAYMENTS_CLIENT_SECRET || '';
         this.environment = (process.env.CASHFREE_ENV as 'sandbox' | 'production') || 'sandbox';
 
         if (!this.appId || !this.secretKey) {

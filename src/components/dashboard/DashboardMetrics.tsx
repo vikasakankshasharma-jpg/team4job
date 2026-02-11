@@ -5,6 +5,7 @@ import { Target, Clock, Star, Users } from "lucide-react";
 import { User } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useTranslations } from 'next-intl';
 
 interface QuickMetrics {
     avgBidsPerJob: number;
@@ -21,29 +22,30 @@ interface DashboardMetricsProps {
 
 export function DashboardMetrics({ userId, user, metrics }: DashboardMetricsProps) {
     const router = useRouter();
+    const t = useTranslations('dashboard');
 
     if (!metrics) return null;
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <QuickMetricCard
-                label="Avg Bids/Job"
+                label={t('metrics.avgBids')}
                 value={metrics.avgBidsPerJob.toFixed(1)}
                 icon={Target}
-                tooltip="Average number of bids you receive per job (last 90 days)"
+                tooltip={t('metrics.avgBidsTooltip')}
                 className="h-full"
             />
 
             <QuickMetricCard
-                label="Time to 1st Bid"
+                label={t('metrics.timeToFirstBid')}
                 value={metrics.avgTimeToFirstBid}
                 icon={Clock}
-                tooltip="Average time before receiving your first bid"
+                tooltip={t('metrics.timeToFirstBidTooltip')}
                 className="h-full"
             />
 
             <QuickMetricCard
-                label="Pending Reviews"
+                label={t('metrics.pendingReviews')}
                 value={metrics.pendingReviews}
                 icon={Star}
                 actionable={metrics.pendingReviews > 0}
@@ -54,8 +56,8 @@ export function DashboardMetrics({ userId, user, metrics }: DashboardMetricsProp
                 }
                 tooltip={
                     metrics.pendingReviews > 0
-                        ? "Click to review completed jobs"
-                        : "All completed jobs have been reviewed"
+                        ? t('metrics.pendingReviewsActionTooltip')
+                        : t('metrics.pendingReviewsNoneTooltip')
                 }
                 className={cn(
                     "h-full",
@@ -64,12 +66,12 @@ export function DashboardMetrics({ userId, user, metrics }: DashboardMetricsProp
             />
 
             <QuickMetricCard
-                label="Your Network"
+                label={t('metrics.yourNetwork')}
                 value={metrics.favoriteInstallers}
                 icon={Users}
                 onClick={() => router.push("/dashboard/my-installers?tab=favorites")}
                 actionable
-                tooltip="Installers you've favorited. Click to view them."
+                tooltip={t('metrics.yourNetworkTooltip')}
                 className="h-full"
             />
         </div>

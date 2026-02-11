@@ -54,6 +54,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useHelp } from "@/hooks/use-help";
 // import axios from "axios"; // Removed
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+
 
 
 const tierIcons = {
@@ -88,6 +90,7 @@ const editProfileSchema = z.object({
 function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) => void }) {
     const { db } = useFirebase();
     const { toast } = useToast();
+    const t = useTranslations('profile');
     const isInstaller = user.roles.includes('Installer');
 
     const form = useForm<z.infer<typeof editProfileSchema>>({
@@ -124,17 +127,6 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                 gstin: values.gstin || '',
             };
 
-            // Note: API should handle verification logic based on data change, 
-            // but for now we pass data and API updates it. 
-            // Our API route handles basic updates. Let's send the plain data.
-            // If we need to unverify, the API business logic "should" handle it, 
-            // but currently the API is a simple pass-through.
-            // Let's implement the unverify logic in the API next if needed, 
-            // or trust the simple update for now. 
-            // Actually, let's just send the data.
-
-
-
             const response = await fetch('/api/users/profile', {
                 method: 'PUT',
                 headers: {
@@ -151,17 +143,17 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
             onSave(values);
 
             toast({
-                title: "Profile Updated",
+                title: t('profileUpdated'),
                 description: shouldUnverify
-                    ? "Your profile was updated. Verification status may be revoked."
-                    : "Your profile details have been successfully updated.",
+                    ? t('profileUpdatedUnverified')
+                    : t('profileUpdatedDesc'),
                 variant: shouldUnverify ? "destructive" : "default",
             });
         } catch (error) {
             console.error("Profile update failed", error);
             toast({
-                title: "Update Failed",
-                description: "Could not update profile.",
+                title: t('updateFailed'),
+                description: t('updateFailedDesc'),
                 variant: "destructive"
             });
         }
@@ -170,9 +162,9 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
     return (
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Edit Profile</DialogTitle>
+                <DialogTitle>{t('editProfile')}</DialogTitle>
                 <DialogDescription>
-                    Make changes to your profile here. Click save when you&apos;re done.
+                    {t('editProfileDesc')}
                 </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -182,7 +174,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                         name="name"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Name</FormLabel>
+                                <FormLabel>{t('name')}</FormLabel>
                                 <FormControl>
                                     <Input {...field} />
                                 </FormControl>
@@ -195,7 +187,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                         name="residentialPincode"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Residential Pincode</FormLabel>
+                                <FormLabel>{t('residentialPincode')}</FormLabel>
                                 <FormControl>
                                     <Input {...field} />
                                 </FormControl>
@@ -209,43 +201,46 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                             name="officePincode"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Office Pincode (Optional)</FormLabel>
+                                    <FormLabel>{t('officePincode')}</FormLabel>
+                                    <FormDescription>
+                                        {t('officePincodeDesc')}
+                                    </FormDescription>
                                     <FormControl>
-                                        <Input placeholder="e.g., 110021" {...field} />
+                                        <Input placeholder={t('officePincodePlaceholder')} {...field} />
                                     </FormControl>
-                                    <FormDescription>Add an office pincode to find jobs in that area too.</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
                     )}
-                    <Card>
-                        <CardHeader className="p-4">
-                            <CardTitle className="text-base">Business & GST Information</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0">
+                    {isInstaller && (
+                        <div className="space-y-4">
+                            <Separator />
+                            <h4 className="text-sm font-medium">{t('businessGstInfo')}</h4>
                             <FormField
                                 control={form.control}
                                 name="gstin"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>GSTIN (Optional)</FormLabel>
+                                        <FormLabel>{t('gstin')}</FormLabel>
+                                        <FormDescription>
+                                            {t('gstinDesc')}
+                                        </FormDescription>
                                         <FormControl>
-                                            <Input placeholder="e.g., 29ABCDE1234F1Z5" {...field} />
+                                            <Input placeholder={t('gstinPlaceholder')} {...field} />
                                         </FormControl>
-                                        <FormDescription>Your 15-digit Goods and Services Tax Identification Number.</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
-                        </CardContent>
-                    </Card>
+                        </div>
+                    )}
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button type="button" variant="secondary">Cancel</Button>
+                            <Button type="button" variant="secondary">{t('cancel')}</Button>
                         </DialogClose>
                         <DialogClose asChild>
-                            <Button type="submit">Save Changes</Button>
+                            <Button type="submit">{t('saveChanges')}</Button>
                         </DialogClose>
                     </DialogFooter>
                 </form>
@@ -262,6 +257,7 @@ const installerOnboardingSchema = z.object({
 function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string[], onSave: (skills: string[]) => void, userId: string }) {
     const { toast } = useToast();
     const { db } = useFirebase();
+    const t = useTranslations('profile');
     const [selectedSkills, setSelectedSkills] = React.useState<string[]>(initialSkills);
     const [newSkillRequest, setNewSkillRequest] = React.useState('');
     const [isOpen, setIsOpen] = React.useState(false);
@@ -285,8 +281,8 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
     const handleRequestSkill = () => {
         if (newSkillRequest.trim()) {
             toast({
-                title: "Skill Request Submitted",
-                description: `Your request for "${newSkillRequest}" has been sent for review.`,
+                title: t('skillRequestSubmitted'),
+                description: t('skillRequestSubmittedDesc', { skill: newSkillRequest }),
             });
             setNewSkillRequest('');
         }
@@ -301,7 +297,7 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
                             <Badge key={skill} variant="secondary" className="capitalize">{skill}</Badge>
                         ))
                     ) : (
-                        <p className="text-sm text-muted-foreground">No skills added yet.</p>
+                        <p className="text-sm text-muted-foreground">{t('noSkillsYet')}</p>
                     )}
                 </div>
                 <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -313,8 +309,8 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
                     <PopoverContent className="w-80" align="end">
                         <div className="space-y-4">
                             <div>
-                                <h4 className="font-medium leading-none">Edit Skills</h4>
-                                <p className="text-sm text-muted-foreground">Select your areas of expertise.</p>
+                                <h4 className="font-medium leading-none">{t('editSkills')}</h4>
+                                <p className="text-sm text-muted-foreground">{t('editSkillsDesc')}</p>
                             </div>
                             <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                                 {allSkills.map(skill => (
@@ -330,21 +326,21 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
                             </div>
                             <Separator />
                             <div>
-                                <h4 className="font-medium leading-none mb-2">Request New Skill</h4>
-                                <p className="text-sm text-muted-foreground mb-2">Can&apos;t find your skill? Request it here.</p>
+                                <h4 className="font-medium leading-none mb-2">{t('requestNewSkill')}</h4>
+                                <p className="text-sm text-muted-foreground mb-2">{t('requestSkillDesc')}</p>
                                 <div className="flex gap-2">
                                     <Input
-                                        placeholder="e.g., AI Analytics"
+                                        placeholder={t('requestSkillPlaceholder')}
                                         value={newSkillRequest}
                                         onChange={(e) => setNewSkillRequest(e.target.value)}
                                     />
-                                    <Button variant="secondary" onClick={handleRequestSkill} disabled={!newSkillRequest.trim()}>Request</Button>
+                                    <Button variant="secondary" onClick={handleRequestSkill} disabled={!newSkillRequest.trim()}>{t('request')}</Button>
                                 </div>
                             </div>
                             <Separator />
                             <div className="flex justify-end gap-2">
-                                <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                                <Button onClick={handleSave}>Save</Button>
+                                <Button variant="outline" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
+                                <Button onClick={handleSave}>{t('saveChanges')}</Button>
                             </div>
                         </div>
                     </PopoverContent>
@@ -357,6 +353,7 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
 function CompletedJobsStat() {
     const { user, role } = useUser();
     const { db } = useFirebase();
+    const t = useTranslations('profile');
     const [jobsCompletedCount, setJobsCompletedCount] = React.useState(0);
     const [loading, setLoading] = React.useState(true);
 
@@ -387,7 +384,7 @@ function CompletedJobsStat() {
             ) : (
                 <p className="text-2xl font-bold">{jobsCompletedCount}</p>
             )}
-            <p className="text-sm text-muted-foreground">Jobs Completed</p>
+            <p className="text-sm text-muted-foreground">{t('jobsCompleted')}</p>
         </Link>
     );
 }
@@ -401,6 +398,7 @@ const beneficiarySchema = z.object({
 
 function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
     const { toast } = useToast();
+    const t = useTranslations('profile');
     const [isLoading, setIsLoading] = React.useState(false);
 
     const form = useForm<z.infer<typeof beneficiarySchema>>({
@@ -435,16 +433,16 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
             }
 
             toast({
-                title: "Bank Account Added",
-                description: "Your bank account has been successfully registered for payouts.",
+                title: t('bankAccountAdded'),
+                description: t('bankAccountAddedDesc'),
                 variant: "default",
             });
             onUpdate(); // This will re-fetch user data
         } catch (error: any) {
             console.error("Failed to add beneficiary:", error);
             toast({
-                title: "Failed to Add Bank Account",
-                description: error.message || "An unexpected error occurred.",
+                title: t('failedToAddBank'),
+                description: error.message || t('unexpectedError'),
                 variant: "destructive",
             });
         } finally {
@@ -455,8 +453,8 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Banknote className="h-5 w-5" /> Payout Settings</CardTitle>
-                <CardDescription>Manage the bank account where you receive payments for completed jobs.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Banknote className="h-5 w-5" /> {t('payoutSettings')}</CardTitle>
+                <CardDescription>{t('payoutSettingsDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
                 {user.payouts?.beneficiaryId ? (
@@ -467,9 +465,9 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
                                 <p className="text-sm text-muted-foreground">{user.payouts.accountNumberMasked}</p>
                                 <p className="text-sm text-muted-foreground font-mono">{user.payouts.ifsc}</p>
                             </div>
-                            <Badge variant="success" className="gap-2"><Check className="h-4 w-4" /> Registered</Badge>
+                            <Badge variant="success" className="gap-2"><Check className="h-4 w-4" /> {t('registered')}</Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">To change your bank account, please contact support.</p>
+                        <p className="text-xs text-muted-foreground">{t('changeAccountNote')}</p>
                     </div>
                 ) : (
                     <Form {...form}>
@@ -479,8 +477,8 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
                                 name="accountHolderName"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Account Holder Name</FormLabel>
-                                        <FormControl><Input placeholder="Name as per bank records" {...field} /></FormControl>
+                                        <FormLabel>{t('accountHolderName')}</FormLabel>
+                                        <FormControl><Input placeholder={t('accountHolderPlaceholder')} {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -491,8 +489,8 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
                                     name="accountNumber"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Bank Account Number</FormLabel>
-                                            <FormControl><Input placeholder="Enter account number" {...field} /></FormControl>
+                                            <FormLabel>{t('bankAccountNumber')}</FormLabel>
+                                            <FormControl><Input placeholder={t('accountNumberPlaceholder')} {...field} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -502,8 +500,8 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
                                     name="ifsc"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>IFSC Code</FormLabel>
-                                            <FormControl><Input placeholder="Enter 11-digit IFSC" {...field} /></FormControl>
+                                            <FormLabel>{t('ifscCode')}</FormLabel>
+                                            <FormControl><Input placeholder={t('ifscPlaceholder')} {...field} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -511,7 +509,7 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
                             </div>
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Save Bank Account
+                                {t('saveBankAccount')}
                             </Button>
                         </form>
                     </Form>
@@ -523,6 +521,7 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
 
 function ReferralCard({ user }: { user: User }) {
     const { toast } = useToast();
+    const t = useTranslations('profile');
     const [origin, setOrigin] = React.useState("");
 
     React.useEffect(() => {
@@ -534,8 +533,8 @@ function ReferralCard({ user }: { user: User }) {
     const handleCopy = () => {
         navigator.clipboard.writeText(referralLink);
         toast({
-            title: "Link Copied!",
-            description: "Share this link with your friends.",
+            title: t('linkCopied'),
+            description: t('shareLinkDesc'),
         });
     };
 
@@ -544,10 +543,10 @@ function ReferralCard({ user }: { user: User }) {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-indigo-900">
                     <Gift className="h-5 w-5 text-indigo-600" />
-                    Invite & Earn
+                    {t('inviteAndEarn')}
                 </CardTitle>
                 <CardDescription className="text-indigo-700">
-                    Invite friends to join DoDo. They get a warm welcome, and you help grow the community.
+                    {t('inviteAndEarnDesc')}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -572,6 +571,7 @@ const emergencyContactSchema = z.object({
 function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
     const { toast } = useToast();
     const { db } = useFirebase();
+    const t = useTranslations('profile');
     const [isAdding, setIsAdding] = React.useState(false);
 
     const form = useForm<z.infer<typeof emergencyContactSchema>>({
@@ -586,13 +586,13 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
             await updateDoc(userRef, {
                 emergencyContacts: arrayUnion(values)
             });
-            toast({ title: "Contact Added", description: `${values.name} has been added to your emergency contacts.` });
+            toast({ title: t('contactAdded'), description: t('contactAddedDesc', { name: values.name }) });
             setIsAdding(false);
             form.reset();
             onUpdate();
         } catch (error) {
             console.error("Failed to add contact:", error);
-            toast({ title: "Error", description: "Could not add contact.", variant: "destructive" });
+            toast({ title: t('error'), description: t('couldNotAddContact'), variant: "destructive" });
         }
     };
 
@@ -608,11 +608,11 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
             await updateDoc(userRef, {
                 emergencyContacts: arrayRemove(contact)
             });
-            toast({ title: "Contact Removed", description: "Emergency contact deleted." });
+            toast({ title: t('contactRemoved'), description: t('emergencyContactDeleted') });
             onUpdate();
         } catch (error) {
             console.error("Failed to remove contact:", error);
-            toast({ title: "Error", description: "Could not remove contact.", variant: "destructive" });
+            toast({ title: t('error'), description: t('couldNotRemoveContact'), variant: "destructive" });
         }
     }
 
@@ -621,10 +621,10 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-red-900">
                     <ShieldCheck className="h-5 w-5 text-red-600" />
-                    Emergency Contacts
+                    {t('emergencyContacts')}
                 </CardTitle>
                 <CardDescription>
-                    Add at least 2 people we can contact if we can&apos;t reach you during an active job.
+                    {t('emergencyContactsDesc')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -637,40 +637,40 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
                                     <p className="text-xs text-muted-foreground font-mono">{contact.mobile}</p>
                                 </div>
                                 <Button variant="ghost" size="sm" onClick={() => handleRemoveContact(contact)} className="h-10 px-4 text-red-500 hover:text-red-700 hover:bg-red-50">
-                                    Remove
+                                    {t('remove')}
                                 </Button>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <p className="text-sm text-muted-foreground italic">No emergency contacts added yet.</p>
+                    <p className="text-sm text-muted-foreground italic">{t('noEmergencyContactsYet')}</p>
                 )}
 
                 {isAdding ? (
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(handleAddContact)} className="space-y-3 p-3 border rounded-md bg-white">
-                            <h4 className="text-sm font-semibold">New Contact</h4>
+                            <h4 className="text-sm font-semibold">{t('newContact')}</h4>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <FormField name="name" control={form.control} render={({ field }) => (
-                                    <FormItem><FormControl><Input placeholder="Name" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormControl><Input placeholder={t('name')} {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField name="relation" control={form.control} render={({ field }) => (
-                                    <FormItem><FormControl><Input placeholder="Relation (e.g. Spouse)" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormControl><Input placeholder={t('relationPlaceholder')} {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField name="mobile" control={form.control} render={({ field }) => (
-                                    <FormItem><FormControl><Input placeholder="Mobile (10 digits)" type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormControl><Input placeholder={t('mobilePlaceholder')} type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                             </div>
                             <div className="flex gap-2 justify-end">
-                                <Button type="button" variant="ghost" size="sm" onClick={() => setIsAdding(false)}>Cancel</Button>
-                                <Button type="submit" size="sm">Save Contact</Button>
+                                <Button type="button" variant="ghost" size="sm" onClick={() => setIsAdding(false)}>{t('cancel')}</Button>
+                                <Button type="submit" size="sm">{t('saveContact')}</Button>
                             </div>
                         </form>
                     </Form>
                 ) : (
                     <Button variant="outline" size="sm" onClick={() => setIsAdding(true)} className="w-full h-12 border-dashed text-muted-foreground hover:text-foreground">
                         <PlusCircle className="mr-2 h-5 w-5" />
-                        Add Emergency Contact
+                        {t('addEmergencyContact')}
                     </Button>
                 )}
             </CardContent>
@@ -682,6 +682,7 @@ function DeleteAccountCard({ user }: { user: User }) {
     const { toast } = useToast();
     const { db, auth } = useFirebase();
     const router = useRouter();
+    const t = useTranslations('profile');
     const [isDeleting, setIsDeleting] = React.useState(false);
     const [confirmText, setConfirmText] = React.useState("");
 
@@ -689,7 +690,7 @@ function DeleteAccountCard({ user }: { user: User }) {
         if (!db || !auth || !auth.currentUser) return;
 
         if (confirmText !== "DELETE") {
-            toast({ title: "Verification Failed", description: "Please type DELETE to confirm.", variant: "destructive" });
+            toast({ title: t('verificationFailed'), description: t('typeDeleteToConfirm'), variant: "destructive" });
             return;
         }
 
@@ -709,20 +710,20 @@ function DeleteAccountCard({ user }: { user: User }) {
             // 2. Delete Auth User
             await deleteUser(auth.currentUser);
 
-            toast({ title: "Account Deleted", description: "Your account has been permanently deleted." });
+            toast({ title: t('accountDeleted'), description: t('accountDeletedDesc') });
             window.location.href = '/'; // Force reload/redirect
         } catch (error: any) {
             console.error("Delete account error:", error);
             if (error.code === 'auth/requires-recent-login') {
                 toast({
-                    title: "Security Check Required",
-                    description: "For security, please log out and log back in, then try deleting your account again.",
+                    title: t('securityCheckRequired'),
+                    description: t('securityCheckRequiredDesc'),
                     variant: "destructive"
                 });
             } else {
                 toast({
-                    title: "Deletion Failed",
-                    description: "Something went wrong. Please contact support.",
+                    title: t('deletionFailed'),
+                    description: t('deletionFailedDesc'),
                     variant: "destructive"
                 });
             }
@@ -736,32 +737,32 @@ function DeleteAccountCard({ user }: { user: User }) {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
                     <AlertTriangle className="h-5 w-5" />
-                    Danger Zone
+                    {t('dangerZone')}
                 </CardTitle>
                 <CardDescription className="text-red-600/80 dark:text-red-400/80">
-                    Irreversible actions related to your account.
+                    {t('dangerZoneDesc')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                    <h4 className="font-semibold text-red-900 dark:text-red-300">Delete Account</h4>
+                    <h4 className="font-semibold text-red-900 dark:text-red-300">{t('deleteAccount')}</h4>
                     <p className="text-sm text-red-700 dark:text-red-400">
-                        Permanently delete your account and all your data. This action cannot be undone.
+                        {t('deleteAccountDesc')}
                     </p>
                 </div>
                 <Dialog>
                     <DialogTrigger asChild>
-                        <Button variant="destructive">Delete Account</Button>
+                        <Button variant="destructive">{t('deleteAccount')}</Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Are you absolutely sure?</DialogTitle>
+                            <DialogTitle>{t('areYouAbsolutelySure')}</DialogTitle>
                             <DialogDescription>
-                                This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+                                {t('deleteConfirmationDesc')}
                             </DialogDescription>
                         </DialogHeader>
                         <div className="py-4">
-                            <Label htmlFor="confirm-delete">Type <strong>DELETE</strong> to confirm:</Label>
+                            <Label htmlFor="confirm-delete">{t('typeDeleteToConfirmLabel')}</Label>
                             <Input
                                 id="confirm-delete"
                                 value={confirmText}
@@ -772,7 +773,7 @@ function DeleteAccountCard({ user }: { user: User }) {
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button variant="secondary">Cancel</Button>
+                                <Button variant="secondary">{t('cancel')}</Button>
                             </DialogClose>
                             <Button
                                 variant="destructive"
@@ -780,7 +781,7 @@ function DeleteAccountCard({ user }: { user: User }) {
                                 disabled={isDeleting || confirmText !== "DELETE"}
                             >
                                 {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Confirm Deletion
+                                {t('confirmDeletion')}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -797,6 +798,7 @@ export default function ProfileClient() {
     const { toast } = useToast();
     const { setHelp } = useHelp();
     const router = useRouter();
+    const t = useTranslations('profile');
 
     const fetchUser = useCallback(async () => {
         if (!user) return;
@@ -819,40 +821,40 @@ export default function ProfileClient() {
 
     React.useEffect(() => {
         setHelp({
-            title: "Your Profile",
+            title: t('yourProfile'),
             content: (
                 <div className="space-y-4 text-sm">
-                    <p>This is your personal profile page. Here, you can view and manage your information.</p>
+                    <p>{t('profileHelpDesc1')}</p>
                     <ul className="list-disc space-y-2 pl-5">
-                        <li><span className="font-semibold">Your Details:</span> View your name, user ID, email, and location info. Click &quot;Edit Profile&quot; to update your name, pincodes, or GSTIN.</li>
-                        <li><span className="font-semibold">Role Switching:</span> If you have both &quot;Job Giver&quot; and &quot;Installer&quot; roles, you can switch between them in the user menu (top right).</li>
+                        <li><span className="font-semibold">{t('yourDetails')}:</span> {t('yourDetailsHelp')}</li>
+                        <li><span className="font-semibold">{t('roleSwitching')}:</span> {t('roleSwitchingHelp')}</li>
                         {role === 'Installer' && (
                             <>
-                                <li><span className="font-semibold">Installer Reputation:</span> This section tracks your performance. Complete jobs and get good ratings to earn points and advance to higher tiers (Bronze, Silver, Gold, Platinum).</li>
-                                <li><span className="font-semibold">Skills:</span> Click the pencil icon to add or remove skills from your profile. This helps Job Givers find you.</li>
-                                <li><span className="font-semibold">Payout Settings:</span> Add your bank account details here to receive payments for completed jobs.</li>
+                                <li><span className="font-semibold">{t('installerReputation')}:</span> {t('installerReputationHelp')}</li>
+                                <li><span className="font-semibold">{t('skills')}:</span> {t('skillsHelp')}</li>
+                                <li><span className="font-semibold">{t('payoutSettings')}:</span> {t('payoutSettingsHelp')}</li>
                             </>
                         )}
-                        <li><span className="font-semibold">Become an Installer/Job Giver:</span> If you only have one role, you&apos;ll see a prompt to activate the other, expanding your opportunities on the platform.</li>
+                        <li><span className="font-semibold">{t('becomeInstallerJobGiver')}:</span> {t('becomeInstallerJobGiverHelp')}</li>
                     </ul>
                 </div>
             )
         });
-    }, [setHelp, role]);
+    }, [setHelp, role, t]);
 
     if (userLoading) {
         return (
             <div className="flex h-48 items-center justify-center">
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Loading Profile...</span>
+                    <span>{t('loadingProfile')}</span>
                 </div>
             </div>
         );
     }
 
     if (!user || !db) {
-        return <div>User not found.</div>
+        return <div>{t('userNotFound')}</div>
     }
 
     const installerProfile = user.installerProfile;
@@ -887,8 +889,8 @@ export default function ProfileClient() {
                 return { ...prevUser, installerProfile: updatedProfile };
             });
             toast({
-                title: "Skills Updated",
-                description: "Your list of skills has been saved.",
+                title: t('skillsUpdated'),
+                description: t('skillsUpdatedDesc'),
             });
         }
     }
@@ -901,8 +903,8 @@ export default function ProfileClient() {
             setUser(updatedUser);
             setRole('Job Giver');
             toast({
-                title: "Job Giver Role Activated!",
-                description: "You can now post jobs and hire installers.",
+                title: t('jobGiverRoleActivated'),
+                description: t('jobGiverRoleActivatedDesc'),
                 variant: "default",
             });
         }
@@ -953,7 +955,7 @@ export default function ProfileClient() {
                             <div className="mt-4">
                                 <Dialog>
                                     <DialogTrigger asChild>
-                                        <Button>Edit Profile</Button>
+                                        <Button>{t('editProfileBtn')}</Button>
                                     </DialogTrigger>
                                     <EditProfileForm user={user} onSave={handleProfileSave} />
                                 </Dialog>
@@ -973,8 +975,8 @@ export default function ProfileClient() {
                 <div className="grid gap-8">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Installer Reputation</CardTitle>
-                            <CardDescription>Your performance and trust score on the platform.</CardDescription>
+                            <CardTitle>{t('installerReputation')}</CardTitle>
+                            <CardDescription>{t('installerReputationDesc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-6">
                             <Collapsible
@@ -986,13 +988,13 @@ export default function ProfileClient() {
                                         <div className="flex items-center gap-4">
                                             {tierIcons[installerProfile.tier]}
                                             <div>
-                                                <p className="text-sm">Tier</p>
+                                                <p className="text-sm">{t('tier')}</p>
                                                 <p className="text-xl font-bold">{installerProfile.tier}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className="text-right">
-                                                <p className="text-sm">Reputation Points</p>
+                                                <p className="text-sm">{t('reputationPoints')}</p>
                                                 <p className="text-xl font-bold text-right">{installerProfile.points}</p>
                                             </div>
                                             <ChevronsUpDown className="h-5 w-5 text-muted-foreground" />
@@ -1002,21 +1004,21 @@ export default function ProfileClient() {
                                 <CollapsibleContent className="space-y-6 pt-6">
                                     <div className="text-sm text-muted-foreground p-4 border rounded-lg space-y-4">
                                         <div>
-                                            <h4 className="font-semibold text-foreground mb-2">How Reputation Works</h4>
-                                            <p>Earn points for completing jobs and receiving positive ratings. Higher points unlock new tiers, giving you more visibility and access to premium jobs.</p>
+                                            <h4 className="font-semibold text-foreground mb-2">{t('howReputationWorks')}</h4>
+                                            <p>{t('howReputationWorksDesc')}</p>
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold text-foreground mb-2">Point System</h4>
+                                            <h4 className="font-semibold text-foreground mb-2">{t('pointSystem')}</h4>
                                             <ul className="list-disc list-inside space-y-1">
-                                                <li><span className="font-semibold">Complete a Job:</span> +50 points</li>
-                                                <li><span className="font-semibold">Receive a 5-Star Rating:</span> +20 points</li>
-                                                <li><span className="font-semibold">Receive a 4-Star Rating:</span> +10 points</li>
-                                                <li><span className="font-semibold">On-time Completion Bonus:</span> +15 points</li>
-                                                <li><span className="font-semibold">Job Canceled or 1-Star Rating:</span> -25 points</li>
+                                                <li><span className="font-semibold">{t('completeJobPoints')}:</span> +50 points</li>
+                                                <li><span className="font-semibold">{t('fiveStarRatingPoints')}:</span> +20 points</li>
+                                                <li><span className="font-semibold">{t('fourStarRatingPoints')}:</span> +10 points</li>
+                                                <li><span className="font-semibold">{t('onTimeBonusPoints')}:</span> +15 points</li>
+                                                <li><span className="font-semibold">{t('negativePoints')}:</span> -25 points</li>
                                             </ul>
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold text-foreground mb-2">Reputation Tiers</h4>
+                                            <h4 className="font-semibold text-foreground mb-2">{t('reputationTiers')}</h4>
                                             <ul className="list-disc list-inside space-y-1">
                                                 <li><span className="font-semibold">Bronze:</span> 0 - 499 points</li>
                                                 <li><span className="font-semibold">Silver:</span> 500 - 999 points</li>
@@ -1028,7 +1030,7 @@ export default function ProfileClient() {
                                     {currentTierInfo && currentTierInfo.next !== 'Max' && (
                                         <div>
                                             <div className="flex justify-between items-center mb-1">
-                                                <p className="text-sm font-medium">Progress to {currentTierInfo.next}</p>
+                                                <p className="text-sm font-medium">{t('progressTo', { tier: currentTierInfo.next })}</p>
                                                 <p className="text-sm font-medium">{installerProfile.points} / {currentTierInfo.goal} pts</p>
                                             </div>
                                             <Progress value={progressPercentage} className="h-2" />
@@ -1039,7 +1041,7 @@ export default function ProfileClient() {
                                             <CardHeader>
                                                 <CardTitle className="text-base flex items-center gap-2">
                                                     <TrendingUp className="h-5 w-5" />
-                                                    Reputation History (Last 6 Months)
+                                                    {t('reputationHistory')}
                                                 </CardTitle>
                                             </CardHeader>
                                             <CardContent>
@@ -1078,18 +1080,18 @@ export default function ProfileClient() {
                                 <div className="p-4 rounded-lg border">
                                     <Star className="mx-auto h-6 w-6 mb-2 text-primary" />
                                     <p className="text-2xl font-bold">{installerProfile.rating}/5.0</p>
-                                    <p className="text-sm text-muted-foreground">from {installerProfile.reviews} reviews</p>
+                                    <p className="text-sm text-muted-foreground">{t('fromReviews', { count: installerProfile.reviews })}</p>
                                 </div>
                                 <CompletedJobsStat />
                                 <div className="p-4 rounded-lg border">
                                     <ShieldCheck className="mx-auto h-6 w-6 mb-2 text-primary" />
                                     <p className="text-lg font-bold">{installerProfile.verified ? "Verified" : "Pending"}</p>
-                                    <p className="text-sm text-muted-foreground">Status</p>
+                                    <p className="text-sm text-muted-foreground">{t('verifiedStatus')}</p>
                                 </div>
                                 <div className="p-4 rounded-lg border">
                                     <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary" />
                                     <p className="text-lg font-bold">{installerProfile.skills.length}</p>
-                                    <p className="text-sm text-muted-foreground">Skills</p>
+                                    <p className="text-sm text-muted-foreground">{t('skillsLabel')}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -1098,8 +1100,8 @@ export default function ProfileClient() {
                     <div className="grid md:grid-cols-2 gap-8">
                         <Card>
                             <CardHeader>
-                                <CardTitle>My Skills</CardTitle>
-                                <CardDescription>Manage the skills shown on your profile.</CardDescription>
+                                <CardTitle>{t('mySkills')}</CardTitle>
+                                <CardDescription>{t('mySkillsDesc')}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <SkillsEditor initialSkills={installerProfile.skills} onSave={handleSkillsSave} userId={user.id} />
@@ -1119,13 +1121,13 @@ export default function ProfileClient() {
             {isJobGiverOnly && (
                 <Card className="bg-accent/20 border-dashed">
                     <CardHeader>
-                        <CardTitle>Expand Your Opportunities</CardTitle>
-                        <CardDescription>Want to find work on the platform? Become a verified installer to start bidding on jobs.</CardDescription>
+                        <CardTitle>{t('expandOpportunities')}</CardTitle>
+                        <CardDescription>{t('expandOpportunitiesDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button asChild>
                             <Link href="/dashboard/verify-installer">
-                                Become an Installer <ArrowRight className="ml-2 h-4 w-4" />
+                                {t('becomeInstaller')} <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
                     </CardContent>
@@ -1135,12 +1137,12 @@ export default function ProfileClient() {
             {isInstallerOnly && (
                 <Card className="bg-accent/20 border-dashed">
                     <CardHeader>
-                        <CardTitle>Ready to Hire?</CardTitle>
-                        <CardDescription>Activate your Job Giver profile to post jobs and find the perfect installer for your projects.</CardDescription>
+                        <CardTitle>{t('readyToHire')}</CardTitle>
+                        <CardDescription>{t('readyToHireDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button onClick={handleBecomeJobGiver}>
-                            Start Hiring as a Job Giver <PlusCircle className="ml-2 h-4 w-4" />
+                            {t('startHiring')} <PlusCircle className="ml-2 h-4 w-4" />
                         </Button>
                     </CardContent>
                 </Card>
