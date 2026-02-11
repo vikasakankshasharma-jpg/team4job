@@ -51,7 +51,7 @@ test.describe('Admin System Smoke Tests @smoke', () => {
 
         // Verify common team member role indicators
         // We look for badges which are styled with specific colors
-        await expect(page.locator('.badge, [role="status"]').filter({ hasText: /Admin|Support/ })).first().toBeVisible();
+        await expect(page.locator('.badge, [role="status"]').filter({ hasText: /Admin|Support/ }).first()).toBeVisible();
     });
 
     test('Admin can access all sections', async ({ page }) => {
