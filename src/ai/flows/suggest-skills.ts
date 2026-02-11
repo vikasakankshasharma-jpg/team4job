@@ -16,8 +16,11 @@ import { z } from 'genkit';
 const SuggestSkillsInputSchema = z.object({
   jobTitle: z.string().describe('The title of the job.'),
   jobDescription: z.string().describe('The detailed description of the job.'),
+  historicalContext: z.string().optional(),
 });
 export type SuggestSkillsInput = z.infer<typeof SuggestSkillsInputSchema>;
+
+import { aiLearningService } from '@/ai/services/ai-learning.service';
 
 const SuggestSkillsOutputSchema = z.object({
   skills: z.array(z.string()).describe('A list of suggested technical skills relevant to the job.'),
@@ -39,6 +42,13 @@ const suggestSkillsPrompt = ai.definePrompt({
   Job Title: {{{jobTitle}}}
   Job Description: {{{jobDescription}}}
 
+  {{#if historicalContext}}
+  **Successful Past Jobs (Reference):**
+  {{{historicalContext}}}
+  
+  *Consider these past successes but adapt to the current specific description.*
+  {{/if}}
+
   Return the skills as a simple JSON array of strings.
   `,
 });
@@ -50,7 +60,45 @@ const suggestSkillsFlow = ai.defineFlow(
     outputSchema: SuggestSkillsOutputSchema,
   },
   async input => {
-    const { output } = await suggestSkillsPrompt(input);
+    let historicalContext = '';
+
+    // RAG: Fetch "learned" examples
+    try {
+      const learnedExamples = await aiLearningService.getSuccessfulExamples(
+        'skill_suggestion',
+        `${input.jobTitle} ${input.jobDescription}`,
+        3
+      );
+
+      if (learnedExamples.length > 0) {
+        historicalContext += "Successful Past Jobs (High Rated):\n";
+        learnedExamples.forEach(ex => {
+          const outcome = ex.outcome;
+          // If we have actual skills from a successful job
+          if (outcome?.actualValue) {
+            // outcome.actualValue should be array of strings (the final skills used)
+            historicalContext += `- Job: "${ex.input.jobTitle}" | Skills Used: ${Array.isArray(outcome.actualValue) ? outcome.actualValue.join(', ') : outcome.actualValue}\n`;
+          }
+        });
+      }
+    } catch (error) {
+      console.warn("Failed to fetch historical context for skill suggestion:", error);
+    }
+
+    const { output } = await suggestSkillsPrompt({
+      ...input,
+      historicalContext
+    });
+
+    // Log for future learning
+    await aiLearningService.logInteraction(
+      'skill_suggestion',
+      input,
+      output,
+      undefined,
+      'gemini-2.0-flash'
+    );
+
     return output!;
   }
 );

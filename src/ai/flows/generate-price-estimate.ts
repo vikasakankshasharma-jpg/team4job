@@ -13,6 +13,7 @@ const PromptInputSchema = GeneratePriceEstimateInputSchema.extend({
   historicalContext: z.string().optional(),
 });
 
+import { aiLearningService } from '@/ai/services/ai-learning.service';
 import { z } from 'genkit'; // Re-import z for extend if needed, or use imported schema
 
 // The prompt for the AI
@@ -69,34 +70,51 @@ export const generatePriceEstimateFlow = ai.defineFlow(
   async (input) => {
     let historicalContext = '';
 
-    // RAG: Fetch historical data from Firestore
+    // RAG: Fetch "learned" examples (high-rated past estimates)
     try {
-      const db = getAdminDb();
-      const jobsRef = db.collection('jobs');
-      const snapshot = await jobsRef
-        .where('jobCategory', '==', input.jobCategory)
-        .where('status', '==', 'Completed')
-        .limit(5)
-        .get();
+      // 1. Get similar successful previous estimates
+      const learnedExamples = await aiLearningService.getSuccessfulExamples(
+        'price_estimate',
+        `${input.jobTitle} ${input.jobDescription}`,
+        3
+      );
 
-      if (!snapshot.empty) {
-        const examples = snapshot.docs.map(doc => {
-          const data = doc.data();
-          // Prioritize subtotal (service cost) if available, otherwise total amount
-          const amount = data.invoice?.subtotal || data.invoice?.totalAmount;
-          if (!amount) return null;
+      if (learnedExamples.length > 0) {
+        historicalContext += "Successful Past Estimates (High Confidence):\n";
+        learnedExamples.forEach(ex => {
+          const outcome = ex.outcome;
+          historicalContext += `- Job: "${ex.input.jobTitle}" | Factors: ${ex.output.factors?.join(', ')} | Predicted: ₹${ex.output.priceEstimate.min}-${ex.output.priceEstimate.max} | Actual: ₹${outcome?.actualValue} (Rating: ${outcome?.rating}/5)\n`;
+        });
+        historicalContext += "\n";
+      }
 
-          const shortDesc = data.description ? data.description.substring(0, 120).replace(/\n/g, ' ') : '';
-          return `- Job: "${data.title}" | Scope: "${shortDesc}..." | Agreed Price: ₹${amount}`;
-        }).filter(Boolean);
+      // 2. Fallback / Supplement with raw completed jobs if we don't have enough learned examples
+      if (learnedExamples.length < 3) {
+        const db = getAdminDb();
+        const jobsRef = db.collection('jobs');
+        const snapshot = await jobsRef
+          .where('jobCategory', '==', input.jobCategory)
+          .where('status', '==', 'Completed')
+          .limit(5)
+          .get();
 
-        if (examples.length > 0) {
-          historicalContext = examples.join('\n');
+        if (!snapshot.empty) {
+          const rawExamples = snapshot.docs.map(doc => {
+            const data = doc.data();
+            const amount = data.invoice?.subtotal || data.invoice?.totalAmount;
+            if (!amount) return null;
+            const shortDesc = data.description ? data.description.substring(0, 100).replace(/\n/g, ' ') : '';
+            return `- Completed Job: "${data.title}" | Scope: "${shortDesc}..." | Final Price: ₹${amount}`;
+          }).filter(Boolean);
+
+          if (rawExamples.length > 0) {
+            historicalContext += "Recent Market Data:\n" + rawExamples.join('\n');
+          }
         }
       }
+
     } catch (error) {
       console.warn("Failed to fetch historical context for price estimate:", error);
-      // Continue without history if fetch fails
     }
 
     const { output } = await priceEstimatePrompt({
@@ -107,6 +125,20 @@ export const generatePriceEstimateFlow = ai.defineFlow(
     if (!output) {
       throw new Error('AI failed to generate a price estimate.');
     }
+
+    // LOGGING: Record this interaction so we can learn from it later
+    // We don't have a jobId here yet (usually this runs before job creation), 
+    // so we might need to update this log later with the jobId if possible, 
+    // or rely on the client to send the log ID back when the job is created.
+    // For now, we log it.
+    await aiLearningService.logInteraction(
+      'price_estimate',
+      input,
+      output,
+      undefined, // No relatedEntityId yet
+      'gemini-2.0-flash'
+    );
+
     return output;
   }
 );

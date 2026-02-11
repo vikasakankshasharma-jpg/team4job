@@ -6,6 +6,7 @@ import { userService } from '../users/user.service';
 import { logger } from '@/infrastructure/logger';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { aiLearningService } from '@/ai/services/ai-learning.service';
 
 export class ReviewService {
     async submitReview(input: CreateReviewInput): Promise<string> {
@@ -36,6 +37,14 @@ export class ReviewService {
             const db = getAdminDb();
             await db.collection('users').doc(input.targetUserId).update({
                 'installerProfile.reviews': FieldValue.increment(1)
+            });
+
+            // AI Learning: Rate the skill suggestions that defined this job
+            // If the job was defined using AI, this feedback helps learn "what makes a good job definition"
+            aiLearningService.updateOutcome(input.jobId, 'skill_suggestion', {
+                rating: input.rating,
+                feedback: input.comment,
+                success: input.rating >= 4
             });
         }
 

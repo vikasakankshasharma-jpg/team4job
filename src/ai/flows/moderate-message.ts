@@ -12,6 +12,9 @@ const ModerateMessageInputSchema = z.object({
 // Fallback Regex Patterns
 const PHONE_REGEX = /(\+\d{1,3}[- ]?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}|\d{10}/;
 const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+const UPI_REGEX = /[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}/; // Simple UPI pattern
+const KEYWORD_REGEX = /whatsapp|telegram|signal|viber|wechat|paytm|gpay|phonepe/i;
+
 // Wrapper removed to prefer direct flow export
 export type ModerateMessageInput = z.infer<typeof ModerateMessageInputSchema>;
 
@@ -32,9 +35,10 @@ const moderateMessagePrompt = ai.definePrompt({
   
   Violations include:
   1. **Scams:** Requests for advance payment, sharing fake bank details.
-  2. **Off-Platforming:** Asking to chat on WhatsApp/Phone/Telegram to avoid fees.
+  2. **Off-Platforming:** Asking to chat on WhatsApp/Phone/Telegram/Signal to avoid fees.
   3. **Harassment:** Toxic, abusive, or threatening language.
   4. **PII:** Sharing phone numbers or emails (only if context implies circumvention).
+  5. **Direct Payments:** Sharing UPI IDs (e.g. user@upi) or asking for direct bank transfer outside the app.
 
   Message: "{{{message}}}"
 
@@ -70,18 +74,26 @@ export const moderateMessageFlow = ai.defineFlow(
             }
         }
 
-        const { output } = await moderateMessagePrompt(input);
+        let output: any = null;
+        try {
+            const result = await moderateMessagePrompt(input, { model: 'googleai/gemini-1.5-flash' });
+            output = result.output;
+        } catch (error) {
+            console.warn("AI Moderation failed (rate limit or key issue), falling back to Regex:", error);
+            // output remains null, triggering fallback below
+        }
 
-        // Phase 13: Hybrid Fallback
         // If AI says "Safe" (isFlagged: false) OR AI fails (returns null), we run Regex Check.
         if (!output || !output.isFlagged) {
             const hasPhone = PHONE_REGEX.test(input.message);
             const hasEmail = EMAIL_REGEX.test(input.message);
+            const hasUpi = UPI_REGEX.test(input.message);
+            const hasKeyword = KEYWORD_REGEX.test(input.message);
 
-            if (hasPhone || hasEmail) {
+            if (hasPhone || hasEmail || hasUpi || hasKeyword) {
                 return {
                     isFlagged: true,
-                    reason: "Potential PII sharing detected (Phone/Email Protection - FailSafe)."
+                    reason: "Safety Violation: Prohibited contact/payment info or keywords detected."
                 };
             }
         }
