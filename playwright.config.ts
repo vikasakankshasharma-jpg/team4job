@@ -65,15 +65,12 @@ export default defineConfig({
     ],
 
     /* Run your local dev server before starting the tests */
-    /* Disabled: We are running against Firebase Emulator (port 5000) launched by fix-and-run-tests.bat */
-    /*
     webServer: {
-        command: 'npx next dev -p 3006',
-        url: 'http://localhost:3006',
-        reuseExistingServer: true,
+        command: 'npx next start -p 5000',
+        url: 'http://localhost:5000',
+        reuseExistingServer: !process.env.CI,
         timeout: 180000, // 3 mins for server start
     },
-    */
 
     /* Global timeout for each test */
     timeout: 180000, // 3 mins per test
