@@ -14,7 +14,8 @@ test.describe('Admin System Smoke Tests @smoke', () => {
 
         // Wait for dashboard to handle multi-role switch or hydration
         await page.waitForURL(/\/dashboard/, { timeout: 30000 });
-        await page.waitForLoadState('networkidle');
+        // Wait for Admin Mode indicator instead of networkidle (unreliable in CI with background polling)
+        await page.waitForSelector('text=Admin Mode', { state: 'visible', timeout: 30000 });
 
         // Verify "Admin Mode" is visible in the header
         await expect(page.locator('text=Admin Mode')).toBeVisible({ timeout: 15000 });
@@ -30,7 +31,8 @@ test.describe('Admin System Smoke Tests @smoke', () => {
         await helper.auth.loginAsAdmin();
 
         await page.goto('/dashboard/audit-logs');
-        await page.waitForLoadState('networkidle');
+        // Wait for page heading instead of networkidle (unreliable in CI with Firestore listeners)
+        await page.waitForSelector('role=heading[name="Admin Audit Log"]', { state: 'visible', timeout: 30000 });
 
         // Verify page title from en.json "auditLogs.title": "Admin Audit Log"
         await expect(page.getByRole('heading', { name: 'Admin Audit Log' })).toBeVisible({ timeout: 15000 });
@@ -44,7 +46,8 @@ test.describe('Admin System Smoke Tests @smoke', () => {
         await helper.auth.loginAsAdmin();
 
         await page.goto('/dashboard/team');
-        await page.waitForLoadState('networkidle');
+        // Wait for button instead of networkidle (unreliable in CI)
+        await page.waitForSelector('text=Add Team Member', { state: 'visible', timeout: 30000 });
 
         // Verify page loads - "Add Team Member" is currently hardcoded in TeamManagementCard
         await expect(page.locator('text=Add Team Member')).toBeVisible({ timeout: 15000 });
