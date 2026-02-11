@@ -8,6 +8,7 @@ import { Role } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { paymentService } from '../payments/payment.service';
 import { Timestamp } from 'firebase-admin/firestore';
+import { aiLearningService } from '@/ai/services/ai-learning.service';
 
 /**
  * Job Service - Business logic for job management
@@ -44,6 +45,10 @@ export class JobService {
             const jobId = await jobRepository.create(job);
 
             logger.userActivity(userId, 'job_created', { jobId, title: data.title });
+
+            // AI Learning Linkage (Async, don't block)
+            aiLearningService.linkLogToEntity(userId, jobId, 'price_estimate').catch(err => console.error(err));
+            aiLearningService.linkLogToEntity(userId, jobId, 'time_estimate').catch(err => console.error(err));
 
             return jobId;
         } catch (error: any) {
@@ -426,6 +431,29 @@ export class JobService {
 
         await jobRepository.updateStatus(jobId, 'Completed', userId, 'Job marked complete with OTP');
         logger.userActivity(userId, 'job_completed', { jobId });
+
+        // AI Learning: Record actuals
+        try {
+            // Calculate duration
+            const workStartedAt: any = job.workStartedAt;
+            const startTime = workStartedAt?.toDate ? workStartedAt.toDate() : new Date(workStartedAt);
+            const endTime = new Date();
+            const durationHours = !isNaN(startTime.getTime()) ? (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60) : 0;
+
+            // Find price (from accepted bid)
+            // The userId here is the Installer.
+            const acceptedBid = job.bids.find(b => {
+                const bInstallerId = typeof b.installer === 'string' ? b.installer : (b.installer as any)?.id || b.installerId;
+                return bInstallerId === userId;
+            });
+            const finalPrice = acceptedBid?.amount || 0;
+
+            // Update outcomes (fire and forget)
+            aiLearningService.updateOutcome(jobId, 'price_estimate', { success: true, actualValue: finalPrice });
+            aiLearningService.updateOutcome(jobId, 'time_estimate', { success: true, actualValue: durationHours });
+        } catch (e) {
+            console.warn('Failed to update AI outcomes on job completion:', e);
+        }
     }
 
     /**
@@ -464,6 +492,28 @@ export class JobService {
 
         await jobRepository.updateStatus(jobId, 'Completed', userId, 'Job approved by Giver');
         logger.userActivity(userId, 'job_approved', { jobId });
+
+        // AI Learning: Record actuals (for manual approval flow)
+        try {
+            const workStartedAt: any = job.workStartedAt;
+            const startTime = workStartedAt?.toDate ? workStartedAt.toDate() : new Date(workStartedAt);
+            const endTime = new Date();
+            const durationHours = !isNaN(startTime.getTime()) ? (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60) : 0;
+
+            // For price, use the invoice total or accepted bid
+            const acceptedBid = job.bids.find(b => b.installerId === job.awardedInstallerId || b.id === job.awardedInstallerId /* sloppy match logic from service */);
+            // Better: use job.awardedInstallerId to find bid
+            const winningBid = job.bids.find(b => {
+                const bInstallerId = typeof b.installer === 'string' ? b.installer : (b.installer as any)?.id || b.installerId;
+                return bInstallerId === job.awardedInstallerId;
+            });
+            const finalPrice = winningBid?.amount || 0;
+
+            aiLearningService.updateOutcome(jobId, 'price_estimate', { success: true, actualValue: finalPrice });
+            aiLearningService.updateOutcome(jobId, 'time_estimate', { success: true, actualValue: durationHours });
+        } catch (e) {
+            console.warn('Failed to update AI outcomes on job approval:', e);
+        }
     }
 
     /**

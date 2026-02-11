@@ -173,6 +173,7 @@ export interface CreateJobInput {
     deadline: Date;
     jobStartDate?: Date;
     isUrgent?: boolean;
+    preferredTimeSlot?: 'Morning' | 'Afternoon' | 'Evening' | 'Weekend' | 'Any';
     attachments?: JobAttachment[];
     directAwardInstallerId?: string;
 }

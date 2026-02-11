@@ -203,6 +203,7 @@ export type Job = {
   deadline: Date | Timestamp;
   jobStartDate?: Date | Timestamp;
   isUrgent?: boolean;
+  preferredTimeSlot?: 'Morning' | 'Afternoon' | 'Evening' | 'Weekend' | 'Any';
   priceEstimate?: { min: number; max: number };
   dateChangeProposal?: {
     newDate: Date | Timestamp;

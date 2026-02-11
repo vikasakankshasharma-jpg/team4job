@@ -67,6 +67,8 @@ export async function getJobForEditAction(jobId: string, userId: string): Promis
     }
 }
 
+import { moderateMessageFlow } from '@/ai/flows/moderate-message';
+
 /**
  * Server Action to update a job
  */
@@ -75,6 +77,46 @@ export async function updateJobAction(jobId: string, userId: string, data: Parti
         // Map CreateJobInput back to Job partial
         // Note: In a real app, we might want a specific UpdateJobInput type
         const updates: Partial<Job> = { ...data };
+
+        // --- Chat Moderation (Revenue Protection) ---
+        // If a new private message is being added, moderate it.
+        if (updates.privateMessages && updates.privateMessages.length > 0) {
+            // Assuming the last message in the array is the new one
+            // (Logic depends on how client appends. Usually client sends full array? Or just the new one?)
+            // Based on `job-detail-client.tsx`, it seems to handle `handleJobUpdate` by merging.
+            // But usually for chats, we might be appending.
+            // Let's assume the client sends the *updated full array* or we need to check the diff.
+            // Actually, `handleJobUpdate` in client sends: `privateMessages: [...(job.privateMessages||[]), newMessage]`.
+            // So we should check the *last* message.
+            const lastMsg = updates.privateMessages[updates.privateMessages.length - 1];
+
+            // Only moderate if it's from the current user (security check)
+            // AND it's a new message (we don't want to re-moderate old ones if we pass the whole array)
+            // Simpler: Just moderate the last text content if it exists.
+            if (lastMsg && lastMsg.content) {
+                const moderation = await moderateMessageFlow({
+                    message: lastMsg.content,
+                    userId: userId,
+                    limitType: 'ai_chat'
+                });
+
+                if (moderation.isFlagged) {
+                    await logger.business({
+                        eventType: 'MODERATION_FLAG' as any,
+                        actorId: userId,
+                        entityId: jobId,
+                        entityType: 'JOB',
+                        metadata: { reason: moderation.reason, content: lastMsg.content }
+                    });
+
+                    // Reject the update
+                    return {
+                        success: false,
+                        error: moderation.reason || "Message blocked by safety filters."
+                    };
+                }
+            }
+        }
 
         await jobService.updateJob(jobId, userId, updates);
 

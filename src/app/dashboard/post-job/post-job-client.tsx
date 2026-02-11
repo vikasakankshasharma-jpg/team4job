@@ -103,6 +103,7 @@ const jobSchema = z.object({
     message: "validation.deadlinePast",
   }).or(z.literal("")),
   jobStartDate: z.string().min(1, { message: "validation.startDateReq" }),
+  preferredTimeSlot: z.enum(['Morning', 'Afternoon', 'Evening', 'Weekend', 'Any']).default('Any'),
   attachments: z.array(z.instanceof(File)).optional(),
   directAwardInstallerId: z.string().optional(),
 }).refine(data => {
@@ -567,12 +568,89 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   };
 
   const handleVoiceTranscript = async (transcript: string) => {
-    form.setValue("jobTitle", transcript, { shouldValidate: true });
+    // OLD LOGIC: form.setValue("jobTitle", transcript, { shouldValidate: true });
+    // NEW LOGIC: Call CCTV Voice Processor
 
-    // Slight delay to ensure state updates before triggering generation
-    setTimeout(() => {
-      handleGenerateDetails(transcript);
-    }, 100);
+    setIsGenerating(true);
+    try {
+      const { generateCCTVJobFromVoiceAction } = await import('@/app/actions/ai.actions');
+      const result = await generateCCTVJobFromVoiceAction(transcript);
+
+      if (result.success && result.data) {
+        const data = result.data;
+        // Populate Form - HUMAN IN THE LOOP
+        form.setValue("jobTitle", data.title, { shouldValidate: true });
+        form.setValue("jobDescription", data.description, { shouldValidate: true });
+        form.setValue("jobCategory", "Security & CCTV", { shouldValidate: true });
+        form.setValue("skills", data.skills.join(', '), { shouldValidate: true });
+
+        toast({
+          title: "Voice Analysis Complete",
+          description: "Job details have been auto-filled from your voice input.",
+        });
+      } else {
+        // Fallback to simple title fill if AI fails
+        console.warn("Voice AI failed, falling back to title fill");
+        form.setValue("jobTitle", transcript, { shouldValidate: true });
+        handleGenerateDetails(transcript); // Trigger old generation logic as backup
+      }
+    } catch (error) {
+      console.error("Voice processing error:", error);
+      form.setValue("jobTitle", transcript, { shouldValidate: true });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // --- CCTV Visual Job Posting ---
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleCCTVAnalysis = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: tError('fileTooLarge'), description: tError('fileTooLargeDesc'), variant: "destructive" });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // Convert to Base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+        // Remove data URL prefix (e.g. "data:image/jpeg;base64,")
+        const base64Content = base64String.split(',')[1];
+
+        // Call Server Action
+        const { generateCCTVJobFromImageAction } = await import('@/app/actions/ai.actions');
+        const result = await generateCCTVJobFromImageAction(base64Content);
+
+        if (result.success && result.data) {
+          const data = result.data;
+
+          // Populate Form - HUMAN IN THE LOOP: User edits these values
+          form.setValue("jobTitle", data.title, { shouldValidate: true });
+          form.setValue("jobDescription", data.description, { shouldValidate: true });
+          form.setValue("jobCategory", "Security & CCTV", { shouldValidate: true }); // Auto-select category
+          form.setValue("skills", data.skills.join(', '), { shouldValidate: true });
+
+          toast({
+            title: "CCTV Analysis Complete",
+            description: "Job details have been auto-filled. Please review and edit before posting.",
+          });
+        } else {
+          throw new Error(result.error || "Failed to analyze image.");
+        }
+        setIsGenerating(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("CCTV Analysis Error:", error);
+      toast({ title: tError('generationFailed'), description: "Could not analyze image.", variant: "destructive" });
+      setIsGenerating(false);
+    }
   };
 
   const handleEstimatePrice = async () => {
@@ -619,6 +697,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       setIsEstimating(false);
     }
   };
+
+
+  // ... (render logic) ...
+
 
   async function onSubmit(values: z.infer<typeof jobSchema>) {
     setPendingValues(values);
@@ -692,6 +774,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         max: values.directAwardInstallerId ? values.priceEstimate.min : values.priceEstimate.max,
       } : undefined,
       directAwardInstallerId: values.directAwardInstallerId || undefined,
+      preferredTimeSlot: values.preferredTimeSlot,
     };
 
     try {
@@ -888,16 +971,46 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                       <FormLabel>{tJob('description')}</FormLabel>
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         onClick={() => handleGenerateDetails()}
-                        disabled={isGenerating || !isJobTitleValid}
+                        disabled={isGenerating}
+                        className="w-full sm:w-auto mt-2 sm:mt-0"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {tCommon('generating')}
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="mr-2 h-4 w-4 text-yellow-500" />
+                            {tJob('autoGenerateDetails')}
+                          </>
+                        )}
+                      </Button>
+
+                      <div className="hidden">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          accept="image/*"
+                          onChange={handleCCTVAnalysis}
+                          disabled={isGenerating}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isGenerating}
+                        className="w-full sm:w-auto mt-2 sm:mt-0 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800"
                       >
                         {isGenerating ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                           <Zap className="mr-2 h-4 w-4" />
                         )}
-                        {tJob('aiGenerate')}
+                        Analyze CCTV Site
                       </Button>
                     </div>
                     <FormControl>
@@ -1038,6 +1151,33 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                       </FormControl>
                       <FormDescription>
                         {tJob('travelTipDesc')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="preferredTimeSlot"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{tJob('preferredTime') || "Preferred Time"}</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a time" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Any">Any Time</SelectItem>
+                          <SelectItem value="Morning">Morning</SelectItem>
+                          <SelectItem value="Afternoon">Afternoon</SelectItem>
+                          <SelectItem value="Evening">Evening</SelectItem>
+                          <SelectItem value="Weekend">Weekend</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Best time for installer to visit
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

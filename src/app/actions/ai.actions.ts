@@ -144,3 +144,37 @@ export async function rewardTopPerformersAction(input: RewardTopPerformersInput)
         return { success: false, error: formatFriendlyError(error) };
     }
 }
+
+import { analyzeCCTVImageFlow } from '@/ai/flows/analyze-cctv-image';
+// Wait, based on previous experience, we should use the flow function directly if exported correctly.
+// Let's check analyze-cctv-image.ts export. It exports `analyzeCCTVImageFlow` which is result of `ai.defineFlow`.
+// In Genkit 1.x, `defineFlow` returns a callable function.
+// So we can call `analyzeCCTVImageFlow(input)`.
+
+/**
+ * Server Action for CCTV Job Generation from Image
+ */
+export async function generateCCTVJobFromImageAction(imageBase64: string): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+        const result = await analyzeCCTVImageFlow({ imageBase64 });
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("Error generating CCTV job from image:", error);
+        return { success: false, error: formatFriendlyError(error) };
+    }
+}
+
+import { processCCTVVoiceFlow } from '@/ai/flows/process-cctv-voice';
+
+/**
+ * Server Action for CCTV Job Generation from Voice
+ */
+export async function generateCCTVJobFromVoiceAction(transcript: string): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+        const result = await processCCTVVoiceFlow({ transcript });
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("Error generating CCTV job from voice:", error);
+        return { success: false, error: formatFriendlyError(error) };
+    }
+}
