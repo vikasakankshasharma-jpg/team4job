@@ -29,7 +29,7 @@ export function ExportButton({
     label,
 }: ExportButtonProps) {
     const { toast } = useToast();
-    const t = useTranslations('admin.components.export');
+    const t = useTranslations('components.export');
 
     const exportToCSV = () => {
         if (!data || data.length === 0) {

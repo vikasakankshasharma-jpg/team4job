@@ -57,7 +57,7 @@ const targetIcons = {
 };
 
 export default function AuditLogsClient() {
-    const t = useTranslations('admin.auditLogs');
+    const t = useTranslations('auditLogs');
     const { user, isAdmin, loading: userLoading } = useUser();
     const { db } = useFirebase();
     const router = useRouter();
