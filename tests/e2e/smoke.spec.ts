@@ -41,8 +41,8 @@ test.describe('Smoke Tests @smoke', () => {
         await helper.nav.goToPostJob();
 
         await expect(page).toHaveURL(/\/post-job/);
-        await expect(page.getByLabel('Job Title')).toBeVisible();
-        await expect(page.getByLabel('Job Description')).toBeVisible();
+        await expect(page.getByTestId('job-title-input')).toBeVisible();
+        await expect(page.getByTestId('job-description-input')).toBeVisible();
     });
 
     test('Installer can access Browse Jobs page', async ({ page }) => {
