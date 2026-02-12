@@ -52,3 +52,10 @@ src/.env
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Google Cloud Service Account
+service-account.json
+
+# Backup files
+*.bak
+*.swp
