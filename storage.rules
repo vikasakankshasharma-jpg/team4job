@@ -1,40 +1,65 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Helper functions
+    
+    // --- HELPER FUNCTIONS ---
     function isAuthenticated() {
       return request.auth != null;
     }
     
-    // Check if image
     function isImage() {
       return request.resource.contentType.matches('image/.*');
     }
     
-    // Max size 5MB
     function isValidSize() {
-      return request.resource.size < 5 * 1024 * 1024;
+      return request.resource.size < 5 * 1024 * 1024; // 5MB Limit
     }
 
-    // Profile Images
+    // --- USER PROFILE ---
+    // Path: /users/{userId}/avatar
     match /users/{userId}/avatar {
-      allow read: if true;
+      allow read: if true; // Public access for avatars
+      // Only owner can upload
       allow write: if isAuthenticated() && request.auth.uid == userId && isImage() && isValidSize();
     }
 
-    // Job Attachments
-    match /jobs/{jobId}/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isImage() && isValidSize(); // Basic allow for now, ideally check if user involved in job
+    // --- JOBS ---
+    // Handles two different path structures:
+    // 1. Post Job: /jobs/{userId}/{timestamp}/{fileName}
+    // 2. Completion: /jobs/{jobId}/completion/{fileName}
+    
+    match /jobs/{firstId} {
+        
+        // Case 2: Job Completion Uploads (Specific path takes precedence in logic organization)
+        // Path: /jobs/{jobId}/completion/{fileName} -> firstId is jobId
+        match /completion/{fileName} {
+             allow read: if isAuthenticated();
+             // Allow authenticated users (Installers) to upload proofs
+             // Prevent overwriting existing proofs for integrity
+             allow create: if isAuthenticated() && isImage() && isValidSize();
+             allow update, delete: if false; 
+        }
+
+        // Case 1: Job Giver Uploads (Generic wildcard)
+        // Path: /jobs/{userId}/{timestamp}/{fileName} -> firstId is userId
+        match /{timestamp}/{fileName} {
+            allow read: if isAuthenticated();
+            // Strict check: intermediate path element MUST match the authenticated User ID
+            allow write: if isAuthenticated() && request.auth.uid == firstId && isImage() && isValidSize();
+        }
     }
 
-    // Dispute Evidence
+    // --- DISPUTES ---
+    // Path: /disputes/{disputeId}/{fileName}
     match /disputes/{disputeId}/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isImage() && isValidSize();
+      // Allow creation of new evidence files
+      // Prevent overwriting or deleting evidence once uploaded
+      allow create: if isAuthenticated() && isImage() && isValidSize();
+      allow update, delete: if false; 
     }
     
-    // Default Deny
+    // --- DEFAULT DENY ---
     match /{allPaths=**} {
       allow read, write: if false;
     }
