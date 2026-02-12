@@ -121,9 +121,17 @@ export class AuthHelper {
                 const passwordInput = this.page.locator('input[type="password"]');
                 await passwordInput.fill(password);
 
-                // Click submit button
+                // Click submit button with robustness
                 const submitButton = this.page.getByTestId('login-submit-btn').first();
-                await submitButton.click({ force: true });
+                await submitButton.waitFor({ state: 'visible', timeout: 5000 });
+
+                // Try normal click first, then force
+                try {
+                    await submitButton.click({ timeout: 2000 });
+                } catch (e) {
+                    console.log('[AuthHelper] Normal click failed, trying force click...');
+                    await submitButton.click({ force: true });
+                }
 
                 // Wait for redirect to dashboard
                 await this.page.waitForURL(/\/dashboard/, { timeout: 30000 });
@@ -131,6 +139,10 @@ export class AuthHelper {
                 return;
             } catch (error) {
                 console.error(`[AuthHelper] Login attempt ${attempts} failed:`, error);
+
+                // Screenshot on failure
+                await this.page.screenshot({ path: `test-results/login-failure-${attempts}.png` });
+
                 if (attempts === maxRetries) throw error;
                 await this.page.waitForTimeout(2000);
                 await this.page.reload();
@@ -139,7 +151,7 @@ export class AuthHelper {
 
         const currentUrl = this.page.url();
         const pageText = await this.page.textContent('body');
-        throw new Error(`Login failed after ${maxRetries} attempts. Current URL: ${currentUrl}. Page content preview: ${pageText?.substring(0, 200)}`);
+        throw new Error(`Login failed after ${maxRetries} attempts. Current URL: ${currentUrl}.`);
     }
 
 
