@@ -367,6 +367,7 @@ export type Transaction = {
   releasedAt?: Date | Timestamp;
   refundedAt?: Date | Timestamp;
   relatedTaskId?: string; // Links this transaction to a specific AdditionalTask
+  description?: string;
 };
 
 export type PlatformSettings = {

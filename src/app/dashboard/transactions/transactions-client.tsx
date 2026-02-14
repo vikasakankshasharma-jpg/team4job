@@ -39,6 +39,7 @@ import { DateRange } from "react-day-picker";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MobileTransactionCard } from "@/components/dashboard/transactions/mobile-transaction-card";
+import { InvoiceDownloadButton } from "@/components/billing/invoice-download-button";
 
 const getStatusVariant = (status: Transaction['status']) => {
     switch (status) {
@@ -363,6 +364,7 @@ export default function TransactionsClient() {
                                     <TableHead className="text-right">{t('table.amount')}</TableHead>
                                     <TableHead>{t('table.status')}</TableHead>
                                     <TableHead>{t('table.timestamp')}</TableHead>
+                                    <TableHead>{t('table.invoice')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -395,6 +397,9 @@ export default function TransactionsClient() {
                                                 </TableCell>
                                                 <TableCell title={format(latestTimestamp, "PPpp")}>
                                                     {formatDistanceToNow(latestTimestamp, { addSuffix: true })}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <InvoiceDownloadButton transaction={t} />
                                                 </TableCell>
                                             </TableRow>
                                         )

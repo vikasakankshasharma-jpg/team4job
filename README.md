@@ -14,6 +14,8 @@
 
 **Team4Job** is a sophisticated, AI-enhanced marketplace connecting "Job Givers" (clients) with verified "Installers" (CCTV/Security professionals).
 
+> 📘 **Master Architecture Guide**: For a complete deep-dive into the system prompt, database schema, and recreation instructions, see [system_architecture.md](./system_architecture.md).
+
 **Core Philosophy:**
 *   **Dual-Role Architecture:** Every user can be both a Job Giver and an Installer.
 *   **Zero-Cost Infrastructure:** Designed to run on free tiers (Firebase Spark + App Hosting) for the first 500+ users.

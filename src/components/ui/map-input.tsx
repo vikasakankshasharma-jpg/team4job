@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useFormContext, useController, Control } from 'react-hook-form';
-import { GoogleMap, Marker } from '@react-google-maps/api';
+import dynamic from 'next/dynamic';
 import { FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Loader2, Map as MapIcon, Maximize2 } from 'lucide-react';
@@ -133,18 +133,21 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
     );
   }
 
+  const LazyMap = dynamic(() => import('./lazy-map'), {
+    loading: () => <div className="h-full w-full flex items-center justify-center bg-muted animate-pulse"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>,
+    ssr: false
+  });
+
   const renderMap = (isSheet = false) => (
-    <GoogleMap
-      mapContainerStyle={isSheet ? mobileContainerStyle : containerStyle}
+    <LazyMap
+      containerStyle={isSheet ? mobileContainerStyle : containerStyle}
       center={center}
       zoom={15}
       onLoad={onMapLoad}
       onUnmount={onUnmount}
       onClick={onMapClick}
-      options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
-    >
-      {marker && <Marker position={marker} />}
-    </GoogleMap>
+      marker={marker}
+    />
   );
 
   return (

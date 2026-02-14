@@ -68,3 +68,5 @@ import { getAuth } from 'firebase-admin/auth';
 
 export const getAdminDb = () => getFirestore(getAdminApp());
 export const getAdminAuth = () => getAuth(getAdminApp());
+import { getStorage } from 'firebase-admin/storage';
+export const getAdminStorage = () => getStorage(getAdminApp());

@@ -7,6 +7,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { toDate } from "@/lib/utils";
 import { ArrowRight, IndianRupee } from "lucide-react";
 import Link from "next/link";
+import { InvoiceDownloadButton } from "@/components/billing/invoice-download-button";
 
 interface MobileTransactionCardProps {
     transaction: Transaction & { payerName?: string; payeeName?: string };
@@ -59,7 +60,10 @@ export function MobileTransactionCard({ transaction }: MobileTransactionCardProp
                         {transaction.amount.toLocaleString()}
                     </div>
                 </div>
+                <div className="flex justify-end pt-2">
+                    <InvoiceDownloadButton transaction={transaction} />
+                </div>
             </CardContent>
-        </Card>
+        </Card >
     );
 }
