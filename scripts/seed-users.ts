@@ -9,6 +9,12 @@ const envPath = path.resolve(process.cwd(), '.env.local');
 console.log('Loading .env.local from:', envPath);
 dotenv.config({ path: envPath });
 
+// Force use of Emulators for local seeding
+process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
+process.env.FIREBASE_STORAGE_EMULATOR_HOST = '127.0.0.1:9199';
+console.log('🔧 Configured for Local Emulators (Auth: 9099, Firestore: 8080)');
+
 console.log('Checks:');
 console.log('CWD:', process.cwd());
 console.log('Env Path:', envPath);
