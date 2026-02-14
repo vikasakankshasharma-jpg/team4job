@@ -134,7 +134,7 @@ export class AuthHelper {
                 }
 
                 // Wait for redirect to dashboard
-                await this.page.waitForURL(/\/dashboard/, { timeout: 30000 });
+                await this.page.waitForURL(/\/dashboard/, { timeout: TIMEOUTS.medium });
                 console.log(`[AuthHelper] Login successful for ${email}`);
                 return;
             } catch (error) {

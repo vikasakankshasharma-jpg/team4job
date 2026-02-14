@@ -59,6 +59,16 @@ export const AnalyticsService = {
      * Master function to fetch all analytics data in ONE read operation
      */
     async getAnalytics(userId: string): Promise<AnalyticsData> {
+        if (!db) {
+            console.warn("[AnalyticsService] Firestore db not initialized");
+            return {
+                summary: { totalJobs: 0, completedJobs: 0, totalSpend: 0, activeJobs: 0, avgRating: 0 },
+                timeToHire: [],
+                spendingTrends: [],
+                topInstallers: []
+            };
+        }
+
         // 1. Single efficient read of all user's jobs (up to safe limit)
         const q = query(
             collection(db, JOBS_COLLECTION),

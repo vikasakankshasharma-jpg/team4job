@@ -132,6 +132,40 @@ export async function POST(req: NextRequest) {
               userId: transaction.payerId,
               planName: planData.name,
             });
+
+            // Send Invoice Email
+            if (userData.email) {
+              const { emailService } = await import('@/lib/email/email-service');
+              await emailService.sendInvoice({
+                to: userData.email,
+                userName: userData.name,
+                invoiceAmount: `₹${transaction.amount}`,
+                invoiceDate: new Date().toLocaleDateString('en-IN'),
+                invoiceNumber: `INV-${orderId.slice(-6).toUpperCase()}`,
+                downloadLink: `${process.env.NEXT_PUBLIC_APP_URL || 'https://dodo-platform.com'}/dashboard/transactions?invoice=${orderId}`
+              });
+            }
+          }
+        }
+
+        // Also handle one-time payments if needed, but for now subscription flow covers the main use case.
+        // If transaction.payerId exists, we could fetch user and send email for ALL successful payments.
+        else if (transaction.payerId) {
+          const userRef = db.collection('users').doc(transaction.payerId);
+          const userSnap = await userRef.get();
+          if (userSnap.exists) {
+            const userData = userSnap.data() as User;
+            if (userData.email) {
+              const { emailService } = await import('@/lib/email/email-service');
+              await emailService.sendInvoice({
+                to: userData.email,
+                userName: userData.name,
+                invoiceAmount: `₹${transaction.amount}`, // Ensure transaction type has amount
+                invoiceDate: new Date().toLocaleDateString('en-IN'),
+                invoiceNumber: `INV-${orderId.slice(-6).toUpperCase()}`,
+                downloadLink: `${process.env.NEXT_PUBLIC_APP_URL || 'https://dodo-platform.com'}/dashboard/transactions?invoice=${orderId}`
+              });
+            }
           }
         }
 

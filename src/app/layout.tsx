@@ -14,6 +14,7 @@ import { GA_TRACKING_ID } from '@/lib/analytics';
 import { WebVitalsReporter } from "@/components/dashboard/analytics/web-vitals";
 import CookieBanner from "@/components/gdpr/cookie-banner";
 import { SystemStatusBanner } from "@/components/layout/system-status-banner";
+import ErrorBoundaryWrapper from "@/components/error-boundary-wrapper";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -97,9 +98,11 @@ export default async function RootLayout({
             <FirebaseClientProvider>
               <UserProvider>
                 <Providers>
-                  <WebVitalsReporter />
-                  <SystemStatusBanner />
-                  {children}
+                  <ErrorBoundaryWrapper>
+                    <WebVitalsReporter />
+                    <SystemStatusBanner />
+                    {children}
+                  </ErrorBoundaryWrapper>
                 </Providers>
               </UserProvider>
             </FirebaseClientProvider>

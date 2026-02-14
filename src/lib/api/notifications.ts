@@ -26,24 +26,36 @@ export const NotificationsService = {
      * Subscribe to real-time notifications for a user
      */
     subscribeToNotifications(userId: string, callback: (notifications: Notification[]) => void, onError?: (error: any) => void) {
-        const q = query(
-            collection(db, NOTIFICATIONS_COLLECTION),
-            where('userId', '==', userId),
-            orderBy('createdAt', 'desc'),
-            limit(50)
-        );
+        if (!db) {
+            console.warn("[NotificationsService] Firestore db is not initialized.");
+            if (onError) onError(new Error("Firestore not initialized"));
+            return () => { };
+        }
 
-        return onSnapshot(q, (snapshot) => {
-            const notifications = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as Notification));
+        try {
+            const q = query(
+                collection(db, NOTIFICATIONS_COLLECTION),
+                where('userId', '==', userId),
+                orderBy('createdAt', 'desc'),
+                limit(50)
+            );
 
-            callback(notifications);
-        }, (error) => {
-            console.error("[NotificationsService] Subscription error:", error);
+            return onSnapshot(q, (snapshot) => {
+                const notifications = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                } as Notification));
+
+                callback(notifications);
+            }, (error) => {
+                console.error("[NotificationsService] Subscription error:", error);
+                if (onError) onError(error);
+            });
+        } catch (error) {
+            console.error("[NotificationsService] Setup error:", error);
             if (onError) onError(error);
-        });
+            return () => { };
+        }
     },
 
     /**
