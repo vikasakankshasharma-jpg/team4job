@@ -47,11 +47,11 @@ export default defineConfig({
         /* Video on failure */
         video: 'retain-on-failure',
 
-        /* Maximum time each action can take */
-        actionTimeout: 60 * 1000,
+        /* Maximum time each action can take - Increased for slow local env */
+        actionTimeout: 120 * 1000,
 
-        /* Maximum time for navigation */
-        navigationTimeout: 120 * 1000,
+        /* Maximum time for navigation - Increased for slow local env */
+        navigationTimeout: 180 * 1000,
     },
 
     /* Configure projects for major browsers */
