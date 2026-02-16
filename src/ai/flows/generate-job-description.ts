@@ -45,7 +45,7 @@ const generateJobDescriptionFlow = ai.defineFlow(
     inputSchema: GenerateJobDescriptionInputSchema,
     outputSchema: GenerateJobDescriptionOutputSchema,
   },
-  async input => {
+  async (input: z.infer<typeof GenerateJobDescriptionInputSchema>) => {
     const { output } = await generateJobDescriptionPrompt(input);
     return output!;
   }

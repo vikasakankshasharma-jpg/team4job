@@ -43,7 +43,7 @@ export const processCCTVVoiceFlow = ai.defineFlow(
         inputSchema: ProcessCCTVVoiceInputSchema,
         outputSchema: ProcessCCTVVoiceOutputSchema,
     },
-    async (input) => {
+    async (input: z.infer<typeof ProcessCCTVVoiceInputSchema>) => {
         const { output } = await processCCTVVoicePrompt({
             transcript: input.transcript
         }, { model: 'googleai/gemini-1.5-flash' });

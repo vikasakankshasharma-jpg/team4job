@@ -77,7 +77,7 @@ const recommendJobsFlow = ai.defineFlow(
         inputSchema: RecommendJobsInputSchema,
         outputSchema: RecommendJobsOutputSchema,
     },
-    async input => {
+    async (input: z.infer<typeof RecommendJobsInputSchema>) => {
         if (!input.jobs || input.jobs.length === 0) {
             return { recommendations: [] };
         }

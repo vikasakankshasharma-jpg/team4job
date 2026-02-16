@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ToastAction } from "@/components/ui/toast";
 import {
   Form,
   FormControl,
@@ -797,12 +798,30 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
 
         if (result.success && result.jobId) {
           setIsSubmitted(true);
+          const targetUrl = `/dashboard/jobs/${result.jobId}`;
+
           toast({
             title: repostJobId ? tSuccess('jobReposted') : tSuccess('jobPosted'),
             description: tSuccess('jobLive'),
+            action: (
+              <ToastAction altText="View Job" onClick={() => router.push(targetUrl)}>
+                View Job
+              </ToastAction>
+            ),
           });
           form.reset();
-          router.push(`/dashboard/jobs/${result.jobId}`);
+
+          // Try router push first
+          router.push(targetUrl);
+
+          // Fallback: If router doesn't navigate within 1.5s, force reload
+          setTimeout(() => {
+            if (window.location.pathname !== targetUrl) {
+              console.log("Router push fallback: forcing window location change");
+              window.location.href = targetUrl;
+            }
+          }, 1500);
+
         } else {
           throw new Error(result.error);
         }

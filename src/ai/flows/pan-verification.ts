@@ -79,7 +79,7 @@ export const verifyPan = ai.defineFlow(
         inputSchema: VerifyPanInputSchema,
         outputSchema: VerifyPanOutputSchema,
     },
-    async (input) => {
+    async (input: z.infer<typeof VerifyPanInputSchema>) => {
         // Mock for Testing
         if (input.pan === 'ABCDE1234F') {
             console.log('[Cashfree KYC] Using mock PAN verification.');

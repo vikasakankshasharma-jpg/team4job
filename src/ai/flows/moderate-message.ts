@@ -56,7 +56,7 @@ export const moderateMessageFlow = ai.defineFlow(
         inputSchema: ModerateMessageInputSchema,
         outputSchema: ModerateMessageOutputSchema,
     },
-    async input => {
+    async (input: z.infer<typeof ModerateMessageInputSchema>) => {
         // Optimization: Skip empty or very short messages
         if (!input.message || input.message.length < 5) {
             return { isFlagged: false };

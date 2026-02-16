@@ -27,12 +27,18 @@ try {
     if (process.env.NEXT_PUBLIC_IS_CI === 'true') {
         try {
             // Attempt to initialize with memory cache for CI stability (browserLocalPersistence for Auth, memory for Firestore)
-            db = initializeFirestore(app, { localCache: memoryLocalCache() });
+            console.log('[Firebase Client] Initializing Firestore with MEMORY CACHE (CI mode)');
+            db = initializeFirestore(app, {
+                localCache: memoryLocalCache(),
+                experimentalForceLongPolling: true
+            });
         } catch (e) {
+            console.error('[Firebase Client] Failed to initialize memory cache, falling back to default:', e);
             // Fallback if already initialized
             db = getFirestoreDefault(app);
         }
     } else {
+        console.log('[Firebase Client] Initializing Firestore with DEFAULT PERSISTENCE');
         db = getFirestoreDefault(app);
     }
 
@@ -44,13 +50,13 @@ try {
 
         // Connect Auth Emulator
         // Note: No trailing slash for auth URL usually, but let's follow standard port
-        connectAuthEmulator(auth, "http://localhost:9099");
+        connectAuthEmulator(auth, "http://127.0.0.1:9099");
 
         // Connect Firestore Emulator
-        connectFirestoreEmulator(db, 'localhost', 8080);
+        connectFirestoreEmulator(db, '127.0.0.1', 8080);
 
         // Connect Storage Emulator (Optional, but good practice)
-        connectStorageEmulator(storage, 'localhost', 9199);
+        connectStorageEmulator(storage, '127.0.0.1', 9199);
 
         console.log('✅ Connected to Firebase Emulators');
     }

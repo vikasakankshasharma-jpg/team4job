@@ -50,7 +50,7 @@ const analyzePhotoFlow = ai.defineFlow(
         inputSchema: AnalyzePhotoInputSchema,
         outputSchema: AnalyzePhotoOutputSchema,
     },
-    async input => {
+    async (input: z.infer<typeof AnalyzePhotoInputSchema>) => {
         // Basic validation
         if (!input.imageUrl) {
             throw new Error("No image URL provided");

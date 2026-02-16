@@ -8,6 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 import {
   GenerateJobDetailsInputSchema,
   GenerateJobDetailsOutputSchema
@@ -36,7 +37,7 @@ export const generateJobDetailsFlow = ai.defineFlow(
     inputSchema: GenerateJobDetailsInputSchema,
     outputSchema: GenerateJobDetailsOutputSchema,
   },
-  async input => {
+  async (input: z.infer<typeof GenerateJobDetailsInputSchema>) => {
     const { output } = await generateJobDetailsPrompt(input);
     if (!output) {
       throw new Error("Failed to generate job details from AI.");

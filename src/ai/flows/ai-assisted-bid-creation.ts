@@ -62,7 +62,7 @@ const aiAssistedBidCreationFlow = ai.defineFlow(
     inputSchema: AiAssistedBidCreationInputSchema,
     outputSchema: AiAssistedBidCreationOutputSchema,
   },
-  async input => {
+  async (input: z.infer<typeof AiAssistedBidCreationInputSchema>) => {
     // Lazy import to avoid circular dependencies
     const checkRateLimit = (await import('@/lib/services/rate-limit')).checkRateLimit;
 

@@ -287,9 +287,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(async (identifier: string, password?: string) => {
     if (!password) return false;
+    let email = identifier;
     try {
-      let email = identifier;
-
       // Check if identifier is a mobile number (10 digits)
       const isMobile = /^\d{10}$/.test(identifier);
 
@@ -321,9 +320,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       await signInWithEmailAndPassword(auth, email, password);
+      console.log(`[useUser] Login successful for ${email}`);
       return true;
-    } catch (error) {
-      console.error("Login failed:", error);
+    } catch (error: any) {
+      console.error("[useUser] Login failed:", {
+        code: error.code,
+        message: error.message,
+        email: email
+      });
       return false;
     }
   }, [auth, db, toast]);

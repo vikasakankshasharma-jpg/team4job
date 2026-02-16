@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from '@next/bundle-analyzer';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
@@ -42,17 +43,21 @@ const nextConfig: NextConfig = {
   },
 };
 
-import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfigWithBundleAnalyzer = withBundleAnalyzer(nextConfig);
 
-export default withSentryConfig(nextConfigWithBundleAnalyzer, {
+// Temporarily disabled due to @sentry/nextjs v8 compatibility issues with Next.js 15
+// Errors: _optionalChain, _nullishCoalesce not exported from @sentry/core
+// Sentry runtime monitoring is still active (see instrumentation-client.ts)
+export default nextConfigWithBundleAnalyzer;
+
+/* export default withSentryConfig(nextConfigWithBundleAnalyzer, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
   // Suppresses source map uploading logs during build
   silent: true,
-  org: "team4job",
+  org: "team-gq",
   project: "javascript-nextjs",
 
   // For all available options, see:
@@ -75,5 +80,4 @@ export default withSentryConfig(nextConfigWithBundleAnalyzer, {
   // https://docs.sentry.io/product/crons/
   // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true,
-});
-
+}); */

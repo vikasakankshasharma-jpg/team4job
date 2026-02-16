@@ -72,7 +72,7 @@ export const generateTimeEstimateFlow = ai.defineFlow(
         inputSchema: GenerateTimeEstimateInputSchema,
         outputSchema: GenerateTimeEstimateOutputSchema,
     },
-    async (input) => {
+    async (input: z.infer<typeof GenerateTimeEstimateInputSchema>) => {
         let historicalContext = '';
 
         // RAG: Fetch "learned" examples

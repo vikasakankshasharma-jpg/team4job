@@ -59,7 +59,7 @@ const suggestSkillsFlow = ai.defineFlow(
     inputSchema: SuggestSkillsInputSchema,
     outputSchema: SuggestSkillsOutputSchema,
   },
-  async input => {
+  async (input: z.infer<typeof SuggestSkillsInputSchema>) => {
     let historicalContext = '';
 
     // RAG: Fetch "learned" examples

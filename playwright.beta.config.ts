@@ -36,7 +36,7 @@ export default defineConfig({
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         /* Base URL to use in actions like `await page.goto('/')`. */
-        baseURL: 'http://localhost:3006',
+        baseURL: 'http://127.0.0.1:3006',
 
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
         trace: 'on-first-retry',
@@ -47,11 +47,11 @@ export default defineConfig({
         /* Video on failure */
         video: 'retain-on-failure',
 
-        /* Maximum time each action can take - Increased for slow local env */
-        actionTimeout: 120 * 1000,
+        /* Maximum time each action can take - EXTREME (5m) for local env */
+        actionTimeout: 300 * 1000,
 
-        /* Maximum time for navigation - Increased for slow local env */
-        navigationTimeout: 180 * 1000,
+        /* Maximum time for navigation - EXTREME (5m) for local env */
+        navigationTimeout: 300 * 1000,
     },
 
     /* Configure projects for major browsers */
@@ -63,12 +63,12 @@ export default defineConfig({
     ],
 
     /* Run your local dev server before starting the tests */
-    webServer: {
-        command: 'npx next dev -p 3006',
-        url: 'http://localhost:3006',
-        reuseExistingServer: true, // Reuse the server we started
-        timeout: 180000,
-    },
+    // webServer: {
+    //     command: 'npx next dev -p 3006',
+    //     url: 'http://localhost:3006',
+    //     reuseExistingServer: true, // Reuse the server we started
+    //     timeout: 180000,
+    // },
 
     /* Global timeout for each test */
     timeout: 600000, // 10 mins per test

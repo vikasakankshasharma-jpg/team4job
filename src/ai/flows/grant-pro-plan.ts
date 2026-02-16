@@ -28,7 +28,7 @@ export const grantProPlan = ai.defineFlow(
     inputSchema: GrantProPlanInputSchema,
     outputSchema: GrantProPlanOutputSchema,
   },
-  async ({ userId }, context: any) => {
+  async ({ userId }: z.infer<typeof GrantProPlanInputSchema>, context: any) => {
     try {
       // Verify that the caller has 'Admin' privileges.
       if (!context?.auth) {
