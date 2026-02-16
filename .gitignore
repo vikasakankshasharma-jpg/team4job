@@ -59,3 +59,15 @@ service-account.json
 # Backup files
 *.bak
 *.swp
+
+# Temporary Test Output
+test_output_*.txt
+final_test_output.txt
+seed_output.txt
+seed_output_*.txt
+
+# Firebase Emulators
+firebase-export/
+
+# Sentry Backup Configs
+_sentry.*.config.ts

@@ -67,7 +67,7 @@ export const generatePriceEstimateFlow = ai.defineFlow(
     inputSchema: GeneratePriceEstimateInputSchema,
     outputSchema: GeneratePriceEstimateOutputSchema,
   },
-  async (input) => {
+  async (input: z.infer<typeof GeneratePriceEstimateInputSchema>) => {
     let historicalContext = '';
 
     // RAG: Fetch "learned" examples (high-rated past estimates)

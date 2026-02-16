@@ -58,7 +58,7 @@ const jobScopingWizardFlow = ai.defineFlow(
     inputSchema: JobScopingWizardInputSchema,
     outputSchema: GenerateJobDetailsOutputSchema,
   },
-  async input => {
+  async (input: z.infer<typeof JobScopingWizardInputSchema>) => {
     const { output } = await jobScopingPrompt(input);
     if (!output) {
       throw new Error("Failed to generate job details from AI wizard.");

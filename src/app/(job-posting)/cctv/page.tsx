@@ -1,5 +1,7 @@
-
 "use client";
+import { useUser, useFirebase } from "@/hooks/use-user";
+import { saveDraft } from "@/lib/api/drafts";
+import { useToast } from "@/hooks/use-toast";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -18,10 +20,14 @@ type CompileOutput = {
         max: number;
         currency: string;
     };
+    skills?: string[];
 };
 
 export default function CCTVJobPage() {
     const router = useRouter();
+    const { user } = useUser();
+    const { db } = useFirebase();
+    const { toast } = useToast();
 
     // State 1: Fixed Questions
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -98,13 +104,45 @@ export default function CCTVJobPage() {
     };
 
     const handlePostJob = async (finalData: CompileOutput) => {
-        // Phase 1: Just log it or mock post. 
-        // Real implementation would call a server action to save to Firestore.
-        console.log("POSTING FINAL JOB:", { ...finalData, structuredRequirements: answers });
+        if (!user || !db) {
+            toast({
+                title: "Authentication Required",
+                description: "Please log in to post a job.",
+                variant: "destructive",
+            });
+            // Ideally redirect to login with callback, but for now just alert/toast
+            return;
+        }
 
-        // Redirect to dashboard or success page
-        // router.push('/dashboard/jobs');
-        alert("Phase 1: Job would be posted now! Check console for data payload.");
+        try {
+            const draftData = {
+                title: finalData.jobTitle,
+                description: finalData.jobDescription,
+                jobCategory: "Security & CCTV",
+                skills: finalData.skills || [],
+                budget: finalData.priceEstimate ? {
+                    min: finalData.priceEstimate.min,
+                    max: finalData.priceEstimate.max
+                } : undefined,
+                // We don't have location/address from the simple wizard yet
+            };
+
+            await saveDraft(db, user.id, draftData);
+
+            toast({
+                title: "Draft Saved",
+                description: "Redirecting to final review...",
+            });
+
+            router.push('/dashboard/post-job');
+        } catch (error) {
+            console.error("Failed to save draft:", error);
+            toast({
+                title: "Error",
+                description: "Failed to save job details. Please try again.",
+                variant: "destructive",
+            });
+        }
     };
 
     // --- Render ---

@@ -1,6 +1,14 @@
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
+// import * as Sentry from "@sentry/nextjs";
+
+const Sentry = {
+  captureException: () => { },
+  captureMessage: () => { },
+  startSpan: async (config: any, callback: () => Promise<any>) => {
+    return await callback();
+  },
+};
 import Head from "next/head";
 import { useEffect, useState } from "react";
 
@@ -88,7 +96,7 @@ export default function Page() {
               "This error is raised on the frontend of the example page.",
             );
           }}
-          // disabled={!isConnected}
+        // disabled={!isConnected}
         >
           <span>Throw Sample Error</span>
         </button>

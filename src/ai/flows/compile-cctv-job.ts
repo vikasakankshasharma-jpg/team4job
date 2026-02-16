@@ -23,6 +23,7 @@ const CompileCCTVJobOutputSchema = z.object({
     }).optional().describe('Estimated price range for the job based on requirements.'),
     originalText: z.string().optional().describe('The exact original user input text.'),
     detectedLanguage: z.enum(['en', 'hi', 'hinglish']).optional().describe('Detected language of user input.'),
+    skills: z.array(z.string()).describe('List of 5-7 relevant technical skills for the job.'),
 });
 
 export type CompileCCTVJobOutput = z.infer<typeof CompileCCTVJobOutputSchema>;
@@ -105,7 +106,7 @@ const compileCCTVJobFlow = ai.defineFlow(
         inputSchema: CompileCCTVJobInputSchema,
         outputSchema: CompileCCTVJobOutputSchema,
     },
-    async (input) => {
+    async (input: z.infer<typeof CompileCCTVJobInputSchema>) => {
         const { output } = await compileCCTVJobPrompt(input);
         return output!;
     }

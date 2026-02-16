@@ -72,7 +72,7 @@ export const verifyGst = ai.defineFlow(
         inputSchema: VerifyGstInputSchema,
         outputSchema: VerifyGstOutputSchema,
     },
-    async (input) => {
+    async (input: z.infer<typeof VerifyGstInputSchema>) => {
         // Mock for Testing
         if (input.gstin === '22AAAAA0000A1Z5') {
             console.log('[Cashfree KYC] Using mock GST verification.');

@@ -30,6 +30,7 @@ interface CompileOutput {
         max: number;
         currency: string;
     };
+    skills?: string[]; // Added skills
 }
 
 interface JobReviewStepProps {

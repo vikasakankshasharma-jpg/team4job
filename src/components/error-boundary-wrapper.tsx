@@ -62,7 +62,7 @@ class ErrorBoundaryWrapper extends React.Component<Props, State> {
         }
 
         return (
-            <Sentry.ErrorBoundary fallback={({ error, resetError }) => (
+            <Sentry.ErrorBoundary fallback={({ error, resetError }: { error: any; resetError: () => void }) => (
                 <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center">
                     <h2 className="text-lg font-bold">An unexpected error occurred</h2>
                     <Button onClick={() => resetError()}>Try Again</Button>

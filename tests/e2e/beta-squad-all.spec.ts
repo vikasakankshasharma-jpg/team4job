@@ -54,10 +54,31 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(1));
         await page.fill('input[name="priceEstimate.min"]', data.budget.toString());
         await page.fill('input[name="priceEstimate.max"]', data.budget.toString());
+        await page.getByText("I verify that these details are correct.").click();
 
-        await page.getByRole('button', { name: "Post Job" }).click();
-        await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
-        const jobId = await helper.job.getJobIdFromUrl();
+        await page.getByRole('button', { name: "Post Job", exact: true }).click();
+
+        // Wait for confirmation dialog to appear
+        await page.getByRole('button', { name: "Confirm & Save" }).waitFor({ state: 'visible', timeout: 10000 });
+        await page.getByRole('button', { name: "Confirm & Save" }).click();
+
+        // Wait for the POST request to complete successfully
+        await page.waitForResponse(response =>
+            response.url().includes('/dashboard/post-job') &&
+            response.request().method() === 'POST' &&
+            response.status() === 200,
+            { timeout: 60000 }
+        );
+
+        // Navigate to My Jobs page to verify job creation and get ID
+        await page.goto('/dashboard/posted-jobs');
+        await page.waitForLoadState('networkidle');
+
+        // Get the first job card (most recent) and extract the job ID
+        const firstJobCard = page.locator('[data-testid^="job-card-"]').first();
+        await firstJobCard.waitFor({ state: 'visible', timeout: 30000 });
+        const jobCardTestId = await firstJobCard.getAttribute('data-testid');
+        const jobId = jobCardTestId?.replace('job-card-', '') || '';
         console.log(`Job Posted: ${jobId}`);
 
         console.log('--- Step 2: IN Bid ---');

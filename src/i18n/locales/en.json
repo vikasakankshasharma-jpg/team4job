@@ -37,7 +37,13 @@
         "tryAgain": "Try again",
         "update": "Update",
         "unbid": "Unbid",
-        "loadMore": "Load More"
+        "loadMore": "Load More",
+        "error": "Error",
+        "uploadFailed": "Upload Failed",
+        "uploadFailedDesc": "Could not upload one or more files. Please try again.",
+        "checkForm": "Check Form",
+        "saving": "Saving...",
+        "draftAutoSaved": "Draft auto-saved"
     },
     "landing": {
         "tagline": "The Professional CCTV Marketplace",
@@ -963,7 +969,9 @@
         "loginRequired": "You must be logged in to post a job.",
         "aiOverload": "AI is in high demand. Please try again in a moment.",
         "contentSafety": "Your input was flagged by our safety filters. Please revise and try again.",
-        "aiGenerationFailed": "We couldn't generate a response. Please try modifying your input."
+        "aiGenerationFailed": "We couldn't generate a response. Please try modifying your input.",
+        "fileTooLarge": "File Too Large",
+        "fileTooLargeDesc": "Please upload a file smaller than 5MB."
     },
     "success": {
         "saved": "Saved successfully",
@@ -983,7 +991,9 @@
         "aiSuggestionsAdded": "AI Suggestions Added!",
         "aiSuggestionsAddedDesc": "Description and skills have been auto-filled.",
         "budgetEstimated": "Budget Estimated!",
-        "budgetEstimatedDesc": "AI suggests a range of â‚¹{min} - â‚¹{max}."
+        "budgetEstimatedDesc": "AI suggests a range of ₹{min} - ₹{max}.",
+        "jobUpdated": "Job Updated",
+        "jobUpdatedDesc": "Your job posting has been successfully updated."
     },
     "installers": {
         "title": "Find Installers",

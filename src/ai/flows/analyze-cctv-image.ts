@@ -43,7 +43,7 @@ export const analyzeCCTVImageFlow = ai.defineFlow(
         inputSchema: AnalyzeCCTVImageInputSchema,
         outputSchema: AnalyzeCCTVImageOutputSchema,
     },
-    async (input) => {
+    async (input: z.infer<typeof AnalyzeCCTVImageInputSchema>) => {
         const { output } = await analyzeCCTVImagePrompt({
             imageBase64: input.imageBase64
         }, { model: 'googleai/gemini-1.5-flash' });

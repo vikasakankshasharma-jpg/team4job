@@ -37,7 +37,7 @@ const findMatchingInstallersFlow = ai.defineFlow(
     inputSchema: FindMatchingInstallersInputSchema,
     outputSchema: FindMatchingInstallersOutputSchema,
   },
-  async ({ jobDescription, location, skillsRequired }) => {
+  async ({ jobDescription, location, skillsRequired }: z.infer<typeof FindMatchingInstallersInputSchema>) => {
     // In a real-world scenario, you might use a vector database for this.
     // For this implementation, we will fetch installers with relevant skills and in the same location
     // and then use an LLM to rank them based on the job description.
@@ -94,8 +94,8 @@ const findMatchingInstallersFlow = ai.defineFlow(
     const rankedIds = llmResponse.output || [];
 
     const rankedInstallers = rankedIds
-      .map(id => candidates.find(c => c.id === id))
-      .filter((c): c is User => c !== undefined);
+      .map((id: string) => candidates.find((c: User) => c.id === id))
+      .filter((c: User | undefined): c is User => c !== undefined);
 
     return { installerMatches: rankedInstallers };
   }

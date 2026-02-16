@@ -63,7 +63,7 @@ const smartInstallerMatchingFlow = ai.defineFlow(
     inputSchema: SmartInstallerMatchingInputSchema,
     outputSchema: SmartInstallerMatchingOutputSchema,
   },
-  async input => {
+  async (input: z.infer<typeof SmartInstallerMatchingInputSchema>) => {
     const { output } = await smartInstallerMatchingPrompt(input);
     return output!;
   }

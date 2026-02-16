@@ -89,7 +89,7 @@ export const initiateAadharVerification = ai.defineFlow(
     inputSchema: InitiateAadharInputSchema,
     outputSchema: InitiateAadharOutputSchema,
   },
-  async (input) => {
+  async (input: z.infer<typeof InitiateAadharInputSchema>) => {
     // For demo purposes, if the Aadhar number is the test number, simulate success without a real API call.
     if (input.aadharNumber === '999999990019') {
       const mockVerificationId = `VERIF_MOCK_${Date.now()}`;
@@ -208,7 +208,7 @@ export const confirmAadharVerification = ai.defineFlow(
     inputSchema: ConfirmAadharInputSchema,
     outputSchema: ConfirmAadharOutputSchema,
   },
-  async (input) => {
+  async (input: z.infer<typeof ConfirmAadharInputSchema>) => {
     // For demo purposes, if the transaction is a mock one and OTP is correct, simulate success.
     if (input.verificationId.startsWith('VERIF_MOCK_') && input.otp === '123456') {
       console.log('[Cashfree KYC] Using mock verification for test OTP.');
