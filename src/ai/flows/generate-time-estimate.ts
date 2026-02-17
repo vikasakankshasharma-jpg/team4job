@@ -1,5 +1,5 @@
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 import { aiLearningService } from '@/ai/services/ai-learning.service';
 
@@ -66,11 +66,12 @@ const timeEstimatePrompt = ai.definePrompt({
 });
 
 // Flow Definition
-export const generateTimeEstimateFlow = ai.defineFlow(
+export const generateTimeEstimateFlow = defineLoggedFlow(
     {
         name: 'generateTimeEstimateFlow',
         inputSchema: GenerateTimeEstimateInputSchema,
         outputSchema: GenerateTimeEstimateOutputSchema,
+        cacheConfig: { enabled: true, ttlSeconds: 86400 }, // Cache for 24 hours
     },
     async (input: z.infer<typeof GenerateTimeEstimateInputSchema>) => {
         let historicalContext = '';

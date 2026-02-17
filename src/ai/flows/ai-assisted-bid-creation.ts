@@ -11,7 +11,7 @@
  * - AiAssistedBidCreationOutput - The return type for the aiAssistedBidCreation function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const AiAssistedBidCreationInputSchema = z.object({
@@ -56,11 +56,18 @@ const bidCreationPrompt = ai.definePrompt({
   Format your response as a valid JSON object with two keys: "bidProposal" and "reasoning". The reasoning should explain how you followed the three-paragraph structure.`,
 });
 
-const aiAssistedBidCreationFlow = ai.defineFlow(
+const aiAssistedBidCreationFlow = defineLoggedFlow(
   {
     name: 'aiAssistedBidCreationFlow',
     inputSchema: AiAssistedBidCreationInputSchema,
     outputSchema: AiAssistedBidCreationOutputSchema,
+    rateLimitConfig: {
+      enabled: true,
+      quota: 10,
+      windowSeconds: 86400,
+      limitType: 'per_user',
+      limitTypeAction: 'ai_bio'
+    }
   },
   async (input: z.infer<typeof AiAssistedBidCreationInputSchema>) => {
     // Lazy import to avoid circular dependencies

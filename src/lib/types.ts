@@ -543,6 +543,7 @@ export interface Activity {
   relatedId?: string; // Job ID, Transaction ID, etc.
 }
 
+
 export type BetaFeedback = {
   id: string;
   userId: string;
@@ -555,3 +556,50 @@ export type BetaFeedback = {
   status: 'new' | 'reviewed' | 'resolved';
   adminNotes?: string;
 };
+
+export type AILog = {
+  id: string;
+  timestamp: Date | Timestamp;
+  flowName: string;
+  modelVersion: string;
+  inputTokenCount?: number;
+  outputTokenCount?: number;
+  totalTokenCount?: number;
+  latencyMs: number;
+  costUsd?: number; // Estimated cost
+  success: boolean;
+  errorType?: string;
+  errorMessage?: string;
+  userFeedbackScore?: number; // 1-5
+  cacheHit?: boolean;
+};
+
+export type AIMetric = {
+  date: string; // YYYY-MM-DD
+  totalCostUsd: number;
+  totalRequests: number;
+  averageLatencyMs: number;
+  errorCount: number;
+  cacheHitCount?: number;
+};
+
+export interface RateLimitConfig {
+  enabled: boolean;
+  limitType: 'global' | 'per_user'; // 'per_user' is what we mostly use
+  quota: number; // Daily quota
+  windowSeconds: number; // Usually 86400 for daily
+  limitTypeAction?: 'ai_chat' | 'ai_bio' | 'ai_image' | 'ai_voice';
+}
+
+export interface AIFeedback {
+  id?: string; // Optional because Firestore generates it
+  traceId?: string; // Link to specific AI execution context
+  flowName: string;
+  userId: string;
+  rating: 'positive' | 'negative';
+  reason?: string; // Optional text feedback
+  correction?: string; // Optional user-provided correction
+  createdAt: any; // Timestamp
+  metadata?: Record<string, any>; // Context (e.g., job scope inputs)
+}
+

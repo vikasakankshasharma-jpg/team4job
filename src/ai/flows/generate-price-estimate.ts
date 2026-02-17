@@ -1,5 +1,5 @@
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { getAdminDb } from '@/lib/firebase/server-init';
 import {
   GeneratePriceEstimateInputSchema,
@@ -61,7 +61,7 @@ const priceEstimatePrompt = ai.definePrompt({
 });
 
 // Define the Genkit flow
-export const generatePriceEstimateFlow = ai.defineFlow(
+export const generatePriceEstimateFlow = defineLoggedFlow(
   {
     name: 'generatePriceEstimateFlow',
     inputSchema: GeneratePriceEstimateInputSchema,

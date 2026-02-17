@@ -9,7 +9,7 @@
  * - AnalyzeBidsOutput - The output schema for the flow.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'zod';
 
 const BidderProfileSchema = z.object({
@@ -47,11 +47,12 @@ export const AnalyzeBidsOutputSchema = z.object({
 export type AnalyzeBidsOutput = z.infer<typeof AnalyzeBidsOutputSchema>;
 
 
-export const analyzeBidsFlow = ai.defineFlow(
+export const analyzeBidsFlow = defineLoggedFlow(
   {
     name: 'analyzeBidsFlow',
     inputSchema: AnalyzeBidsInputSchema,
     outputSchema: AnalyzeBidsOutputSchema,
+    modelTier: 'pro', // Complex comparative analysis
   },
   async (input: z.infer<typeof AnalyzeBidsInputSchema>) => {
     const prompt = `You are an expert hiring consultant for CCTV installation projects. Your task is to analyze a set of anonymous bids for a job and provide a clear, actionable recommendation to the Job Giver.

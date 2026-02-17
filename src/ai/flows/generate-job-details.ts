@@ -7,7 +7,7 @@
  * - `generateJobDetailsFlow`: The Genkit flow.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 import {
   GenerateJobDetailsInputSchema,
@@ -31,11 +31,12 @@ const generateJobDetailsPrompt = ai.definePrompt({
   `,
 });
 
-export const generateJobDetailsFlow = ai.defineFlow(
+export const generateJobDetailsFlow = defineLoggedFlow(
   {
     name: 'generateJobDetailsFlow',
     inputSchema: GenerateJobDetailsInputSchema,
     outputSchema: GenerateJobDetailsOutputSchema,
+    cacheConfig: { enabled: true, ttlSeconds: 86400 }, // Cache for 24 hours
   },
   async (input: z.infer<typeof GenerateJobDetailsInputSchema>) => {
     const { output } = await generateJobDetailsPrompt(input);

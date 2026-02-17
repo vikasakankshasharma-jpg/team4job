@@ -1,5 +1,5 @@
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const AnalyzeCCTVImageInputSchema = z.object({
@@ -37,7 +37,7 @@ const analyzeCCTVImagePrompt = ai.definePrompt({
   `,
 });
 
-export const analyzeCCTVImageFlow = ai.defineFlow(
+export const analyzeCCTVImageFlow = defineLoggedFlow(
     {
         name: 'analyzeCCTVImageFlow',
         inputSchema: AnalyzeCCTVImageInputSchema,

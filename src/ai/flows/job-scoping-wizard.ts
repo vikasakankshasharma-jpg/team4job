@@ -8,7 +8,7 @@
  * detailed job post, including a title, description, and suggested skills.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 import { GenerateJobDetailsOutputSchema } from './generate-job-details-schema';
 
@@ -52,11 +52,19 @@ const jobScopingPrompt = ai.definePrompt({
   `,
 });
 
-const jobScopingWizardFlow = ai.defineFlow(
+const jobScopingWizardFlow = defineLoggedFlow(
   {
     name: 'jobScopingWizardFlow',
     inputSchema: JobScopingWizardInputSchema,
     outputSchema: GenerateJobDetailsOutputSchema,
+    modelTier: 'pro', // Complex multi-turn reasoning
+    rateLimitConfig: {
+      enabled: true,
+      quota: 50, // Fallback if service fails, though service uses its own limits
+      windowSeconds: 86400,
+      limitType: 'per_user',
+      limitTypeAction: 'ai_chat'
+    }
   },
   async (input: z.infer<typeof JobScopingWizardInputSchema>) => {
     const { output } = await jobScopingPrompt(input);

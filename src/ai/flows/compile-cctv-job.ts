@@ -1,5 +1,5 @@
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const QuestionAnswerSchema = z.record(z.string(), z.any());
@@ -100,7 +100,7 @@ const compileCCTVJobPrompt = ai.definePrompt({
   `,
 });
 
-const compileCCTVJobFlow = ai.defineFlow(
+const compileCCTVJobFlow = defineLoggedFlow(
     {
         name: 'compileCCTVJobFlow',
         inputSchema: CompileCCTVJobInputSchema,

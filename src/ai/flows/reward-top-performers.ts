@@ -9,7 +9,7 @@
  * Pro Installer subscription.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'zod';
 
 import { getAdminDb } from '@/lib/firebase/server-init';
@@ -28,7 +28,7 @@ const RewardTopPerformersOutputSchema = z.object({
 });
 export type RewardTopPerformersOutput = z.infer<typeof RewardTopPerformersOutputSchema>;
 
-export const rewardTopPerformers = ai.defineFlow(
+export const rewardTopPerformers = defineLoggedFlow(
   {
     name: 'rewardTopPerformers',
     inputSchema: RewardTopPerformersInputSchema,

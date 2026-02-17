@@ -36,9 +36,16 @@ try {
 
     storage = getStorage(app);
 
-    // Connect to Emulators if configured
-    if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
-        // console.log('[Firebase Client] Connecting to Emulators...');
+    // HYPER-STRICT GUARD: Only connect to emulators on localhost and when explicitly enabled
+    const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'ssr';
+    const isActualLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
+    const isStaging = currentHost.includes('dodo-beta');
+    const emulatorFlag = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+
+    console.log('[DEBUG-LIB] Host Check:', { currentHost, isActualLocalhost, isStaging, emulatorFlag });
+
+    if (emulatorFlag && isActualLocalhost && !isStaging) {
+        console.log('[LIB-CLIENT] Connecting to Emulators...');
 
         // Auth Emulator (Port 9099)
         connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });

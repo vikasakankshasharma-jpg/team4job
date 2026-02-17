@@ -1,7 +1,7 @@
 
 // 'use server'; removed to fix invalid export error
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const AnalyzePhotoInputSchema = z.object({
@@ -44,11 +44,18 @@ const analyzePhotoPrompt = ai.definePrompt({
   `,
 });
 
-const analyzePhotoFlow = ai.defineFlow(
+const analyzePhotoFlow = defineLoggedFlow(
     {
         name: 'analyzePhotoFlow',
         inputSchema: AnalyzePhotoInputSchema,
         outputSchema: AnalyzePhotoOutputSchema,
+        rateLimitConfig: {
+            enabled: true,
+            quota: 5,
+            windowSeconds: 86400,
+            limitType: 'per_user',
+            limitTypeAction: 'ai_image'
+        }
     },
     async (input: z.infer<typeof AnalyzePhotoInputSchema>) => {
         // Basic validation

@@ -6,7 +6,7 @@
  * - verifyPan - Verifies a PAN number via Cashfree.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'zod';
 import axios from 'axios';
 
@@ -73,7 +73,7 @@ async function callCashfreeVerifyPan(pan: string): Promise<{ success: boolean; d
     }
 }
 
-export const verifyPan = ai.defineFlow(
+export const verifyPan = defineLoggedFlow(
     {
         name: 'verifyPan',
         inputSchema: VerifyPanInputSchema,

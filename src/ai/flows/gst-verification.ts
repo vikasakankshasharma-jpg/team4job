@@ -6,7 +6,7 @@
  * - verifyGst - Verifies a GSTIN via Cashfree.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'zod';
 import axios from 'axios';
 
@@ -66,7 +66,7 @@ async function callCashfreeVerifyGst(gstin: string): Promise<{ success: boolean;
     }
 }
 
-export const verifyGst = ai.defineFlow(
+export const verifyGst = defineLoggedFlow(
     {
         name: 'verifyGst',
         inputSchema: VerifyGstInputSchema,
