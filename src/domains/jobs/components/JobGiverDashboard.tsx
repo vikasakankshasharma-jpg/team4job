@@ -1,16 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useUser } from "@/hooks/use-user";
+import { JobsMetricsRow } from "./JobsMetricsRow"
+import { RecommendedJobsList } from "./RecommendedJobsList"
+import { useUser } from "@/hooks/use-user"
 import { useTranslations } from 'next-intl';
-import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Briefcase,
     ShieldCheck,
@@ -185,7 +181,7 @@ export function JobGiverDashboard({ stats, transactions, loading = false, quickM
 
                 {/* Right column: Phase 11 Widgets */}
                 <div className="space-y-6">
-                    {user && <RecommendedInstallersCard userId={user.id} currentUser={user} />}
+                    {user && <RecommendedJobsList user={user} />}
                     {user && <SpendingInsightsCard userId={user.id} />}
                 </div>
             </div>

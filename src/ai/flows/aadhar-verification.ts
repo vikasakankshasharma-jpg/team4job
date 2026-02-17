@@ -11,7 +11,7 @@
  * - confirmAadharVerification - Verifies the OTP with Cashfree to complete the KYC process.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'zod';
 import axios from 'axios';
 
@@ -83,7 +83,7 @@ async function callCashfreeToRequestOtp(aadharNumber: string): Promise<{ success
   }
 }
 
-export const initiateAadharVerification = ai.defineFlow(
+export const initiateAadharVerification = defineLoggedFlow(
   {
     name: 'initiateAadharVerification',
     inputSchema: InitiateAadharInputSchema,
@@ -202,7 +202,7 @@ async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
 }
 
 
-export const confirmAadharVerification = ai.defineFlow(
+export const confirmAadharVerification = defineLoggedFlow(
   {
     name: 'confirmAadharVerification',
     inputSchema: ConfirmAadharInputSchema,

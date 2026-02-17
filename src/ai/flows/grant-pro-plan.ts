@@ -6,7 +6,7 @@
  * This is an admin-only flow intended to be used as a reward.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/server-init';
 import type { User, SubscriptionPlan } from '@/lib/types';
@@ -22,7 +22,7 @@ const GrantProPlanOutputSchema = z.object({
 });
 export type GrantProPlanOutput = z.infer<typeof GrantProPlanOutputSchema>;
 
-export const grantProPlan = ai.defineFlow(
+export const grantProPlan = defineLoggedFlow(
   {
     name: 'grantProPlan',
     inputSchema: GrantProPlanInputSchema,

@@ -45,8 +45,22 @@ try {
     storage = getStorage(app);
 
     // Emulator Connection Logic
-    if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-        console.log('🔴 Connecting to Firebase Emulators...');
+    console.log('[DEBUG] Env Check:', {
+        NODE_ENV: process.env.NODE_ENV,
+        USE_EMULATOR: process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR,
+        USE_EMULATOR_LEGACY: process.env.NEXT_PUBLIC_USE_EMULATOR
+    });
+
+    // HYPER-STRICT GUARD: Only connect to emulators on localhost and when explicitly enabled
+    const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'ssr';
+    const isActualLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
+    const isStaging = currentHost.includes('dodo-beta');
+    const emulatorFlag = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' || process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+
+    console.log('[DEBUG-INFRA] Host Check:', { currentHost, isActualLocalhost, isStaging, emulatorFlag });
+
+    if (emulatorFlag && isActualLocalhost && !isStaging) {
+        console.log('🔴 [INFRA-CLIENT] Connecting to Firebase Emulators...');
 
         // Connect Auth Emulator
         // Note: No trailing slash for auth URL usually, but let's follow standard port

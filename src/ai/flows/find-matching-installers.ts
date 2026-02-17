@@ -9,7 +9,7 @@
  * - FindMatchingInstallersOutput - The return type for the findMatchingInstallers function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 import { User } from '@/lib/types';
 
@@ -31,7 +31,7 @@ export async function findMatchingInstallers(input: FindMatchingInstallersInput)
   return findMatchingInstallersFlow(input);
 }
 
-const findMatchingInstallersFlow = ai.defineFlow(
+const findMatchingInstallersFlow = defineLoggedFlow(
   {
     name: 'findMatchingInstallersFlow',
     inputSchema: FindMatchingInstallersInputSchema,

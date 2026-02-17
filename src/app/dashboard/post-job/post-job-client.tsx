@@ -70,6 +70,7 @@ import { Save, Check, Loader2 as Loader, Bookmark, Sparkles } from "lucide-react
 import { createJobAction, updateJobAction, getJobForEditAction } from "@/app/actions/job.actions";
 import { CreateJobInput } from "@/domains/jobs/job.types";
 import { Badge } from "@/components/ui/badge";
+import { AIFeedbackControl } from "@/components/ai/AIFeedbackControl";
 
 const addressSchema = z.object({
   house: z.string().min(3, "address.houseReq"),
@@ -1033,12 +1034,23 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                       </Button>
                     </div>
                     <FormControl>
-                      <Textarea
-                        placeholder={tJob('descriptionPlaceholder')}
-                        className={cn("min-h-32 text-base md:text-sm", isGenerating && "opacity-50")}
-                        {...field}
-                        data-testid="job-description-input"
-                      />
+                      <div className="space-y-2">
+                        <Textarea
+                          placeholder={tJob('descriptionPlaceholder')}
+                          className={cn("min-h-32 text-base md:text-sm", isGenerating && "opacity-50")}
+                          {...field}
+                          data-testid="job-description-input"
+                        />
+                        {/* AI Feedback Control - Only show if description exists (likely AI generated or at least user has input) */}
+                        {field.value && field.value.length > 50 && (
+                          <div className="flex justify-end">
+                            <AIFeedbackControl
+                              flowName="jobScopingWizardFlow"
+                              metadata={{ jobTitle, category: jobCategory }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

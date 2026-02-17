@@ -9,7 +9,7 @@
  * - SmartInstallerMatchingOutput - The return type for the smartInstallerMatching function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const SmartInstallerMatchingInputSchema = z.object({
@@ -57,7 +57,7 @@ const smartInstallerMatchingPrompt = ai.definePrompt({
   `,
 });
 
-const smartInstallerMatchingFlow = ai.defineFlow(
+const smartInstallerMatchingFlow = defineLoggedFlow(
   {
     name: 'smartInstallerMatchingFlow',
     inputSchema: SmartInstallerMatchingInputSchema,

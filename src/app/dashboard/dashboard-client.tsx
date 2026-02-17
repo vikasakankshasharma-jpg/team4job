@@ -14,11 +14,11 @@ const SupportTeamDashboard = dynamic(() => import("@/components/dashboard/suppor
   loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />,
   ssr: false
 });
-const InstallerDashboard = dynamic(() => import("@/components/dashboard/installer-dashboard").then(mod => mod.InstallerDashboard), {
+const InstallerDashboard = dynamic(() => import("@/domains/jobs").then(mod => mod.InstallerDashboard), {
   loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />,
   ssr: false
 });
-const JobGiverDashboard = dynamic(() => import("@/components/dashboard/job-giver-dashboard").then(mod => mod.JobGiverDashboard), {
+const JobGiverDashboard = dynamic(() => import("@/domains/jobs").then(mod => mod.JobGiverDashboard), {
   loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />,
   ssr: false
 });

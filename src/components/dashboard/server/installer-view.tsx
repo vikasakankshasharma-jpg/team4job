@@ -10,7 +10,7 @@ import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
 import { InstallerStatsWidget } from "@/components/dashboard/widgets/installer-stats";
 import { InstallerChartsWidget } from "@/components/dashboard/widgets/installer-charts";
 import { RecentActivityWidget } from "@/components/dashboard/widgets/recent-activity-widget";
-import { RecommendedJobs } from "@/components/dashboard/recommended-jobs";
+import { RecommendedJobsList } from "@/domains/jobs";
 import { InstallerHelpSetter } from "@/components/dashboard/installer-help-setter";
 
 export async function InstallerServerView({ user }: { user: User }) {
@@ -56,7 +56,7 @@ export async function InstallerServerView({ user }: { user: User }) {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
                 <div className="mt-8 mb-8">
                     {/* RecommendedJobs is Client Component but doesn't fetch on mount automatically, so fine to include */}
-                    <RecommendedJobs user={user} />
+                    <RecommendedJobsList user={user} />
                 </div>
                 <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <Card data-tour="find-project-card">

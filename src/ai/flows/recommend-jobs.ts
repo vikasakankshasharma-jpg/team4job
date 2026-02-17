@@ -1,7 +1,7 @@
 
 // 'use server'; removed to fix invalid export error
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 import { aiLearningService } from '@/ai/services/ai-learning.service';
 
@@ -71,7 +71,7 @@ const recommendJobsPrompt = ai.definePrompt({
   `,
 });
 
-const recommendJobsFlow = ai.defineFlow(
+const recommendJobsFlow = defineLoggedFlow(
     {
         name: 'recommendJobsFlow',
         inputSchema: RecommendJobsInputSchema,

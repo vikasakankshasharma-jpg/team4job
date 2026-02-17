@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useFirebase } from "@/hooks/use-user";
-import { QuickMetricCard } from "./quick-metric-card";
+import { QuickMetricCard } from "@/components/dashboard/quick-metric-card";
 import { Target, Clock, Star, Users } from "lucide-react";
 import { collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { Job, User } from "@/lib/types";
@@ -23,7 +23,7 @@ interface QuickMetrics {
     favoriteInstallers: number;
 }
 
-export function QuickMetricsRowV2({ userId, user }: QuickMetricsRowProps) {
+export function JobsMetricsRow({ userId, user }: QuickMetricsRowProps) {
     const { db } = useFirebase();
     const router = useRouter();
     const [metrics, setMetrics] = useState<QuickMetrics | null>(null);

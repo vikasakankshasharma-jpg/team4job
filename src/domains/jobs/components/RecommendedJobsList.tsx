@@ -21,7 +21,7 @@ interface RecommendedJobsProps {
     user: User;
 }
 
-export function RecommendedJobs({ user }: RecommendedJobsProps) {
+export function RecommendedJobsList({ user }: RecommendedJobsProps) {
     const { db } = useFirebase();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);

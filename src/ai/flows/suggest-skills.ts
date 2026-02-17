@@ -10,7 +10,7 @@
  * - `SuggestSkillsOutput`: The output type for the `suggestSkills` function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const SuggestSkillsInputSchema = z.object({
@@ -53,11 +53,12 @@ const suggestSkillsPrompt = ai.definePrompt({
   `,
 });
 
-const suggestSkillsFlow = ai.defineFlow(
+const suggestSkillsFlow = defineLoggedFlow(
   {
     name: 'suggestSkillsFlow',
     inputSchema: SuggestSkillsInputSchema,
     outputSchema: SuggestSkillsOutputSchema,
+    modelTier: 'flash', // Cost-effective model for pattern matching
   },
   async (input: z.infer<typeof SuggestSkillsInputSchema>) => {
     let historicalContext = '';

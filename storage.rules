@@ -42,7 +42,7 @@ service firebase.storage {
 
         // Case 1: Job Giver Uploads (Generic wildcard)
         // Path: /jobs/{userId}/{timestamp}/{fileName} -> firstId is userId
-        match /{timestamp}/{fileName} {
+        match /{ts}/{fileName} {
             allow read: if isAuthenticated();
             // Strict check: intermediate path element MUST match the authenticated User ID
             allow write: if isAuthenticated() && request.auth.uid == firstId && isImage() && isValidSize();

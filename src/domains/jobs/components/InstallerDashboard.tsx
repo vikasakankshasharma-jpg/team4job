@@ -1,16 +1,12 @@
 "use client";
 
 import React, { useMemo, useEffect } from "react";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { JobsMetricsRow } from "./JobsMetricsRow"
+import { RecommendedJobsList } from "./RecommendedJobsList"
+import { useUser, useFirebase } from "@/hooks/use-user"
 import { useTranslations } from 'next-intl';
-import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     ArrowRight,
     ShieldCheck,
@@ -26,7 +22,7 @@ import { toDate } from "@/lib/utils";
 import { format, subMonths } from "date-fns";
 import dynamic from "next/dynamic";
 import { StatCard } from "@/components/dashboard/cards/stat-card";
-import { RecommendedJobs } from "@/components/dashboard/recommended-jobs";
+
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
 import { InstallerStats } from "@/domains/jobs/job.types";
@@ -200,7 +196,7 @@ export function InstallerDashboard({ stats, transactions, loading = false }: {
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
                 <div className="mt-8 mb-8">
-                    <RecommendedJobs user={user!} />
+                    <RecommendedJobsList user={user!} />
                 </div>
                 <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <Card data-tour="find-project-card">

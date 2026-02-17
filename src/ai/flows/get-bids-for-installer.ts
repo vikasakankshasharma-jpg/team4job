@@ -5,7 +5,7 @@
  * The logic has been moved to a client-side query in src/app/dashboard/my-bids/page.tsx
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 import { Job, Bid } from '@/lib/types';
 
@@ -27,11 +27,11 @@ async function getBidsForInstaller(input: GetBidsForInstallerInput): Promise<Get
   return { jobs: [], bids: [] };
 }
 
-export const getBidsForInstallerFlow = ai.defineFlow(
+export const getBidsForInstallerFlow = defineLoggedFlow(
   {
     name: 'getBidsForInstallerFlow',
     inputSchema: GetBidsForInstallerInputSchema,
     outputSchema: GetBidsForInstallerOutputSchema,
   },
-  getBidsForInstaller
+  async (input) => getBidsForInstaller(input)
 );

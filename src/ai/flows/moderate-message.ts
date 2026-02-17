@@ -1,6 +1,6 @@
 
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const ModerateMessageInputSchema = z.object({
@@ -47,14 +47,21 @@ const moderateMessagePrompt = ai.definePrompt({
   `,
 });
 
-// Lazy import to avoid circular dependencies or server-init issues if not needed
-const getRateLimit = async () => (await import('@/lib/services/rate-limit')).checkRateLimit;
 
-export const moderateMessageFlow = ai.defineFlow(
+
+export const moderateMessageFlow = defineLoggedFlow(
     {
         name: 'moderateMessageFlow',
         inputSchema: ModerateMessageInputSchema,
         outputSchema: ModerateMessageOutputSchema,
+        modelTier: 'flash', // Simple safety checks
+        rateLimitConfig: {
+            enabled: true,
+            quota: 50,
+            windowSeconds: 86400,
+            limitType: 'per_user',
+            limitTypeAction: 'ai_chat'
+        }
     },
     async (input: z.infer<typeof ModerateMessageInputSchema>) => {
         // Optimization: Skip empty or very short messages
@@ -62,17 +69,7 @@ export const moderateMessageFlow = ai.defineFlow(
             return { isFlagged: false };
         }
 
-        // Rate Limiting (Server-Side Enforcement)
-        if (input.userId) {
-            const checkRateLimit = await getRateLimit();
-            const limitCheck = await checkRateLimit(input.userId, input.limitType as any || 'ai_chat');
-            if (!limitCheck.allowed) {
-                return {
-                    isFlagged: true,
-                    reason: limitCheck.reason || "Daily AI limit reached. Please try again tomorrow."
-                };
-            }
-        }
+        // Rate Limiting is now handled by middleware.
 
         let output: any = null;
         try {

@@ -1,5 +1,5 @@
 
-import { ai } from '@/ai/genkit';
+import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const ProcessCCTVVoiceInputSchema = z.object({
@@ -37,7 +37,7 @@ const processCCTVVoicePrompt = ai.definePrompt({
   `,
 });
 
-export const processCCTVVoiceFlow = ai.defineFlow(
+export const processCCTVVoiceFlow = defineLoggedFlow(
     {
         name: 'processCCTVVoiceFlow',
         inputSchema: ProcessCCTVVoiceInputSchema,
