@@ -24,10 +24,15 @@ try {
     auth = getAuth(app);
 
     // Initialization logic for Firestore to support custom cache settings
-    if (process.env.NEXT_PUBLIC_IS_CI === 'true') {
+    const useMemoryCache =
+        process.env.NEXT_PUBLIC_IS_CI === 'true' ||
+        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
+        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+
+    if (useMemoryCache) {
         try {
-            // Attempt to initialize with memory cache for CI stability (browserLocalPersistence for Auth, memory for Firestore)
-            console.log('[Firebase Client] Initializing Firestore with MEMORY CACHE (CI mode)');
+            // Use memory cache to avoid IndexedDB flakiness in CI/emulator environments
+            console.log('[Firebase Client] Initializing Firestore with MEMORY CACHE (CI/emulator mode)');
             db = initializeFirestore(app, {
                 localCache: memoryLocalCache(),
                 experimentalForceLongPolling: true

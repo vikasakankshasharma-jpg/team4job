@@ -13,9 +13,24 @@ let app: App | undefined;
 export function getAdminApp(): App {
     if (app) return app;
 
+    console.log('[ADMIN-SDK] Initializing Firebase Admin...');
+    console.log('[ADMIN-SDK] FIRESTORE_EMULATOR_HOST:', process.env.FIRESTORE_EMULATOR_HOST);
+    console.log('[ADMIN-SDK] FIREBASE_AUTH_EMULATOR_HOST:', process.env.FIREBASE_AUTH_EMULATOR_HOST);
+
     // If an app is already initialized, return it
     if (getApps().length > 0) {
+        console.log('[ADMIN-SDK] Using already initialized app');
         app = getApps()[0];
+        return app;
+    }
+
+    // 0. Emulator-friendly init (no credentials required)
+    if (process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+        console.log('[ADMIN-SDK] ✓ Using Emulator mode');
+        app = initializeApp({
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'demo-project',
+        });
+        console.log('[ADMIN-SDK] App initialized with project:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
         return app;
     }
 

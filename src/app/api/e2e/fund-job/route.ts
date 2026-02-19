@@ -7,16 +7,24 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 
+const isE2eAllowed = () => {
+    const emulatorEnabled =
+        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
+        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+
+    if (emulatorEnabled) return true;
+    if (process.env.ALLOW_E2E_SEED === 'true') return true;
+    if (process.env.NODE_ENV !== 'production') return true;
+
+    return process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'dodo-beta';
+};
+
 /**
  * E2E Test Helper: Fund a job instantly for testing
  * ✅ REFACTORED: Uses infrastructure logger and Firebase
  */
 export async function POST(req: NextRequest) {
-    // Only allow in beta/test environments
-    if (
-        process.env.NODE_ENV === 'production' &&
-        process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID !== 'dodo-beta'
-    ) {
+    if (!isE2eAllowed()) {
         return NextResponse.json(
             { error: 'Not allowed in production' },
             { status: 403 }

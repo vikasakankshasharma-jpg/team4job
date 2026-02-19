@@ -7,12 +7,31 @@ import { TEST_ACCOUNTS, ROUTES, TIMEOUTS } from '../fixtures/test-data';
 export class AuthHelper {
     constructor(private page: Page) { }
 
+    private static seeded = false;
+
+    private async seedTestUsers() {
+        if (AuthHelper.seeded) return;
+        try {
+            const response = await this.page.request.post('/api/e2e/seed-users');
+            if (response.ok()) {
+                AuthHelper.seeded = true;
+                console.log('[AuthHelper] Seeded test users.');
+            } else {
+                console.warn('[AuthHelper] Seed users call failed with status', response.status());
+            }
+        } catch (e) {
+            console.warn('[AuthHelper] Seed users call failed:', e);
+        }
+    }
+
     async loginAsJobGiver() {
+        await this.seedTestUsers();
         await this.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
         await this.ensureRole('Job Giver');
     }
 
     async loginAsInstaller() {
+        await this.seedTestUsers();
         await this.login(TEST_ACCOUNTS.installer.email, TEST_ACCOUNTS.installer.password);
         await this.ensureRole('Installer');
     }
@@ -84,6 +103,7 @@ export class AuthHelper {
     }
 
     async loginAsAdmin() {
+        await this.seedTestUsers();
         await this.login(TEST_ACCOUNTS.admin.email, TEST_ACCOUNTS.admin.password);
     }
 
@@ -659,6 +679,10 @@ export class TestHelper {
         this.debug = new DebugHelper(page);
         // Auto-enable console logging for debugging
         this.debug.logConsoleErrors();
+        // Auto-mock external APIs (pincode) for stability in E2E runs
+        void this.mockExternalAPIs().catch((e) => {
+            console.warn('[TestHelper] Failed to set up external API mocks:', e);
+        });
     }
 
     async mockExternalAPIs() {

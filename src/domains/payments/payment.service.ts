@@ -9,6 +9,12 @@ import { Timestamp } from 'firebase-admin/firestore';
  * Payment Service - Business logic for payments
  */
 export class PaymentService {
+    private isEmulatorMode(): boolean {
+        return process.env.USE_EMULATOR === 'true'
+            || process.env.NEXT_PUBLIC_USE_EMULATOR === 'true'
+            || !!process.env.FIRESTORE_EMULATOR_HOST;
+    }
+
     /**
      * Create a payment order for job funding
      */
@@ -121,11 +127,22 @@ export class PaymentService {
 
             // Create payout
             const transferId = `transfer_${jobId}_${Date.now()}`;
-            await cashfreeClient.createPayout({
-                beneficiaryId: installerId,
-                amount: transaction.payoutToInstaller,
-                transferId,
-            });
+            if (this.isEmulatorMode()) {
+                logger.info('Skipping Cashfree payout in emulator mode', {
+                    metadata: {
+                        jobId,
+                        installerId,
+                        transferId,
+                        amount: transaction.payoutToInstaller,
+                    }
+                });
+            } else {
+                await cashfreeClient.createPayout({
+                    beneficiaryId: installerId,
+                    amount: transaction.payoutToInstaller,
+                    transferId,
+                });
+            }
 
             // Update transaction
             await paymentRepository.update(transaction.id, {

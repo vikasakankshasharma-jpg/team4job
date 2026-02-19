@@ -16,6 +16,14 @@ export function getAdminApp() {
     return app;
   }
 
+  // 0. Emulator-friendly init (no credentials required)
+  if (process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+    app = initializeApp({
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'demo-project',
+    });
+    return app;
+  }
+
   // 1. Try to use service-account.json first for local development
   // UNCOMMENT the lines below if you have a service-account.json file in this directory.
   // try {

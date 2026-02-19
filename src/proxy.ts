@@ -3,11 +3,22 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
 
+const isE2eAllowed = () => {
+    const emulatorEnabled =
+        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
+        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+
+    if (emulatorEnabled) return true;
+    if (process.env.ALLOW_E2E_SEED === 'true') return true;
+    return process.env.NODE_ENV !== 'production';
+};
+
 // Paths that do not require authentication (public APIs)
 const PUBLIC_PATHS = [
     '/api/auth/session',
     '/api/cashfree/webhook',
     '/api/test-email', // Email testing endpoint
+    ...(isE2eAllowed() ? ['/api/e2e'] : []),
 ];
 
 // Initialize rate limiter: 20 requests per minute per IP
