@@ -1,0 +1,20 @@
+﻿{
+    "success":  true,
+    "results":  [
+                    {
+                        "email":  "giver_vip_v3@team4job.com",
+                        "uid":  "ZsH3li3fq1UzqkgSoqDGX2Fupccl",
+                        "created":  false
+                    },
+                    {
+                        "email":  "installer_pro_v3@team4job.com",
+                        "uid":  "vNpHzmnwo9yAwEySYODKWItoUvwx",
+                        "created":  true
+                    },
+                    {
+                        "email":  "vikasakankshasharma_v3@gmail.com",
+                        "uid":  "dToPNXk9GJExUZGX3oewlgkhjxDS",
+                        "created":  true
+                    }
+                ]
+}
