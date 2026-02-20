@@ -137,7 +137,7 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>{t('emailMobileLabel')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('emailMobilePlaceholder')} {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="username" aria-label={t('emailMobileLabel')} />
+                <Input placeholder={t('emailMobilePlaceholder')} {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="off" aria-label={t('emailMobileLabel')} />
               </FormControl>
               <FormMessage data-testid="email-error">
                 {form.formState.errors.identifier?.message && t(form.formState.errors.identifier.message)}
@@ -159,7 +159,7 @@ export function LoginForm() {
                     {...field}
                     disabled={!!lockoutUntil}
                     className="h-11 pr-12"
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                     aria-label={t('passwordLabel')}
                   />
                   <Button
