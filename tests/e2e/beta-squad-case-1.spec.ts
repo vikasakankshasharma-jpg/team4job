@@ -18,7 +18,7 @@ import { getDateString, getDateTimeString, TIMEOUTS } from '../fixtures/test-dat
 
 const CASE_1_DATA = {
     title: 'Test CCTV',
-    description: 'Test Job for Case 1 Standard Flow',
+    description: 'Detailed job description for Case 1. Includes requirements, scope, constraints and expected deliverables for CCTV installation in a 2BHK apartment.',
     category: 'CCTV Installation', // Adjust if needed based on dropdown
     skills: 'CCTV',
     pincode: '560001',
@@ -43,40 +43,97 @@ test.describe('Beta Squad - Group A', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
 
-        // Fill Job Details
-        // Handle Category Select
-        const categorySelect = page.getByTestId('job-category-select');
-        await categorySelect.waitFor({ state: 'visible' });
-        await categorySelect.click();
-        const option = page.locator('[role="option"]').first(); // Just pick first one or filter
-        await option.waitFor({ state: 'visible' });
-        await option.click();
-
-        await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(CASE_1_DATA.description);
-        await page.fill('input[name="skills"]', CASE_1_DATA.skills);
-        await page.fill('input[placeholder*="110001"]', CASE_1_DATA.pincode);
-        await page.waitForTimeout(1000);
-
-        // Select Post Office if needed
-        const poTrigger = page.locator('button:has-text("Select Post Office")');
-        if (await poTrigger.isVisible()) {
-            await poTrigger.click();
-            await page.locator('[role="option"]').first().click();
+        // Dismiss any blocking dialog (draft recovery, template selector, etc.)
+        const blockingDialog = page.getByRole('dialog');
+        if (await blockingDialog.isVisible().catch(() => false)) {
+            const dismissButton = blockingDialog.getByRole('button', { name: /Discard|Cancel|Close|Start Fresh|Skip|No/i }).first();
+            if (await dismissButton.isVisible().catch(() => false)) {
+                await dismissButton.click({ force: true });
+            } else {
+                await page.keyboard.press('Escape').catch(() => {});
+            }
         }
 
-        await page.fill('input[name="address.fullAddress"]', CASE_1_DATA.fullAddress);
-        await page.fill('input[name="deadline"]', getDateString(7));
-        await page.fill('input[name="jobStartDate"]', getDateTimeString(1)); // Tomorrow
+        // Fill Job Details
+        // Use helper form utilities for robust interactions
+        await helper.form.selectDropdown('Job Category', 'New Installation');
+        await helper.form.fillInput('Job Title', uniqueJobTitle);
+        await helper.form.fillTextarea('Job Description', CASE_1_DATA.description);
+        // Skills label may vary; use multiple attempts
+        try {
+            await helper.form.fillInput('Required Skills', CASE_1_DATA.skills);
+        } catch {
+            await helper.form.fillInput('Skills', CASE_1_DATA.skills);
+        }
+        await helper.form.fillInput('Pincode', CASE_1_DATA.pincode);
+        await page.waitForTimeout(1000);
+
+        await helper.form.fillInput('Detailed Address', CASE_1_DATA.fullAddress).catch(() => page.fill('input[name="address.fullAddress"]', CASE_1_DATA.fullAddress));
+        await helper.form.fillInput('Bidding Deadline', getDateString(7)).catch(() => page.fill('input[name="deadline"]', getDateString(7)));
+        await helper.form.fillInput('Job Work Start Date & Time', getDateTimeString(8)).catch(() => page.fill('input[name="jobStartDate"]', getDateTimeString(8)));
 
         // Budget
         await page.fill('input[name="priceEstimate.min"]', CASE_1_DATA.budget.toString());
         await page.fill('input[name="priceEstimate.max"]', CASE_1_DATA.budget.toString());
 
-        await page.getByRole('button', { name: "Post Job" }).click();
-        await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });
-        jobId = await helper.job.getJobIdFromUrl();
-        console.log(`[PASS] Job Posted: ${jobId}`);
+        // Wait a bit for form to settle
+        await page.waitForTimeout(2000);
+
+        // Ensure verification checkbox is checked (required by schema)
+        const verifyCheckbox = page.getByRole('checkbox', { name: /I verify that these details are correct/i }).first();
+        if (await verifyCheckbox.isVisible().catch(() => false)) {
+            await verifyCheckbox.check().catch(() => { /* ignore if custom checkbox */ });
+            // Fallback to DOM check if the custom component doesn't respond to Playwright check
+            await page.evaluate(() => {
+                const cb = Array.from(document.querySelectorAll('input[type="checkbox"]')).find(i => (i as HTMLInputElement).nextSibling && (i as HTMLInputElement).nextSibling.textContent && (i as HTMLInputElement).nextSibling.textContent.includes('I verify')) as HTMLInputElement | undefined;
+                if (cb) cb.checked = true;
+            });
+        }
+
+        // Check for validation errors
+        const errors = await page.evaluate(() => {
+            const errorElements = document.querySelectorAll('[role="alert"], .text-red-500, .error');
+            const errorTexts: string[] = [];
+            errorElements.forEach(el => {
+                const text = el.textContent?.trim();
+                if (text) errorTexts.push(text);
+            });
+            return errorTexts;
+        });
+        
+        if (errors.length > 0) {
+            console.log('[WARN] Form validation errors detected:', errors);
+        }
+
+        // Hide overlays before clicking
+        await page.evaluate(() => {
+            const emulatorWarning = document.querySelector('.firebase-emulator-warning');
+            if (emulatorWarning) (emulatorWarning as any).style.display = 'none';
+            document.querySelectorAll('button').forEach((btn: any) => {
+                if (btn.textContent?.includes('Beta') || btn.textContent?.includes('Feedback') || (btn.classList.contains('fixed') && btn.classList.contains('z-50'))) {
+                    btn.style.display = 'none';
+                    btn.style.pointerEvents = 'none';
+                }
+            });
+        });
+
+            // Prepare form and submit using robust helpers
+            await helper.preparePostJobSubmission();
+            await helper.submitPostJob({ force: true });
+        
+        // Wait for submission and redirect
+        try {
+            await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });
+            jobId = await helper.job.getJobIdFromUrl();
+            console.log(`[PASS] Job Posted: ${jobId}`);
+        } catch (e) {
+            console.error('[ERROR] Failed to post job:', e);
+            const url = page.url();
+            const pageText = await page.textContent('body');
+            console.log('[DEBUG] Current URL:', url);
+            console.log('[DEBUG] Page contains:', pageText?.substring(0, 500));
+            throw e;
+        }
 
         // --- Step 2: IN Bid ---
         console.log('--- Step 2: IN Bid ---');

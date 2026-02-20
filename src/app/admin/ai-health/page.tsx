@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { aiMetricsService } from "@/ai/services/AIMetricsService";
+
+export const dynamic = 'force-dynamic';
 import { AIMetric, AILog } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, DollarSign, Clock, AlertTriangle } from "lucide-react";
