@@ -669,11 +669,44 @@ export class TestHelper {
         this.job = new JobHelper(page);
         this.form = new FormHelper(page);
 
-        // Globally suppress cookie banner for all navigations
+        // Globally suppress cookie banner and test overlay elements
         this.page.addInitScript(() => {
+            // Hide overlays with CSS
             const style = document.createElement('style');
-            style.innerHTML = '.CookieConsent { display: none !important; }';
+            style.innerHTML = `
+                .CookieConsent { display: none !important; }
+                .firebase-emulator-warning { display: none !important; pointer-events: none !important; }
+            `;
             document.head.appendChild(style);
+
+            // Set up MutationObserver to persist overlay hiding as new elements are added
+            const observer = new MutationObserver(() => {
+                // Hide firebase emulator warning
+                const emulatorWarning = document.querySelector('.firebase-emulator-warning');
+                if (emulatorWarning) {
+                    (emulatorWarning as any).style.display = 'none';
+                    (emulatorWarning as any).style.pointerEvents = 'none';
+                }
+                
+                // Hide Beta Feedback button
+                const betaButtons = document.querySelectorAll('button');
+                for (const btn of betaButtons) {
+                    const text = btn.textContent || '';
+                    if (text.includes('Beta Feedback') || text.includes('Feedback') || text === '…') {
+                        if (btn.classList.contains('fixed') || btn.classList.contains('z-50')) {
+                            (btn as any).style.display = 'none';
+                            (btn as any).style.pointerEvents = 'none';
+                        }
+                    }
+                }
+            });
+
+            // Start observing the document for changes
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: false,
+            });
         });
         this.wait = new WaitHelper(page);
         this.debug = new DebugHelper(page);
@@ -682,6 +715,10 @@ export class TestHelper {
         // Auto-mock external APIs (pincode) for stability in E2E runs
         void this.mockExternalAPIs().catch((e) => {
             console.warn('[TestHelper] Failed to set up external API mocks:', e);
+        });
+        // Hide test overlays on page load
+        void this.hideTestOverlays().catch((e) => {
+            console.warn('[TestHelper] Failed to hide test overlays:', e);
         });
     }
 
@@ -720,6 +757,138 @@ export class TestHelper {
             }
         } catch (e) {
             console.log('[TestHelper] Cookie banner not found or already accepted.');
+        }
+    }
+
+    async hideTestOverlays() {
+        console.log('[TestHelper] Hiding test overlay elements...');
+        try {
+            await this.page.evaluate(() => {
+                // Hide firebase emulator warning
+                const emulatorWarning = document.querySelector('.firebase-emulator-warning');
+                if (emulatorWarning) {
+                    (emulatorWarning as any).style.display = 'none';
+                    (emulatorWarning as any).style.visibility = 'hidden';
+                    (emulatorWarning as any).style.pointerEvents = 'none';
+                    (emulatorWarning as any).style.position = 'absolute';
+                    (emulatorWarning as any).style.left = '-9999px';
+                }
+                
+                // Hide Beta Feedback button and other overlays
+                const elements = document.querySelectorAll('button, div');
+                for (const el of elements) {
+                    const text = el.textContent || '';
+                    const classes = el.className;
+                    
+                    // Check if it's a fixed button or overlay
+                    if ((text.includes('Beta') || text.includes('Feedback') || text === '…' || classes.includes('fixed') && classes.includes('z-50')) && el.tagName === 'BUTTON') {
+                        (el as any).style.display = 'none';
+                        (el as any).style.visibility = 'hidden';
+                        (el as any).style.pointerEvents = 'none';
+                    }
+                }
+            });
+            console.log('[TestHelper] Test overlays hidden successfully.');
+        } catch (e) {
+            console.warn('[TestHelper] Failed to hide overlays:', e);
+        }
+    }
+
+    // Prepare the post-job form to be submitted: dismiss dialogs, ensure fields, set defaults
+    async preparePostJobSubmission() {
+        // Disable autosave where applicable
+        await this.page.evaluate(() => { (window as any).__DISABLE_AUTO_SAVE__ = true; }).catch(() => {});
+
+        // Dismiss blocking dialogs
+        const blockingDialog = this.page.getByRole('dialog');
+        if (await blockingDialog.isVisible().catch(() => false)) {
+            const dismissButton = blockingDialog.getByRole('button', { name: /Discard|Cancel|Close|Start Fresh|Skip|No/i }).first();
+            if (await dismissButton.isVisible().catch(() => false)) {
+                await dismissButton.click({ force: true });
+            } else {
+                await this.page.keyboard.press('Escape').catch(() => {});
+            }
+        }
+
+        // Ensure long description
+        const description = this.page.locator('textarea[name="jobDescription"]');
+        if (await description.isVisible().catch(() => false)) {
+            const value = await description.inputValue();
+            if (value.trim().length < 50) {
+                await description.fill('Detailed job description for E2E testing. Includes requirements, scope, and constraints for installation work.');
+            }
+        }
+
+        // Category select fallback
+        const categoryTrigger = this.page.getByTestId('job-category-select');
+        if (await categoryTrigger.isVisible().catch(() => false)) {
+            try {
+                await categoryTrigger.click();
+                const option = this.page.getByRole('option').first();
+                if (await option.isVisible().catch(() => false)) await option.click();
+            } catch {
+                await categoryTrigger.dispatchEvent('click').catch(() => {});
+            }
+        }
+
+        // Skills
+        const skillsInput = this.page.getByTestId('skills-input');
+        if (await skillsInput.isVisible().catch(() => false)) {
+            const value = await skillsInput.inputValue();
+            if (!value.trim()) await skillsInput.fill('CCTV');
+        }
+
+        // Pincode/post office
+        const pinInput = this.page.getByTestId('pincode-input');
+        if (await pinInput.isVisible().catch(() => false)) {
+            let pinValue = (await pinInput.inputValue()).trim();
+            if (pinValue.length !== 6) {
+                pinValue = '110001';
+                await pinInput.fill(pinValue);
+            }
+            await pinInput.blur();
+            const poTrigger = this.page.getByTestId('po-select-trigger');
+            if (await poTrigger.isVisible().catch(() => false)) {
+                const isDisabled = await poTrigger.isDisabled().catch(() => false);
+                if (!isDisabled) {
+                    await poTrigger.click().catch(() => {});
+                    const option = this.page.locator('[data-testid="po-select-item"], [role="option"]').first();
+                    if (await option.isVisible().catch(() => false)) await option.click().catch(() => {});
+                }
+            }
+        }
+
+        // Verify checkbox
+        const verifyCheckbox = this.page.getByRole('checkbox', { name: /I verify that these details are correct/i });
+        if (await verifyCheckbox.isVisible().catch(() => false)) {
+            const checked = await verifyCheckbox.getAttribute('aria-checked').catch(() => undefined);
+            if (checked !== 'true') await verifyCheckbox.click().catch(() => {});
+        } else {
+            const verifyText = this.page.getByText(/I verify that these details are correct/i);
+            if (await verifyText.isVisible().catch(() => false)) await verifyText.click().catch(() => {});
+        }
+    }
+
+    // Submit the Post Job action with overlays and confirm handling
+    async submitPostJob(options?: { force?: boolean }) {
+        // Hide common blocking elements
+        const betaFeedback = this.page.getByRole('button', { name: /Beta Feedback/i });
+        if (await betaFeedback.isVisible().catch(() => false)) {
+            await betaFeedback.evaluate(el => (el as HTMLElement).style.display = 'none').catch(() => {});
+        }
+        const emulatorWarning = this.page.locator('.firebase-emulator-warning');
+        if (await emulatorWarning.isVisible().catch(() => false)) {
+            await emulatorWarning.evaluate(el => (el as HTMLElement).style.display = 'none').catch(() => {});
+        }
+
+        await this.page.getByRole('button', { name: /Post Job/i }).click({ force: options?.force ?? true }).catch(() => {});
+
+        const confirmButton = this.page.getByRole('button', { name: /Confirm & Save/i });
+        try {
+            await confirmButton.waitFor({ state: 'visible', timeout: 10000 });
+            await confirmButton.click().catch(() => {});
+        } catch {
+            // ignore if not present
         }
     }
 }

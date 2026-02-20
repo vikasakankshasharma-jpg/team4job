@@ -43,7 +43,9 @@
         "uploadFailedDesc": "Could not upload one or more files. Please try again.",
         "checkForm": "Check Form",
         "saving": "Saving...",
-        "draftAutoSaved": "Draft auto-saved"
+        "draftAutoSaved": "Draft auto-saved",
+        "saved": "Saved successfully.",
+        "checkFormDesc": "Please check the form description and required fields."
     },
     "landing": {
         "tagline": "The Professional CCTV Marketplace",

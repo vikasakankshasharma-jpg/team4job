@@ -20,6 +20,11 @@ service cloud.firestore {
     }
 
     // --- COLLECTION RULES ---
+    // Feature Flags - Readable by all authenticated users
+    match /feature_flags/{flagId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
 
 
     // Confidential User Data (PII)
