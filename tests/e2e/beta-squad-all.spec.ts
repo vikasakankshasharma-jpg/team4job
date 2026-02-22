@@ -15,21 +15,7 @@ const DEFAULT_STREET = 'Main Road';
 const DEFAULT_FULL_ADDRESS = '123 Main Road, Bangalore';
 
 async function preparePostJobSubmission(page: Page) {
-    await page.evaluate(() => {
-        (window as any).__DISABLE_AUTO_SAVE__ = true;
-    });
-
-    const blockingDialog = page.getByRole('dialog');
-    if (await blockingDialog.isVisible().catch(() => false)) {
-        const dismissButton = blockingDialog.getByRole('button', { name: /Discard|Cancel|Close|Start Fresh|Skip|No/i }).first();
-        if (await dismissButton.isVisible().catch(() => false)) {
-            await dismissButton.click({ force: true });
-        } else {
-            await page.keyboard.press('Escape').catch(() => { });
-        }
-    }
-
-    const description = page.locator('textarea[name="jobDescription"]');
+    const description = page.locator('[data-testid="job-description-input"]');
     if (await description.isVisible()) {
         const value = await description.inputValue();
         if (value.trim().length < 50) {
@@ -145,12 +131,27 @@ async function submitPostJob(page: Page, options?: { force?: boolean }) {
     }
 
     await page.getByRole('button', { name: /Post Job/i }).click({ force: options?.force ?? true });
+    await page.waitForTimeout(500); // give UI time to show errors
+    const formMessages = page.locator('.text-destructive');
+    const errCount = await formMessages.count();
+
+    console.log(`[DEBUG] Final Job Title in DOM: "${await page.inputValue('input[name="jobTitle"]').catch(() => 'error')}"`);
+    console.log(`[DEBUG] Final Address in DOM: "${await page.inputValue('input[name="address.fullAddress"]').catch(() => 'error')}"`);
+
+    if (errCount > 0) {
+        console.log(`[DEBUG] Found ${errCount} validation errors:`);
+        for (let i = 0; i < errCount; i++) {
+            const errText = await formMessages.nth(i).innerText();
+            console.log(`[DEBUG] Error ${i + 1}: ${errText}`);
+        }
+    }
+
     const confirmButton = page.getByRole('button', { name: /Confirm & Save/i });
     try {
-        await confirmButton.waitFor({ state: 'visible', timeout: 10000 });
+        await confirmButton.waitFor({ state: 'visible', timeout: 5000 });
         await confirmButton.click();
     } catch {
-        // If confirm dialog doesn't appear, continue (validation or offline scenarios may handle separately).
+        // ...
     }
 }
 
@@ -183,7 +184,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         // Fill Job Details
         await page.fill('input[name="jobTitle"]', data.title);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', data.pincode);
         await page.waitForTimeout(1000); // Wait for pincode API
@@ -191,8 +192,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="address.fullAddress"]', data.address);
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', data.budget.toString());
-        await page.fill('input[name="priceEstimate.max"]', data.budget.toString());
+        await page.fill('[data-testid="min-budget-input"]', data.budget.toString());
+        await page.fill('[data-testid="max-budget-input"]', data.budget.toString());
 
         await preparePostJobSubmission(page);
         await submitPostJob(page);
@@ -315,7 +316,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         // Fill Job Details
         await page.fill('input[name="jobTitle"]', data.title);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', data.pincode);
         await page.waitForTimeout(1000);
@@ -341,8 +342,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             if (!disabled) await deadlineInput.fill(getDateString(7));
         }
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', data.budget.toString());
-        await page.fill('input[name="priceEstimate.max"]', data.budget.toString());
+        await page.fill('[data-testid="min-budget-input"]', data.budget.toString());
+        await page.fill('[data-testid="max-budget-input"]', data.budget.toString());
 
         await preparePostJobSubmission(page);
         await submitPostJob(page);
@@ -392,15 +393,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Haggle St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', budget.toString());
-        await page.fill('input[name="priceEstimate.max"]', budget.toString());
+        await page.fill('[data-testid="min-budget-input"]', budget.toString());
+        await page.fill('[data-testid="max-budget-input"]', budget.toString());
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -463,15 +464,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Haggle St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', budget.toString());
-        await page.fill('input[name="priceEstimate.max"]', budget.toString());
+        await page.fill('[data-testid="min-budget-input"]', budget.toString());
+        await page.fill('[data-testid="max-budget-input"]', budget.toString());
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -522,15 +523,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Milestone Rd");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', budget.toString());
-        await page.fill('input[name="priceEstimate.max"]', budget.toString());
+        await page.fill('[data-testid="min-budget-input"]', budget.toString());
+        await page.fill('[data-testid="max-budget-input"]', budget.toString());
 
         // Enable Milestones (toggle)
         const milestoneToggle = page.locator('button[role="switch"][name="milestones"]'); // Adjust selector
@@ -633,15 +634,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Edit St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -656,7 +657,19 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await editJobButton.click();
             await page.fill('input[name="jobTitle"]', correctedTitle);
             await page.getByRole('button', { name: /Save|Update/i }).click();
-            await helper.form.waitForToast('Job Updated', 10000).catch(() => { });
+
+            // Handle potential confirmation dialog
+            const confirmBtn = page.getByRole('button', { name: /Confirm|Proceed|Yes/i }).first();
+            try {
+                await confirmBtn.waitFor({ state: 'visible', timeout: 3000 });
+                await confirmBtn.click();
+            } catch { }
+
+            // Safe wait for toast without failing the test if it timeouts, since it's a fallback block
+            try {
+                await page.locator(`[role="status"]:has-text("Job Updated"), .toast:has-text("Job Updated")`)
+                    .first().waitFor({ state: 'visible', timeout: 8000 });
+            } catch { }
         } else {
             // Some builds removed explicit edit action on this screen.
             expectedTitle = uniqueJobTitle;
@@ -677,6 +690,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill("5000");
+        await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!', 15000);
 
@@ -698,15 +712,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.nav.goToPostJob();
         // ... Quick Post ...
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Cancel St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -718,6 +732,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill("5000");
+        await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
         await helper.form.waitForToast('Bid Placed!', 10000).catch(() => { });
@@ -834,15 +849,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Ghost St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -854,6 +869,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill("5000");
+        await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
 
         // 3. JG Does Nothing
@@ -927,15 +943,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Fail St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -946,6 +962,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill("5000");
+        await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
 
@@ -1057,15 +1074,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Far St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -1077,6 +1094,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill("5000");
+        await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!', 10000).catch(() => { });
 
@@ -1136,15 +1154,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "No Show St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -1155,6 +1173,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill("5000");
+        await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
 
@@ -1258,15 +1277,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Late St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -1277,6 +1296,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill("5000");
+        await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
 
@@ -1371,15 +1391,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Extra St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -1390,6 +1410,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill("5000");
+        await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
 
@@ -1463,6 +1484,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await addExtraBtn.click();
             await page.fill('input[name="description"]', "Clips").catch(() => { });
             await page.fill('input[name="amount"]', "1000").catch(() => { });
+            await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
             const addOrFundButton = page.getByRole('button', { name: /Add|Fund|Submit|Propose|Request/i }).first();
             if (await addOrFundButton.isVisible().catch(() => false)) {
                 await addOrFundButton.click();
@@ -1498,15 +1520,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Reject St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -1517,6 +1539,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill("5000");
+        await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
 
@@ -1634,15 +1657,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Scope St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -1653,6 +1676,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill("5000");
+        await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
 
@@ -1769,15 +1793,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         // ... (Repeat setup) ...
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Ugly St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -1788,6 +1812,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill("5000");
+        await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
 
@@ -1905,15 +1930,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Damage St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -1924,6 +1949,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill("5000");
+        await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
 
@@ -2013,15 +2039,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Report St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -2062,15 +2088,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.nav.goToPostJob();
         // ... Quick Post ...
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Cash St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
         await preparePostJobSubmission(page);
         await submitPostJob(page);
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -2201,15 +2227,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         // Fill required fields first so offline failure is network-related, not validation-related.
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "Outage St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
 
         // Simulate Offline
         await context.setOffline(true);
@@ -2219,7 +2245,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await submitPostJob(page, { force: true });
 
         // Expect Graceful Error (Toast or UI message), no crash
-        const errorToast = page.getByText(/Network request failed|Offline|Check internet|Failed to fetch|ERR_INTERNET_DISCONNECTED/i);
+        const errorToast = page.getByText(/Network request failed|Offline|Check internet|Failed to fetch|ERR_INTERNET_DISCONNECTED/i).first();
         await expect(errorToast).toBeVisible({ timeout: 5000 });
 
         await context.setOffline(false);
@@ -2239,15 +2265,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
         await page.fill('input[name="jobTitle"]', xssTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(LONG_DESCRIPTION);
+        await page.locator('[data-testid="job-description-input"]').fill(LONG_DESCRIPTION);
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', '560001');
         await page.waitForTimeout(1000);
         await page.fill('input[name="address.fullAddress"]', "XSS St");
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
-        await page.fill('input[name="priceEstimate.min"]', "5000");
-        await page.fill('input[name="priceEstimate.max"]', "5000");
+        await page.fill('[data-testid="min-budget-input"]', "5000");
+        await page.fill('[data-testid="max-budget-input"]', "5000");
 
         // Listen for Dialog (Alert) - Should NOT happen
         let dialogTriggered = false;

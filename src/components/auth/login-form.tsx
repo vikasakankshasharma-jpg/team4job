@@ -19,18 +19,14 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTranslations } from "next-intl";
 
-const formSchema = z.object({
-  identifier: z.string().refine((val) => {
-    const isEmail = z.string().email().safeParse(val).success;
-    const isMobile = /^\d{10}$/.test(val);
-    return isEmail || isMobile;
-  }, { message: "validation.identifierReq" }),
-  password: z.string().min(1, { message: "validation.passwordReq" }),
-});
+type FormValues = {
+  identifier: string;
+  password: string;
+};
 
 const MAX_LOGIN_ATTEMPTS = typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 10 : 5;
 const LOCKOUT_DURATION_SECONDS = 60;
@@ -65,7 +61,16 @@ export function LoginForm() {
     return () => clearInterval(interval);
   }, [lockoutUntil]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const formSchema = useMemo(() => z.object({
+    identifier: z.string().refine((val) => {
+      const isEmail = z.string().email().safeParse(val).success;
+      const isMobile = /^\d{10}$/.test(val);
+      return isEmail || isMobile;
+    }, { message: t("validation.identifierReq") }),
+    password: z.string().min(1, { message: t("validation.passwordReq") }),
+  }), [t]);
+
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       identifier: "",
@@ -73,7 +78,7 @@ export function LoginForm() {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormValues) {
     console.log("LoginForm: onSubmit called", values.identifier);
     if (lockoutUntil) return;
 
@@ -139,9 +144,7 @@ export function LoginForm() {
               <FormControl>
                 <Input placeholder={t('emailMobilePlaceholder')} {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="off" aria-label={t('emailMobileLabel')} />
               </FormControl>
-              <FormMessage data-testid="email-error">
-                {form.formState.errors.identifier?.message && t(form.formState.errors.identifier.message)}
-              </FormMessage>
+              <FormMessage data-testid="email-error" />
             </FormItem>
           )}
         />

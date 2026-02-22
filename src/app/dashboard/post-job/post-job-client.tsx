@@ -76,7 +76,7 @@ const addressSchema = z.object({
   house: z.string().min(3, "address.houseReq"),
   street: z.string().min(3, "address.streetReq"),
   landmark: z.string().optional(),
-  cityPincode: z.string().min(8, "address.pincodeReq"),
+  cityPincode: z.string().min(6, "address.pincodeReq"),
   fullAddress: z.string().min(10, { message: "address.locationReq" }),
 });
 
@@ -263,22 +263,26 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     const result = await resolver(data, context, options);
 
     if (Object.keys(result.errors).length > 0) {
-      const translatedErrors: any = {};
-      Object.keys(result.errors).forEach((key) => {
-        const error = (result.errors as Record<string, any>)[key];
-        if (error && error.message) {
-          // Check if message is a translation key (contains dot or starts with validation/address)
-          const messageKey = error.message as string;
-          // Check if it's one of our known keys
+      const translateErrorNode = (node: any): any => {
+        if (!node || typeof node !== 'object') return node;
+
+        if (node.message && typeof node.message === 'string') {
+          const messageKey = node.message;
           if (messageKey.startsWith('validation.') || messageKey.startsWith('address.')) {
             const [ns, k] = messageKey.split('.');
-            translatedErrors[key] = { ...error, message: ns === 'address' ? tJob(k) : tValidation(k) }; // Assumption: address keys in job, validation keys in validation
-          } else {
-            translatedErrors[key] = error;
+            return { ...node, message: ns === 'address' ? tJob(k) : tValidation(k) };
           }
+          return node;
         }
-      });
-      return { ...result, errors: translatedErrors };
+
+        const newNode: any = Array.isArray(node) ? [] : {};
+        for (const key in node) {
+          newNode[key] = translateErrorNode(node[key]);
+        }
+        return newNode;
+      };
+
+      return { ...result, errors: translateErrorNode(result.errors) };
     }
     return result;
   }, [tJob, tValidation]);
@@ -724,13 +728,16 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     setIsPostConfirmDialogOpen(false);
 
     if (!user || !storage) { // Removed db requirement
+      console.log("DEBUG: Exiting early because !user or !storage. user:", !!user, "storage:", !!storage);
       toast({ title: tCommon('error'), description: tError('loginRequired'), variant: "destructive" });
       return;
     }
 
     setIsProcessing(true);
+    console.log("DEBUG: Passed user/storage check. Setting isProcessing=true.");
 
     const [pincode] = values.address.cityPincode.split(',');
+    console.log("DEBUG: Parsed pincode:", pincode);
 
     // 1. Upload Attachments (Client-side)
     const attachmentUrls: JobAttachment[] = [];
@@ -748,6 +755,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
           });
         }
         console.log("Attachments uploaded successfully");
+      } else {
+        console.log("DEBUG: No attachments to upload.");
       }
     } catch (uploadError) {
       console.error("Upload failed", uploadError);
@@ -756,6 +765,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       return;
     }
 
+    console.log("DEBUG: Preparing jobInput...");
     // 2. Prepare Data for Server Action
     const jobInput: CreateJobInput = {
       title: values.jobTitle,
@@ -778,9 +788,11 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       directAwardInstallerId: values.directAwardInstallerId || undefined,
       preferredTimeSlot: values.preferredTimeSlot,
     };
+    console.log("DEBUG: jobInput prepared:", jobInput);
 
     try {
       let result;
+      console.log("DEBUG: Entering submit try block. Edit mode:", isEditMode);
 
       if (isEditMode && editJobId) {
         // Update Action
@@ -860,7 +872,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     // If valid, submit the form
     form.handleSubmit(onSubmit, (errors) => {
       // Invalid handler
-      console.error("Form validation errors:", errors);
+      console.error("Form validation errors:", JSON.stringify(errors, null, 2));
+      console.error("Current address values:", JSON.stringify(form.getValues("address"), null, 2));
       const firstErrorField = Object.keys(errors)[0];
       const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
       if (errorElement) {

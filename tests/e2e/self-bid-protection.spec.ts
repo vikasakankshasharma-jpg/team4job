@@ -30,7 +30,7 @@ test.describe('Self-Interaction Guardrails', () => {
 
         // Fill job details
         await page.fill('input[name="jobTitle"]', jobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill('Testing self-bid protection. This job should not be biddable by the owner.');
+        await page.locator('[data-testid="job-description-input"]').fill('Testing self-bid protection. This job should not be biddable by the owner.');
         // Select category
         await page.getByTestId('job-category-select').click();
         await page.locator('[role="option"]').first().click();
@@ -60,8 +60,8 @@ test.describe('Self-Interaction Guardrails', () => {
         await page.fill('input[name="deadline"]', tomorrow.toISOString().split('T')[0]);
         await page.fill('input[name="jobStartDate"]', nextWeek.toISOString().slice(0, 16));
 
-        await page.fill('input[name="priceEstimate.min"]', '1000');
-        await page.fill('input[name="priceEstimate.max"]', '5000');
+        await page.fill('[data-testid="min-budget-input"]', '1000');
+        await page.fill('[data-testid="max-budget-input"]', '5000');
 
         await page.getByRole('button', { name: "Post Job" }).click();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });

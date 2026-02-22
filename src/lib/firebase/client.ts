@@ -41,6 +41,7 @@ try {
     const isActualLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
     const isStaging = currentHost.includes('dodo-beta');
     const emulatorFlag = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+    const firestoreEmulatorFlag = process.env.NEXT_PUBLIC_USE_FIRESTORE_EMULATOR === 'true';
 
     console.log('[DEBUG-LIB] Host Check:', { currentHost, isActualLocalhost, isStaging, emulatorFlag });
 
@@ -54,6 +55,11 @@ try {
         connectFirestoreEmulator(db, '127.0.0.1', 8080);
 
         // Storage Emulator (Port 9199 - Default)
+        connectStorageEmulator(storage, '127.0.0.1', 9199);
+    } else if (firestoreEmulatorFlag && isActualLocalhost && !isStaging) {
+        // Only connect Firestore/Storage to emulator (Auth uses production Firebase)
+        console.log('[LIB-CLIENT] Connecting Firestore and Storage to Emulator...');
+        connectFirestoreEmulator(db, '127.0.0.1', 8080);
         connectStorageEmulator(storage, '127.0.0.1', 9199);
     }
 

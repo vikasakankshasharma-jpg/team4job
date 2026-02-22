@@ -66,10 +66,15 @@ export default defineConfig({
 
     /* Run your local dev server before starting the tests */
     webServer: {
-        command: 'npx next start -p 5000',
+        command: 'cross-env FIRESTORE_EMULATOR_HOST=localhost:8080 npx next start -p 5000',
         url: 'http://localhost:5000',
         reuseExistingServer: !process.env.CI,
         timeout: 180000, // 3 mins for server start
+        env: {
+            FIRESTORE_EMULATOR_HOST: 'localhost:8080',
+            FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199',
+            ALLOW_E2E_SEED: 'true',
+        },
     },
 
     /* Global timeout for each test */

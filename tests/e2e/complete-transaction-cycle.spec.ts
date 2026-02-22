@@ -86,7 +86,7 @@ test.describe('Complete Transaction Cycle E2E', () => {
         await option.click();
 
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(TEST_JOB_DATA.description);
+        await page.locator('[data-testid="job-description-input"]').fill(TEST_JOB_DATA.description);
         await page.fill('input[name="skills"]', TEST_JOB_DATA.skills);
 
         await page.fill('input[placeholder*="110001"]', TEST_JOB_DATA.pincode);
@@ -106,8 +106,8 @@ test.describe('Complete Transaction Cycle E2E', () => {
         await page.fill('input[name="deadline"]', getDateString(7));
         const randomDays = Math.floor(Math.random() * 90) + 50; // increased min from 10 to 50 to clear random deadline (max 37)
         await page.fill('input[name="jobStartDate"]', getDateTimeString(randomDays));
-        await page.fill('input[name="priceEstimate.min"]', TEST_JOB_DATA.minBudget.toString());
-        await page.fill('input[name="priceEstimate.max"]', TEST_JOB_DATA.maxBudget.toString());
+        await page.fill('[data-testid="min-budget-input"]', TEST_JOB_DATA.minBudget.toString());
+        await page.fill('[data-testid="max-budget-input"]', TEST_JOB_DATA.maxBudget.toString());
 
         await page.getByRole('button', { name: "Post Job" }).click();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });

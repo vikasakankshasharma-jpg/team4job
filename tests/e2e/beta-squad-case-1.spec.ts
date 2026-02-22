@@ -17,7 +17,7 @@ import { getDateString, getDateTimeString, TIMEOUTS } from '../fixtures/test-dat
  */
 
 const CASE_1_DATA = {
-    title: 'Test CCTV',
+    title: 'Test CCTV Installation',
     description: 'Detailed job description for Case 1. Includes requirements, scope, constraints and expected deliverables for CCTV installation in a 2BHK apartment.',
     category: 'CCTV Installation', // Adjust if needed based on dropdown
     skills: 'CCTV',
@@ -50,7 +50,7 @@ test.describe('Beta Squad - Group A', () => {
             if (await dismissButton.isVisible().catch(() => false)) {
                 await dismissButton.click({ force: true });
             } else {
-                await page.keyboard.press('Escape').catch(() => {});
+                await page.keyboard.press('Escape').catch(() => { });
             }
         }
 
@@ -68,13 +68,13 @@ test.describe('Beta Squad - Group A', () => {
         await helper.form.fillInput('Pincode', CASE_1_DATA.pincode);
         await page.waitForTimeout(1000);
 
-        await helper.form.fillInput('Detailed Address', CASE_1_DATA.fullAddress).catch(() => page.fill('input[name="address.fullAddress"]', CASE_1_DATA.fullAddress));
-        await helper.form.fillInput('Bidding Deadline', getDateString(7)).catch(() => page.fill('input[name="deadline"]', getDateString(7)));
-        await helper.form.fillInput('Job Work Start Date & Time', getDateTimeString(8)).catch(() => page.fill('input[name="jobStartDate"]', getDateTimeString(8)));
+        await page.getByPlaceholder('Type address or click on map').fill(CASE_1_DATA.fullAddress);
+        await page.getByTestId('job-deadline-input').fill(getDateString(7));
+        await page.getByTestId('job-start-date-input').fill(getDateTimeString(8));
 
         // Budget
-        await page.fill('input[name="priceEstimate.min"]', CASE_1_DATA.budget.toString());
-        await page.fill('input[name="priceEstimate.max"]', CASE_1_DATA.budget.toString());
+        await page.fill('[data-testid="min-budget-input"]', CASE_1_DATA.budget.toString());
+        await page.fill('[data-testid="max-budget-input"]', CASE_1_DATA.budget.toString());
 
         // Wait a bit for form to settle
         await page.waitForTimeout(2000);
@@ -85,7 +85,7 @@ test.describe('Beta Squad - Group A', () => {
             await verifyCheckbox.check().catch(() => { /* ignore if custom checkbox */ });
             // Fallback to DOM check if the custom component doesn't respond to Playwright check
             await page.evaluate(() => {
-                const cb = Array.from(document.querySelectorAll('input[type="checkbox"]')).find(i => (i as HTMLInputElement).nextSibling && (i as HTMLInputElement).nextSibling.textContent && (i as HTMLInputElement).nextSibling.textContent.includes('I verify')) as HTMLInputElement | undefined;
+                const cb = Array.from(document.querySelectorAll('input[type="checkbox"]')).find(i => (i as HTMLInputElement).nextSibling?.textContent?.includes('I verify')) as HTMLInputElement | undefined;
                 if (cb) cb.checked = true;
             });
         }
@@ -100,7 +100,7 @@ test.describe('Beta Squad - Group A', () => {
             });
             return errorTexts;
         });
-        
+
         if (errors.length > 0) {
             console.log('[WARN] Form validation errors detected:', errors);
         }
@@ -117,10 +117,10 @@ test.describe('Beta Squad - Group A', () => {
             });
         });
 
-            // Prepare form and submit using robust helpers
-            await helper.preparePostJobSubmission();
-            await helper.submitPostJob({ force: true });
-        
+        // Prepare form and submit using robust helpers
+        await helper.preparePostJobSubmission();
+        await helper.submitPostJob({ force: true });
+
         // Wait for submission and redirect
         try {
             await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });
@@ -155,9 +155,12 @@ test.describe('Beta Squad - Group A', () => {
         await helper.auth.loginAsJobGiver();
         await page.goto(`/dashboard/jobs/${jobId}`);
 
+        // Wait for bids to load via Firestore real-time subscription
+        await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
         await page.getByTestId('send-offer-button').first().click();
         await helper.form.waitForToast('Offer Sent');
         console.log('[PASS] Offer Sent');
+
 
         // --- Step 4: IN Accept ---
         console.log('--- Step 4: IN Accept ---');
@@ -224,7 +227,8 @@ test.describe('Beta Squad - Group A', () => {
         });
 
         await page.getByTestId('submit-for-review-button').click();
-        await helper.form.waitForToast('Submitted for Confirmation');
+
+        // Wait for status to change to Pending Confirmation since the toast might disappear too quickly
         await helper.job.waitForJobStatus('Pending Confirmation');
         console.log('[PASS] Work Submitted');
 

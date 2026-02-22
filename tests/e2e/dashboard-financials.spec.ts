@@ -30,7 +30,7 @@ test.describe('Dashboard Financials E2E', () => {
         await page.getByTestId('job-category-select').click();
         await page.locator('[role="option"]').filter({ hasText: TEST_JOB_DATA.category }).first().click();
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
-        await page.locator('textarea[name="jobDescription"]').fill(TEST_JOB_DATA.description);
+        await page.locator('[data-testid="job-description-input"]').fill(TEST_JOB_DATA.description);
         await page.fill('input[name="skills"]', TEST_JOB_DATA.skills);
         await page.fill('input[placeholder*="110001"]', TEST_JOB_DATA.pincode);
         await page.waitForTimeout(2000); // Wait for pincode API
@@ -45,8 +45,8 @@ test.describe('Dashboard Financials E2E', () => {
         await page.fill('input[name="address.fullAddress"]', `${TEST_JOB_DATA.house}, ${TEST_JOB_DATA.street}`);
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(30));
-        await page.fill('input[name="priceEstimate.min"]', '1000');
-        await page.fill('input[name="priceEstimate.max"]', '5000');
+        await page.fill('[data-testid="min-budget-input"]', '1000');
+        await page.fill('[data-testid="max-budget-input"]', '5000');
         await page.getByRole('button', { name: "Post Job" }).click();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });
         jobId = await helper.job.getJobIdFromUrl();

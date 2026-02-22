@@ -35,7 +35,7 @@ test.describe('Job Giver Enhancements Verification', () => {
         // Type in title
         await page.fill('input[name="jobTitle"]', testTitle);
         // Type description to ensure form is dirty
-        await page.fill('textarea[name="jobDescription"]', 'This is a test description for auto-save verification.');
+        await page.fill('[data-testid="job-description-input"]', 'This is a test description for auto-save verification.');
 
         // Blur field to trigger immediate events
         await page.click('body');

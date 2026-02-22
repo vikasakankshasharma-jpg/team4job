@@ -53,8 +53,8 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff)', () => 
 
     await page.fill('input[name="deadline"]', getDateString(7));
     await page.fill('input[name="jobStartDate"]', getDateTimeString(10));
-    await page.fill('input[name="priceEstimate.min"]', TEST_JOB_DATA.minBudget.toString());
-    await page.fill('input[name="priceEstimate.max"]', TEST_JOB_DATA.maxBudget.toString());
+    await page.fill('[data-testid="min-budget-input"]', TEST_JOB_DATA.minBudget.toString());
+    await page.fill('[data-testid="max-budget-input"]', TEST_JOB_DATA.maxBudget.toString());
 
     await helper.form.clickButton('Post Job');
     // Wait for job page to load (status shows as 'open' in UI)

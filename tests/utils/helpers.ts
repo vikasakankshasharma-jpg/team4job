@@ -282,10 +282,6 @@ export class FormHelper {
         }
 
         const input = this.page.locator(
-            `label:has-text("${label}") ~ input, ` +
-            `label:has-text("${label}") + input, ` +
-            `label:has-text("${label}") + div input, ` +
-            `div:has(label:has-text("${label}")) input, ` +
             `input[placeholder*="${label}"], ` +
             `input[name="${camelCase}"], ` +
             `input[name="${kebabCase}"], ` +
@@ -309,11 +305,8 @@ export class FormHelper {
 
         // Expanded fallback locators for complex nesting (like Job Description with AI button)
         const textarea = this.page.locator(
-            `label:has-text("${label}") ~ textarea, ` +
-            `label:has-text("${label}") + textarea, ` +
-            `label:has-text("${label}") + div textarea, ` +
-            `div:has(label:has-text("${label}")) ~ div textarea, ` + // Label in sibling div
-            `div:has(label:has-text("${label}")) + div textarea`
+            `textarea[placeholder*="${label}"], ` +
+            `textarea[name="${label.toLowerCase().replace(/\s/g, '')}"]`
         ).first();
         await textarea.fill(value);
     }
@@ -448,11 +441,11 @@ export class FormHelper {
         const testIdButton = this.page.getByTestId(`${kebabText}-button`).or(this.page.getByTestId(`${kebabText}-btn`)).first();
 
         if (await testIdButton.isVisible({ timeout: 1000 })) {
-            await testIdButton.click();
+            await testIdButton.click({ force: true });
             return;
         }
 
-        await this.page.click(`button:has-text("${text}")`);
+        await this.page.click(`button:has-text("${text}")`, { force: true });
     }
 
     async waitForToast(message: string, timeout = TIMEOUTS.medium) {
@@ -463,6 +456,98 @@ export class FormHelper {
     async waitForErrorToast(timeout = TIMEOUTS.medium) {
         await expect(this.page.locator('[role="status"][data-variant="destructive"], .toast-error').first())
             .toBeVisible({ timeout });
+    }
+
+    /**
+     * Click "Post Job" and handle the confirmation AlertDialog that follows.
+     * Handles: verifyDetails checkbox, Feedback dialog dismissal, confirmation dialog.
+     */
+    async submitPostJob() {
+        // 1. Dismiss any open floating dialogs (Feedback, Draft, etc.)
+        try {
+            const feedbackDialog = this.page.getByRole('dialog');
+            if (await feedbackDialog.isVisible({ timeout: 500 }).catch(() => false)) {
+                const closeBtn = feedbackDialog.getByRole('button', { name: /Close/i }).first();
+                if (await closeBtn.isVisible({ timeout: 500 }).catch(() => false)) {
+                    await closeBtn.click({ force: true });
+                    await this.page.waitForTimeout(300);
+                } else {
+                    await this.page.keyboard.press('Escape');
+                    await this.page.waitForTimeout(300);
+                }
+            }
+        } catch { /* no dialog */ }
+
+        // 2. Ensure the "I verify that these details are correct" checkbox is checked
+        // Hide overlays before clicking to prevent Playwright hangs
+        await this.page.evaluate(() => {
+            const emulatorWarning = document.querySelector('.firebase-emulator-warning');
+            if (emulatorWarning) (emulatorWarning as any).style.display = 'none';
+            document.querySelectorAll('button').forEach((btn: any) => {
+                if (btn.textContent?.includes('Beta') || btn.textContent?.includes('Feedback') || (btn.classList.contains('fixed') && btn.classList.contains('z-50'))) {
+                    btn.style.display = 'none';
+                    btn.style.pointerEvents = 'none';
+                }
+            });
+        });
+
+        try {
+            // Use the label text to find and click the checkbox area.
+            // Clicking the label naturally triggers Radix UI's onCheckedChange handler,
+            // which updates React Hook Form state (unlike force:true on the button).
+            const verifyLabel = this.page.getByText('I verify that these details are correct');
+
+            if (await verifyLabel.isVisible({ timeout: 3000 }).catch(() => false)) {
+                // Check if it's already checked by looking at the sibling checkbox button
+                const checkboxParent = this.page.locator('div.rounded-lg').filter({
+                    hasText: /I verify that these details are correct/i
+                }).first();
+                const checkbox = checkboxParent.locator('button[role="checkbox"]').first();
+
+                const dataState = await checkbox.getAttribute('data-state').catch(() => null);
+                const ariaChecked = await checkbox.getAttribute('aria-checked').catch(() => null);
+                const isChecked = dataState === 'checked' || ariaChecked === 'true';
+
+                if (!isChecked) {
+                    // Strategy 1: Click the label (triggers onCheckedChange via label association)
+                    await verifyLabel.click({ force: true });
+                    await this.page.waitForTimeout(500);
+
+                    // Verify it toggled
+                    const newState = await checkbox.getAttribute('data-state').catch(() => null);
+                    if (newState !== 'checked') {
+                        // Strategy 2: Click the checkbox button WITHOUT force
+                        console.log('[FormHelper] Label click did not toggle checkbox, trying direct click');
+                        await checkbox.click();
+                        await this.page.waitForTimeout(500);
+                    }
+
+                    // Final verification
+                    const finalState = await checkbox.getAttribute('data-state').catch(() => null);
+                    console.log('[FormHelper] Checkbox final state:', finalState);
+                }
+            }
+        } catch (e) {
+            console.log('[FormHelper] Could not check verify details checkbox:', e);
+        }
+
+        // 3. Click the Post Job button (data-testid="post-job-button")
+        const postBtn = this.page.getByTestId('post-job-button');
+        await postBtn.scrollIntoViewIfNeeded();
+        await postBtn.click({ force: true });
+
+        // 4. Wait for the confirmation dialog
+        const confirmDialog = this.page.getByRole('alertdialog');
+        try {
+            await confirmDialog.waitFor({ state: 'visible', timeout: 5000 });
+            // Click the confirm / continue action button inside the dialog
+            const confirmAction = confirmDialog.getByRole('button', { name: /Confirm|Continue|Yes|Post/i }).first();
+            await confirmAction.waitFor({ state: 'visible', timeout: 3000 });
+            await confirmAction.click({ force: true });
+        } catch {
+            // No confirmation dialog appeared — form likely had validation errors
+            console.log('[FormHelper] No confirmation dialog after Post Job click — check for validation errors.');
+        }
     }
 }
 
@@ -480,6 +565,38 @@ export class NavigationHelper {
         await this.page.goto(ROUTES.postJob);
         await this.page.waitForLoadState('domcontentloaded');
         await this.injectCookieHide();
+
+        // Wait for the Post Job heading to appear (form is loaded)
+        await this.page.locator('h1:has-text("Post Job")').waitFor({ state: 'visible', timeout: 15000 }).catch(() => { });
+
+        // Dismiss draft recovery dialog - retry a few times as it loads asynchronously from Firestore
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                const dialog = this.page.getByRole('dialog');
+                await dialog.waitFor({ state: 'visible', timeout: 3000 });
+                // Try Discard first, then Cancel, then Close
+                const dismissButton = dialog.getByRole('button', { name: /Discard/i }).first();
+                if (await dismissButton.isVisible({ timeout: 1000 })) {
+                    await dismissButton.click({ force: true });
+                } else {
+                    const cancelButton = dialog.getByRole('button', { name: /Cancel|Close|Start Fresh|Skip|No/i }).first();
+                    if (await cancelButton.isVisible({ timeout: 1000 })) {
+                        await cancelButton.click({ force: true });
+                    } else {
+                        await this.page.keyboard.press('Escape');
+                    }
+                }
+                await this.page.waitForTimeout(500);
+                // Check if dialog is gone
+                if (!(await dialog.isVisible().catch(() => false))) break;
+            } catch {
+                // No draft dialog appeared — break out
+                break;
+            }
+        }
+
+        // Final wait for form to be interactive
+        await this.page.waitForTimeout(500);
     }
 
     async goToPostedJobs() {
@@ -687,7 +804,7 @@ export class TestHelper {
                     (emulatorWarning as any).style.display = 'none';
                     (emulatorWarning as any).style.pointerEvents = 'none';
                 }
-                
+
                 // Hide Beta Feedback button
                 const betaButtons = document.querySelectorAll('button');
                 for (const btn of betaButtons) {
@@ -716,15 +833,46 @@ export class TestHelper {
         void this.mockExternalAPIs().catch((e) => {
             console.warn('[TestHelper] Failed to set up external API mocks:', e);
         });
-        // Hide test overlays on page load
-        void this.hideTestOverlays().catch((e) => {
-            console.warn('[TestHelper] Failed to hide test overlays:', e);
-        });
     }
 
     async mockExternalAPIs() {
-        console.log('[TestHelper] Mocking external APIs (Pincode, etc)...');
-        // Mock Pincode API
+        console.log('[TestHelper] Mocking external APIs (Pincode, Maps, etc)...');
+
+        // Mock Google Maps API to prevent RefererNotAllowedMapError on localhost:5000
+        await this.page.route('**/*maps.googleapis.com/maps/api/place/autocomplete/*', async route => {
+            const url = route.request().url();
+            console.log(`[Mock] Intercepted Google Maps Autocomplete request: ${url}`);
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    predictions: [
+                        { description: '123 Test St, Bangalore', place_id: 'mock_place_1' },
+                        { description: 'Direct Award Lane, Bangalore', place_id: 'mock_place_2' }
+                    ],
+                    status: 'OK'
+                })
+            });
+        }).catch(() => { });
+
+        // Mock the core Google Maps JS script load so it doesn't throw the Referrer error on the window
+        await this.page.route('**/*maps.googleapis.com/maps/api/js*', async route => {
+            console.log(`[Mock] Intercepted Google Maps JS Script payload`);
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/javascript',
+                body: `
+                    window.google = window.google || {};
+                    window.google.maps = {
+                        places: {
+                            AutocompleteService: function() {},
+                            PlacesServiceStatus: { OK: 'OK' }
+                        }
+                    };
+                `
+            });
+        }).catch(() => { });
+
         // Mock Pincode API - Broad pattern
         await this.page.route('**/*pincode/*', async route => {
             const url = route.request().url();
@@ -773,13 +921,13 @@ export class TestHelper {
                     (emulatorWarning as any).style.position = 'absolute';
                     (emulatorWarning as any).style.left = '-9999px';
                 }
-                
+
                 // Hide Beta Feedback button and other overlays
                 const elements = document.querySelectorAll('button, div');
                 for (const el of elements) {
                     const text = el.textContent || '';
                     const classes = el.className;
-                    
+
                     // Check if it's a fixed button or overlay
                     if ((text.includes('Beta') || text.includes('Feedback') || text === '…' || classes.includes('fixed') && classes.includes('z-50')) && el.tagName === 'BUTTON') {
                         (el as any).style.display = 'none';
@@ -797,7 +945,7 @@ export class TestHelper {
     // Prepare the post-job form to be submitted: dismiss dialogs, ensure fields, set defaults
     async preparePostJobSubmission() {
         // Disable autosave where applicable
-        await this.page.evaluate(() => { (window as any).__DISABLE_AUTO_SAVE__ = true; }).catch(() => {});
+        await this.page.evaluate(() => { (window as any).__DISABLE_AUTO_SAVE__ = true; }).catch(() => { });
 
         // Dismiss blocking dialogs
         const blockingDialog = this.page.getByRole('dialog');
@@ -806,12 +954,25 @@ export class TestHelper {
             if (await dismissButton.isVisible().catch(() => false)) {
                 await dismissButton.click({ force: true });
             } else {
-                await this.page.keyboard.press('Escape').catch(() => {});
+                await this.page.keyboard.press('Escape').catch(() => { });
+            }
+        }
+
+        // Ensure job title is at least 10 chars (fallback using native React approach)
+        const titleInput = this.page.getByTestId('job-title-input');
+        if (await titleInput.isVisible().catch(() => false)) {
+            const val = await titleInput.inputValue();
+            if (val.trim().length < 10) {
+                // Use native React input setter to trigger react-hook-form's onChange
+                await titleInput.fill('Test CCTV Installation');
+                await titleInput.dispatchEvent('input');
+                await titleInput.dispatchEvent('change');
+                await titleInput.blur();
             }
         }
 
         // Ensure long description
-        const description = this.page.locator('textarea[name="jobDescription"]');
+        const description = this.page.locator('[data-testid="job-description-input"]');
         if (await description.isVisible().catch(() => false)) {
             const value = await description.inputValue();
             if (value.trim().length < 50) {
@@ -827,7 +988,7 @@ export class TestHelper {
                 const option = this.page.getByRole('option').first();
                 if (await option.isVisible().catch(() => false)) await option.click();
             } catch {
-                await categoryTrigger.dispatchEvent('click').catch(() => {});
+                await categoryTrigger.dispatchEvent('click').catch(() => { });
             }
         }
 
@@ -851,10 +1012,48 @@ export class TestHelper {
             if (await poTrigger.isVisible().catch(() => false)) {
                 const isDisabled = await poTrigger.isDisabled().catch(() => false);
                 if (!isDisabled) {
-                    await poTrigger.click().catch(() => {});
+                    await poTrigger.click().catch(() => { });
                     const option = this.page.locator('[data-testid="po-select-item"], [role="option"]').first();
-                    if (await option.isVisible().catch(() => false)) await option.click().catch(() => {});
+                    if (await option.isVisible().catch(() => false)) await option.click().catch(() => { });
                 }
+            }
+        }
+
+        // Detailed Address (House & Street)
+        const houseInput = this.page.getByTestId('house-input');
+        if (await houseInput.isVisible().catch(() => false)) {
+            const value = await houseInput.inputValue();
+            if (!value.trim()) await houseInput.fill('Flat 4B');
+        }
+
+        const streetInput = this.page.getByTestId('street-input');
+        if (await streetInput.isVisible().catch(() => false)) {
+            const value = await streetInput.inputValue();
+            if (!value.trim()) await streetInput.fill('12th Main Road, Indiranagar');
+        }
+
+        const mapInput = this.page.getByTestId('full-address-input');
+        if (await mapInput.isVisible().catch(() => false)) {
+            const value = await mapInput.inputValue();
+            if (!value.trim() || value.length < 10) await mapInput.fill('123 Test St, Bangalore, India');
+        }
+
+
+        // Budget (priceEstimate.min and max)
+        const minBudgetInput = this.page.getByTestId('min-budget-input');
+        if (await minBudgetInput.isVisible().catch(() => false)) {
+            const val = await minBudgetInput.inputValue();
+            if (!val || Number(val) < 1) {
+                await minBudgetInput.fill('5000');
+                await minBudgetInput.blur();
+            }
+        }
+        const maxBudgetInput = this.page.getByTestId('max-budget-input');
+        if (await maxBudgetInput.isVisible().catch(() => false)) {
+            const val = await maxBudgetInput.inputValue();
+            if (!val || Number(val) < 1) {
+                await maxBudgetInput.fill('5000');
+                await maxBudgetInput.blur();
             }
         }
 
@@ -862,10 +1061,10 @@ export class TestHelper {
         const verifyCheckbox = this.page.getByRole('checkbox', { name: /I verify that these details are correct/i });
         if (await verifyCheckbox.isVisible().catch(() => false)) {
             const checked = await verifyCheckbox.getAttribute('aria-checked').catch(() => undefined);
-            if (checked !== 'true') await verifyCheckbox.click().catch(() => {});
+            if (checked !== 'true') await verifyCheckbox.click().catch(() => { });
         } else {
             const verifyText = this.page.getByText(/I verify that these details are correct/i);
-            if (await verifyText.isVisible().catch(() => false)) await verifyText.click().catch(() => {});
+            if (await verifyText.isVisible().catch(() => false)) await verifyText.click().catch(() => { });
         }
     }
 
@@ -874,19 +1073,19 @@ export class TestHelper {
         // Hide common blocking elements
         const betaFeedback = this.page.getByRole('button', { name: /Beta Feedback/i });
         if (await betaFeedback.isVisible().catch(() => false)) {
-            await betaFeedback.evaluate(el => (el as HTMLElement).style.display = 'none').catch(() => {});
+            await betaFeedback.evaluate(el => (el as HTMLElement).style.display = 'none').catch(() => { });
         }
         const emulatorWarning = this.page.locator('.firebase-emulator-warning');
         if (await emulatorWarning.isVisible().catch(() => false)) {
-            await emulatorWarning.evaluate(el => (el as HTMLElement).style.display = 'none').catch(() => {});
+            await emulatorWarning.evaluate(el => (el as HTMLElement).style.display = 'none').catch(() => { });
         }
 
-        await this.page.getByRole('button', { name: /Post Job/i }).click({ force: options?.force ?? true }).catch(() => {});
+        await this.page.getByRole('button', { name: /Post Job/i }).click({ force: options?.force ?? true }).catch(() => { });
 
         const confirmButton = this.page.getByRole('button', { name: /Confirm & Save/i });
         try {
             await confirmButton.waitFor({ state: 'visible', timeout: 10000 });
-            await confirmButton.click().catch(() => {});
+            await confirmButton.click().catch(() => { });
         } catch {
             // ignore if not present
         }
