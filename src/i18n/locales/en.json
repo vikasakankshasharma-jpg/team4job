@@ -2138,5 +2138,17 @@
             "performanceDesc": "This card shows your personal dispute resolution metrics, helping you track your progress.",
             "bottomText": "Click on the stat cards to navigate to the Dispute Center and start resolving cases."
         }
+    },
+    "admin": {
+        "blacklist": {
+            "form": {
+                "roles": {
+                    "installer": "Installer",
+                    "jobGiver": "Job Giver"
+                },
+                "reason": "Reason",
+                "reasonPlaceholder": "Explain why this entry is being added to the blacklist..."
+            }
+        }
     }
 }

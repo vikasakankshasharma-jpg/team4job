@@ -11,16 +11,16 @@ export class AuthHelper {
 
     private async seedTestUsers() {
         if (AuthHelper.seeded) return;
-        
+
         const maxRetries = 3;
         let attempts = 0;
-        
+
         while (attempts < maxRetries) {
             attempts++;
             try {
                 console.log(`[AuthHelper] Seed users attempt ${attempts}/${maxRetries}`);
                 const response = await this.page.request.post('/api/e2e/seed-users');
-                
+
                 if (response.ok()) {
                     AuthHelper.seeded = true;
                     console.log('[AuthHelper] Seeded test users successfully.');
@@ -209,13 +209,13 @@ export class AuthHelper {
                 try {
                     // First wait for URL change
                     await this.page.waitForURL(/\/dashboard/, { timeout: TIMEOUTS.medium, waitUntil: 'domcontentloaded' });
-                    
+
                     // Then wait for a stable dashboard marker (nav or user menu)
-                    await this.page.waitForSelector('[data-testid="nav-link-auditLog"], [data-testid="user-menu-trigger"], nav, [role="navigation"]', { 
-                        state: 'visible', 
-                        timeout: 30000 
+                    await this.page.waitForSelector('[data-testid="nav-link-auditLog"], [data-testid="user-menu-trigger"], nav, [role="navigation"]', {
+                        state: 'visible',
+                        timeout: 30000
                     });
-                    
+
                     console.log(`[AuthHelper] Login successful for ${email}`);
                     return;
                 } catch (error) {
@@ -625,7 +625,13 @@ export class FormHelper {
             await confirmAction.click({ force: true });
         } catch {
             // No confirmation dialog appeared — form likely had validation errors
-            console.log('[FormHelper] No confirmation dialog after Post Job click — check for validation errors.');
+            console.log('[FormHelper] No confirmation dialog after Post Job click — checking for validation errors.');
+            const errorMessages = await this.page.locator('p.text-destructive, [data-testid$="-error"]').allTextContents();
+            if (errorMessages.length > 0) {
+                console.log('[FormHelper] Found validation errors:', errorMessages.join(' | '));
+            } else {
+                console.log('[FormHelper] No visible validation errors found.');
+            }
         }
     }
 }

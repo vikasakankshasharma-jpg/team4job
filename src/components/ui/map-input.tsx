@@ -124,6 +124,7 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
         <Input
           placeholder="Enter full address manually (Map unavailable)"
           {...addressField}
+          data-testid="full-address-input"
         />
         <FormDescription className="text-yellow-600 dark:text-yellow-500">
           Map features are currently unavailable. Please enter your address manually.

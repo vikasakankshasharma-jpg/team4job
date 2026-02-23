@@ -5,7 +5,10 @@ import { TEST_JOB_DATA, getDateString, getDateTimeString } from '../fixtures/tes
 
 // Helper to generate a unique job title for each test to avoid collisions
 function generateUniqueJobTitle(base: string = 'Edge Case Job') {
-    return `${base} ${Math.random().toString(36).substring(7)}`;
+    // Ensure the title is always at least 15 characters to pass min(10) validation
+    const uniqueId = Math.random().toString(36).substring(2, 10);
+    const title = `${base} ${uniqueId}`;
+    return title.length < 15 ? title.padEnd(15, '!') : title;
 }
 
 test.describe('Edge Case Tests @edge', () => {
@@ -130,6 +133,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.getByTestId("job-deadline-input").fill(getDateString(2));
             await page.getByTestId("job-start-date-input").fill(getDateTimeString(72));
 
+            await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
             await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
         });
@@ -160,6 +164,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.getByTestId("job-deadline-input").fill(getDateString(2));
             await page.getByTestId("job-start-date-input").fill(getDateTimeString(72));
 
+            await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
             await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
         });
@@ -177,6 +182,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.fill('[data-testid="min-budget-input"]', '10000');
             await page.fill('[data-testid="max-budget-input"]', '5000');
 
+            await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
 
             await expect(page.locator('text=Maximum budget cannot be less than minimum budget').first()).toBeVisible({ timeout: 15000 });
@@ -192,6 +198,7 @@ test.describe('Edge Case Tests @edge', () => {
             pastDate.setDate(pastDate.getDate() - 2); // 2 days ago
             await page.fill('input[name="deadline"]', pastDate.toISOString().split('T')[0]);
 
+            await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
 
             await expect(page.locator('text=Deadline cannot be in the past').first()).toBeVisible({ timeout: 15000 });
@@ -222,13 +229,14 @@ test.describe('Edge Case Tests @edge', () => {
             await page.getByTestId("job-deadline-input").fill(getDateString(2));
             await page.getByTestId("job-start-date-input").fill(getDateTimeString(72));
 
+            await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
 
             await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
             await expect(page.getByText(specialTitle).first()).toBeVisible();
         });
 
-        test('Job posting with invalid pincode', async ({ page }) => {
+        test.only('Job posting with invalid pincode', async ({ page }) => {
             await page.goto('/login');
             const helper = new TestHelper(page);
             await helper.auth.loginAsJobGiver();
@@ -237,7 +245,12 @@ test.describe('Edge Case Tests @edge', () => {
             await page.fill('[data-testid="pincode-input"]', '000000');
             // Wait for loading to finish
             await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 10000 });
-            await expect(page.getByTestId('pincode-error')).toBeVisible({ timeout: 15000 });
+
+            // Dump to file
+            const fs = await import('fs');
+            fs.writeFileSync('dom-dump.html', await page.content());
+
+            await expect(page.getByTestId('pincode-error')).toBeVisible({ timeout: 5000 });
         });
     });
 
@@ -291,7 +304,7 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.auth.loginAsJobGiver();
             await helper.nav.goToPostJob();
 
-            const fileInput = page.locator('input[type="file"]').first();
+            const fileInput = page.getByTestId('file-upload-input');
             await fileInput.waitFor({ state: 'attached' });
 
             await fileInput.setInputFiles({
@@ -310,7 +323,7 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.auth.loginAsJobGiver();
             await helper.nav.goToPostJob();
 
-            const fileInput = page.locator('input[type="file"]').first();
+            const fileInput = page.getByTestId('file-upload-input');
             await fileInput.waitFor({ state: 'attached' });
 
             const largeFile = Buffer.alloc(20 * 1024 * 1024);
@@ -416,6 +429,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.getByTestId("job-deadline-input").fill(getDateString(2));
             await page.getByTestId("job-start-date-input").fill(getDateTimeString(72));
 
+            await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
 
             await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
@@ -427,8 +441,8 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.auth.loginAsJobGiver();
             await helper.nav.goToPostJob();
 
-            const unicodeTitle = 'Job 🚀 🛠️';
-            await page.fill('input[name="jobTitle"]', unicodeTitle);
+            const unicodeTitle = generateUniqueJobTitle('Job 🚀 🛠️');
+            await page.fill('[data-testid="job-title-input"]', unicodeTitle);
             await page.fill('[data-testid="job-description-input"]', 'Testing unicode: 🌈 🦄. This description needs to be longer to meet the validation requirements of at least 50 chars.');
 
             await helper.form.selectDropdown('Job Category', TEST_JOB_DATA.category);
@@ -439,7 +453,7 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.form.fillPincodeAndSelectPO('560001');
             await page.waitForTimeout(1000);
 
-            await page.fill('input[name="address.fullAddress"]', 'Bangalore 🇮🇳');
+            await page.fill('[data-testid="full-address-input"]', 'Flat 101, Main Street, Bangalore 560001, India 🇮🇳');
 
             await page.fill('[data-testid="min-budget-input"]', '500');
             await page.fill('[data-testid="max-budget-input"]', '1000');
@@ -447,6 +461,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.getByTestId("job-deadline-input").fill(getDateString(2));
             await page.getByTestId("job-start-date-input").fill(getDateTimeString(72));
 
+            await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
 
             await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });

@@ -35,13 +35,19 @@ export function AddressForm({
 
     return (
         <div className="space-y-6">
-            <LocationInput
-                name={pincodeName}
-                label={t('locationPincode')}
-                placeholder={t('pincodePlaceholder')}
+            <FormField
                 control={control}
-                onLocationGeocoded={onLocationGeocoded}
-                isMapLoaded={isMapLoaded}
+                name={pincodeName}
+                render={() => (
+                    <LocationInput
+                        name={pincodeName}
+                        label={t('locationPincode')}
+                        placeholder={t('pincodePlaceholder')}
+                        control={control}
+                        onLocationGeocoded={onLocationGeocoded}
+                        isMapLoaded={isMapLoaded}
+                    />
+                )}
             />
 
             <Separator />
@@ -90,12 +96,18 @@ export function AddressForm({
                     )}
                 />
             </div>
-            <MapInput
-                name={fullAddressName}
-                label={t('setPreciseLocation')}
+            <FormField
                 control={control}
-                center={mapCenter}
-                isMapLoaded={isMapLoaded}
+                name={fullAddressName}
+                render={() => (
+                    <MapInput
+                        name={fullAddressName}
+                        label={t('setPreciseLocation')}
+                        control={control}
+                        center={mapCenter}
+                        isMapLoaded={isMapLoaded}
+                    />
+                )}
             />
         </div>
     )

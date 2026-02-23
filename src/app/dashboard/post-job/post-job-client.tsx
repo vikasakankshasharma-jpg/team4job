@@ -137,8 +137,8 @@ const jobSchema = z.object({
   message: "validation.maxBudgetLow",
   path: ["priceEstimate.max"],
 }).and(z.object({
-  verifyDetails: z.literal(true, {
-    errorMap: () => ({ message: "validation.verifyReq" }),
+  verifyDetails: z.boolean().refine(val => val === true, {
+    message: "validation.verifyReq",
   }),
 }));
 
@@ -310,7 +310,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       attachments: [],
       directAwardInstallerId: "",
       priceEstimate: { min: 0, max: 0 },
-      verifyDetails: undefined, // undefined so it defaults to unchecked
+      verifyDetails: false, // Must be false, not undefined, to prevent uncontrolled component warnings
     },
   });
 

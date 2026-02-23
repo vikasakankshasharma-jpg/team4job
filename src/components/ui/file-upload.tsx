@@ -59,10 +59,11 @@ export function FileUpload({ onFilesChange, maxFiles = 5 }: FileUploadProps) {
     <div className="space-y-4">
       <div
         {...getRootProps()}
+        data-testid="file-upload-dropzone"
         className={`flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/10' : 'border-muted hover:border-primary/50'
           }`}
       >
-        <input {...getInputProps()} />
+        <input {...getInputProps()} data-testid="file-upload-input" />
         <UploadCloud className="w-8 h-8 text-muted-foreground" />
         <p className="mt-2 text-sm text-center text-muted-foreground">
           {isDragActive
@@ -76,7 +77,7 @@ export function FileUpload({ onFilesChange, maxFiles = 5 }: FileUploadProps) {
           <p className="font-medium text-sm">Selected Files ({files.length}/{maxFiles}):</p>
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {files.map((file, index) => (
-              <li key={index} className="flex items-center justify-between p-2 border rounded-md bg-secondary/50">
+              <li key={index} data-testid="file-item" className="flex items-center justify-between p-2 border rounded-md bg-secondary/50">
                 <div className="flex items-center gap-2 overflow-hidden">
                   <FileIcon className="h-5 w-5 flex-shrink-0" />
                   <span className="text-sm truncate">{file.name}</span>
