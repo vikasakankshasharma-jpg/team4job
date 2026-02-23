@@ -347,8 +347,8 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     const [isVariationDialogOpen, setIsVariationDialogOpen] = React.useState(false);
 
     // Feature Flags
-    const { isEnabled: isPaymentsEnabled } = useFeatureFlag('ENABLE_PAYMENTS');
-    const { isEnabled: isDisputesEnabled } = useFeatureFlag('ENABLE_DISPUTES_V2');
+    const isPaymentsEnabled = useFeatureFlag('ENABLE_PAYMENTS');
+    const isDisputesEnabled = useFeatureFlag('ENABLE_DISPUTES_V2');
     // DEEP DEBUG LOGGING FOR E2E
     React.useEffect(() => {
         if (job) {

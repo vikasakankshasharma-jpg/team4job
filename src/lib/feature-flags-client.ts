@@ -12,13 +12,19 @@ export const DEFAULT_FLAGS: Record<FeatureFlagKey, boolean> = {
 };
 
 // CLIENT-SIDE Hook
-export function useFeatureFlag(key: FeatureFlagKey) {
+export function useFeatureFlag(key: FeatureFlagKey): boolean {
+    const [isEnabled, setIsEnabled] = useState(DEFAULT_FLAGS[key]);
     const { db } = useFirebase();
-    const [isEnabled, setIsEnabled] = useState<boolean>(DEFAULT_FLAGS[key]);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!db) return;
+        
+        // Disable real-time feature flags in E2E mode to prevent Firestore assertion errors
+        const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
+        if (isE2EMode) {
+            console.log('[useFeatureFlag] E2E mode detected - using default flag value');
+            return;
+        }
 
         const ref = doc(db, 'feature_flags', key);
         const unsubscribe = onSnapshot(ref, (snap) => {
@@ -27,14 +33,13 @@ export function useFeatureFlag(key: FeatureFlagKey) {
             } else {
                 setIsEnabled(DEFAULT_FLAGS[key]);
             }
-            setLoading(false);
         }, (error) => {
-            console.error(`[FeatureFlag] Subscription error for ${key}:`, error);
-            setLoading(false);
+            console.error(`Error fetching feature flag ${key}:`, error);
+            setIsEnabled(DEFAULT_FLAGS[key]);
         });
 
-        return () => unsubscribe();
+        return unsubscribe;
     }, [db, key]);
 
-    return { isEnabled, loading };
+    return isEnabled;
 }

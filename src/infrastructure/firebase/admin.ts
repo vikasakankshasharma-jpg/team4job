@@ -30,6 +30,17 @@ export function getAdminApp(): App {
         app = initializeApp({
             projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'demo-project',
         });
+        
+        // Connect to emulators explicitly
+        if (process.env.FIRESTORE_EMULATOR_HOST) {
+            const [host, port] = process.env.FIRESTORE_EMULATOR_HOST.split(':');
+            getFirestore(app).settings({
+                host: `${host}:${port}`,
+                ssl: false
+            });
+            console.log('[ADMIN-SDK] ✓ Connected to Firestore emulator at', process.env.FIRESTORE_EMULATOR_HOST);
+        }
+        
         console.log('[ADMIN-SDK] App initialized with project:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
         return app;
     }

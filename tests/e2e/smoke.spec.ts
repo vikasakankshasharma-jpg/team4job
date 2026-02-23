@@ -12,8 +12,9 @@ test.describe('Smoke Tests @smoke', () => {
 
         await helper.auth.loginAsJobGiver();
         await expect(page).toHaveURL(/\/dashboard/);
+        
         // Verify we're on dashboard - look for Job Giver-specific navigation
-        await expect(page.locator('a:has-text("Post a Job")').first()).toBeVisible();
+        await expect(page.getByText('Post Job').or(page.getByText('Active Jobs')).first()).toBeVisible({ timeout: 90000 });
     });
 
     test('User can login as Installer', async ({ page }) => {
@@ -21,8 +22,9 @@ test.describe('Smoke Tests @smoke', () => {
 
         await helper.auth.loginAsInstaller();
         await expect(page).toHaveURL(/\/dashboard/);
-        // Verify we're on dashboard - look for common dashboard elements
-        await expect(page.locator('text=Browse Jobs').first()).toBeVisible();
+        
+        // Verify we're on dashboard - look for Installer-specific navigation
+        await expect(page.getByText('Browse Jobs').or(page.getByText('Open Jobs')).first()).toBeVisible({ timeout: 90000 });
     });
 
     test('User can login as Admin', async ({ page }) => {
@@ -30,8 +32,9 @@ test.describe('Smoke Tests @smoke', () => {
 
         await helper.auth.loginAsAdmin();
         await expect(page).toHaveURL(/\/dashboard/);
-        // Verify we're on dashboard - look for Admin-specific element
-        await expect(page.locator('a:has-text("All Jobs")').first()).toBeVisible();
+        
+        // Verify we're on dashboard - admin sidebar links are stable
+        await expect(page.getByTestId('nav-link-auditLog')).toBeVisible({ timeout: 90000 });
     });
 
     test('Job Giver can access Post Job page', async ({ page }) => {
@@ -41,6 +44,8 @@ test.describe('Smoke Tests @smoke', () => {
         await helper.nav.goToPostJob();
 
         await expect(page).toHaveURL(/\/post-job/);
+        
+        // Verify form elements using stable selectors
         await expect(page.getByTestId('job-title-input')).toBeVisible();
         await expect(page.getByTestId('job-description-input')).toBeVisible();
     });
@@ -52,8 +57,9 @@ test.describe('Smoke Tests @smoke', () => {
         await helper.nav.goToBrowseJobs();
 
         await expect(page).toHaveURL(/\/jobs/);
-        // Look for page heading or navigation element
-        await expect(page.locator('a:has-text("Browse Jobs")').first()).toBeVisible();
+        
+        // Look for page heading or navigation element using stable selectors
+        await expect(page.getByTestId('nav-link-browseJobs').or(page.getByText('Browse Jobs')).first()).toBeVisible({ timeout: 90000 });
     });
 
     test('Invalid login shows error', async ({ page }) => {

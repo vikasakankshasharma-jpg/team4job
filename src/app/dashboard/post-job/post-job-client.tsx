@@ -243,7 +243,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const tError = useTranslations('errors');
 
   // Feature Flags
-  const { isEnabled: isAiEnabled } = useFeatureFlag('ENABLE_AI_GENERATION');
+  const isAiEnabled = useFeatureFlag('ENABLE_AI_GENERATION');
 
   // Draft & Template state
   const [showDraftDialog, setShowDraftDialog] = useState(false);

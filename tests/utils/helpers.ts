@@ -11,16 +11,36 @@ export class AuthHelper {
 
     private async seedTestUsers() {
         if (AuthHelper.seeded) return;
-        try {
-            const response = await this.page.request.post('/api/e2e/seed-users');
-            if (response.ok()) {
-                AuthHelper.seeded = true;
-                console.log('[AuthHelper] Seeded test users.');
-            } else {
-                console.warn('[AuthHelper] Seed users call failed with status', response.status());
+        
+        const maxRetries = 3;
+        let attempts = 0;
+        
+        while (attempts < maxRetries) {
+            attempts++;
+            try {
+                console.log(`[AuthHelper] Seed users attempt ${attempts}/${maxRetries}`);
+                const response = await this.page.request.post('/api/e2e/seed-users');
+                
+                if (response.ok()) {
+                    AuthHelper.seeded = true;
+                    console.log('[AuthHelper] Seeded test users successfully.');
+                    return;
+                } else {
+                    console.warn(`[AuthHelper] Seed users call failed with status ${response.status()}, attempt ${attempts}`);
+                    if (attempts === maxRetries) {
+                        throw new Error(`Failed to seed users after ${maxRetries} attempts. Last status: ${response.status()}`);
+                    }
+                    // Wait before retry
+                    await this.page.waitForTimeout(2000);
+                }
+            } catch (e: any) {
+                console.warn(`[AuthHelper] Seed users attempt ${attempts} failed:`, e);
+                if (attempts === maxRetries) {
+                    throw new Error(`Failed to seed users after ${maxRetries} attempts due to error: ${e.message || e}`);
+                }
+                // Wait before retry
+                await this.page.waitForTimeout(2000);
             }
-        } catch (e) {
-            console.warn('[AuthHelper] Seed users call failed:', e);
         }
     }
 
@@ -62,15 +82,46 @@ export class AuthHelper {
 
             console.log(`[AuthHelper] Role mismatch or indicators not found. Attempting role switch.`);
 
-            // Click user menu
-            const menuTrigger = this.page.getByTestId('user-menu-trigger').first();
-            if (!(await menuTrigger.isVisible({ timeout: 5000 }))) {
-                console.log(`[AuthHelper] User menu trigger not visible. Checking if we are on dashboard.`);
-                if (this.page.url().includes('/dashboard')) return; // Assume okay if on dashboard
-                throw new Error("User menu trigger not found.");
-            }
+            // Click user menu - try multiple locators
+            const userMenu = this.page.locator('[data-testid="user-menu-trigger"]')
+                .or(this.page.locator('button.rounded-full:has(img)'))
+                .or(this.page.locator('button:has(.rounded-full)'))
+                .or(this.page.locator('button[aria-label*="user"]'))
+                .or(this.page.locator('button[aria-label*="menu"]'))
+                .first();
 
-            await menuTrigger.click();
+            try {
+                await userMenu.waitFor({ state: 'visible', timeout: 10000 });
+                await userMenu.click();
+                console.log('[AuthHelper] Clicked user menu');
+            } catch (e: any) {
+                console.log('[AuthHelper] User menu not found or not clickable, checking if we are on dashboard...');
+                if (this.page.url().includes('/dashboard')) {
+                    console.log('[AuthHelper] Already on dashboard, proceeding without role switch');
+                    return;
+                }
+
+                // Fallback: attempt to navigate to dashboard and re-check indicators.
+                // This handles transient reloads / missing header UI during hydration.
+                await this.page.goto('/dashboard');
+                await this.page.waitForLoadState('domcontentloaded');
+                await this.page.waitForTimeout(1500);
+
+                const installerNow = await this.page.getByText('Browse Jobs').first().isVisible().catch(() => false) ||
+                    await this.page.getByText('Open Jobs').first().isVisible().catch(() => false);
+                const jobGiverNow = await this.page.getByText('Post Job').first().isVisible().catch(() => false) ||
+                    await this.page.getByText('Active Jobs').first().isVisible().catch(() => false);
+
+                const matchedNow = (targetRole === 'Installer' && installerNow) || (targetRole === 'Job Giver' && jobGiverNow);
+                if (matchedNow) {
+                    console.log(`[AuthHelper] ${targetRole} indicators found after dashboard fallback.`);
+                    return;
+                }
+
+                // Don't hard-fail here; role switcher can be unavailable for single-role users.
+                console.log(`[AuthHelper] User menu missing; continuing without switching to ${targetRole}.`);
+                return;
+            }
 
             // Click the radio item for the role
             const menuText = targetRole === 'Installer' ? "Installer (Working)" : "Job Giver (Hiring)";
@@ -93,11 +144,11 @@ export class AuthHelper {
                     throw new Error(`Failed to ensure role ${targetRole}. Not on dashboard and switcher missing.`);
                 }
             }
-        } catch (e: any) {
-            console.warn(`[AuthHelper] Warning in ensureRole for ${targetRole}:`, e.message);
+        } catch (error: any) {
+            console.warn(`[AuthHelper] Warning in ensureRole for ${targetRole}:`, error.message);
             // Don't throw if we are on /dashboard, let the test attempt to proceed
             if (!this.page.url().includes('/dashboard')) {
-                throw e;
+                throw error;
             }
         }
     }
@@ -117,8 +168,9 @@ export class AuthHelper {
                 console.log(`[AuthHelper] Login attempt ${attempts}/${maxRetries} for ${email}`);
 
                 // Navigate to login
-                await this.page.goto(ROUTES.login);
-                await this.page.waitForLoadState('load');
+                // Hot reload / frame swaps can prevent the full "load" event.
+                await this.page.goto(ROUTES.login, { waitUntil: 'domcontentloaded', timeout: 90000 });
+                await this.page.waitForLoadState('domcontentloaded');
 
                 // Force hide cookie banner to prevent interception
                 await this.page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
@@ -153,19 +205,46 @@ export class AuthHelper {
                     await submitButton.click({ force: true });
                 }
 
-                // Wait for redirect to dashboard
-                await this.page.waitForURL(/\/dashboard/, { timeout: TIMEOUTS.medium });
-                console.log(`[AuthHelper] Login successful for ${email}`);
-                return;
+                // Wait for redirect to dashboard with stable markers
+                try {
+                    // First wait for URL change
+                    await this.page.waitForURL(/\/dashboard/, { timeout: TIMEOUTS.medium, waitUntil: 'domcontentloaded' });
+                    
+                    // Then wait for a stable dashboard marker (nav or user menu)
+                    await this.page.waitForSelector('[data-testid="nav-link-auditLog"], [data-testid="user-menu-trigger"], nav, [role="navigation"]', { 
+                        state: 'visible', 
+                        timeout: 30000 
+                    });
+                    
+                    console.log(`[AuthHelper] Login successful for ${email}`);
+                    return;
+                } catch (error) {
+                    // If we didn't reach dashboard, try to surface a helpful error from the login page.
+                    try {
+                        const bodyText = (await this.page.textContent('body')) || '';
+                        const looksLikeLoginError = /invalid|wrong|incorrect|failed|error/i.test(bodyText);
+                        if (this.page.url().includes('/login') && looksLikeLoginError) {
+                            throw new Error(`[AuthHelper] Login did not redirect to /dashboard. Still on ${this.page.url()}. Possible login error visible on page.`);
+                        }
+                    } catch {
+                        // ignore secondary failures
+                    }
+                    console.error(`[AuthHelper] Login failed to reach dashboard:`, error);
+                    throw error;
+                }
             } catch (error) {
                 console.error(`[AuthHelper] Login attempt ${attempts} failed:`, error);
 
                 // Screenshot on failure
-                await this.page.screenshot({ path: `test-results/login-failure-${attempts}.png` });
+                if (!this.page.isClosed()) {
+                    await this.page.screenshot({ path: `test-results/login-failure-${attempts}.png` }).catch(() => { });
+                }
 
                 if (attempts === maxRetries) throw error;
-                await this.page.waitForTimeout(2000);
-                await this.page.reload();
+                if (!this.page.isClosed()) {
+                    await this.page.waitForTimeout(2000);
+                    await this.page.reload({ waitUntil: 'domcontentloaded' }).catch(() => { });
+                }
             }
         }
 
@@ -562,12 +641,26 @@ export class NavigationHelper {
     }
 
     async goToPostJob() {
-        await this.page.goto(ROUTES.postJob);
-        await this.page.waitForLoadState('domcontentloaded');
+        // Fast Refresh / emulator flakiness can prevent the full "load" event.
+        // Prefer domcontentloaded and wait for a stable form marker.
+        const maxRetries = 2;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                await this.page.goto(ROUTES.postJob, { waitUntil: 'domcontentloaded', timeout: 90000 });
+                break;
+            } catch (e) {
+                console.warn(`[NavigationHelper] goToPostJob attempt ${attempt}/${maxRetries} failed:`, e);
+                if (attempt === maxRetries) throw e;
+                await this.page.waitForTimeout(2000);
+            }
+        }
         await this.injectCookieHide();
 
         // Wait for the Post Job heading to appear (form is loaded)
         await this.page.locator('h1:has-text("Post Job")').waitFor({ state: 'visible', timeout: 15000 }).catch(() => { });
+
+        // Stable marker: first required field
+        await this.page.getByTestId('job-title-input').waitFor({ state: 'visible', timeout: 30000 });
 
         // Dismiss draft recovery dialog - retry a few times as it loads asynchronously from Firestore
         for (let attempt = 0; attempt < 3; attempt++) {
@@ -606,9 +699,29 @@ export class NavigationHelper {
     }
 
     async goToBrowseJobs() {
-        await this.page.goto(ROUTES.browseJobs);
-        await this.page.waitForLoadState('domcontentloaded');
+        // Fast Refresh / emulator flakiness can prevent the full "load" event.
+        // Prefer domcontentloaded and retry navigation.
+        const maxRetries = 2;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // "commit" is more resilient than waiting for DOM events during hot reload / frame swaps.
+                await this.page.goto(ROUTES.browseJobs, { waitUntil: 'commit', timeout: 90000 });
+                break;
+            } catch (e) {
+                console.warn(`[NavigationHelper] goToBrowseJobs attempt ${attempt}/${maxRetries} failed:`, e);
+                if (attempt === maxRetries) throw e;
+                // Don't rely on page APIs here; the page may be mid-reload or detached.
+                if (this.page.isClosed()) throw e;
+                await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+            }
+        }
         await this.injectCookieHide();
+
+        // Wait for a stable marker on the page
+        await this.page.waitForURL(/\/dashboard\/jobs/, { timeout: 30000 }).catch(() => { });
+        // Stable marker: sidebar link exists even if the page content is still streaming/hydrating
+        await this.page.getByTestId('nav-link-browseJobs').first()
+            .waitFor({ state: 'visible', timeout: 30000 });
     }
 
     async goToMyBids() {

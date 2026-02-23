@@ -4,7 +4,7 @@ import { User } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
-import { doc, onSnapshot, updateDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, serverTimestamp, collection, query, where, getDocs, getDoc, Timestamp } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -144,8 +144,45 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('[useUser] Failed to sync token to cookie:', e);
         }
 
-        setHasAuthUser(true);
+        // In E2E mode, avoid realtime listeners but still fetch the user profile once
+        // so role-based UI can render correctly.
+        const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
+        if (isE2EMode) {
+          console.log('[useUser] E2E mode detected - using one-time user profile fetch (no realtime listener)');
+          setLoading(true);
+          setHasAuthUser(true);
+
+          const userDocRef = doc(db, "users", firebaseUser.uid);
+          try {
+            const snap = await getDoc(userDocRef);
+            if (snap.exists()) {
+              const userData = { id: snap.id, ...snap.data() } as User;
+              updateUserState(userData);
+            } else {
+              const basicUser: User = {
+                id: firebaseUser.uid,
+                email: firebaseUser.email!,
+                name: firebaseUser.displayName || firebaseUser.email!,
+                mobile: firebaseUser.phoneNumber || '',
+                avatarUrl: firebaseUser.photoURL || '',
+                roles: [],
+                status: 'active',
+                memberSince: Timestamp.now(),
+                address: { fullAddress: '', cityPincode: '' },
+                pincodes: { residential: '', office: '' },
+              };
+              updateUserState(basicUser);
+            }
+          } catch (e) {
+            console.error('[useUser] E2E one-time user fetch failed:', e);
+          } finally {
+            setLoading(false);
+          }
+          return;
+        }
+
         setLoading(true);
+        setHasAuthUser(true);
         const userDocRef = doc(db, "users", firebaseUser.uid);
         const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
           if (userDoc.exists()) {

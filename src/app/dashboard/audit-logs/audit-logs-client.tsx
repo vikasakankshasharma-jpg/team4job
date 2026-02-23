@@ -88,6 +88,15 @@ export default function AuditLogsClient() {
     useEffect(() => {
         if (!db || !isAdmin) return;
 
+        // Disable real-time audit logs listener in E2E mode to prevent Firestore assertion errors
+        const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
+        if (isE2EMode) {
+            console.log('[AuditLogsClient] E2E mode detected - skipping real-time audit logs listener');
+            setLogs([]);
+            setLoading(false);
+            return;
+        }
+
         const logsRef = collection(db, 'admin_action_logs');
         const q = query(logsRef, orderBy('timestamp', 'desc'), limit(100));
 

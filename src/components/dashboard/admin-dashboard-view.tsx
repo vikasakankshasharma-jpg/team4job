@@ -42,12 +42,24 @@ export function AdminDashboardView() {
     const [transactions, setTransactions] = React.useState<Transaction[]>([]);
     const [allUsers, setAllUsers] = React.useState<User[]>([]);
     const [allJobs, setAllJobs] = React.useState<Job[]>([]);
+    const isAdmin = useUser().isAdmin;
 
     React.useEffect(() => {
+        if (!db || !isAdmin) return;
+
+        // Disable real-time listeners in E2E mode to prevent Firestore assertion errors
+        const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
+        if (isE2EMode) {
+            console.log('[AdminDashboardView] E2E mode detected - skipping real-time listeners');
+            setAllUsers([]);
+            setAllJobs([]);
+            setStats({ totalUsers: 0, totalJobs: 0, openDisputes: 0, totalValueReleased: 0 });
+            return;
+        }
+
         const unsubscribeFuncs: (() => void)[] = [];
 
         async function setupListeners() {
-            if (!db) return;
             setLoading(true);
 
             const usersRef = collection(db, "users");

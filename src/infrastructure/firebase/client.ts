@@ -33,10 +33,9 @@ try {
         try {
             // Use memory cache to avoid IndexedDB flakiness in CI/emulator environments
             console.log('[Firebase Client] Initializing Firestore with MEMORY CACHE (CI/emulator mode)');
-            db = initializeFirestore(app, {
-                localCache: memoryLocalCache(),
-                experimentalForceLongPolling: true
-            });
+            // Temporarily disable memory cache due to assertion errors
+            console.log('[Firebase Client] Memory cache disabled due to assertion errors, using default');
+            db = getFirestoreDefault(app);
         } catch (e) {
             console.error('[Firebase Client] Failed to initialize memory cache, falling back to default:', e);
             // Fallback if already initialized

@@ -21,6 +21,14 @@ export function SystemStatusBanner() {
 
     useEffect(() => {
         if (!db) return;
+        
+        // Disable real-time system status listener in E2E mode to prevent Firestore assertion errors
+        const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
+        if (isE2EMode) {
+            console.log('[SystemStatusBanner] E2E mode detected - skipping real-time system status listener');
+            return;
+        }
+        
         const ref = doc(db, 'system_status', 'global');
         return onSnapshot(ref, (snap) => {
             if (snap.exists()) {

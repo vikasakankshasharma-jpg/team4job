@@ -9,8 +9,18 @@ export function useNotifications() {
     const [loading, setLoading] = useState(true);
     const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
 
+    // Disable realtime notifications in E2E mode to prevent Firestore assertion errors
+    const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
+
     useEffect(() => {
-        if (!user) {
+        if (!user || isE2EMode) {
+            setNotifications([]);
+            setLoading(false);
+            return;
+        }
+
+        if (isE2EMode) {
+            console.log('[useNotifications] E2E mode detected - skipping realtime subscription');
             setNotifications([]);
             setLoading(false);
             return;

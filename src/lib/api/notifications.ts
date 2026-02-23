@@ -26,6 +26,15 @@ export const NotificationsService = {
      * Subscribe to real-time notifications for a user
      */
     subscribeToNotifications(userId: string, callback: (notifications: Notification[]) => void, onError?: (error: any) => void) {
+        // Disable realtime notifications in E2E mode to prevent Firestore assertion errors
+        const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
+        
+        if (isE2EMode) {
+            console.log('[NotificationsService] E2E mode detected - skipping realtime subscription');
+            callback([]);
+            return () => { };
+        }
+        
         if (!db) {
             console.warn("[NotificationsService] Firestore db is not initialized.");
             if (onError) onError(new Error("Firestore not initialized"));
