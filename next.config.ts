@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
   eslint: {
     // Warning: This allows production builds to successfully complete even if
     // your project has ESLint errors.
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   serverExternalPackages: ['firebase-admin'],
   compress: true,
@@ -46,12 +46,8 @@ const nextConfig: NextConfig = {
 
 const nextConfigWithBundleAnalyzer = withBundleAnalyzer(nextConfig);
 
-// Temporarily disabled due to @sentry/nextjs v8 compatibility issues with Next.js 15
-// Errors: _optionalChain, _nullishCoalesce not exported from @sentry/core
 // Sentry runtime monitoring is still active (see instrumentation-client.ts)
-export default nextConfigWithBundleAnalyzer;
-
-/* export default withSentryConfig(nextConfigWithBundleAnalyzer, {
+export default withSentryConfig(nextConfigWithBundleAnalyzer, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
@@ -72,12 +68,8 @@ export default nextConfigWithBundleAnalyzer;
   // side errors will fail.
   tunnelRoute: "/monitoring",
 
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
-
-  // Enables automatic instrumentation of Vercel Cron Monitors.
-  // See the following for more information:
-  // https://docs.sentry.io/product/crons/
-  // https://vercel.com/docs/cron-jobs
-  automaticVercelMonitors: true,
-}); */
+  // Modern way to disable logger and enable Vercel monitors in Sentry v8
+  bundleSizeOptimizations: {
+    excludeDebugStatements: true,
+  },
+});

@@ -172,6 +172,34 @@ function PersonalSettingsCard() {
                         </div>
                         <Button variant="outline">{t('changePassword')}</Button>
                     </div>
+                    <div className="flex items-center justify-between rounded-lg border p-3">
+                        <div>
+                            <Label>{t('exportData') || 'Export My Data'}</Label>
+                            <p className="text-xs text-muted-foreground">
+                                {t('exportDataDesc') || 'Download all your personal data in JSON format.'}
+                            </p>
+                        </div>
+                        <Button
+                            variant="outline"
+                            onClick={async () => {
+                                try {
+                                    window.location.href = '/api/user/export';
+                                    toast({
+                                        title: "Export Started",
+                                        description: "Your data is being prepared for download.",
+                                    });
+                                } catch (error) {
+                                    toast({
+                                        title: "Export Failed",
+                                        description: "Could not export data. Please try again later.",
+                                        variant: "destructive"
+                                    });
+                                }
+                            }}
+                        >
+                            {t('exportData') || 'Export Data'}
+                        </Button>
+                    </div>
                     {!isTeamMember && (
                         <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-3">
                             <div>
@@ -203,13 +231,35 @@ function PersonalSettingsCard() {
                                         <AlertDialogCancel onClick={() => setDeleteConfirmation("")}>Cancel</AlertDialogCancel>
                                         <AlertDialogAction
                                             disabled={isDeleteDisabled}
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 if (isDeleteDisabled) return;
-                                                toast({
-                                                    title: t('accountDeletionRequested'),
-                                                    description: t('accountDeletionRequestedDesc'),
-                                                    variant: "destructive"
-                                                })
+                                                try {
+                                                    const res = await fetch('/api/user/delete', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ reason: 'User requested deletion via settings' })
+                                                    });
+                                                    const data = await res.json();
+                                                    if (data.success) {
+                                                        toast({
+                                                            title: t('accountDeletionRequested'),
+                                                            description: data.message,
+                                                            variant: "destructive"
+                                                        });
+                                                        // Logout and redirect
+                                                        setTimeout(() => {
+                                                            window.location.href = '/login';
+                                                        }, 2000);
+                                                    } else {
+                                                        throw new Error(data.error || 'Failed to delete account');
+                                                    }
+                                                } catch (error: any) {
+                                                    toast({
+                                                        title: "Error",
+                                                        description: error.message || "Failed to process account deletion.",
+                                                        variant: "destructive"
+                                                    });
+                                                }
                                             }}
                                         >
                                             {t('continue')}

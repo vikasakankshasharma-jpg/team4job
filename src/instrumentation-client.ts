@@ -4,28 +4,33 @@
 
 import * as Sentry from "@sentry/nextjs";
 
-// Only initialize Sentry in production (not in CI/test mode)
-// Only initialize Sentry in production (not in CI/test mode)
+const isProduction = process.env.NODE_ENV === 'production';
 const isCI = process.env.NEXT_PUBLIC_IS_CI;
+
+// Only initialize Sentry if NOT in CI/test mode
 if (isCI !== 'true' && isCI !== '1' && isCI?.trim() !== 'true') {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-    // Add optional integrations for additional features
-    integrations: [Sentry.replayIntegration()],
+    // Adjust this value in production, or use tracesSampler for greater control
+    tracesSampleRate: isProduction ? 0.1 : 1.0,
 
-    // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-    tracesSampleRate: 1,
-    // Enable logs to be sent to Sentry
-    // enableLogs: true,
+    // Setting this option to true will print useful information to the console while you're setting up Sentry.
+    debug: false,
 
-    // Define how likely Replay events are sampled.
+    replaysOnErrorSampleRate: 1.0,
+
     // This sets the sample rate to be 10%. You may want this to be 100% while
     // in development and sample at a lower rate in production
-    replaysSessionSampleRate: 0.1,
+    replaysSessionSampleRate: isProduction ? 0.01 : 0.1,
 
-    // Define how likely Replay events are sampled when an error occurs.
-    replaysOnErrorSampleRate: 1.0,
+    integrations: [
+      Sentry.replayIntegration({
+        // Additional Replay configuration goes here, for example:
+        maskAllText: true,
+        blockAllMedia: true,
+      }),
+    ],
 
     // Enable sending user PII (Personally Identifiable Information)
     // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
@@ -33,4 +38,5 @@ if (isCI !== 'true' && isCI !== '1' && isCI?.trim() !== 'true') {
   });
 }
 
-
+// Action required for Sentry v8 to instrument navigations
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

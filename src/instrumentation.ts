@@ -1,10 +1,16 @@
-// import * as Sentry from "@sentry/nextjs";
+import * as Sentry from "@sentry/nextjs";
 
 export async function register() {
-  // Temporarily disabled for Firebase deployment compatibility
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('../sentry.server.config');
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('../sentry.edge.config');
+  }
 }
 
 export const onRequestError = async (err: any) => {
-  // No-op for now
-  console.error("Request Error:", err);
+  Sentry.captureException(err);
+  console.error("Request Error captured by Sentry:", err);
 };

@@ -46,8 +46,15 @@ export default function PrivacyPage() {
                 </section>
 
                 <section>
-                    <h2 className="text-xl font-semibold mb-2">5. Your Rights</h2>
-                    <p>You have the right to access, correct, or delete your personal information. You can manage most of your data directly through your Profile settings.</p>
+                    <h2 className="text-xl font-semibold mb-2">5. Your Rights (DPDP Act 2023)</h2>
+                    <p>In accordance with the Digital Personal Data Protection Act 2023 (India), you have the right to:</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                        <li>Access information about the processing of your data.</li>
+                        <li>Correct, complete, or update your personal data.</li>
+                        <li>Withdraw consent and request erasure of your data.</li>
+                        <li>Grievance redressal regarding data handling.</li>
+                    </ul>
+                    <p className="mt-2 text-sm italic">You can export your data or deactivate your account directly from your Dashboard Settings.</p>
                 </section>
             </div>
         </div>

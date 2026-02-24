@@ -94,7 +94,12 @@ service cloud.firestore {
 
       // --- BIDS SUB-COLLECTION ---
       match /bids/{bidId} {
-        allow read: if true;
+        allow read: if request.auth != null && (
+          resource.data.installerId == request.auth.uid || 
+          get(/databases/$(database)/documents/jobs/$(jobId)).data.jobGiverId == request.auth.uid ||
+          isAdmin() || 
+          isSupport()
+        );
         
         allow create: if request.auth != null && 
           "Installer" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles &&
