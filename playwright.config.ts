@@ -66,13 +66,18 @@ export default defineConfig({
 
     /* Run your local dev server before starting the tests */
     webServer: {
-        command: 'cross-env FIRESTORE_EMULATOR_HOST=localhost:8080 npx next start -p 5000',
+        command: process.env.CI
+            ? 'npx next start -p 5000'
+            : 'cross-env FIRESTORE_EMULATOR_HOST=localhost:8080 npx next start -p 5000',
         url: 'http://localhost:5000',
         // Reusing an existing server can accidentally attach Playwright to `next dev`,
         // which is much more prone to reload/frame-detach issues during E2E.
-        reuseExistingServer: false,
+        reuseExistingServer: !process.env.CI,
         timeout: 180000, // 3 mins for server start
-        env: {
+        env: process.env.CI ? {
+            ALLOW_E2E_SEED: 'true',
+            NEXT_PUBLIC_E2E: 'true',
+        } : {
             FIRESTORE_EMULATOR_HOST: 'localhost:8080',
             FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199',
             ALLOW_E2E_SEED: 'true',
