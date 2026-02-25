@@ -6,10 +6,13 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from .env.local
-dotenv.config({ path: path.resolve(__dirname, '.env.local'), override: true });
-// Load .env.test if it exists (for emulator support)
-dotenv.config({ path: path.resolve(__dirname, '.env.test'), override: true });
+// In CI, variables are injected by GitHub Actions. Locally, we load them from .env files.
+if (!process.env.CI) {
+    // Load environment variables from .env.local
+    dotenv.config({ path: path.resolve(__dirname, '.env.local'), override: true });
+    // Load .env.test if it exists (for emulator support)
+    dotenv.config({ path: path.resolve(__dirname, '.env.test'), override: true });
+}
 
 /**
  * Playwright Configuration for E2E Testing
