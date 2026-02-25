@@ -7,40 +7,27 @@ This project uses **Playwright** for end-to-end (E2E) testing. The test suite co
 
 ## 🚀 Quick Start
 
-### Run All Tests
+### Run All Tests (25+ Scenarios)
 ```bash
 npm run test:e2e
 ```
 
-### Run Smoke Tests Only
+### Run Smoke Tests Only (Admin & Basic Flows)
 ```bash
 npm run test:smoke
 ```
 
-### Run Complete Transaction Cycle Test
+### Run Edge Cases
 ```bash
-npm run test:full
+npm run test:edge-cases
 ```
 
-### Run Tests with UI Mode (Interactive)
+### Run Full Regression (Invert Smoke/Edge)
 ```bash
-npm run test:e2e:ui
+npm run test:regression
 ```
 
-### Run Tests in Headed Mode (See Browser)
-```bash
-npm run test:e2e:headed
-```
-
-### Debug Tests
-```bash
-npm run test:debug
-```
-
-### View Test Report
-```bash
-npm run test:report
-```
+*(Note: Use standard `npx playwright test --ui` for interactive mode or `npx playwright test --debug` for debugging).*
 
 ---
 
@@ -61,29 +48,30 @@ tests/
 
 ## 🧪 Test Suites
 
-### 1. Smoke Tests (`smoke.spec.ts`)
-Quick validation tests that run in ~2-3 minutes:
+### 1. Smoke Tests (`smoke.spec.ts`, `admin-smoke.spec.ts`)
+Quick validation tests that ensure basic platform stability:
 - ✅ Login as Job Giver, Installer, Admin
 - ✅ Access key pages (Post Job, Browse Jobs)
-- ✅ Invalid login handling
-- ✅ Authentication redirects
-- ✅ No console errors
+- ✅ Admin dashboard access verification
 
 **Run**: `npm run test:smoke`
 
-### 2. Complete Transaction Cycle (`complete-transaction-cycle.spec.ts`)
-Full E2E test covering all 9 phases (~15-20 minutes):
-1. **Phase 1**: Job Giver posts a new job
-2. **Phase 2**: Installer places a bid
-3. **Phase 3**: Job Giver awards the job
-4. **Phase 4**: Installer accepts the offer
-5. **Phase 5**: Job Giver funds the project (Cashfree payment)
-6. **Phase 6**: Installer submits work
-7. **Phase 7**: Job Giver approves and releases payment
-8. **Phase 8**: Job Giver leaves review
-9. **Phase 9**: Admin verifies transactions
+### 2. Edge Cases (`edge-cases.spec.ts`)
+Deep checks for unexpected user behavior:
+- ✅ Invalid budget handling
+- ✅ Deadline boundary testing
+- ✅ Missing KYC or payment setups
 
-**Run**: `npm run test:full`
+**Run**: `npm run test:edge-cases`
+
+### 3. Full Regression (`tests/e2e/`)
+The platform has over 25+ specific test files covering every domain:
+- `beta-squad-all.spec.ts` (Major user flows)
+- `budget-estimator.spec.ts`
+- `mobile_user_flow.spec.ts`
+- `self-bid-protection.spec.ts`
+
+**Run**: `npm run test:regression`
 
 ---
 
@@ -231,10 +219,10 @@ Click on a failed test to view:
 
 ## 📊 Test Reports
 
-### HTML Report
-After running tests, view the HTML report:
+### View HTML Report
+After running tests, you can view the detailed graphical report via Playwright:
 ```bash
-npm run test:report
+npx playwright show-report
 ```
 
 ### JSON Report

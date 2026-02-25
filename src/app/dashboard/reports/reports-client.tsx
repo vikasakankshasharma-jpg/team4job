@@ -180,9 +180,9 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
         const pincodesByCity: Record<string, Set<string>> = {};
 
         installers.forEach(installer => {
-            if (installer.address.fullAddress) {
+            if (installer.address?.fullAddress) {
                 const parts = installer.address.fullAddress.split(', ');
-                const pincode = installer.address.cityPincode.split(',')[0].trim();
+                const pincode = installer.address.cityPincode?.split(',')[0]?.trim() || '';
 
                 if (parts.length >= 3) {
                     const city = parts[parts.length - 2];
@@ -221,13 +221,13 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
         let result = installers;
 
         if (selectedState !== 'all') {
-            result = result.filter(u => u.address.fullAddress?.includes(selectedState));
+            result = result.filter(u => u.address?.fullAddress?.includes(selectedState));
         }
         if (selectedCity !== 'all') {
-            result = result.filter(u => u.address.fullAddress?.includes(selectedCity));
+            result = result.filter(u => u.address?.fullAddress?.includes(selectedCity));
         }
         if (selectedPincode !== 'all') {
-            result = result.filter(u => u.address.cityPincode.startsWith(selectedPincode));
+            result = result.filter(u => u.address?.cityPincode?.startsWith(selectedPincode));
         }
 
         return result.sort((a, b) => (b.installerProfile?.points || 0) - (a.installerProfile?.points || 0));
@@ -256,7 +256,7 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
             rating: u.installerProfile?.rating || 0,
             reviews: u.installerProfile?.reviews || 0,
             verified: u.installerProfile?.verified ? 'Yes' : 'No',
-            fullAddress: u.address.fullAddress || '',
+            fullAddress: u.address?.fullAddress || '',
             residentialPincode: u.pincodes.residential || '',
             officePincode: u.pincodes.office || '',
         }));

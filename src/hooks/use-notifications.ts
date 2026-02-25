@@ -45,7 +45,7 @@ export function useNotifications() {
         NotificationsService.getPreferences(user.id).then(setPreferences);
 
         return () => unsubscribe();
-    }, [user]);
+    }, [user, isE2EMode]);
 
     const unreadCount = notifications.filter(n => !n.read).length;
 

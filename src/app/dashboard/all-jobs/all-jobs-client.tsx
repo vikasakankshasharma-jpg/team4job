@@ -582,8 +582,8 @@ export default function AllJobsClient() {
                             <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
                           </TableCell>
                           <TableCell>
-                            <Link href={`/dashboard/users/${(job.jobGiver as User).id}`} className="hover:underline" onClick={e => e.stopPropagation()}>
-                              {(job.jobGiver as User).name}
+                            <Link href={`/dashboard/users/${(job.jobGiver as User)?.id || '#'}`} className="hover:underline" onClick={e => e.stopPropagation()}>
+                              {(job.jobGiver as User)?.name || t('common.na')}
                             </Link>
                           </TableCell>
                           <TableCell>

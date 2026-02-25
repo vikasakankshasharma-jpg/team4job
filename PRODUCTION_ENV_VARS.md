@@ -13,7 +13,7 @@ NEXT_PUBLIC_FIREBASE_VAPID_KEY=<your_vapid_key>
 
 ## Maps & AI
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<your_google_maps_key>
-GEMINI_API_KEY=AIzaSyCg6OjGn9jmxzd-hbe8RGJA3vOqlBL8soY
+GEMINI_API_KEY=AIzaSyDmtKfEAtRoUdMbLt5Fwn0UjfeFzLjDgbc
 
 ## Server-Side Credentials (NEVER expose these to client)
 # Get this from Firebase Console > Project Settings > Service Accounts > Generate New Private Key

@@ -14,7 +14,7 @@
 
 **Team4Job** is a sophisticated, AI-enhanced marketplace connecting "Job Givers" (clients) with verified "Installers" (CCTV/Security professionals).
 
-> 📘 **Master Architecture Guide**: For a complete deep-dive into the system prompt, database schema, and recreation instructions, see [system_architecture.md](./system_architecture.md).
+
 
 **Core Philosophy:**
 *   **Dual-Role Architecture:** Every user can be both a Job Giver and an Installer.
@@ -29,7 +29,8 @@
 *   **Frontend:** Next.js 14 (App Router), React 18, TailwindCSS, ShadCN/UI.
 *   **Backend:** Firebase App Hosting (running on Cloud Run), Firebase Functions for triggers.
 *   **Database:** Cloud Firestore (NoSQL).
-*   **AI:** Google Gemini (via Genkit) for job scoping and bid analysis.
+*   **AI (Phase 1):** Google Gemini (via Genkit) for job scoping and bid analysis.
+*   **AI (Phase 2 Planned):** Sarvam AI for regional language Voice Agents and Document OCR.
 *   **Payments:** Cashfree Payment Gateway (Marketplace Split logic).
 *   **Maps:** Google Maps API (Geocoding, Places).
 
@@ -42,9 +43,14 @@
   /components   # React Components
     /ui         # ShadCN Primitives (Atomic Design)
     /dashboard  # Business Logic Components
-  /lib          # Core Logic
+  /domains      # Domain-driven design slices (e.g., jobs, users, payments)
+  /hooks        # Custom React Hooks
+  /i18n         # Internationalization setup (next-intl)
+  /infrastructure # Monitoring/Observability (Sentry, OpenTelemetry)
+  /lib          # Core Logic and Utilities
     /firebase   # Initialization & Seed scripts
     types.ts    # centralized TypeScript interfaces (Source of Truth)
+  /store        # Zustand state management
   /ai           # Genkit flows (Gemini integration)
 ```
 
@@ -110,11 +116,19 @@ npm run dev
 ```
 
 ### Testing Strategy
-We use **Playwright** for everything. Do NOT skip these before pushing.
+We use **Playwright** for a comprehensive suite of over 25+ automated E2E tests covering every scenario. Do NOT skip these before pushing.
 
-*   **E2E Suite (Critical Flows):**
+*   **Smoke Tests (Quick Check):**
     ```bash
-    npm run test:e2e
+    npm run test:smoke
+    ```
+*   **Edge Cases:**
+    ```bash
+    npm run test:edge-cases
+    ```
+*   **Full Regression Suite:**
+    ```bash
+    npm run test:regression
     ```
 
 ### Deployment

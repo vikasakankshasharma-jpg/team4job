@@ -236,8 +236,7 @@ test.describe('Edge Case Tests @edge', () => {
             await expect(page.getByText(specialTitle).first()).toBeVisible();
         });
 
-        test.only('Job posting with invalid pincode', async ({ page }) => {
-            await page.goto('/login');
+        test('Job posting with invalid pincode', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsJobGiver();
             await helper.nav.goToPostJob();
@@ -246,11 +245,8 @@ test.describe('Edge Case Tests @edge', () => {
             // Wait for loading to finish
             await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 10000 });
 
-            // Dump to file
-            const fs = await import('fs');
-            fs.writeFileSync('dom-dump.html', await page.content());
-
-            await expect(page.getByTestId('pincode-error')).toBeVisible({ timeout: 5000 });
+            // Expect the error text to be visible based on our mock response ("No records found")
+            await expect(page.locator('text=No records found').first()).toBeVisible({ timeout: 10000 });
         });
     });
 

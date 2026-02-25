@@ -12,6 +12,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { FileUpload } from "@/components/ui/file-upload";
 import { completeJobWithOtpAction } from "@/app/actions/job.actions";
 import { sendNotification } from "@/lib/notifications";
+import { compressImage } from "@/lib/image-compression";
 
 interface InstallerCompletionSectionProps {
     job: Job;
@@ -56,15 +57,19 @@ export function InstallerCompletionSection({ job, user, onJobUpdate }: Installer
                 if (isE2E) {
                     return { fileName: file.name, fileUrl: "https://firebasestorage.googleapis.com/v0/b/studio-mock/o/mock.png?alt=media", fileType: file.type, isAiVerified: true };
                 }
-                const fileRef = ref(storage, `jobs/${job.id}/completion/${Date.now()}_${file.name}`);
-                await uploadBytes(fileRef, file);
+
+                // Compress the image before uploading to save user bandwidth/memory
+                const finalFileToUpload = await compressImage(file);
+
+                const fileRef = ref(storage, `jobs/${job.id}/completion/${Date.now()}_${finalFileToUpload.name}`);
+                await uploadBytes(fileRef, finalFileToUpload);
                 const fileUrl = await getDownloadURL(fileRef);
 
                 let isAiVerified = false;
-                if (file.type.startsWith('image/')) {
+                if (finalFileToUpload.type.startsWith('image/')) {
                     isAiVerified = true; // Optimization for now
                 }
-                return { fileName: file.name, fileUrl, fileType: file.type, isAiVerified };
+                return { fileName: finalFileToUpload.name, fileUrl, fileType: finalFileToUpload.type, isAiVerified };
             });
 
             const uploadedAttachments = await Promise.all(uploadPromises);

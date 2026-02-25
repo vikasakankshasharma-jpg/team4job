@@ -19,7 +19,7 @@ Your current architecture (Next.js on Firebase + Cloud Functions + Google Maps) 
 | **Functions** | 2,000,000 invocations/month | ~2,000 invocations/month | ✅ Safe |
 | **Auth** | Unlimited (Email/Pwd) | 30 Users | ✅ Safe |
 
-> **Note:** You are using **Cloud Scheduler** for 3 jobs (`handleUnfundedJobs`, `handleUnbidJobs`, `handleExpiredAwards`). The free tier includes **3 jobs**. **DO NOT add a 4th scheduled job** without expecting a small bill ($0.10/month).
+> **Note:** You were previously using **Cloud Scheduler** for 3 jobs (`handleUnfundedJobs`, `handleUnbidJobs`, `handleExpiredAwards`), but these legacy Cloud Functions have now been disabled to ensure you stay under the free tier logic. New triggers are handled differently. Do not re-enable scheduled functions without expecting a small bill.
 
 ### Google Maps Platform
 | Service | Free Credit | Cost/Unit | Safe Limit | Status |

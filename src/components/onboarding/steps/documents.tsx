@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { UploadCloud, CheckCircle, X } from "lucide-react";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { compressImage } from "@/lib/image-compression";
 
 interface DocumentsProps {
     data: any;
@@ -53,9 +54,11 @@ function FileUploader({ label, file, onDrop, onRemove }: { label: string, file?:
 
 export function Documents({ data, updateData }: DocumentsProps) {
 
-    const handleDrop = useCallback((field: string) => (acceptedFiles: File[]) => {
+    const handleDrop = useCallback((field: string) => async (acceptedFiles: File[]) => {
         if (acceptedFiles?.length > 0) {
-            updateData({ [field]: acceptedFiles[0] });
+            const file = acceptedFiles[0];
+            const compressedFile = await compressImage(file);
+            updateData({ [field]: compressedFile });
         }
     }, [updateData]);
 

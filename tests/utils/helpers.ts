@@ -925,7 +925,7 @@ export class TestHelper {
                 }
 
                 // Hide Beta Feedback button
-                const betaButtons = document.querySelectorAll('button');
+                const betaButtons = Array.from(document.querySelectorAll('button'));
                 for (const btn of betaButtons) {
                     const text = btn.textContent || '';
                     if (text.includes('Beta Feedback') || text.includes('Feedback') || text === '…') {
@@ -1042,7 +1042,7 @@ export class TestHelper {
                 }
 
                 // Hide Beta Feedback button and other overlays
-                const elements = document.querySelectorAll('button, div');
+                const elements = Array.from(document.querySelectorAll('button, div'));
                 for (const el of elements) {
                     const text = el.textContent || '';
                     const classes = el.className;

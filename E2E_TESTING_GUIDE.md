@@ -475,13 +475,10 @@ For rapid testing, use this condensed checklist:
 
 ---
 
-## 🔄 Automated Testing (Future)
+## 🔄 Automated Testing Infrastructure
 
-Consider implementing:
-- Playwright/Cypress for E2E automation
-- API testing with Postman/Jest
-- Load testing for concurrent users
-- Integration tests for payment flows
+This project runs a highly robust, fully-implemented Playwright automation suite located in `tests/e2e`. It contains over 25 specific test files covering smoke tests, mobile responsiveness, edge cases, and all permutations of the transaction lifecycle.
+To execute the automated regression suite, see [TESTING_GUIDE.md](./TESTING_GUIDE.md).
 
 ---
 

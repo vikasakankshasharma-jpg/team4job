@@ -51,6 +51,7 @@ At this stage, "Zero Cost" is impossible on managed cloud. You must focus on **E
 | **Maps** | $$$ | **Aggressive Move:** Switch from Google Maps to **Mapbox** (generous free tier) or **OpenStreetMap (Leaflet)** (Completely Free) for the viewing components. Only use Google for geocoding if absolutely necessary. |
 | **Database** | $$ | **Denormalization:** Instead of reading 5 documents to build a Job Card (User, Profiles, Reviews), store the user's name/photo directly on the Job document. This reduces Reads by 80%. |
 | **Auth** | $ | Firebase Auth Phones/SMS is expensive ($10/month per 1k verifications). Stick to **Email/Password** or **Social Login** (Google/GitHub) which is free/cheap. |
+| **AI (Voice/OCR)** | $$ | **Strategic Upgrade:** Introduce **Sarvam AI** for regional language Voice Agents (bidding via voice) and Document OCR (KYC). Keep **Gemini** for the core reasoning engine. Sarvam's INR pricing and Indic-language focus makes it the only viable cost-effective choice for Indian field workers. |
 
 **✅ Action Items:**
 1.  If Maps bill exceeds $200, migrate the "View Map" to [Leaflet JS](https://leafletjs.com/) (OpenStreetMap).
@@ -86,7 +87,7 @@ At this stage, "Zero Cost" is impossible on managed cloud. You must focus on **E
 | :--- | :--- | :--- | :--- |
 | **0 - 100** | None | **$0** | Use Free Tiers & Credits. |
 | **1,000** | Google Maps | **$0 - $20** | Debounce API calls & Session Tokens. |
-| **10,000** | Firestore Reads / Maps | **$50 - $200** | Denormalize DB Data & Cache heavily. |
+| **10,000** | Firestore Reads / AI | **$50 - $200** | Denormalize DB Data & Implement Sarvam AI for low-cost Indian language Voice/OCR. |
 | **100,000** | Cloud Run Compute | **$500+** | Enable Request Caching & Cloudflare. |
 | **>100,000** | Everything | **$$$** | Move to Self-Hosted / Open Source alternatives (Leaflet, Postgres). |
 

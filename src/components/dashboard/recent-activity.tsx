@@ -31,7 +31,7 @@ export function RecentActivity({ initialActivities = [] }: { initialActivities?:
 
     useEffect(() => {
         if (!user || !db) return;
-        
+
         // Disable real-time activity listener in E2E mode to prevent Firestore assertion errors
         const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
         if (isE2EMode) {
@@ -40,7 +40,7 @@ export function RecentActivity({ initialActivities = [] }: { initialActivities?:
             setLoading(false);
             return;
         }
-        
+
         // If we have initial data, we aren't loading, but we still want live updates.
         // However, for optimization, we might skip live updates or delay them.
         // For now, let's keep live updates but set loading to false immediately if we have data.
@@ -74,7 +74,7 @@ export function RecentActivity({ initialActivities = [] }: { initialActivities?:
         });
 
         return () => unsubscribe();
-    }, [user, db, initialActivities.length]); // Dependence on length to avoid reset loop
+    }, [user, db, initialActivities]);
 
     if (loading) {
         return (

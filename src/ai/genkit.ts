@@ -26,7 +26,7 @@ export const ai: any = isCI ? {
     // Vertex AI for embeddings
     vertexAI({
       projectId: 'dodo-beta',
-      location: 'us-central1',
+      location: 'us-east4',
       // Use service account credentials in Firebase Functions, ADC locally
       ...(process.env.VERTEX_AI_CREDENTIALS ? {
         googleAuth: {
@@ -59,7 +59,7 @@ export const defineLoggedFlow = (config: any, fn: (input: any, ...args: any[]) =
 
     // MODEL ROUTER: Select model based on tier
     const modelTier = config.modelTier || 'flash'; // Default to cost-effective Flash
-    const modelVersion = modelTier === 'pro' ? 'gemini-2.0-flash' : 'gemini-1.5-flash';
+    const modelVersion = modelTier === 'pro' ? 'gemini-1.5-pro' : 'gemini-2.0-flash';
 
     // CACHE CHECK (Only use cache if no streaming/extra args, to be safe for now, or just ignore args for cache key)
     // For now, we only cache based on input.

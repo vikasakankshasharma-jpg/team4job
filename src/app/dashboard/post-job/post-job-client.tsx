@@ -71,6 +71,7 @@ import { createJobAction, updateJobAction, getJobForEditAction } from "@/app/act
 import { CreateJobInput } from "@/domains/jobs/job.types";
 import { Badge } from "@/components/ui/badge";
 import { AIFeedbackControl } from "@/components/ai/AIFeedbackControl";
+import { compressImage } from "@/lib/image-compression";
 
 const addressSchema = z.object({
   house: z.string().min(3, "address.houseReq"),
@@ -745,13 +746,16 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       if (values.attachments && values.attachments.length > 0) {
         console.log(`Uploading ${values.attachments.length} attachments...`);
         for (const file of values.attachments) {
-          const fileRef = ref(storage, `jobs/${user.id}/${Date.now()}/${file.name}`);
-          await uploadBytes(fileRef, file);
+          // Compress the image before uploading
+          const finalFileToUpload = await compressImage(file);
+
+          const fileRef = ref(storage, `jobs/${user.id}/${Date.now()}/${finalFileToUpload.name}`);
+          await uploadBytes(fileRef, finalFileToUpload);
           const downloadURL = await getDownloadURL(fileRef);
           attachmentUrls.push({
-            fileName: file.name,
+            fileName: finalFileToUpload.name,
             fileUrl: downloadURL,
-            fileType: file.type,
+            fileType: finalFileToUpload.type,
           });
         }
         console.log("Attachments uploaded successfully");

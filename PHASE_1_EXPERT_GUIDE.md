@@ -143,7 +143,7 @@ const debouncedGeocode = useCallback(debounce(geocodeAddress, 2000), [geocodeAdd
 
 ### 4. **Gemini AI (Google AI Studio)** ✅ OPTIMAL
 
-**Current API Key:** `AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE`
+**Current API Key:** `AIzaSyDmtKfEAtRoUdMbLt5Fwn0UjfeFzLjDgbc`
 
 **Free Tier:**
 - 15 RPM (requests per minute)
@@ -163,7 +163,7 @@ You MUST verify this is a Google AI Studio key (free tier), NOT a Vertex AI key 
 
 **How to Check:**
 1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Verify your key `AIzaSyBDga6PRAvyYIjAuEMTJIFOPeAUV_3wklE` is listed there
+2. Verify your key `AIzaSyDmtKfEAtRoUdMbLt5Fwn0UjfeFzLjDgbc` is listed there
 3. If it's NOT there, you might be using Vertex AI accidentally, which will charge you
 
 **If you're using Vertex AI (paid), here's how to switch:**

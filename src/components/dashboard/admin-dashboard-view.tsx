@@ -109,7 +109,7 @@ export function AdminDashboardView() {
         return () => {
             unsubscribeFuncs.forEach(unsub => unsub());
         };
-    }, [db]);
+    }, [db, isAdmin]);
 
     React.useEffect(() => {
         setHelp({
