@@ -74,9 +74,11 @@ vertex-ai-key.json
 serviceAccountKey.json
 service-account.json
 .env*.bak
+API_KEYS.md
+dom-dump.html
 
 # Firebase Emulators
-firebase-export/
+firebase-export*/
 
 # Sentry Backup Configs
 _sentry.*.config.ts
