@@ -288,6 +288,7 @@ export class AuthHelper {
             const userMenu = this.page.locator('[data-testid="user-menu-trigger"]')
                 .or(this.page.locator('button.rounded-full:has(img)'))
                 .or(this.page.locator('button:has(.rounded-full)'))
+                .filter({ hasNot: this.page.locator('xpath=ancestor::*[contains(@class, "hidden")]') })
                 .first();
 
             try {

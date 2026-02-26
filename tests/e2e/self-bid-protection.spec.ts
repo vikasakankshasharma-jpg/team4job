@@ -63,8 +63,9 @@ test.describe('Self-Interaction Guardrails', () => {
         await page.fill('[data-testid="min-budget-input"]', '1000');
         await page.fill('[data-testid="max-budget-input"]', '5000');
 
-        // Check the required verification checkbox
-        await page.getByRole('checkbox', { name: /I verify that the details provided are accurate/i }).check({ force: true });
+        // Check the required verification checkbox (using more generic locator as text is i18n dependent and missing in CI)
+        await page.locator('button[role="checkbox"]').last().hover();
+        await page.locator('button[role="checkbox"]').last().click({ force: true });
 
         await page.getByRole('button', { name: "Post Job" }).click();
 

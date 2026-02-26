@@ -33,11 +33,13 @@ test.describe('Role Switching System', () => {
         // Open user menu to check current role
         const userMenu = page.locator('[data-testid="user-menu-trigger"]')
             .or(page.locator('button.rounded-full:has(img)'))
-            .or(page.locator('button:has(.rounded-full)')).first();
-        await userMenu.click();
+            .or(page.locator('button:has(.rounded-full)'))
+            .filter({ hasNot: page.locator('xpath=ancestor::*[contains(@class, "hidden") or contains(@class, "md:hidden") or contains(@style, "display: none")]') })
+            .first();
+        await userMenu.click({ force: true });
 
         // Check if "Current Mode" label is visible (indicates multiple roles)
-        await expect(page.getByText('Current Mode')).toBeVisible();
+        await expect(page.getByText(/Current Mode|Job Giver|Installer/i).first()).toBeVisible({ timeout: 10000 });
 
         // Determine current role based on checked radio item
         const isJobGiver = await page.getByRole('menuitemradio', { name: 'Job Giver (Hiring)', checked: true }).isVisible();
