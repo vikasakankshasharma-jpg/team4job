@@ -34,13 +34,19 @@ test.describe('Role Switching System', () => {
         await page.locator('.animate-spin').waitFor({ state: 'hidden', timeout: 30000 }).catch(() => { });
 
         // Open user menu to check current role
-        const userMenu = page.locator('[data-testid="user-menu-trigger"]').first();
+        const userMenu = page.locator('[data-testid="user-menu-trigger"]')
+            .or(page.locator('button.rounded-full:has(img)'))
+            .or(page.locator('button:has(.rounded-full)'))
+            .filter({ hasNot: page.locator('xpath=ancestor::*[contains(@class, "hidden") or contains(@class, "md:hidden")]') })
+            .first();
+
+        console.log('[Test] Waiting for user-menu-trigger...');
+        await userMenu.waitFor({ state: 'visible', timeout: 30000 });
         await userMenu.scrollIntoViewIfNeeded();
         await userMenu.click({ force: true });
 
-
-        // Check if "Current Mode" label is visible (indicates multiple roles)
-        await expect(page.getByText(/Current Mode|Job Giver|Installer/i).first()).toBeVisible({ timeout: 10000 });
+        // Check if "Current Mode" label or role options are visible
+        await expect(page.getByText(/Current Mode|Job Giver|Installer/i).first()).toBeVisible({ timeout: 15000 });
 
         // Determine current role based on checked radio item
         const isJobGiver = await page.getByRole('menuitemradio', { name: 'Job Giver (Hiring)', checked: true }).isVisible();

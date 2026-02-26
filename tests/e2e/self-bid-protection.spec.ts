@@ -37,20 +37,14 @@ test.describe('Self-Interaction Guardrails', () => {
         await page.locator('[role="option"]').first().click();
 
         await page.fill('input[name="skills"]', 'React, Testing');
-        await page.fill('input[placeholder*="110001"]', '560001');
-        await page.waitForTimeout(1000); // Wait for pincode debounce
 
-        // Select logic if dropdown appears (reusing logic from successful tests)
-        const poTrigger = page.locator('button:has-text("Select Post Office")');
-        if (await poTrigger.isVisible()) {
-            await poTrigger.click();
-            await page.locator('[role="option"]').first().click();
-        }
+        // Use robust pincode helper
+        await helper.form.fillPincodeAndSelectPO('110001');
 
         await page.fill('input[name="address.house"]', 'Self-Bid House');
         await page.fill('input[name="address.street"]', 'Guardrail St');
         await page.fill('input[name="address.landmark"]', 'Near Protection Park');
-        await page.fill('input[name="address.fullAddress"]', 'Self-Bid House, Guardrail St, Near Protection Park, 560001');
+        await page.fill('input[name="address.fullAddress"]', 'Self-Bid House, Guardrail St, Near Protection Park, 110001');
 
         // Dates
         const tomorrow = new Date();
