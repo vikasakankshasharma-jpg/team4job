@@ -22,6 +22,7 @@ test.describe('Secured Variation Orders', () => {
         // 1. Job Giver Creates Job
         await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
         await helper.nav.goToPostJob();
+
         await helper.form.fillInput('Job Title', 'Variation Test Job ' + Date.now());
         await page.locator('textarea[name="jobDescription"]').fill('A simple job for testing variations. Must be at least 50 chars long to pass validation.');
         await helper.form.fillPincodeAndSelectPO('110001'); // Delhi
@@ -59,14 +60,8 @@ test.describe('Secured Variation Orders', () => {
 
         // Check the required verification checkbox
         await page.locator('button[role="checkbox"]').last().hover();
-        await page.locator('button[role="checkbox"]').last().click({ force: true });
-
-        await page.click('button:has-text("Post Job")');
-
-        // Handle the confirmation dialog
-        const confirmDialog = page.locator('text=Confirm Job Posting');
-        await confirmDialog.waitFor({ state: 'visible', timeout: 5000 });
-        await page.click('button:has-text("Yes, Post Job")');
+        // Use the robust submitPostJob helper that handles checkboxes and confirmation modals
+        await helper.form.submitPostJob();
 
         // Check for navigation OR error message
         try {

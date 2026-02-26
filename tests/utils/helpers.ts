@@ -672,6 +672,20 @@ export class NavigationHelper {
         }
         await this.injectCookieHide();
 
+        // Wait for the Post Job heading or the "Resume your draft?" modal
+        const resumeModal = this.page.locator('div[role="dialog"]:has-text("Resume your draft?"), h2:has-text("Resume your draft?")');
+        if (await resumeModal.isVisible({ timeout: 5000 }).catch(() => false)) {
+            console.log('[NavigationHelper] Found Resume Draft modal, discarding it');
+            // Try to find discard button
+            const discardBtn = this.page.locator('button:has-text("Discard")');
+            if (await discardBtn.isVisible()) {
+                await discardBtn.click();
+            } else {
+                // Try closing it
+                await this.page.locator('button:has-text("Close"), button[aria-label="Close"]').first().click().catch(() => { });
+            }
+        }
+
         // Wait for the Post Job heading to appear (form is loaded)
         await this.page.locator('h1:has-text("Post Job")').waitFor({ state: 'visible', timeout: 15000 }).catch(() => { });
 
@@ -738,12 +752,6 @@ export class NavigationHelper {
         // Stable marker: sidebar link exists even if the page content is still streaming/hydrating
         await this.page.getByTestId('nav-link-browseJobs').first()
             .waitFor({ state: 'visible', timeout: 30000 });
-    }
-
-    async goToMyBids() {
-        await this.page.goto(ROUTES.myBids);
-        await this.page.waitForLoadState('domcontentloaded');
-        await this.injectCookieHide();
     }
 
     async goToTransactions() {

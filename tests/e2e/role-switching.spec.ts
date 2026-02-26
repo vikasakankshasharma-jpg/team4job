@@ -30,13 +30,14 @@ test.describe('Role Switching System', () => {
         // By default, it might pick one or the other. Let's check what it is.
         await page.waitForTimeout(2000); // Wait for initial hydration/redirects
 
+        // Wait for dashboard loading spinner to disappear
+        await page.locator('.animate-spin').waitFor({ state: 'hidden', timeout: 30000 }).catch(() => { });
+
         // Open user menu to check current role
-        const userMenu = page.locator('[data-testid="user-menu-trigger"]')
-            .or(page.locator('button.rounded-full:has(img)'))
-            .or(page.locator('button:has(.rounded-full)'))
-            .filter({ hasNot: page.locator('xpath=ancestor::*[contains(@class, "hidden") or contains(@class, "md:hidden") or contains(@style, "display: none")]') })
-            .first();
+        const userMenu = page.locator('[data-testid="user-menu-trigger"]').first();
+        await userMenu.scrollIntoViewIfNeeded();
         await userMenu.click({ force: true });
+
 
         // Check if "Current Mode" label is visible (indicates multiple roles)
         await expect(page.getByText(/Current Mode|Job Giver|Installer/i).first()).toBeVisible({ timeout: 10000 });

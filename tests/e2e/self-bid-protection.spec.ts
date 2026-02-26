@@ -28,6 +28,7 @@ test.describe('Self-Interaction Guardrails', () => {
         console.log('Posting a new job...');
         await helper.nav.goToPostJob();
 
+
         // Fill job details
         await page.fill('input[name="jobTitle"]', jobTitle);
         await page.locator('[data-testid="job-description-input"]').fill('Testing self-bid protection. This job should not be biddable by the owner.');
@@ -63,16 +64,8 @@ test.describe('Self-Interaction Guardrails', () => {
         await page.fill('[data-testid="min-budget-input"]', '1000');
         await page.fill('[data-testid="max-budget-input"]', '5000');
 
-        // Check the required verification checkbox (using more generic locator as text is i18n dependent and missing in CI)
-        await page.locator('button[role="checkbox"]').last().hover();
-        await page.locator('button[role="checkbox"]').last().click({ force: true });
-
-        await page.getByRole('button', { name: "Post Job" }).click();
-
-        // Handle the confirmation dialog
-        const confirmDialog = page.locator('text=Confirm Job Posting');
-        await confirmDialog.waitFor({ state: 'visible', timeout: 5000 });
-        await page.click('button:has-text("Yes, Post Job")');
+        // Use the robust submitPostJob helper that handles checkboxes and confirmation modals
+        await helper.form.submitPostJob();
 
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });
 
