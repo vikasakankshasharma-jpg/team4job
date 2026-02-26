@@ -379,16 +379,31 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // RENDER LOGIC:
   // 1. If loading, show loader
   // 2. If we determined a redirect is necessary, show loader
-  // 3. If we have a Firebase user but haven't fetched the profile yet (on a private page), show loader
+  // 3. Instead of showing a loader infinitely if the DB fails to fetch the user profile, 
+  //    we show an explicit error message if loading finished but `user` is still null.
   const isPublic = isPublicPath(pathname);
-  const shouldShowLoader = (loading && !isPublic) ||
-    (redirectPath !== null) ||
-    (hasAuthUser && !user && !isPublic);
+  const shouldShowLoader = (loading && !isPublic) || (redirectPath !== null);
 
   if (shouldShowLoader) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If loading is false, and hasAuthUser is true, but user is null...
+  if (!isPublic && hasAuthUser && !user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+        <h2 className="text-xl font-semibold mb-2 text-destructive">Profile Fetch Error</h2>
+        <p className="text-muted-foreground mb-4 max-w-sm">We could not load your user profile. This might be due to a network error or missing data.</p>
+        <button
+          onClick={() => logout()}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+        >
+          Sign Out & Try Again
+        </button>
       </div>
     );
   }

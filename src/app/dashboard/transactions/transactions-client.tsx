@@ -58,7 +58,7 @@ const initialFilters = {
 
 export default function TransactionsClient() {
     const { user, isAdmin, loading: userLoading } = useUser();
-    // const { db } = useFirebase(); // Unused now
+    const { auth } = useFirebase();
     const router = useRouter();
     const t = useTranslations('transactions');
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -96,8 +96,8 @@ export default function TransactionsClient() {
         setLoading(true);
 
         try {
-            // @ts-ignore
-            const token = await user.getIdToken();
+            if (!auth?.currentUser) throw new Error("No authenticated user");
+            const token = await auth.currentUser.getIdToken();
             const response = await fetch('/api/transactions/history', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
