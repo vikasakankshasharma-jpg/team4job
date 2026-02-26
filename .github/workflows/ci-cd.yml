@@ -68,6 +68,8 @@ jobs:
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
           NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
           NEXT_PUBLIC_IS_CI: true
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: true
+          NEXT_PUBLIC_E2E: true
 
 
       - name: Archive build artifacts
@@ -139,6 +141,8 @@ jobs:
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           NEXT_PUBLIC_IS_CI: true
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: true
+          NEXT_PUBLIC_E2E: true
 
       - name: Upload smoke test report
         uses: actions/upload-artifact@v4
@@ -208,6 +212,8 @@ jobs:
           echo "GOOGLE_GENAI_API_KEY=$GOOGLE_GENAI_API_KEY" >> $GITHUB_ENV
           echo "GOOGLE_API_KEY=$GOOGLE_API_KEY" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_IS_CI=true" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_E2E=true" >> $GITHUB_ENV
 
       - name: Run Regression Suite
         run: npx playwright test tests/e2e --grep-invert '@smoke|@edge' --shard=${{ matrix.shard }}/${{ strategy.job-total }}
@@ -279,6 +285,8 @@ jobs:
           echo "GOOGLE_GENAI_API_KEY=$GOOGLE_GENAI_API_KEY" >> $GITHUB_ENV
           echo "GOOGLE_API_KEY=$GOOGLE_API_KEY" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_IS_CI=true" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_E2E=true" >> $GITHUB_ENV
 
       - name: Run edge case tests
         run: npx playwright test tests/e2e/edge-cases.spec.ts --shard=${{ matrix.shard }}/${{ strategy.job-total }}
