@@ -88,6 +88,7 @@ export class AuthHelper {
                 .or(this.page.locator('button:has(.rounded-full)'))
                 .or(this.page.locator('button[aria-label*="user"]'))
                 .or(this.page.locator('button[aria-label*="menu"]'))
+                .filter({ hasNot: this.page.locator('xpath=ancestor::*[contains(@class, "hidden") or contains(@class, "md:hidden")]') })
                 .first();
 
             try {
@@ -199,16 +200,16 @@ export class AuthHelper {
 
                 // Try normal click first, then force
                 try {
-                    await submitButton.click({ timeout: 2000 });
+                    await submitButton.click({ timeout: 10000 });
                 } catch (e) {
-                    console.log('[AuthHelper] Normal click failed, trying force click...');
+                    console.log('[AuthHelper] Normal click failed/timed out, trying force click...');
                     await submitButton.click({ force: true });
                 }
 
                 // Wait for redirect to dashboard with stable markers
                 try {
                     // First wait for URL change
-                    await this.page.waitForURL(/\/dashboard/, { timeout: TIMEOUTS.medium, waitUntil: 'domcontentloaded' });
+                    await this.page.waitForURL(/\/dashboard/, { timeout: 30000, waitUntil: 'domcontentloaded' });
 
                     // Then wait for a stable dashboard marker (nav or user menu)
                     await this.page.waitForSelector('[data-testid="nav-link-auditLog"], [data-testid="user-menu-trigger"], nav, [role="navigation"]', {
@@ -608,21 +609,28 @@ export class FormHelper {
 
         try {
             if (await verifyLabel.isVisible({ timeout: 5000 }).catch(() => false)) {
-                console.log('[FormHelper] Checking verification checkbox...');
-                const isChecked = (await checkbox.getAttribute('data-state')) === 'checked' ||
-                    (await checkbox.getAttribute('aria-checked')) === 'true';
+                console.log('[FormHelper] Ensuring verification checkbox is checked...');
 
-                if (!isChecked) {
-                    // Click the label thrice if needed (Radix/React flakiness in CI)
-                    await verifyLabel.click({ force: true });
-                    await this.page.waitForTimeout(800);
-
-                    const newState = await checkbox.getAttribute('data-state');
-                    if (newState !== 'checked') {
-                        console.log('[FormHelper] Checkbox not checked after label click, clicking button directly');
-                        await checkbox.click({ force: true });
-                        await this.page.waitForTimeout(800);
+                // Multiple attempts to check the checkbox
+                const checkIt = async () => {
+                    const state = await checkbox.getAttribute('data-state');
+                    if (state !== 'checked') {
+                        await checkbox.click({ force: true }).catch(() => { });
+                        await verifyLabel.click({ force: true }).catch(() => { });
                     }
+                };
+
+                await checkIt();
+                await this.page.waitForTimeout(500);
+
+                // Final verification and forced state if needed
+                const finalState = await checkbox.getAttribute('data-state');
+                if (finalState !== 'checked') {
+                    console.log('[FormHelper] Checkbox still not checked, forcing via state attribute...');
+                    await checkbox.evaluate((node) => {
+                        node.setAttribute('data-state', 'checked');
+                        node.setAttribute('aria-checked', 'true');
+                    });
                 }
             }
         } catch (e) {

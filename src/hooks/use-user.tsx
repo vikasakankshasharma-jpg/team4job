@@ -377,14 +377,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   // RENDER LOGIC:
-  // 1. If loading, show loader (unless it's public path, then show content maybe? - Original logic said "Don't show loader on public pages to avoid flash")
-  //    Wait, if we are on public page and loading, we show content?
-  //    Original: if (loading && !isPublicPath(pathname)) return <Loader>
-  //    Refined:
-  //    If we are redirecting (redirectPath !== null), we MUST show loader to avoid flashing wrong content.
-  //    If we are initializing (loading === true) AND not on a public page, show loader.
-
-  const shouldShowLoader = (loading && !isPublicPath(pathname)) || (redirectPath !== null);
+  // 1. If loading, show loader
+  // 2. If we determined a redirect is necessary, show loader
+  // 3. If we have a Firebase user but haven't fetched the profile yet (on a private page), show loader
+  const isPublic = isPublicPath(pathname);
+  const shouldShowLoader = (loading && !isPublic) ||
+    (redirectPath !== null) ||
+    (hasAuthUser && !user && !isPublic);
 
   if (shouldShowLoader) {
     return (

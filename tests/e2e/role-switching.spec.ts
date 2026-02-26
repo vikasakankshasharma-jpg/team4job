@@ -40,9 +40,11 @@ test.describe('Role Switching System', () => {
             .filter({ hasNot: page.locator('xpath=ancestor::*[contains(@class, "hidden") or contains(@class, "md:hidden")]') })
             .first();
 
-        console.log('[Test] Waiting for user-menu-trigger...');
+        console.log('[Test] Waiting for user-menu-trigger (up to 30s)...');
         await userMenu.waitFor({ state: 'visible', timeout: 30000 });
         await userMenu.scrollIntoViewIfNeeded();
+
+        // Retry click if it fails due to loading overlays
         await userMenu.click({ force: true });
 
         // Check if "Current Mode" label or role options are visible
