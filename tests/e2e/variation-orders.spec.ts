@@ -56,7 +56,17 @@ test.describe('Secured Variation Orders', () => {
         const startDate = dayAfter.toISOString().slice(0, 16);
 
         await helper.form.fillInput('Job Work Start Date & Time', startDate);
+
+        // Check the required verification checkbox
+        await page.getByRole('checkbox', { name: /I verify that the details provided are accurate/i }).check();
+
         await page.click('button:has-text("Post Job")');
+
+        // Handle the confirmation dialog
+        const confirmDialog = page.locator('text=Confirm Job Posting');
+        await confirmDialog.waitFor({ state: 'visible', timeout: 5000 });
+        await page.click('button:has-text("Yes, Post Job")');
+
         // Check for navigation OR error message
         try {
             await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 15000 });

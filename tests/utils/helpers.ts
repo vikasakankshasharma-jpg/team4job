@@ -373,9 +373,10 @@ export class FormHelper {
     async fillTextarea(label: string, value: string) {
         // Try getByLabel first (standard accessibility)
         try {
-            const textarea = this.page.getByLabel(label).first();
-            if (await textarea.isVisible({ timeout: 1000 })) {
-                await textarea.fill(value);
+            const textareaByLabel = this.page.getByLabel(label).first();
+            // Handle timeout gracefully inside a try block
+            if (await textareaByLabel.isVisible({ timeout: 1000 }).catch(() => false)) {
+                await textareaByLabel.fill(value);
                 return;
             }
         } catch (e) {
@@ -385,7 +386,8 @@ export class FormHelper {
         // Expanded fallback locators for complex nesting (like Job Description with AI button)
         const textarea = this.page.locator(
             `textarea[placeholder*="${label}"], ` +
-            `textarea[name="${label.toLowerCase().replace(/\s/g, '')}"]`
+            `textarea[name="${label.toLowerCase().replace(/\s/g, '')}"], ` +
+            `[data-testid*="${label.toLowerCase().replace(/\s/g, '-')}"] textarea`
         ).first();
         await textarea.fill(value);
     }

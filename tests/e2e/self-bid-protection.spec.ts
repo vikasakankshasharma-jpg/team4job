@@ -63,7 +63,16 @@ test.describe('Self-Interaction Guardrails', () => {
         await page.fill('[data-testid="min-budget-input"]', '1000');
         await page.fill('[data-testid="max-budget-input"]', '5000');
 
+        // Check the required verification checkbox
+        await page.getByRole('checkbox', { name: /I verify that the details provided are accurate/i }).check();
+
         await page.getByRole('button', { name: "Post Job" }).click();
+
+        // Handle the confirmation dialog
+        const confirmDialog = page.locator('text=Confirm Job Posting');
+        await confirmDialog.waitFor({ state: 'visible', timeout: 5000 });
+        await page.click('button:has-text("Yes, Post Job")');
+
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });
 
         jobId = await helper.job.getJobIdFromUrl();

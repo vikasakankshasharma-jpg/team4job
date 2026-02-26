@@ -85,7 +85,7 @@ export default defineConfig({
             FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199',
             ALLOW_E2E_SEED: 'true',
             NEXT_PUBLIC_E2E: 'true',
-            NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true',
+            NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'false',
         },
     },
 
