@@ -256,6 +256,13 @@ export class AuthHelper {
 
     async clearAuthPersistence() {
         console.log('[AuthHelper] Clearing auth persistence...');
+
+        // Prevent SecurityError on 'about:blank' by navigating to a valid origin first
+        if (this.page.url() === 'about:blank' || this.page.url() === '') {
+            console.log('[AuthHelper] Navigating to / to clear origin-bound data');
+            await this.page.goto('/');
+        }
+
         await this.page.evaluate(async () => {
             try {
                 const databases = await window.indexedDB.databases();

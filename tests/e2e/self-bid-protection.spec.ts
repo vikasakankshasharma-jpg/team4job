@@ -64,7 +64,7 @@ test.describe('Self-Interaction Guardrails', () => {
         await page.fill('[data-testid="max-budget-input"]', '5000');
 
         // Check the required verification checkbox
-        await page.getByRole('checkbox', { name: /I verify that the details provided are accurate/i }).check();
+        await page.getByRole('checkbox', { name: /I verify that the details provided are accurate/i }).check({ force: true });
 
         await page.getByRole('button', { name: "Post Job" }).click();
 

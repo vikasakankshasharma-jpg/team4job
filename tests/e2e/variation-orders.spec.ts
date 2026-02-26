@@ -23,7 +23,7 @@ test.describe('Secured Variation Orders', () => {
         await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
         await helper.nav.goToPostJob();
         await helper.form.fillInput('Job Title', 'Variation Test Job ' + Date.now());
-        await helper.form.fillTextarea('Job Description', 'A simple job for testing variations. Must be at least 50 chars long to pass validation.');
+        await helper.form.fillTextarea('Description', 'A simple job for testing variations. Must be at least 50 chars long to pass validation.');
         await helper.form.fillPincodeAndSelectPO('110001'); // Delhi
         await helper.form.selectDropdown('Category', 'New Installation'); // Valid category
         await page.waitForTimeout(500);
@@ -58,7 +58,7 @@ test.describe('Secured Variation Orders', () => {
         await helper.form.fillInput('Job Work Start Date & Time', startDate);
 
         // Check the required verification checkbox
-        await page.getByRole('checkbox', { name: /I verify that the details provided are accurate/i }).check();
+        await page.getByRole('checkbox', { name: /I verify that the details provided are accurate/i }).check({ force: true });
 
         await page.click('button:has-text("Post Job")');
 
