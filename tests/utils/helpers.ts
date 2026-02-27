@@ -45,13 +45,11 @@ export class AuthHelper {
     }
 
     async loginAsJobGiver() {
-        await this.seedTestUsers();
         await this.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
         await this.ensureRole('Job Giver');
     }
 
     async loginAsInstaller() {
-        await this.seedTestUsers();
         await this.login(TEST_ACCOUNTS.installer.email, TEST_ACCOUNTS.installer.password);
         await this.ensureRole('Installer');
     }
@@ -155,11 +153,11 @@ export class AuthHelper {
     }
 
     async loginAsAdmin() {
-        await this.seedTestUsers();
         await this.login(TEST_ACCOUNTS.admin.email, TEST_ACCOUNTS.admin.password);
     }
 
     async login(email: string, password: string) {
+        await this.seedTestUsers();
         let attempts = 0;
         const maxRetries = 3;
 
