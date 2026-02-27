@@ -135,7 +135,9 @@ jobs:
           echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}" >> $GITHUB_ENV
 
       - name: Run smoke tests
-        run: npx firebase emulators:exec "npm run test:smoke" --project $FIREBASE_PROJECT_ID --only auth,firestore,storage
+        run: |
+          npx firebase experiments:enable webframeworks
+          npx firebase emulators:exec "npm run test:smoke" --project $FIREBASE_PROJECT_ID --only auth,firestore,storage
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -232,7 +234,9 @@ jobs:
           echo "NEXT_PUBLIC_E2E=true" >> $GITHUB_ENV
 
       - name: Run Regression Suite
-        run: npx firebase emulators:exec "npx playwright test tests/e2e --grep-invert '@smoke|@edge' --shard=${{ matrix.shard }}/${{ strategy.job-total }}" --project $FIREBASE_PROJECT_ID --only auth,firestore,storage
+        run: |
+          npx firebase experiments:enable webframeworks
+          npx firebase emulators:exec "npx playwright test tests/e2e --grep-invert '@smoke|@edge' --shard=${{ matrix.shard }}/${{ strategy.job-total }}" --project $FIREBASE_PROJECT_ID --only auth,firestore,storage
         env:
           CI: true
 
@@ -313,7 +317,9 @@ jobs:
           echo "NEXT_PUBLIC_E2E=true" >> $GITHUB_ENV
 
       - name: Run edge case tests
-        run: npx firebase emulators:exec "npx playwright test tests/e2e/edge-cases.spec.ts --shard=${{ matrix.shard }}/${{ strategy.job-total }}" --project $FIREBASE_PROJECT_ID --only auth,firestore,storage
+        run: |
+          npx firebase experiments:enable webframeworks
+          npx firebase emulators:exec "npx playwright test tests/e2e/edge-cases.spec.ts --shard=${{ matrix.shard }}/${{ strategy.job-total }}" --project $FIREBASE_PROJECT_ID --only auth,firestore,storage
         env:
           CI: true
 
