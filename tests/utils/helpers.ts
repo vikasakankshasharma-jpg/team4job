@@ -283,43 +283,34 @@ export class AuthHelper {
     async logout() {
         console.log('[AuthHelper] Starting logout process...');
         try {
-            // Click user menu - try multiple locators
             const userMenu = this.page.locator('[data-testid="user-menu-trigger"]')
                 .or(this.page.locator('button.rounded-full:has(img)'))
                 .or(this.page.locator('button:has(.rounded-full)'))
                 .filter({ hasNot: this.page.locator('xpath=ancestor::*[contains(@class, "hidden")]') })
                 .first();
 
-            try {
-                await userMenu.waitFor({ state: 'visible', timeout: 5000 });
-                await userMenu.click();
-                console.log('[AuthHelper] Clicked user menu');
+            await userMenu.waitFor({ state: 'visible', timeout: 5000 });
+            await userMenu.click();
+            console.log('[AuthHelper] Clicked user menu');
 
-                // Wait for dropdown content explicitly using robust locators
-                const logoutMenuItem = this.page.getByRole('menuitem', { name: 'Logout' });
-                const logoutText = this.page.getByText('Log out');
-                const logoutButton = logoutMenuItem.or(logoutText).first();
+            const logoutButton = this.page.getByRole('menuitem', { name: 'Logout' })
+                .or(this.page.getByText('Log out')).first();
 
-                await logoutButton.waitFor({ state: 'visible', timeout: 5000 });
+            await logoutButton.waitFor({ state: 'visible', timeout: 5000 });
+            await logoutButton.click();
+            console.log('[AuthHelper] Clicked logout button');
 
-                // Click logout
-                await logoutButton.click();
-                console.log('[AuthHelper] Clicked logout button');
-
-                // Wait for redirect to login (shorter timeout, we have fallback)
-                await this.page.waitForURL('**/login**', { timeout: 10000 });
-                console.log('[AuthHelper] Redirected to login page');
-            } catch (e) {
-                console.log('[AuthHelper] Logout UI interaction failed, forcing navigation to login...');
-                throw e; // Re-throw to trigger catch block which forces navigation
-            }
+            await this.page.waitForURL('**/login**', { timeout: 10000 });
+            console.log('[AuthHelper] Redirected to login page');
         } catch (error) {
-            console.error('[AuthHelper] Logout failed:', error);
-            // Force navigate to login if logout fails
-            await this.page.goto(ROUTES.login);
+            console.error('[AuthHelper] Logout UI failed, enforcing hard reset.');
         } finally {
             // ALWAYS clear persistence to prevent zombie sessions
             await this.clearAuthPersistence();
+            // Force navigate to login if UI interactions failed
+            if (!this.page.url().includes('/login')) {
+                await this.page.goto(ROUTES.login, { timeout: 15000 }).catch(() => { });
+            }
         }
     }
 

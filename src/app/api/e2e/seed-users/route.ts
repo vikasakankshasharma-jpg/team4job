@@ -53,6 +53,21 @@ const TEST_USERS = [
         roles: ['Admin'],
         mobile: '9000000003',
     },
+    {
+        name: 'Dual Role User',
+        email: 'dualrole@example.com',
+        password: 'Vikas@129229',
+        roles: ['Job Giver', 'Installer'],
+        mobile: '9000000004',
+        installerProfile: {
+            verified: true,
+            tier: 'Gold',
+            rating: 4.9,
+            reviews: 20,
+            points: 1000,
+            skills: ['General Carpentry', 'Painting', 'Plumbing'],
+        },
+    },
 ];
 
 export async function POST(req: NextRequest) {
@@ -68,7 +83,7 @@ export async function POST(req: NextRequest) {
         logger.info('[E2E-SEED] Env check - FIREBASE_AUTH_EMULATOR_HOST', {
             FIREBASE_AUTH_EMULATOR_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST,
         });
-        
+
         logger.info('[E2E-SEED] Getting Auth and Firestore instances...');
         const auth = getAdminAuth();
         const db = getAdminDb();
@@ -90,7 +105,7 @@ export async function POST(req: NextRequest) {
             }
             throw lastErr;
         };
-        
+
         const now = Timestamp.now();
 
         const results: Array<{ email: string; uid?: string; created: boolean }> = [];
