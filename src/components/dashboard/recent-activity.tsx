@@ -20,7 +20,9 @@ import { hi } from 'date-fns/locale';
 
 // ...
 
-export function RecentActivity({ initialActivities = [] }: { initialActivities?: Activity[] }) {
+const EMPTY_ACTIVITIES: Activity[] = [];
+
+export function RecentActivity({ initialActivities = EMPTY_ACTIVITIES }: { initialActivities?: Activity[] }) {
     const { user, role } = useUser();
     const { db } = useFirebase();
     const [activities, setActivities] = useState<Activity[]>(initialActivities);
@@ -36,7 +38,7 @@ export function RecentActivity({ initialActivities = [] }: { initialActivities?:
         const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
         if (isE2EMode) {
             console.log('[RecentActivity] E2E mode detected - skipping real-time activity listener');
-            setActivities(initialActivities);
+            setActivities(prev => initialActivities.length > 0 ? initialActivities : prev);
             setLoading(false);
             return;
         }
