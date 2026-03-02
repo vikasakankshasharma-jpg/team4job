@@ -99,7 +99,7 @@ These tasks are for creating a staging environment for testing before production
 #### 1. Create Staging Firebase Project
 ```bash
 # Install Firebase CLI
-npm install -g firebase-tools
+npm install -g firebase-tools@11.28.0
 
 # Login
 firebase login

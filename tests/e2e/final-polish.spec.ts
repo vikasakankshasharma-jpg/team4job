@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
+import { HORIZONTAL_SCROLL_TOLERANCE } from './config';
 
 test.describe('Final UX Polish', () => {
     let helper: TestHelper;
@@ -58,6 +59,7 @@ test.describe('Final UX Polish', () => {
         const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
 
         console.log(`[Test] Scroll: ${scrollWidth}, Client: ${clientWidth}`);
-        expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 2); // Strict check now
+        // CI/browser rendering can differ by a few pixels.
+        expect(scrollWidth).toBeLessThanOrEqual(clientWidth + HORIZONTAL_SCROLL_TOLERANCE);
     });
 });

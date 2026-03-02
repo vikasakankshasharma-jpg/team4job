@@ -11,11 +11,12 @@
     "emulators": "firebase emulators:start --only auth,firestore,storage --import=./firebase-export --export-on-exit",
     "build": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "npm run check:e2e-tags && eslint .",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:smoke": "playwright test tests/e2e/smoke.spec.ts tests/e2e/admin-smoke.spec.ts",
     "test:regression": "playwright test tests/e2e --grep-invert \"@smoke|@edge\"",
+    "check:e2e-tags": "node scripts/verify-tags.cjs",
     "test:edge-cases": "playwright test tests/e2e/edge-cases.spec.ts",
     "analyze": "cross-env ANALYZE=true next build"
   },

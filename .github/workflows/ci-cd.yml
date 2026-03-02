@@ -7,8 +7,14 @@ on:
     branches: [main, develop]
   workflow_dispatch:
 
+defaults:
+  run:
+    shell: bash
+
 env:
   NODE_VERSION: '20.x'
+  FIREBASE_CLI_EXPERIMENTS: webframeworks
+  FIREBASE_TOOLS_VERSION: '11.28.0'
 
 jobs:
   # Job 1: Code Quality Checks
@@ -136,7 +142,6 @@ jobs:
 
       - name: Run smoke tests
         run: |
-          npx firebase experiments:enable webframeworks
           npx firebase emulators:exec "npm run test:smoke" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
         env:
           CI: true
@@ -235,7 +240,6 @@ jobs:
 
       - name: Run Regression Suite
         run: |
-          npx firebase experiments:enable webframeworks
           npx firebase emulators:exec "npx playwright test tests/e2e --grep-invert '@smoke|@edge' --shard=${{ matrix.shard }}/${{ strategy.job-total }}" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
         env:
           CI: true
@@ -328,7 +332,6 @@ jobs:
 
       - name: Run edge case tests
         run: |
-          npx firebase experiments:enable webframeworks
           npx firebase emulators:exec "npx playwright test tests/e2e/edge-cases.spec.ts --shard=${{ matrix.shard }}/${{ strategy.job-total }}" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
         env:
           CI: true

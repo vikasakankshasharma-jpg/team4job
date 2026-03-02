@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
 import { ROUTES } from '../fixtures/test-data';
-
-const THRESHOLD_MS = 5000; // 5 seconds initial threshold to account for dev mode
+import { THRESHOLD_MS } from './config';
 
 const PUBLIC_PAGES = [
     { url: '/', name: 'Landing Page' },
