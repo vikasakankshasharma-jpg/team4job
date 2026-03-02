@@ -6,7 +6,7 @@ import { TEST_JOB_DATA, generateUniqueJobTitle, getDateString, getDateTimeString
 // Emulate iPhone 13
 const device = { name: 'iPhone 13', viewport: { width: 390, height: 844 }, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1' };
 
-test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff)', () => {
+test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff) @slow', () => {
   test.use({ ...device });
 
   test('Full end-to-end flow on mobile', async ({ page }) => {

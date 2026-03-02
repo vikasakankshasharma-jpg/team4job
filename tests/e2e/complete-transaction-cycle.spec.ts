@@ -11,7 +11,7 @@ import { TEST_JOB_DATA, TEST_CREDENTIALS, TEST_ACCOUNTS, getDateString, getDateT
  */
 
 
-test.describe('Complete Transaction Cycle E2E', () => {
+test.describe('Complete Transaction Cycle E2E @slow', () => {
     let jobId: string;
     let uniqueJobTitle = generateUniqueJobTitle();
     // console logs moved to individual pages

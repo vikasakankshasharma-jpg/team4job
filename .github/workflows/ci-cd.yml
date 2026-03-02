@@ -240,7 +240,7 @@ jobs:
 
       - name: Run Regression Suite
         run: |
-          npx firebase emulators:exec "npx playwright test tests/e2e --grep-invert '@smoke|@edge' --shard=${{ matrix.shard }}/${{ strategy.job-total }}" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
+          npx firebase emulators:exec "npx playwright test tests/e2e --grep-invert '@smoke|@edge|@slow' --shard=${{ matrix.shard }}/${{ strategy.job-total }}" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}

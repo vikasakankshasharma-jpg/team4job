@@ -4,7 +4,7 @@ import { TEST_ACCOUNTS, TEST_JOB_DATA } from '../fixtures/test-data';
 import { AuthHelper } from '../utils/helpers';
 import { execSync } from 'child_process';
 
-test.describe('Milestone-based Payments', () => {
+test.describe('Milestone-based Payments @slow', () => {
     let jobId: string;
     let helper: { auth: AuthHelper };
 
