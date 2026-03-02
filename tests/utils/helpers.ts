@@ -755,7 +755,10 @@ export class FormHelper {
 export class NavigationHelper {
     constructor(private page: Page) { }
 
-    private async injectCookieHide() {
+    // changed from private so external tests can invoke it when they need to purge
+    // floating overlays prior to a click. ideally the helper would handle this
+    // automatically but a few legacy tests still call it explicitly.
+    public async injectCookieHide() {
         // old name is misleading but this helper is invoked after every navigation and is a good
         // place to drop any transient overlays that regularly interfere with clicks during E2E
         // runs.
