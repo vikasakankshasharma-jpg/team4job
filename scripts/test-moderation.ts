@@ -1,5 +1,9 @@
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+if (!process.env.CI) {
+    dotenv.config({ path: '.env.local' });
+} else {
+    console.log('[test-moderation] running in CI, skipping dotenv');
+}
 import { moderateMessageFlow } from '../src/ai/flows/moderate-message';
 
 async function testModeration() {

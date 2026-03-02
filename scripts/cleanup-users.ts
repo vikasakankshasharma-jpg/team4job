@@ -9,7 +9,11 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 
 // Load environment variables from .env.local
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+if (!process.env.CI) {
+    dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+} else {
+    console.log('[cleanup-users] CI mode, skipping .env.local');
+}
 
 // Initialize Firebase Admin
 if (!getApps().length) {

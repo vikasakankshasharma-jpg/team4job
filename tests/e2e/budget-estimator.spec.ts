@@ -37,9 +37,19 @@ test.describe('Budget Estimator & Templates', () => {
 
         console.log('Navigating to Post Job page...');
         await page.goto('/dashboard/post-job');
+        // drop any floating widgets that could intercept subsequent clicks
+        await page.evaluate(() => {
+            document.querySelectorAll('button').forEach(btn => {
+                const text = btn.textContent || '';
+                if (text.includes('Beta Feedback') || text.includes('Feedback') || text.trim() === '…') {
+                    btn.remove();
+                }
+            });
+        });
         await handleDraftDialog(page);
 
-        await expect(page.locator('h1')).toContainText(/Post a New Job|Edit Job/);
+        // header text recently changed from "Post a New Job" to simply "Post Job" so allow either
+        await expect(page.locator('h1')).toContainText(/Post(?: a New)? Job|Edit Job/);
 
         // 1. Fill basic budget info to save
         console.log('Setting custom budget...');

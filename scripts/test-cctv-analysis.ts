@@ -1,6 +1,10 @@
 
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+if (!process.env.CI) {
+    dotenv.config({ path: '.env.local' });
+} else {
+    console.log('[test-cctv-analysis] CI skip dotenv');
+}
 import { analyzeCCTVImageFlow } from '../src/ai/flows/analyze-cctv-image';
 
 async function testCCTVAnalysis() {

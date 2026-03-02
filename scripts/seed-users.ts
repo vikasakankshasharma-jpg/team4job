@@ -4,10 +4,14 @@ import { getAuth } from 'firebase-admin/auth';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-// Load environment variables from .env.local
+// Load environment variables from .env.local when running locally
 const envPath = path.resolve(process.cwd(), '.env.local');
-console.log('Loading .env.local from:', envPath);
-dotenv.config({ path: envPath });
+if (!process.env.CI) {
+    console.log('Loading .env.local from:', envPath);
+    dotenv.config({ path: envPath });
+} else {
+    console.log('[seed-users] CI detected, skipping .env.local');
+}
 
 // Force use of Emulators for local seeding
 process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';

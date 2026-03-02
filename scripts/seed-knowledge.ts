@@ -3,7 +3,11 @@
 import * as dotenv from 'dotenv';
 
 // 1. Load Environment Variables immediately
-dotenv.config({ path: '.env.local' });
+if (!process.env.CI) {
+    dotenv.config({ path: '.env.local' });
+} else {
+    console.log('[seed-knowledge] CI detected, skipping .env.local');
+}
 
 // 2. Patch global.fetch BEFORE importing any Genkit/GoogleAI libraries
 const originalFetch = global.fetch;

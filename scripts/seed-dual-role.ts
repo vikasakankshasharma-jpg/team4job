@@ -16,7 +16,11 @@ if (fs.existsSync(tempEnvPath)) {
 }
 
 console.log('Loading environment from:', envPath);
-dotenv.config({ path: envPath });
+if (!process.env.CI) {
+    dotenv.config({ path: envPath });
+} else {
+    console.log('[seed-dual-role] CI mode - env file not loaded');
+}
 
 console.log('Environment loaded.');
 console.log('Available keys:', Object.keys(process.env).filter(k => k.includes('FIREBASE')));

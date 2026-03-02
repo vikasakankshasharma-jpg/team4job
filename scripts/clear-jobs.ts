@@ -1,7 +1,11 @@
 
 import * as admin from 'firebase-admin';
 import * as dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+if (!process.env.CI) {
+    dotenv.config({ path: '.env.local' });
+} else {
+    console.log('[clear-jobs] CI detected, env file skipped');
+}
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {

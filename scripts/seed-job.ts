@@ -1,7 +1,17 @@
 
 import { config } from 'dotenv';
-const result = config({ path: '.env.local' });
-if (result.error) console.error("Dotenv error:", result.error);
+
+// CI workflows supply all required Firebase credentials via environment variables
+// (GitHub secrets). Loading a local `.env.local` file is only needed for
+// developers running the script on their machine.  When the file is missing,
+// dotenv will throw ENOENT; ignore that if we detect we're running in CI.
+if (!process.env.CI) {
+    const result = config({ path: '.env.local' });
+    if (result.error) console.error("Dotenv error:", result.error);
+} else {
+    // rely on environment provided by actions
+    console.log('[seed-job] detected CI environment, skipping .env.local load');
+}
 
 async function seedJob() {
     // Dynamic import to ensure env vars are loaded first

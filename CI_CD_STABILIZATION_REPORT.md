@@ -110,9 +110,12 @@ FirebaseAuthError: There is no user record corresponding to the provided identif
 | Item | Severity | Effort | Notes |
 |------|----------|--------|-------|
 | Navigation flake in `helpers.ts:892` | Medium | 1h | Use stronger wait strategy or add retry logic |
-| `.env.local` seeding in CI | Medium | 2h | Load env vars from GitHub secrets, not file |
-| Extract slow tests to optional workflow | Low | 1h | Create separate `e2e-slow.yml` for nightly runs |
+| `.env.local` seeding in CI | Medium | 1h | Handled in seed scripts: skip dotenv when CI=true |
+| Extract slow tests to optional workflow | Low | 1h | **Done** – added `.github/workflows/ci-slow-e2e.yml` scheduled nightly |
 | Extend grep filtering | Low | 30min | Add `@slow` to `package.json` test scripts |
+| Beta feedback widget occasionally blocks clicks | Low | 30min | Added aggressive removal via `injectCookieHide` and test-level fallbacks
+| Header text variance on Post Job page | Low | 15min | Relaxed regex to match new title format
+| Slow test nightly job | Low | 1h | Implemented `ci-slow-e2e.yml` to run `@slow` tests every night
 
 ---
 
@@ -126,7 +129,7 @@ FirebaseAuthError: There is no user record corresponding to the provided identif
 
 **Next PR should address:**
 1. Navigation visibility flake (easy win)
-2. Env seeding in CI (unblocks `milestones`)
+2. Env seeding in CI (unblocks `milestones`) – **addressed by conditional dotenv loading in all seed scripts**
 3. Create nightly slow-test job
 
 ---

@@ -47,6 +47,17 @@ test.describe('Dashboard Financials E2E', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(30));
         await page.fill('[data-testid="min-budget-input"]', '1000');
         await page.fill('[data-testid="max-budget-input"]', '5000');
+        // ensure any floating overlays like the beta-feedback widget are gone before
+        // attempting to click the Post Job button
+        await helper.nav.injectCookieHide();
+        await page.evaluate(() => {
+            document.querySelectorAll('button').forEach(btn => {
+                const text = btn.textContent || '';
+                if (text.includes('Beta Feedback') || text.includes('Feedback') || text.trim() === '…') {
+                    btn.remove();
+                }
+            });
+        });
         await page.getByRole('button', { name: "Post Job" }).click();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });
         jobId = await helper.job.getJobIdFromUrl();

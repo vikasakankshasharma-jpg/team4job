@@ -5,7 +5,11 @@ import * as dotenv from 'dotenv';
 import path from 'path';
 
 // Load env vars
-dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+if (!process.env.CI) {
+    dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+} else {
+    console.log('[seed-flags] running in CI; skipping .env.local');
+}
 
 // Helper to get credentials
 function getCredential() {

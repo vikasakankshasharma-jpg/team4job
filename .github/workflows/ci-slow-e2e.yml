@@ -1,0 +1,105 @@
+name: Nightly Slow E2E Suite
+
+on:
+  schedule:
+    # run every night at 01:00 UTC
+    - cron: '0 1 * * *'
+  workflow_dispatch: {}
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  NODE_VERSION: '20.x'
+  FIREBASE_CLI_EXPERIMENTS: webframeworks
+  FIREBASE_TOOLS_VERSION: '11.28.0'
+
+jobs:
+  slow-e2e:
+    name: Slow E2E Tests (nightly)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup Java 21 for Firebase Emulators
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm install -g firebase-tools
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: .
+
+      - name: Extract build artifacts
+        run: tar -xzf build-artifacts.tar.gz
+
+      - name: Setup environment variables
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          CASHFREE_PAYMENTS_CLIENT_ID: ${{ secrets.CASHFREE_PAYMENTS_CLIENT_ID }}
+          CASHFREE_PAYMENTS_CLIENT_SECRET: ${{ secrets.CASHFREE_PAYMENTS_CLIENT_SECRET }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_GENAI_API_KEY: ${{ secrets.GOOGLE_GENAI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          echo "DO_FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID" >> $GITHUB_ENV
+          echo "DO_FIREBASE_CLIENT_EMAIL=$FIREBASE_CLIENT_EMAIL" >> $GITHUB_ENV
+          echo "DO_FIREBASE_PRIVATE_KEY=$FIREBASE_PRIVATE_KEY" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" >> $GITHUB_ENV
+          echo "CASHFREE_PAYMENTS_CLIENT_ID=$CASHFREE_PAYMENTS_CLIENT_ID" >> $GITHUB_ENV
+          echo "CASHFREE_PAYMENTS_CLIENT_SECRET=$CASHFREE_PAYMENTS_CLIENT_SECRET" >> $GITHUB_ENV
+          echo "GEMINI_API_KEY=$GEMINI_API_KEY" >> $GITHUB_ENV
+          echo "GOOGLE_GENAI_API_KEY=$GOOGLE_GENAI_API_KEY" >> $GITHUB_ENV
+          echo "GOOGLE_API_KEY=$GOOGLE_API_KEY" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_IS_CI=true" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_E2E=true" >> $GITHUB_ENV
+
+      - name: Run slow regression
+        run: |
+          npx firebase emulators:exec "npx playwright test tests/e2e --grep '@slow'" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
+        env:
+          CI: true
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_IS_CI: true
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: true
+          NEXT_PUBLIC_E2E: true
+
+      - name: Upload slow e2e report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: slow-e2e-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

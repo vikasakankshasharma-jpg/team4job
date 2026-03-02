@@ -1,7 +1,11 @@
 
 // Scripts/test-embedding-with-patch.ts
 import * as dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+if (!process.env.CI) {
+    dotenv.config({ path: '.env.local' });
+} else {
+    console.log('[test-embedding-with-patch] CI skip dotenv');
+}
 
 // Patch fetch
 const originalFetch = global.fetch;
