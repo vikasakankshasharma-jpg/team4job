@@ -8,4 +8,4 @@ java -version
 
 Write-Host "🚀 Starting Firebase Emulators..."
 # execute the batch file to avoid quoting/parsing issues with && in PowerShell
-npx firebase emulators:exec ".\test-runner.bat"
+npx firebase emulators:exec --project demo-team4job --only auth,firestore,storage ".\test-runner.bat"

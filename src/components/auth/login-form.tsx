@@ -28,7 +28,10 @@ type FormValues = {
   password: string;
 };
 
-const MAX_LOGIN_ATTEMPTS = typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 10 : 5;
+const MAX_LOGIN_ATTEMPTS =
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost') || process.env.NEXT_PUBLIC_E2E === 'true'
+    ? 50
+    : 5;
 const LOCKOUT_DURATION_SECONDS = 60;
 
 export function LoginForm() {
@@ -142,7 +145,7 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>{t('emailMobileLabel')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('emailMobilePlaceholder')} {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="off" aria-label={t('emailMobileLabel')} />
+                <Input placeholder={t('emailMobilePlaceholder')} {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="off" aria-label={t('emailMobileLabel')} data-testid="login-identifier" />
               </FormControl>
               <FormMessage data-testid="email-error" />
             </FormItem>
@@ -164,6 +167,7 @@ export function LoginForm() {
                     className="h-11 pr-12"
                     autoComplete="new-password"
                     aria-label={t('passwordLabel')}
+                    data-testid="login-password"
                   />
                   <Button
                     type="button"

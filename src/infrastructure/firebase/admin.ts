@@ -27,8 +27,14 @@ export function getAdminApp(): App {
     // 0. Emulator-friendly init (no credentials required)
     if (process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST) {
         console.log('[ADMIN-SDK] ✓ Using Emulator mode');
+        const emulatorProjectId =
+            process.env.GCLOUD_PROJECT ||
+            process.env.FIREBASE_PROJECT_ID ||
+            process.env.DO_FIREBASE_PROJECT_ID ||
+            process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+            'demo-project';
         app = initializeApp({
-            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'demo-project',
+            projectId: emulatorProjectId,
         });
         
         // Connect to emulators explicitly
@@ -41,7 +47,7 @@ export function getAdminApp(): App {
             console.log('[ADMIN-SDK] ✓ Connected to Firestore emulator at', process.env.FIRESTORE_EMULATOR_HOST);
         }
         
-        console.log('[ADMIN-SDK] App initialized with project:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+        console.log('[ADMIN-SDK] App initialized with project:', emulatorProjectId);
         return app;
     }
 

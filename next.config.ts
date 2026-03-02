@@ -56,6 +56,11 @@ export default withSentryConfig(nextConfigWithBundleAnalyzer, {
   org: "team-gq",
   project: "javascript-nextjs",
 
+  // Disable source map generation for faster local E2E builds
+  sourcemaps: {
+    disable: !process.env.CI,
+  },
+
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 

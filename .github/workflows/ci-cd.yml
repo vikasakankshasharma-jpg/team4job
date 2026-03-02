@@ -239,6 +239,16 @@ jobs:
           npx firebase emulators:exec "npx playwright test tests/e2e --grep-invert '@smoke|@edge' --shard=${{ matrix.shard }}/${{ strategy.job-total }}" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
         env:
           CI: true
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_IS_CI: true
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: true
+          NEXT_PUBLIC_E2E: true
 
       - name: Upload E2E test report
         uses: actions/upload-artifact@v4
@@ -322,6 +332,16 @@ jobs:
           npx firebase emulators:exec "npx playwright test tests/e2e/edge-cases.spec.ts --shard=${{ matrix.shard }}/${{ strategy.job-total }}" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
         env:
           CI: true
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_IS_CI: true
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: true
+          NEXT_PUBLIC_E2E: true
 
       - name: Upload edge case test report
         uses: actions/upload-artifact@v4

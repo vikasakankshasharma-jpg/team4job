@@ -1,0 +1,62 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - link "CCTV Job Connect" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img
+        - generic [ref=e7]: CCTV Job Connect
+      - generic [ref=e8]:
+        - button "Help" [ref=e9] [cursor=pointer]:
+          - img [ref=e10]
+          - generic [ref=e13]: Help
+        - button "🇬🇧 English" [ref=e14] [cursor=pointer]:
+          - img [ref=e15]
+          - generic [ref=e18]: 🇬🇧 English
+        - button "Toggle theme" [ref=e19] [cursor=pointer]:
+          - img
+          - img [ref=e20]
+          - generic [ref=e22]: Toggle theme
+    - main [ref=e23]:
+      - generic [ref=e24]:
+        - tablist [ref=e25]:
+          - tab "Log In" [selected] [ref=e26] [cursor=pointer]
+          - tab "Sign Up" [ref=e27] [cursor=pointer]
+        - tabpanel "Log In" [ref=e28]:
+          - generic [ref=e29]:
+            - generic [ref=e30]:
+              - heading "Log In" [level=3] [ref=e31]
+              - paragraph [ref=e32]: Enter your credentials to access your dashboard.
+            - generic [ref=e34]:
+              - generic [ref=e35]:
+                - text: Email or Mobile Number
+                - textbox "Email or Mobile Number" [ref=e36]:
+                  - /placeholder: name@example.com or 9876543210
+              - generic [ref=e37]:
+                - text: Password
+                - generic [ref=e38]:
+                  - textbox "Password" [ref=e39]:
+                    - /placeholder: â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢
+                  - button "Show password" [ref=e40] [cursor=pointer]:
+                    - img [ref=e41]
+                    - generic [ref=e44]: Show password
+              - button "Log In" [ref=e45] [cursor=pointer]
+  - region "Notifications (F8)":
+    - list
+  - paragraph [ref=e46]: Running in emulator mode. Do not use with production credentials.
+  - alert [ref=e47]: Team4Job | Professional Services Marketplace
+  - generic [ref=e48]:
+    - generic [ref=e50]:
+      - generic [ref=e51]: We value your privacy
+      - generic [ref=e52]:
+        - text: We use cookies to enhance your experience, analyze site traffic, and assist in our marketing efforts. By clicking "Accept All", you consent to our use of cookies.
+        - link "Read our Privacy Policy" [ref=e53] [cursor=pointer]:
+          - /url: /privacy-policy
+    - generic [ref=e54]:
+      - button "Decline cookies" [ref=e55] [cursor=pointer]: Essential Only
+      - button "Accept cookies" [ref=e56] [cursor=pointer]: Accept All
+```

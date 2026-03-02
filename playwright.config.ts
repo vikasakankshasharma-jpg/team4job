@@ -6,12 +6,38 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const getWebServerEnv = () => {
+    const rawEnv: Record<string, string | undefined> = { ...process.env };
+
+    const env: Record<string, string> = {};
+    for (const [k, v] of Object.entries(rawEnv)) {
+        if (typeof v === 'string') env[k] = v;
+    }
+
+    const inferredProjectId = env.GCLOUD_PROJECT || env.FIREBASE_PROJECT_ID || env.DO_FIREBASE_PROJECT_ID;
+
+    env.ALLOW_E2E_SEED = 'true';
+    env.NEXT_PUBLIC_E2E = 'true';
+    env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = 'true';
+    env.NEXT_PUBLIC_USE_EMULATOR = 'true';
+
+    // In emulator/E2E mode we MUST align the Firebase project id with the emulator project.
+    // `firebase emulators:exec --project X` sets `GCLOUD_PROJECT=X`.
+    if (inferredProjectId) {
+        env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = inferredProjectId;
+        env.FIREBASE_PROJECT_ID = inferredProjectId;
+        env.DO_FIREBASE_PROJECT_ID = inferredProjectId;
+    }
+
+    return env;
+};
+
 // In CI, variables are injected by GitHub Actions. Locally, we load them from .env files.
 if (!process.env.CI) {
     // Load environment variables from .env.local
     dotenv.config({ path: path.resolve(__dirname, '.env.local'), override: true });
     // Load .env.test if it exists (for emulator support)
-    dotenv.config({ path: path.resolve(__dirname, '.env.test'), override: true });
+    dotenv.config({ path: path.resolve(__dirname, '.env.test'), override: false });
 }
 
 /**
@@ -71,22 +97,20 @@ export default defineConfig({
     webServer: {
         command: process.env.CI
             ? 'npx next start -p 5000'
-            : 'cross-env FIRESTORE_EMULATOR_HOST=localhost:8080 npx next start -p 5000',
+            : 'npm run build && cross-env FIRESTORE_EMULATOR_HOST=localhost:8080 npx next start -p 5000',
         url: 'http://localhost:5000',
         // Reusing an existing server can accidentally attach Playwright to `next dev`,
         // which is much more prone to reload/frame-detach issues during E2E.
         reuseExistingServer: !process.env.CI,
-        timeout: 180000, // 3 mins for server start
-        env: process.env.CI ? {
-            ALLOW_E2E_SEED: 'true',
-            NEXT_PUBLIC_E2E: 'true',
-        } : {
-            FIRESTORE_EMULATOR_HOST: 'localhost:8080',
-            FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199',
-            ALLOW_E2E_SEED: 'true',
-            NEXT_PUBLIC_E2E: 'true',
-            NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'false',
-        },
+        timeout: 600000, // 10 mins for server start (Windows/CI can be slow)
+        env: process.env.CI
+            ? getWebServerEnv()
+            : {
+                  ...getWebServerEnv(),
+                  FIRESTORE_EMULATOR_HOST: 'localhost:8080',
+                  FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199',
+                  FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
+              },
     },
 
     /* Global timeout for each test */

@@ -39,4 +39,4 @@ if (isCI !== 'true' && isCI !== '1' && isCI?.trim() !== 'true') {
 }
 
 // Action required for Sentry v8 to instrument navigations
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+export const onRouterTransitionStart = (Sentry as any).captureRouterTransitionStart;

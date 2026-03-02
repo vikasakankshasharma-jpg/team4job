@@ -68,7 +68,7 @@ test.describe('Beta Squad - Group A', () => {
         await helper.form.fillInput('Pincode', CASE_1_DATA.pincode);
         await page.waitForTimeout(1000);
 
-        await page.getByPlaceholder('Type address or click on map').fill(CASE_1_DATA.fullAddress);
+        await page.getByTestId('full-address-input').fill(CASE_1_DATA.fullAddress);
         await page.getByTestId('job-deadline-input').fill(getDateString(7));
         await page.getByTestId('job-start-date-input').fill(getDateTimeString(8));
 

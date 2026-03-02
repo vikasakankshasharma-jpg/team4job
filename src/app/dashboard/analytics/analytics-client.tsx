@@ -140,12 +140,12 @@ export default function AnalyticsClient() {
     }
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+        <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6 lg:p-8" data-testid="analytics-page">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="space-y-1">
-                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('title')}</h1>
-                    <p className="text-sm md:text-base text-muted-foreground">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight" data-testid="analytics-title">{t('title')}</h1>
+                    <p className="text-sm md:text-base text-muted-foreground" data-testid="analytics-description">
                         {t('description')}
                     </p>
                 </div>
@@ -155,6 +155,7 @@ export default function AnalyticsClient() {
                         size="sm"
                         onClick={handleRefresh}
                         disabled={loading || refreshing}
+                        data-testid="analytics-refresh"
                     >
                         <RefreshCw className={cn("mr-2 h-4 w-4", refreshing && "animate-spin")} />
                         {t('refresh')}
@@ -164,6 +165,7 @@ export default function AnalyticsClient() {
                         size="sm"
                         onClick={handleExport}
                         disabled={loading}
+                        data-testid="analytics-export"
                     >
                         <Download className="mr-2 h-4 w-4" />
                         <span className="hidden sm:inline">{t('export')}</span>
