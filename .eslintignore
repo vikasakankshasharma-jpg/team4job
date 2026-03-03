@@ -8,3 +8,6 @@ lint-results.json
 lint-results-utf8.json
 lint-output.txt
 lint-output-utf8.txt
+shard*/
+playwright-report/
+test-results/

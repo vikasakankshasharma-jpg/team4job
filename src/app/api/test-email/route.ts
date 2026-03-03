@@ -4,12 +4,27 @@ import { sendServerEmail } from '@/lib/server-email';
 import { logger } from '@/infrastructure/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
+const isE2eAllowed = () => {
+    const emulatorEnabled =
+        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
+        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+
+    if (emulatorEnabled) return true;
+    if (process.env.NODE_ENV !== 'production') return true;
+
+    return false;
+};
+
 /**
  * Test endpoint to verify email functionality
  * GET /api/test-email?to=test@example.com
  * ✅ REFACTORED: Uses infrastructure logger
  */
 export async function GET(request: NextRequest) {
+    if (!isE2eAllowed()) {
+        return NextResponse.json({ error: 'Not allowed in production' }, { status: 403 });
+    }
+
     try {
         const { searchParams } = new URL(request.url);
         const to = searchParams.get('to');

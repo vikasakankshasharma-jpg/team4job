@@ -8,9 +8,8 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 const nextConfig: NextConfig = {
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
+    // We now enforce ESLint checks during the build
+    ignoreDuringBuilds: false,
   },
   serverExternalPackages: ['firebase-admin'],
   compress: true,

@@ -1,6 +1,5 @@
 
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,13 +14,6 @@ import { WebVitalsReporter } from "@/components/dashboard/analytics/web-vitals";
 import CookieBanner from "@/components/gdpr/cookie-banner";
 import { SystemStatusBanner } from "@/components/layout/system-status-banner";
 import ErrorBoundaryWrapper from "@/components/error-boundary-wrapper";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
-  display: 'swap',
-});
-
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://dodo-beta.web.app"),
@@ -81,8 +73,7 @@ export default async function RootLayout({
       </head>
       <body
         className={cn(
-          "min-h-screen bg-background font-body antialiased",
-          inter.variable
+          "min-h-screen bg-background font-sans antialiased"
         )}
       >
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-foreground">
@@ -165,14 +156,11 @@ export default async function RootLayout({
           {`
             if ('serviceWorker' in navigator) {
               window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js').then(
-                  function(registration) {
-                    console.log('Service Worker registration successful with scope: ', registration.scope);
-                  },
-                  function(err) {
-                    console.log('Service Worker registration failed: ', err);
+                navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                  if (window.location.hostname === 'localhost') {
+                    console.error('Service Worker registration failed: ', err);
                   }
-                );
+                });
               });
             }
           `}

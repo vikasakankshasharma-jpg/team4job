@@ -11,7 +11,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useTranslations } from 'next-intl';
 
 export default function HomeClient() {
-    console.log("🏠 HOME CLIENT RENDERING");
     const t = useTranslations('landing');
 
     const features = [
@@ -96,9 +95,9 @@ export default function HomeClient() {
                 <section id="features" className="py-20 md:py-24 bg-card/50">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-4xl font-bold">A Smarter Way to Hire</h2>
+                            <h2 className="text-3xl md:text-4xl font-bold">{t('sectionTitle')}</h2>
                             <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-                                We&apos;ve built intelligent tools and secure workflows to eliminate the guesswork and risk from your projects.
+                                {t('sectionDesc')}
                             </p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -120,9 +119,9 @@ export default function HomeClient() {
                 <section id="how-it-works" className="py-16 md:py-20">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-12">
-                            <h2 className="text-3xl md:text-4xl font-bold">Your Project Workflow, Perfected</h2>
+                            <h2 className="text-3xl md:text-4xl font-bold">{t('workflowTitle')}</h2>
                             <p className="text-muted-foreground mt-2">
-                                A simple, transparent process for everyone.
+                                {t('workflowDesc')}
                             </p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -130,22 +129,22 @@ export default function HomeClient() {
                                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                                     <span className="text-2xl font-bold text-primary">1</span>
                                 </div>
-                                <h3 className="text-xl font-semibold mb-2">Post Your Job</h3>
-                                <p className="text-muted-foreground">Describe your project and get AI-powered budget suggestions instantly.</p>
+                                <h3 className="text-xl font-semibold mb-2">{t('step1Title')}</h3>
+                                <p className="text-muted-foreground">{t('step1Desc')}</p>
                             </div>
                             <div className="text-center p-6">
                                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                                     <span className="text-2xl font-bold text-primary">2</span>
                                 </div>
-                                <h3 className="text-xl font-semibold mb-2">Review Bids</h3>
-                                <p className="text-muted-foreground">Verified professionals bid on your job. Compare ratings and choose the best fit.</p>
+                                <h3 className="text-xl font-semibold mb-2">{t('step2Title')}</h3>
+                                <p className="text-muted-foreground">{t('step2Desc')}</p>
                             </div>
                             <div className="text-center p-6">
                                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                                     <span className="text-2xl font-bold text-primary">3</span>
                                 </div>
-                                <h3 className="text-xl font-semibold mb-2">Complete Work</h3>
-                                <p className="text-muted-foreground">Secure escrow protects your payment. Release funds only when you&apos;re satisfied.</p>
+                                <h3 className="text-xl font-semibold mb-2">{t('step3Title')}</h3>
+                                <p className="text-muted-foreground">{t('step3Desc')}</p>
                             </div>
                         </div>
                     </div>
@@ -153,14 +152,14 @@ export default function HomeClient() {
 
                 <section className="py-20 md:py-24 bg-primary text-primary-foreground">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                        <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+                        <h2 className="text-3xl font-bold mb-4">{t('ctaTitle')}</h2>
                         <p className="max-w-2xl mx-auto mb-8">
-                            Join the growing community of professionals and clients building a better, more secure future with CCTV Job Connect.
+                            {t('ctaDesc')}
                         </p>
                         <div className="flex justify-center gap-4">
                             <Button size="lg" variant="secondary" asChild>
                                 <Link href="/login?tab=signup">
-                                    Create Your Account
+                                    {t('ctaButton')}
                                 </Link>
                             </Button>
                         </div>
@@ -170,10 +169,10 @@ export default function HomeClient() {
 
             <footer className="py-8 border-t">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-muted-foreground gap-4">
-                    <p>&copy; {new Date().getFullYear()} Team4Job. All Rights Reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} {t('footerRights')}</p>
                     <div className="flex gap-6 text-sm">
-                        <Link href="/terms-of-service" className="hover:underline hover:text-foreground">Terms of Service</Link>
-                        <Link href="/privacy-policy" className="hover:underline hover:text-foreground">Privacy Policy</Link>
+                        <Link href="/terms-of-service" className="hover:underline hover:text-foreground">{t('footerTerms')}</Link>
+                        <Link href="/privacy-policy" className="hover:underline hover:text-foreground">{t('footerPrivacy')}</Link>
                     </div>
                 </div>
             </footer>

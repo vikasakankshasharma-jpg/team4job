@@ -11,24 +11,29 @@ const isE2eAllowed = () => {
         process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
 
     if (emulatorEnabled) return true;
-    if (process.env.ALLOW_E2E_SEED === 'true') return true;
     if (process.env.NODE_ENV !== 'production') return true;
+
+    // Strict override for E2E testing against preview/staging URLs, require an admin secret
+    if (process.env.ALLOW_E2E_SEED === 'true' && process.env.E2E_ADMIN_SECRET) return true;
 
     return false;
 };
+
+const getTestPassword = () => process.env.E2E_TEST_PASSWORD || 'Test@1234';
+const getAdminPassword = () => process.env.E2E_ADMIN_PASSWORD || 'Vks2bhdj@9229';
 
 const TEST_USERS = [
     {
         name: 'Test Job Giver',
         email: 'giver_vip_v3@team4job.com',
-        password: 'Test@1234',
+        password: getTestPassword(),
         roles: ['Job Giver'],
         mobile: '9000000001',
     },
     {
         name: 'Test Installer',
         email: 'installer_pro_v3@team4job.com',
-        password: 'Test@1234',
+        password: getTestPassword(),
         roles: ['Installer'],
         mobile: '9000000002',
         installerProfile: {
@@ -49,14 +54,14 @@ const TEST_USERS = [
     {
         name: 'Test Admin',
         email: 'vikasakankshasharma_v3@gmail.com',
-        password: 'Vks2bhdj@9229',
+        password: getAdminPassword(),
         roles: ['Admin'],
         mobile: '9000000003',
     },
     {
         name: 'Dual Role User',
         email: 'dualrole@example.com',
-        password: 'Vikas@129229',
+        password: getTestPassword(),
         roles: ['Job Giver', 'Installer'],
         mobile: '9000000004',
         installerProfile: {

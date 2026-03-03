@@ -120,7 +120,7 @@ export default function TransactionsClient() {
         } finally {
             setLoading(false);
         }
-    }, [user]);
+    }, [user, auth?.currentUser]);
 
     useEffect(() => {
         if (user) {
