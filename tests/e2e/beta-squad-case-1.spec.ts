@@ -43,28 +43,11 @@ test.describe('Beta Squad - Group A', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
 
-        // Dismiss any blocking dialog (draft recovery, template selector, etc.)
-        const blockingDialog = page.getByRole('dialog');
-        if (await blockingDialog.isVisible().catch(() => false)) {
-            const dismissButton = blockingDialog.getByRole('button', { name: /Discard|Cancel|Close|Start Fresh|Skip|No/i }).first();
-            if (await dismissButton.isVisible().catch(() => false)) {
-                await dismissButton.click({ force: true });
-            } else {
-                await page.keyboard.press('Escape').catch(() => { });
-            }
-        }
-
         // Fill Job Details
-        // Use helper form utilities for robust interactions
         await helper.form.selectDropdown('Job Category', 'New Installation');
         await helper.form.fillInput('Job Title', uniqueJobTitle);
         await helper.form.fillTextarea('Job Description', CASE_1_DATA.description);
-        // Skills label may vary; use multiple attempts
-        try {
-            await helper.form.fillInput('Required Skills', CASE_1_DATA.skills);
-        } catch {
-            await helper.form.fillInput('Skills', CASE_1_DATA.skills);
-        }
+        await helper.form.fillInput('Required Skills', CASE_1_DATA.skills).catch(() => helper.form.fillInput('Skills', CASE_1_DATA.skills));
         await helper.form.fillInput('Pincode', CASE_1_DATA.pincode);
         await page.waitForTimeout(1000);
 
@@ -76,50 +59,9 @@ test.describe('Beta Squad - Group A', () => {
         await page.fill('[data-testid="min-budget-input"]', CASE_1_DATA.budget.toString());
         await page.fill('[data-testid="max-budget-input"]', CASE_1_DATA.budget.toString());
 
-        // Wait a bit for form to settle
-        await page.waitForTimeout(2000);
-
-        // Ensure verification checkbox is checked (required by schema)
-        const verifyCheckbox = page.getByRole('checkbox', { name: /I verify that these details are correct/i }).first();
-        if (await verifyCheckbox.isVisible().catch(() => false)) {
-            await verifyCheckbox.check().catch(() => { /* ignore if custom checkbox */ });
-            // Fallback to DOM check if the custom component doesn't respond to Playwright check
-            await page.evaluate(() => {
-                const cb = Array.from(document.querySelectorAll('input[type="checkbox"]')).find(i => (i as HTMLInputElement).nextSibling?.textContent?.includes('I verify')) as HTMLInputElement | undefined;
-                if (cb) cb.checked = true;
-            });
-        }
-
-        // Check for validation errors
-        const errors = await page.evaluate(() => {
-            const errorElements = document.querySelectorAll('[role="alert"], .text-red-500, .error');
-            const errorTexts: string[] = [];
-            errorElements.forEach(el => {
-                const text = el.textContent?.trim();
-                if (text) errorTexts.push(text);
-            });
-            return errorTexts;
-        });
-
-        if (errors.length > 0) {
-            console.log('[WARN] Form validation errors detected:', errors);
-        }
-
-        // Hide overlays before clicking
-        await page.evaluate(() => {
-            const emulatorWarning = document.querySelector('.firebase-emulator-warning');
-            if (emulatorWarning) (emulatorWarning as any).style.display = 'none';
-            document.querySelectorAll('button').forEach((btn: any) => {
-                if (btn.textContent?.includes('Beta') || btn.textContent?.includes('Feedback') || (btn.classList.contains('fixed') && btn.classList.contains('z-50'))) {
-                    btn.style.display = 'none';
-                    btn.style.pointerEvents = 'none';
-                }
-            });
-        });
-
         // Prepare form and submit using robust helpers
         await helper.preparePostJobSubmission();
-        await helper.submitPostJob({ force: true });
+        await helper.form.submitPostJob();
 
         // Wait for submission and redirect
         try {

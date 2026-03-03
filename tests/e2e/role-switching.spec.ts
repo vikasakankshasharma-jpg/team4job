@@ -37,7 +37,8 @@ test.describe('Role Switching System', () => {
         const userMenu = page.locator('[data-testid="user-menu-trigger"]')
             .or(page.locator('button.rounded-full:has(img)'))
             .or(page.locator('button:has(.rounded-full)'))
-            .filter({ hasNot: page.locator('xpath=ancestor::*[contains(@class, "hidden") or contains(@class, "md:hidden")]') })
+            .or(page.locator('button:has-text("D")'))
+            .filter({ visible: true })
             .first();
 
         console.log('[Test] Waiting for user-menu-trigger (up to 30s)...');

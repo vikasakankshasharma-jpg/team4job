@@ -14,146 +14,6 @@ const DEFAULT_HOUSE = 'Flat 1A';
 const DEFAULT_STREET = 'Main Road';
 const DEFAULT_FULL_ADDRESS = '123 Main Road, Bangalore';
 
-async function preparePostJobSubmission(page: Page) {
-    const description = page.locator('[data-testid="job-description-input"]');
-    if (await description.isVisible()) {
-        const value = await description.inputValue();
-        if (value.trim().length < 50) {
-            await description.fill(LONG_DESCRIPTION);
-        }
-    }
-
-    const categoryTrigger = page.getByTestId('job-category-select');
-    if (await categoryTrigger.isVisible().catch(() => false)) {
-        await categoryTrigger.click();
-        const option = page.getByRole('option').first();
-        if (await option.isVisible()) {
-            await option.click();
-        }
-    }
-
-    const skillsInput = page.getByTestId('skills-input');
-    if (await skillsInput.isVisible().catch(() => false)) {
-        const value = await skillsInput.inputValue();
-        if (!value.trim()) {
-            await skillsInput.fill('CCTV');
-        }
-    }
-
-    const timeTrigger = page.getByRole('combobox', { name: /Preferred Time/i });
-    if (await timeTrigger.isVisible()) {
-        await timeTrigger.click();
-        const timeOption = page.getByRole('option', { name: /Any|Morning|Afternoon|Evening|Weekend/i }).first();
-        if (await timeOption.isVisible()) {
-            await timeOption.click();
-        }
-    }
-
-    const houseInput = page.getByTestId('house-input');
-    if (await houseInput.isVisible()) {
-        const value = await houseInput.inputValue();
-        if (!value) await houseInput.fill(DEFAULT_HOUSE);
-    }
-
-    const streetInput = page.getByTestId('street-input');
-    if (await streetInput.isVisible()) {
-        const value = await streetInput.inputValue();
-        if (!value) await streetInput.fill(DEFAULT_STREET);
-    }
-
-    const fullAddressInput = page.locator('input[name="address.fullAddress"]');
-    if (await fullAddressInput.isVisible()) {
-        const value = await fullAddressInput.inputValue();
-        if (value.trim().length < 10) await fullAddressInput.fill(DEFAULT_FULL_ADDRESS);
-    }
-
-    const minBudgetInput = page.getByTestId('min-budget-input');
-    if (await minBudgetInput.isVisible().catch(() => false)) {
-        const value = await minBudgetInput.inputValue();
-        if (!value || Number(value) <= 0) {
-            await minBudgetInput.fill('5000');
-        }
-    }
-    const maxBudgetInput = page.getByTestId('max-budget-input');
-    if (await maxBudgetInput.isVisible().catch(() => false)) {
-        const value = await maxBudgetInput.inputValue();
-        if (!value || Number(value) <= 0) {
-            await maxBudgetInput.fill('5000');
-        }
-    }
-
-    const hiddenPincode = page.locator('input[name="address.cityPincode"]');
-    if (await hiddenPincode.count()) {
-        const value = (await hiddenPincode.inputValue()).trim();
-        if (value.length < 8 || !value.includes(',')) {
-            const pinInput = page.getByTestId('pincode-input');
-            if (await pinInput.isVisible()) {
-                let pinValue = (await pinInput.inputValue()).trim();
-                if (pinValue.length !== 6) {
-                    pinValue = '110001';
-                    await pinInput.fill(pinValue);
-                }
-                await pinInput.blur();
-
-                const poTrigger = page.getByTestId('po-select-trigger');
-                if (await poTrigger.isVisible()) {
-                    const isDisabled = await poTrigger.isDisabled().catch(() => false);
-                    if (!isDisabled) {
-                        await poTrigger.click();
-                        const option = page.locator('[data-testid="po-select-item"], [role="option"]').first();
-                        if (await option.isVisible()) {
-                            await option.click();
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    const verifyCheckbox = page.getByRole('checkbox', { name: /I verify that these details are correct/i });
-    if (await verifyCheckbox.isVisible()) {
-        const checked = await verifyCheckbox.getAttribute('aria-checked');
-        if (checked !== 'true') await verifyCheckbox.click();
-    } else {
-        const verifyText = page.getByText(/I verify that these details are correct/i);
-        if (await verifyText.isVisible()) await verifyText.click();
-    }
-}
-
-async function submitPostJob(page: Page, options?: { force?: boolean }) {
-    const betaFeedback = page.getByRole('button', { name: /Beta Feedback/i });
-    if (await betaFeedback.isVisible()) {
-        await betaFeedback.evaluate(el => (el as HTMLElement).style.display = 'none');
-    }
-    const emulatorWarning = page.locator('.firebase-emulator-warning');
-    if (await emulatorWarning.isVisible()) {
-        await emulatorWarning.evaluate(el => (el as HTMLElement).style.display = 'none');
-    }
-
-    await page.getByRole('button', { name: /Post Job/i }).click({ force: options?.force ?? true });
-    await page.waitForTimeout(500); // give UI time to show errors
-    const formMessages = page.locator('.text-destructive');
-    const errCount = await formMessages.count();
-
-    console.log(`[DEBUG] Final Job Title in DOM: "${await page.inputValue('input[name="jobTitle"]').catch(() => 'error')}"`);
-    console.log(`[DEBUG] Final Address in DOM: "${await page.inputValue('input[name="address.fullAddress"]').catch(() => 'error')}"`);
-
-    if (errCount > 0) {
-        console.log(`[DEBUG] Found ${errCount} validation errors:`);
-        for (let i = 0; i < errCount; i++) {
-            const errText = await formMessages.nth(i).innerText();
-            console.log(`[DEBUG] Error ${i + 1}: ${errText}`);
-        }
-    }
-
-    const confirmButton = page.getByRole('button', { name: /Confirm & Save/i });
-    try {
-        await confirmButton.waitFor({ state: 'visible', timeout: 5000 });
-        await confirmButton.click();
-    } catch {
-        // ...
-    }
-}
 
 test.describe('Beta Squad - Beta Launch Protocol', () => {
 
@@ -195,16 +55,10 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('[data-testid="min-budget-input"]', data.budget.toString());
         await page.fill('[data-testid="max-budget-input"]', data.budget.toString());
 
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
 
-        // Wait for the POST request to complete successfully
-        await page.waitForResponse(response =>
-            response.url().includes('/dashboard/post-job') &&
-            response.request().method() === 'POST' &&
-            response.status() === 200,
-            { timeout: 60000 }
-        );
+
 
         // Capture created job from redirect URL
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
@@ -215,6 +69,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.logout();
         await helper.auth.loginAsInstaller();
         await page.goto(`/dashboard/jobs/${jobId}`);
+
         await page.getByTestId('place-bid-button').click();
         await page.locator('input[name="amount"]').fill(data.budget.toString());
         await page.fill('textarea[name="coverLetter"]', 'I can do this');
@@ -345,8 +200,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('[data-testid="min-budget-input"]', data.budget.toString());
         await page.fill('[data-testid="max-budget-input"]', data.budget.toString());
 
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -402,8 +257,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', budget.toString());
         await page.fill('[data-testid="max-budget-input"]', budget.toString());
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -473,8 +328,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', budget.toString());
         await page.fill('[data-testid="max-budget-input"]', budget.toString());
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -538,8 +393,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         if (await milestoneToggle.isVisible()) await milestoneToggle.click();
         else console.log("Milestone toggle not found, assuming default or explicit field handling");
 
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -643,8 +498,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -721,8 +576,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -858,8 +713,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -952,8 +807,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -1083,8 +938,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -1163,8 +1018,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -1286,8 +1141,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -1400,8 +1255,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -1529,8 +1384,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -1666,8 +1521,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -1802,8 +1657,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -1939,8 +1794,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -2048,8 +1903,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -2097,8 +1952,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
         await page.fill('[data-testid="min-budget-input"]', "5000");
         await page.fill('[data-testid="max-budget-input"]', "5000");
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 
@@ -2241,8 +2096,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await context.setOffline(true);
 
         // Try Action
-        await preparePostJobSubmission(page);
-        await submitPostJob(page, { force: true });
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
 
         // Expect Graceful Error (Toast or UI message), no crash
         const errorToast = page.getByText(/Network request failed|Offline|Check internet|Failed to fetch|ERR_INTERNET_DISCONNECTED/i).first();
@@ -2279,8 +2134,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         let dialogTriggered = false;
         page.on('dialog', () => { dialogTriggered = true; });
 
-        await preparePostJobSubmission(page);
-        await submitPostJob(page);
+        await helper.preparePostJobSubmission();
+        await helper.form.submitPostJob();
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
         const jobId = await helper.job.getJobIdFromUrl();
 

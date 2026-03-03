@@ -106,11 +106,11 @@ export default defineConfig({
         env: process.env.CI
             ? getWebServerEnv()
             : {
-                  ...getWebServerEnv(),
-                  FIRESTORE_EMULATOR_HOST: 'localhost:8080',
-                  FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199',
-                  FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
-              },
+                ...getWebServerEnv(),
+                FIRESTORE_EMULATOR_HOST: 'localhost:8080',
+                FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199',
+                FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
+            },
     },
 
     /* Global timeout for each test */

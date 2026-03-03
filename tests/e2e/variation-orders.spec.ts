@@ -101,7 +101,7 @@ test.describe('Secured Variation Orders', () => {
         await bidInput.fill('500');
         await page.getByRole('textbox', { name: 'Cover Letter' }).fill('I am the best installer for this job.');
         await page.click('div[role="dialog"] button:has-text("Place Bid")');
-        await expect(page.locator('text=Bid Placed')).toBeVisible();
+        await expect(page.getByText('Bid Placed!', { exact: true }).first()).toBeVisible();
         await helper.auth.logout();
 
         // 3. Job Giver Awards

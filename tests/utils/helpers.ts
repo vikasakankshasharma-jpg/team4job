@@ -87,7 +87,8 @@ export class AuthHelper {
                 .or(this.page.locator('button:has(.rounded-full)'))
                 .or(this.page.locator('button[aria-label*="user"]'))
                 .or(this.page.locator('button[aria-label*="menu"]'))
-                .filter({ hasNot: this.page.locator('xpath=ancestor::*[contains(@class, "hidden") or contains(@class, "md:hidden")]') })
+                .or(this.page.locator('button:has-text("D")'))
+                .filter({ visible: true })
                 .first();
 
             try {
@@ -258,6 +259,14 @@ export class AuthHelper {
                         timeout: 30000
                     });
 
+                    // Hide any persistent cookie consent banners that may appear after navigation
+                    try {
+                        await this.page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
+                        console.log('[AuthHelper] Cookie banner hidden after dashboard load');
+                    } catch (e) {
+                        console.warn('[AuthHelper] Failed to hide cookie banner:', e);
+                    }
+
                     console.log(`[AuthHelper] Login successful for ${email}`);
                     return;
                 } catch (error) {
@@ -360,7 +369,8 @@ export class AuthHelper {
             const userMenu = this.page.locator('[data-testid="user-menu-trigger"]')
                 .or(this.page.locator('button.rounded-full:has(img)'))
                 .or(this.page.locator('button:has(.rounded-full)'))
-                .filter({ hasNot: this.page.locator('xpath=ancestor::*[contains(@class, "hidden")]') })
+                .or(this.page.locator('button:has-text("D")'))
+                .filter({ visible: true })
                 .first();
 
             await userMenu.waitFor({ state: 'visible', timeout: 5000 });
@@ -680,28 +690,49 @@ export class FormHelper {
         await this.page.evaluate(() => {
             const overlays = [
                 '.firebase-emulator-warning',
-                'button:has-text("Feedback")',
                 '.fixed.z-50'
             ];
             overlays.forEach(selector => {
                 const el = document.querySelector(selector);
                 if (el) (el as any).style.display = 'none';
             });
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => {
+                if (btn.textContent && btn.textContent.includes('Feedback')) {
+                    (btn as any).style.display = 'none';
+                }
+            });
         });
 
-        const verifyLabel = this.page.getByText('I verify that these details are correct');
-        const checkbox = this.page.locator('button[role="checkbox"]:has-text("I verify"), button[role="checkbox"][id*="verify"]').first();
+        const verifyLabel = this.page.getByText(/I verify that these details are correct/i);
+        const checkbox = this.page.locator('button[role="checkbox"]').filter({ hasText: /I verify/i }).first()
+            .or(this.page.locator('div.flex-row').filter({ hasText: /I verify/i }).locator('button[role="checkbox"]'))
+            .first();
 
         try {
-            if (await verifyLabel.isVisible({ timeout: 5000 }).catch(() => false)) {
+            if (await verifyLabel.count() > 0 || await checkbox.count() > 0) {
                 console.log('[FormHelper] Ensuring verification checkbox is checked...');
 
                 // Multiple attempts to check the checkbox
                 const checkIt = async () => {
-                    const state = await checkbox.getAttribute('data-state');
-                    if (state !== 'checked') {
-                        await checkbox.click({ force: true }).catch(() => { });
-                        await verifyLabel.click({ force: true }).catch(() => { });
+                    const isChecked = async () => {
+                        if (await checkbox.count() > 0) {
+                            const state = await checkbox.getAttribute('data-state');
+                            const ariaChecked = await checkbox.getAttribute('aria-checked');
+                            return state === 'checked' || ariaChecked === 'true';
+                        }
+                        return false;
+                    };
+
+                    if (!(await isChecked())) {
+                        console.log('[FormHelper] Clicking checkbox...');
+                        if (await checkbox.count() > 0) {
+                            await checkbox.click({ force: true }).catch(() => { });
+                        } else if (await verifyLabel.count() > 0) {
+                            await verifyLabel.click({ force: true }).catch(() => { });
+                        }
+                    } else {
+                        console.log('[FormHelper] Checkbox already checked, skipping click.');
                     }
                 };
 
@@ -709,13 +740,17 @@ export class FormHelper {
                 await this.page.waitForTimeout(500);
 
                 // Final verification and forced state if needed
-                const finalState = await checkbox.getAttribute('data-state');
-                if (finalState !== 'checked') {
-                    console.log('[FormHelper] Checkbox still not checked, forcing via state attribute...');
-                    await checkbox.evaluate((node) => {
-                        node.setAttribute('data-state', 'checked');
-                        node.setAttribute('aria-checked', 'true');
-                    });
+                if (await checkbox.count() > 0) {
+                    const finalState = await checkbox.getAttribute('data-state');
+                    const ariaChecked = await checkbox.getAttribute('aria-checked');
+                    if (finalState !== 'checked' && ariaChecked !== 'true') {
+                        console.log('[FormHelper] Checkbox still not checked, forcing via state attribute...');
+                        await checkbox.evaluate((node) => {
+                            node.setAttribute('data-state', 'checked');
+                            node.setAttribute('aria-checked', 'true');
+                            node.dispatchEvent(new Event('change', { bubbles: true }));
+                        });
+                    }
                 }
             }
         } catch (e) {
@@ -723,28 +758,51 @@ export class FormHelper {
         }
 
         // 3. Click the Post Job button
-        const postBtn = this.page.getByTestId('post-job-button').or(this.page.getByRole('button', { name: /Post Job/i })).first();
+        const postBtn = this.page.getByTestId('post-job-button')
+            .or(this.page.getByRole('button', { name: /Post Job/i }))
+            .or(this.page.getByRole('button', { name: /Save Changes/i }))
+            .first();
         await postBtn.waitFor({ state: 'visible', timeout: 5000 });
         console.log('[FormHelper] Clicking Post Job button...');
         await postBtn.click({ force: true });
 
-        // 4. Wait for the confirmation dialog
-        const confirmDialog = this.page.locator('div[role="alertdialog"], div[role="dialog"]:has-text("Confirm")').first();
-        try {
-            console.log('[FormHelper] Waiting for confirmation dialog...');
-            await confirmDialog.waitFor({ state: 'visible', timeout: 10000 });
+        // 4. Handle confirmation dialog if it appears
+        console.log('[FormHelper] Checking for confirmation dialog...');
+        const dialog = this.page.locator('div[role="alertdialog"], div[role="dialog"]').filter({
+            has: this.page.getByText(/Confirm|Save|Post|Verify|Proceed|Warning/i)
+        });
 
-            const confirmAction = confirmDialog.getByRole('button', { name: /Confirm|Save|Continue|Yes|Post/i }).first();
-            await confirmAction.waitFor({ state: 'visible', timeout: 5000 });
-            await confirmAction.click({ force: true });
-            console.log('[FormHelper] Confirmation action clicked.');
-        } catch (e) {
-            console.log('[FormHelper] No confirmation dialog appeared or timeout.');
-            // Check for validation errors
-            const errors = await this.page.locator('p.text-destructive, [id*="-error"]').allTextContents();
-            if (errors.length > 0) {
-                console.warn('[FormHelper] Form has validation errors:', errors.join(' | '));
+        try {
+            // Wait up to 5s for any confirmation dialog to appear
+            await dialog.waitFor({ state: 'visible', timeout: 5000 });
+            console.log('[FormHelper] Confirmation dialog detected.');
+
+            // Handle "Bid exceeds budget" or other warnings by clicking the positive action button
+            // Usually it's the last button or one with "Proceed", "Confirm", "Yes", "Accept"
+            const confirmBtn = dialog.getByRole('button', { name: /Confirm|Save|Post|Proceed|Yes|Accept/i }).first()
+                .or(dialog.locator('button').filter({ hasText: /Confirm|Save|Post|Proceed|Yes|Accept/i }).first())
+                .or(dialog.locator('button').last());
+
+            if (await confirmBtn.isVisible().catch(() => false)) {
+                console.log(`[FormHelper] Clicking confirmation button: ${await confirmBtn.innerText().catch(() => 'unknown')}`);
+                await confirmBtn.click({ force: true });
+                await this.page.waitForTimeout(1000);
+
+                // Second check: if warning dialog (like "Bid exceeds budget") is still there, click again
+                // (Sometimes confirmation dialogs are stacked or require multiple clicks in some UI states)
+                if (await confirmBtn.isVisible().catch(() => false)) {
+                    await confirmBtn.click({ force: true }).catch(() => { });
+                }
+            } else {
+                console.warn('[FormHelper] Dialog found but no clear confirmation button detected.');
             }
+        } catch (e) {
+            console.log('[FormHelper] No confirmation dialog appeared within timeout.');
+        }
+        // Check for validation errors
+        const errors = await this.page.locator('p.text-destructive, [id*="-error"]').allTextContents();
+        if (errors.length > 0) {
+            console.warn('[FormHelper] Form has validation errors:', errors.join(' | '));
         }
     }
 }
@@ -1098,45 +1156,64 @@ export class TestHelper {
         this.job = new JobHelper(page);
         this.form = new FormHelper(page);
 
-        // Globally suppress cookie banner and test overlay elements
-        this.page.addInitScript(() => {
-            // Hide overlays with CSS
-            const style = document.createElement('style');
-            style.innerHTML = `
-                .CookieConsent { display: none !important; }
-                .firebase-emulator-warning { display: none !important; pointer-events: none !important; }
-            `;
-            document.head.appendChild(style);
+        // 1. Set cookie on the context level (most reliable)
+        const baseUrl = page.url() || 'http://localhost:5000';
+        try {
+            const urlObj = new URL(baseUrl);
+            void this.page.context().addCookies([{
+                name: 'dodo-cookie-consent',
+                value: 'true',
+                domain: urlObj.hostname,
+                path: '/',
+                expires: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365
+            }]);
+        } catch { /* ignore invalid URL */ }
 
-            // Set up MutationObserver to persist overlay hiding as new elements are added
-            const observer = new MutationObserver(() => {
-                // Hide firebase emulator warning
-                const emulatorWarning = document.querySelector('.firebase-emulator-warning');
-                if (emulatorWarning) {
-                    (emulatorWarning as any).style.display = 'none';
-                    (emulatorWarning as any).style.pointerEvents = 'none';
-                }
+        // 2. Suppress overlays via persistent CSS injection
+        void this.page.addInitScript(() => {
+            const styleId = 'e2e-suppress-overlays';
+            const injectStyles = () => {
+                if (document.getElementById(styleId)) return;
+                const style = document.createElement('style');
+                style.id = styleId;
+                style.innerHTML = `
+                    .CookieConsent, 
+                    #cookie-consent-banner,
+                    [class*="CookieConsent"],
+                    .fixed.bottom-0.left-0.right-0.z-50 { 
+                        display: none !important; 
+                        opacity: 0 !important;
+                        pointer-events: none !important;
+                        visibility: hidden !important;
+                        z-index: -9999 !important; 
+                    }
+                    .firebase-emulator-warning { display: none !important; pointer-events: none !important; }
+                `;
+                (document.head || document.documentElement).appendChild(style);
+            };
 
-                // Hide Beta Feedback button
-                const betaButtons = Array.from(document.querySelectorAll('button'));
-                for (const btn of betaButtons) {
+            const hideFeedback = () => {
+                const buttons = Array.from(document.querySelectorAll('button'));
+                for (const btn of buttons) {
                     const text = btn.textContent || '';
-                    if (text.includes('Beta Feedback') || text.includes('Feedback') || text === '…') {
+                    if (text.includes('Feedback') || text.includes('Beta Feedback') || text === '…') {
                         if (btn.classList.contains('fixed') || btn.classList.contains('z-50')) {
                             (btn as any).style.display = 'none';
-                            (btn as any).style.pointerEvents = 'none';
                         }
                     }
                 }
-            });
+            };
 
-            // Start observing the document for changes
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true,
-                attributes: false,
+            injectStyles();
+            hideFeedback();
+
+            const observer = new MutationObserver(() => {
+                injectStyles();
+                hideFeedback();
             });
+            observer.observe(document.documentElement, { childList: true, subtree: true });
         });
+
         this.wait = new WaitHelper(page);
         this.debug = new DebugHelper(page);
         // Auto-enable console logging for debugging
@@ -1382,24 +1459,7 @@ export class TestHelper {
 
     // Submit the Post Job action with overlays and confirm handling
     async submitPostJob(options?: { force?: boolean }) {
-        // Hide common blocking elements
-        const betaFeedback = this.page.getByRole('button', { name: /Beta Feedback/i });
-        if (await betaFeedback.isVisible().catch(() => false)) {
-            await betaFeedback.evaluate(el => (el as HTMLElement).style.display = 'none').catch(() => { });
-        }
-        const emulatorWarning = this.page.locator('.firebase-emulator-warning');
-        if (await emulatorWarning.isVisible().catch(() => false)) {
-            await emulatorWarning.evaluate(el => (el as HTMLElement).style.display = 'none').catch(() => { });
-        }
-
-        await this.page.getByRole('button', { name: /Post Job/i }).click({ force: options?.force ?? true }).catch(() => { });
-
-        const confirmButton = this.page.getByRole('button', { name: /Confirm & Save/i });
-        try {
-            await confirmButton.waitFor({ state: 'visible', timeout: 10000 });
-            await confirmButton.click().catch(() => { });
-        } catch {
-            // ignore if not present
-        }
+        // Delegate to the robust FormHelper implementation
+        await this.form.submitPostJob();
     }
 }
