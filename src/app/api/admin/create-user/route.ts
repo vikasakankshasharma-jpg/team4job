@@ -82,7 +82,7 @@ async function verifyAdminAuth(req: NextRequest): Promise<string | null> {
     // ✅ Use user service to get user data
     const user = await userService.getProfile(decodedToken.uid);
 
-    if (user.role !== 'Admin') {
+    if (!user.roles?.includes('Admin')) {
       return null;
     }
 

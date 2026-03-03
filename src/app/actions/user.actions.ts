@@ -2,8 +2,7 @@
 
 import { userService } from '@/domains/users/user.service';
 import { revalidatePath } from 'next/cache';
-import { User } from '@/lib/types';
-import { UpdateProfileInput } from '@/domains/users/user.types';
+import { User, UpdateProfileInput } from '@/lib/types';
 
 /**
  * Server Action to update user profile

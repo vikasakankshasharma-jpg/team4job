@@ -45,21 +45,19 @@ export default async function DashboardPage() {
     }
 
     // Role-based Server Rendering
-    if (user.role === 'Job Giver') {
+    if (user.roles?.includes('Job Giver')) {
         // Map domain User to UI User (lib/types)
         const uiUser = {
             ...user,
-            roles: [user.role],
         } as any; // Cast to any/User to avoid strict type mismatch on slight interface differences
 
         return <JobGiverServerView user={uiUser} />;
     }
 
-    if (user.role === 'Installer') {
+    if (user.roles?.includes('Installer')) {
         // Map domain User to UI User (lib/types)
         const uiUser = {
             ...user,
-            roles: [user.role],
         } as any;
 
         return <InstallerServerView user={uiUser} />;

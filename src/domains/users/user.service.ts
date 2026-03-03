@@ -1,9 +1,8 @@
 // domains/users/user.service.ts
 
 import { userRepository } from './user.repository';
-import { User, UpdateProfileInput, InstallerFilters } from './user.types';
 import { logger } from '@/infrastructure/logger';
-import { Role } from '@/lib/types';
+import { User, UpdateProfileInput, InstallerFilters, Role } from '@/lib/types';
 
 export class UserService {
     async getProfile(userId: string): Promise<User> {
@@ -24,7 +23,7 @@ export class UserService {
             throw new Error('Invalid mobile number');
         }
 
-        await userRepository.update(userId, updates);
+        await userRepository.update(userId, updates as Partial<User>);
         logger.userActivity(userId, 'profile_updated', { fields: Object.keys(updates) });
     }
 
@@ -34,12 +33,16 @@ export class UserService {
             throw new Error('User not found');
         }
 
-        if (user.role !== 'Installer') {
+        if (!user.roles?.includes('Installer')) {
             throw new Error('User is not an installer');
         }
 
         await userRepository.update(installerId, {
-            verificationStatus: 'Verified',
+            installerProfile: {
+                ...user.installerProfile,
+                verified: true,
+                verificationLevel: 'Basic',
+            } as any,
         });
 
         logger.adminAction(adminId, 'installer_verified', installerId);

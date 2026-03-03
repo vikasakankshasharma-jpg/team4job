@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
         // 2. ✅ Use user service to verify admin role
         const admin = await userService.getProfile(decodedToken.uid);
 
-        if (admin.role !== 'Admin') {
+        if (!admin.roles?.includes('Admin')) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 

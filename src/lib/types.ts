@@ -603,3 +603,20 @@ export interface AIFeedback {
   metadata?: Record<string, any>; // Context (e.g., job scope inputs)
 }
 
+export interface UpdateProfileInput {
+  name?: string;
+  mobile?: string;
+  address?: Address;
+  pincodes?: {
+    residential: string;
+    office?: string;
+  };
+  installerProfile?: Partial<User["installerProfile"]>;
+}
+
+export interface InstallerFilters {
+  skills?: string[];
+  minRating?: number;
+  verified?: boolean;
+  pincode?: string;
+}

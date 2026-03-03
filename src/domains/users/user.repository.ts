@@ -3,7 +3,7 @@
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { COLLECTIONS } from '@/infrastructure/firebase/firestore';
 import { logger } from '@/infrastructure/logger';
-import { User, InstallerFilters } from './user.types';
+import { User, InstallerFilters } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export class UserRepository {
@@ -43,10 +43,10 @@ export class UserRepository {
             const db = getAdminDb();
             let query = db
                 .collection(COLLECTIONS.USERS)
-                .where('role', '==', 'Installer');
+                .where('roles', 'array-contains', 'Installer');
 
             if (filters?.verified) {
-                query = query.where('verificationStatus', '==', 'Verified');
+                query = query.where('installerProfile.verified', '==', true);
             }
 
             if (filters?.pincode) {
@@ -54,7 +54,7 @@ export class UserRepository {
             }
 
             if (filters?.minRating) {
-                query = query.where('rating', '>=', filters.minRating);
+                query = query.where('installerProfile.rating', '>=', filters.minRating);
             }
 
             const snapshot = await query.limit(limit).get();
@@ -63,7 +63,7 @@ export class UserRepository {
             // Client-side filter for skills (array-contains doesn't work with multiple values)
             if (filters?.skills && filters.skills.length > 0) {
                 return users.filter(user =>
-                    filters.skills!.some(skill => user.skills?.includes(skill))
+                    filters.skills!.some(skill => user.installerProfile?.skills?.includes(skill))
                 );
             }
 

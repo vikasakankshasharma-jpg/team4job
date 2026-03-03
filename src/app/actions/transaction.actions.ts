@@ -10,7 +10,7 @@ import { Transaction } from '@/lib/types';
 export async function getTransactionHistoryAction(userId: string) {
     try {
         const user = await userService.getProfile(userId);
-        const isAdmin = user.role === 'Admin' || user.role === 'Support Team';
+        const isAdmin = user.roles?.includes('Admin') || user.roles?.includes('Support Team');
 
         const db = getAdminDb();
         let transactions: Transaction[] = [];
