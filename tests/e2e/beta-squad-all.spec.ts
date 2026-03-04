@@ -879,29 +879,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await expect(proceedPaymentButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await proceedPaymentButton.click();
 
-        // Force Shim to simulate failure if possible, or use real shim with Failure Trigger
-        await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
-
-        // NOTE: The shim currently defaults to Success. 
-        // We might need to override it in the console to fail.
-        await page.evaluate(async () => {
-            // Mock a failure response
-            const originalObj = (window as any).e2e_directFundJob;
-            (window as any).e2e_directFundJob = async () => {
-                throw new Error("Simulated Card Failure");
-            };
-        });
-
-        // Attempt Pay
-        const payButton = page.getByRole('button', { name: /Pay/i }).first(); // Within shim UI?
-        // Since we are mocking the function call directly in the test usually:
-        // Verification: If the UI has a "Pay Now" button that calls this function:
-        // If we normally call execute() manualy:
-
+        // Use the improved shim with simulateError flag
         try {
-            await page.evaluate(async () => { await (window as any).e2e_directFundJob(); });
+            await page.evaluate(async () => {
+                await (window as any).e2e_directFundJob({ simulateError: true });
+            });
+            // If it didn't throw, something is wrong with the shim or test logic
         } catch (e) {
             // Expected
+            console.log('Caught expected simulation error:', e);
         }
 
         // Verify Status - Should still be Pending Funding

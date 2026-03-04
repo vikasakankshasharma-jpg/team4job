@@ -66,6 +66,7 @@ import { useFirestore, useFirebase } from "@/lib/firebase/client-provider";
 import { useHelp } from "@/hooks/use-help";
 import { allSkills } from "@/lib/data";
 import { trackSignupProgress, markSignupComplete } from "@/lib/signup-tracker";
+import { trackFunnelEvent } from "@/lib/analytics";
 
 const addressSchema = z.object({
   house: z.string().min(1, "House/Flat No. is required."),
@@ -147,6 +148,10 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
 
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
   const [verificationType, setVerificationType] = useState<"mobile" | "email" | null>(null);
+
+  useEffect(() => {
+    trackFunnelEvent('signup_started');
+  }, []);
 
   useEffect(() => {
     // Initialize Temp Auth
@@ -687,6 +692,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       try {
         const mobile = values.mobile;
         await markSignupComplete(db, mobile, firebaseUser.uid);
+        trackFunnelEvent('signup_completed', { role: values.role });
       } catch (trackError) {
         console.error("Tracking error (non-fatal):", trackError);
       }

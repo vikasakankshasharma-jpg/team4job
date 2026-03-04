@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, initializeFirestore, memoryLocalCache, getFirestore as getFirestoreDefault, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { logger } from '@/infrastructure/logger';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'mock-key',
@@ -32,14 +33,14 @@ try {
 
     if (useMemoryCache) {
         try {
-            console.log('[Firebase Client] Memory cache disabled due to assertion errors, using default');
+            logger.warn('[Firebase Client] Memory cache disabled due to assertion errors, using default');
             db = getFirestoreDefault(app);
         } catch (e) {
             console.error('[Firebase Client] Failed to initialize memory cache, falling back to default:', e);
             db = getFirestoreDefault(app);
         }
     } else {
-        console.log('[Firebase Client] Initializing Firestore with DEFAULT PERSISTENCE');
+        logger.info('[Firebase Client] Initializing Firestore with DEFAULT PERSISTENCE');
         db = getFirestoreDefault(app);
     }
 
@@ -54,16 +55,16 @@ try {
     if (emulatorFlag && isActualLocalhost && !isStaging) {
         const globalObj = typeof window !== 'undefined' ? (window as any) : globalThis;
         if (!globalObj[EMULATORS_STARTED]) {
-            console.log('🔴 [INFRA-CLIENT] Connecting to Firebase Emulators...');
+            logger.info('🔴 [INFRA-CLIENT] Connecting to Firebase Emulators...');
             try {
                 connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
                 connectFirestoreEmulator(db, '127.0.0.1', 8080);
                 connectStorageEmulator(storage, '127.0.0.1', 9199);
                 globalObj[EMULATORS_STARTED] = true;
-                console.log('✅ Connected to Firebase Emulators');
+                logger.info('✅ Connected to Firebase Emulators');
             } catch (emuError: any) {
                 if (emuError?.code === 'auth/emulator-config-failed') {
-                    console.log('⚠️ Emulators already connected, ignoring error.');
+                    logger.warn('⚠️ Emulators already connected, ignoring error.');
                     globalObj[EMULATORS_STARTED] = true;
                 } else {
                     console.error('Failed to connect to emulators:', emuError);

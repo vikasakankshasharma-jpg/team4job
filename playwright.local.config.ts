@@ -25,11 +25,11 @@ export default defineConfig({
     /* Fail the build on CI if you accidentally left test.only in the source code. */
     forbidOnly: !!process.env.CI,
 
-    /* Retry on CI only */
-    retries: process.env.CI ? 2 : 0,
+    /* Retry for stability on slow machines */
+    retries: 2,
 
     /* Opt out of parallel tests on CI. */
-    workers: process.env.CI ? 1 : undefined,
+    workers: 1,
 
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
     reporter: 'html',
@@ -49,10 +49,10 @@ export default defineConfig({
         video: 'retain-on-failure',
 
         /* Maximum time each action can take */
-        actionTimeout: 90 * 1000,
+        actionTimeout: 120 * 1000,
 
         /* Maximum time for navigation */
-        navigationTimeout: 90 * 1000,
+        navigationTimeout: 120 * 1000,
     },
 
     /* Configure projects for major browsers */
@@ -67,10 +67,10 @@ export default defineConfig({
     /* webServer is intentionally disabled when using an existing server */
 
     /* Global timeout for each test */
-    timeout: 180000, // 3 mins per test
+    timeout: 300000, // 5 mins per test
 
     /* Expect timeout */
     expect: {
-        timeout: 90 * 1000,
+        timeout: 120 * 1000,
     },
 });

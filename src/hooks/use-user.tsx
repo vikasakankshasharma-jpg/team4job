@@ -1,6 +1,7 @@
 "use client";
 
-import { User } from "@/lib/types";
+import { User } from '@/lib/types';
+import { logger } from '@/infrastructure/logger';
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
@@ -148,7 +149,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // so role-based UI can render correctly.
         const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
         if (isE2EMode) {
-          console.log('[useUser] E2E mode detected - using one-time user profile fetch (no realtime listener)');
+          logger.info('[useUser] E2E mode detected - using one-time user profile fetch (no realtime listener)');
           setLoading(true);
           setHasAuthUser(true);
 
@@ -357,7 +358,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       await signInWithEmailAndPassword(auth, email, password);
-      console.log(`[useUser] Login successful for ${email}`);
+      logger.info(`[useUser] Login successful for ${email}`);
       return true;
     } catch (error: any) {
       console.error("[useUser] Login failed:", {

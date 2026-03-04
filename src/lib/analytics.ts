@@ -3,7 +3,20 @@
  * Provides utilities for tracking page views and custom events
  */
 
+import { logger } from "@/infrastructure/logger";
+
 export const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GA_ID || '';
+
+export type FunnelEventName =
+    | 'cta_click'
+    | 'signup_started'
+    | 'signup_completed';
+
+export interface FunnelProperties {
+    source?: string;
+    role?: string;
+    [key: string]: any;
+}
 
 // Track page views
 export const pageview = (url: string) => {
@@ -11,6 +24,7 @@ export const pageview = (url: string) => {
         window.gtag('config', GA_TRACKING_ID, {
             page_path: url,
         });
+        logger.debug('[ANALYTICS] Pageview recorded', { url });
     }
 };
 
@@ -31,6 +45,19 @@ export const event = ({
             event_category: category,
             event_label: label,
             value: value,
+        });
+        logger.debug('[ANALYTICS] Event recorded', { action, category, label, value });
+    }
+};
+
+// Track Funnel Actions
+export const trackFunnelEvent = (eventName: FunnelEventName, properties?: FunnelProperties) => {
+    logger.info(`[TELEMETRY] Funnel Event: ${eventName}`, properties);
+
+    if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', eventName, {
+            event_category: 'Funnel',
+            ...properties
         });
     }
 };

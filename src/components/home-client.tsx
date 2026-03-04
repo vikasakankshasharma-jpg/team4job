@@ -2,10 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, Bot, ShieldCheck, CreditCard } from "lucide-react";
+import { ArrowRight, Bot, ShieldCheck, CreditCard, MapPin, Briefcase, IndianRupee, Star, TrendingUp, CheckCircle, Clock } from "lucide-react";
+import { trackFunnelEvent } from '@/lib/analytics';
 import { Logo } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrustProofSection } from "@/components/landing/trust-proof";
 import { LanguageToggle } from "@/components/layout/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTranslations } from 'next-intl';
@@ -44,13 +46,13 @@ export default function HomeClient() {
                 <nav className="flex items-center gap-2 sm:gap-4">
                     <LanguageToggle />
                     <ThemeToggle />
-                    <Button variant="ghost" asChild className="sm:hidden px-2">
+                    <Button variant="ghost" asChild className="sm:hidden px-2" onClick={() => trackFunnelEvent('cta_click', { source: 'header_login_mobile' })}>
                         <Link href="/login?tab=login">{t('loginButton')}</Link>
                     </Button>
-                    <Button variant="secondary" asChild className="hidden sm:inline-flex">
+                    <Button variant="secondary" asChild className="hidden sm:inline-flex" onClick={() => trackFunnelEvent('cta_click', { source: 'header_login_desktop' })}>
                         <Link href="/login?tab=login">{t('loginButton')}</Link>
                     </Button>
-                    <Button asChild className="px-3 sm:px-4">
+                    <Button asChild className="px-3 sm:px-4" onClick={() => trackFunnelEvent('cta_click', { source: 'header_signup' })}>
                         <Link href="/login?tab=signup">{t('getStartedButton')}</Link>
                     </Button>
                 </nav>
@@ -69,12 +71,12 @@ export default function HomeClient() {
                             {t('heroDescription')}
                         </p>
                         <div className="flex flex-col sm:flex-row justify-center gap-4">
-                            <Button size="lg" asChild>
+                            <Button size="lg" asChild onClick={() => trackFunnelEvent('cta_click', { source: 'hero_primary' })}>
                                 <Link href="/login?tab=signup">
                                     {t('postJobButton')} <ArrowRight className="ml-2 h-5 w-5" />
                                 </Link>
                             </Button>
-                            <Button size="lg" variant="secondary" asChild>
+                            <Button size="lg" variant="secondary" asChild onClick={() => trackFunnelEvent('cta_click', { source: 'hero_secondary' })}>
                                 <Link href="/login?tab=signup">{t('findWorkButton')}</Link>
                             </Button>
                         </div>
@@ -150,6 +152,9 @@ export default function HomeClient() {
                     </div>
                 </section>
 
+                {/* Trust Proof Section */}
+                <TrustProofSection />
+
                 <section className="py-20 md:py-24 bg-primary text-primary-foreground">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
                         <h2 className="text-3xl font-bold mb-4">{t('ctaTitle')}</h2>
@@ -157,7 +162,7 @@ export default function HomeClient() {
                             {t('ctaDesc')}
                         </p>
                         <div className="flex justify-center gap-4">
-                            <Button size="lg" variant="secondary" asChild>
+                            <Button size="lg" variant="secondary" asChild onClick={() => trackFunnelEvent('cta_click', { source: 'footer_cta' })}>
                                 <Link href="/login?tab=signup">
                                     {t('ctaButton')}
                                 </Link>

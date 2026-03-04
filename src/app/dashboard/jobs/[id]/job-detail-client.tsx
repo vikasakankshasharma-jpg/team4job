@@ -662,15 +662,21 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     };
 
     // E2E Test Logic
-    const handleDirectConfirm = React.useCallback(async () => {
+    const handleDirectConfirm = React.useCallback(async (options?: { simulateError?: boolean }) => {
         const auth = getAuth();
         const token = await auth.currentUser?.getIdToken();
         const runId = id; // use params id
-        console.log('[E2E Client] handleDirectConfirm calling with jobID:', runId, 'Token present:', !!token);
+        console.log('[E2E Client] handleDirectConfirm calling with jobID:', runId, 'Token present:', !!token, 'Options:', options);
 
         if (!token) {
             console.log('[E2E Client] No token found!');
             return;
+        }
+
+        if (options?.simulateError) {
+            console.log('[E2E Client] Simulating payment error as requested');
+            toast({ title: "Test Mode: Simulated Error", description: "Simulation triggered successfully", variant: "destructive" });
+            throw new Error("Simulated Card Failure");
         }
 
         try {
@@ -685,8 +691,6 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             console.log('[E2E Client] Fund Failed:', e.response?.data || e.message);
             toast({ title: "Fund Failed", description: "Check logs", variant: "destructive" });
         }
-
-        // Removed redundant post-try toast to avoid confusion.
     }, [id, toast]);
 
     // E2E Shim: Expose function globally

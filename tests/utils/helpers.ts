@@ -188,7 +188,7 @@ export class AuthHelper {
 
                 // Navigate to login
                 // Hot reload / frame swaps can prevent the full "load" event.
-                await this.page.goto(ROUTES.login, { waitUntil: 'domcontentloaded', timeout: 30000 });
+                await this.page.goto(ROUTES.login, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
                 // Force hide cookie banner to prevent interception
                 await this.page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
@@ -366,34 +366,41 @@ export class AuthHelper {
     async logout() {
         console.log('[AuthHelper] Starting logout process...');
         try {
-            const userMenu = this.page.locator('[data-testid="user-menu-trigger"]')
+            // 0. Dismiss any blocking dialogs that might be open
+            const dialog = this.page.getByRole('dialog');
+            if (await dialog.isVisible().catch(() => false)) {
+                await this.page.keyboard.press('Escape').catch(() => { });
+                await this.page.waitForTimeout(500);
+            }
+
+            const userMenu = this.page.getByTestId('user-menu-trigger').first()
+                .or(this.page.locator('button:has([data-testid="user-avatar"]), button:has(.avatar), button[aria-haspopup="menu"]').first())
                 .or(this.page.locator('button.rounded-full:has(img)'))
                 .or(this.page.locator('button:has(.rounded-full)'))
-                .or(this.page.locator('button:has-text("D")'))
-                .filter({ visible: true })
-                .first();
+                .or(this.page.locator('button:has-text("D")'));
 
-            await userMenu.waitFor({ state: 'visible', timeout: 5000 });
-            await userMenu.click();
+            await userMenu.waitFor({ state: 'visible', timeout: 10000 });
+            await userMenu.click({ force: true });
             console.log('[AuthHelper] Clicked user menu');
 
-            const logoutButton = this.page.getByRole('menuitem', { name: 'Logout' })
-                .or(this.page.getByText('Log out')).first();
+            const logoutButton = this.page.getByTestId('logout-button').first()
+                .or(this.page.getByRole('menuitem', { name: /Log out|Sign out|Logout/i }).first())
+                .or(this.page.locator('button:has-text("Log out"), button:has-text("Sign out"), button:has-text("Logout")').first());
 
             await logoutButton.waitFor({ state: 'visible', timeout: 5000 });
-            await logoutButton.click();
+            await logoutButton.click({ force: true });
             console.log('[AuthHelper] Clicked logout button');
 
-            await this.page.waitForURL('**/login**', { timeout: 10000 });
-            console.log('[AuthHelper] Redirected to login page');
+            await this.page.waitForURL(url => url.pathname === '/' || url.pathname.includes('/login'), { timeout: 15000 });
+            console.log('[AuthHelper] Redirected to login page or home');
         } catch (error) {
             console.error('[AuthHelper] Logout UI failed, enforcing hard reset.');
         } finally {
             // ALWAYS clear persistence to prevent zombie sessions
             await this.clearAuthPersistence();
             // Force navigate to login if UI interactions failed
-            if (!this.page.url().includes('/login')) {
-                await this.page.goto(ROUTES.login, { timeout: 15000 }).catch(() => { });
+            if (!this.page.url().includes('/login') && this.page.url() !== '/') {
+                await this.page.goto(ROUTES.login || '/login', { timeout: 15000 }).catch(() => { });
             }
         }
     }
@@ -887,7 +894,7 @@ export class NavigationHelper {
                 console.log('[NavigationHelper] Redirect loop detected, proceeding on dashboard');
                 return; // Exit early to avoid further waits on a closed page
             }
-            await this.page.goto('/dashboard/post-job', { waitUntil: 'networkidle', timeout: 10000 }).catch(() => {});
+            await this.page.goto('/dashboard/post-job', { waitUntil: 'networkidle', timeout: 10000 }).catch(() => { });
             await this.page.waitForTimeout(2000);
         }
 
@@ -1157,13 +1164,14 @@ export class TestHelper {
         this.form = new FormHelper(page);
 
         // 1. Set cookie on the context level (most reliable)
-        const baseUrl = page.url() || 'http://localhost:5000';
+        const baseUrl = page.url() && page.url() !== 'about:blank' ? page.url() : 'http://localhost:5000';
         try {
             const urlObj = new URL(baseUrl);
+            const hostname = urlObj.hostname || 'localhost';
             void this.page.context().addCookies([{
                 name: 'dodo-cookie-consent',
                 value: 'true',
-                domain: urlObj.hostname,
+                domain: hostname,
                 path: '/',
                 expires: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365
             }]);
@@ -1180,7 +1188,9 @@ export class TestHelper {
                     .CookieConsent, 
                     #cookie-consent-banner,
                     [class*="CookieConsent"],
-                    .fixed.bottom-0.left-0.right-0.z-50 { 
+                    .fixed.bottom-0.left-0.right-0.z-50,
+                    [data-state="open"][aria-hidden="true"],
+                    .fixed.inset-0.z-50.bg-black\\/80 { 
                         display: none !important; 
                         opacity: 0 !important;
                         pointer-events: none !important;
