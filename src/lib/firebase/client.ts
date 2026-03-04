@@ -40,7 +40,7 @@ try {
     const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'ssr';
     const isActualLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
     const isStaging = currentHost.includes('dodo-beta');
-    const emulatorFlag = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+    const emulatorFlag = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' || process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
     const firestoreEmulatorFlag = process.env.NEXT_PUBLIC_USE_FIRESTORE_EMULATOR === 'true';
 
     console.log('[DEBUG-LIB] Host Check:', { currentHost, isActualLocalhost, isStaging, emulatorFlag });
