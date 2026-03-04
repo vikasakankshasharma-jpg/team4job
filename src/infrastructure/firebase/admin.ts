@@ -18,10 +18,10 @@ export function getAdminApp(): App {
     logger.debug(`[ADMIN-SDK] FIRESTORE_EMULATOR_HOST: ${process.env.FIRESTORE_EMULATOR_HOST}`);
     logger.debug(`[ADMIN-SDK] FIREBASE_AUTH_EMULATOR_HOST: ${process.env.FIREBASE_AUTH_EMULATOR_HOST}`);
 
-    // If an app is already initialized, return it
+    // If an app is already initialized, cache it locally and continue to ensure settings are verified
     if (getApps().length > 0) {
-        logger.debug('[ADMIN-SDK] Using already initialized app');
-        return getApps()[0];
+        app = getApps()[0];
+        logger.debug('[ADMIN-SDK] Using existing app instance');
     }
 
     // 0. Emulator-friendly init (no credentials required)
@@ -38,9 +38,11 @@ export function getAdminApp(): App {
         logger.info(`[ADMIN-SDK] FIRESTORE_EMULATOR_HOST: ${process.env.FIRESTORE_EMULATOR_HOST}`);
         logger.info(`[ADMIN-SDK] FIREBASE_AUTH_EMULATOR_HOST: ${process.env.FIREBASE_AUTH_EMULATOR_HOST}`);
 
-        app = initializeApp({
-            projectId: emulatorProjectId,
-        });
+        if (!app) {
+            app = initializeApp({
+                projectId: emulatorProjectId,
+            });
+        }
 
         // Connect to emulators explicitly
         if (process.env.FIRESTORE_EMULATOR_HOST) {
@@ -73,9 +75,11 @@ export function getAdminApp(): App {
     const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     if (serviceAccountEnv) {
         try {
-            app = initializeApp({
-                credential: cert(JSON.parse(serviceAccountEnv)),
-            });
+            if (!app) {
+                app = initializeApp({
+                    credential: cert(JSON.parse(serviceAccountEnv)),
+                });
+            }
             return app;
         } catch (error) {
             console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY.", error);
@@ -88,14 +92,16 @@ export function getAdminApp(): App {
         process.env.DO_FIREBASE_CLIENT_EMAIL &&
         process.env.DO_FIREBASE_PRIVATE_KEY
     ) {
-        const privateKey = process.env.DO_FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'); // Fix escaped newlines
-        app = initializeApp({
-            credential: cert({
-                projectId: process.env.DO_FIREBASE_PROJECT_ID,
-                clientEmail: process.env.DO_FIREBASE_CLIENT_EMAIL,
-                privateKey: privateKey,
-            })
-        });
+        if (!app) {
+            const privateKey = process.env.DO_FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'); // Fix escaped newlines
+            app = initializeApp({
+                credential: cert({
+                    projectId: process.env.DO_FIREBASE_PROJECT_ID,
+                    clientEmail: process.env.DO_FIREBASE_CLIENT_EMAIL,
+                    privateKey: privateKey,
+                })
+            });
+        }
         return app;
     }
 
