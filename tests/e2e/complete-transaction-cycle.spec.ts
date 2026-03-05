@@ -112,7 +112,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         // Post Job
         // Try multiple approaches to find and click verification checkbox
         let checkboxClicked = false;
-        
+
         // Try different selector strategies
         const checkboxSelectors = [
             page.getByText('I verify that these details are correct'),
@@ -121,7 +121,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
             page.locator('input[type="checkbox"]'),
             page.locator('[role="checkbox"]')
         ];
-        
+
         for (const selector of checkboxSelectors) {
             try {
                 await selector.first().click({ force: true, timeout: 2000 });
@@ -131,15 +131,15 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
                 continue;
             }
         }
-        
+
         if (!checkboxClicked) {
             test.skip(true, 'Verification checkbox not clickable – skipping entire test');
             return;
         }
-        
+
         // Wait a moment for the checkbox state to update
         await page.waitForTimeout(500);
-        
+
         await page.evaluate(() => {
             const overlays = [
                 '.firebase-emulator-warning',
@@ -155,6 +155,13 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         });
         const postButton = page.getByRole('button', { name: "Post Job" }).or(page.locator('button[type="submit"]')).or(page.getByTestId('post-job-button')).first();
         await postButton.click({ force: true });
+
+        // Handle the "Confirm Job Posting" dialog
+        const confirmDialog = page.getByRole('alertdialog', { name: 'Confirm Job Posting' });
+        await expect(confirmDialog).toBeVisible({ timeout: TIMEOUTS.short });
+        const confirmBtn = confirmDialog.getByRole('button', { name: 'Confirm & Save' });
+        await confirmBtn.click();
+
         // Wait for navigation to job detail page; if it fails, skip remaining steps
         try {
             await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });
@@ -454,7 +461,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
 
         // Verify "Review Submitted" toast/text
-        await expect(page.getByText('Review Submitted')).toBeVisible();
+        await expect(page.getByText('Review Submitted').first()).toBeVisible();
 
         // CRITICAL: Ensure persistence by verifying the Locked Card appears on Client
         // Using toPass because the realtime update might take a second to trigger the Card swap

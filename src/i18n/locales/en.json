@@ -1,4 +1,4 @@
-{
+﻿{
     "common": {
         "postJob": "Post Job",
         "dashboard": "Dashboard",
@@ -79,7 +79,17 @@
         "ctaButton": "Create Your Account",
         "footerRights": "Team4Job. All Rights Reserved.",
         "footerTerms": "Terms of Service",
-        "footerPrivacy": "Privacy Policy"
+        "footerPrivacy": "Privacy Policy",
+        "trustProof": {
+            "heading": "Built on Trust and Security",
+            "subheading": "We engineered our platform to remove risk, so you can focus on getting the job done right.",
+            "verifiedInstallersTitle": "100% Verified Installers",
+            "verifiedInstallersDesc": "Every installer undergoes strict Aadhar/PAN verification before they can place a bid.",
+            "escrowTitle": "Secure Escrow Payments",
+            "escrowDesc": "Funds are securely held in escrow and only released when you are 100% satisfied with the installation.",
+            "guaranteeTitle": "Platform Guarantee",
+            "guaranteeDesc": "Backed by our rapid dispute resolution process and robust community rating system."
+        }
     },
     "auth": {
         "brandName": "CCTV Job Connect",
@@ -191,10 +201,10 @@
         "experience": "How was your experience?",
         "category": "Category",
         "selectCategory": "Select topic",
-        "catBug": "ðŸ› Bug Report",
-        "catFeature": "💡 Feature Request",
-        "catImprovement": "🔧 Improvement",
-        "catOther": "ðŸ“ Other",
+        "catBug": "Ã°Å¸Ââ€º Bug Report",
+        "catFeature": "ðŸ’¡ Feature Request",
+        "catImprovement": "ðŸ”§ Improvement",
+        "catOther": "Ã°Å¸â€œÂ Other",
         "details": "Details",
         "detailsPlaceholder": "Tell us what happened or what you'd like to see...",
         "send": "Send Feedback",
@@ -354,7 +364,7 @@
         "optionOutdoor": "Outdoor Only",
         "optionBoth": "Both Indoor & Outdoor",
         "optionInstallerSuggest": "Let Installer Suggest",
-        "aiCompiling": "Generating job description…",
+        "aiCompiling": "Generating job descriptionâ€¦",
         "jobPreview": "Job Preview",
         "looksGood": "Looks good, post job",
         "editDescription": "Edit description",
@@ -593,8 +603,8 @@
         "applyNow": "Apply Now",
         "placeBid": "Place Bid",
         "verifyDetails": "I verify that these details are correct.",
-        "originalDescription": "Job Description (User Provided – {language})",
-        "compiledDescription": "Job Description (System Compiled – English)",
+        "originalDescription": "Job Description (User Provided â€“ {language})",
+        "compiledDescription": "Job Description (System Compiled â€“ English)",
         "noBidsYet": "No bids yet",
         "bidsReceived": "Bids Received",
         "awardJob": "Award Job",
@@ -660,7 +670,7 @@
         "loadFromTemplate": "Load from template...",
         "noTemplates": "No templates yet",
         "saveAsTemplateHelp": "Save this job as a template to reuse later",
-        "usedCount": "Used {count}Ã—",
+        "usedCount": "Used {count}Ãƒâ€”",
         "manageTemplates": "Manage Templates",
         "stepOfTotal": "Step {step} of {total}",
         "percentCompleted": "{percent}% Completed",

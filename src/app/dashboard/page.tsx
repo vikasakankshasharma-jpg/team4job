@@ -15,8 +15,6 @@ import { getUserIdFromSession } from '@/lib/auth-server';
 import { getDashboardStatsAction } from '@/app/actions/dashboard.actions';
 
 import { userService } from '@/domains/users/user.service';
-import { JobGiverServerView } from '@/components/dashboard/server/job-giver-view';
-import { InstallerServerView } from '@/components/dashboard/server/installer-view';
 
 export default async function DashboardPage() {
     const userId = await getUserIdFromSession();
@@ -44,30 +42,10 @@ export default async function DashboardPage() {
         );
     }
 
-    // Role-based Server Rendering
-    if (user.roles?.includes('Job Giver')) {
-        // Map domain User to UI User (lib/types)
-        const uiUser = {
-            ...user,
-        } as any; // Cast to any/User to avoid strict type mismatch on slight interface differences
-
-        return <JobGiverServerView user={uiUser} />;
-    }
-
-    if (user.roles?.includes('Installer')) {
-        // Map domain User to UI User (lib/types)
-        const uiUser = {
-            ...user,
-        } as any;
-
-        return <InstallerServerView user={uiUser} />;
-    }
-
-    // Fallback for other roles (Phase 3 can migrate them)
-    // We need to fetch formatted data for legacy DashboardClient if we want to avoid client waterfall?
-    // Or just let DashboardClient handle it for now to minimize risk.
-
-    // Legacy fetching for non-Job Giver roles:
+    // Fetch dashboard stats for the legacy client-side rendering path
+    // NOTE: JobGiverServerView and InstallerServerView are disabled due to
+    // "Functions cannot be passed to Client Components" serialization errors.
+    // Using the battle-tested DashboardClient as a stable fallback.
     let initialData = undefined;
     const result = await getDashboardStatsAction(userId!);
     if (result.success) {

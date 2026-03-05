@@ -29,7 +29,11 @@ export async function getDashboardStatsAction(userId: string) {
 
         const transactions = transactionsSnapshot.docs.map(doc => {
             const data = doc.data();
-            const mapDate = (d: any) => d?.toDate?.() || d;
+            const mapDate = (d: any) => {
+                if (!d) return null;
+                const date = d?.toDate?.() || (d instanceof Date ? d : new Date(d));
+                return date instanceof Date && !isNaN(date.getTime()) ? date.toISOString() : null;
+            };
             return {
                 id: doc.id,
                 ...data,
@@ -77,7 +81,8 @@ export async function getDashboardStatsAction(userId: string) {
             if (data.status === 'cancelled') jobGiverStats.cancelledJobs++;
         });
 
-        return {
+        // Serialize to strip all non-serializable Firestore objects (Timestamps, References, etc.)
+        return JSON.parse(JSON.stringify({
             success: true,
             data: {
                 transactions,
@@ -85,7 +90,7 @@ export async function getDashboardStatsAction(userId: string) {
                 jobGiverStats,
                 quickMetrics
             }
-        };
+        }));
 
     } catch (error: any) {
         logger.error('Error fetching dashboard stats', error);

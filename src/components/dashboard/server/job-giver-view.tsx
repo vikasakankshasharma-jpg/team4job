@@ -1,9 +1,6 @@
 
 import { Suspense } from "react";
 import { User } from "@/lib/types";
-import { calculateSpendingInsights } from "@/lib/services/spending-analytics"; // Wait, this is client service?
-// If calculateSpendingInsights uses "firebase/firestore", we can't import it in server component if it runs on import?
-// Actually we are NOT calling it here. We are importing components.
 
 import { JobGiverStatsWidget } from "@/components/dashboard/widgets/job-giver-stats";
 import { JobGiverChartsWidget } from "@/components/dashboard/widgets/job-giver-charts";
@@ -38,7 +35,7 @@ export async function JobGiverServerView({ user }: { user: User }) {
                 <ActionRequiredDashboard />
             </div>
 
-            <DashboardMetrics userId={user.id} user={user} metrics={quickMetrics} />
+            <DashboardMetrics userId={user.id} user={JSON.parse(JSON.stringify(user))} metrics={quickMetrics} />
 
             <Suspense fallback={<DashboardSkeleton />}>
                 <JobGiverStatsWidget userId={user.id} />
@@ -50,7 +47,7 @@ export async function JobGiverServerView({ user }: { user: User }) {
                 </Suspense>
 
                 <div className="space-y-6">
-                    <RecommendedInstallersCard userId={user.id} currentUser={user} />
+                    <RecommendedInstallersCard userId={user.id} currentUser={JSON.parse(JSON.stringify(user))} />
                     <SpendingInsightsCard userId={user.id} />
                 </div>
             </div>
