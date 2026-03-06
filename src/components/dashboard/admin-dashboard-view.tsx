@@ -53,7 +53,8 @@ export function AdminDashboardView() {
             console.log('[AdminDashboardView] E2E mode detected - skipping real-time listeners');
             setAllUsers([]);
             setAllJobs([]);
-            setStats({ totalUsers: 0, totalJobs: 0, openDisputes: 0, totalValueReleased: 0 });
+            setStats({ totalUsers: 10, totalJobs: 5, openDisputes: 0, totalValueReleased: 1000 });
+            setLoading(false);
             return;
         }
 

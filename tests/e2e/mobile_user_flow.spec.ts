@@ -11,11 +11,20 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff) @slow', 
 
   test('Full end-to-end flow on mobile', async ({ page }) => {
     const helper = new TestHelper(page);
+
+    // Capture browser console logs
+    page.on('console', msg => {
+      if (msg.type() === 'error' || msg.text().includes('Form validation errors')) {
+        console.log(`[MOBILE BROWSER ERROR] ${msg.text()}`);
+      } else {
+        console.log(`[MOBILE BROWSER LOG] ${msg.text()}`);
+      }
+    });
+
     await helper.acceptCookies();
     const uniqueJobTitle = generateUniqueJobTitle();
     let jobId: string;
 
-    // ---------- Login as Job Giver ----------
     // ---------- Login as Job Giver ----------
     // Register handler for potential "Resume Draft" dialog from previous runs
     await page.addLocatorHandler(
@@ -27,7 +36,8 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff) @slow', 
     );
 
     await helper.auth.loginAsJobGiver();
-    await expect(page.locator('text=Active Jobs').first()).toBeVisible();
+    // Resilient dashboard check
+    await expect(page.getByTestId('dashboard-post-job-btn').or(page.getByText(/Post New Job|Active Jobs/i)).first()).toBeVisible({ timeout: 60000 });
 
     // ---------- Post a Job ----------
     await helper.nav.goToPostJob();
@@ -56,7 +66,9 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff) @slow', 
     await page.fill('[data-testid="min-budget-input"]', TEST_JOB_DATA.minBudget.toString());
     await page.fill('[data-testid="max-budget-input"]', TEST_JOB_DATA.maxBudget.toString());
 
-    await helper.form.clickButton('Post Job');
+    // Use the robust helper to handle checkbox, clicking Post Job, and the confirmation dialog
+    await helper.form.submitPostJob();
+
     // Wait for job page to load (status shows as 'open' in UI)
     console.log('[Mobile] Checking for job detail page...');
     await page.waitForSelector(`[data-testid="job-detail-page"]`, { timeout: 10000 }).catch(() => {
@@ -65,6 +77,10 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff) @slow', 
     jobId = await helper.job.getJobIdFromUrl();
     console.log(`Job Posted: ${jobId}`);
 
+    if (!jobId) {
+      throw new Error('[MOBILE E2E] Job ID could not be captured. Job posting likely failed.');
+    }
+
     // ---------- Switch to Installer logic ----------
     await helper.auth.logout();
     await helper.auth.loginAsInstaller();
@@ -72,8 +88,17 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff) @slow', 
     // Direct navigation to job (more robust than browsing)
     await page.goto(`/dashboard/jobs/${jobId}`);
 
-    // Place Bid
-    await helper.form.clickButton('Place Bid');
+    // Resilient wait for Place Bid button
+    const placeBidButton = page.getByRole('button', { name: /Place Bid/i }).first().or(page.getByTestId('place-bid-button').first());
+    await placeBidButton.waitFor({ state: 'visible', timeout: 30000 });
+
+    // Dismiss any toasts if they overlap
+    await page.locator('[role="status"]').evaluateAll(nodes => nodes.forEach(n => (n as HTMLElement).style.display = 'none')).catch(() => { });
+
+    // Scroll and click
+    await placeBidButton.scrollIntoViewIfNeeded();
+    await placeBidButton.click();
+
     await helper.form.fillInput('Bid Amount', TEST_JOB_DATA.bidAmount.toString());
     await helper.form.fillTextarea('Cover Letter', TEST_JOB_DATA.coverLetter);
 

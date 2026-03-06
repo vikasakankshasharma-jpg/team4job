@@ -124,7 +124,7 @@ export function HeaderClient() {
     const renderContextualActions = () => {
         if (role === 'Job Giver') {
             return (
-                <Button size="sm" className="h-8 gap-1 rounded-full shadow-sm" asChild>
+                <Button size="sm" className="h-8 gap-1 rounded-full shadow-sm" asChild data-testid="dashboard-post-job-btn">
                     <Link href="/dashboard/post-job">
                         <PlusCircle className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">

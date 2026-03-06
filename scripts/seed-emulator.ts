@@ -31,7 +31,7 @@ async function seed() {
             });
             console.log("✅ Admin Auth User Created:", admin.uid);
         } catch (e: any) {
-            if (e.code === 'auth/email-already-in-use') {
+            if (e.code === 'auth/email-already-in-use' || e.code === 'auth/email-already-exists' || e.code === 'auth/uid-already-exists') {
                 console.log("ℹ️ Admin Auth User already exists");
             } else {
                 throw e;
@@ -59,7 +59,11 @@ async function seed() {
             });
             console.log("✅ Giver Auth User Created");
         } catch (e: any) {
-            if (e.code === 'auth/email-already-in-use') console.log("ℹ️ Giver Auth User already exists");
+            if (e.code === 'auth/email-already-in-use' || e.code === 'auth/email-already-exists' || e.code === 'auth/uid-already-exists') {
+                console.log("ℹ️ Giver Auth User already exists");
+            } else {
+                throw e;
+            }
         }
 
         await db.collection("users").doc("giver-uid").set({
@@ -82,7 +86,11 @@ async function seed() {
             });
             console.log("✅ Installer Auth User Created");
         } catch (e: any) {
-            if (e.code === 'auth/email-already-in-use') console.log("ℹ️ Installer Auth User already exists");
+            if (e.code === 'auth/email-already-in-use' || e.code === 'auth/email-already-exists' || e.code === 'auth/uid-already-exists') {
+                console.log("ℹ️ Installer Auth User already exists");
+            } else {
+                throw e;
+            }
         }
 
         await db.collection("users").doc("installer-uid").set({

@@ -877,6 +877,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     form.handleSubmit(onSubmit, (errors) => {
       // Invalid handler
       console.error("Form validation errors:", JSON.stringify(errors, null, 2));
+      console.error("verifyDetails value:", form.getValues("verifyDetails"));
       console.error("Current address values:", JSON.stringify(form.getValues("address"), null, 2));
       const firstErrorField = Object.keys(errors)[0];
       const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
@@ -1104,6 +1105,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
                       <Checkbox
+                        data-testid="gst-invoice-checkbox"
                         checked={field.value}
                         onCheckedChange={field.onChange}
                       />
@@ -1329,6 +1331,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
                     <Checkbox
+                      data-testid="verify-details-checkbox"
                       checked={field.value}
                       onCheckedChange={field.onChange}
                     />

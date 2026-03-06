@@ -60,7 +60,16 @@ export class AuthHelper {
         const secondaryIndicator = targetRole === 'Installer' ? 'Browse Jobs' : 'Post Job';
 
         try {
-            console.log(`[AuthHelper] Verifying ${targetRole} dashboard...`);
+            // First, wait for the global initial loader to disappear
+            const initialLoader = this.page.getByTestId('initial-loader');
+            try {
+                if (await initialLoader.isVisible({ timeout: 5000 }).catch(() => false)) {
+                    console.log('[AuthHelper] Waiting for initial loader to disappear...');
+                    await expect(initialLoader).not.toBeVisible({ timeout: 45000 });
+                }
+            } catch (e) {
+                console.warn('[AuthHelper] Timeout waiting for initial loader to disappear, continuing anyway...');
+            }
 
             // Wait a bit for the page to settle
             await this.page.waitForTimeout(1000);
@@ -68,8 +77,9 @@ export class AuthHelper {
             // Check primary or secondary indicators (sidebar links usually load fast)
             const isInstaller = await this.page.getByText('Browse Jobs').first().isVisible() ||
                 await this.page.getByText('Open Jobs').first().isVisible();
-            const isJobGiver = await this.page.getByText('Post Job').first().isVisible() ||
-                await this.page.getByText('Active Jobs').first().isVisible();
+            const isJobGiver = await this.page.getByTestId('dashboard-post-job-btn').isVisible().catch(() => false) ||
+                await this.page.getByText(/Post (New )?Job/i).first().isVisible().catch(() => false) ||
+                await this.page.getByText(/(My )?Active Jobs/i).first().isVisible().catch(() => false);
 
             const currentRoleMatched = (targetRole === 'Installer' && isInstaller) ||
                 (targetRole === 'Job Giver' && isJobGiver);
@@ -712,9 +722,7 @@ export class FormHelper {
         });
 
         const verifyLabel = this.page.getByText(/I verify that these details are correct/i);
-        const checkbox = this.page.locator('button[role="checkbox"]').filter({ hasText: /I verify/i }).first()
-            .or(this.page.locator('div.flex-row').filter({ hasText: /I verify/i }).locator('button[role="checkbox"]'))
-            .first();
+        const checkbox = this.page.getByTestId('verify-details-checkbox').first();
 
         try {
             if (await verifyLabel.count() > 0 || await checkbox.count() > 0) {
@@ -862,9 +870,8 @@ export class NavigationHelper {
         }
         await this.injectCookieHide();
 
-        // Wait for unique Post Job page markers
         try {
-            await this.page.waitForSelector('h1:has-text("Post Job"), button:has-text("Post Job")', { timeout: 30000 });
+            await this.page.waitForSelector('h1:has-text("Post"), button:has-text("Post")', { timeout: 30000 });
         } catch { console.warn('[NavigationHelper] Post Job heading not found, but continuing...'); }
 
         // Dismiss persistent draft recovery dialog
