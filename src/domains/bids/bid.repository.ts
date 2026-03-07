@@ -55,6 +55,30 @@ export class BidRepository {
     }
 
     /**
+     * Get a single bid by ID
+     */
+    async fetchById(jobId: string, bidId: string): Promise<Bid | null> {
+        try {
+            const db = getAdminDb();
+            const doc = await db
+                .collection(COLLECTIONS.JOBS)
+                .doc(jobId)
+                .collection('bids')
+                .doc(bidId)
+                .get();
+
+            if (!doc.exists) {
+                return null;
+            }
+
+            return { id: doc.id, ...doc.data() } as Bid;
+        } catch (error) {
+            logger.error('Failed to fetch bid by ID', error, { metadata: { jobId, bidId } });
+            throw error;
+        }
+    }
+
+    /**
      * Get all bids by an installer with pagination using collectionGroup
      * @param installerId - The installer user ID
      * @param limit - Number of bids per page (default 50)

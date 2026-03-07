@@ -4,6 +4,7 @@ import { CreatePaymentOrderInput, Transaction, PaymentStatus } from './payment.t
 import { paymentRepository } from './payment.repository';
 import { logger } from '@/infrastructure/logger';
 import { Timestamp } from 'firebase-admin/firestore';
+import { userRepository } from '../users/user.repository';
 
 /**
  * Payment Service - Business logic for payments
@@ -53,7 +54,7 @@ export class PaymentService {
                 }
             });
 
-            console.log('[DEBUG] Final Transaction before Repository:', JSON.stringify(transactionData, null, 2));
+            logger.info('Transaction data prepared', { metadata: { jobId: data.jobId, amount: transactionData.totalPaidByGiver } });
 
             const transactionId = await paymentRepository.create(transactionData);
 
@@ -62,13 +63,19 @@ export class PaymentService {
                 amount: totalPaidByGiver
             });
 
-            // Create Cashfree order (mock for now)
+            // Fetch real user data
+            const user = await userRepository.fetchById(data.userId);
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            // Create Cashfree order
             const order = await cashfreeClient.createOrder({
                 orderId,
                 orderAmount: totalPaidByGiver,
-                customerName: 'User', // TODO: Get from user data
-                customerEmail: 'user@example.com',
-                customerPhone: '9999999999',
+                customerName: user.name || 'User',
+                customerEmail: user.email || 'user@example.com',
+                customerPhone: user.mobile || '0000000000',
             });
 
             // Update transaction with order token
@@ -89,7 +96,11 @@ export class PaymentService {
     async verifyPayment(orderId: string): Promise<void> {
         try {
             // Verify with Cashfree
-            await cashfreeClient.verifyPayment(orderId);
+            const cashfreeResponse = await cashfreeClient.verifyPayment(orderId);
+
+            if (cashfreeResponse.status !== 'PAID' && cashfreeResponse.status !== 'SUCCESS') {
+                throw new Error(`Payment verification failed. Cashfree Status: ${cashfreeResponse.status}`);
+            }
 
             // Find transaction
             const transactionResult = await paymentRepository.findByOrderId(orderId);
@@ -102,6 +113,16 @@ export class PaymentService {
                 status: 'funded',
                 fundedAt: Timestamp.now() as any,
             });
+
+            // Data Aggregation: Update Installer's Projected Earnings
+            // We need to find the awarded installer for this job
+            const { jobRepository } = await import('../jobs/job.repository');
+            const job = await jobRepository.fetchById(transactionResult.data.jobId);
+            if (job?.awardedInstallerId) {
+                userRepository.incrementStats(job.awardedInstallerId, {
+                    projectedEarnings: transactionResult.data.payoutToInstaller
+                }).catch(e => logger.error('Failed to increment projectedEarnings', e));
+            }
 
             logger.userActivity(transactionResult.data.payerId, 'payment_verified', {
                 jobId: transactionResult.data.jobId,
@@ -122,7 +143,13 @@ export class PaymentService {
             const transaction = transactions.find(t => t.status === 'funded');
 
             if (!transaction) {
+                logger.warn('Release attempt on non-funded job', { jobId, installerId });
                 throw new Error('No funded transaction found for this job');
+            }
+
+            // Verify the transaction belongs to this job and amount matches
+            if (transaction.jobId !== jobId) {
+                throw new Error('Security violation: Transaction job ID mismatch');
             }
 
             // Create payout
@@ -149,7 +176,14 @@ export class PaymentService {
                 status: 'released',
                 releasedAt: Timestamp.now() as any,
                 payoutTransferId: transferId,
+                payeeId: installerId,
             });
+
+            // Data Aggregation: Transition Projected to Total Earnings
+            userRepository.incrementStats(installerId, {
+                projectedEarnings: -transaction.payoutToInstaller,
+                totalEarnings: transaction.payoutToInstaller
+            }).catch(e => logger.error('Failed to update earnings aggregation', e));
 
             logger.userActivity(installerId, 'funds_released', {
                 jobId,
@@ -159,6 +193,29 @@ export class PaymentService {
             logger.error('Failed to release funds', error, { metadata: { jobId } });
             throw error;
         }
+    }
+
+    /**
+     * Get escrow status for a job
+     */
+    async getEscrowStatus(jobId: string): Promise<{ status: 'none' | 'initiated' | 'funded' | 'released' | 'refunded'; amount?: number }> {
+        const transactions = await paymentRepository.findByJobId(jobId);
+        if (transactions.length === 0) return { status: 'none' };
+
+        // Prioritize funded/released statuses
+        if (transactions.some(t => t.status === 'released')) {
+            const tx = transactions.find(t => t.status === 'released')!;
+            return { status: 'released', amount: tx.amount };
+        }
+        if (transactions.some(t => t.status === 'funded')) {
+            const tx = transactions.find(t => t.status === 'funded')!;
+            return { status: 'funded', amount: tx.amount };
+        }
+        if (transactions.some(t => t.status === 'refunded')) {
+            return { status: 'refunded' };
+        }
+
+        return { status: 'initiated' };
     }
 
     /**
@@ -187,6 +244,17 @@ export class PaymentService {
                 refundedAt: Timestamp.now() as any,
                 refundTransferId: refundId,
             });
+
+            // Data Aggregation: Rollback Projected Earnings if it was funded
+            if (transaction.status === 'funded') {
+                const { jobRepository } = await import('../jobs/job.repository');
+                const job = await jobRepository.fetchById(transaction.jobId);
+                if (job?.awardedInstallerId) {
+                    userRepository.incrementStats(job.awardedInstallerId, {
+                        projectedEarnings: -transaction.payoutToInstaller
+                    }).catch(e => logger.error('Failed to rollback projectedEarnings', e));
+                }
+            }
 
             logger.adminAction('system', 'refund_processed', jobId, { reason, amount: transaction.totalPaidByGiver });
         } catch (error) {
@@ -223,6 +291,34 @@ export class PaymentService {
         } catch (error) {
             logger.error('Failed to fetch transaction', error, { transactionId });
             throw error;
+        }
+    }
+
+    /**
+     * Record payout success from webhook (TRANSFER_SUCCESS)
+     */
+    async recordPayoutSuccess(transferId: string): Promise<void> {
+        try {
+            // Find transaction by payoutTransferId
+            const transactionRecord = await paymentRepository.findByPayoutTransferId(transferId);
+            if (!transactionRecord) {
+                logger.warn('Payout success for unknown transferId', { transferId });
+                return;
+            }
+
+            if (transactionRecord.data.status === 'released') {
+                logger.info('Payout success confirmed by webhook', { transferId, transactionId: transactionRecord.id });
+                return;
+            }
+
+            await paymentRepository.update(transactionRecord.id, {
+                status: 'released',
+                releasedAt: transactionRecord.data.releasedAt || Timestamp.now() as any
+            });
+
+            logger.info('Transaction marked as released via payout webhook', { transferId });
+        } catch (error) {
+            logger.error('Failed to record payout success', error, { transferId });
         }
     }
 }

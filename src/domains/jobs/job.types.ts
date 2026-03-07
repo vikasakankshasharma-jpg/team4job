@@ -80,6 +80,7 @@ export interface Job {
     postedAt: Date | Timestamp;
     deadline: Date | Timestamp;
     jobStartDate?: Date | Timestamp;
+    fundedAt?: Date | Timestamp;
     completionTimestamp?: Date | Timestamp;
     paymentReleasedAt?: Date | Timestamp;
     isUrgent?: boolean;

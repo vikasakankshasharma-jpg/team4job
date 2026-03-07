@@ -24,7 +24,9 @@ export const jobClientService = {
                 }
             },
             (error) => {
-                console.error('Error in job subscription:', error);
+                if (process.env.NODE_ENV !== 'production') {
+                    console.error('Error in job subscription:', error);
+                }
                 onError(error);
             }
         );
@@ -42,7 +44,9 @@ export const jobClientService = {
             const fetchedBids = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             onUpdate(fetchedBids);
         }, (error) => {
-            console.error('Error in bids subscription:', error);
+            if (process.env.NODE_ENV !== 'production') {
+                console.error('Error in bids subscription:', error);
+            }
             onError(error);
         });
         return unsubscribe;

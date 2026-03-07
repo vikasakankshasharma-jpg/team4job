@@ -61,6 +61,18 @@ export class PaymentRepository {
             .get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
     }
+
+    async findByPayoutTransferId(transferId: string): Promise<{ id: string; data: Transaction } | null> {
+        const snapshot = await this.collection
+            .where("payoutTransferId", "==", transferId)
+            .limit(1)
+            .get();
+
+        if (snapshot.empty) return null;
+
+        const doc = snapshot.docs[0];
+        return { id: doc.id, data: { id: doc.id, ...doc.data() } as Transaction };
+    }
 }
 
 export const paymentRepository = new PaymentRepository();

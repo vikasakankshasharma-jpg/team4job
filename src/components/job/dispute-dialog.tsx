@@ -15,6 +15,9 @@ import { Job, User } from "@/lib/types";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FileUpload } from "@/components/ui/file-upload";
+import { useFirebase } from "@/hooks/use-user";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 interface DisputeDialogProps {
     job: Job;
@@ -43,7 +46,9 @@ export function DisputeDialog({
     const [isLoading, setIsLoading] = React.useState(false);
     const [reason, setReason] = React.useState("");
     const [description, setDescription] = React.useState("");
+    const [files, setFiles] = React.useState<File[]>([]);
     const { toast } = useToast();
+    const { storage } = useFirebase();
 
     const handleDispute = async () => {
         if (!reason || !description) {
@@ -53,7 +58,27 @@ export function DisputeDialog({
 
         setIsLoading(true);
         try {
-            const res = await raiseDisputeAction(job.id, user.id, reason, description);
+            let attachmentUrls: { fileName: string; fileUrl: string; fileType: string; }[] = [];
+
+            if (files.length > 0 && storage) {
+                const uploadPromises = files.map(async (file) => {
+                    const storageRef = ref(storage, `disputes/${job.id}/${Date.now()}-${file.name}`);
+                    const snapshot = await uploadBytes(storageRef, file);
+                    const downloadURL = await getDownloadURL(snapshot.ref);
+                    return { fileName: file.name, fileUrl: downloadURL, fileType: file.type };
+                });
+                attachmentUrls = await Promise.all(uploadPromises);
+            }
+
+            const res = await raiseDisputeAction(
+                job.id,
+                user.id,
+                reason,
+                description,
+                "Job Dispute",
+                attachmentUrls
+            );
+
             if (res.success) {
                 toast({
                     title: "Dispute Raised",
@@ -78,7 +103,7 @@ export function DisputeDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-destructive">
                         <ShieldAlert className="h-5 w-5" />
@@ -114,6 +139,11 @@ export function DisputeDialog({
                         />
                     </div>
 
+                    <div className="space-y-2">
+                        <Label>Evidence (Photos/Documents)</Label>
+                        <FileUpload onFilesChange={setFiles} maxFiles={5} />
+                    </div>
+
                     <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-800 flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                         <div>
@@ -127,7 +157,7 @@ export function DisputeDialog({
                     </div>
                 </div>
 
-                <DialogFooter className="gap-2 sm:gap-0">
+                <DialogFooter className="gap-2 sm:gap-0 sticky bottom-0 bg-background pt-2">
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
                     <Button onClick={handleDispute} disabled={isLoading} variant="destructive">
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

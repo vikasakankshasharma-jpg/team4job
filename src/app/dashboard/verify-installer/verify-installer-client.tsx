@@ -30,8 +30,11 @@ import { ShieldCheck, Loader2 } from "lucide-react";
 import {
   initiateAadharVerificationAction,
   confirmAadharVerificationAction,
-  verifyGstAction
+  verifyGstAction,
+  analyzeIDCardAction,
+  analyzeShopPhotoAction
 } from "@/app/actions/ai.actions";
+import { Camera, Sparkles, Wand2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -54,6 +57,8 @@ export default function VerifyInstallerClient() {
   const [step, setStep] = useState<VerificationStep>("enterAadhar");
   const [verificationId, setVerificationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [shopAudit, setShopAudit] = useState<{ recognizedEquipment: string[]; suggestedSkills: string[]; feedback: string } | null>(null);
   const { setHelp } = useHelp();
 
   // Zod schemas moved inside to use translations
@@ -246,6 +251,65 @@ export default function VerifyInstallerClient() {
   }
 
 
+  const handleIdCardScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsScanning(true);
+    setError(null);
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Content = (reader.result as string).split(',')[1];
+        const result = await analyzeIDCardAction(base64Content);
+
+        if (result.success && result.data) {
+          const { idNumber, cardType, name, message } = result.data;
+          if (idNumber) {
+            aadharForm.setValue("aadharNumber", idNumber, { shouldValidate: true });
+            toast({
+              title: `${cardType} Detected`,
+              description: `Successfully extracted ID number for ${name || 'cardholder'}.`,
+            });
+          } else {
+            toast({ title: "Scan Incomplete", description: message, variant: "destructive" });
+          }
+        } else {
+          toast({ title: "Scan Failed", description: result.error || "Could not read card.", variant: "destructive" });
+        }
+        setIsScanning(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Scan error", err);
+      setIsScanning(false);
+    }
+  };
+
+  const handleShopPhotoAudit = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsLoading(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Content = (reader.result as string).split(',')[1];
+        const result = await analyzeShopPhotoAction(base64Content);
+
+        if (result.success && result.data) {
+          setShopAudit(result.data);
+          toast({ title: "Smart Audit Complete", description: "Specialized equipment detected!" });
+        }
+        setIsLoading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setIsLoading(false);
+    }
+  };
+
   if (userLoading || user?.roles.includes('Installer')) {
     return (
       <div className="flex h-48 items-center justify-center">
@@ -326,7 +390,42 @@ export default function VerifyInstallerClient() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" disabled={isLoading} className="w-full">
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      OR USE QUICK SCAN
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="id-card-scan"
+                    onChange={handleIdCardScan}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-dashed"
+                    disabled={isScanning || isLoading}
+                    onClick={() => document.getElementById('id-card-scan')?.click()}
+                  >
+                    {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
+                    Scan Aadhar/PAN Card
+                  </Button>
+                  <p className="text-[10px] text-center text-muted-foreground">
+                    Powered by AI • Your data is processed securely
+                  </p>
+                </div>
+
+                <Button type="submit" disabled={isLoading || isScanning} className="w-full">
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {process.env.NEXT_PUBLIC_ENABLE_KYC_API === 'true' ? t('steps.aadhar.buttonApi') : t('steps.aadhar.buttonNext')}
                 </Button>
@@ -463,6 +562,72 @@ export default function VerifyInstallerClient() {
                     </FormItem>
                   )}
                 />
+
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 p-4 rounded-lg border border-blue-100 dark:border-slate-700">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm">
+                      <Sparkles className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <h4 className="font-semibold text-sm">Smart Equipment Audit</h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Upload a photo of your professional toolkit or shop. Our AI will detect your specialized gear and suggest premium profile tags.
+                  </p>
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="shop-photo-audit"
+                    onChange={handleShopPhotoAudit}
+                  />
+
+                  {shopAudit ? (
+                    <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
+                      <div className="bg-white/50 dark:bg-slate-900/50 p-2.5 rounded border border-blue-200/50 dark:border-slate-600">
+                        <p className="text-[11px] font-bold uppercase mb-1 text-blue-800 dark:text-blue-300">Tools Detected</p>
+                        <div className="flex flex-wrap gap-1">
+                          {shopAudit.recognizedEquipment.map(tool => (
+                            <span key={tool} className="text-[10px] bg-blue-100 dark:bg-blue-900 px-1.5 py-0.5 rounded text-blue-700 dark:text-blue-200">{tool}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <Alert className="bg-blue-600 border-none py-2 px-3">
+                        <Wand2 className="h-3.5 w-3.5 text-white" />
+                        <AlertDescription className="text-white text-[11px] leading-tight">
+                          {shopAudit.feedback}
+                        </AlertDescription>
+                      </Alert>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="w-full text-xs h-8"
+                        onClick={() => {
+                          const currentSkills = skillsForm.getValues().skills;
+                          const newSkills = [...new Set([...currentSkills, ...shopAudit.suggestedSkills])];
+                          skillsForm.setValue("skills", newSkills);
+                          toast({ title: "Profile Boosted", description: "Specialized skills added based on your gear!" });
+                        }}
+                      >
+                        Add Suggested Skills
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="w-full text-xs h-9"
+                      onClick={() => document.getElementById('shop-photo-audit')?.click()}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
+                      Analyze My Setup
+                    </Button>
+                  )}
+                </div>
+
                 <div className="flex gap-4">
                   <Button type="submit" disabled={isLoading} className="w-full">
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {t('steps.business.buttonFinish')}

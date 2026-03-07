@@ -73,9 +73,9 @@ export const verifyGst = defineLoggedFlow(
         outputSchema: VerifyGstOutputSchema,
     },
     async (input: z.infer<typeof VerifyGstInputSchema>) => {
-        // Mock for Testing
-        if (input.gstin === '22AAAAA0000A1Z5') {
-            console.log('[Cashfree KYC] Using mock GST verification.');
+        // Mock for Local E2E Testing
+        if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' && input.gstin === '22AAAAA0000A1Z5') {
+            console.log('[Cashfree KYC] Using mock GST verification (Emulator Mode).');
             return {
                 isValid: true,
                 legalName: 'MOCK GSTIN BUSINESS',

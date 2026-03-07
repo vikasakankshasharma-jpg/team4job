@@ -29,8 +29,9 @@ import { useJobSubscription } from "@/hooks/use-job-subscription";
 import { useBidsSubscription } from "@/hooks/use-bids-subscription";
 import { useFeatureFlag } from "@/lib/feature-flags-client";
 import axios from "axios";
-import { updateJobAction, approveJobAction } from "@/app/actions/job.actions";
+import { updateJobAction, approveJobAction, revealContactAction, awardJobAction, completeJobWithOtpAction } from "@/app/actions/job.actions";
 import { createPaymentOrderAction, createAddFundsOrderAction } from "@/app/actions/payment.actions";
+import { suggestPriceBoostAction } from "@/app/actions/ai.actions";
 
 
 import { moderateContentAction } from "@/app/actions/ai.actions";
@@ -145,7 +146,6 @@ import { InstallerCompletionSection } from "@/components/job/installer-completio
 import { JobGiverConfirmationSection } from "@/components/job/job-giver-confirmation-section";
 import { ReleasePaymentDialog } from "@/components/job/release-payment-dialog";
 import { DisputeDialog } from "@/components/job/dispute-dialog";
-import { completeJobWithOtpAction, awardJobAction } from "@/app/actions/job.actions";
 import { JobTimeline } from "@/components/job/job-timeline";
 import { useTranslations } from 'next-intl';
 
@@ -365,6 +365,70 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     }, [job, user, isJobGiver, role, realtimeJob]);
 
     const [isMilestoneDialogOpen, setIsMilestoneDialogOpen] = React.useState(false);
+    const [revealLoading, setRevealLoading] = React.useState(false);
+
+    // AI Market Insights State
+    const [marketAnalysis, setMarketAnalysis] = React.useState<any>(null);
+    const [isAnalyzingMarket, setIsAnalyzingMarket] = React.useState(false);
+
+    // Auto-trigger Market Analysis for Job Givers
+    React.useEffect(() => {
+        const analyzeMarket = async () => {
+            if (!isJobGiver || job.status !== 'open' || bids.length > 0 || marketAnalysis || isAnalyzingMarket) return;
+
+            // Check if job is at least 1 day old (simulated check)
+            const postedDate = toDate(job.postedAt);
+            const hoursSincePosted = (Date.now() - postedDate.getTime()) / (1000 * 60 * 60);
+
+            if (hoursSincePosted > 24 || process.env.NODE_ENV === 'development') {
+                setIsAnalyzingMarket(true);
+                try {
+                    const res = await suggestPriceBoostAction({
+                        jobTitle: job.title,
+                        jobCategory: job.jobCategory,
+                        pincode: job.address?.cityPincode || job.location,
+                        currentBudget: job.priceEstimate?.min || 0,
+                        isUrgent: job.isUrgent,
+                        bidCount: bids.length,
+                        daysSincePosted: Math.max(1, Math.floor(hoursSincePosted / 24))
+                    });
+                    if (res.success) {
+                        setMarketAnalysis(res.data);
+                    }
+                } catch (e) {
+                    console.error("Market analysis failed:", e);
+                } finally {
+                    setIsAnalyzingMarket(false);
+                }
+            }
+        };
+
+        analyzeMarket();
+    }, [isJobGiver, job, bids.length, marketAnalysis, isAnalyzingMarket]);
+
+    // Secure Contact Reveal Flow
+    React.useEffect(() => {
+        const fetchContact = async () => {
+            if (!job || !user || revealLoading || counterParty) return;
+
+            const secureStatuses = ['funded', 'in_progress', 'work_submitted', 'completed', 'disputed', 'In Progress', 'Completed', 'Pending Confirmation'];
+            if (secureStatuses.includes(job.status)) {
+                setRevealLoading(true);
+                try {
+                    const res = await revealContactAction(job.id, user.id);
+                    if (res.success && res.contact) {
+                        setCounterParty(res.contact as User);
+                    }
+                } catch (e) {
+                    console.error("Failed to reveal contact:", e);
+                } finally {
+                    setRevealLoading(false);
+                }
+            }
+        };
+
+        fetchContact();
+    }, [job?.status, user?.id, counterParty, revealLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
 
@@ -595,12 +659,14 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     // --- Subscriptions handled by Hooks ---
     // useJobSubscription handles job updates.
     // useBidsSubscription handles bids.
-    // Contact Reveal handled via Safe API or Server Component (TODO).
+    // Contact Reveal handled via `revealContactAction` server action.
 
 
     const handleJobUpdate = async (updatedFields: Partial<Job>) => {
         if (!job || !user) return;
-        console.log('[handleJobUpdate] Updating with fields:', Object.keys(updatedFields), 'awardedInstallerId=', updatedFields.awardedInstallerId);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('[handleJobUpdate] Updating with fields:', Object.keys(updatedFields), 'awardedInstallerId=', updatedFields.awardedInstallerId);
+        }
         try {
             const res = await updateJobAction(job.id, user.id, updatedFields as any);
             if (res.success) {
@@ -609,7 +675,9 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                 throw new Error(res.error);
             }
         } catch (error: any) {
-            console.error("[handleJobUpdate] Update failed:", error);
+            if (process.env.NODE_ENV !== 'production') {
+                console.error("[handleJobUpdate] Update failed:", error);
+            }
             toast({ title: tCommon('error'), description: t('notifications.updateFailed'), variant: "destructive" });
         }
     };
@@ -834,7 +902,17 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold overflow-wrap-anywhere" data-testid="job-title">{job.title}</h1>
                 <div className="flex flex-col gap-4 mt-2">
-                    <Badge variant="outline" className="w-fit" data-testid="job-status-badge" data-status={job.status}>{job.status}</Badge>
+                    <div className="flex items-center gap-2">
+                        <Badge variant={getStatusVariant(job.status)} className="w-fit px-3 py-1 text-sm font-semibold" data-testid="job-status-badge" data-status={job.status}>
+                            {job.status.replace(/_/g, ' ').toUpperCase()}
+                        </Badge>
+                        {job.status === 'funded' && (
+                            <Badge className="bg-green-600 text-white flex items-center gap-1.5 px-3 py-1 shadow-sm animate-in fade-in zoom-in duration-300">
+                                <ShieldCheck className="h-4 w-4" />
+                                <span className="font-bold tracking-tight uppercase text-xs">Platform Guaranteed</span>
+                            </Badge>
+                        )}
+                    </div>
                     <Card>
                         <CardContent className="pt-6 pb-2">
                             <JobTimeline status={job.status} userRole={isJobGiver ? 'Job Giver' : 'Installer'} />
@@ -890,6 +968,36 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                         <Card id="bids-section">
                             <CardHeader><CardTitle>{tJob('bidsTab')} ({bids.length})</CardTitle></CardHeader>
                             <CardContent>
+                                {isJobGiver && marketAnalysis && bids.length === 0 && (
+                                    <div className="mb-6 p-4 bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl shadow-sm relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
+                                            <TrendingUp className="h-20 w-20 text-indigo-900" />
+                                        </div>
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-2 text-indigo-900 mb-2">
+                                                <Sparkles className="h-5 w-5 animate-pulse" />
+                                                <h4 className="font-bold">AI Market Insight</h4>
+                                            </div>
+                                            <p className="text-sm text-indigo-800 mb-3 leading-relaxed">
+                                                {marketAnalysis.reasoning}
+                                            </p>
+                                            <div className="bg-white/60 backdrop-blur-sm p-3 rounded-lg border border-indigo-200/50 flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="bg-indigo-600 p-2 rounded-full text-white">
+                                                        <Zap className="h-4 w-4" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wider">Recommendation</p>
+                                                        <p className="text-sm font-bold text-indigo-950">{marketAnalysis.recommendedAction}</p>
+                                                    </div>
+                                                </div>
+                                                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
+                                                    Apply Boost
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 {bids.length === 0 ? <p className="text-muted-foreground">{t('noBidsYet')}</p> : (
                                     <div className="space-y-4">
                                         {bids.map(bid => (
@@ -1101,6 +1209,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                     )}
 
                                     {/* Secure Contact Reveal */}
+                                    {revealLoading && <Loader2 className="h-4 w-4 animate-spin mx-auto my-4" />}
                                     {counterParty && (
                                         <div className="space-y-4">
                                             <div className="border rounded-lg overflow-hidden">

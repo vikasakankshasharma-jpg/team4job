@@ -4,6 +4,7 @@ import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
 import { AIFeedback } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { headers } from 'next/headers';
+import { logger } from '@/lib/system-logger';
 
 export async function submitAIFeedback(feedbackData: Omit<AIFeedback, 'createdAt' | 'userId'> & { userId?: string }) {
     try {
@@ -49,10 +50,12 @@ export async function submitAIFeedback(feedbackData: Omit<AIFeedback, 'createdAt
             // metrics: ai_feedback_count + 1
         }
 
-        console.log(`[AIFeedback] Feedback recorded for ${data.flowName}`);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[AIFeedback] Feedback recorded for ${data.flowName}`);
+        }
 
     } catch (error) {
-        console.error("[AIFeedback] Failed to submit feedback:", error);
+        await logger.error(error, { action: 'submitAIFeedback', data: feedbackData });
         throw new Error("Failed to submit feedback");
     }
 }

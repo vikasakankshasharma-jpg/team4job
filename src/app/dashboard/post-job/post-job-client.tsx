@@ -338,6 +338,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     travelTip: form.getValues('travelTip'),
     directAwardInstallerId: form.getValues('directAwardInstallerId'),
     isGstInvoiceRequired: form.getValues('isGstInvoiceRequired'),
+    attachments: form.getValues('attachments')?.map(f => ({ fileName: f.name, fileType: f.type })) as any,
   });
 
   const { saveStatus, draftId, saveNow, setDraftId } = useAutoSave(
@@ -815,6 +816,13 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
 
         if (result.success && result.jobId) {
           setIsSubmitted(true);
+
+          // Clear Draft after success
+          if (draftId && user && db) {
+            console.log("Cleaning up draft:", draftId);
+            deleteDraft(db, user.id, draftId).catch(err => console.error("Failed to delete draft after submission", err));
+          }
+
           const targetUrl = `/dashboard/jobs/${result.jobId}`;
 
           toast({

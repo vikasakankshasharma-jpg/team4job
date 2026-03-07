@@ -3,6 +3,7 @@ import { disputeRepository } from './dispute.repository';
 import { CreateDisputeInput, Dispute, DisputeMessage } from './dispute.types';
 import { logger } from '@/infrastructure/logger';
 import { jobService } from '../jobs/job.service';
+import { Role } from '@/lib/types';
 
 export class DisputeService {
     async createDispute(input: CreateDisputeInput): Promise<string> {
@@ -29,16 +30,17 @@ export class DisputeService {
         }
     }
 
-    async getDispute(id: string, userId: string): Promise<Dispute> {
+    async getDispute(id: string, userId: string, userRole?: Role): Promise<Dispute> {
         const dispute = await disputeRepository.fetchById(id);
         if (!dispute) throw new Error('Dispute not found');
 
         // Check permissions: requester, parties, or admin/support
-        // For now, simple check
-        if (dispute.requesterId !== userId && dispute.parties?.jobGiverId !== userId && dispute.parties?.installerId !== userId) {
-            // TODO: check for Admin role via UserService
-            // For now, throw
-            // throw new Error('Unauthorized access to dispute');
+        const isRequester = dispute.requesterId === userId;
+        const isParty = dispute.parties?.jobGiverId === userId || dispute.parties?.installerId === userId;
+        const isAdmin = userRole === 'Admin' || userRole === 'Support Team';
+
+        if (!isRequester && !isParty && !isAdmin) {
+            throw new Error('Unauthorized access to dispute');
         }
 
         return dispute;

@@ -1,6 +1,14 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, initializeFirestore, memoryLocalCache, getFirestore as getFirestoreDefault, connectFirestoreEmulator } from 'firebase/firestore';
+import {
+    getFirestore,
+    initializeFirestore,
+    memoryLocalCache,
+    persistentLocalCache,
+    persistentMultipleTabManager,
+    getFirestore as getFirestoreDefault,
+    connectFirestoreEmulator
+} from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { logger } from '@/infrastructure/logger';
 
@@ -40,8 +48,17 @@ try {
             db = getFirestoreDefault(app);
         }
     } else {
-        logger.info('[Firebase Client] Initializing Firestore with DEFAULT PERSISTENCE');
-        db = getFirestoreDefault(app);
+        logger.info('[Firebase Client] Initializing Firestore with PERSISTENT MULTI-TAB CACHE');
+        try {
+            db = initializeFirestore(app, {
+                localCache: persistentLocalCache({
+                    tabManager: persistentMultipleTabManager()
+                })
+            });
+        } catch (e) {
+            logger.warn('[Firebase Client] Failed to initialize persistent cache, falling back to default:', { error: e });
+            db = getFirestoreDefault(app);
+        }
     }
 
     storage = getStorage(app);

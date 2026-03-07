@@ -4,11 +4,13 @@ import { jobRepository } from './job.repository';
 import { jobRules } from './job.rules';
 import { Job, JobStatus, CreateJobInput, JobFilters, JobStats, InstallerStats } from './job.types'; // Updated imports
 import { logger } from '@/infrastructure/logger';
-import { Role } from '@/lib/types';
+import { Role, User } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { paymentService } from '../payments/payment.service';
 import { Timestamp } from 'firebase-admin/firestore';
 import { aiLearningService } from '@/ai/services/ai-learning.service';
+import { userRepository } from '../users/user.repository';
+import { emailService } from '@/lib/email/email-service';
 
 /**
  * Job Service - Business logic for job management
@@ -46,9 +48,12 @@ export class JobService {
 
             logger.userActivity(userId, 'job_created', { jobId, title: data.title });
 
+            // Increment Job Giver stats
+            userRepository.incrementStats(userId, { activeJobs: 1 }).catch(e => logger.error('Failed to increment activeJobs', e));
+
             // AI Learning Linkage (Async, don't block)
-            aiLearningService.linkLogToEntity(userId, jobId, 'price_estimate').catch(err => console.error(err));
-            aiLearningService.linkLogToEntity(userId, jobId, 'time_estimate').catch(err => console.error(err));
+            aiLearningService.linkLogToEntity(userId, jobId, 'price_estimate').catch(err => logger.error('AI linkage failed (price_estimate)', err));
+            aiLearningService.linkLogToEntity(userId, jobId, 'time_estimate').catch(err => logger.error('AI linkage failed (time_estimate)', err));
 
             return jobId;
         } catch (error: any) {
@@ -149,15 +154,23 @@ export class JobService {
     /**
      * Get single job details
      */
-    async getJobById(jobId: string, userId: string): Promise<Job> {
+    async getJobById(jobId: string, userId: string, userRole?: Role): Promise<Job> {
         const job = await jobRepository.fetchById(jobId);
         if (!job) {
             throw new Error('Job not found');
         }
 
-        // TODO: Check visibility permissions
-        // Public if status is 'open'
-        // Otherwise only visible to jobGiver, awardedInstaller, and admins
+        // Check visibility permissions
+        const isPublic = ['open', 'Open for Bidding'].includes(job.status);
+        const ownerId = job.jobGiverId || (typeof job.jobGiver === 'string' ? job.jobGiver : job.jobGiver?.id);
+        const isOwner = ownerId === userId;
+        const isAwardee = job.awardedInstallerId === userId;
+        const isAdmin = userRole === 'Admin' || userRole === 'Support Team';
+        const isBidder = job.bidderIds?.includes(userId);
+
+        if (!isPublic && !isOwner && !isAwardee && !isAdmin && !isBidder) {
+            throw new Error('You do not have permission to view this job');
+        }
 
         return job;
     }
@@ -209,9 +222,25 @@ export class JobService {
             acceptanceDeadline: acceptanceDeadline,
         };
 
-        console.log(`[JobService.awardJob] Awarding job ${jobId} to ${installerId}. Updates:`, JSON.stringify(updates));
+        logger.info('Awarding job', { jobId, installerId, updates: Object.keys(updates) });
 
         await jobRepository.update(jobId, updates);
+
+        // Increment Installer stats (Awarded/Won)
+        userRepository.incrementStats(installerId, { jobsWon: 1 }).catch(e => logger.error('Failed to increment jobsWon', e));
+
+        // Send Job Awarded Email
+        userRepository.fetchById(installerId).then(installer => {
+            if (installer) {
+                emailService.sendJobAwardedEmail({
+                    to: installer.email,
+                    userName: installer.name,
+                    jobTitle: job.title,
+                    jobLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:5000'}/dashboard/jobs/${jobId}`
+                });
+            }
+        }).catch(e => logger.error('Award email fetch failed', e));
+
         logger.info(`Job ${jobId} awarded to ${installerId} by ${userId}`);
     }
 
@@ -269,6 +298,21 @@ export class JobService {
             `Accepted bid from ${installerId}`
         );
 
+        // Increment Installer stats (Awarded/Won)
+        userRepository.incrementStats(installerId, { jobsWon: 1 }).catch(e => logger.error('Failed to increment jobsWon', e));
+
+        // Send Job Awarded Email
+        userRepository.fetchById(installerId).then(installer => {
+            if (installer) {
+                emailService.sendJobAwardedEmail({
+                    to: installer.email,
+                    userName: installer.name,
+                    jobTitle: job.title,
+                    jobLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:5000'}/dashboard/jobs/${jobId}`
+                });
+            }
+        }).catch(e => logger.error('Award email fetch failed', e));
+
         logger.userActivity(userId, 'bid_accepted', { jobId, bidId, installerId });
     }
 
@@ -321,11 +365,13 @@ export class JobService {
         }
 
         if (job.jobGiverId !== userId) {
-            throw new Error('Not authorized');
+            throw new Error('Not authorized to fund this job');
         }
 
-        if (!jobRules.canTransitionTo(job.status, 'funded')) {
-            throw new Error(`Cannot fund job in ${job.status} status`);
+        // Validate state transition
+        const canFund = job.status === 'bid_accepted' || job.status === 'Pending Funding';
+        if (!canFund) {
+            throw new Error(`Cannot fund job in current status: ${job.status}`);
         }
 
         const startOtp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -333,10 +379,11 @@ export class JobService {
 
         await jobRepository.update(jobId, {
             startOtp,
-            completionOtp
+            completionOtp,
+            fundedAt: new Date(),
         });
 
-        await jobRepository.updateStatus(jobId, 'Pending Funding', userId, 'Job funded');
+        await jobRepository.updateStatus(jobId, 'funded', userId, 'Job successfully funded by Giver');
         logger.userActivity(userId, 'job_funded', { jobId });
     }
 
@@ -392,9 +439,6 @@ export class JobService {
     }
 
     /**
-     * Mark job as complete
-     */
-    /**
      * Mark job as complete using OTP (Installer flows)
      */
     async completeJobWithOtp(jobId: string, userId: string, otp: string, attachments: any[] = []): Promise<void> {
@@ -413,9 +457,6 @@ export class JobService {
         }
 
         // Release Funds
-        // Only release if funded?
-        // paymentService.releaseFunds handles checks.
-        // We need installerId (payee).
         const installerId = userId;
         await paymentService.releaseFunds(jobId, installerId);
 
@@ -423,32 +464,36 @@ export class JobService {
         await jobRepository.update(jobId, {
             completionTimestamp: new Date(),
             status: 'Completed',
-            // attachments: FieldValue.arrayUnion(...attachments) // Handled by repository if supported, or basic update
-            // Using generic update:
             ...(attachments.length > 0 ? { attachments: FieldValue.arrayUnion(...attachments) as any } : {}),
             completionOtp: FieldValue.delete() as any
         });
 
         await jobRepository.updateStatus(jobId, 'Completed', userId, 'Job marked complete with OTP');
+
+        // Data Aggregation: Update Stats
+        const jobGiverId = job.jobGiverId;
+        userRepository.incrementStats(jobGiverId, { activeJobs: -1, completedJobs: 1 });
+
+        // Find amount for installer earnings
+        const finalBid = job.bids?.find(b => (typeof b.installer === 'string' ? b.installer : b.installer?.id) === installerId);
+        const amount = finalBid?.amount || 0;
+        userRepository.incrementStats(installerId, { activeJobs: -1, completedJobs: 1, totalEarnings: amount });
+
         logger.userActivity(userId, 'job_completed', { jobId });
 
         // AI Learning: Record actuals
         try {
-            // Calculate duration
             const workStartedAt: any = job.workStartedAt;
             const startTime = workStartedAt?.toDate ? workStartedAt.toDate() : new Date(workStartedAt);
             const endTime = new Date();
             const durationHours = !isNaN(startTime.getTime()) ? (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60) : 0;
 
-            // Find price (from accepted bid)
-            // The userId here is the Installer.
             const acceptedBid = job.bids.find(b => {
                 const bInstallerId = typeof b.installer === 'string' ? b.installer : (b.installer as any)?.id || b.installerId;
                 return bInstallerId === userId;
             });
             const finalPrice = acceptedBid?.amount || 0;
 
-            // Update outcomes (fire and forget)
             aiLearningService.updateOutcome(jobId, 'price_estimate', { success: true, actualValue: finalPrice });
             aiLearningService.updateOutcome(jobId, 'time_estimate', { success: true, actualValue: durationHours });
         } catch (e) {
@@ -470,27 +515,21 @@ export class JobService {
         const installerId = job.awardedInstallerId || (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : job.awardedInstaller?.id!);
         await paymentService.releaseFunds(jobId, installerId);
 
-        // Generate Invoice (Simplified)
-        // TODO: Move to InvoiceService
-        const invoiceData = {
-            id: `INV-${jobId.slice(-6).toUpperCase()}-${Date.now().toString().slice(-4)}`,
-            jobId,
-            jobTitle: job.title,
-            date: Timestamp.now(),
-            totalAmount: 0 // Should calculate? API calculated it. For now assume PaymentService logic handles transaction truth.
-            // We need to fetch Transaction to get amounts for Invoice.
-            // But JobService shouldn't ideally depend on Payment implementation details too deeply.
-            // Keeping it simple: Just mark completed. Invoice can be generated/fetched dynamically or async.
-        };
-
         await jobRepository.update(jobId, {
             status: 'Completed',
             completionTimestamp: new Date(),
             paymentReleasedAt: new Date(),
-            // invoice: invoiceData // API saved it.
         });
 
         await jobRepository.updateStatus(jobId, 'Completed', userId, 'Job approved by Giver');
+
+        // Data Aggregation: Update Stats
+        userRepository.incrementStats(userId, { activeJobs: -1, completedJobs: 1 });
+
+        const winningBid = job.bids?.find(b => (typeof b.installer === 'string' ? b.installer : b.installer?.id) === installerId);
+        const amount = winningBid?.amount || 0;
+        userRepository.incrementStats(installerId, { activeJobs: -1, completedJobs: 1, totalEarnings: amount });
+
         logger.userActivity(userId, 'job_approved', { jobId });
 
         // AI Learning: Record actuals (for manual approval flow)
@@ -500,9 +539,6 @@ export class JobService {
             const endTime = new Date();
             const durationHours = !isNaN(startTime.getTime()) ? (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60) : 0;
 
-            // For price, use the invoice total or accepted bid
-            const acceptedBid = job.bids.find(b => b.installerId === job.awardedInstallerId || b.id === job.awardedInstallerId /* sloppy match logic from service */);
-            // Better: use job.awardedInstallerId to find bid
             const winningBid = job.bids.find(b => {
                 const bInstallerId = typeof b.installer === 'string' ? b.installer : (b.installer as any)?.id || b.installerId;
                 return bInstallerId === job.awardedInstallerId;
@@ -664,26 +700,21 @@ export class JobService {
         pendingReviews: number;
         favoriteInstallers: number;
     }> {
-        // Calculate date 90 days ago
         const ninetyDaysAgo = new Date();
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
         const jobs = await jobRepository.fetchByJobGiverSince(userId, ninetyDaysAgo);
 
-        // 1. Average Bids Per Job
         const jobsWithBids = jobs.filter(job => job.bids && job.bids.length > 0);
         const totalBids = jobsWithBids.reduce((sum, job) => sum + (job.bids?.length || 0), 0);
         const avgBidsPerJob = jobsWithBids.length > 0 ? Number((totalBids / jobsWithBids.length).toFixed(1)) : 0;
 
-        // 2. Average Time to First Bid
         const avgTimeToFirstBid = "~";
 
-        // 3. Pending Reviews (Completed jobs without ratings)
         const pendingReviews = jobs.filter(
             job => (job.status === "Completed" || job.status === "completed") && !job.installerReview
         ).length;
 
-        // 4. Favorite Installers - This should be fetched via User Domain, returning 0 as placeholder for service isolation
         const favoriteInstallers = 0;
 
         return {
@@ -693,6 +724,7 @@ export class JobService {
             favoriteInstallers
         };
     }
+
     /**
      * Get unique installer IDs that a job giver has worked with (completed jobs)
      */
@@ -707,6 +739,43 @@ export class JobService {
         });
 
         return Array.from(installerIds);
+    }
+
+    /**
+     * Securely fetch contact details of the other party
+     */
+    async getCounterParty(jobId: string, userId: string): Promise<Partial<User> | null> {
+        const job = await jobRepository.fetchById(jobId);
+        if (!job) throw new Error('Job not found');
+
+        // Check if job is in a state where contacts can be revealed (funded or later)
+        const revealableStatuses: JobStatus[] = ['funded', 'in_progress', 'work_submitted', 'completed', 'disputed', 'In Progress', 'Completed', 'Pending Confirmation'];
+        if (!revealableStatuses.includes(job.status)) {
+            return null;
+        }
+
+        const isJobGiver = job.jobGiverId === userId;
+        const installerId = job.awardedInstallerId || (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : job.awardedInstaller?.id);
+        const isInstaller = installerId === userId;
+
+        if (!isJobGiver && !isInstaller) {
+            throw new Error('Not authorized to view contacts for this job');
+        }
+
+        const targetId = isJobGiver ? installerId : job.jobGiverId;
+        if (!targetId) return null;
+
+        const targetUser = await userRepository.fetchById(targetId);
+        if (!targetUser) return null;
+
+        return {
+            id: targetUser.id,
+            name: targetUser.name,
+            email: targetUser.email,
+            mobile: targetUser.mobile,
+            avatarUrl: targetUser.avatarUrl,
+            roles: targetUser.roles
+        };
     }
 }
 

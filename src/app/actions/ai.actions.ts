@@ -165,6 +165,9 @@ export async function generateCCTVJobFromImageAction(imageBase64: string): Promi
 }
 
 import { processCCTVVoiceFlow } from '@/ai/flows/process-cctv-voice';
+import { analyzeIDCardFlow } from '@/ai/flows/analyze-id-card';
+import { analyzeShopPhotoFlow } from '@/ai/flows/analyze-shop-photo';
+import { analyzeMarketFlow } from '@/ai/flows/analyze-market';
 
 /**
  * Server Action for CCTV Job Generation from Voice
@@ -175,6 +178,72 @@ export async function generateCCTVJobFromVoiceAction(transcript: string): Promis
         return { success: true, data: result };
     } catch (error: any) {
         console.error("Error generating CCTV job from voice:", error);
+        return { success: false, error: formatFriendlyError(error) };
+    }
+}
+
+/**
+ * Server Action for ID Card Analysis (Aadhar/PAN OCR)
+ */
+export async function analyzeIDCardAction(imageBase64: string): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+        const result = await analyzeIDCardFlow({ imageBase64 });
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("Error analyzing ID card:", error);
+        return { success: false, error: formatFriendlyError(error) };
+    }
+}
+
+/**
+ * Server Action for Shop/Equipment Photo Analysis
+ */
+export async function analyzeShopPhotoAction(imageBase64: string): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+        const result = await analyzeShopPhotoFlow({ imageBase64 });
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("Error analyzing shop photo:", error);
+        return { success: false, error: formatFriendlyError(error) };
+    }
+}
+
+/**
+ * Server Action for Market Analysis and Price Boosting Suggestions
+ */
+export async function suggestPriceBoostAction(input: {
+    jobTitle: string;
+    jobCategory: string;
+    pincode: string;
+    currentBudget: number;
+    isUrgent?: boolean;
+    bidCount: number;
+    daysSincePosted: number;
+}): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+        const result = await analyzeMarketFlow(input);
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("Error suggesting price boost:", error);
+        return { success: false, error: formatFriendlyError(error) };
+    }
+}
+
+import { aiSupportFlow } from '@/ai/flows/ai-support';
+
+/**
+ * Server Action for AI Support Bot
+ */
+export async function aiSupportAction(input: {
+    message: string;
+    history?: { role: 'user' | 'model'; content: string }[];
+    userId: string;
+}): Promise<{ success: boolean; data?: { response: string }; error?: string }> {
+    try {
+        const result = await aiSupportFlow(input);
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("Error in AI Support Bot:", error);
         return { success: false, error: formatFriendlyError(error) };
     }
 }

@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import axios from 'axios';
 import { FileUpload } from "@/components/ui/file-upload";
+import { postDisputeMessageAction, updateDisputeStatusAction } from "@/app/actions/job.actions";
 
 const getStatusVariant = (status: Dispute['status']) => {
   switch (status) {
@@ -206,7 +207,7 @@ export default function DisputeDetailPage() {
 
     if (attachments.length > 0) {
       const uploadPromises = attachments.map(async (file) => {
-        const storageRef = ref(storage, `disputes/${id}/${file.name}`);
+        const storageRef = ref(storage, `disputes/${id}/${Date.now()}-${file.name}`);
         const snapshot = await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(snapshot.ref);
         return { fileName: file.name, fileUrl: downloadURL, fileType: file.type };
@@ -214,32 +215,44 @@ export default function DisputeDetailPage() {
       attachmentUrls = await Promise.all(uploadPromises);
     }
 
-    const message: DisputeMessage = {
-      authorId: user.id,
-      authorRole: role,
-      content: newMessage,
-      timestamp: new Date(),
-      attachments: attachmentUrls,
-    };
-
-    await updateDoc(doc(db, "disputes", id), {
-      messages: arrayUnion(message)
-    });
-    setDispute(prev => prev ? { ...prev, messages: [...prev.messages, message] } : null);
-
-    setNewMessage("");
-    setAttachments([]);
+    const res = await postDisputeMessageAction(id, user.id, newMessage, role, attachmentUrls);
+    if (res.success) {
+      // Refresh local state if needed (or rely on real-time but we aren't using onSnapshot here currently)
+      // For simplicity we add to local state
+      const message: DisputeMessage = {
+        authorId: user.id,
+        authorRole: role,
+        content: newMessage,
+        timestamp: new Date(),
+        attachments: attachmentUrls,
+      };
+      setDispute(prev => prev ? { ...prev, messages: [...prev.messages, message] } : null);
+      setNewMessage("");
+      setAttachments([]);
+    } else {
+      toast({ title: "Failed to post message", description: res.error, variant: "destructive" });
+    }
     setIsSubmitting(false);
   };
 
-  const handleResolveDispute = async () => {
-    await handleUpdateDispute({ status: 'Resolved', resolvedAt: new Date() });
-    toast({ title: "Dispute Resolved", description: "This case is now closed." });
+  const handleResolveDispute = async (resolution?: string) => {
+    const res = await updateDisputeStatusAction(id, user.id, 'Resolved', resolution);
+    if (res.success) {
+      setDispute(prev => prev ? { ...prev, status: 'Resolved', resolvedAt: new Date(), resolution: resolution || prev.resolution } : null);
+      toast({ title: "Dispute Resolved", description: "This case is now closed." });
+    } else {
+      toast({ title: "Error", description: res.error, variant: "destructive" });
+    }
   }
 
   const handleReviewDispute = async () => {
-    await handleUpdateDispute({ status: 'Under Review', handledBy: user.id });
-    toast({ title: "Dispute Under Review", description: "The case is now marked for active review." });
+    const res = await updateDisputeStatusAction(id, user.id, 'Under Review');
+    if (res.success) {
+      setDispute(prev => prev ? { ...prev, status: 'Under Review', handledBy: user.id } : null);
+      toast({ title: "Dispute Under Review", description: "The case is now marked for active review." });
+    } else {
+      toast({ title: "Error", description: res.error, variant: "destructive" });
+    }
   }
 
   const handleRefund = async () => {
@@ -272,12 +285,7 @@ export default function DisputeDetailPage() {
 
   const handleWithdrawDispute = async () => {
     if (!confirm("Are you sure you want to withdraw this dispute? This will close the ticket.")) return;
-    await handleUpdateDispute({
-      status: 'Resolved',
-      resolvedAt: new Date(),
-      resolution: 'Withdrawn by Requester'
-    });
-    toast({ title: "Dispute Withdrawn", description: "The ticket has been closed." });
+    await handleResolveDispute('Withdrawn by Requester');
   };
 
   const handleReleaseFunds = async () => {
@@ -535,41 +543,29 @@ export default function DisputeDetailPage() {
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                           <Button variant="destructive" onClick={async () => {
-                            // Option A: Cancel Job (Refund Giver)
-                            // Logic: 1. Refund logic (if funded). 2. Job status -> Cancelled. 3. Dispute -> Resolved.
-                            if (transaction?.status === 'funded') {
+                            if (transaction?.status === 'funded' || transaction?.status === 'disputed') {
                               await handleRefund();
                             }
-                            await handleUpdateDispute({ status: 'Resolved', resolvedAt: new Date(), resolution: 'Job Cancelled & Refunded' });
-                            // We also need to update the Job Status here ideally, but we don't have direct handleJobUpdate prop here.
-                            // We can assume the API/Backend flows or we do a direct db update if permission allows.
-                            // For this MVP, we will rely on the Refunds triggering job updates or manual cleanup, 
-                            // BUT the plan said to update Job Status. 
-                            // Let's at least mark the dispute clearly.
-                            // NOTE: Ideally we should update the Job doc too.
+                            await handleResolveDispute('Job Cancelled & Refunded');
                             if (dispute.jobId) {
                               await updateDoc(doc(db, "jobs", dispute.jobId), { status: 'Cancelled' });
                             }
-                            toast({ title: "Resolved", description: "Job Cancelled and Dispute Resolved." });
                           }}>
                             Option A: Cancel Job & Refund Giver
                           </Button>
                           <Button className="bg-green-600 hover:bg-green-700" onClick={async () => {
-                            // Option B: Complete Job (Pay Installer)
-                            if (transaction?.status === 'funded') {
+                            if (transaction?.status === 'funded' || transaction?.status === 'disputed') {
                               await handleReleaseFunds();
                             }
-                            await handleUpdateDispute({ status: 'Resolved', resolvedAt: new Date(), resolution: 'Job Completed & Funds Released' });
+                            await handleResolveDispute('Job Completed & Funds Released');
                             if (dispute.jobId) {
                               await updateDoc(doc(db, "jobs", dispute.jobId), { status: 'Completed' });
                             }
-                            toast({ title: "Resolved", description: "Job Completed and Funds Released." });
                           }}>
                             Option B: Complete Job & Pay Installer
                           </Button>
                           <Button variant="secondary" onClick={async () => {
-                            // Option C: Just Close Ticket
-                            await handleResolveDispute();
+                            await handleResolveDispute('Resolved without further action');
                           }}>
                             Option C: Just Close Ticket (No Job Action)
                           </Button>

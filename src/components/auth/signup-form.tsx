@@ -175,7 +175,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           });
         }
       } catch (e) {
-        console.error("Temp Auth Init Error", e);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error("Temp Auth Init Error", e);
+        }
       }
     }
   }, [mainApp]);
@@ -202,7 +204,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       setIsOtpDialogOpen(true);
       toast({ title: "OTP Sent", description: "Please check your mobile for the verification code." });
     } catch (error: any) {
-      console.error("SMS Error:", error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error("SMS Error:", error);
+      }
       toast({ title: "Error", description: tError(error.message) || "Could not send OTP.", variant: "destructive" });
       if (recaptchaVerifierRef.current) recaptchaVerifierRef.current.clear();
     } finally {
@@ -248,12 +252,16 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           });
         }
       } catch (trackError) {
-        console.error("Tracking error (non-fatal):", trackError);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error("Tracking error (non-fatal):", trackError);
+        }
       }
 
       toast({ title: "Verified!", description: "Mobile number verified successfully.", className: "bg-green-100 border-green-500" });
     } catch (error: any) {
-      console.error("Verify Error:", error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error("Verify Error:", error);
+      }
       toast({ title: "Verification Failed", description: "Invalid OTP. Please try again.", variant: "destructive" });
     } finally {
       setIsLoading(false);
@@ -507,7 +515,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       }
     } catch (e: any) {
       setError(tError(e.message) || "An unexpected error occurred. Please try again.");
-      console.error(e);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error(e);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -585,7 +595,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
 
     if (values.fax) {
       // Honeypot trap triggered - simulate success but do nothing
-      console.log("Bot detected via honeypot.");
+      if (process.env.NODE_ENV !== 'production') {
+        console.log("Bot detected via honeypot.");
+      }
       setIsLoading(false);
       return;
     }
@@ -610,12 +622,16 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       if (isMobileVerified && verifiedCredential && firebaseUser) {
         try {
           await linkWithCredential(firebaseUser, verifiedCredential);
-          console.log("Phone Credentials Linked Successfully");
+          if (process.env.NODE_ENV !== 'production') {
+            console.log("Phone Credentials Linked Successfully");
+          }
         } catch (linkError: any) {
           if (linkError.code === 'auth/credential-already-associated') {
             // Ignore if already done
           } else {
-            console.error("Link Error", linkError);
+            if (process.env.NODE_ENV !== 'production') {
+              console.error("Link Error", linkError);
+            }
             // Non-fatal? If link fails, user still created but mobile not linked in Auth.
             toast({ title: "Link Warning", description: "Mobile could not be linked to Auth account, but signup proceeded.", variant: "default" });
           }
@@ -694,7 +710,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         await markSignupComplete(db, mobile, firebaseUser.uid);
         trackFunnelEvent('signup_completed', { role: values.role });
       } catch (trackError) {
-        console.error("Tracking error (non-fatal):", trackError);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error("Tracking error (non-fatal):", trackError);
+        }
       }
 
       // We are essentially already logged in if verified.
@@ -708,7 +726,9 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       if (error.code === 'auth/email-already-in-use') {
         form.setError("email", { type: "manual", message: "This email is already registered." });
       } else {
-        console.error("Signup failed:", error);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error("Signup failed:", error);
+        }
         toast({ title: "Sign Up Failed", description: tError(error.message), variant: "destructive" });
       }
       setCurrentStep("details");

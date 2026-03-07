@@ -14,6 +14,7 @@ import { WebVitalsReporter } from "@/components/dashboard/analytics/web-vitals";
 import CookieBanner from "@/components/gdpr/cookie-banner";
 import { SystemStatusBanner } from "@/components/layout/system-status-banner";
 import ErrorBoundaryWrapper from "@/components/error-boundary-wrapper";
+import { OfflineDetector } from "@/components/layout/offline-detector";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://dodo-beta.web.app"),
@@ -67,6 +68,8 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
+        {/* PWA Manifest */}
+        <link rel="manifest" href="/manifest.webmanifest" />
         {/* Preconnect to external services for faster loading */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://sdk.cashfree.com" />
@@ -89,6 +92,7 @@ export default async function RootLayout({
             <FirebaseClientProvider>
               <UserProvider>
                 <Providers>
+                  <OfflineDetector />
                   <ErrorBoundaryWrapper>
                     <WebVitalsReporter />
                     <SystemStatusBanner />

@@ -38,6 +38,30 @@ export class UserRepository {
         }
     }
 
+    /**
+     * Increment or decrement numeric stats on a user document
+     */
+    async incrementStats(userId: string, stats: Record<string, number>): Promise<void> {
+        try {
+            const db = getAdminDb();
+            const { FieldValue } = await import('firebase-admin/firestore');
+
+            const updates: Record<string, any> = {
+                updatedAt: Timestamp.now()
+            };
+
+            for (const [key, value] of Object.entries(stats)) {
+                updates[key] = FieldValue.increment(value);
+            }
+
+            await db.collection(COLLECTIONS.USERS).doc(userId).update(updates);
+            logger.info('User stats incremented', { userId, stats });
+        } catch (error) {
+            logger.error('Failed to increment user stats', error, { userId });
+            throw error;
+        }
+    }
+
     async queryInstallers(filters?: InstallerFilters, limit = 50): Promise<User[]> {
         try {
             const db = getAdminDb();

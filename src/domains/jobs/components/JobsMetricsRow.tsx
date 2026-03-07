@@ -61,11 +61,15 @@ export function JobsMetricsRow({ userId, user }: QuickMetricsRowProps) {
                 try {
                     calculatedMetrics = calculateMetrics(jobs, user);
                 } catch (calcError) {
-                    console.error("Critical error in calculateMetrics, using defaults:", calcError);
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.error("Critical error in calculateMetrics, using defaults:", calcError);
+                    }
                 }
                 setMetrics(calculatedMetrics);
             } catch (error) {
-                console.error("Error fetching quick metrics:", error);
+                if (process.env.NODE_ENV !== 'production') {
+                    console.error("Error fetching quick metrics:", error);
+                }
             } finally {
                 setLoading(false);
             }
@@ -130,14 +134,18 @@ export function JobsMetricsRow({ userId, user }: QuickMetricsRowProps) {
                             }
                         }
                     } catch (innerErr) {
-                        console.error("Error processing job time diff:", job.id, innerErr);
+                        if (process.env.NODE_ENV !== 'production') {
+                            console.error("Error processing job time diff:", job.id, innerErr);
+                        }
                     }
                 });
 
                 avgTimeToFirstBid = "~";
             }
         } catch (e) {
-            console.error("Error calculating avgTimeToFirstBid:", e);
+            if (process.env.NODE_ENV !== 'production') {
+                console.error("Error calculating avgTimeToFirstBid:", e);
+            }
             avgTimeToFirstBid = "Error";
         }
 

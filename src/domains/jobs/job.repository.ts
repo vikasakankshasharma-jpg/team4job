@@ -245,7 +245,7 @@ export class JobRepository {
     async update(jobId: string, updates: Partial<Job>): Promise<void> {
         try {
             const db = getAdminDb();
-            console.log(`[JobRepository.update] Updating job ${jobId}. Fields: ${Object.keys(updates).join(', ')}. awardedInstallerId=${updates.awardedInstallerId}`);
+            logger.info('JobRepository.update', { jobId, fields: Object.keys(updates) });
             await db.collection(COLLECTIONS.JOBS).doc(jobId).update({
                 ...updates,
                 updatedAt: Timestamp.now(),
@@ -294,28 +294,17 @@ export class JobRepository {
                     .get()
             ]);
 
-            // For total bids, we unfortunately still need to scan docs OR keep a running counter on the user/stats doc.
-            // Since we don't have a stats doc, and scanning ALL jobs just for bid count is expensive...
-            // We will omit totalBids for now in the optimized version OR accept we can't optimize it without schema change.
-            // Requirement says "optimize". Dropping 80s load time is priority. 
-            // Let's count bids only on active jobs? No, dashboard shows total.
-            // COMPROMISE: For now, return 0 or fetch strictly needed fields if we really need it.
-            // BUT: The UI shows "Total Bids".
-            // Alternative: Add a Cloud Function to maintaining stats counter. (Out of scope for this refactor?)
-            // Let's look at `dashboard-data.actions.ts`. It iterates docs to sum bids.
-            // If we want to avoid 80s load, we MUST NOT read all docs.
-            // Let's set totalBids to 0 for this optimization step and mark as TODO for aggregation trigger.
-            // OR checks only recent jobs?
-            // Actually, `fetchJobGiverStats` in actions didn't even return `totalBids` correctly (it returned 0 constant).
-            // So we aren't breaking anything by returning 0 here!
+            // Fetch user for cached totalBids
+            const userDoc = await db.collection(COLLECTIONS.USERS).doc(jobGiverId).get();
+            const userData = userDoc.data();
 
             return {
                 totalJobs: allJobsSnap.data().count,
                 openJobs: activeSnap.data().count,
-                inProgressJobs: 0, // We bundled them into active for the dashboard "Active Jobs" card usually
+                inProgressJobs: 0,
                 completedJobs: completedSnap.data().count,
                 cancelledJobs: cancelledSnap.data().count,
-                totalBids: 0 // Optimization: aggregation required for real count
+                totalBids: userData?.totalBids || 0
             };
         } catch (error) {
             logger.error('Failed to get job stats', error, { userId: jobGiverId });
@@ -348,20 +337,31 @@ export class JobRepository {
             const db = getAdminDb();
 
             // Parallelize the queries for performance
-            const [openJobsSnap, myBidsSnap, jobsWonSnap] = await Promise.all([
+            const [openJobsSnap, myBidsSnap, jobsWonSnap, activeJobsSnap, completedJobsSnap, userDoc] = await Promise.all([
                 db.collection(COLLECTIONS.JOBS).where('status', 'in', ['open', 'Open for Bidding']).count().get(),
                 db.collection(COLLECTIONS.JOBS).where('bidderIds', 'array-contains', installerId).count().get(),
-                db.collection(COLLECTIONS.JOBS).where('awardedInstallerId', '==', installerId).count().get()
+                db.collection(COLLECTIONS.JOBS).where('awardedInstallerId', '==', installerId).count().get(),
+                db.collection(COLLECTIONS.JOBS)
+                    .where('awardedInstallerId', '==', installerId)
+                    .where('status', 'in', ['in_progress', 'funded', 'bid_accepted'])
+                    .count().get(),
+                db.collection(COLLECTIONS.JOBS)
+                    .where('awardedInstallerId', '==', installerId)
+                    .where('status', '==', 'completed')
+                    .count().get(),
+                db.collection(COLLECTIONS.USERS).doc(installerId).get()
             ]);
+
+            const userData = userDoc.data();
 
             return {
                 openJobs: openJobsSnap.data().count,
                 myBids: myBidsSnap.data().count,
                 jobsWon: jobsWonSnap.data().count,
-                activeJobs: 0, // Placeholder, calculated in action or future optimization
-                completedJobs: 0, // Placeholder, calculated in action or future optimization
-                projectedEarnings: 0, // Calculated from transactions in service/client
-                totalEarnings: 0      // Calculated from transactions in service/client
+                activeJobs: activeJobsSnap.data().count,
+                completedJobs: completedJobsSnap.data().count,
+                projectedEarnings: userData?.projectedEarnings || 0,
+                totalEarnings: userData?.totalEarnings || 0
             };
         } catch (error) {
             logger.error('Failed to get installer stats', error, { userId: installerId });

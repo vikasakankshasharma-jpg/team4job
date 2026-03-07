@@ -73,7 +73,9 @@ export function RecommendedJobsList({ user }: RecommendedJobsProps) {
             }
 
         } catch (e) {
-            console.error("Failed to fetch recommendations", e);
+            if (process.env.NODE_ENV !== 'production') {
+                console.error("Failed to fetch recommendations", e);
+            }
         } finally {
             setIsLoading(false);
         }

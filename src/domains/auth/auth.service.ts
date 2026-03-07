@@ -5,6 +5,7 @@ import { SignupData, AuthSession } from './auth.types';
 import { getAdminAuth } from '@/infrastructure/firebase/admin';
 import { logger } from '@/infrastructure/logger';
 import { User, Role } from '@/lib/types';
+import { emailService } from '@/lib/email/email-service';
 
 /**
  * Auth Service - Business logic for authentication
@@ -77,6 +78,12 @@ export class AuthService {
                 email: data.email,
             });
 
+            // Send Welcome Email (Async)
+            emailService.sendWelcomeEmail({
+                to: data.email,
+                userName: data.name
+            }).catch(e => logger.error('Welcome email failed', e));
+
             return { uid: userRecord.uid, user: userData };
         } catch (error: any) {
             logger.error('Signup failed', error, {
@@ -130,8 +137,14 @@ export class AuthService {
             const auth = getAdminAuth();
             const link = await auth.generatePasswordResetLink(email);
 
-            // TODO: Send email via email service
-            logger.info('Password reset link generated', { metadata: { email } });
+            // Send email via email service
+            await emailService.sendPasswordResetEmail({
+                to: email,
+                userName: email.split('@')[0], // Fallback if name not easily accessible here
+                resetLink: link
+            });
+
+            logger.info('Password reset email sent', { metadata: { email } });
 
         } catch (error: any) {
             if (error.code === 'auth/user-not-found') {

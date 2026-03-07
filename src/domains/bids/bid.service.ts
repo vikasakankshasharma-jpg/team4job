@@ -6,6 +6,8 @@ import { jobRepository } from '../jobs/job.repository';
 import { bidRepository } from './bid.repository'; // Import added
 import { logger } from '@/infrastructure/logger';
 import { Role } from '@/lib/types';
+import { userRepository } from '../users/user.repository';
+import { emailService } from '@/lib/email/email-service';
 
 /**
  * Bid Service - Business logic for bid management
@@ -61,6 +63,22 @@ export class BidService {
             bidderIds: updatedBidderIds,
         });
 
+        // Data Aggregation: Update Stats
+        userRepository.incrementStats(job.jobGiverId, { totalBids: 1 }).catch(e => logger.error('Failed to increment totalBids', e));
+        userRepository.incrementStats(userId, { myBids: 1 }).catch(e => logger.error('Failed to increment myBids', e));
+
+        // Send Bid Received Notification to Job Giver
+        userRepository.fetchById(job.jobGiverId).then(giver => {
+            if (giver) {
+                emailService.sendBidReceivedEmail({
+                    to: giver.email,
+                    userName: giver.name,
+                    jobTitle: job.title,
+                    jobLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:5000'}/dashboard/jobs/${data.jobId}`
+                });
+            }
+        }).catch(e => logger.error('Bid email fetch failed', e));
+
         logger.userActivity(userId, 'bid_placed', {
             jobId: data.jobId,
             amount: data.amount,
@@ -77,7 +95,7 @@ export class BidService {
             throw new Error('Job not found');
         }
 
-        const bid = job.bids.find(b => b.id === bidId);
+        const bid = await bidRepository.fetchById(jobId, bidId);
         if (!bid) {
             throw new Error('Bid not found');
         }
@@ -90,14 +108,16 @@ export class BidService {
             throw new Error('Cannot withdraw this bid');
         }
 
-        // Remove bid from job
-        const updatedBids = job.bids.filter(b => b.id !== bidId);
+        // Remove bid from job (bidderIds)
         const updatedBidderIds = (job.bidderIds || []).filter(id => id !== userId);
 
         await jobRepository.update(jobId, {
-            bids: updatedBids,
             bidderIds: updatedBidderIds,
         });
+
+        // Data Aggregation: Decrement Stats
+        userRepository.incrementStats(job.jobGiverId, { totalBids: -1 }).catch(e => logger.error('Failed to decrement totalBids', e));
+        userRepository.incrementStats(userId, { myBids: -1 }).catch(e => logger.error('Failed to decrement myBids', e));
 
         logger.userActivity(userId, 'bid_withdrawn', { jobId, bidId });
     }

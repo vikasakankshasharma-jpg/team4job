@@ -21,6 +21,8 @@ export const getStatusVariant = (status: Job['status']): "default" | "secondary"
             return 'info';
         case 'Pending Funding':
             return 'info';
+        case 'funded':
+            return 'success';
         case 'In Progress':
             return 'default';
         case 'Completed':

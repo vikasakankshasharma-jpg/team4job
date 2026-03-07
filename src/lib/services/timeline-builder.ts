@@ -18,6 +18,7 @@ export interface TimelineEvent {
     metadata?: Record<string, any>;
     icon?: string;  // Icon name for rendering
     color?: string;  // Color class for visual distinction
+    attachments?: { fileName: string; fileUrl: string; fileType: string; }[];
 }
 
 export interface CommunicationItem {
@@ -29,7 +30,7 @@ export interface CommunicationItem {
     authorName?: string;
     timestamp: Date | Timestamp;
     read: boolean;
-    attachments?: string[];
+    attachments?: { fileName: string; fileUrl: string; fileType: string; }[];
 }
 
 /**
@@ -202,6 +203,7 @@ export function buildJobTimeline(
             actorName: comm.authorName,
             icon: comm.type === 'system_update' ? 'Bell' : 'MessageCircle',
             color: comm.type === 'system_update' ? 'gray' : 'purple',
+            attachments: comm.attachments,
         });
     });
 

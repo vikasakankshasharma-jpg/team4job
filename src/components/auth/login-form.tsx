@@ -82,20 +82,28 @@ export function LoginForm() {
   });
 
   async function onSubmit(values: FormValues) {
-    console.log("LoginForm: onSubmit called", values.identifier);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log("LoginForm: onSubmit called", values.identifier);
+    }
     if (lockoutUntil) return;
 
     setIsLoading(true);
     // basic demo check - still useful if user types dummy email
     const isDemoUser = values.identifier.endsWith("@example.com");
-    console.log("LoginForm: Calling login...");
+    if (process.env.NODE_ENV !== 'production') {
+      console.log("LoginForm: Calling login...");
+    }
     const success = await login(values.identifier, values.password);
-    console.log("LoginForm: Login result:", success);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log("LoginForm: Login result:", success);
+    }
 
     if (success) {
       // A small delay to allow user context to update before redirect
       setTimeout(() => {
-        console.log("LoginForm: Redirecting to dashboard...");
+        if (process.env.NODE_ENV !== 'production') {
+          console.log("LoginForm: Redirecting to dashboard...");
+        }
         const isFirstLogin = !user?.lastLoginAt; // This is a simplified check
         if (isDemoUser || isFirstLogin) {
           router.push("/dashboard?tour=true");
@@ -104,7 +112,9 @@ export function LoginForm() {
         }
       }, 500);
     } else {
-      console.log("LoginForm: Login failed");
+      if (process.env.NODE_ENV !== 'production') {
+        console.log("LoginForm: Login failed");
+      }
       const newAttemptCount = loginAttempts + 1;
       setLoginAttempts(newAttemptCount);
 

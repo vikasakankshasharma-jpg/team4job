@@ -12,18 +12,14 @@ export async function getDashboardStatsAction(userId: string) {
         const db = getAdminDb();
 
         // Fetch data in parallel
-        const [transactionsSnapshot, installerJobsSnapshot, jobGiverJobsSnapshot, quickMetrics] = await Promise.all([
+        const [transactionsSnapshot, installerStats, jobGiverStats, quickMetrics] = await Promise.all([
             db.collection('transactions')
                 .where('payeeId', '==', userId)
                 .orderBy('createdAt', 'desc')
                 .limit(10)
                 .get(),
-            db.collection('jobs')
-                .where('installerId', '==', userId)
-                .get(),
-            db.collection('jobs')
-                .where('jobGiverId', '==', userId)
-                .get(),
+            jobService.getStatsForInstaller(userId),
+            jobService.getStatsForJobGiver(userId),
             jobService.getQuickMetrics(userId)
         ]);
 
@@ -46,40 +42,6 @@ export async function getDashboardStatsAction(userId: string) {
                 refundedAt: mapDate(data.refundedAt),
             };
         }) as unknown as Transaction[];
-
-        const installerStats = {
-            projectedEarnings: 0,
-            totalEarnings: 0,
-            activeJobs: 0,
-            completedJobs: 0,
-            openJobs: 0,
-            myBids: 0,
-            jobsWon: 0
-        };
-
-        installerJobsSnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            if (data.status === 'in_progress') installerStats.activeJobs++;
-            if (data.status === 'completed') {
-                installerStats.completedJobs++;
-                installerStats.totalEarnings += (data.finalAmount || 0);
-            }
-        });
-
-        const jobGiverStats = {
-            activeJobs: 0,
-            completedJobs: 0,
-            cancelledJobs: 0,
-            totalBids: 0,
-            openDisputes: 0
-        };
-
-        jobGiverJobsSnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            if (data.status === 'in_progress') jobGiverStats.activeJobs++;
-            if (data.status === 'completed') jobGiverStats.completedJobs++;
-            if (data.status === 'cancelled') jobGiverStats.cancelledJobs++;
-        });
 
         // Serialize to strip all non-serializable Firestore objects (Timestamps, References, etc.)
         return JSON.parse(JSON.stringify({

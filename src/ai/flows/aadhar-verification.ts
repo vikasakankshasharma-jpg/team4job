@@ -90,10 +90,10 @@ export const initiateAadharVerification = defineLoggedFlow(
     outputSchema: InitiateAadharOutputSchema,
   },
   async (input: z.infer<typeof InitiateAadharInputSchema>) => {
-    // For demo purposes, if the Aadhar number is the test number, simulate success without a real API call.
-    if (input.aadharNumber === '999999990019') {
+    // For local E2E testing purposes, if emulator mode is on and the Aadhar number is the test number, simulate success without a real API call.
+    if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' && input.aadharNumber === '999999990019') {
       const mockVerificationId = `VERIF_MOCK_${Date.now()}`;
-      console.log(`[Cashfree KYC] Using mock OTP flow for test Aadhar. Verification ID: ${mockVerificationId}`);
+      console.log(`[Cashfree KYC] Using mock OTP flow for test Aadhar (Emulator Mode). Verification ID: ${mockVerificationId}`);
       return {
         success: true,
         verificationId: mockVerificationId,
@@ -209,9 +209,9 @@ export const confirmAadharVerification = defineLoggedFlow(
     outputSchema: ConfirmAadharOutputSchema,
   },
   async (input: z.infer<typeof ConfirmAadharInputSchema>) => {
-    // For demo purposes, if the transaction is a mock one and OTP is correct, simulate success.
-    if (input.verificationId.startsWith('VERIF_MOCK_') && input.otp === '123456') {
-      console.log('[Cashfree KYC] Using mock verification for test OTP.');
+    // For local E2E testing purposes, simulate success if in emulator mode.
+    if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' && input.verificationId.startsWith('VERIF_MOCK_') && input.otp === '123456') {
+      console.log('[Cashfree KYC] Using mock verification for test OTP (Emulator Mode).');
       const mockKycData = {
         name: 'Ramesh Kumar',
         mobile: '9876543210',

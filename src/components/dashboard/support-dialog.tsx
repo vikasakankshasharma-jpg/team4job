@@ -9,8 +9,9 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Headphones, Phone, Mail } from "lucide-react";
+import { Headphones, Phone, Mail, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SupportChatbot } from "./support-chatbot";
 import {
     Tooltip,
     TooltipContent,
@@ -45,6 +46,14 @@ export function SupportDialog() {
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <Bot className="h-4 w-4" />
+                            AI Support Assistant
+                        </p>
+                        <SupportChatbot />
+                    </div>
+
                     <div className="flex items-center gap-4 rounded-md border p-4">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
                             <Phone className="h-5 w-5 text-primary" />

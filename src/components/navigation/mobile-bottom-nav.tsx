@@ -2,45 +2,65 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Briefcase, PlusCircle, Users, User } from "lucide-react";
+import { Home, Briefcase, PlusCircle, Users, User, FileText, Search, TrendingUp, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/hooks/use-user";
 
 interface MobileBottomNavProps {
     className?: string;
 }
 
+interface NavItem {
+    href: string;
+    icon: any;
+    label: string;
+    exact?: boolean;
+    primary?: boolean;
+}
+
 export function MobileBottomNav({ className }: MobileBottomNavProps) {
     const pathname = usePathname();
+    const { role } = useUser();
 
-    const navItems = [
-        {
-            href: "/dashboard",
-            icon: Home,
-            label: "Home",
-            exact: true,
-        },
-        {
-            href: "/dashboard/posted-jobs",
-            icon: Briefcase,
-            label: "Jobs",
-        },
-        {
-            href: "/dashboard/post-job",
-            icon: PlusCircle,
-            label: "Post",
-            primary: true,
-        },
-        {
-            href: "/dashboard/installers",
-            icon: Users,
-            label: "Find",
-        },
-        {
-            href: "/dashboard/profile",
-            icon: User,
-            label: "Profile",
-        },
-    ];
+    const getNavItems = (): NavItem[] => {
+        const commonItems: NavItem[] = [
+            { href: "/dashboard", icon: Home, label: "Home", exact: true },
+        ];
+
+        if (role === 'Installer') {
+            return [
+                ...commonItems,
+                { href: "/dashboard/jobs", icon: Search, label: "Browse" },
+                { href: "/dashboard/my-bids", icon: FileText, label: "Bids" },
+                { href: "/dashboard/profile", icon: User, label: "Profile" },
+            ];
+        }
+
+        if (role === 'Job Giver') {
+            return [
+                ...commonItems,
+                { href: "/dashboard/post-job", icon: PlusCircle, label: "Post", primary: true },
+                { href: "/dashboard/posted-jobs", icon: Briefcase, label: "Jobs" },
+                { href: "/dashboard/analytics", icon: TrendingUp, label: "Stats" },
+            ];
+        }
+
+        if (role === 'Admin') {
+            return [
+                ...commonItems,
+                { href: "/dashboard/users", icon: Users, label: "Users" },
+                { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
+                { href: "/dashboard/reports", icon: FileText, label: "Reports" },
+            ];
+        }
+
+        return [
+            ...commonItems,
+            { href: "/dashboard/profile", icon: User, label: "Profile" },
+        ];
+    };
+
+    const navItems = getNavItems();
 
     const isActive = (href: string, exact?: boolean) => {
         if (exact) {

@@ -5,6 +5,7 @@ import { getAdminDb } from "@/infrastructure/firebase/admin";
 import { Transaction } from "@/lib/types";
 import { JobGiverStats, InstallerStats } from "@/domains/jobs/job.types";
 import { jobService } from "@/domains/jobs/job.service";
+import { userRepository } from "@/domains/users/user.repository";
 
 export async function fetchJobGiverStats(userId: string): Promise<JobGiverStats> {
     const stats = await jobService.getStatsForJobGiver(userId);
@@ -42,25 +43,15 @@ export async function fetchInstallerStats(userId: string): Promise<InstallerStat
     //    openJobs: number;
     //    myBids: number;
     //    jobsWon: number;
-    // }
 
-    // The repository method `getStatsForInstaller` currently only gets open/bids/won.
-    // We need to enhance the repository method or minimal additional queries here.
-    // Let's assume we update repository later or now? 
-    // Best practice: Update repository to fetch active/completed counts for installer too.
-
-    // For now, let's look at `jobService.getStatsForInstaller`. It just calls repo.
-    // Let's check `job.repository.ts` again. It misses active/completed counts for installer specific jobs.
-
-    // Let's implement active/completed count in this action for now using count() queries 
-    // OR ideally update the repository method proper.
-
+    // Fetch user for pre-aggregated earnings (maintained by PaymentService.releaseFunds)
+    const user = await userRepository.fetchById(userId);
     const db = getAdminDb();
 
     const [activeSnap, completedSnap] = await Promise.all([
         db.collection('jobs')
             .where('awardedInstallerId', '==', userId)
-            .where('status', 'in', ['in_progress', 'In Progress', 'Pending Funding', 'Pending Confirmation'])
+            .where('status', 'in', ['in_progress', 'In Progress', 'Pending Funding', 'Pending Confirmation', 'work_submitted', 'Work Submitted'])
             .count().get(),
         db.collection('jobs')
             .where('awardedInstallerId', '==', userId)
@@ -68,43 +59,12 @@ export async function fetchInstallerStats(userId: string): Promise<InstallerStat
             .count().get()
     ]);
 
-    // Earnings... fetching all transactions might still be heavy if there are thousands.
-    // But transactions are payment records, usually fewer than jobs?
-    // Let's use `fetchTransactions` limit but we need TOTAL earnings.
-    // Aggregation query for sum is not native in Firestore client SDKs easily without extension?
-    // Actually sum() is supported in newer Node SDKs.
-
-    // Let's try sum() if available, or fetch strictly relevant transaction fields.
-    // Given the previous code fetched all installer jobs to sum earnings... 
-    // Let's rely on calculating it from closed jobs? Or keep the transaction scan but minimal.
-    // Previous code: `stats.totalEarnings += (data.finalAmount || 0)` from Job docs.
-    // So we can sum `finalAmount` from completed jobs.
-    // But we just did count().
-
-    // COMPROMISE: For "Total Earnings", iterating completed jobs is 100x better than ALL jobs.
-    // Let's fetch only completed jobs for earnings sum. 
-    // Or if we can use sum aggregation:
-    // db.collection('jobs').where(...).aggregate({ total: sum('finalAmount') })...
-
-    // Assuming we can't trust sum() availability or field consistency yet.
-    // We will leave earnings as 0 or TODO for now to prioritize load speed? 
-    // User wants "optimize".
-    // Let's attempt to fetch completed jobs (usually much smaller set than 'all') to sum.
-
-    let totalEarnings = 0;
-    // const completedJobsDocs = await db.collection('jobs')
-    //    .where('awardedInstallerId', '==', userId)
-    //    .where('status', 'in', ['Completed', 'completed'])
-    //    .select('finalAmount')
-    //    .get();
-    // completedJobsDocs.docs.forEach(d => totalEarnings += d.data().finalAmount || 0);
-
     return {
         ...stats,
         activeJobs: activeSnap.data().count,
         completedJobs: completedSnap.data().count,
-        projectedEarnings: 0, // Placeholder
-        totalEarnings: totalEarnings // Placeholder
+        projectedEarnings: (user as any)?.projectedEarnings || 0,
+        totalEarnings: (user as any)?.totalEarnings || 0
     };
 }
 

@@ -80,9 +80,9 @@ export const verifyPan = defineLoggedFlow(
         outputSchema: VerifyPanOutputSchema,
     },
     async (input: z.infer<typeof VerifyPanInputSchema>) => {
-        // Mock for Testing
-        if (input.pan === 'ABCDE1234F') {
-            console.log('[Cashfree KYC] Using mock PAN verification.');
+        // Mock for Local E2E Testing
+        if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' && input.pan === 'ABCDE1234F') {
+            console.log('[Cashfree KYC] Using mock PAN verification (Emulator Mode).');
             return {
                 isValid: true,
                 registeredName: 'MOCK USER NAME',

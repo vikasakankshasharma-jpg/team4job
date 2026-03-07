@@ -2,6 +2,7 @@
 
 import { paymentService } from '@/domains/payments/payment.service';
 import { CreatePaymentOrderInput } from '@/domains/payments/payment.types';
+import { logger } from '@/lib/system-logger';
 
 /**
  * Server Action to create a payment order
@@ -14,7 +15,9 @@ export async function createPaymentOrderAction(
     travelTip?: number
 ): Promise<{ success: boolean; data?: { orderToken: string; orderId: string }; error?: string }> {
     try {
-        console.log(`[Action] createPaymentOrderAction called by ${userId} for job ${jobId}`);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[Action] createPaymentOrderAction called by ${userId} for job ${jobId}`);
+        }
 
         const input: CreatePaymentOrderInput = {
             jobId,
@@ -27,7 +30,7 @@ export async function createPaymentOrderAction(
 
         return { success: true, data: result };
     } catch (error: any) {
-        console.error('[Action] createPaymentOrderAction failed:', error);
+        await logger.error(error, { action: 'createPaymentOrderAction', jobId, userId });
         return {
             success: false,
             error: error.message || 'Failed to initiate payment',
@@ -46,7 +49,9 @@ export async function createAddFundsOrderAction(
     taskId?: string
 ): Promise<{ success: boolean; data?: { orderToken: string; orderId: string }; error?: string }> {
     try {
-        console.log(`[Action] createAddFundsOrderAction called by ${userId} for job ${jobId}`);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[Action] createAddFundsOrderAction called by ${userId} for job ${jobId}`);
+        }
 
         const input: CreatePaymentOrderInput = {
             jobId,
@@ -61,7 +66,7 @@ export async function createAddFundsOrderAction(
 
         return { success: true, data: result };
     } catch (error: any) {
-        console.error('[Action] createAddFundsOrderAction failed:', error);
+        await logger.error(error, { action: 'createAddFundsOrderAction', jobId, userId });
         return {
             success: false,
             error: error.message || 'Failed to initiate add-funds payment',

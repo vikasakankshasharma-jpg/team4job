@@ -5,10 +5,14 @@ import { userService } from '@/domains/users/user.service';
 import { CreateJobInput, JobFilters } from '@/domains/jobs/job.types';
 import { startWorkSchema } from '@/lib/validations/jobs';
 
-import { Role, Job, JobAttachment, Transaction, User } from '@/lib/types';
+import { Role, Job, JobAttachment, Transaction, User, DisputeAttachment, Dispute } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { logger } from '@/lib/system-logger';
+import { emailService } from '@/lib/email/email-service';
+import { FieldValue } from 'firebase-admin/firestore';
+import { invoiceService } from '@/domains/jobs/invoice.service';
+import { AdminGuard } from '@/lib/auth/admin-guard';
 
 /**
  * Server Action to create a new job
@@ -20,7 +24,10 @@ export async function createJobAction(
     userRole: Role
 ): Promise<{ success: boolean; jobId?: string; error?: string }> {
     try {
-        console.log(`[Action] createJobAction called by ${userId} (${userRole})`);
+        // Using console.log for simple action tracking, system logger for errors/business events
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[Action] createJobAction called by ${userId} (${userRole})`);
+        }
 
         // Delegate business logic to the domain service
         const jobId = await jobService.createJob(userId, userRole, data);
@@ -59,7 +66,7 @@ export async function getJobForEditAction(jobId: string, userId: string): Promis
         const serializedJob = JSON.parse(JSON.stringify(job));
         return { success: true, job: serializedJob };
     } catch (error: any) {
-        console.error('[Action] getJobForEditAction failed:', error);
+        await logger.error(error, { action: 'getJobForEditAction', jobId });
         return {
             success: false,
             error: error.message || 'Failed to fetch job',
@@ -125,7 +132,7 @@ export async function updateJobAction(jobId: string, userId: string, data: Parti
 
         return { success: true };
     } catch (error: any) {
-        console.error('[Action] updateJobAction failed:', error);
+        await logger.error(error, { action: 'updateJobAction', jobId });
         return {
             success: false,
             error: error.message || 'Failed to update job',
@@ -165,7 +172,7 @@ export async function approveJobAction(jobId: string, userId: string): Promise<{
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
     } catch (error: any) {
-        console.error('[Action] approveJobAction failed:', error);
+        await logger.error(error, { action: 'approveJobAction', jobId });
         return { success: false, error: error.message || 'Failed to approve job' };
     }
 }
@@ -180,7 +187,7 @@ export async function acceptJobAction(jobId: string, userId: string): Promise<{ 
         revalidatePath('/dashboard/jobs');
         return { success: true };
     } catch (error: any) {
-        console.error('[Action] acceptJobAction failed:', error);
+        await logger.error(error, { action: 'acceptJobAction', jobId });
         return { success: false, error: error.message || 'Failed to accept job' };
     }
 }
@@ -199,7 +206,7 @@ export async function completeJobWithOtpAction(
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
     } catch (error: any) {
-        console.error('[Action] completeJobWithOtpAction failed:', error);
+        await logger.error(error, { action: 'completeJobWithOtpAction', jobId });
         return { success: false, error: error.message || 'Failed to complete job' };
     }
 }
@@ -215,56 +222,24 @@ type InvoiceData = {
     transaction: Transaction | null;
 };
 
-export async function getInvoiceDataAction(jobId: string, userId: string, type?: string): Promise<{ success: boolean; data?: InvoiceData; error?: string }> {
+export async function getInvoiceDataAction(jobId: string, userId: string, type?: string): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
-        const db = getAdminDb();
-        const jobDoc = await db.collection('jobs').doc(jobId).get();
+        const data = await invoiceService.getInvoiceData(jobId);
 
-        if (!jobDoc.exists) {
-            return { success: false, error: 'Job not found' };
-        }
+        // Security check: Only parties or staff can see invoice data
+        const isStaff = await AdminGuard.isStaff(userId);
+        const isParty = data.job.jobGiverId === userId || data.job.awardedInstallerId === userId;
 
-        const jobData = jobDoc.data() as Job;
-
-        // 2. Fetch Transaction (if it exists)
-        let transaction = null;
-        if (jobData.status === 'completed' || jobData.status === 'Completed' || jobData.status === 'Pending Funding' || jobData.status === 'funded' || jobData.status === 'In Progress') {
-            const txSnapshot = await db.collection('transactions')
-                .where('jobId', '==', jobId)
-                .limit(1)
-                .get();
-
-            if (!txSnapshot.empty) {
-                transaction = txSnapshot.docs[0].data();
-            }
-        }
-
-        // Expand Job Giver and Installer for Invoice Page
-        let expandedJob = { ...jobData };
-
-        if (jobData.jobGiverId) {
-            const giverSnap = await db.collection('users').doc(jobData.jobGiverId).get();
-            if (giverSnap.exists) {
-                expandedJob.jobGiver = { id: giverSnap.id, ...giverSnap.data() } as User;
-            }
-        }
-
-        if (jobData.awardedInstallerId) {
-            const installerSnap = await db.collection('users').doc(jobData.awardedInstallerId).get();
-            if (installerSnap.exists) {
-                expandedJob.awardedInstaller = { id: installerSnap.id, ...installerSnap.data() } as User;
-            }
+        if (!isStaff && !isParty) {
+            throw new Error('Unauthorized access to invoice data');
         }
 
         return {
             success: true,
-            data: JSON.parse(JSON.stringify({
-                job: expandedJob,
-                transaction
-            }))
+            data: JSON.parse(JSON.stringify(data))
         };
     } catch (error: any) {
-        console.error('Error in getInvoiceDataAction:', error);
+        await logger.error(error, { action: 'getInvoiceDataAction', jobId });
         return { success: false, error: error.message };
     }
 }
@@ -341,7 +316,9 @@ export async function raiseDisputeAction(
     jobId: string,
     userId: string,
     reason: string,
-    description: string
+    description: string,
+    category: "Job Dispute" | "Billing Inquiry" | "Technical Support" | "Skill Request" | "General Question" = "Job Dispute",
+    attachments: { fileName: string; fileUrl: string; fileType: string; }[] = []
 ): Promise<{ success: boolean; error?: string }> {
     try {
         // Direct DB Access or via Service. Using Service pattern for consistency.
@@ -369,6 +346,7 @@ export async function raiseDisputeAction(
             jobId,
             jobTitle: job.title,
             requesterId: userId,
+            category,
             reason,
             title: `Dispute: ${reason}`,
             description,
@@ -377,8 +355,25 @@ export async function raiseDisputeAction(
             parties: {
                 jobGiverId: job.jobGiverId,
                 installerId: job.awardedInstallerId
-            }
+            },
+            messages: [{
+                authorId: userId,
+                authorRole: job.jobGiverId === userId ? 'Job Giver' : 'Installer',
+                content: description,
+                attachments: attachments,
+                timestamp: new Date()
+            }]
         });
+
+        // 3.5. Update Transaction Status if exists
+        const transQuery = await db.collection('transactions').where("jobId", "==", jobId).limit(1).get();
+        if (!transQuery.empty) {
+            const transDoc = transQuery.docs[0];
+            const transData = transDoc.data();
+            if (transData.status === 'funded') {
+                await transDoc.ref.update({ status: 'disputed' });
+            }
+        }
 
         // 4. Update Job Status
         await jobRef.update({
@@ -386,18 +381,230 @@ export async function raiseDisputeAction(
             disputeId: disputeRef.id
         });
 
-        await logger.business({
-            eventType: 'DISPUTE_RAISED',
-            actorId: userId,
-            entityId: disputeRef.id,
-            entityType: 'DISPUTE',
-            metadata: { jobId, reason }
-        });
+        // 5. Send Notifications
+        const otherPartyId = job.jobGiverId === userId ? job.awardedInstallerId : job.jobGiverId;
+        if (otherPartyId) {
+            const otherPartySnap = await db.collection('users').doc(otherPartyId).get();
+            const requesterSnap = await db.collection('users').doc(userId).get();
+
+            if (otherPartySnap.exists && requesterSnap.exists) {
+                const otherParty = otherPartySnap.data() as User;
+                const requester = requesterSnap.data() as User;
+                const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dodo-test.web.app';
+
+                // To the other party
+                await emailService.sendDisputeRaisedEmail({
+                    to: otherParty.email,
+                    userName: otherParty.name,
+                    jobTitle: job.title,
+                    reason,
+                    disputeLink: `${baseUrl}/dashboard/disputes/${disputeRef.id}`
+                });
+
+                // To the requester (Optional acknowledgement)
+                await emailService.sendDisputeRaisedEmail({
+                    to: requester.email,
+                    userName: requester.name,
+                    jobTitle: job.title,
+                    reason,
+                    disputeLink: `${baseUrl}/dashboard/disputes/${disputeRef.id}`
+                });
+            }
+        }
 
         revalidatePath(`/dashboard/jobs/${jobId}`);
+        revalidatePath(`/dashboard/disputes/${disputeRef.id}`);
         return { success: true };
     } catch (error: any) {
         await logger.error(error, { action: 'raiseDisputeAction', jobId, reason }, { id: userId, role: 'unknown' });
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Server Action to securely reveal contact details
+ */
+export async function revealContactAction(jobId: string, userId: string): Promise<{ success: boolean; contact?: Partial<User>; error?: string }> {
+    try {
+        const contact = await jobService.getCounterParty(jobId, userId);
+        return { success: true, contact: contact || undefined };
+    } catch (error: any) {
+        console.error('[Action] revealContactAction failed:', error);
+        return { success: false, error: error.message || 'Failed to reveal contact' };
+    }
+}
+export async function sendMessageAction(
+    jobId: string,
+    senderId: string,
+    content: string,
+    attachments: { fileName: string; fileUrl: string; fileType: string; }[] = []
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const db = getAdminDb();
+        const jobRef = db.collection('jobs').doc(jobId);
+        const jobDoc = await jobRef.get();
+        if (!jobDoc.exists) throw new Error("Job not found");
+        const job = jobDoc.data() as Job;
+
+        // 1. Save to Firestore
+        const isJobGiver = job.jobGiverId === senderId;
+        const msgType = isJobGiver ? 'job_giver_message' : 'installer_message';
+
+        const commRef = await db.collection(`jobs/${jobId}/communications`).add({
+            jobId,
+            type: msgType,
+            content: content.trim(),
+            author: senderId,
+            authorName: isJobGiver ? 'Job Giver' : 'Installer', // Fallback or fetch from user
+            timestamp: FieldValue.serverTimestamp(),
+            read: false,
+            attachments
+        });
+
+        // 2. Notify recipient via email
+        const recipientId = isJobGiver ? job.awardedInstallerId : job.jobGiverId;
+        if (recipientId) {
+            const [recipientSnap, senderSnap] = await Promise.all([
+                db.collection('users').doc(recipientId).get(),
+                db.collection('users').doc(senderId).get()
+            ]);
+
+            if (recipientSnap.exists && senderSnap.exists) {
+                const recipient = recipientSnap.data() as User;
+                const sender = senderSnap.data() as User;
+                const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dodo-test.web.app';
+
+                await emailService.sendNewMessageEmail({
+                    to: recipient.email,
+                    userName: recipient.name,
+                    senderName: sender.name,
+                    jobTitle: job.title,
+                    messagePreview: content.substring(0, 100) + (content.length > 100 ? '...' : ''),
+                    chatLink: `${baseUrl}/dashboard/jobs/${jobId}?tab=communications`
+                });
+            }
+        }
+
+        return { success: true };
+    } catch (error: any) {
+        console.error('[Action] sendMessageAction failed:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function postDisputeMessageAction(
+    disputeId: string,
+    authorId: string,
+    content: string,
+    authorRole: Role,
+    attachments: { fileName: string; fileUrl: string; fileType: string; }[] = []
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const db = getAdminDb();
+        const disputeRef = db.collection('disputes').doc(disputeId);
+        const disputeSnap = await disputeRef.get();
+        if (!disputeSnap.exists) throw new Error("Dispute not found");
+        const dispute = disputeSnap.data() as Dispute;
+
+        // Security Check
+        const isStaff = await AdminGuard.isStaff(authorId);
+        const isParty = dispute.parties?.jobGiverId === authorId || dispute.parties?.installerId === authorId;
+
+        if (!isStaff && !isParty) {
+            throw new Error("Unauthorized to post in this dispute");
+        }
+
+        const message = {
+            authorId,
+            authorRole,
+            content,
+            timestamp: FieldValue.serverTimestamp(),
+            attachments
+        };
+
+        await disputeRef.update({
+            messages: FieldValue.arrayUnion(message)
+        });
+
+        // Notify other parties
+        const parties = dispute.parties;
+        if (parties) {
+            const recipientIds = [parties.jobGiverId, parties.installerId].filter(id => id !== authorId);
+
+            for (const recipientId of recipientIds) {
+                const recipientSnap = await db.collection('users').doc(recipientId).get();
+                if (recipientSnap.exists) {
+                    const recipient = recipientSnap.data() as User;
+                    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dodo-test.web.app';
+
+                    await emailService.sendNewMessageEmail({
+                        to: recipient.email,
+                        userName: recipient.name,
+                        senderName: (authorRole as any) === 'Support Team' || (authorRole as any) === 'Admin' ? 'Support Team' : (authorRole === 'Job Giver' ? 'Job Giver' : 'Installer'),
+                        jobTitle: dispute.jobTitle || 'Your Job',
+                        messagePreview: content.substring(0, 100),
+                        chatLink: `${baseUrl}/dashboard/disputes/${disputeId}`
+                    });
+                }
+            }
+        }
+
+        return { success: true };
+    } catch (error: any) {
+        console.error('[Action] postDisputeMessageAction failed:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function updateDisputeStatusAction(
+    disputeId: string,
+    adminId: string,
+    newStatus: 'Open' | 'Under Review' | 'Resolved',
+    resolution?: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        await AdminGuard.requireStaff(adminId);
+        const db = getAdminDb();
+        const disputeRef = db.collection('disputes').doc(disputeId);
+        const disputeSnap = await disputeRef.get();
+        if (!disputeSnap.exists) throw new Error("Dispute not found");
+        const dispute = disputeSnap.data() as Dispute;
+
+        const updateData: any = { status: newStatus };
+        if (newStatus === 'Resolved') {
+            updateData.resolvedAt = FieldValue.serverTimestamp();
+            if (resolution) updateData.resolution = resolution;
+        }
+        if (newStatus === 'Under Review' && !dispute.handledBy) {
+            updateData.handledBy = adminId;
+        }
+
+        await disputeRef.update(updateData);
+
+        // Notify parties
+        if (dispute.parties) {
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dodo-test.web.app';
+            const partyIds = [dispute.parties.jobGiverId, dispute.parties.installerId];
+
+            for (const pid of partyIds) {
+                const pSnap = await db.collection('users').doc(pid).get();
+                if (pSnap.exists) {
+                    const pUser = pSnap.data() as User;
+                    await emailService.sendDisputeUpdateEmail({
+                        to: pUser.email,
+                        userName: pUser.name,
+                        jobTitle: dispute.jobTitle || 'Your Job',
+                        status: newStatus,
+                        disputeLink: `${baseUrl}/dashboard/disputes/${disputeId}`
+                    });
+                }
+            }
+        }
+
+        revalidatePath(`/dashboard/disputes/${disputeId}`);
+        return { success: true };
+    } catch (error: any) {
+        console.error('[Action] updateDisputeStatusAction failed:', error);
         return { success: false, error: error.message };
     }
 }

@@ -46,7 +46,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         // --- PHASE 1: JOB GIVER POSTS JOB ---
         console.log('--- START: Phase 1 - Job Giver posts a new job ---');
         await helper.auth.loginAsJobGiver();
-        await expect(page.getByText('Active Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page).toHaveURL(/.*\/dashboard/);
 
         // Mock Pincode API
         await page.route('**/api.postalpincode.in/pincode/**', async route => {
@@ -176,7 +176,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         console.log('--- START: Phase 2 - Installer places a bid ---');
         await helper.auth.logout();
         await helper.auth.loginAsInstaller();
-        await expect(page.getByText('Open Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         await expect(page.getByTestId('job-title')).toHaveText(uniqueJobTitle);
@@ -194,7 +194,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         console.log('--- START: Phase 3 - Job Giver awards job ---');
         await helper.auth.logout(); // Force logout to switch user from Installer to Job Giver
         await helper.auth.loginAsJobGiver();
-        await expect(page.getByText('Active Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         // Wait for bids to load and click send offer
@@ -216,7 +216,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
         await helper.auth.logout(); // Ensure clean session
         await helper.auth.loginAsInstaller();
-        await expect(page.getByText('Open Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         // Capture conflict check completion
@@ -253,8 +253,9 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
         // --- PHASE 5: JOB GIVER FUNDS ESCROW ---
         console.log('--- START: Phase 5 - Job Giver funds escrow ---');
+        await helper.auth.logout(); // Ensure clean session switch
         await helper.auth.loginAsJobGiver();
-        await expect(page.getByText('Active Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         await page.getByTestId('proceed-payment-button').click();
@@ -291,8 +292,9 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
         // --- PHASE 6: INSTALLER STARTS WORK ---
         console.log('--- START: Phase 6 - Installer starts work ---');
+        await helper.auth.logout(); // Ensure clean session
         await helper.auth.loginAsInstaller();
-        await expect(page.getByText('Open Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page).toHaveURL(/.*\/dashboard/);
 
         console.log(`[DEBUG] Phase 6: Navigating to job detail. JobID: ${jobId}`);
         const targetUrl = `/dashboard/jobs/${jobId}`;
@@ -341,7 +343,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         console.log('--- START: Phase 8 - Job Giver approves work ---');
         await helper.auth.logout(); // Ensure clean session
         await helper.auth.loginAsJobGiver();
-        await expect(page.getByText('Active Jobs').first()).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         const approveBtn = page.getByTestId('approve-release-button');

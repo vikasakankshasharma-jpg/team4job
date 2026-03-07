@@ -199,6 +199,23 @@ export class CashfreeClient {
             status: resp.data?.status,
         };
     }
+
+    /**
+     * Verify Cashfree Webhook Signature
+     */
+    verifyWebhookSignature(signature: string, rawBody: string, timestamp: string): boolean {
+        const { secret } = getPaymentCredentials();
+        const crypto = require('crypto');
+
+        // Cashfree V3 Webhook Signature: HMACSHA256(timestamp + rawBody, secret)
+        const data = timestamp + rawBody;
+        const expectedSignature = crypto
+            .createHmac('sha256', secret)
+            .update(data)
+            .digest('base64');
+
+        return signature === expectedSignature;
+    }
 }
 
 export const cashfreeClient = new CashfreeClient();
