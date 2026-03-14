@@ -38,17 +38,17 @@ export function trackQueryPerformance(
 
     // Log slow queries (>1 second)
     if (duration > 1000) {
-        console.warn(`[SLOW QUERY] ${queryName} took ${duration}ms for ${docCount} documents`);
+        // Slow query detected
     }
 
     // Alert on large fetches (>100 documents)
     if (docCount > 100) {
-        console.warn(`[LARGE FETCH] ${queryName} fetched ${docCount} documents`);
+        // Large fetch detected
     }
 
     // Log errors
     if (error) {
-        console.error(`[QUERY ERROR] ${queryName} failed:`, error);
+        // Query error recorded
     }
 
     return metrics;

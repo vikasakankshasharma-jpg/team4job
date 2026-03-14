@@ -11,7 +11,6 @@ export async function deductReputationAction(input: DeductReputationInput) {
         if (input.jobId) revalidatePath(`/dashboard/jobs/${input.jobId}`);
         return { success: true, newPoints };
     } catch (error: any) {
-        console.error('deductReputationAction error:', error);
         return { success: false, error: error.message || 'Failed to deduct reputation' };
     }
 }

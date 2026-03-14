@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
                         jobsMap.set(jobId, job);
                     }
                 } catch (error) {
-                    console.error(`Failed to fetch job ${jobId}:`, error);
                 }
             })
         );
@@ -61,7 +60,6 @@ export async function GET(request: NextRequest) {
             hasMore: bids.length === limit
         });
     } catch (error: any) {
-        console.error('Failed to fetch bids:', error);
         return NextResponse.json(
             { error: error.message || 'Failed to fetch bids' },
             { status: 500 }

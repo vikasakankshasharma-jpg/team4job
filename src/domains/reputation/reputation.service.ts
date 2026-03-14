@@ -1,7 +1,7 @@
 
 import { DeductReputationInput } from './reputation.types';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
-import { logger } from '@/infrastructure/logger';
+
 import { FieldValue } from 'firebase-admin/firestore';
 import { userService } from '../users/user.service';
 
@@ -33,13 +33,7 @@ export class ReputationService {
             });
         }
 
-        logger.adminAction('SYSTEM', 'REPUTATION_DEDUCTED', userId, {
-            points,
-            reason,
-            jobId,
-            oldPoints: currentPoints,
-            newPoints
-        });
+
 
         return newPoints;
     }
@@ -49,7 +43,7 @@ export class ReputationService {
         await db.collection('users').doc(userId).update({
             'installerProfile.reputationPoints': FieldValue.increment(points)
         });
-        logger.info('Reputation points added', { userId, points, reason });
+
     }
 }
 

@@ -14,7 +14,6 @@ export async function updateProfileAction(userId: string, data: UpdateProfileInp
         revalidatePath(`/dashboard/users/${userId}`);
         return { success: true };
     } catch (error: any) {
-        console.error('updateProfileAction error:', error);
         return { success: false, error: error.message || 'Failed to update profile' };
     }
 }
@@ -27,7 +26,6 @@ export async function getProfileAction(userId: string) {
         const user = await userService.getProfile(userId);
         return { success: true, user: JSON.parse(JSON.stringify(user)) };
     } catch (error: any) {
-        console.error('getProfileAction error:', error);
         return { success: false, error: error.message || 'Failed to fetch profile' };
     }
 }
@@ -75,7 +73,6 @@ export async function getRelatedInstallersAction(userId: string) {
         return { success: true, installers: JSON.parse(JSON.stringify(installers)) };
 
     } catch (error: any) {
-        console.error('getRelatedInstallersAction error:', error);
         return { success: false, error: error.message || 'Failed to fetch installers' };
     }
 }
@@ -95,7 +92,6 @@ export async function listInstallersAction(limit = 50, lastMemberSince?: string,
         );
         return { success: true, data: JSON.parse(JSON.stringify(installers)) };
     } catch (error: any) {
-        console.error('listInstallersAction error:', error);
         return { success: false, data: [], error: error.message || 'Failed to list installers' };
     }
 }

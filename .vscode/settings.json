@@ -1,4 +1,24 @@
 {
     "antigravityWorkspace": true,
-    "css.lint.unknownAtRules": "ignore"
+    "css.lint.unknownAtRules": "ignore",
+    "files.exclude": {
+        "**/*.log": true,
+        "**/*.txt": true,
+        "**/*.bak": true,
+        "**/*.zip": true,
+        "**/dom-dump.html": true,
+        "**/firebase-export*/": true,
+        "**/playwright-report/": true,
+        "**/test-results/": true
+    },
+    "search.exclude": {
+        "**/*.log": true,
+        "**/*.txt": true,
+        "**/*.bak": true,
+        "**/*.zip": true,
+        "**/dom-dump.html": true,
+        "**/firebase-export*/": true,
+        "**/playwright-report/": true,
+        "**/test-results/": true
+    }
 }

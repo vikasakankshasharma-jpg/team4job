@@ -35,7 +35,7 @@ export default function AIHealthPage() {
                 setMetrics(fetchedMetrics);
                 setRecentLogs(fetchedLogs);
             } catch (error) {
-                console.error("Failed to load AI data", error);
+                // Failed to load AI data
             } finally {
                 setLoading(false);
             }

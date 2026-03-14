@@ -1,7 +1,6 @@
 "use client";
 
 import { User } from '@/lib/types';
-import { logger } from '@/infrastructure/logger';
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
@@ -12,7 +11,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useFirestore, useFirebase } from "@/lib/firebase/client-provider";
 import { toDate } from "@/lib/utils";
-import { setAuthTokenAction, clearAuthTokenAction } from "@/app/actions/auth.actions";
+import { updateSessionTokenAction, removeSessionTokenAction } from "@/app/actions/auth.actions";
 
 // Re-export firebase hooks for convenience
 export { useFirestore, useFirebase, useStorage } from "@/lib/firebase/client-provider";
@@ -60,13 +59,11 @@ const isPublicPath = (path: string) => {
   const normalized = path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
 
   const isPublic = PUBLIC_PAGES.includes(normalized);
-  if (!isPublic) {
-    // console.log('[useUser] Protected path:', path, 'Normalized:', normalized);
-  }
   return isPublic;
 };
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  console.log("CORTEX_CANARY_ACTIVE_V1");
   const { auth } = useFirebase();
   const db = useFirestore();
 
@@ -75,6 +72,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasAuthUser, setHasAuthUser] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -85,9 +83,17 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const lastRedirectPath = useRef<string | null>(null);
   const lastUpdateRef = useRef<number>(0);
 
+  // Sync role from localStorage after hydration
+  useEffect(() => {
+    setIsMounted(true);
+    const storedRole = localStorage.getItem('userRole') as Role;
+    if (storedRole) {
+      setRoleState(storedRole);
+    }
+  }, []);
+
   const smartPush = useCallback((path: string) => {
     if (pathname === path || lastRedirectPath.current === path) return;
-    console.log(`[useUser] Redirecting: ${pathname} -> ${path}`);
     lastRedirectPath.current = path;
     router.push(path);
   }, [pathname, router]);
@@ -134,7 +140,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     lastRedirectPath.current = null;
 
     const handlePermissionError = (error: FirestorePermissionError) => {
-      console.error("Firestore Permission Error:", error);
       toast({
         title: "Permission Denied",
         description: "You do not have permission to perform this action.",
@@ -149,24 +154,17 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (firebaseUser) {
         // Sync token to cookie for server-side fetching
-        // Skip in E2E mode — server actions can crash with UnrecognizedActionError
-        // when the .next cache is stale, which blocks the entire auth flow.
-        const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
-        if (!isE2EMode) {
-          try {
-            const token = await firebaseUser.getIdToken();
-            await setAuthTokenAction(token);
-          } catch (e) {
-            console.error('[useUser] Failed to sync token to cookie:', e);
-          }
-        } else {
-          console.log('[useUser] E2E mode: skipping server action token sync');
+        try {
+          const token = await firebaseUser.getIdToken();
+          await updateSessionTokenAction(token);
+        } catch (e) {
+          // Silent fail on cookie sync, not fatal
         }
 
         // In E2E mode, avoid realtime listeners but still fetch the user profile once
         // so role-based UI can render correctly.
+        const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
         if (isE2EMode) {
-          logger.info('[useUser] E2E mode detected - using one-time user profile fetch (no realtime listener)');
           setLoading(true);
           setHasAuthUser(true);
 
@@ -174,22 +172,26 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           try {
             // In CI/emulator the users doc can appear a little later than auth state.
             // Retry a few times to avoid getting stuck in a loading shell after successful login.
-            let snap = await getDoc(userDocRef);
-            for (let i = 0; i < 4 && !snap.exists(); i++) {
-              await new Promise((resolve) => setTimeout(resolve, 1000));
+            let snap;
+            try {
               snap = await getDoc(userDocRef);
+            } catch (err: any) {
+              // i.e ignore
             }
 
-            if (snap.exists()) {
+            for (let i = 0; i < 4 && (!snap || !snap.exists()); i++) {
+              try {
+                snap = await getDoc(userDocRef);
+              } catch (err: any) {
+                // i.e ignore
+              }
+            }
+
+            if (snap && snap.exists()) {
               const userData = { id: snap.id, ...snap.data() } as User;
               updateUserState(userData);
             } else {
               const inferredRoles = inferE2ERolesFromIdentity(firebaseUser);
-              console.warn('[useUser] E2E user profile missing after retries. Falling back to inferred role(s).', {
-                uid: firebaseUser.uid,
-                email: firebaseUser.email,
-                inferredRoles,
-              });
 
               const basicUser: User = {
                 id: firebaseUser.uid,
@@ -206,7 +208,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
               updateUserState(basicUser);
             }
           } catch (e) {
-            console.error('[useUser] E2E one-time user fetch failed:', e);
+            // In E2E, wait longer before giving up if we are on a protected path
 
             // Never leave `user` null in E2E mode after auth success, or the dashboard can hang.
             const fallbackUser: User = {
@@ -252,20 +254,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (timeSinceLocalUpdate > 5 * 60 * 1000 && timeSinceDbUpdate > 5 * 60 * 1000) {
                 lastUpdateRef.current = now; // Mark local update immediately
                 updateDoc(userDocRef, { lastLoginAt: serverTimestamp(), lastActiveAt: serverTimestamp() }).catch(e => {
-                  console.error("Failed to update user activity:", e);
+                  // Failed to update activity
                 });
               }
             }
           }
           setLoading(false);
         }, (error) => {
-          console.error("Error listening to user document:", error);
           setLoading(false);
         });
         return () => unsubscribeDoc();
       } else {
         // Clear token cookie
-        await clearAuthTokenAction();
+        await removeSessionTokenAction();
         setHasAuthUser(false);
         updateUserState(null);
         setLoading(false);
@@ -352,9 +353,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (redirectPath && !isLoggingOut.current) {
+      if (typeof window !== 'undefined' && window.location.hostname !== 'ssr') {
+        console.log(`[UseUser] Redirecting: ${pathname} -> ${redirectPath} (Role: ${role}, User: ${user?.email || 'none'})`);
+      }
       smartPush(redirectPath);
     }
-  }, [redirectPath, smartPush]);
+  }, [redirectPath, smartPush, pathname, role, user?.email]);
 
 
 
@@ -391,7 +395,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-          console.error("Login failed: No user found with this mobile number");
           toast({
             title: "Login Failed",
             description: "No account found with this mobile number.",
@@ -405,21 +408,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userDoc = querySnapshot.docs[0];
         const userData = userDoc.data();
         if (!userData.email) {
-          console.error("Login failed: User has no email");
           return false;
         }
         email = userData.email;
       }
 
       await signInWithEmailAndPassword(auth, email, password);
-      logger.info(`[useUser] Login successful for ${email}`);
       return true;
     } catch (error: any) {
-      console.error("[useUser] Login failed:", {
-        code: error.code,
-        message: error.message,
-        email: email
-      });
       return false;
     }
   }, [auth, db, toast]);

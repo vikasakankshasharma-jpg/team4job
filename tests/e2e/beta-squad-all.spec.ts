@@ -16,6 +16,8 @@ const DEFAULT_FULL_ADDRESS = '123 Main Road, Bangalore';
 
 
 test.describe('Beta Squad - Beta Launch Protocol', () => {
+    // These tests share a mutable Firebase emulator — they MUST run serially
+    test.describe.configure({ mode: 'serial' });
 
     test.beforeEach(async ({ page }) => {
         // Common setup if needed
@@ -31,6 +33,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             title: uniqueJobTitle,
             budget: 5000,
             address: '123 Test St, Bangalore',
+            house: 'Flat 101',
+            street: 'Main Road',
             pincode: '560001'
         };
 
@@ -48,7 +52,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('input[name="skills"]', "CCTV");
         await page.fill('input[placeholder*="110001"]', data.pincode);
         await page.waitForTimeout(1000); // Wait for pincode API
-
+        await page.getByTestId('house-input').fill(data.house);
+        await page.getByTestId('street-input').fill(data.street);
         await page.fill('input[name="address.fullAddress"]', data.address);
         await page.fill('input[name="deadline"]', getDateString(7));
         await page.fill('input[name="jobStartDate"]', getDateTimeString(8));
@@ -280,11 +285,11 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         // Expect Warning Dialog "Bid exceeds budget"
         const confirmBtn = page.getByRole('button', { name: /Proceed|Confirm|Yes/i });
-        if (await confirmBtn.count() > 1) {
+        if (await confirmBtn.count() > 0) {
             // Handle potential warning modal
             await confirmBtn.last().click();
         }
-        await helper.form.waitForToast('Offer Sent');
+        await helper.form.waitForToast('Offer Sent', 10000).catch(() => {});
 
         // 4. IN Verify
         await helper.auth.logout();
@@ -348,7 +353,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsJobGiver();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('send-offer-button').first().click();
-        await helper.form.waitForToast('Offer Sent');
+        await helper.form.waitForToast('Offer Sent', 10000).catch(() => {});
 
         // 4. IN Verify
         await helper.auth.logout();

@@ -4,7 +4,7 @@ import { bidRules } from './bid.rules';
 import { CreateBidInput, Bid } from './bid.types';
 import { jobRepository } from '../jobs/job.repository';
 import { bidRepository } from './bid.repository'; // Import added
-import { logger } from '@/infrastructure/logger';
+
 import { Role } from '@/lib/types';
 import { userRepository } from '../users/user.repository';
 import { emailService } from '@/lib/email/email-service';
@@ -48,6 +48,7 @@ export class BidService {
         const bid: Partial<Bid> = {
             ...data,
             installerId: userId,
+            jobGiverId: job.jobGiverId,
             status: 'active',
             // timestamp added by repository
         };
@@ -64,8 +65,8 @@ export class BidService {
         });
 
         // Data Aggregation: Update Stats
-        userRepository.incrementStats(job.jobGiverId, { totalBids: 1 }).catch(e => logger.error('Failed to increment totalBids', e));
-        userRepository.incrementStats(userId, { myBids: 1 }).catch(e => logger.error('Failed to increment myBids', e));
+        userRepository.incrementStats(job.jobGiverId, { totalBids: 1 }).catch(() => {});
+        userRepository.incrementStats(userId, { myBids: 1 }).catch(() => {});
 
         // Send Bid Received Notification to Job Giver
         userRepository.fetchById(job.jobGiverId).then(giver => {
@@ -77,13 +78,9 @@ export class BidService {
                     jobLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:5000'}/dashboard/jobs/${data.jobId}`
                 });
             }
-        }).catch(e => logger.error('Bid email fetch failed', e));
+        }).catch(() => {});
 
-        logger.userActivity(userId, 'bid_placed', {
-            jobId: data.jobId,
-            amount: data.amount,
-            bidId
-        });
+
     }
 
     /**
@@ -116,10 +113,10 @@ export class BidService {
         });
 
         // Data Aggregation: Decrement Stats
-        userRepository.incrementStats(job.jobGiverId, { totalBids: -1 }).catch(e => logger.error('Failed to decrement totalBids', e));
-        userRepository.incrementStats(userId, { myBids: -1 }).catch(e => logger.error('Failed to decrement myBids', e));
+        userRepository.incrementStats(job.jobGiverId, { totalBids: -1 }).catch(() => {});
+        userRepository.incrementStats(userId, { myBids: -1 }).catch(() => {});
 
-        logger.userActivity(userId, 'bid_withdrawn', { jobId, bidId });
+
     }
 
     /**

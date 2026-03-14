@@ -47,7 +47,6 @@ export function ReapplyCard({ job, user, onJobUpdate }: { job: Job, user: User, 
                 description: "15 points deducted. You are now eligible to be selected again.",
             });
         } catch (error) {
-            console.error("Re-apply failed:", error);
             toast({
                 title: "Error",
                 description: "Failed to process re-application penalty.",

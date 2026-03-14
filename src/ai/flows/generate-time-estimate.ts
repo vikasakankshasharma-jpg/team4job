@@ -35,7 +35,7 @@ const timeEstimatePrompt = ai.definePrompt({
     },
     output: { schema: GenerateTimeEstimateOutputSchema },
     prompt: `
-    You are an expert project manager for security and CCTV installation services.
+    You are an expert project manager for technical services and installations.
     Your task is to estimate the time required to complete the following job.
 
     **Job Details:**
@@ -60,8 +60,8 @@ const timeEstimatePrompt = ai.definePrompt({
     - Explain your reasoning.
 
     **Example:**
-    - Input: "Install 4 CP Plus Cameras"
-    - Output: { "timeEstimate": { "min": 4, "max": 6, "unit": "hours" }, "confidence": "high", "reasoning": "Standard 4 channel setup takes ~1-1.5 hours per camera including cabling." }
+    - Input: "Install 4 Smart Devices"
+    - Output: { "timeEstimate": { "min": 2, "max": 4, "unit": "hours" }, "confidence": "high", "reasoning": "Standard smart device setup takes ~30-60 minutes per device including configuration." }
   `,
 });
 
@@ -95,7 +95,6 @@ export const generateTimeEstimateFlow = defineLoggedFlow(
                 });
             }
         } catch (error) {
-            console.warn("Failed to fetch historical context for time estimate:", error);
         }
 
         const { output } = await timeEstimatePrompt({

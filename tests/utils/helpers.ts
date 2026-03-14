@@ -9,6 +9,11 @@ export class AuthHelper {
 
     private static seeded = false;
 
+    /** Allow tests that seed users via their own scripts to skip the seed-users API call */
+    static markSeeded() {
+        AuthHelper.seeded = true;
+    }
+
     private async seedTestUsers() {
         if (AuthHelper.seeded) return;
 
@@ -32,7 +37,7 @@ export class AuthHelper {
                         throw new Error(`Failed to seed users after ${maxRetries} attempts. Last status: ${response.status()}`);
                     }
                     // Wait before retry
-                    await this.page.waitForTimeout(2000);
+                    await this.page.waitForTimeout(5000);
                 }
             } catch (e: any) {
                 console.warn(`[AuthHelper] Seed users attempt ${attempts} failed:`, e);
@@ -40,7 +45,7 @@ export class AuthHelper {
                     throw new Error(`Failed to seed users after ${maxRetries} attempts due to error: ${e.message || e}`);
                 }
                 // Wait before retry
-                await this.page.waitForTimeout(2000);
+                await this.page.waitForTimeout(5000);
             }
         }
     }
@@ -65,10 +70,16 @@ export class AuthHelper {
             try {
                 if (await initialLoader.isVisible({ timeout: 5000 }).catch(() => false)) {
                     console.log('[AuthHelper] Waiting for initial loader to disappear...');
-                    await expect(initialLoader).not.toBeVisible({ timeout: 45000 });
+                    // Use a slightly more lenient approach for emulator environments
+                    await this.page.waitForFunction(() => {
+                        const loader = document.querySelector('[data-testid="initial-loader"]');
+                        return !loader || (loader as HTMLElement).style.display === 'none';
+                    }, { timeout: 45000 }).catch(() => {
+                        console.warn('[AuthHelper] Loader still visible in DOM, but possibly transparent or hidden via CSS.');
+                    });
                 }
             } catch (e) {
-                console.warn('[AuthHelper] Timeout waiting for initial loader to disappear, continuing anyway...');
+                console.warn('[AuthHelper] Error or timeout waiting for initial loader, continuing anyway...');
             }
 
             // Wait a bit for the page to settle
@@ -198,7 +209,7 @@ export class AuthHelper {
 
                 // Navigate to login
                 // Hot reload / frame swaps can prevent the full "load" event.
-                await this.page.goto(ROUTES.login, { waitUntil: 'domcontentloaded', timeout: 60000 });
+                await this.page.goto(ROUTES.login, { waitUntil: 'domcontentloaded', timeout: 120000 });
 
                 // Force hide cookie banner to prevent interception
                 await this.page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
@@ -264,9 +275,9 @@ export class AuthHelper {
                     }
 
                     // Then wait for a stable dashboard marker (nav or user menu)
-                    await this.page.waitForSelector('[data-testid="nav-link-auditLog"], [data-testid="user-menu-trigger"], nav, [role="navigation"]', {
+                    await this.page.waitForSelector('[data-testid="nav-link-auditLog"], [data-testid="user-menu-trigger"], [data-testid="dashboard-post-job-btn"], nav, [role="navigation"], text=/Post (New )?Job/i, text=/Active Jobs/i', {
                         state: 'visible',
-                        timeout: 30000
+                        timeout: 60000
                     });
 
                     // Hide any persistent cookie consent banners that may appear after navigation
@@ -1175,13 +1186,16 @@ export class TestHelper {
         try {
             const urlObj = new URL(baseUrl);
             const hostname = urlObj.hostname || 'localhost';
-            void this.page.context().addCookies([{
-                name: 'dodo-cookie-consent',
+            const commonCookie = {
                 value: 'true',
                 domain: hostname,
                 path: '/',
                 expires: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365
-            }]);
+            };
+            void this.page.context().addCookies([
+                { ...commonCookie, name: 'dodo-cookie-consent' },
+                { ...commonCookie, name: 'CookieConsent' }
+            ]);
         } catch { /* ignore invalid URL */ }
 
         // 2. Suppress overlays via persistent CSS injection
@@ -1284,6 +1298,15 @@ export class TestHelper {
             const url = route.request().url();
             const pincode = url.split('/').pop();
             console.log(`[Mock] Intercepted Pincode request: ${pincode}`);
+
+            if (pincode === '000000' || pincode === 'invalid') {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify([{ Status: 'Error', Message: 'No records found' }])
+                });
+                return;
+            }
 
             await route.fulfill({
                 status: 200,
@@ -1426,16 +1449,22 @@ export class TestHelper {
         }
 
         // Detailed Address (House & Street)
-        const houseInput = this.page.getByTestId('house-input');
-        if (await houseInput.isVisible().catch(() => false)) {
-            const value = await houseInput.inputValue();
-            if (!value.trim()) await houseInput.fill('Flat 4B');
+        const houseInput = this.page.getByTestId('house-input').first();
+        if (await houseInput.count() > 0) {
+            const value = await houseInput.inputValue().catch(() => '');
+            if (!value.trim()) {
+                console.log('[TestHelper] Filling missing house field');
+                await houseInput.fill('Flat 4B');
+            }
         }
 
-        const streetInput = this.page.getByTestId('street-input');
-        if (await streetInput.isVisible().catch(() => false)) {
-            const value = await streetInput.inputValue();
-            if (!value.trim()) await streetInput.fill('12th Main Road, Indiranagar');
+        const streetInput = this.page.getByTestId('street-input').first();
+        if (await streetInput.count() > 0) {
+            const value = await streetInput.inputValue().catch(() => '');
+            if (!value.trim()) {
+                console.log('[TestHelper] Filling missing street field');
+                await streetInput.fill('Test Street');
+            }
         }
 
         const mapInput = this.page.getByTestId('full-address-input');

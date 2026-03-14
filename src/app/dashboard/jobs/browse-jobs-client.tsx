@@ -145,7 +145,6 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
       }
 
     } catch (error) {
-      console.error('Error fetching jobs:', error);
       if (!isLoadMore) setJobs([]);
     } finally {
       if (isLoadMore) {

@@ -30,7 +30,7 @@ export function SpendingInsightsCard({ userId }: SpendingInsightsCardProps) {
                 const data = await calculateSpendingInsights(db, userId);
                 setInsights(data);
             } catch (error) {
-                console.error("Error fetching spending insights:", error);
+                // Error fetching spending insights
             } finally {
                 setLoading(false);
             }
@@ -145,7 +145,7 @@ export function SpendingInsightsCard({ userId }: SpendingInsightsCardProps) {
                             variant="outline"
                             size="sm"
                             className="mt-4"
-                            onClick={() => router.push("/dashboard/post-job")}
+                            onClick={() => router.push("/wizard")}
                         >
                             Post a Job
                         </Button>

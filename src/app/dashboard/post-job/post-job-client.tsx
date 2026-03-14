@@ -65,7 +65,8 @@ import { TemplateSelector } from "@/components/post-job/template-selector";
 import { SaveTemplateDialog } from "@/components/post-job/save-template-dialog";
 import { BudgetTemplateSelector } from "@/components/post-job/budget-template-selector";
 import { SmartEstimatorDialog } from "@/components/post-job/smart-estimator-dialog";
-import { getLatestDraft, deleteDraft, JobDraft, JobTemplate, incrementTemplateUsage } from "@/lib/api/drafts";
+import { JobDraft, JobTemplate } from "@/lib/api/drafts";
+import { getLatestDraftAction, deleteDraftAction, incrementTemplateUsageAction } from "@/app/actions/draft.actions";
 import { Save, Check, Loader2 as Loader, Bookmark, Sparkles } from "lucide-react";
 import { createJobAction, updateJobAction, getJobForEditAction } from "@/app/actions/job.actions";
 import { CreateJobInput } from "@/domains/jobs/job.types";
@@ -232,7 +233,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isEstimating, setIsEstimating] = React.useState(false); // New state for price estimation
   const { user, role, loading: userLoading } = useUser();
-  const { storage, db } = useFirebase();
+  const { storage } = useFirebase();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mapCenter, setMapCenter] = React.useState<{ lat: number, lng: number } | null>(null);
@@ -353,40 +354,25 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     if (directAwardParam) {
       form.setValue('directAwardInstallerId', directAwardParam, { shouldValidate: true });
     }
-  }, [directAwardParam, form]);
-
-  // Load draft on mount (only for new jobs)
-  useEffect(() => {
-    async function checkForDraft() {
-      if (isEditMode || repostJobId || !user) return; // Removed db check
-
-      // Note: Drafts are still using client-side Firestore for now as per plan (step 3 said "Remove old hooks gradually")
-      // But typically we should migrate draft logic too. For now we leave drafts as is if they use 'useAutoSave' which uses 'db'.
-      // Wait, 'useAutoSave' might rely on 'db'. Let's check imports. 
-      // 'useAutoSave' hook handles the db. We don't need 'db' here explicitly if we pass it? 
-      // Actually 'getLatestDraft' needs 'db'. 
-      // If we removed 'db' from useFirebase(), we need to get it again or migrate drafts.
-      // To avoid breaking drafts, I will re-add 'db' to useFirebase destructuring for DRAFTS ONLY.
-      // But the goal is "No component imports Firebase directly".
-      // Let's assume for this specific task (Job Domain Refactor), we focus on the MAIN flow.
-      // I will keep 'db' just for drafts for now, but mark as TODO.
-      // Or better, I will just ignore the lint rule/Architecture rule for Drafts until next step.
-      // Wait, I am removing 'doc', 'setDoc' imports. 'getLatestDraft' is imported from lib/api/drafts.
-      // So 'getLatestDraft' likely takes 'db' as arg.
-      // I must expose 'db' again.
-
-      // const { db, storage } = useFirebase(); // I need to revert this line change to keep db for drafts?
-      // Let's keep db for now but only pass it to legacy functions.
-
-
-      const draft = await getLatestDraft(db, user.id);
-      if (draft && !isSubmitted) {
-        setLoadedDraft(draft);
-        setShowDraftDialog(true);
+    const checkForDraft = async () => {
+      if (!user || isEditMode || repostJobId || isSubmitted) return;
+      try {
+        const { getLatestDraftAction } = await import('@/app/actions/draft.actions');
+        const res = await getLatestDraftAction(user.id);
+        if (res.success && res.draft) {
+          setLoadedDraft(res.draft);
+          setShowDraftDialog(true);
+        } else if (!directAwardParam && process.env.NEXT_PUBLIC_IS_CI !== 'true') {
+          // Wizard-first guard: No draft, no special params → redirect to wizard
+          router.replace('/wizard');
+        }
+      } catch (error) {
+        // Ignore error silently
       }
-    }
+    };
+
     checkForDraft();
-  }, [isEditMode, repostJobId, user, db, isSubmitted]);
+  }, [isEditMode, repostJobId, user, isSubmitted]);
 
   // Handle draft recovery
   const handleResumeDraft = useCallback(() => {
@@ -415,19 +401,19 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   }, [loadedDraft, form, setDraftId, toast, tSuccess]);
 
   const handleDiscardDraft = useCallback(async () => {
-    if (!loadedDraft || !user || !db) return;
+    if (!loadedDraft || !user) return;
 
-    await deleteDraft(db, user.id, loadedDraft.id);
+    await deleteDraftAction(user.id, loadedDraft.id);
     setShowDraftDialog(false);
     toast({
       title: tSuccess('draftDiscarded'),
       description: tSuccess('draftDiscardedDesc'),
     });
-  }, [loadedDraft, user, db, toast, tSuccess]);
+  }, [loadedDraft, user, toast, tSuccess]);
 
   // Handle template selection
   const handleTemplateSelect = useCallback(async (template: JobTemplate) => {
-    if (!user || !db) return;
+    if (!user) return;
 
     const fields = template.fields;
     form.reset({
@@ -444,13 +430,13 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       priceEstimate: fields.budget || { min: 0, max: 0 },
     });
 
-    await incrementTemplateUsage(db, user.id, template.id);
+    await incrementTemplateUsageAction(user.id, template.id);
 
     toast({
       title: tSuccess('templateLoaded'),
       description: tSuccess('templateLoadedDesc', { name: template.name }),
     });
-  }, [user, db, form, toast, tSuccess]);
+  }, [user, form, toast, tSuccess]);
 
   React.useEffect(() => {
     async function prefillForm() {
@@ -564,7 +550,6 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error("Error generating job details:", error);
       toast({
         title: tError('generationFailed'),
         description: tError((error as any).message) || tError('generationFailedDesc'),
@@ -577,19 +562,20 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
 
   const handleVoiceTranscript = async (transcript: string) => {
     // OLD LOGIC: form.setValue("jobTitle", transcript, { shouldValidate: true });
-    // NEW LOGIC: Call CCTV Voice Processor
+    // NEW LOGIC: Call Smart Voice Processor
 
     setIsGenerating(true);
     try {
-      const { generateCCTVJobFromVoiceAction } = await import('@/app/actions/ai.actions');
-      const result = await generateCCTVJobFromVoiceAction(transcript);
+      const { generateSmartJobFromVoiceAction } = await import('@/app/actions/ai.actions');
+      const result = await generateSmartJobFromVoiceAction(transcript);
 
       if (result.success && result.data) {
         const data = result.data;
         // Populate Form - HUMAN IN THE LOOP
         form.setValue("jobTitle", data.title, { shouldValidate: true });
         form.setValue("jobDescription", data.description, { shouldValidate: true });
-        form.setValue("jobCategory", "Security & CCTV", { shouldValidate: true });
+        // Use suggested category if available, else default
+        form.setValue("jobCategory", data.category || "Security & Surveillance", { shouldValidate: true });
         form.setValue("skills", data.skills.join(', '), { shouldValidate: true });
 
         toast({
@@ -598,22 +584,20 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         });
       } else {
         // Fallback to simple title fill if AI fails
-        console.warn("Voice AI failed, falling back to title fill");
         form.setValue("jobTitle", transcript, { shouldValidate: true });
         handleGenerateDetails(transcript); // Trigger old generation logic as backup
       }
     } catch (error) {
-      console.error("Voice processing error:", error);
       form.setValue("jobTitle", transcript, { shouldValidate: true });
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // --- CCTV Visual Job Posting ---
+  // --- Smart Visual Job Posting ---
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleCCTVAnalysis = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageAnalysis = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -632,8 +616,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         const base64Content = base64String.split(',')[1];
 
         // Call Server Action
-        const { generateCCTVJobFromImageAction } = await import('@/app/actions/ai.actions');
-        const result = await generateCCTVJobFromImageAction(base64Content);
+        const { generateSmartJobFromImageAction } = await import('@/app/actions/ai.actions');
+        const result = await generateSmartJobFromImageAction(base64Content);
 
         if (result.success && result.data) {
           const data = result.data;
@@ -641,11 +625,11 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
           // Populate Form - HUMAN IN THE LOOP: User edits these values
           form.setValue("jobTitle", data.title, { shouldValidate: true });
           form.setValue("jobDescription", data.description, { shouldValidate: true });
-          form.setValue("jobCategory", "Security & CCTV", { shouldValidate: true }); // Auto-select category
+          form.setValue("jobCategory", data.category || "Security & Surveillance", { shouldValidate: true }); // Auto-select category
           form.setValue("skills", data.skills.join(', '), { shouldValidate: true });
 
           toast({
-            title: "CCTV Analysis Complete",
+            title: "Analysis Complete",
             description: "Job details have been auto-filled. Please review and edit before posting.",
           });
         } else {
@@ -655,7 +639,6 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      console.error("CCTV Analysis Error:", error);
       toast({ title: tError('generationFailed'), description: "Could not analyze image.", variant: "destructive" });
       setIsGenerating(false);
     }
@@ -695,7 +678,6 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error("Error estimating price:", error);
       toast({
         title: tError('estimationFailed'),
         description: tError((error as any).message) || tError('estimationFailedDesc'),
@@ -723,29 +705,24 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     const values = pendingValues;
     if (!values) return;
 
-    console.log("Form submission started with values:", values);
 
     // Close dialogs
     setIsConfirmDialogOpen(false);
     setIsPostConfirmDialogOpen(false);
 
     if (!user || !storage) { // Removed db requirement
-      console.log("DEBUG: Exiting early because !user or !storage. user:", !!user, "storage:", !!storage);
       toast({ title: tCommon('error'), description: tError('loginRequired'), variant: "destructive" });
       return;
     }
 
     setIsProcessing(true);
-    console.log("DEBUG: Passed user/storage check. Setting isProcessing=true.");
 
     const [pincode] = values.address.cityPincode.split(',');
-    console.log("DEBUG: Parsed pincode:", pincode);
 
     // 1. Upload Attachments (Client-side)
     const attachmentUrls: JobAttachment[] = [];
     try {
       if (values.attachments && values.attachments.length > 0) {
-        console.log(`Uploading ${values.attachments.length} attachments...`);
         for (const file of values.attachments) {
           // Compress the image before uploading
           const finalFileToUpload = await compressImage(file);
@@ -759,18 +736,13 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
             fileType: finalFileToUpload.type,
           });
         }
-        console.log("Attachments uploaded successfully");
-      } else {
-        console.log("DEBUG: No attachments to upload.");
       }
     } catch (uploadError) {
-      console.error("Upload failed", uploadError);
       toast({ title: tCommon('uploadFailed'), description: tCommon('uploadFailedDesc'), variant: "destructive" });
       setIsProcessing(false);
       return;
     }
 
-    console.log("DEBUG: Preparing jobInput...");
     // 2. Prepare Data for Server Action
     const jobInput: CreateJobInput = {
       title: values.jobTitle,
@@ -793,12 +765,9 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       directAwardInstallerId: values.directAwardInstallerId || undefined,
       preferredTimeSlot: values.preferredTimeSlot,
     };
-    console.log("DEBUG: jobInput prepared:", jobInput);
 
     try {
       let result;
-      console.log("DEBUG: Entering submit try block. Edit mode:", isEditMode);
-
       if (isEditMode && editJobId) {
         // Update Action
         result = await updateJobAction(editJobId, user.id, jobInput);
@@ -818,9 +787,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
           setIsSubmitted(true);
 
           // Clear Draft after success
-          if (draftId && user && db) {
-            console.log("Cleaning up draft:", draftId);
-            deleteDraft(db, user.id, draftId).catch(err => console.error("Failed to delete draft after submission", err));
+          if (draftId && user) {
+            deleteDraftAction(user.id, draftId).catch(() => {});
           }
 
           const targetUrl = `/dashboard/jobs/${result.jobId}`;
@@ -842,7 +810,6 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
           // Fallback: If router doesn't navigate within 1.5s, force reload
           setTimeout(() => {
             if (window.location.pathname !== targetUrl) {
-              console.log("Router push fallback: forcing window location change");
               window.location.href = targetUrl;
             }
           }, 1500);
@@ -852,7 +819,6 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         }
       }
     } catch (error: any) {
-      console.error("Error processing job:", error);
       toast({
         title: tError('postFailed'),
         description: error.message || tCommon('error'),
@@ -860,7 +826,6 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       });
     } finally {
       setIsProcessing(false);
-      console.log("Form submission completed");
     }
   }
 
@@ -879,14 +844,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const buttonText = isEditMode ? tJob('saveChanges') : (repostJobId ? tJob('repostJob') : tJob('postJob'));
 
   const handleSubmitClick = async () => {
-    console.log("HandleSubmitClick triggered");
     // Check form validity before submission
     // If valid, submit the form
     form.handleSubmit(onSubmit, (errors) => {
       // Invalid handler
-      console.error("Form validation errors:", JSON.stringify(errors, null, 2));
-      console.error("verifyDetails value:", form.getValues("verifyDetails"));
-      console.error("Current address values:", JSON.stringify(form.getValues("address"), null, 2));
       const firstErrorField = Object.keys(errors)[0];
       const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
       if (errorElement) {
@@ -1040,7 +1001,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                           type="file"
                           ref={fileInputRef}
                           accept="image/*"
-                          onChange={handleCCTVAnalysis}
+                          onChange={handleImageAnalysis}
                           disabled={isGenerating}
                         />
                       </div>
@@ -1056,7 +1017,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                         ) : (
                           <Zap className="mr-2 h-4 w-4" />
                         )}
-                        Analyze CCTV Site
+                        Analyze Site Photo
                       </Button>
                     </div>
                     <FormControl>

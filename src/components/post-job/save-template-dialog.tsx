@@ -62,10 +62,8 @@ export function SaveTemplateDialog({
                 description: tSuccess('templateSavedDesc', { name: templateName.trim() }),
             });
 
-            setTemplateName('');
             onOpenChange(false);
         } catch (error) {
-            console.error('Error saving template:', error);
             toast({
                 title: tError('saveFailed'), // Added to errors namespace previously in my head, checking...
                 description: tError('generic'),

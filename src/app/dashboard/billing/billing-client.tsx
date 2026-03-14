@@ -252,7 +252,6 @@ export default function BillingClient() {
           }
         },
         onError: (errorData: any) => {
-          console.error("Cashfree onError:", errorData);
           toast({
             title: t('paymentFailed'),
             description: errorData.error.message || t('paymentFailedDesc'),

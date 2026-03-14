@@ -116,7 +116,7 @@ export default function TransactionsClient() {
             setTransactions(data.transactions || []);
 
         } catch (error) {
-            console.error("Error fetching transactions:", error);
+            // Error fetching transactions
         } finally {
             setLoading(false);
         }

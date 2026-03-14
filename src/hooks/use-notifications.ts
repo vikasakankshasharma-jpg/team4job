@@ -20,7 +20,6 @@ export function useNotifications() {
         }
 
         if (isE2EMode) {
-            console.log('[useNotifications] E2E mode detected - skipping realtime subscription');
             setNotifications([]);
             setLoading(false);
             return;
@@ -55,8 +54,7 @@ export function useNotifications() {
         try {
             await NotificationsService.markAsRead(notificationId);
         } catch (error) {
-            console.error("Failed to mark notification as read:", error);
-            // Revert if needed, or just let the next snapshot fix it
+            // Revert or handle silently
         }
     }, []);
 
@@ -67,7 +65,6 @@ export function useNotifications() {
         try {
             await NotificationsService.markAllAsRead(user.id);
         } catch (error) {
-            console.error("Failed to mark all as read:", error);
             setNotifications(previous);
         }
     }, [user, notifications]);

@@ -91,7 +91,6 @@ export default function PendingSignupsClient() {
             })) as PendingSignup[];
             setSignups(data);
         } catch (error) {
-            console.error("Error fetching pending signups:", error);
             toast({
                 title: "Error",
                 description: "Failed to load pending signups.",
@@ -212,7 +211,6 @@ export default function PendingSignupsClient() {
                 description: `Scheduled for ${data.date.toLocaleString()}`,
             });
         } catch (error) {
-            console.error("Error scheduling follow-up:", error);
             toast({
                 title: "Error",
                 description: "Failed to schedule follow-up",
@@ -240,7 +238,6 @@ export default function PendingSignupsClient() {
                 description: "User has been marked as denied",
             });
         } catch (error) {
-            console.error("Error marking as denied:", error);
             toast({
                 title: "Error",
                 description: "Failed to mark as denied",
@@ -268,7 +265,6 @@ export default function PendingSignupsClient() {
                 description: `${action.toUpperCase()} contact logged`,
             });
         } catch (error) {
-            console.error("Error logging activity:", error);
             toast({
                 title: "Error",
                 description: "Failed to log activity",
@@ -287,7 +283,6 @@ export default function PendingSignupsClient() {
                 description: `Set to ${priority} priority`,
             });
         } catch (error) {
-            console.error("Error updating priority:", error);
             toast({
                 title: "Error",
                 description: "Failed to update priority",

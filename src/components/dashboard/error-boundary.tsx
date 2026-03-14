@@ -27,7 +27,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     }
 
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error("Uncaught error in Dashboard:", error, errorInfo);
+        // Uncaught error in Dashboard
     }
 
     public resetBoundary = () => {

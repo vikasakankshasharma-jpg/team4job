@@ -95,7 +95,6 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
       form.reset();
       onSave();
     } catch (e) {
-      console.error(e);
       toast({
         title: t('add.error'),
         description: t('add.failed'),

@@ -59,7 +59,6 @@ export default function ChatClient() {
     useEffect(() => {
         if (!user || !db) return;
 
-        console.log("Setting up conversation listener for user:", user.id);
         const q = query(
             collection(db, 'conversations'),
             where('participants', 'array-contains', user.id),
@@ -83,7 +82,7 @@ export default function ChatClient() {
                             };
                         }
                     } catch (e) {
-                        console.error("Failed to fetch user details", e);
+                        // Suppress fetch errors in production
                     }
                 }
 
@@ -199,7 +198,6 @@ export default function ChatClient() {
             setInputText('');
 
         } catch (error) {
-            console.error("Send failed", error);
             toast({ title: t('sendFailed'), description: tError('networkError'), variant: "destructive" });
         } finally {
             setIsSending(false);

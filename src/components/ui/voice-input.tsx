@@ -43,7 +43,6 @@ export function VoiceInput({ onTranscript, isProcessing = false, className }: Vo
                 };
 
                 recognition.onerror = (event: any) => {
-                    console.error("Speech recognition error", event.error);
                     setIsListening(false);
                 };
 

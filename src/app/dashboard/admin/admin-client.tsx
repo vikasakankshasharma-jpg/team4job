@@ -139,7 +139,6 @@ export default function AdminClient() {
                     overall: 'healthy'
                 });
             } catch (error) {
-                console.error("Failed to fetch admin metrics", error);
                 setPlatformHealth({
                     firebase: 'degraded',
                     overall: 'issues'
@@ -227,7 +226,6 @@ export default function AdminClient() {
                 variant: "default"
             });
         } catch (error) {
-            console.error(error);
             toast({
                 title: t('resolutionFailed'),
                 description: t('resolutionFailedDesc'),

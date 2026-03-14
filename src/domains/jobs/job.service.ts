@@ -1,9 +1,10 @@
 // domains/jobs/job.service.ts
 
 import { jobRepository } from './job.repository';
+import { bidRepository } from '../bids/bid.repository';
 import { jobRules } from './job.rules';
 import { Job, JobStatus, CreateJobInput, JobFilters, JobStats, InstallerStats } from './job.types'; // Updated imports
-import { logger } from '@/infrastructure/logger';
+
 import { Role, User } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { paymentService } from '../payments/payment.service';
@@ -46,18 +47,15 @@ export class JobService {
 
             const jobId = await jobRepository.create(job);
 
-            logger.userActivity(userId, 'job_created', { jobId, title: data.title });
-
             // Increment Job Giver stats
-            userRepository.incrementStats(userId, { activeJobs: 1 }).catch(e => logger.error('Failed to increment activeJobs', e));
+            userRepository.incrementStats(userId, { activeJobs: 1 }).catch(e => { /* Failed to increment activeJobs */ });
 
             // AI Learning Linkage (Async, don't block)
-            aiLearningService.linkLogToEntity(userId, jobId, 'price_estimate').catch(err => logger.error('AI linkage failed (price_estimate)', err));
-            aiLearningService.linkLogToEntity(userId, jobId, 'time_estimate').catch(err => logger.error('AI linkage failed (time_estimate)', err));
+            aiLearningService.linkLogToEntity(userId, jobId, 'price_estimate').catch(err => { /* AI linkage failed (price_estimate) */ });
+            aiLearningService.linkLogToEntity(userId, jobId, 'time_estimate').catch(err => { /* AI linkage failed (time_estimate) */ });
 
             return jobId;
         } catch (error: any) {
-            logger.error('Failed to create job', error, { userId });
             throw new Error(error.message || 'Failed to create job');
         }
     }
@@ -82,7 +80,6 @@ export class JobService {
         }
 
         await jobRepository.updateStatus(jobId, 'Open for Bidding', userId, 'Job posted publicly');
-        logger.userActivity(userId, 'job_posted', { jobId, title: job.title });
     }
 
     /**
@@ -92,7 +89,6 @@ export class JobService {
         try {
             return await jobRepository.fetchByJobGiver(userId, limit);
         } catch (error) {
-            logger.error('Failed to list jobs for job giver', error, { userId });
             throw error;
         }
     }
@@ -134,7 +130,6 @@ export class JobService {
         try {
             return await jobRepository.fetchOpen(filters, limit, lastPostedAt);
         } catch (error) {
-            logger.error('Failed to list open jobs', error);
             throw error;
         }
     }
@@ -146,7 +141,6 @@ export class JobService {
         try {
             return await jobRepository.fetchByInstaller(installerId);
         } catch (error) {
-            logger.error('Failed to list jobs for installer', error, { userId: installerId });
             throw error;
         }
     }
@@ -168,7 +162,9 @@ export class JobService {
         const isAdmin = userRole === 'Admin' || userRole === 'Support Team';
         const isBidder = job.bidderIds?.includes(userId);
 
-        if (!isPublic && !isOwner && !isAwardee && !isAdmin && !isBidder) {
+        const isSystem = ['system-ssr', 'system-metadata', 'system-ssr-bid'].includes(userId);
+
+        if (!isPublic && !isOwner && !isAwardee && !isAdmin && !isBidder && !isSystem) {
             throw new Error('You do not have permission to view this job');
         }
 
@@ -195,7 +191,6 @@ export class JobService {
         }
 
         await jobRepository.update(jobId, updates);
-        logger.info(`Job ${jobId} updated by ${userId}`, { updates });
     }
 
     /**
@@ -222,12 +217,10 @@ export class JobService {
             acceptanceDeadline: acceptanceDeadline,
         };
 
-        logger.info('Awarding job', { jobId, installerId, updates: Object.keys(updates) });
-
         await jobRepository.update(jobId, updates);
 
         // Increment Installer stats (Awarded/Won)
-        userRepository.incrementStats(installerId, { jobsWon: 1 }).catch(e => logger.error('Failed to increment jobsWon', e));
+        userRepository.incrementStats(installerId, { jobsWon: 1 }).catch(e => { /* Failed to increment jobsWon */ });
 
         // Send Job Awarded Email
         userRepository.fetchById(installerId).then(installer => {
@@ -239,9 +232,7 @@ export class JobService {
                     jobLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:5000'}/dashboard/jobs/${jobId}`
                 });
             }
-        }).catch(e => logger.error('Award email fetch failed', e));
-
-        logger.info(`Job ${jobId} awarded to ${installerId} by ${userId}`);
+        }).catch(e => { /* Award email fetch failed */ });
     }
 
     /**
@@ -250,13 +241,16 @@ export class JobService {
     async getBidsForJob(jobId: string, userId: string): Promise<any[]> { // Using any[] for now, should be Bid[]
         const job = await this.getJobById(jobId, userId);
 
+        // Fetch bids from the new subcollection architecture
+        const bids = await bidRepository.fetchByJob(jobId);
+
         // Filter bids based on visibility rules
         // Job Giver sees all bids
         // Admin sees all bids
         // Installer sees only their own bid? Or open bidding platform?
         // Assuming open bidding for now or restricted visibility
 
-        return job.bids || [];
+        return bids || [];
     }
 
     /**
@@ -299,7 +293,7 @@ export class JobService {
         );
 
         // Increment Installer stats (Awarded/Won)
-        userRepository.incrementStats(installerId, { jobsWon: 1 }).catch(e => logger.error('Failed to increment jobsWon', e));
+        userRepository.incrementStats(installerId, { jobsWon: 1 }).catch(e => { /* Failed to increment jobsWon */ });
 
         // Send Job Awarded Email
         userRepository.fetchById(installerId).then(installer => {
@@ -311,9 +305,7 @@ export class JobService {
                     jobLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:5000'}/dashboard/jobs/${jobId}`
                 });
             }
-        }).catch(e => logger.error('Award email fetch failed', e));
-
-        logger.userActivity(userId, 'bid_accepted', { jobId, bidId, installerId });
+        }).catch(e => { /* Award email fetch failed */ });
     }
 
     /**
@@ -351,8 +343,6 @@ export class JobService {
             userId,
             'Installer accepted job'
         );
-
-        logger.userActivity(userId, 'job_accepted', { jobId });
     }
 
     /**
@@ -384,7 +374,6 @@ export class JobService {
         });
 
         await jobRepository.updateStatus(jobId, 'funded', userId, 'Job successfully funded by Giver');
-        logger.userActivity(userId, 'job_funded', { jobId });
     }
 
     /**
@@ -410,7 +399,6 @@ export class JobService {
         });
 
         await jobRepository.updateStatus(jobId, 'In Progress', userId, 'Work started with OTP');
-        logger.userActivity(userId, 'work_started', { jobId });
     }
 
     /**
@@ -435,7 +423,6 @@ export class JobService {
         });
 
         await jobRepository.updateStatus(jobId, 'Pending Confirmation', userId, 'Work submitted by installer');
-        logger.userActivity(userId, 'work_submitted', { jobId });
     }
 
     /**
@@ -479,7 +466,7 @@ export class JobService {
         const amount = finalBid?.amount || 0;
         userRepository.incrementStats(installerId, { activeJobs: -1, completedJobs: 1, totalEarnings: amount });
 
-        logger.userActivity(userId, 'job_completed', { jobId });
+
 
         // AI Learning: Record actuals
         try {
@@ -497,7 +484,7 @@ export class JobService {
             aiLearningService.updateOutcome(jobId, 'price_estimate', { success: true, actualValue: finalPrice });
             aiLearningService.updateOutcome(jobId, 'time_estimate', { success: true, actualValue: durationHours });
         } catch (e) {
-            console.warn('Failed to update AI outcomes on job completion:', e);
+            // Silently handle AI sync failures
         }
     }
 
@@ -530,7 +517,7 @@ export class JobService {
         const amount = winningBid?.amount || 0;
         userRepository.incrementStats(installerId, { activeJobs: -1, completedJobs: 1, totalEarnings: amount });
 
-        logger.userActivity(userId, 'job_approved', { jobId });
+
 
         // AI Learning: Record actuals (for manual approval flow)
         try {
@@ -548,7 +535,7 @@ export class JobService {
             aiLearningService.updateOutcome(jobId, 'price_estimate', { success: true, actualValue: finalPrice });
             aiLearningService.updateOutcome(jobId, 'time_estimate', { success: true, actualValue: durationHours });
         } catch (e) {
-            console.warn('Failed to update AI outcomes on job approval:', e);
+            // Silently handle AI sync failures
         }
     }
 
@@ -572,7 +559,6 @@ export class JobService {
         });
 
         await jobRepository.updateStatus(jobId, 'Cancelled', userId, reason);
-        logger.userActivity(userId, 'job_cancelled', { jobId, reason });
     }
 
     /**
@@ -582,7 +568,6 @@ export class JobService {
         try {
             return await jobRepository.getStatsForJobGiver(userId);
         } catch (error) {
-            logger.error('Failed to get job stats', error, { userId });
             throw error;
         }
     }
@@ -594,7 +579,6 @@ export class JobService {
         try {
             return await jobRepository.getStatsForInstaller(userId);
         } catch (error) {
-            logger.error('Failed to get installer stats', error, { userId });
             throw error;
         }
     }
@@ -616,7 +600,6 @@ export class JobService {
         });
 
         await jobRepository.updateStatus(jobId, 'Open for Bidding', userId, 'Job promoted and re-listed');
-        logger.userActivity(userId, 'job_promoted', { jobId });
     }
 
     /**

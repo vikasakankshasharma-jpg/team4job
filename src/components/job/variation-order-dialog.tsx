@@ -35,7 +35,7 @@ export function VariationOrderDialog({ open, onOpenChange, onSubmitProposal, onS
             setDescription('');
             setAmount(0);
         } catch (error) {
-            console.error(error);
+            // Error submitting variation order
         } finally {
             setIsLoading(false);
         }

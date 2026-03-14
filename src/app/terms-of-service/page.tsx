@@ -10,12 +10,12 @@ export default function TermsPage() {
             <div className="prose dark:prose-invert max-w-none space-y-6">
                 <section>
                     <h2 className="text-xl font-semibold mb-2">1. Acceptance of Terms</h2>
-                    <p>By accessing and using CCTV Job Connect (&quot;the Platform&quot;), you accept and agree to be bound by the terms and provision of this agreement.</p>
+                    <p>By accessing and using Team4Job (&quot;the Platform&quot;), you accept and agree to be bound by the terms and provision of this agreement.</p>
                 </section>
 
                 <section>
                     <h2 className="text-xl font-semibold mb-2">2. Description of Service</h2>
-                    <p>The Platform provides a marketplace for Job Givers to post CCTV installation requirements and for verified Installers to bid on these jobs. We act as an intermediary and escrow agent but are not a party to the actual contract between Job Giver and Installer.</p>
+                    <p>The Platform provides a marketplace for Job Givers to post technical service requirements and for verified Professionals to bid on these jobs. We act as an intermediary and escrow agent but are not a party to the actual contract between Job Giver and Professional.</p>
                 </section>
 
                 <section>
@@ -40,7 +40,7 @@ export default function TermsPage() {
 
                 <section>
                     <h2 className="text-xl font-semibold mb-2">6. Limitation of Liability</h2>
-                    <p>CCTV Job Connect is not liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use the service, or for the conduct of any user on the platform.</p>
+                    <p>Team4Job is not liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use the service, or for the conduct of any user on the platform.</p>
                 </section>
             </div>
         </div>

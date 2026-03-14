@@ -64,7 +64,6 @@ export async function GET() {
         });
 
     } catch (error: any) {
-        console.error('[UserExport] Error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

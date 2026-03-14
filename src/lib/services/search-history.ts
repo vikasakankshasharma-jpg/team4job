@@ -21,7 +21,6 @@ export function getSearchHistory(storageKey: string): string[] {
         const history: SearchHistoryItem[] = JSON.parse(stored);
         return history.map(item => item.query);
     } catch (error) {
-        console.error('Error reading search history:', error);
         return [];
     }
 }
@@ -49,7 +48,7 @@ export function addToSearchHistory(storageKey: string, query: string): void {
 
         localStorage.setItem(storageKey, JSON.stringify(items));
     } catch (error) {
-        console.error('Error adding to search history:', error);
+        // Localstorage failed
     }
 }
 
@@ -60,7 +59,7 @@ export function clearSearchHistory(storageKey: string): void {
     try {
         localStorage.removeItem(storageKey);
     } catch (error) {
-        console.error('Error clearing search history:', error);
+        // Localstorage failed
     }
 }
 
@@ -79,6 +78,6 @@ export function removeFromSearchHistory(storageKey: string, query: string): void
 
         localStorage.setItem(storageKey, JSON.stringify(items));
     } catch (error) {
-        console.error('Error removing from search history:', error);
+        // Localstorage failed
     }
 }

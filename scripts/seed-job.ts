@@ -21,7 +21,7 @@ async function seedJob() {
 
     try {
         const db = getAdminDb(); // Initialize Admin App first
-        const userRecord = await getAuth().getUserByEmail('giver_vip@team4job.com');
+        const userRecord = await getAuth().getUserByEmail('giver_vip_v3@team4job.com');
         const userId = userRecord.uid;
 
         const jobId = `JOB-SEED-${Date.now()}`;
@@ -41,7 +41,7 @@ async function seedJob() {
             id: jobId,
             title: `Seeded Milestone Job ${Date.now()}`,
             description: "A seeded job for testing milestones.",
-            status: 'In Progress', // Skip to In Progress
+            status: 'in_progress', // Skip to In Progress
             jobGiverId: userId,
             jobGiver: db.collection('users').doc(userId),
             priceEstimate: { min: 8000, max: 15000 },

@@ -71,7 +71,10 @@ export function OnboardingWizard() {
                 }
             });
 
-            if (!response.ok) throw new Error('Submission failed');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Submission failed');
+            }
 
             toast({
                 title: "Application Submitted!",
@@ -82,7 +85,6 @@ export function OnboardingWizard() {
             router.push('/dashboard');
 
         } catch (error) {
-            console.error(error);
             toast({
                 title: "Submission Failed",
                 description: "Please try again later.",

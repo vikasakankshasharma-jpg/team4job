@@ -48,7 +48,6 @@ export default function AnalyticsClient() {
             setTopInstallers(data.topInstallers);
 
         } catch (error) {
-            console.error("Failed to load analytics:", error);
             toast({
                 title: tCommon('error'),
                 description: t('loadError'),
@@ -216,7 +215,7 @@ export default function AnalyticsClient() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button onClick={() => window.location.href = '/dashboard/post-job'}>
+                        <Button onClick={() => window.location.href = '/wizard'}>
                             {t('postFirstJob')}
                         </Button>
                     </CardContent>

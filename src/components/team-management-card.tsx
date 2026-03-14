@@ -83,7 +83,6 @@ export function TeamManagementCard({ onTeamMemberAdded }: { onTeamMemberAdded: (
       form.reset();
       onTeamMemberAdded(); // This will refresh the list of team members
     } catch (error: any) {
-      console.error("Error creating team member:", error);
       toast({
         title: "Error Creating User",
         description: error.response?.data?.error || "An unexpected error occurred.",

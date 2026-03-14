@@ -37,7 +37,6 @@ export async function addInstallerTag(
             installerTags: updatedTags,
         });
     } catch (error) {
-        console.error("Error adding installer tag:", error);
         throw error;
     }
 }
@@ -79,7 +78,6 @@ export async function removeInstallerTag(
             installerTags: updatedTags,
         });
     } catch (error) {
-        console.error("Error removing installer tag:", error);
         throw error;
     }
 }
@@ -142,7 +140,7 @@ export const COMMON_INSTALLER_TAGS = [
     "Fast",
     "Professional",
     "Electrical",
-    "CCTV Specialist",
+    "Technical Specialist",
     "Commercial",
     "Residential",
     "Emergency",

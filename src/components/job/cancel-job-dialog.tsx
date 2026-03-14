@@ -62,7 +62,6 @@ export function CancelJobDialog({
             });
             onOpenChange(false);
         } catch (error: any) {
-            console.error(error);
             toast({
                 title: "Cancellation Failed",
                 description: error.response?.data?.error || "Could not cancel job.",

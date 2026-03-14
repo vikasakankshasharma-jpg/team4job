@@ -150,7 +150,6 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                 variant: shouldUnverify ? "destructive" : "default",
             });
         } catch (error) {
-            console.error("Profile update failed", error);
             toast({
                 title: t('updateFailed'),
                 description: t('updateFailedDesc'),
@@ -439,7 +438,6 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
             });
             onUpdate(); // This will re-fetch user data
         } catch (error: any) {
-            console.error("Failed to add beneficiary:", error);
             toast({
                 title: t('failedToAddBank'),
                 description: error.message || t('unexpectedError'),
@@ -591,7 +589,6 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
             form.reset();
             onUpdate();
         } catch (error) {
-            console.error("Failed to add contact:", error);
             toast({ title: t('error'), description: t('couldNotAddContact'), variant: "destructive" });
         }
     };
@@ -611,7 +608,6 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
             toast({ title: t('contactRemoved'), description: t('emergencyContactDeleted') });
             onUpdate();
         } catch (error) {
-            console.error("Failed to remove contact:", error);
             toast({ title: t('error'), description: t('couldNotRemoveContact'), variant: "destructive" });
         }
     }
@@ -713,7 +709,6 @@ function DeleteAccountCard({ user }: { user: User }) {
             toast({ title: t('accountDeleted'), description: t('accountDeletedDesc') });
             window.location.href = '/'; // Force reload/redirect
         } catch (error: any) {
-            console.error("Delete account error:", error);
             if (error.code === 'auth/requires-recent-login') {
                 toast({
                     title: t('securityCheckRequired'),
@@ -815,7 +810,7 @@ export default function ProfileClient() {
                 }
             }
         } catch (error) {
-            console.error("Failed to fetch profile API", error);
+            // Failed to fetch profile
         }
     }, [user, setUser]);
 

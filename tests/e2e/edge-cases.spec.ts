@@ -241,12 +241,13 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.auth.loginAsJobGiver();
             await helper.nav.goToPostJob();
 
-            await page.fill('[data-testid="pincode-input"]', '000000');
+            await page.locator('[data-testid="pincode-input"]').pressSequentially('000000', { delay: 50 });
             // Wait for loading to finish
             await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 10000 });
 
-            // Expect the error text to be visible based on our mock response ("No records found")
-            await expect(page.locator('text=No records found').first()).toBeVisible({ timeout: 10000 });
+            // Expect the error text to be visible based on our mock response ("No records found") or fallback
+            // Match substring to handle variable structures
+            await expect(page.locator('text=/No records found|Invalid PIN code/i').first()).toBeVisible({ timeout: 15000 });
         });
     });
 
@@ -309,9 +310,8 @@ test.describe('Edge Case Tests @edge', () => {
                 buffer: Buffer.from('dummy content')
             });
 
-            // Should show error message or toast handled by file-upload.tsx
-            // Not asserting exact text to avoid rigidness, but ensuring it doesn't crash
-            await expect(page.locator('input[type="file"]')).toBeVisible();
+            // The rejected file creates a toast notification/status alert, not asserting on visually hidden input
+            await expect(page.locator('text=/File type must be one of|rejected/i').first()).toBeVisible({ timeout: 10000 });
         });
 
         test('Upload file exceeding size limit', async ({ page }) => {

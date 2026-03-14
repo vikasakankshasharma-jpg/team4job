@@ -65,10 +65,8 @@ const generateJobDescriptionFlow = defineLoggedFlow(
       const docs = await aiKnowledgeService.searchSimilar(input.jobTitle, 2);
       if (docs.length > 0) {
         context = docs.map(d => `- ${d.content}`).join('\n');
-        console.log(`[RAG] Found ${docs.length} context docs for "${input.jobTitle}"`);
       }
     } catch (err) {
-      console.warn("[RAG] Failed to retrieve context:", err);
       // Continue without context
     }
 

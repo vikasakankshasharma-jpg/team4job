@@ -12,31 +12,27 @@ let app: App | undefined;
  * This function is designed for server-side environments (API routes, server components).
  */
 export function getAdminApp(): App {
-    if (app) return app;
+    if (app) {
+        return app;
+    }
 
-    logger.debug('[ADMIN-SDK] Initializing Firebase Admin...');
-    logger.debug(`[ADMIN-SDK] FIRESTORE_EMULATOR_HOST: ${process.env.FIRESTORE_EMULATOR_HOST}`);
-    logger.debug(`[ADMIN-SDK] FIREBASE_AUTH_EMULATOR_HOST: ${process.env.FIREBASE_AUTH_EMULATOR_HOST}`);
+    // Environment checks removed for Zero-Noise production compliance
 
     // If an app is already initialized, cache it locally and continue to ensure settings are verified
     if (getApps().length > 0) {
         app = getApps()[0];
-        logger.debug('[ADMIN-SDK] Using existing app instance');
     }
 
     // 0. Emulator-friendly init (no credentials required)
-    if (process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-        logger.info('[ADMIN-SDK] ✓ Using Emulator mode');
+    const useEmulator = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' || process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+    if (useEmulator && (process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST)) {
+
         const emulatorProjectId =
             process.env.GCLOUD_PROJECT ||
             process.env.FIREBASE_PROJECT_ID ||
             process.env.DO_FIREBASE_PROJECT_ID ||
             process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
             'demo-project';
-
-        logger.info(`[ADMIN-SDK] Emulator Project ID: ${emulatorProjectId}`);
-        logger.info(`[ADMIN-SDK] FIRESTORE_EMULATOR_HOST: ${process.env.FIRESTORE_EMULATOR_HOST}`);
-        logger.info(`[ADMIN-SDK] FIREBASE_AUTH_EMULATOR_HOST: ${process.env.FIREBASE_AUTH_EMULATOR_HOST}`);
 
         if (!app) {
             app = initializeApp({
@@ -48,27 +44,24 @@ export function getAdminApp(): App {
         if (process.env.FIRESTORE_EMULATOR_HOST) {
             try {
                 const [host, port] = process.env.FIRESTORE_EMULATOR_HOST.split(':');
-                getFirestore(app).settings({
-                    host: `${host}:${port}`,
+                const normalizedHost = host === 'localhost' ? '127.0.0.1' : host;
+                getFirestore(app!).settings({
+                    host: `${normalizedHost}:${port}`,
                     ssl: false,
                     ignoreUndefinedProperties: true
                 });
-                logger.info(`[ADMIN-SDK] ✓ Connected to Firestore emulator at ${process.env.FIRESTORE_EMULATOR_HOST}`);
             } catch (e: any) {
-                if (e.message?.includes('settings() once')) {
-                    logger.debug('[ADMIN-SDK] Firestore settings already applied');
-                } else {
+                if (!e.message?.includes('settings() once')) {
                     throw e;
                 }
             }
         }
 
         if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-            logger.info(`[ADMIN-SDK] ✓ Auth Emulator detected at ${process.env.FIREBASE_AUTH_EMULATOR_HOST}`);
+            // Emulator detected
         }
 
-        logger.info(`[ADMIN-SDK] App initialized with project: ${emulatorProjectId}`);
-        return app;
+        return app as App;
     }
 
     // 1. Try FIREBASE_SERVICE_ACCOUNT_KEY (JSON string) - preferred for production
@@ -76,13 +69,15 @@ export function getAdminApp(): App {
     if (serviceAccountEnv) {
         try {
             if (!app) {
+                const serviceAccount = JSON.parse(serviceAccountEnv);
                 app = initializeApp({
-                    credential: cert(JSON.parse(serviceAccountEnv)),
+                    credential: cert(serviceAccount),
+                    projectId: serviceAccount.project_id
                 });
             }
-            return app;
+            return app as App;
         } catch (error) {
-            console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY.", error);
+            // Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY.
         }
     }
 
@@ -99,12 +94,12 @@ export function getAdminApp(): App {
                     projectId: process.env.DO_FIREBASE_PROJECT_ID,
                     clientEmail: process.env.DO_FIREBASE_CLIENT_EMAIL,
                     privateKey: privateKey,
-                })
+                }),
+                projectId: process.env.DO_FIREBASE_PROJECT_ID
             });
         }
-        return app;
+        return app as App;
     }
-
     throw new Error(
         'Failed to initialize Firebase Admin SDK. Missing credentials (FIREBASE_SERVICE_ACCOUNT_KEY or individual vars).'
     );

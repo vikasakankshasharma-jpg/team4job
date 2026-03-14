@@ -54,8 +54,6 @@ export async function saveDraft(
     draftData: Partial<JobDraft>,
     draftId?: string
 ): Promise<string> {
-    console.log('[DEBUG] Entering saveDraft function.');
-    console.log('[DEBUG] Initial draftData received:', JSON.stringify(draftData, null, 2));
 
     try {
         const id = draftId || `draft_${Date.now()}`;
@@ -79,14 +77,10 @@ export async function saveDraft(
             {} as Partial<JobDraft>
         );
 
-        console.log('[DEBUG] Cleaned object before saving:', JSON.stringify(cleanedDraft, null, 2));
 
         await setDoc(draftRef, cleanedDraft, { merge: true });
-        console.log('[DEBUG] Draft saved successfully.');
         return id;
     } catch (error) {
-        console.error('[CRITICAL] Error in saveDraft:', error);
-        console.error('[CRITICAL] Data that caused the error:', JSON.stringify(draftData, null, 2));
         throw error;
     }
 }
@@ -108,7 +102,6 @@ export async function getDraft(
         }
         return null;
     } catch (error) {
-        console.error('Error getting draft:', error);
         throw error;
     }
 }
@@ -127,7 +120,6 @@ export async function getAllDrafts(
 
         return querySnapshot.docs.map((doc) => doc.data() as JobDraft);
     } catch (error) {
-        console.error('Error getting all drafts:', error);
         throw error;
     }
 }
@@ -144,7 +136,6 @@ export async function deleteDraft(
         const draftRef = doc(db, 'users', userId, 'jobDrafts', draftId);
         await deleteDoc(draftRef);
     } catch (error) {
-        console.error('Error deleting draft:', error);
         throw error;
     }
 }
@@ -166,7 +157,6 @@ export async function getLatestDraft(
         }
         return null;
     } catch (error) {
-        console.error('Error getting latest draft:', error);
         throw error;
     }
 }
@@ -199,7 +189,6 @@ export async function saveTemplate(
         await setDoc(templateRef, templateToSave);
         return id;
     } catch (error) {
-        console.error('Error saving template:', error);
         throw error;
     }
 }
@@ -218,7 +207,6 @@ export async function getTemplates(
 
         return querySnapshot.docs.map((doc) => doc.data() as JobTemplate);
     } catch (error) {
-        console.error('Error getting all templates:', error);
         throw error;
     }
 }
@@ -235,7 +223,6 @@ export async function deleteTemplate(
         const templateRef = doc(db, 'users', userId, 'jobTemplates', templateId);
         await deleteDoc(templateRef);
     } catch (error) {
-        console.error('Error deleting template:', error);
         throw error;
     }
 }
@@ -255,7 +242,6 @@ export async function incrementTemplateUsage(
             lastUsed: Timestamp.now(),
         });
     } catch (error) {
-        console.error('Error incrementing template usage:', error);
         throw error;
     }
 }

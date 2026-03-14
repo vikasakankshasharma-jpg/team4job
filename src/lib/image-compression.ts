@@ -32,12 +32,8 @@ export async function compressImage(file: File): Promise<File> {
             lastModified: Date.now(),
         });
 
-        // Logging for debugging (optional, can be removed in production)
-        console.log(`[Image Compression] Original: ${(file.size / 1024 / 1024).toFixed(2)}MB -> Compressed: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
-
         return compressedFile;
     } catch (error) {
-        console.warn("Image compression failed, falling back to original file:", error);
         return file;
     }
 }

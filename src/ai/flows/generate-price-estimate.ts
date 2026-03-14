@@ -23,7 +23,7 @@ const priceEstimatePrompt = ai.definePrompt({
   input: { schema: PromptInputSchema },
   output: { schema: GeneratePriceEstimateOutputSchema },
   prompt: `
-    You are an expert cost estimator for security and CCTV installation services in India.
+    You are an expert cost estimator for security and technical installation services in India.
     Your task is to analyze the provided job details and generate a realistic and fair market price range in Indian Rupees (INR).
 
     **Job Details:**
@@ -114,7 +114,6 @@ export const generatePriceEstimateFlow = defineLoggedFlow(
       }
 
     } catch (error) {
-      console.warn("Failed to fetch historical context for price estimate:", error);
     }
 
     const { output } = await priceEstimatePrompt({

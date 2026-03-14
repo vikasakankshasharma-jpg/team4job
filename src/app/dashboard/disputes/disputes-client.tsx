@@ -169,7 +169,7 @@ export default function DisputesClient() {
                 setInvolvedUsers(data.involvedUsers || {});
             }
         } catch (error) {
-            console.error("Error fetching disputes:", error);
+            // Error fetching disputes
         } finally {
             setLoading(false);
         }

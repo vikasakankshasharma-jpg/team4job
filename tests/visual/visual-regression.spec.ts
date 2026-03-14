@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { TestHelper } from '../utils/helpers';
+import { TEST_ACCOUNTS } from '../fixtures/test-data';
 
 /**
  * Visual Regression Testing
@@ -7,7 +9,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Visual Regression Tests', () => {
     test('Landing page should match baseline', async ({ page }) => {
+        const helper = new TestHelper(page);
         await page.goto('/');
+        await helper.nav.injectCookieHide();
         await page.waitForLoadState('networkidle');
 
         // Take screenshot and compare
@@ -36,11 +40,9 @@ test.describe('Visual Regression Tests', () => {
     });
 
     test('Installer dashboard should match baseline', async ({ page }) => {
-        await page.goto('/login');
-        await page.fill('input[name="identifier"]', 'installer@example.com');
-        await page.fill('input[type="password"]', 'Vikas@129229');
-        await page.click('button[type="submit"]');
-        await page.waitForURL(/\/dashboard/);
+        const helper = new TestHelper(page);
+        await helper.auth.loginAsInstaller();
+        await helper.nav.injectCookieHide();
         await page.waitForLoadState('networkidle');
 
         // Wait for charts to render
@@ -53,11 +55,9 @@ test.describe('Visual Regression Tests', () => {
     });
 
     test('Job Giver dashboard should match baseline', async ({ page }) => {
-        await page.goto('/login');
-        await page.fill('input[name="identifier"]', 'jobgiver@example.com');
-        await page.fill('input[type="password"]', 'Vikas@129229');
-        await page.click('button[type="submit"]');
-        await page.waitForURL(/\/dashboard/);
+        const helper = new TestHelper(page);
+        await helper.auth.loginAsJobGiver();
+        await helper.nav.injectCookieHide();
         await page.waitForLoadState('networkidle');
 
         // Wait for charts to render
@@ -70,11 +70,10 @@ test.describe('Visual Regression Tests', () => {
     });
 
     test('Job listing page should match baseline', async ({ page }) => {
-        await page.goto('/login');
-        await page.fill('input[name="identifier"]', 'installer@example.com');
-        await page.fill('input[type="password"]', 'Vikas@129229');
-        await page.click('button[type="submit"]');
-        await page.waitForURL(/\/dashboard/);
+        const helper = new TestHelper(page);
+        await helper.auth.loginAsInstaller();
+        await helper.nav.goToBrowseJobs();
+        await helper.nav.injectCookieHide();
 
         await page.goto('/dashboard/jobs');
         await page.waitForLoadState('networkidle');
@@ -99,11 +98,9 @@ test.describe('Visual Regression Tests', () => {
     test('Mobile view - Dashboard should match baseline', async ({ page }) => {
         await page.setViewportSize({ width: 375, height: 667 });
 
-        await page.goto('/login');
-        await page.fill('input[name="identifier"]', 'installer@example.com');
-        await page.fill('input[type="password"]', 'Vikas@129229');
-        await page.click('button[type="submit"]');
-        await page.waitForURL(/\/dashboard/);
+        const helper = new TestHelper(page);
+        await helper.auth.loginAsInstaller();
+        await helper.nav.injectCookieHide();
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(2000);
 

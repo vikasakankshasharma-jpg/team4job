@@ -24,7 +24,7 @@ export function InvoiceDownloadButton({ transaction, plan }: InvoiceDownloadButt
             await new Promise(resolve => setTimeout(resolve, 500));
             invoiceService.generateInvoice(transaction, user, plan);
         } catch (error) {
-            console.error("Failed to generate invoice", error);
+            // Failed to generate invoice
         } finally {
             setLoading(false);
         }

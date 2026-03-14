@@ -316,7 +316,6 @@ export default function UsersClient() {
       handleUserUpdate(targetUser.id, updateData);
       toast({ title: toastTitle, description: toastDescription });
     } catch (e) {
-      console.error(e);
       toast({ title: t('messages.error'), description: t('messages.errorDesc'), variant: "destructive" });
     } finally {
       setActionLoading(null);

@@ -51,7 +51,6 @@ export const toDate = (timestamp: Date | Timestamp | { _seconds: number; _nanose
 
     // Check if valid date
     if (isNaN(date.getTime())) {
-        console.warn("Invalid date encountered in toDate:", timestamp);
         return new Date(); // Fallback to now
     }
 

@@ -106,8 +106,7 @@ const recommendJobsFlow = defineLoggedFlow(
                     }
                 });
             }
-        } catch (e) {
-            console.warn("Learning service lookup failed:", e);
+        } catch (error) {
         }
 
         try {
@@ -128,7 +127,6 @@ const recommendJobsFlow = defineLoggedFlow(
 
             return output || { recommendations: [] };
         } catch (e) {
-            console.error("Neural Match Error:", e);
             return { recommendations: [] };
         }
     }

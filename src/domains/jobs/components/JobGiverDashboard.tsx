@@ -131,7 +131,7 @@ export function JobGiverDashboard({ stats, transactions, loading = false, quickM
             {/* Phase 11: Quick Metrics Row */}
             {user && <DashboardMetrics userId={user.id} user={user} metrics={quickMetrics} />}
 
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 min-w-0">
                 <StatCard
                     title={t('activeJobs')}
                     value={stats.activeJobs}
@@ -196,7 +196,7 @@ export function JobGiverDashboard({ stats, transactions, loading = false, quickM
                     </CardHeader>
                     <CardContent>
                         <Button asChild>
-                            <Link href="/dashboard/post-job">
+                            <Link href="/wizard">
                                 <PlusCircle className="mr-2 h-4 w-4" /> {t('postNewJob')}
                             </Link>
                         </Button>

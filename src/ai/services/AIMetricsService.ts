@@ -11,7 +11,7 @@ export const aiMetricsService = {
         try {
             await addDoc(collection(db, "ai_logs"), log);
         } catch (error) {
-            console.error("Failed to log AI interaction:", error);
+            // Failed to log AI interaction
         }
     },
 
@@ -25,7 +25,6 @@ export const aiMetricsService = {
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AILog));
         } catch (error) {
-            console.error("Failed to fetch AI logs:", error);
             return [];
         }
     },
@@ -74,7 +73,6 @@ export const aiMetricsService = {
 
             return Array.from(metricsMap.values()).sort((a, b) => a.date.localeCompare(b.date));
         } catch (error) {
-            console.error("Failed to calculate AI metrics:", error);
             return [];
         }
     }

@@ -234,10 +234,10 @@ export default function MyInstallersClient({ initialInstallers }: { initialInsta
       if (res.success && res.installers) {
         setInstallers(res.installers);
       } else {
-        console.error("Failed to fetch installers:", res.error);
+        // failed
       }
     } catch (err) {
-      console.error("Error in fetchRelatedInstallers:", err);
+      // error
     } finally {
       setLoading(false);
     }

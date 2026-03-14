@@ -5,7 +5,8 @@ import { cookies } from 'next/headers';
 /**
  * Sets the auth-token cookie with HttpOnly flag for security
  */
-export async function setAuthTokenAction(token: string) {
+export async function updateSessionTokenAction(token: string) {
+    console.log(`[AuthAction] Setting token cookie: ${token ? '(token present)' : '(empty)'}`);
     const cookieStore = await cookies();
     cookieStore.set('auth-token', token, {
         httpOnly: true,
@@ -19,7 +20,8 @@ export async function setAuthTokenAction(token: string) {
 /**
  * Clears the auth-token cookie
  */
-export async function clearAuthTokenAction() {
+export async function removeSessionTokenAction() {
+    console.log('[AuthAction] Clearing token cookie');
     const cookieStore = await cookies();
     cookieStore.delete('auth-token');
 }

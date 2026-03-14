@@ -19,14 +19,14 @@ export async function generateMetadata(
     const id = params.id
 
     try {
-        if (!id) return { title: 'CCTV Job Connect' };
+        if (!id) return { title: 'Team4Job' };
 
         // Use JobService instead of direct DB access
         const job = await jobService.getJobById(id, 'system-metadata');
 
         return {
-            title: `${job?.title} | CCTV Job Connect`,
-            description: job?.description?.substring(0, 160) || 'Hire verified CCTV professionals for your security needs.',
+            title: `${job?.title} | Team4Job`,
+            description: job?.description?.substring(0, 160) || 'Hire verified technical professionals for your security needs.',
             openGraph: {
                 title: `${job?.title} - Remote Hire`,
                 description: job?.description?.substring(0, 200),
@@ -35,7 +35,7 @@ export async function generateMetadata(
         }
     } catch (error) {
         return {
-            title: 'Job Not Found | CCTV Job Connect',
+            title: 'Job Not Found | Team4Job',
             description: 'The requested job could not be found.'
         }
     }
@@ -62,7 +62,7 @@ export default async function JobDetailPageWrapper(props: Props) {
                 initialBids = bidsRes.bids || [];
             }
         } catch (error) {
-            console.error("Error pre-fetching job data:", error);
+            // Error pre-fetching job data
         }
     }
 

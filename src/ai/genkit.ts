@@ -9,8 +9,20 @@ const isCI = process.env.NEXT_PUBLIC_IS_CI === 'true';
 export const ai: any = isCI ? {
   // Minimal mock to prevent crashes in CI/test
   definePrompt: () => ({}),
-  defineFlow: () => {
-    const flow = (input: any) => Promise.resolve({ success: true, data: {} });
+  defineFlow: (config: any) => {
+    const flow = (input: any) => {
+      if (config.name === 'smartSplitFlow') {
+        const mockResult = {
+          jobs: [
+            { title: "Technical Installation - Delhi", description: "4 devices", location: "Okhla, Delhi", address: "Okhla, Delhi", pincode: "110020", deviceCount: "4", budget: { min: 20000, max: 30000, currency: 'INR' } },
+            { title: "Technical Installation - Mumbai", description: "8 devices", location: "Borivali, Mumbai", address: "Borivali, Mumbai", pincode: "400066", deviceCount: "8", budget: { min: 50000, max: 70000, currency: 'INR' } }
+          ],
+          explanation: "Mocked split for E2E testing."
+        };
+        return Promise.resolve(mockResult);
+      }
+      return Promise.resolve({ success: true, data: {} });
+    };
     (flow as any).run = flow;
     return flow;
   },
@@ -69,22 +81,10 @@ export const defineLoggedFlow = (config: any, fn: (input: any, ...args: any[]) =
         if (cached) {
           // HIT! Return instantly
           cachedHit = true;
-
-          // Still log the interaction but as a cache hit (faster, cheaper)
-          aiMetricsService.logInteraction({
-            timestamp: new Date(),
-            flowName: name,
-            modelVersion,
-            latencyMs: Math.round(performance.now() - startTime),
-            success: true,
-            costUsd: 0, // Cache hits are free!
-            cacheHit: true
-          }).catch(e => console.error(`[AI] Log cache hit failed:`, e));
-
+          // ...
           return cached.output;
         }
       } catch (e) {
-        console.warn(`[AI] Cache lookup failed for ${name}:`, e);
       }
     }
 
@@ -101,7 +101,6 @@ export const defineLoggedFlow = (config: any, fn: (input: any, ...args: any[]) =
         }
       } catch (e) {
         if ((e as Error).message.includes("Rate limit exceeded")) throw e;
-        console.warn(`[AI] Rate limit check failed for ${name}:`, e);
         // Fail open
       }
     }
@@ -118,14 +117,14 @@ export const defineLoggedFlow = (config: any, fn: (input: any, ...args: any[]) =
           modelVersion,
           result,
           config.cacheConfig.ttlSeconds
-        ).catch(e => console.warn(`[AI] Cache set failed:`, e));
+        ).catch(() => {});
       }
 
       // RATE LIMIT INCREMENT
       if (config.rateLimitConfig?.enabled && input.userId) {
         const { aiRateLimitService } = await import('@/ai/services/AIRateLimitService');
         const limitAction = config.rateLimitConfig.limitTypeAction || 'ai_chat';
-        aiRateLimitService.incrementUsage(input.userId, limitAction, 1).catch(e => console.error(`[AI] Rate limit increment failed:`, e));
+        aiRateLimitService.incrementUsage(input.userId, limitAction, 1).catch(() => {});
       }
 
       return result;
@@ -147,12 +146,7 @@ export const defineLoggedFlow = (config: any, fn: (input: any, ...args: any[]) =
           errorType: error?.name || (error ? 'UnknownError' : undefined),
           errorMessage: error?.message || (error ? String(error) : undefined),
           cacheHit: false
-        }).catch(e => {
-          // Fail silently in production, log in dev
-          if (process.env.NODE_ENV === 'development') {
-            console.error(`[AI] Failed to log interaction for ${name}:`, e);
-          }
-        });
+        }).catch(() => {});
       }
     }
   });

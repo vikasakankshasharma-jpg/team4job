@@ -10,6 +10,7 @@ export interface Bid {
   installerId: string;
   amount: number;
   timestamp: Date | Timestamp;
+  jobGiverId?: string;
   coverLetter?: string;
   includedItems?: string[];
   warrantyDuration?: string;

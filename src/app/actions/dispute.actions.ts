@@ -11,7 +11,6 @@ export async function createDisputeAction(input: CreateDisputeInput) {
         revalidatePath('/dashboard/disputes');
         return { success: true, disputeId };
     } catch (error: any) {
-        console.error('createDisputeAction error:', error);
         return { success: false, error: error.message || 'Failed to create dispute' };
     }
 }
@@ -21,7 +20,6 @@ export async function listMyDisputesAction(userId: string) {
         const disputes = await disputeService.listMyDisputes(userId);
         return { success: true, disputes };
     } catch (error: any) {
-        console.error('listMyDisputesAction error:', error);
         return { success: false, error: error.message || 'Failed to list disputes' };
     }
 }

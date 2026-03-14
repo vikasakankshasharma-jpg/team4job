@@ -23,7 +23,7 @@ export type GetBidsForInstallerOutput = z.infer<typeof GetBidsForInstallerOutput
 async function getBidsForInstaller(input: GetBidsForInstallerInput): Promise<GetBidsForInstallerOutput> {
   // This function is deprecated and should not be used.
   // The logic is now handled client-side.
-  console.warn("getBidsForInstallerFlow is deprecated and should not be called.");
+
   return { jobs: [], bids: [] };
 }
 

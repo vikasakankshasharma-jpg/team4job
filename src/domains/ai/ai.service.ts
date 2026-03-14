@@ -21,7 +21,7 @@ import {
     RewardTopPerformersInput,
     RewardTopPerformersOutput
 } from './ai.types';
-import { logger } from '@/infrastructure/logger';
+
 
 /**
  * AI Service - Domain Entry Point for AI Features
@@ -47,7 +47,7 @@ export class AIService {
             };
 
         } catch (error: any) {
-            logger.error('AI Moderation Failed', error, { userId: input.userId });
+
             return { isFlagged: false };
         }
     }
@@ -67,7 +67,7 @@ export class AIService {
                 suggestedSkills: result.suggestedSkills
             };
         } catch (error: any) {
-            logger.error('AI Job Gen Failed', error, { title: input.jobTitle });
+
             throw new Error('Failed to generate job description');
         }
     }
@@ -86,7 +86,7 @@ export class AIService {
 
             return result;
         } catch (error: any) {
-            logger.error('AI Price Est Failed', error, { title: input.jobTitle });
+
             throw new Error('Failed to generate price estimate');
         }
     }
@@ -96,7 +96,7 @@ export class AIService {
             const { initiateAadharVerification } = await import('@/ai/flows/aadhar-verification');
             return await initiateAadharVerification(input);
         } catch (error: any) {
-            logger.error('AI Aadhar Init Failed', error);
+
             throw new Error(error.message || 'Verification initiation failed');
         }
     }
@@ -106,7 +106,7 @@ export class AIService {
             const { confirmAadharVerification } = await import('@/ai/flows/aadhar-verification');
             return await confirmAadharVerification(input);
         } catch (error: any) {
-            logger.error('AI Aadhar Confirm Failed', error);
+
             throw new Error(error.message || 'Verification confirmation failed');
         }
     }
@@ -116,7 +116,7 @@ export class AIService {
             const { verifyPan } = await import('@/ai/flows/pan-verification');
             return await verifyPan(input);
         } catch (error: any) {
-            logger.error('AI PAN Verif Failed', error);
+
             throw new Error(error.message || 'PAN verification failed');
         }
     }
@@ -126,7 +126,7 @@ export class AIService {
             const { recommendJobs } = await import('@/ai/flows/recommend-jobs');
             return await recommendJobs(input);
         } catch (error: any) {
-            logger.error('AI Recommendation Failed', error);
+
             return { recommendations: [] };
         }
     }
@@ -136,7 +136,7 @@ export class AIService {
             const { aiAssistedBidCreation } = await import('@/ai/flows/ai-assisted-bid-creation');
             return await aiAssistedBidCreation(input);
         } catch (error: any) {
-            logger.error('AI Bid Asst Failed', error);
+
             throw new Error(error.message || 'Bid generation failed');
         }
     }
@@ -146,7 +146,7 @@ export class AIService {
             const { verifyGst } = await import('@/ai/flows/gst-verification');
             return await verifyGst(input);
         } catch (error: any) {
-            logger.error('AI GST Verif Failed', error);
+
             throw new Error(error.message || 'GST verification failed');
         }
     }
@@ -156,7 +156,7 @@ export class AIService {
             const { rewardTopPerformers } = await import('@/ai/flows/reward-top-performers');
             return await rewardTopPerformers(input);
         } catch (error: any) {
-            logger.error('AI Reward Top Performers Failed', error);
+
             throw new Error(error.message || 'Reward automation failed');
         }
     }

@@ -121,7 +121,6 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
       onSave();
       setIsOpen(false);
     } catch (e) {
-      console.error(e);
       toast({ title: t('toasts.error'), description: t('toasts.failed'), variant: "destructive" });
     }
     setIsSubmitting(false);

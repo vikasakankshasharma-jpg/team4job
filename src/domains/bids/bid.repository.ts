@@ -2,7 +2,7 @@
 
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { COLLECTIONS } from '@/infrastructure/firebase/firestore';
-import { logger } from '@/infrastructure/logger';
+
 import { Bid } from './bid.types';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -26,10 +26,10 @@ export class BidRepository {
                     timestamp: Timestamp.now(),
                 });
 
-            logger.info('Bid created', { jobId, bidId: bidRef.id });
+
             return bidRef.id;
         } catch (error) {
-            logger.error('Failed to create bid', error, { metadata: { jobId } });
+
             throw error;
         }
     }
@@ -49,7 +49,7 @@ export class BidRepository {
 
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bid));
         } catch (error) {
-            logger.error('Failed to fetch bids', error, { metadata: { jobId } });
+
             throw error;
         }
     }
@@ -73,7 +73,7 @@ export class BidRepository {
 
             return { id: doc.id, ...doc.data() } as Bid;
         } catch (error) {
-            logger.error('Failed to fetch bid by ID', error, { metadata: { jobId, bidId } });
+
             throw error;
         }
     }
@@ -111,7 +111,7 @@ export class BidRepository {
                 } as Bid & { jobId: string };
             });
         } catch (error) {
-            logger.error('Failed to fetch bids by installer', error, { metadata: { installerId, limit, lastTimestamp } });
+
             throw error;
         }
     }
@@ -129,9 +129,9 @@ export class BidRepository {
                 .doc(bidId)
                 .delete();
 
-            logger.info('Bid deleted', { jobId, bidId });
+
         } catch (error) {
-            logger.error('Failed to delete bid', error, { metadata: { jobId, bidId } });
+
             throw error;
         }
     }

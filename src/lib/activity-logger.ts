@@ -24,8 +24,7 @@ export async function logActivity(
             read: false
         });
     } catch (error) {
-        console.error("Failed to log activity:", error);
         // We don't want to block the main flow if activity logging fails, 
-        // so we just log the error and proceed.
+        // so we just proceed.
     }
 }

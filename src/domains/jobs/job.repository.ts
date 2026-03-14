@@ -2,7 +2,7 @@
 
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { COLLECTIONS, getDocData } from '@/infrastructure/firebase/firestore';
-import { logger } from '@/infrastructure/logger';
+
 import { Job, JobFilters, JobStats, InstallerStats } from './job.types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { toDate } from '@/lib/utils';
@@ -35,10 +35,10 @@ export class JobRepository {
                 statusHistory: [],
             });
 
-            logger.info('Job created', { jobId: customJobId });
+
             return customJobId;
         } catch (error) {
-            logger.error('Failed to create job', error);
+
             throw error;
         }
     }
@@ -57,7 +57,7 @@ export class JobRepository {
 
             return { id: doc.id, ...doc.data() } as Job;
         } catch (error) {
-            logger.error('Failed to fetch job by ID', error, { metadata: { jobId } });
+
             throw error;
         }
     }
@@ -78,7 +78,7 @@ export class JobRepository {
                 .map(doc => ({ id: doc.id, ...doc.data() } as Job))
                 .sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
         } catch (error) {
-            logger.error('Failed to fetch jobs by job giver', error, { userId: jobGiverId });
+
             throw error;
         }
     }
@@ -97,7 +97,7 @@ export class JobRepository {
 
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
         } catch (error) {
-            logger.error('Failed to fetch completed jobs', error, { userId: jobGiverId });
+
             throw error;
         }
     }
@@ -116,7 +116,7 @@ export class JobRepository {
 
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
         } catch (error) {
-            logger.error('Failed to fetch jobs by job giver since date', error, { userId: jobGiverId });
+
             throw error;
         }
     }
@@ -154,7 +154,7 @@ export class JobRepository {
                 .map(doc => ({ id: doc.id, ...doc.data() } as Job))
                 .sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
         } catch (error) {
-            logger.error('Failed to fetch open jobs', error, { metadata: { filters } });
+
             throw error;
         }
     }
@@ -193,7 +193,7 @@ export class JobRepository {
 
             return Array.from(jobMap.values());
         } catch (error) {
-            logger.error('Failed to fetch jobs by installer', error, { userId: installerId });
+
             throw error;
         }
     }
@@ -227,14 +227,9 @@ export class JobRepository {
                 }]),
             });
 
-            logger.info('Job status updated', {
-                jobId,
-                oldStatus: currentStatus,
-                newStatus,
-                updatedBy,
-            });
+
         } catch (error) {
-            logger.error('Failed to update job status', error, { metadata: { jobId, newStatus } });
+
             throw error;
         }
     }
@@ -245,15 +240,15 @@ export class JobRepository {
     async update(jobId: string, updates: Partial<Job>): Promise<void> {
         try {
             const db = getAdminDb();
-            logger.info('JobRepository.update', { jobId, fields: Object.keys(updates) });
+
             await db.collection(COLLECTIONS.JOBS).doc(jobId).update({
                 ...updates,
                 updatedAt: Timestamp.now(),
             });
 
-            logger.info('Job updated', { jobId, fields: Object.keys(updates) });
+
         } catch (error) {
-            logger.error('Failed to update job', error, { metadata: { jobId } });
+
             throw error;
         }
     }
@@ -307,7 +302,7 @@ export class JobRepository {
                 totalBids: userData?.totalBids || 0
             };
         } catch (error) {
-            logger.error('Failed to get job stats', error, { userId: jobGiverId });
+
             throw error;
         }
     }
@@ -323,9 +318,9 @@ export class JobRepository {
                 updatedAt: Timestamp.now(),
             });
 
-            logger.info('Job archived', { jobId });
+
         } catch (error) {
-            logger.error('Failed to archive job', error, { metadata: { jobId } });
+
             throw error;
         }
     }
@@ -364,7 +359,7 @@ export class JobRepository {
                 totalEarnings: userData?.totalEarnings || 0
             };
         } catch (error) {
-            logger.error('Failed to get installer stats', error, { userId: installerId });
+
             throw error;
         }
     }

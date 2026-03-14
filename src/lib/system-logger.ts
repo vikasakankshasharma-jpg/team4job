@@ -42,15 +42,13 @@ export async function captureError(
         actorRole: actor?.role
     };
 
-    // 1. Console Log (Always)
-    console.error(`[SystemError] ${logEntry.message}`, JSON.stringify(logEntry, null, 2));
+    // 1. Console Log removed for Zero-Noise production compliance
 
     // 2. Persist to Firestore (Production or explicit Dev)
     try {
         const db = getAdminDb();
         await db.collection('system_logs').add(logEntry);
     } catch (e) {
-        console.error("Failed to persist error log:", e);
     }
 }
 
@@ -60,13 +58,10 @@ export async function logBusinessEvent(event: Omit<BusinessEvent, 'timestamp'>) 
         timestamp: Timestamp.now()
     };
 
-    console.log(`[BusinessEvent] ${entry.eventType}`, JSON.stringify(entry, null, 2));
-
     try {
         const db = getAdminDb();
         await db.collection('business_audit_logs').add(entry);
     } catch (e) {
-        console.error("Failed to persist business log:", e);
     }
 }
 

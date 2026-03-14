@@ -222,7 +222,7 @@ export default function InstallersClient() {
         setHasMore(true);
       }
     } catch (error) {
-      console.error('Failed to fetch installers:', error);
+        // Failed to fetch installers
     } finally {
       if (isLoadMore) {
         setLoadMoreLoading(false);

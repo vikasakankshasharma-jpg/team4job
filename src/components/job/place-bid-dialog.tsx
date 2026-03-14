@@ -111,7 +111,6 @@ export function PlaceBidDialog({
                 throw new Error(result.error || "AI failed to generate a proposal.");
             }
         } catch (error: any) {
-            console.error(error);
             toast({ title: "AI Generation Failed", description: tError(error.message) || "Could not generate draft.", variant: "destructive" });
         } finally {
             setAiLoading(false);
@@ -154,7 +153,6 @@ export function PlaceBidDialog({
                 throw new Error(result.error);
             }
         } catch (error: any) {
-            console.error("Bid submission failed:", error);
             toast({ title: "Bid Failed", description: tError(error.message) || "Could not place bid.", variant: "destructive" });
         }
     }

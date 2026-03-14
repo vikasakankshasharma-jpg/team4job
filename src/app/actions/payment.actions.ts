@@ -15,10 +15,6 @@ export async function createPaymentOrderAction(
     travelTip?: number
 ): Promise<{ success: boolean; data?: { orderToken: string; orderId: string }; error?: string }> {
     try {
-        if (process.env.NODE_ENV !== 'production') {
-            console.log(`[Action] createPaymentOrderAction called by ${userId} for job ${jobId}`);
-        }
-
         const input: CreatePaymentOrderInput = {
             jobId,
             userId,
@@ -30,7 +26,6 @@ export async function createPaymentOrderAction(
 
         return { success: true, data: result };
     } catch (error: any) {
-        await logger.error(error, { action: 'createPaymentOrderAction', jobId, userId });
         return {
             success: false,
             error: error.message || 'Failed to initiate payment',
@@ -49,10 +44,6 @@ export async function createAddFundsOrderAction(
     taskId?: string
 ): Promise<{ success: boolean; data?: { orderToken: string; orderId: string }; error?: string }> {
     try {
-        if (process.env.NODE_ENV !== 'production') {
-            console.log(`[Action] createAddFundsOrderAction called by ${userId} for job ${jobId}`);
-        }
-
         const input: CreatePaymentOrderInput = {
             jobId,
             userId,
@@ -66,7 +57,6 @@ export async function createAddFundsOrderAction(
 
         return { success: true, data: result };
     } catch (error: any) {
-        await logger.error(error, { action: 'createAddFundsOrderAction', jobId, userId });
         return {
             success: false,
             error: error.message || 'Failed to initiate add-funds payment',

@@ -36,8 +36,6 @@ export const rewardTopPerformers = defineLoggedFlow(
   },
   async () => {
     try {
-      console.log("[Automation] Starting: Reward Top Performers");
-
       // Note: Ideally, check for Admin privileges here.
       // Since `grantProPlan` performs checks or is admin-only logic, and this flow 
       // is exposed as a server action to be called by the admin dashboard,
@@ -57,7 +55,6 @@ export const rewardTopPerformers = defineLoggedFlow(
 
       // 3. Select top 3 performers
       const top3 = rankedInstallers.slice(0, 3);
-      console.log(`[Automation] Top 3 performers identified:`, top3.map(u => u.name));
 
       if (top3.length === 0) {
         return { success: true, summary: "No eligible installers found to reward.", rewardedUsers: [] };
@@ -72,11 +69,8 @@ export const rewardTopPerformers = defineLoggedFlow(
         if (result.success) {
           rewardedUsers.push({ id: top3[index].id, name: top3[index].name });
         } else {
-          console.error(`[Automation] Failed to reward ${top3[index].name}: ${result.message}`);
         }
       });
-
-      console.log(`[Automation] Successfully rewarded ${rewardedUsers.length} users.`);
 
       return {
         success: true,
@@ -85,7 +79,6 @@ export const rewardTopPerformers = defineLoggedFlow(
       };
 
     } catch (error: any) {
-      console.error("[Automation] Error rewarding top performers:", error);
       return {
         success: false,
         summary: error.message || 'An unexpected error occurred during the automation.',

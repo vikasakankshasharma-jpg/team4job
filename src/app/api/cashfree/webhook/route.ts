@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
-import { logger } from '@/infrastructure/logger';
+
 import { verifyWebhookSignature } from '@/lib/cashfree-utils';
 import { Transaction, User, SubscriptionPlan } from '@/lib/types';
 import { toDate } from '@/lib/utils';
@@ -22,13 +22,13 @@ export async function POST(req: NextRequest) {
     const rawBody = await req.text();
     const data = JSON.parse(rawBody);
 
-    logger.info('Cashfree webhook received', { eventType: data.type || data.event });
+
 
     const signature = req.headers.get('x-webhook-signature');
     const timestamp = req.headers.get('x-webhook-timestamp');
 
     if (!signature || !timestamp) {
-      logger.error('Webhook signature or timestamp missing');
+
       return NextResponse.json(
         { status: 'error', message: 'Signature missing' },
         { status: 400 }
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     // Verify webhook signature (SECURITY: Critical step)
     const isValid = verifyWebhookSignature(rawBody, signature, timestamp);
     if (!isValid) {
-      logger.error('Invalid webhook signature - possible fraud attempt');
+
       return NextResponse.json(
         { status: 'error', message: 'Invalid signature' },
         { status: 403 }
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       const orderId = data.data.order.order_id;
 
       if (!orderId) {
-        logger.warn('Payment webhook received without order_id');
+
         return NextResponse.json(
           { status: 'error', message: 'Missing order_id' },
           { status: 400 }
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       const transactionSnap = await transactionRef.get();
 
       if (!transactionSnap.exists) {
-        logger.warn(`Transaction not found for webhook`, { orderId });
+
         return NextResponse.json(
           { status: 'error', message: 'Transaction not found' },
           { status: 404 }
@@ -89,10 +89,7 @@ export async function POST(req: NextRequest) {
               startOtp: startOtp,
             });
 
-          logger.info('Job funded and moved to In Progress', {
-            jobId: transaction.jobId,
-            orderId,
-          });
+
         }
 
         // Handle subscription activation
@@ -128,10 +125,7 @@ export async function POST(req: NextRequest) {
               'subscription.expiresAt': Timestamp.fromDate(newExpiryDate) as any,
             });
 
-            logger.info('Subscription activated', {
-              userId: transaction.payerId,
-              planName: planData.name,
-            });
+
 
             // Send Invoice Email
             if (userData.email) {
@@ -169,14 +163,14 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        logger.info('Payment successful', { orderId, transactionId: orderId });
+
       } else if (data.type === 'PAYMENT_FAILED_WEBHOOK') {
         await transactionRef.update({
           status: 'failed',
           failedAt: Timestamp.now() as any,
         });
 
-        logger.error('Payment failed', { orderId });
+
       }
 
       return NextResponse.json({ status: 'success' });
@@ -190,7 +184,7 @@ export async function POST(req: NextRequest) {
       if (event.startsWith('transfer_')) {
         const transferId = eventData?.transfer?.transferId;
         if (!transferId) {
-          logger.warn(`Payout event '${event}' without transferId`);
+
           return NextResponse.json({
             status: 'success',
             message: 'Acknowledged, but missing transferId',
@@ -206,7 +200,7 @@ export async function POST(req: NextRequest) {
           .get();
 
         if (querySnapshot.empty) {
-          logger.warn('Unknown transfer ID in webhook', { transferId });
+
           return NextResponse.json({
             status: 'success',
             message: 'Acknowledged, but no matching transfer found',
@@ -222,17 +216,14 @@ export async function POST(req: NextRequest) {
             [isRefund ? 'refundedAt' : 'releasedAt']: Timestamp.now() as any,
           });
 
-          logger.info('Transfer successful', {
-            transferId,
-            type: isRefund ? 'refund' : 'payout',
-          });
+
         } else if (event === 'transfer_failed' || event === 'transfer_reversed') {
           await transactionDoc.ref.update({
             status: 'failed',
             failedAt: Timestamp.now() as any,
           });
 
-          logger.error('Transfer failed or reversed', { transferId, event });
+
         }
 
         return NextResponse.json({ status: 'success' });
@@ -241,19 +232,19 @@ export async function POST(req: NextRequest) {
       // Handle beneficiary validation events
       if (event.startsWith('bene_')) {
         const beneId = eventData?.beneficiary?.beneId;
-        logger.info('Beneficiary event received', { event, beneId });
+
         return NextResponse.json({ status: 'success' });
       }
     }
 
     // Unknown webhook format
-    logger.warn('Webhook with unknown format received', { data });
+
     return NextResponse.json({
       status: 'success',
       message: 'Acknowledged, but format not recognized',
     });
   } catch (error) {
-    logger.error('Cashfree webhook processing error', error);
+
     return NextResponse.json(
       { status: 'error', message: (error as Error).message },
       { status: 500 }

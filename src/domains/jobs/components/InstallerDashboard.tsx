@@ -194,45 +194,46 @@ export function InstallerDashboard({ stats, transactions, loading = false }: {
                 </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
-                <div className="mt-8 mb-8">
-                    <RecommendedJobsList user={user!} />
-                </div>
-                <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <Card data-tour="find-project-card">
-                        <CardHeader>
-                            <CardTitle>{t('findNextProject')}</CardTitle>
-                            <CardDescription>
-                                {t('findNextProjectDesc')}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button asChild>
-                                <Link href="/dashboard/jobs">
-                                    {t('browseJobs')} <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
+            {/* Recommended Jobs — full-width section */}
+            <div className="mt-8 mb-4">
+                <RecommendedJobsList user={user!} />
+            </div>
 
-                    <RecentActivity />
+            {/* Bottom action cards — single flat grid, never nested */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Card data-tour="find-project-card">
+                    <CardHeader>
+                        <CardTitle>{t('findNextProject')}</CardTitle>
+                        <CardDescription>
+                            {t('findNextProjectDesc')}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild>
+                            <Link href="/dashboard/jobs">
+                                {t('browseJobs')} <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
 
-                    <Card data-tour="manage-profile-card">
-                        <CardHeader>
-                            <CardTitle>{t('manageProfile')}</CardTitle>
-                            <CardDescription>
-                                {t('manageProfileDesc')}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button asChild variant="secondary">
-                                <Link href="/dashboard/profile">
-                                    {t('goToProfile')} <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
+                <RecentActivity />
+
+                <Card data-tour="manage-profile-card">
+                    <CardHeader>
+                        <CardTitle>{t('manageProfile')}</CardTitle>
+                        <CardDescription>
+                            {t('manageProfileDesc')}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild variant="secondary">
+                            <Link href="/dashboard/profile">
+                                {t('goToProfile')} <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

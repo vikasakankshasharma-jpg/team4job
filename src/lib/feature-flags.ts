@@ -21,7 +21,6 @@ export async function getFeatureFlag(key: FeatureFlagKey): Promise<boolean> {
         }
         return DEFAULT_FLAGS[key];
     } catch (error) {
-        console.error(`[FeatureFlag] Failed to fetch flag ${key}:`, error);
         return DEFAULT_FLAGS[key];
     }
 }

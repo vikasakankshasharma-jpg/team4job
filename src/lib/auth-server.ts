@@ -15,8 +15,7 @@ export async function getUserIdFromSession() {
         const adminAuth = getAdminAuth();
         const decodedToken = await adminAuth.verifyIdToken(token);
         return decodedToken.uid;
-    } catch (error) {
-        console.error('[AuthServer] Failed to verify ID token:', error);
+    } catch (error: any) {
         return null;
     }
 }

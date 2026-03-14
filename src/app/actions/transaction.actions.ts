@@ -44,7 +44,6 @@ export async function getTransactionHistoryAction(userId: string) {
         // We return raw data, client handles remaining formatting
         return { success: true, transactions: JSON.parse(JSON.stringify(sorted)) };
     } catch (error: any) {
-        console.error('getTransactionHistoryAction error:', error);
         return { success: false, error: error.message || 'Failed to fetch history' };
     }
 }

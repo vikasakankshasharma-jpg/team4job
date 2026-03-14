@@ -31,7 +31,7 @@ export function MilestoneDialog({ open, onOpenChange, onSubmit, maxAmount }: Mil
             setDescription('');
             setAmount('');
         } catch (error) {
-            console.error(error);
+            // Error adding milestone
         } finally {
             setIsLoading(false);
         }

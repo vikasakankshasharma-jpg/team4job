@@ -118,7 +118,7 @@ export function NotificationsDropdown() {
                 setUnreadCount(newNotifs.filter(n => !n.read).length);
 
             } catch (e) {
-                console.error("Error fetching notifications", e);
+                // Error fetching notifications
             }
         }
 

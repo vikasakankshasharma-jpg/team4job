@@ -166,7 +166,6 @@ export default function VerifyInstallerClient() {
       toast({ title: t('alerts.skillsSaved'), description: t('alerts.skillsSavedDesc'), variant: "default" });
       setStep("enterBusinessProof");
     } catch (error) {
-      console.error("Error saving skills:", error);
       toast({ title: t('alerts.error'), description: t('alerts.updateError'), variant: "destructive" });
     } finally {
       setIsLoading(false);
@@ -193,7 +192,6 @@ export default function VerifyInstallerClient() {
           }
           toast({ title: t('alerts.gstVerified'), description: `Business: ${result.data.legalName || 'Verified'}` });
         } catch (e) {
-          console.error("GST Check Error", e);
           // Block if API enabled and failed
           toast({ title: t('alerts.error'), description: t('alerts.gstCheckError'), variant: "destructive" });
           setIsLoading(false);
@@ -243,7 +241,6 @@ export default function VerifyInstallerClient() {
       });
       router.push('/dashboard/profile');
     } catch (error) {
-      console.error("Error finalizing installer profile:", error);
       toast({ title: t('alerts.error'), description: t('alerts.updateError'), variant: "destructive" });
     } finally {
       setIsLoading(false);
@@ -282,7 +279,6 @@ export default function VerifyInstallerClient() {
       };
       reader.readAsDataURL(file);
     } catch (err) {
-      console.error("Scan error", err);
       setIsScanning(false);
     }
   };

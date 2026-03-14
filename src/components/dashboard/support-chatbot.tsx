@@ -22,9 +22,14 @@ export function SupportChatbot() {
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        if (scrollRef.current) {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (mounted && scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages]);
@@ -55,6 +60,8 @@ export function SupportChatbot() {
             setIsLoading(false);
         }
     };
+
+    if (!mounted) return null;
 
     return (
         <div className="flex flex-col h-[400px] border rounded-lg bg-background shadow-sm overflow-hidden">

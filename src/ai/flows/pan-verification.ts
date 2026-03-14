@@ -33,8 +33,6 @@ export type VerifyPanOutput = z.infer<typeof VerifyPanOutputSchema>;
  * server-to-server call to Cashfree's PAN Lite API.
  */
 async function callCashfreeVerifyPan(pan: string): Promise<{ success: boolean; data?: any; error?: string }> {
-    console.log(`[Cashfree KYC] Verifying PAN: ${pan.slice(0, 2)}...`);
-
     if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
         return { success: false, error: 'Server configuration error: Missing KYC API credentials.' };
     }
@@ -68,7 +66,6 @@ async function callCashfreeVerifyPan(pan: string): Promise<{ success: boolean; d
         }
 
     } catch (error: any) {
-        console.error('[Cashfree KYC] API call error (PAN):', error.response?.data || error.message);
         return { success: false, error: error.response?.data?.message || 'An unexpected error occurred during PAN verification.' };
     }
 }
@@ -82,7 +79,6 @@ export const verifyPan = defineLoggedFlow(
     async (input: z.infer<typeof VerifyPanInputSchema>) => {
         // Mock for Local E2E Testing
         if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' && input.pan === 'ABCDE1234F') {
-            console.log('[Cashfree KYC] Using mock PAN verification (Emulator Mode).');
             return {
                 isValid: true,
                 registeredName: 'MOCK USER NAME',

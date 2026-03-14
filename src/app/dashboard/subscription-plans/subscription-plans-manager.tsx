@@ -116,7 +116,6 @@ function PlanForm({ plan, onSave }: { plan?: SubscriptionPlan, onSave: () => voi
       onSave();
       setIsOpen(false);
     } catch (e) {
-      console.error(e);
       toast({ title: t('toasts.error'), description: t('toasts.failed'), variant: "destructive" });
     }
     setIsSubmitting(false);

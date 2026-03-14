@@ -15,9 +15,9 @@ export async function sendNotification(
         });
 
         if (!response.ok) {
-            console.error("Failed to send notification via API proxy");
+            // Proxy failed
         }
     } catch (error) {
-        console.error("Error sending notification:", error);
+        // Notification failed
     }
 }

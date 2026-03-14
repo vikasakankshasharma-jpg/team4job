@@ -39,7 +39,7 @@ export function MobileBottomNav({ className }: MobileBottomNavProps) {
         if (role === 'Job Giver') {
             return [
                 ...commonItems,
-                { href: "/dashboard/post-job", icon: PlusCircle, label: "Post", primary: true },
+                { href: "/wizard", icon: PlusCircle, label: "Post", primary: true },
                 { href: "/dashboard/posted-jobs", icon: Briefcase, label: "Jobs" },
                 { href: "/dashboard/analytics", icon: TrendingUp, label: "Stats" },
             ];

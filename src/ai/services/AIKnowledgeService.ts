@@ -61,11 +61,8 @@ export const aiKnowledgeService = {
             };
 
             await docRef.set(docData);
-            console.log(`[AIKnowledge] Indexed doc ${docRef.id}`);
             return docRef.id;
-
         } catch (error) {
-            console.error("[AIKnowledge] Indexing failed:", error);
             throw error;
         }
     },
@@ -110,7 +107,6 @@ export const aiKnowledgeService = {
             return docs.slice(0, limit);
 
         } catch (error) {
-            console.error("[AIKnowledge] Search failed:", error);
             return [];
         }
     }

@@ -1,0 +1,760 @@
+{
+    "categories": [
+        {
+            "id": "Security & Surveillance",
+            "icon": "ShieldCheck",
+            "description": "Professional security and surveillance system installation",
+            "questions": [
+                {
+                    "id": "sub_type",
+                    "label": "What type of security service do you need?",
+                    "options": [
+                        { "value": "cctv", "label": "CCTV / Video Surveillance" },
+                        { "value": "alarm", "label": "Security Alarm System" },
+                        { "value": "access_control", "label": "Access Control System" }
+                    ]
+                }
+            ],
+            "branches": {
+                "cctv": [
+                    {
+                        "id": "camera_coverage_points",
+                        "label": "How many areas/points need camera coverage?",
+                        "options": [
+                            { "value": "1-2", "label": "1-2 Points" },
+                            { "value": "3-4", "label": "3-4 Points" },
+                            { "value": "5-8", "label": "5-8 Points" },
+                            { "value": "8+", "label": "8+ Points" }
+                        ]
+                    },
+                    {
+                        "id": "camera_mounting_type",
+                        "label": "Are these points Indoor, Outdoor, or Both?",
+                        "options": [
+                            { "value": "Indoor", "label": "Indoor Only" },
+                            { "value": "Outdoor", "label": "Outdoor Only" },
+                            { "value": "Both", "label": "Both Indoor & Outdoor" },
+                            { "value": "InstallerSuggest", "label": "Let Installer Suggest" }
+                        ]
+                    },
+                    {
+                        "id": "site_complexity",
+                        "label": "Property type and floors?",
+                        "options": [
+                            { "value": "SingleFloor", "label": "Single Floor" },
+                            { "value": "MultiFloor", "label": "Multi-floor / Villa" },
+                            { "value": "Commercial", "label": "Commercial / Office" },
+                            { "value": "Warehouse", "label": "Factory / Warehouse" }
+                        ]
+                    },
+                    {
+                        "id": "cabling_labor",
+                        "label": "Is existing wiring/cabling available?",
+                        "options": [
+                            { "value": "FullyWired", "label": "Yes, fully wired" },
+                            { "value": "PartialWiring", "label": "Partial wiring available" },
+                            { "value": "FreshWiring", "label": "No, needs fresh wiring" }
+                        ]
+                    },
+                    {
+                        "id": "recording_setup",
+                        "label": "How many days of video backup storage is needed?",
+                        "options": [
+                            { "value": "1Week", "label": "1 Week" },
+                            { "value": "2-3Weeks", "label": "2-3 Weeks" },
+                            { "value": "1Month+", "label": "1 Month or more" }
+                        ]
+                    },
+                    {
+                        "id": "special_features",
+                        "label": "Do you need audio recording or two-way talk?",
+                        "options": [
+                            { "value": "AudioOnly", "label": "Audio recording only" },
+                            { "value": "TwoWay", "label": "Two-way talk" },
+                            { "value": "NotNeeded", "label": "Not needed" }
+                        ]
+                    },
+                    {
+                        "id": "display_setup",
+                        "label": "Do you need a monitor display or just mobile viewing?",
+                        "options": [
+                            { "value": "MobileOnly", "label": "Mobile viewing only" },
+                            { "value": "MonitorNeeded", "label": "Monitor display needed" },
+                            { "value": "Both", "label": "Both Mobile & Monitor" }
+                        ]
+                    }
+                ],
+                "alarm": [
+                    {
+                        "id": "alarm_zones",
+                        "label": "How many rooms/zones need sensor coverage?",
+                        "options": [
+                            { "value": "1-2", "label": "1-2 Zones" },
+                            { "value": "3-5", "label": "3-5 Zones" },
+                            { "value": "5+", "label": "5+ Zones" }
+                        ]
+                    },
+                    {
+                        "id": "alarm_sensor_work",
+                        "label": "What needs protection?",
+                        "options": [
+                            { "value": "DoorsWindows", "label": "Doors & Windows only" },
+                            { "value": "MotionArea", "label": "Motion / Area sensing" },
+                            { "value": "Both", "label": "Both" }
+                        ]
+                    },
+                    {
+                        "id": "alarm_monitoring",
+                        "label": "How do you want to be alerted?",
+                        "options": [
+                            { "value": "MobileApp", "label": "Mobile app only" },
+                            { "value": "LocalSiren", "label": "Local Siren only" },
+                            { "value": "AppAndSiren", "label": "App + Local Siren" }
+                        ]
+                    },
+                    {
+                        "id": "alarm_site_status",
+                        "label": "Is the property currently occupied or under construction?",
+                        "options": [
+                            { "value": "Occupied", "label": "Occupied / Furnished" },
+                            { "value": "Empty", "label": "Empty / Under Construction" }
+                        ]
+                    }
+                ],
+                "access_control": [
+                    {
+                        "id": "access_entry_points",
+                        "label": "How many doors/gates need access control?",
+                        "options": [
+                            { "value": "1", "label": "1 Door/Gate" },
+                            { "value": "2-3", "label": "2-3 Doors/Gates" },
+                            { "value": "4+", "label": "4+ Doors/Gates" }
+                        ]
+                    },
+                    {
+                        "id": "access_complexity",
+                        "label": "What type of lock/access method?",
+                        "options": [
+                            { "value": "CardFob", "label": "Card / Key Fob" },
+                            { "value": "Biometric", "label": "Fingerprint / Biometric" },
+                            { "value": "PIN", "label": "PIN Code" },
+                            { "value": "VDP", "label": "Video Door Phone" }
+                        ]
+                    },
+                    {
+                        "id": "access_door_material",
+                        "label": "What is the door material?",
+                        "options": [
+                            { "value": "Wood", "label": "Wood" },
+                            { "value": "Glass", "label": "Glass" },
+                            { "value": "Metal", "label": "Metal" },
+                            { "value": "NotSure", "label": "Not Sure" }
+                        ]
+                    },
+                    {
+                        "id": "access_wiring",
+                        "label": "Is existing power/wiring available at the doors?",
+                        "options": [
+                            { "value": "Yes", "label": "Yes" },
+                            { "value": "No", "label": "No" },
+                            { "value": "NotSure", "label": "Not Sure" }
+                        ]
+                    }
+                ]
+            },
+            "closingQuestions": [
+                {
+                    "id": "urgency",
+                    "label": "When do you need this done?",
+                    "options": [
+                        { "value": "Immediate", "label": "Today / Tomorrow" },
+                        { "value": "Standard", "label": "Within 1-2 Days" },
+                        { "value": "ThisWeek", "label": "This Week" },
+                        { "value": "Flexible", "label": "Flexible" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "Networking & IT",
+            "icon": "Globe",
+            "description": "Network setup, WiFi coverage, and IT infrastructure",
+            "questions": [
+                {
+                    "id": "sub_type",
+                    "label": "What networking service do you need?",
+                    "options": [
+                        { "value": "wifi", "label": "WiFi Setup / Coverage" },
+                        { "value": "lan", "label": "LAN Cabling & Patching" },
+                        { "value": "rack", "label": "Server / Network Rack Setup" },
+                        { "value": "troubleshooting", "label": "Troubleshooting / Repair" }
+                    ]
+                }
+            ],
+            "branches": {
+                "wifi": [
+                    {
+                        "id": "wifi_area",
+                        "label": "Approximate area to cover?",
+                        "options": [
+                            { "value": "SingleFloor", "label": "Single floor / apartment" },
+                            { "value": "MultiFloor", "label": "Multi-floor" },
+                            { "value": "LargeWarehouse", "label": "Large warehouse/commercial" }
+                        ]
+                    },
+                    {
+                        "id": "wifi_walls",
+                        "label": "What are the internal walls made of?",
+                        "options": [
+                            { "value": "StandardBrick", "label": "Standard brick" },
+                            { "value": "ConcreteThick", "label": "Concrete / Thick" },
+                            { "value": "GlassGypsum", "label": "Glass / Gypsum (Drywall)" }
+                        ]
+                    },
+                    {
+                        "id": "wifi_device_count",
+                        "label": "How many devices will connect (phones, laptops, TVs)?",
+                        "options": [
+                            { "value": "Under10", "label": "Under 10" },
+                            { "value": "10-25", "label": "10-25" },
+                            { "value": "25+", "label": "25+" }
+                        ]
+                    }
+                ],
+                "lan": [
+                    {
+                        "id": "lan_points",
+                        "label": "How many LAN points needed?",
+                        "options": [
+                            { "value": "1-5", "label": "1-5 points" },
+                            { "value": "5-15", "label": "5-15 points" },
+                            { "value": "15+", "label": "15+ points" }
+                        ]
+                    },
+                    {
+                        "id": "lan_routing",
+                        "label": "How should the cable run?",
+                        "options": [
+                            { "value": "PVCConduit", "label": "Inside PVC conduit" },
+                            { "value": "FalseCeiling", "label": "False ceiling" },
+                            { "value": "OpenClipping", "label": "Open wall clipping" }
+                        ]
+                    },
+                    {
+                        "id": "lan_length",
+                        "label": "Approximate max length of a single cable run?",
+                        "options": [
+                            { "value": "Under30m", "label": "Under 30 meters" },
+                            { "value": "30-60m", "label": "30-60 meters" },
+                            { "value": "60m+", "label": "60+ meters" }
+                        ]
+                    }
+                ],
+                "rack": [
+                    {
+                        "id": "rack_work",
+                        "label": "Type of rack?",
+                        "options": [
+                            { "value": "SmallWall", "label": "Small Wall Mount" },
+                            { "value": "LargeFloor", "label": "Large Floor Standing" },
+                            { "value": "JustPlacement", "label": "Just equipment placement (No rack)" }
+                        ]
+                    },
+                    {
+                        "id": "rack_equipment",
+                        "label": "How many devices to mount inside?",
+                        "options": [
+                            { "value": "1-3", "label": "1-3 devices" },
+                            { "value": "4-8", "label": "4-8 devices" },
+                            { "value": "8+", "label": "8+ devices" }
+                        ]
+                    },
+                    {
+                        "id": "rack_terminations",
+                        "label": "Do cables need to be terminated to a patch panel?",
+                        "options": [
+                            { "value": "Yes", "label": "Yes" },
+                            { "value": "NoAlreadyDone", "label": "No, already done" },
+                            { "value": "NoPanelNeeded", "label": "No panel needed" }
+                        ]
+                    }
+                ],
+                "troubleshooting": [
+                    {
+                        "id": "trouble_problem",
+                        "label": "What's the primary issue?",
+                        "options": [
+                            { "value": "DeadZones", "label": "Dead zones / No WiFi in some rooms" },
+                            { "value": "SlowSpeeds", "label": "Super slow speeds" },
+                            { "value": "TotalDown", "label": "Total internet down" }
+                        ]
+                    },
+                    {
+                        "id": "trouble_scope",
+                        "label": "Is this for a Home or an Office?",
+                        "options": [
+                            { "value": "Home", "label": "Home" },
+                            { "value": "SmallOffice", "label": "Small Office" },
+                            { "value": "LargeOffice", "label": "Large Office" }
+                        ]
+                    }
+                ]
+            },
+            "closingQuestions": [
+                {
+                    "id": "urgency",
+                    "label": "When do you need this done?",
+                    "options": [
+                        { "value": "Immediate", "label": "Today / Tomorrow" },
+                        { "value": "Standard", "label": "Within 1-2 Days" },
+                        { "value": "ThisWeek", "label": "This Week" },
+                        { "value": "Flexible", "label": "Flexible" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "Electrical & Power",
+            "icon": "Zap",
+            "description": "Electrical wiring, repairs, and power solutions",
+            "questions": [
+                {
+                    "id": "sub_type",
+                    "label": "What electrical service do you need?",
+                    "options": [
+                        { "value": "repairs", "label": "Minor Repairs / Switches" },
+                        { "value": "wiring", "label": "New Wiring (Room/House/Office)" },
+                        { "value": "appliance", "label": "Appliance Installation" },
+                        { "value": "inverter", "label": "Inverter / Solar Setup" }
+                    ]
+                }
+            ],
+            "branches": {
+                "repairs": [
+                    {
+                        "id": "repair_scope",
+                        "label": "How many points/items need repair?",
+                        "options": [
+                            { "value": "1-2", "label": "1-2 items" },
+                            { "value": "3-5", "label": "3-5 items" },
+                            { "value": "5+", "label": "5+ items" }
+                        ]
+                    },
+                    {
+                        "id": "repair_type",
+                        "label": "What exactly needs repair?",
+                        "options": [
+                            { "value": "SwitchSocket", "label": "Burnt switch/socket" },
+                            { "value": "TrippingMCB", "label": "Tripping MCB" },
+                            { "value": "BrokenLightFan", "label": "Broken light/fan" },
+                            { "value": "MainDB", "label": "Main DB box" }
+                        ]
+                    },
+                    {
+                        "id": "repair_urgency_context",
+                        "label": "Is power completely off in the area?",
+                        "options": [
+                            { "value": "TotalBlackout", "label": "Yes, total blackout" },
+                            { "value": "PartialPower", "label": "Partial power" },
+                            { "value": "JustOnePoint", "label": "No, just one faulty point" }
+                        ]
+                    }
+                ],
+                "wiring": [
+                    {
+                        "id": "wiring_site_status",
+                        "label": "Is this property furnished or under construction?",
+                        "options": [
+                            { "value": "UnderConstruction", "label": "Under construction / Empty" },
+                            { "value": "Furnished", "label": "Fully furnished" }
+                        ]
+                    },
+                    {
+                        "id": "wiring_scale",
+                        "label": "Scope of wiring?",
+                        "options": [
+                            { "value": "SingleRoom", "label": "Single room" },
+                            { "value": "FullHouse", "label": "Full house" },
+                            { "value": "CommercialFloor", "label": "Commercial floor" }
+                        ]
+                    },
+                    {
+                        "id": "wiring_phase",
+                        "label": "Load capacity needed?",
+                        "options": [
+                            { "value": "SinglePhase", "label": "Standard Single Phase" },
+                            { "value": "ThreePhase", "label": "Heavy 3-Phase (for ACs/Machinery)" }
+                        ]
+                    },
+                    {
+                        "id": "wiring_cutting",
+                        "label": "Does the installer need to cut walls for pipes (chasing)?",
+                        "options": [
+                            { "value": "Yes", "label": "Yes (Concealed wiring)" },
+                            { "value": "NoPipesLaid", "label": "No, pipes are already laid" },
+                            { "value": "SurfaceWiring", "label": "Surface wiring needed (Casing)" }
+                        ]
+                    }
+                ],
+                "appliance": [
+                    {
+                        "id": "appliance_type",
+                        "label": "What appliance is being installed?",
+                        "options": [
+                            { "value": "AC", "label": "AC" },
+                            { "value": "Geyser", "label": "Geyser" },
+                            { "value": "TVFan", "label": "TV / Chandelier / Fan" },
+                            { "value": "WashingMachine", "label": "Washing Machine" }
+                        ]
+                    },
+                    {
+                        "id": "appliance_point_ready",
+                        "label": "Is the exact power socket and plumbing/mounting area ready?",
+                        "options": [
+                            { "value": "Ready", "label": "Yes, ready to plug" },
+                            { "value": "NeedsNewPoint", "label": "No, needs new socket/pipe" }
+                        ]
+                    },
+                    {
+                        "id": "appliance_count",
+                        "label": "How many units?",
+                        "options": [
+                            { "value": "1", "label": "1 unit" },
+                            { "value": "2-3", "label": "2-3 units" },
+                            { "value": "4+", "label": "4+ units" }
+                        ]
+                    }
+                ],
+                "inverter": [
+                    {
+                        "id": "inverter_type",
+                        "label": "What are you installing?",
+                        "options": [
+                            { "value": "HomeInverterUPS", "label": "Home Inverter / UPS" },
+                            { "value": "SolarSetup", "label": "Solar Setup" }
+                        ]
+                    },
+                    {
+                        "id": "inverter_load",
+                        "label": "What will this run (Load Profile)?",
+                        "options": [
+                            { "value": "LightsFansOnly", "label": "Only lights/fans" },
+                            { "value": "LightsFridgeTV", "label": "Lights + Fridge/TV" },
+                            { "value": "HeavyLoad", "label": "Heavy load including AC" }
+                        ]
+                    },
+                    {
+                        "id": "inverter_wiring_status",
+                        "label": "Is there a dedicated inverter wiring circuit already present?",
+                        "options": [
+                            { "value": "Yes", "label": "Yes" },
+                            { "value": "NoNeedsIntegration", "label": "No, needs full integration" }
+                        ]
+                    }
+                ]
+            },
+            "closingQuestions": [
+                {
+                    "id": "urgency",
+                    "label": "When do you need this done?",
+                    "options": [
+                        { "value": "Immediate", "label": "Today / Tomorrow" },
+                        { "value": "Standard", "label": "Within 1-2 Days" },
+                        { "value": "ThisWeek", "label": "This Week" },
+                        { "value": "Flexible", "label": "Flexible" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "Plumbing & Water Services",
+            "icon": "Droplets",
+            "description": "General plumbing, leaks, fittings, and water tank installation",
+            "questions": [
+                {
+                    "id": "sub_type",
+                    "label": "What plumbing service do you need?",
+                    "options": [
+                        { "value": "leaks", "label": "Leaks & Blockages (Repairs)" },
+                        { "value": "fittings", "label": "Tap & Fitting Installation" },
+                        { "value": "tank", "label": "Water Tank & Motor Setup" },
+                        { "value": "layout", "label": "Bathroom/Kitchen Pipe Layout" }
+                    ]
+                }
+            ],
+            "branches": {
+                "leaks": [
+                    {
+                        "id": "leak_issue_type",
+                        "label": "What is the primary issue?",
+                        "options": [
+                            { "value": "LeakingPipeTap", "label": "Leaking pipe/tap" },
+                            { "value": "BlockedDrainToilet", "label": "Blocked drain/toilet" },
+                            { "value": "LowWaterPressure", "label": "Low water pressure" }
+                        ]
+                    },
+                    {
+                        "id": "leak_location",
+                        "label": "Where is the issue located?",
+                        "options": [
+                            { "value": "Bathroom", "label": "Bathroom" },
+                            { "value": "Kitchen", "label": "Kitchen" },
+                            { "value": "OutdoorTerrace", "label": "Outdoor/Terrace" },
+                            { "value": "Underground", "label": "Underground" }
+                        ]
+                    },
+                    {
+                        "id": "leak_visibility",
+                        "label": "Is the damage visible without breaking walls/tiles?",
+                        "options": [
+                            { "value": "Visible", "label": "Yes, it's visible" },
+                            { "value": "NeedsBreaking", "label": "No, might need tile breaking" }
+                        ]
+                    }
+                ],
+                "fittings": [
+                    {
+                        "id": "fitting_type",
+                        "label": "What type of fitting?",
+                        "options": [
+                            { "value": "BasicTapShower", "label": "Basic tap/shower" },
+                            { "value": "CommodeWashbasin", "label": "Commode/Washbasin" },
+                            { "value": "GeyserPlumbing", "label": "Geyser plumbing" }
+                        ]
+                    },
+                    {
+                        "id": "fitting_count",
+                        "label": "How many units to install?",
+                        "options": [
+                            { "value": "1-2", "label": "1-2 units" },
+                            { "value": "3-5", "label": "3-5 units" },
+                            { "value": "WholeBathroom", "label": "Whole bathroom renovation" }
+                        ]
+                    },
+                    {
+                        "id": "fitting_point_ready",
+                        "label": "Are the water inlet/outlet pipes already at the exact spot?",
+                        "options": [
+                            { "value": "Yes", "label": "Yes" },
+                            { "value": "NeedsExtending", "label": "No, pipes need extending" }
+                        ]
+                    }
+                ],
+                "tank": [
+                    {
+                        "id": "tank_scope",
+                        "label": "What needs to be installed?",
+                        "options": [
+                            { "value": "OverheadTank", "label": "Overhead Water Tank" },
+                            { "value": "UndergroundMotor", "label": "Underground Water Motor" },
+                            { "value": "Both", "label": "Both Tank & Motor" }
+                        ]
+                    },
+                    {
+                        "id": "tank_capacity",
+                        "label": "What is the tank capacity (approx)?",
+                        "options": [
+                            { "value": "Under500L", "label": "Under 500L" },
+                            { "value": "500-1000L", "label": "500L - 1000L" },
+                            { "value": "1000L+", "label": "1000L+" }
+                        ]
+                    },
+                    {
+                        "id": "tank_logistics",
+                        "label": "How many floors up is the placement?",
+                        "options": [
+                            { "value": "Ground", "label": "Ground" },
+                            { "value": "1-2Floors", "label": "1-2 Floors" },
+                            { "value": "3+FloorsNoLift", "label": "3+ Floors (No Lift)" }
+                        ]
+                    }
+                ],
+                "layout": [
+                    {
+                        "id": "layout_scale",
+                        "label": "Scope of piping work?",
+                        "options": [
+                            { "value": "SingleBathroomKitchen", "label": "Single Bathroom/Kitchen" },
+                            { "value": "FullFloor", "label": "Full Floor" },
+                            { "value": "FullHouse", "label": "Full House" }
+                        ]
+                    },
+                    {
+                        "id": "layout_routing_type",
+                        "label": "Type of piping needed?",
+                        "options": [
+                            { "value": "Concealed", "label": "Concealed inside walls" },
+                            { "value": "OpenSurface", "label": "Open/Surface on outside walls" }
+                        ]
+                    },
+                    {
+                        "id": "layout_site_state",
+                        "label": "Is the property currently under construction or occupied?",
+                        "options": [
+                            { "value": "UnderConstruction", "label": "Under construction / Empty" },
+                            { "value": "Occupied", "label": "Occupied / Tile breaking needed" }
+                        ]
+                    }
+                ]
+            },
+            "closingQuestions": [
+                {
+                    "id": "urgency",
+                    "label": "When do you need this done?",
+                    "options": [
+                        { "value": "Immediate", "label": "Today / Tomorrow" },
+                        { "value": "Standard", "label": "Within 1-2 Days" },
+                        { "value": "ThisWeek", "label": "This Week" },
+                        { "value": "Flexible", "label": "Flexible" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "Carpentry & Woodwork",
+            "icon": "Hammer",
+            "description": "Furniture assembly, woodwork, custom cabinetry, and polishing",
+            "questions": [
+                {
+                    "id": "sub_type",
+                    "label": "What carpentry service do you need?",
+                    "options": [
+                        { "value": "furniture", "label": "Furniture Assembly & Repair" },
+                        { "value": "doors_windows", "label": "Door & Window Work" },
+                        { "value": "cabinetry", "label": "Custom Cabinetry & Wardrobes" },
+                        { "value": "polish", "label": "Polish & Wood Finishing" }
+                    ]
+                }
+            ],
+            "branches": {
+                "furniture": [
+                    {
+                        "id": "furniture_task",
+                        "label": "What needs to be done?",
+                        "options": [
+                            { "value": "FirstTimeAssembly", "label": "First-time Assembly" },
+                            { "value": "FixingBrokenParts", "label": "Fixing broken parts" },
+                            { "value": "HingeLockChannelRepair", "label": "Hinge/Lock/Channel repair" }
+                        ]
+                    },
+                    {
+                        "id": "furniture_item_type",
+                        "label": "What type of furniture?",
+                        "options": [
+                            { "value": "Bed", "label": "Bed" },
+                            { "value": "TableChairs", "label": "Table/Chairs" },
+                            { "value": "SofaFrame", "label": "Sofa/Frame" },
+                            { "value": "SmallIkeaStyle", "label": "Small Ikea-style items" }
+                        ]
+                    },
+                    {
+                        "id": "furniture_spares",
+                        "label": "Are spare parts (screws/hinges/channels) available on site?",
+                        "options": [
+                            { "value": "Yes", "label": "Yes" },
+                            { "value": "NeedInstallerToBring", "label": "Need installer to bring them" }
+                        ]
+                    }
+                ],
+                "doors_windows": [
+                    {
+                        "id": "door_requirement",
+                        "label": "What is the exact requirement?",
+                        "options": [
+                            { "value": "NewInstallation", "label": "New door installation" },
+                            { "value": "ScrapingAdjusting", "label": "Scraping / Adjusting tight fit" },
+                            { "value": "LockHandleFix", "label": "Lock/Handle fix" },
+                            { "value": "MosquitoMesh", "label": "Mosquito Mesh" }
+                        ]
+                    },
+                    {
+                        "id": "door_count",
+                        "label": "How many doors/windows?",
+                        "options": [
+                            { "value": "1", "label": "1" },
+                            { "value": "2-3", "label": "2-3" },
+                            { "value": "4+", "label": "4+" }
+                        ]
+                    },
+                    {
+                        "id": "door_frame_ready",
+                        "label": "Is the wooden frame (Chaukhat) already installed in the wall?",
+                        "options": [
+                            { "value": "Yes", "label": "Yes" },
+                            { "value": "NoNeedsFrame", "label": "No, needs frame install too" }
+                        ]
+                    }
+                ],
+                "cabinetry": [
+                    {
+                        "id": "cabinetry_project_type",
+                        "label": "What needs to be built?",
+                        "options": [
+                            { "value": "KitchenModular", "label": "Kitchen cabinets / Modular" },
+                            { "value": "BedroomWardrobe", "label": "Bedroom wardrobe" },
+                            { "value": "StudyTVUnit", "label": "Study / TV unit" }
+                        ]
+                    },
+                    {
+                        "id": "cabinetry_scale",
+                        "label": "Approximate running area (Sq. Ft)?",
+                        "options": [
+                            { "value": "MinorUnder50", "label": "Minor - Under 50 sq ft" },
+                            { "value": "Medium50to100", "label": "Medium - 50-100 sq ft" },
+                            { "value": "Large100+", "label": "Large - 100+ sq ft" }
+                        ]
+                    },
+                    {
+                        "id": "cabinetry_sourcing",
+                        "label": "Who is providing the raw material (plywood, laminate, fixtures)?",
+                        "options": [
+                            { "value": "IHaveMaterial", "label": "I have material (Labor only)" },
+                            { "value": "InstallerMustProvide", "label": "Installer must provide material" }
+                        ]
+                    }
+                ],
+                "polish": [
+                    {
+                        "id": "polish_target",
+                        "label": "What needs finishing?",
+                        "options": [
+                            { "value": "DoorsWindows", "label": "Doors/Windows" },
+                            { "value": "LooseFurniture", "label": "Loose Furniture" },
+                            { "value": "WoodenFlooring", "label": "Wooden flooring" }
+                        ]
+                    },
+                    {
+                        "id": "polish_finish_type",
+                        "label": "What type of finish?",
+                        "options": [
+                            { "value": "BasicHandPolish", "label": "Basic hand polish" },
+                            { "value": "PUMelamineSpray", "label": "PU / Melamine spray coating" },
+                            { "value": "EnamelPaint", "label": "Enamel Paint" }
+                        ]
+                    },
+                    {
+                        "id": "polish_site_prep",
+                        "label": "Current condition?",
+                        "options": [
+                            { "value": "RawNewWood", "label": "Raw new wood" },
+                            { "value": "OldPolishNeedsStripping", "label": "Old polish needs stripping/sanding" },
+                            { "value": "MinorTouchUp", "label": "Minor touch-up" }
+                        ]
+                    }
+                ]
+            },
+            "closingQuestions": [
+                {
+                    "id": "urgency",
+                    "label": "When do you need this done?",
+                    "options": [
+                        { "value": "Immediate", "label": "Today / Tomorrow" },
+                        { "value": "Standard", "label": "Within 1-2 Days" },
+                        { "value": "ThisWeek", "label": "This Week" },
+                        { "value": "Flexible", "label": "Flexible" }
+                    ]
+                }
+            ]
+        }
+    ]
+}

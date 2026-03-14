@@ -57,12 +57,12 @@ export async function JobGiverServerView({ user }: { user: User }) {
                     <CardHeader>
                         <CardTitle>Need an Installer?</CardTitle>
                         <CardDescription>
-                            Post a job and get bids from verified CCTV professionals.
+                            Post a job and get bids from verified technical professionals.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button asChild>
-                            <Link href="/dashboard/post-job">
+                            <Link href="/wizard">
                                 <PlusCircle className="mr-2 h-4 w-4" /> Post a New Job
                             </Link>
                         </Button>

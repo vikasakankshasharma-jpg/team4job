@@ -2,7 +2,7 @@
 
 import { JobStatus, JOB_STATE_TRANSITIONS, CreateJobInput } from './job.types';
 import { Role } from '@/lib/types';
-import { logger } from '@/infrastructure/logger';
+
 
 /**
  * Job Business Rules
@@ -36,13 +36,13 @@ export class JobRules {
 
         // Job must be in 'open' status
         if (jobStatus !== 'open') {
-            logger.warn('Cannot accept bid - job not open', { jobStatus });
+
             return false;
         }
 
         // User must be the job giver (or admin)
         if (userRole !== 'Admin' && userId !== jobGiverId) {
-            logger.warn('Cannot accept bid - not job owner', { userId, jobGiverId });
+
             return false;
         }
 

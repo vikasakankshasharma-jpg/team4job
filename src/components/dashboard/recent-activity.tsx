@@ -37,9 +37,10 @@ export function RecentActivity({ initialActivities = EMPTY_ACTIVITIES }: { initi
         // Disable real-time activity listener in E2E mode to prevent Firestore assertion errors
         const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
         if (isE2EMode) {
-            console.log('[RecentActivity] E2E mode detected - skipping real-time activity listener');
-            setActivities(prev => initialActivities.length > 0 ? initialActivities : prev);
-            setLoading(false);
+            if (loading) {
+                 setActivities(prev => initialActivities.length > 0 ? initialActivities : prev);
+                 setLoading(false);
+            }
             return;
         }
 
@@ -71,7 +72,6 @@ export function RecentActivity({ initialActivities = EMPTY_ACTIVITIES }: { initi
             setActivities(newActivities);
             setLoading(false);
         }, (error) => {
-            console.error("Error fetching activities:", error);
             setLoading(false);
         });
 
@@ -80,7 +80,7 @@ export function RecentActivity({ initialActivities = EMPTY_ACTIVITIES }: { initi
 
     if (loading) {
         return (
-            <Card className="col-span-1 md:col-span-2 lg:col-span-1">
+            <Card>
                 <CardHeader><CardTitle>{t('recentActivityTitle')}</CardTitle></CardHeader>
                 <CardContent><div className="h-[300px] flex items-center justify-center text-muted-foreground">{t('loading')}</div></CardContent>
             </Card>
@@ -88,7 +88,7 @@ export function RecentActivity({ initialActivities = EMPTY_ACTIVITIES }: { initi
     }
 
     return (
-        <Card className="col-span-1 md:col-span-2 lg:col-span-1" data-tour="recent-activity">
+        <Card data-tour="recent-activity">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <ActivityIcon className="h-5 w-5 text-primary" />

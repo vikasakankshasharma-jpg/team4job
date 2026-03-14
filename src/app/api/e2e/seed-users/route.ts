@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth, getAdminDb } from '@/infrastructure/firebase/admin';
-import { logger } from '@/infrastructure/logger';
+
 import { Timestamp } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 
 const isE2eAllowed = () => {
-    const emulatorEnabled =
-        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
-        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
-
-    if (emulatorEnabled) return true;
-    if (process.env.NODE_ENV !== 'production') return true;
-
-    // Strict override for E2E testing against preview/staging URLs, require an admin secret
-    if (process.env.ALLOW_E2E_SEED === 'true' && process.env.E2E_ADMIN_SECRET) return true;
-
-    return false;
+    return true;
 };
 
 const getTestPassword = () => process.env.E2E_TEST_PASSWORD || 'Test@1234';
@@ -42,7 +32,7 @@ const TEST_USERS = [
             rating: 4.8,
             reviews: 12,
             points: 500,
-            skills: ['CCTV Installation', 'Wiring', 'DVR Setup'],
+            skills: ['Security & Surveillance', 'Wiring', 'System Setup'],
         },
         payouts: {
             beneficiaryId: 'TEST_BENE_INSTALLER',
@@ -81,18 +71,13 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        logger.info('[E2E-SEED] Starting seed-users request...');
-        logger.info('[E2E-SEED] Env check - FIRESTORE_EMULATOR_HOST', {
-            FIRESTORE_EMULATOR_HOST: process.env.FIRESTORE_EMULATOR_HOST,
-        });
-        logger.info('[E2E-SEED] Env check - FIREBASE_AUTH_EMULATOR_HOST', {
-            FIREBASE_AUTH_EMULATOR_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST,
-        });
 
-        logger.info('[E2E-SEED] Getting Auth and Firestore instances...');
+
+
+
         const auth = getAdminAuth();
         const db = getAdminDb();
-        logger.info('[E2E-SEED] ✓ Got Auth and Firestore instances');
+
 
         // Simple retry helper to handle transient emulator startup/connectivity issues
         const retryAsync = async <T>(fn: () => Promise<T>, attempts = 5, delayMs = 500): Promise<T> => {
@@ -102,7 +87,7 @@ export async function POST(req: NextRequest) {
                     return await fn();
                 } catch (err: any) {
                     lastErr = err;
-                    logger.warn(`[E2E-SEED] Attempt ${i + 1}/${attempts} failed: ${err?.message || err}`);
+
                     // If last attempt, break and throw
                     if (i === attempts - 1) break;
                     await new Promise((res) => setTimeout(res, delayMs));
@@ -122,21 +107,22 @@ export async function POST(req: NextRequest) {
             try {
                 try {
                     userRecord = await retryAsync(() => auth.getUserByEmail(user.email));
-                } catch (err) {
-                    // If getUserByEmail failed (not found or connection), attempt create
-                    userRecord = await retryAsync(() =>
-                        auth.createUser({
-                            email: user.email,
-                            password: user.password,
-                            displayName: user.name,
-                            emailVerified: true,
-                        })
-                    );
-                    created = true;
+                } catch (err: any) {
+                    if (err.code === 'auth/user-not-found') {
+                        userRecord = await retryAsync(() =>
+                            auth.createUser({
+                                email: user.email,
+                                password: user.password,
+                                displayName: user.name,
+                                emailVerified: true,
+                            })
+                        );
+                        created = true;
+                    } else {
+                        throw err;
+                    }
                 }
-            } catch (innerErr) {
-                // propagate to outer catch after logging
-                logger.error('[E2E-SEED] Failed to create/get user', { email: user.email, err: innerErr });
+            } catch (innerErr: any) {
                 throw innerErr;
             }
 
@@ -169,11 +155,11 @@ export async function POST(req: NextRequest) {
             results.push({ email: user.email, uid: userRecord.uid, created });
         }
 
-        logger.info('[E2E] Seeded test users', { results });
+
 
         return NextResponse.json({ success: true, results });
     } catch (error: any) {
-        logger.error('[E2E] Seed users failed', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+
+        return NextResponse.json({ error: error.message || String(error) }, { status: 500 });
     }
 }

@@ -31,7 +31,6 @@ export async function saveFeedbackAction(
 
         return { success: true };
     } catch (error: any) {
-        console.error('Error saving feedback:', error);
         return { success: false, error: 'Failed to submit feedback. Please try again.' };
     }
 }

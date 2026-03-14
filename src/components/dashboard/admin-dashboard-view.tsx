@@ -50,7 +50,6 @@ export function AdminDashboardView() {
         // Disable real-time listeners in E2E mode to prevent Firestore assertion errors
         const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
         if (isE2EMode) {
-            console.log('[AdminDashboardView] E2E mode detected - skipping real-time listeners');
             setAllUsers([]);
             setAllJobs([]);
             setStats({ totalUsers: 10, totalJobs: 5, openDisputes: 0, totalValueReleased: 1000 });
@@ -73,7 +72,7 @@ export function AdminDashboardView() {
                 const users = snap.docs.map(d => d.data() as User);
                 setAllUsers(users);
                 setStats(prev => ({ ...prev, totalUsers: snap.size })); // Note: this is size of fetched, not total on server if > 500
-            }, (error) => console.error("AdminDashboardView: Users listener error", error));
+            });
             unsubscribeFuncs.push(unsubUsers);
 
             // 2. Jobs Listener
@@ -81,14 +80,14 @@ export function AdminDashboardView() {
                 const jobs = snap.docs.map(d => d.data() as Job);
                 setAllJobs(jobs);
                 setStats(prev => ({ ...prev, totalJobs: snap.size }));
-            }, (error) => console.error("AdminDashboardView: Jobs listener error", error));
+            });
             unsubscribeFuncs.push(unsubJobs);
 
             // 3. Disputes
             const unsubDisputes = onSnapshot(query(disputesRef), (snap) => {
                 const openCount = snap.docs.filter(d => d.data().status === DISPUTE_STATUS.OPEN).length;
                 setStats(prev => ({ ...prev, openDisputes: openCount }));
-            }, (error) => console.error("AdminDashboardView: Disputes listener error", error));
+            });
             unsubscribeFuncs.push(unsubDisputes);
 
             // 4. Transactions
@@ -99,7 +98,7 @@ export function AdminDashboardView() {
                 const released = txs.filter(t => t.status === TRANSACTION_STATUS.RELEASED).reduce((acc, t) => acc + (t.payoutToInstaller || 0), 0);
                 const commission = txs.reduce((acc, t) => acc + (t.commission || 0), 0);
                 setStats(prev => ({ ...prev, totalValueReleased: released }));
-            }, (error) => console.error("AdminDashboardView: Transactions listener error", error));
+            });
             unsubscribeFuncs.push(unsubTx);
 
             setLoading(false);

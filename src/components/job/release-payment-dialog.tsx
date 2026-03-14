@@ -46,7 +46,6 @@ export function ReleasePaymentDialog({
                 throw new Error(res.error);
             }
         } catch (error: any) {
-            console.error("Release Failed:", error);
             toast({
                 title: "Release Failed",
                 description: error.message || "Could not release payment.",

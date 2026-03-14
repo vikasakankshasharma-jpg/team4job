@@ -57,7 +57,7 @@ export default function CalendarClient() {
 
                 setJobs(allJobs);
             } catch (error) {
-                console.error("Error fetching calendar jobs:", error);
+                // Error fetching calendar jobs
             } finally {
                 setIsLoading(false);
             }

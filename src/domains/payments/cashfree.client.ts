@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { logger } from '@/infrastructure/logger';
+
 
 type OrderPayload = {
     orderId: string;
@@ -121,7 +121,7 @@ export class CashfreeClient {
         });
 
         if (resp.data?.status !== 'OK') {
-            logger.error('Cashfree order creation failed', resp.data);
+
             throw new Error(resp.data?.message || 'Cashfree order creation failed');
         }
 
@@ -137,7 +137,7 @@ export class CashfreeClient {
         });
 
         if (resp.data?.order_status !== 'PAID' && resp.data?.order_status !== 'SUCCESS') {
-            logger.warn('Cashfree payment status check returned non-success', resp.data);
+
         }
 
         return {
@@ -167,7 +167,7 @@ export class CashfreeClient {
         );
 
         if (resp.data?.status !== 'SUCCESS' && resp.data?.status !== 'PAYOUT_INITIATED') {
-            logger.warn('Cashfree payout call returned unexpected status', resp.data);
+
         }
 
         return {
@@ -190,7 +190,7 @@ export class CashfreeClient {
         );
 
         if (resp.data?.status !== 'OK') {
-            logger.error('Cashfree refund failed', resp.data);
+
             throw new Error(resp.data?.message || 'Cashfree refund failed');
         }
 

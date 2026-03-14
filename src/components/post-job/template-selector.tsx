@@ -41,7 +41,7 @@ export function TemplateSelector({
                 const userTemplates = await getTemplates(db, user.id);
                 setTemplates(userTemplates);
             } catch (error) {
-                console.error('Error loading templates:', error);
+                // Error loading templates
             } finally {
                 setLoading(false);
             }

@@ -77,9 +77,7 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
     };
 
     const handleAcceptClick = async () => {
-        console.log("InstallerAcceptanceSection: Accept clicked", { payouts: user.payouts, id: user.id });
         if (!user.payouts?.beneficiaryId) {
-            console.log("InstallerAcceptanceSection: Missing beneficiaryId");
             toast({
                 title: "Action Required: Setup Payouts",
                 description: "Please set up your bank account in your profile to ensure timely payments.",
@@ -100,7 +98,6 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
 
             // Query for OTHER jobs awarded to this user
             // We fetch all 'Awarded' and filter in memory for complex date ranges
-            console.log('InstallerAcceptanceSection: Conflict query started for user', user.id);
             // Simplify query to avoid potential index issues in emulator
             const q = query(
                 jobsRef,
@@ -125,8 +122,6 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
                     return isOverlapping;
                 });
 
-            console.log('InstallerAcceptanceSection: Conflict check complete', { conflictsCount: conflicts.length });
-
             if (conflicts.length > 0) {
                 setConflictingJobs(conflicts);
                 setIsConflictDialogOpen(true);
@@ -138,7 +133,6 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
             await processAcceptance();
 
         } catch (error) {
-            console.error("Conflict check failed", error);
             setIsLoading(false);
         }
     };
@@ -158,7 +152,6 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
             // onJobUpdate({ status: 'Pending Funding' }); 
 
         } catch (e: any) {
-            console.error("InstallerAcceptanceSection: Acceptance failed", e);
             toast({
                 title: "Acceptance Failed",
                 description: e.message || "Could not accept job.",
@@ -263,7 +256,6 @@ export function InstallerAcceptanceSection({ job, user, onJobUpdate }: Installer
                     <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
                         <AlertDialogCancel className="w-full sm:w-auto mt-2 sm:mt-0">Cancel</AlertDialogCancel>
                         <Button onClick={() => {
-                            console.log("InstallerAcceptanceSection: Conflict Warning Accepted");
                             setIsConflictDialogOpen(false);
                             processAcceptance();
                         }} className="bg-yellow-600 hover:bg-yellow-700 w-full sm:w-auto">

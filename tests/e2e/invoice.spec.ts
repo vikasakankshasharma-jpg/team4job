@@ -1,61 +1,61 @@
 import { test, expect } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
-import { TEST_JOB_DATA, TIMEOUTS } from '../fixtures/test-data';
+import { execSync } from 'child_process';
 
 /**
  * E2E Test: Invoice Generation
- * Verifies that invoices can be generated and downloaded for completed jobs
+ * Verifies that invoices can be generated and viewed for completed jobs
  */
 
 test.describe('Invoice Generation E2E', () => {
-    test('Job Giver can download invoice for completed job', async ({ browser }) => {
+    test('Job Giver can view invoice for completed job', async ({ browser }) => {
         const context = await browser.newContext();
         const page = await context.newPage();
         const helper = new TestHelper(page);
 
-        // Pre-requisite: We need a completed job. 
-        // For this standalone test, we'll assume we can navigate to a known completed job 
-        // or we need to run a mini-flow to complete one.
-        // To keep it robust, we'll log in and check for ANY completed job in the dashboard.
-
         console.log('--- START: Invoice Generation Test ---');
 
-        await helper.auth.loginAsJobGiver();
-        await page.goto('/dashboard/posted-jobs?tab=archived');
-
-        // Check if there are any completed jobs
-        const completedJobCard = page.locator('[data-testid="job-card-completed"]').first();
-
-        // If no completed jobs exist, we log a warning but pass (or we could quick-create one)
-        if (await completedJobCard.count() === 0) {
-            console.log('WARNING: No completed jobs found. Skipping invoice download test. Run complete-transaction-cycle first.');
-            return;
+        // 1. Seed a completed job
+        console.log('Seeding completed job...');
+        let seededJobId: string;
+        try {
+            const seedOutput = execSync('npx tsx scripts/seed-completed-job.ts').toString();
+            seededJobId = seedOutput.trim().split('\n').pop() || '';
+            console.log(`Seeded Job ID: ${seededJobId}`);
+        } catch (error) {
+            console.error('Failed to seed completed job', error);
+            throw error;
         }
 
-        // Click the first completed job
-        await completedJobCard.click();
+        await helper.auth.loginAsJobGiver();
 
-        // Wait for job details
-        await page.waitForSelector('[data-testid="job-status-badge"]', { state: 'visible' });
-        await expect(page.getByText('Completed')).toBeVisible();
+        // 2. Navigate directly to the seeded job
+        await page.goto(`/dashboard/jobs/${seededJobId}`);
 
-        // Check for download button
+        // Wait for hydration and data load
+        await page.waitForTimeout(3000);
+        await expect(page.getByTestId('job-status-badge')).toContainText(/Completed/i);
+
+        // 3. Confirm download button (which actually opens print view) is visible
         const downloadBtn = page.getByTestId('download-invoice-button');
         await expect(downloadBtn).toBeVisible();
 
-        // Verify download triggers
-        const downloadPromise = page.waitForEvent('download');
-        await downloadBtn.click();
-        const download = await downloadPromise;
+        // 4. In our current implementation, this opens a new tab with a print view
+        // Instead of waiting for a download event (which window.print doesn't trigger),
+        // we verify the link and that the new page loads correctly.
+        const [invoicePage] = await Promise.all([
+            context.waitForEvent('page'),
+            downloadBtn.click()
+        ]);
 
-        // Verify filename
-        expect(download.suggestedFilename()).toContain('Invoice-JOB');
-        expect(download.suggestedFilename()).toContain('.pdf');
+        await invoicePage.waitForLoadState('domcontentloaded');
+        await expect(invoicePage).toHaveURL(new RegExp(`/dashboard/jobs/${seededJobId}/invoice`));
 
-        // Optional: meaningful content check if we had PDF parsing tools
-        // For now, ensuring the stream started is sufficient proof of generation
+        // Check for invoice content on the new page
+        await expect(invoicePage.locator('h1')).toContainText(/Service Invoice/i);
+        await expect(invoicePage.getByRole('button', { name: /Print/i })).toBeVisible();
 
-        console.log(`[PASS] Invoice downloaded: ${download.suggestedFilename()}`);
+        console.log(`[PASS] Invoice page loaded successfully for ${seededJobId}`);
 
         await context.close();
     });

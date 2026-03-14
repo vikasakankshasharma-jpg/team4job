@@ -259,7 +259,6 @@ export default function MyBidsClient() {
 
       setHasMore(data.hasMore !== false && fetchedBids.length === 50);
     } catch (error) {
-      console.error("Failed to fetch bids and jobs:", error);
       toast({ title: tCommon('errors.generic'), description: t('withdrawError'), variant: "destructive" });
     } finally {
       if (isLoadMore) {
@@ -284,7 +283,6 @@ export default function MyBidsClient() {
       // Refresh list locally
       setBids(prev => prev.filter(b => b.id !== bidId));
     } catch (error) {
-      console.error("Failed to withdraw:", error);
       toast({ title: tCommon('errors.generic'), description: t('withdrawError'), variant: "destructive" });
     }
   }

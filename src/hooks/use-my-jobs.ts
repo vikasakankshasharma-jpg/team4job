@@ -82,7 +82,6 @@ export function useMyJobs(initialData?: Job[]): UseMyJobsReturn {
             }
 
         } catch (err: any) {
-            console.error("Error fetching posted jobs:", err);
             setError(err.message || "Failed to load jobs");
         } finally {
             if (isLoadMore) {

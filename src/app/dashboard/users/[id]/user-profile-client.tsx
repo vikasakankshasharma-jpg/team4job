@@ -171,7 +171,6 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
       window.location.href = '/dashboard'; // Force reload as new user
 
     } catch (error: any) {
-      console.error("Impersonation failed:", error);
       toast({
         title: "Impersonation Failed",
         description: error.response?.data?.error || "Could not login as user.",
@@ -184,7 +183,9 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
   const handleDeactivate = async () => {
     setIsLoading(true);
     await updateDoc(doc(db, 'users', user.id), { status: 'deactivated' });
-    await updateDoc(doc(db, 'public_profiles', user.id), { status: 'deactivated' }).catch(e => console.error("Failed to sync public profile", e));
+    await updateDoc(doc(db, 'public_profiles', user.id), { status: 'deactivated' }).catch(e => {
+        // Failed to sync public profile
+    });
     onUserUpdate({ status: 'deactivated' });
     toast({ title: 'User Deactivated', description: `${user.name}'s account has been deactivated.`, variant: 'destructive' });
     setIsLoading(false);
@@ -193,7 +194,9 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
   const handleReactivate = async () => {
     setIsLoading(true);
     await updateDoc(doc(db, 'users', user.id), { status: 'active' });
-    await updateDoc(doc(db, 'public_profiles', user.id), { status: 'active' }).catch(e => console.error("Failed to sync public profile", e));
+    await updateDoc(doc(db, 'public_profiles', user.id), { status: 'active' }).catch(e => {
+        // Failed to sync public profile
+    });
     onUserUpdate({ status: 'active' });
     toast({ title: 'User Reactivated', description: `${user.name}'s account is now active.`, variant: 'default' });
     setIsLoading(false);
@@ -204,7 +207,9 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
     const suspensionEndDate = new Date();
     suspensionEndDate.setDate(suspensionEndDate.getDate() + suspensionDays);
     await updateDoc(doc(db, 'users', user.id), { status: 'suspended', suspensionEndDate });
-    await updateDoc(doc(db, 'public_profiles', user.id), { status: 'suspended' }).catch(e => console.error("Failed to sync public profile", e));
+    await updateDoc(doc(db, 'public_profiles', user.id), { status: 'suspended' }).catch(e => {
+        // Failed to sync public profile
+    });
     onUserUpdate({ status: 'suspended', suspensionEndDate });
     toast({ title: 'User Suspended', description: `${user.name} has been suspended for ${suspensionDays} days.` });
     setIsLoading(false);
@@ -564,7 +569,6 @@ export default function UserProfileClient() {
         setUserCompletedJobs(completedJobsSnapshot.docs.map((d: any) => populateJob(d.data() as Job)));
         setInvolvedDisputes(disputesSnapshot.docs.map((d: any) => d.data() as Dispute));
       } catch (error) {
-        console.error("Error fetching related user data:", error);
         toast({ title: "Error", description: "Failed to load some user data." });
       }
 

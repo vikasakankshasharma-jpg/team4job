@@ -51,9 +51,8 @@ export const emailService = {
 
         try {
             await sendServerEmail(to, subject, text, html);
-            console.log(`[Email Service] Invoice email sent to ${to}`);
         } catch (error) {
-            console.error('[Email Service] Failed to send email:', error);
+            // Email failure
         }
     },
 
@@ -64,7 +63,7 @@ export const emailService = {
         try {
             await sendServerEmail(to, subject, text, html);
         } catch (e) {
-            console.error('[Email Service] Welcome error:', e);
+            // Welcome error
         }
     },
 
@@ -75,7 +74,7 @@ export const emailService = {
         try {
             await sendServerEmail(to, subject, text, html);
         } catch (e) {
-            console.error('[Email Service] Bid error:', e);
+            // Bid error
         }
     },
 
@@ -86,7 +85,7 @@ export const emailService = {
         try {
             await sendServerEmail(to, subject, text, html);
         } catch (e) {
-            console.error('[Email Service] Award error:', e);
+            // Award error
         }
     },
 
@@ -100,7 +99,7 @@ export const emailService = {
         try {
             await sendServerEmail(to, subject, text, html);
         } catch (e) {
-            console.error('[Email Service] Dispute error:', e);
+            // Dispute error
         }
     },
 
@@ -113,7 +112,7 @@ export const emailService = {
         try {
             await sendServerEmail(to, subject, text, html);
         } catch (e) {
-            console.error('[Email Service] Dispute update error:', e);
+            // Dispute update error
         }
     },
 
@@ -126,7 +125,7 @@ export const emailService = {
         try {
             await sendServerEmail(to, subject, text, html);
         } catch (e) {
-            console.error('[Email Service] Message notification error:', e);
+            // Message notification error
         }
     },
     sendPasswordResetEmail: async ({ to, userName, resetLink }: { to: string, userName: string, resetLink: string }) => {
@@ -148,7 +147,7 @@ export const emailService = {
         try {
             await sendServerEmail(to, subject, text, html);
         } catch (e) {
-            console.error('[Email Service] Password reset error:', e);
+            // Password reset error
         }
     }
 };

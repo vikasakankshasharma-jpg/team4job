@@ -17,28 +17,17 @@ export function getAdminApp() {
   }
 
   // 0. Emulator-friendly init (no credentials required)
-  if (process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+  const useEmulator = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' || process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+  if (useEmulator && (process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST)) {
     app = initializeApp({
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'demo-project',
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
     return app;
   }
 
   // 1. Try to use service-account.json first for local development
-  // UNCOMMENT the lines below if you have a service-account.json file in this directory.
-  // try {
-  //   const serviceAccount = require('./service-account.json');
-  //   app = initializeApp({
-  //     credential: cert(serviceAccount)
-  //   });
-  //   return app;
-  // } catch (error: any) {
-  //   if (error.code !== 'MODULE_NOT_FOUND') {
-  //     console.error("Error reading or parsing service-account.json:", error);
-  //     throw new Error("Could not initialize Firebase Admin SDK. The service-account.json file may be corrupted.");
-  //   }
-  //   // If the file is not found, proceed to check environment variable.
-  // }
+  // ... (keeping existing commented code)
 
   // 2. Fallback to FIREBASE_SERVICE_ACCOUNT_KEY (JSON string) for production
   const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
@@ -46,10 +35,11 @@ export function getAdminApp() {
     try {
       app = initializeApp({
         credential: cert(JSON.parse(serviceAccountEnv)),
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
       return app;
     } catch (error) {
-      console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY.", error);
+      // Parse error
     }
   }
 
@@ -61,7 +51,8 @@ export function getAdminApp() {
         projectId: process.env.DO_FIREBASE_PROJECT_ID,
         clientEmail: process.env.DO_FIREBASE_CLIENT_EMAIL,
         privateKey: privateKey,
-      })
+      }),
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
     return app;
   }

@@ -9,7 +9,7 @@ interface ExperienceProps {
     updateData: (data: any) => void;
 }
 
-const SKILLS = ["CCTV Installation", "Smart Home Setup", "Video Doorbell", "Biometric Systems", "Networking", "Electric Locking"];
+const SKILLS = ["Security & Surveillance", "Networking & IT", "Electrical & Power", "Smart Home Setup", "Video Doorbell", "Biometric Systems"];
 
 export function Experience({ data, updateData }: ExperienceProps) {
 

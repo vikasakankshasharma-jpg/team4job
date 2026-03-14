@@ -17,7 +17,8 @@
       "**/node_modules/**"
     ],
     "frameworksBackend": {
-      "region": "us-central1"
+      "region": "us-central1",
+      "memory": "1GiB"
     },
     "headers": [
       {
@@ -47,6 +48,10 @@
     "ui": {
       "enabled": true,
       "port": 4000,
+      "host": "0.0.0.0"
+    },
+    "storage": {
+      "port": 9199,
       "host": "0.0.0.0"
     }
   }

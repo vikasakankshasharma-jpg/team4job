@@ -26,19 +26,15 @@ test.describe('Dashboard Financials E2E', () => {
         await helper.auth.loginAsJobGiver();
         await helper.nav.goToPostJob();
 
-        // Fill Post Job Form
-        await page.getByTestId('job-category-select').click();
-        await page.locator('[role="option"]').filter({ hasText: TEST_JOB_DATA.category }).first().click();
+        // Fill Post Job Form using robust helpers
+        await helper.form.selectDropdown('Job Category', TEST_JOB_DATA.category);
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
         await page.locator('[data-testid="job-description-input"]').fill(TEST_JOB_DATA.description);
         await page.fill('input[name="skills"]', TEST_JOB_DATA.skills);
-        await page.fill('input[placeholder*="110001"]', TEST_JOB_DATA.pincode);
-        await page.waitForTimeout(2000); // Wait for pincode API
-        const poTrigger = page.locator('button:has-text("Select Post Office")');
-        if (await poTrigger.count() > 0) {
-            await poTrigger.click();
-            await page.locator('[role="option"]').first().click();
-        }
+
+        // Use robust pincode helper
+        await helper.form.fillPincodeAndSelectPO(TEST_JOB_DATA.pincode);
+
         await page.fill('input[name="address.house"]', TEST_JOB_DATA.house);
         await page.fill('input[name="address.street"]', TEST_JOB_DATA.street);
         await page.fill('input[name="address.landmark"]', TEST_JOB_DATA.landmark);
@@ -47,18 +43,10 @@ test.describe('Dashboard Financials E2E', () => {
         await page.fill('input[name="jobStartDate"]', getDateTimeString(30));
         await page.fill('[data-testid="min-budget-input"]', '1000');
         await page.fill('[data-testid="max-budget-input"]', '5000');
-        // ensure any floating overlays like the beta-feedback widget are gone before
-        // attempting to click the Post Job button
-        await helper.nav.injectCookieHide();
-        await page.evaluate(() => {
-            document.querySelectorAll('button').forEach(btn => {
-                const text = btn.textContent || '';
-                if (text.includes('Beta Feedback') || text.includes('Feedback') || text.trim() === '…') {
-                    btn.remove();
-                }
-            });
-        });
-        await page.getByRole('button', { name: "Post Job" }).click();
+
+        // Use the robust submitPostJob helper that handles checkboxes and confirmation modals
+        await helper.form.submitPostJob();
+
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });
         jobId = await helper.job.getJobIdFromUrl();
         console.log(`[SETUP] Job Posted: ${jobId}`);
@@ -68,9 +56,12 @@ test.describe('Dashboard Financials E2E', () => {
         await helper.auth.loginAsInstaller();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
-        await page.locator('input[name="bidAmount"]').fill('2000');
+
+        // Wait for dialog and fill fields
+        await expect(page.getByRole('dialog', { name: /Place a Bid/i })).toBeVisible();
+        await page.locator('input[name="amount"]').fill('2000');
         await page.fill('textarea[name="coverLetter"]', 'I can do this.');
-        await page.getByRole('button', { name: /Place Bid/i }).click();
+        await page.getByTestId('submit-bid-button').click();
         await helper.form.waitForToast('Bid Placed!');
         console.log('[SETUP] Bid Placed');
 
@@ -87,17 +78,17 @@ test.describe('Dashboard Financials E2E', () => {
         await helper.auth.loginAsInstaller();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('accept-job-button').first().click();
-        // Handle potential conflict dialog
-        // Handle potential conflict dialog
-        // Robust Conflict Handling (copied from complete-transaction-cycle.spec.ts)
+
+        // Robust Conflict Handling
         const conflictDialogText = page.getByText('Schedule Conflict Warning');
         try {
-            console.log("Waiting for conflict dialog (up to 10s)...");
-            await conflictDialogText.waitFor({ state: 'visible', timeout: 10000 });
-            console.log("Conflict Dialog detected. Clicking Confirm...");
-            await page.getByRole('button', { name: "I Understand, Proceed & Accept" }).click();
+            console.log("Waiting for conflict dialog (up to 5s)...");
+            if (await conflictDialogText.isVisible({ timeout: 5000 }).catch(() => false)) {
+                console.log("Conflict Dialog detected. Clicking Confirm...");
+                await page.getByRole('button', { name: "I Understand, Proceed & Accept" }).click();
+            }
         } catch (e) {
-            console.log("No Conflict Dialog detected (timeout).");
+            console.log("No Conflict Dialog detected.");
         }
         await helper.form.waitForToast('Job Accepted!');
         await helper.job.waitForJobStatus('Pending Funding');
@@ -118,10 +109,9 @@ test.describe('Dashboard Financials E2E', () => {
 
         // --- VERIFICATION: Job Giver Dashboard ---
         await page.goto('/dashboard');
-        // Check "Funds in Secure Deposit"
-        await expect(page.getByText('Funds in Secure Deposit')).toBeVisible();
+        // Check "Funds in Secure Deposit" or "Total Secure Deposit"
+        await expect(page.getByText(/Funds in Secure Deposit|Total Secure Deposit/i)).toBeVisible();
         // Since test account accumulates data, we check for presence of a non-zero currency value
-        // Job Giver uses StatCard which uses div.text-2xl.font-bold
         await expect(page.locator('.text-2xl.font-bold').filter({ hasText: /^₹[\d,]+$/ }).first()).toBeVisible();
         console.log('[PASS] Job Giver Dashboard: Funds in Escrow visible');
 
@@ -133,11 +123,8 @@ test.describe('Dashboard Financials E2E', () => {
 
         await expect(page.getByText('Projected Earnings')).toBeVisible();
         // Check for currency value presence specifically in Projeced Earnings card
-        // We find the card containing the label, then the h3 inside it
         const earningsCard = page.locator('div').filter({ has: page.getByText('Projected Earnings', { exact: true }) }).last();
-        // .last() because 'div' might match outer containers too, the inner-most will be last or we can be more specific
-        // Actually, let's use a better locator strategy
-        await expect(earningsCard.locator('h3').filter({ hasText: /^₹[\d,]+$/ })).toBeVisible();
+        await expect(earningsCard.locator('.text-2xl.font-bold, h3').filter({ hasText: /^₹[\d,]+$/ }).first()).toBeVisible();
 
         console.log('[PASS] Installer Dashboard: Projected Earnings visible');
 

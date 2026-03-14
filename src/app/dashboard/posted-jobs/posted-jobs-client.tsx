@@ -112,7 +112,6 @@ function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () 
       onJobPromoted();
       setIsOpen(false);
     } catch (error) {
-      console.error("Error promoting job:", error);
       toast({
         title: tCommon('error'),
         description: tJob('promoteFailed'),
@@ -292,7 +291,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
                         action={
                           title.toLowerCase().includes('active') ? {
                             label: tJob('postFirstJob'),
-                            onClick: () => window.location.href = '/dashboard/post-job',
+                            onClick: () => window.location.href = '/wizard',
                             variant: 'default' as const
                           } : undefined
                         }
@@ -328,7 +327,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
                     ? tJob('noActiveJobsDesc')
                     : tJob('noUnbidJobsDesc')
                 }
-                action={title.toLowerCase().includes('active') ? { label: tJob('postNewJob'), onClick: () => window.location.href = '/dashboard/post-job' } : undefined}
+                action={title.toLowerCase().includes('active') ? { label: tJob('postNewJob'), onClick: () => window.location.href = '/wizard' } : undefined}
                 className="border-0 shadow-none"
               />
             )}
@@ -422,7 +421,6 @@ export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] 
       setSelectedJobIds([]);
       refetch();
     } catch (error) {
-      console.error(`Bulk ${action} error:`, error);
       toast({
         title: tCommon('error'),
         description: tCommon('bulkActionError', { action }),
@@ -505,7 +503,7 @@ export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] 
             <TabsTrigger value="archived" className="flex-1 sm:flex-none">{tCommon('archived')} ({archivedJobs.length})</TabsTrigger>
           </TabsList>
           <Button asChild>
-            <Link href="/dashboard/post-job">
+            <Link href="/wizard">
               <PlusCircle className="mr-2 h-4 w-4" />
               {tJob('postNewJob')}
             </Link>

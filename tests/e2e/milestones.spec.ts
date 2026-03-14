@@ -29,12 +29,16 @@ test.describe('Milestone-based Payments @slow', () => {
         await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
-        await page.waitForTimeout(5000); // Allow data & animations to fully settle
-        await expect(page.getByTestId('job-status-badge')).toContainText('In Progress');
+
+        // Wait for hydration and data load
+        await page.waitForTimeout(3000);
+        await expect(page.getByTestId('job-status-badge')).toContainText(/In Progress/i);
 
         // 3. Create Milestone 1
-        const addBtn = page.getByRole('button', { name: 'Add Milestone', exact: true }).first();
-        await addBtn.waitFor({ state: 'visible', timeout: 10000 });
+        // Wait for milestone section to be interactive
+        const addBtn = page.getByTestId('add-milestone-button');
+        await addBtn.waitFor({ state: 'visible', timeout: 15000 });
+        await page.waitForTimeout(2000); // Extra safety for hydration
         await addBtn.click({ force: true });
         await expect(page.locator('text=Milestone Title')).toBeVisible();
 
@@ -47,10 +51,23 @@ test.describe('Milestone-based Payments @slow', () => {
         await expect(page.locator('text=₹5,000')).toBeVisible();
 
         // 4. Create Milestone 2 (Exceeding Budget Check)
+        // Ensure success toast from first milestone is acknowledged and cleared
+        try {
+            const toast = page.locator('li:has-text("Milestone has been added")');
+            if (await toast.isVisible()) {
+                await toast.locator('button').click(); // Try to close it
+                await expect(toast).not.toBeVisible({ timeout: 5000 });
+            }
+        } catch (e) { /* ignore if not present */ }
+
+        await page.waitForTimeout(2000); // Wait for UI to settle
         await page.getByTestId('add-milestone-button').click({ force: true });
-        await expect(page.locator('text=Milestone Title')).toBeVisible();
-        await page.fill('input[id="title"]', 'Phase 2: Final');
-        await page.fill('input[id="amount"]', '16000'); // 16k + 5k > 20k budget
+        const dialog2 = page.getByRole('dialog');
+        await expect(dialog2).toBeVisible();
+        await expect(dialog2.locator('text=Milestone Title')).toBeVisible();
+
+        await dialog2.locator('input[id="title"]').fill('Phase 2: Final');
+        await dialog2.locator('input[id="amount"]').fill('16000'); // 16k + 5k > 20k budget
         // Verify submit is disabled or validation error (Logic handled in dialog: disabled={... > maxAmount})
         await expect(page.getByRole('dialog').getByRole('button', { name: 'Add Milestone' })).toBeDisabled();
 
@@ -59,7 +76,11 @@ test.describe('Milestone-based Payments @slow', () => {
         await expect(page.getByRole('dialog').getByRole('button', { name: 'Add Milestone' })).toBeEnabled();
         await page.getByRole('dialog').getByRole('button', { name: 'Add Milestone' }).click({ force: true });
 
+        // Wait for dialog to close and list to update
+        await page.waitForTimeout(2000);
+
         // 5. Release Milestone 1
+        page.once('dialog', dialog => dialog.accept());
         await page.getByRole('button', { name: 'Release Payment' }).first().click();
 
         // Verify status update

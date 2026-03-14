@@ -101,7 +101,7 @@ export function CommunicationFeed({
             setSelectedFiles([]);
             setShowUpload(false);
         } catch (error) {
-            console.error('Error sending message:', error);
+            // Error handled by client logic or reported to UI if needed
         } finally {
             setSending(false);
         }

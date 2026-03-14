@@ -37,7 +37,6 @@ export async function sendWhatsAppTemplate(
     const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
     if (!token || !phoneId) {
-        console.warn("WhatsApp credentials not found. Message skipped.");
         return { success: false, error: "Missing credentials" };
     }
 
@@ -78,13 +77,11 @@ export async function sendWhatsAppTemplate(
         const data = await response.json();
 
         if (!response.ok) {
-            console.error("WhatsApp API Error:", data);
             return { success: false, error: data };
         }
 
         return { success: true, data };
     } catch (error) {
-        console.error("WhatsApp Send Failed:", error);
         return { success: false, error };
     }
 }
@@ -117,6 +114,6 @@ export async function sendWhatsAppText(to: string, message: string) {
             body: JSON.stringify(payload),
         });
     } catch (error) {
-        console.error("WhatsApp Text Failed:", error);
+        // Silently fail text messaging fallbacks
     }
 }

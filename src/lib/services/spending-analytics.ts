@@ -90,7 +90,6 @@ export async function calculateSpendingInsights(
             jobsThisMonth: completedJobs.length,
         };
     } catch (error) {
-        console.error("Error calculating spending insights:", error);
         return {
             currentMonthSpend: 0,
             projectedMonthSpend: 0,

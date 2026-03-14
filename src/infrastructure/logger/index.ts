@@ -30,16 +30,20 @@ class Logger {
     }
 
     warn(message: string, context?: LogContext) {
-        console.warn(this.formatMessage('warn', message, context));
+        if (this.isDevelopment) {
+            console.warn(this.formatMessage('warn', message, context));
+        }
     }
 
     error(message: string, error?: Error | any, context?: LogContext) {
-        const errorContext = {
-            ...context,
-            error: error?.message || String(error),
-            stack: error?.stack,
-        };
-        console.error(this.formatMessage('error', message, errorContext));
+        if (this.isDevelopment) {
+            const errorContext = {
+                ...context,
+                error: error?.message || String(error),
+                stack: error?.stack,
+            };
+            console.error(this.formatMessage('error', message, errorContext));
+        }
     }
 
     debug(message: string, context?: LogContext) {

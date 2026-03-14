@@ -6,7 +6,7 @@ import { z } from 'genkit';
 
 const AnalyzePhotoInputSchema = z.object({
     imageUrl: z.string().describe('The URL of the photo to analyze.'),
-    jobCategory: z.string().optional().describe('Context for what the photo should show (e.g. CCTV, Plumbing).'),
+    jobCategory: z.string().optional().describe('Context for what the photo should show (e.g. WiFi, Plumbing).'),
 });
 export type AnalyzePhotoInput = z.infer<typeof AnalyzePhotoInputSchema>;
 
@@ -74,7 +74,6 @@ const analyzePhotoFlow = defineLoggedFlow(
             return output;
 
         } catch (e) {
-            console.error("AI Vision Error:", e);
             // Fail gracefully
             return { score: 0, isProfessional: false, feedback: "AI analysis failed." };
         }

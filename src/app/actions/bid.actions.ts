@@ -17,7 +17,6 @@ export async function placeBidAction(jobId: string, userId: string, role: Role, 
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
     } catch (error: any) {
-        console.error('placeBidAction error:', error);
         return { success: false, error: error.message || 'Failed to place bid' };
     }
 }
@@ -32,7 +31,6 @@ export async function listMyBidsAction(userId: string) {
         const bids = await jobService.getBidsByInstaller(userId);
         return { success: true, bids: JSON.parse(JSON.stringify(bids)) };
     } catch (error: any) {
-        console.error('listMyBidsAction error:', error);
         return { success: false, error: error.message || 'Failed to list bids' };
     }
 }
@@ -45,7 +43,6 @@ export async function getBidsForJobAction(jobId: string, userId: string) {
         const bids = await jobService.getBidsForJob(jobId, userId);
         return { success: true, bids: JSON.parse(JSON.stringify(bids)) };
     } catch (error: any) {
-        console.error('getBidsForJobAction error:', error);
         return { success: false, error: error.message || 'Failed to fetch bids' };
     }
 }

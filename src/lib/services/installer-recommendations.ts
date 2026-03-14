@@ -65,7 +65,6 @@ export async function getRecommendedInstallers(
 
         return recommendations.slice(0, maxResults);
     } catch (error) {
-        console.error("Error getting recommended installers:", error);
         return [];
     }
 }

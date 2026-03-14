@@ -24,11 +24,11 @@ export const analyzeShopPhotoFlow = defineLoggedFlow(
         outputSchema: AnalyzeShopPhotoOutputSchema,
     },
     async (input) => {
-        const prompt = `You are an expert technical consultant for service professionals (CCTV, IT, Electrical).
+        const prompt = `You are an expert technical consultant for service professionals (Security, IT, Electrical).
         Analyze the provided shop or equipment photo.
         
         Task:
-        1. Identify any specialized tools or inventory. Examples: Fiber Splicing kits, Digital Multimeters, CCTV Testers, Cable Fish Tapes, Hammer Drills, Rack Mounts, POE Switches.
+        1. Identify any specialized tools or inventory. Examples: Fiber Splicing kits, Digital Multimeters, Security System Testers, Cable Fish Tapes, Hammer Drills, Rack Mounts, POE Switches.
         2. Suggest technical skills that this equipment implies the user has.
         3. Assess if the equipment looks professional-grade.
         4. Provide encouraging feedback about their professional setup.

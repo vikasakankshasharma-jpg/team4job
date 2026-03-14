@@ -90,7 +90,6 @@ export function DisputeDialog({
                 throw new Error(res.error);
             }
         } catch (error: any) {
-            console.error("Dispute Failed:", error);
             toast({
                 title: "Failed",
                 description: error.message || "Could not raise dispute.",

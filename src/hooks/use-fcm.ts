@@ -22,8 +22,6 @@ export const useFcm = () => {
                 const permission = await Notification.requestPermission();
 
                 if (permission === 'granted') {
-                    logger.info('Notification permission granted.');
-
                     // Get the token
                     const currentToken = await getToken(messaging, {
                         vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
@@ -31,37 +29,32 @@ export const useFcm = () => {
                     });
 
                     if (currentToken) {
-                        logger.debug('FCM Token:', { token: currentToken });
-
                         // Save the token to the user's document in Firestore
                         if (user && (!user.fcmTokens || !user.fcmTokens.includes(currentToken))) {
                             await userClientService.saveFcmToken(user.id, currentToken);
-                            logger.info("FCM token saved to user's profile.");
                         }
                     } else {
-                        logger.warn('No registration token available. Request permission to generate one.');
+                        // No registration token available
                     }
                 } else {
-                    logger.warn('Unable to get permission to notify.');
+                    // Permission not granted
                 }
             } catch (err: any) {
-                logger.error('An error occurred while retrieving token.', { error: err.message });
+                // Error retrieving token
             }
         };
 
         // Ensure the service worker is ready
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.ready.then(registration => {
-                logger.info('Service Worker is active.');
                 requestPermissionAndToken(registration);
             }).catch(err => {
-                logger.error('Service Worker registration failed to become ready: ', err);
+                // Service Worker registration failed to become ready
             });
         }
 
         const messaging = getMessaging(app);
         const unsubscribe = onMessage(messaging, (payload) => {
-            logger.debug('Message received.', { payload });
             new Notification(payload.notification?.title || 'New Notification', {
                 body: payload.notification?.body,
                 icon: '/icon-192.png'

@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
-import { logger } from '@/infrastructure/logger';
+
 import { Job, Transaction } from '@/lib/types';
 import axios from 'axios';
 
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
         // SECURITY: Verify cron secret
         const authHeader = req.headers.get('Authorization');
         if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-            logger.error('Unauthorized cron attempt');
+
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
             .get();
 
         if (jobsSnap.empty) {
-            logger.info('No jobs eligible for auto-settle');
+
             return NextResponse.json({ message: 'No jobs eligible for auto-settle' });
         }
 
@@ -130,25 +130,18 @@ export async function GET(req: NextRequest) {
 
                 results.push({ jobId: jobDoc.id, status: 'Success', transferId });
 
-                logger.info('Job auto-settled', {
-                    jobId: jobDoc.id,
-                    transferId,
-                    amount: transaction.payoutToInstaller,
-                });
+
             } catch (err: any) {
                 results.push({ jobId: jobDoc.id, status: 'Failed', error: err.message });
-                logger.error('Auto-settle failed for job', err, { jobId: jobDoc.id });
+
             }
         }
 
-        logger.info('Auto-settle cron completed', {
-            processed: results.length,
-            results,
-        });
+
 
         return NextResponse.json({ processed: results.length, results });
     } catch (error: any) {
-        logger.error('Auto-settle cron error', error);
+
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

@@ -48,7 +48,6 @@ export const aiCacheService = {
 
             return data;
         } catch (error) {
-            console.warn(`[AICache] Get failed for ${flowName}:`, error);
             return null;
         }
     },
@@ -78,7 +77,6 @@ export const aiCacheService = {
             // Use set with merge to be safe, though key uniqueness should handle it
             await db.collection('ai_cache').doc(key).set(entry);
         } catch (error) {
-            console.warn(`[AICache] Set failed for ${flowName}:`, error);
         }
     }
 };

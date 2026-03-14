@@ -68,7 +68,6 @@ export async function logAdminAction(params: {
 
         await db.collection('admin_action_logs').add(logEntry);
     } catch (error) {
-        console.error('Failed to log admin action:', error);
         // Don't throw - logging failure shouldn't break the main operation
     }
 }
@@ -118,6 +117,5 @@ export async function logAdminAlert(
             read: false,
         });
     } catch (error) {
-        console.error('Failed to create admin alert:', error);
     }
 }

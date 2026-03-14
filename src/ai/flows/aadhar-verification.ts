@@ -43,14 +43,12 @@ export type InitiateAadharOutput = z.infer<typeof InitiateAadharOutputSchema>;
  * @returns A verification ID and status.
  */
 async function callCashfreeToRequestOtp(aadharNumber: string): Promise<{ success: boolean, verificationId?: string, error?: string }> {
-  console.log(`[Cashfree KYC] Requesting OTP for Aadhar: ${aadharNumber.slice(0, 4)}...`);
-
   if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
-    console.error("[Cashfree KYC] Missing Cashfree API credentials.");
+
     return { success: false, error: 'Server configuration error: Missing KYC API credentials.' };
   }
 
-  const verificationId = `CCTV_KYC_${Date.now()}`;
+  const verificationId = `DO_KYC_${Date.now()}`;
 
   try {
     const response = await axios.post(
@@ -71,14 +69,11 @@ async function callCashfreeToRequestOtp(aadharNumber: string): Promise<{ success
 
     const data = response.data;
     if (response.status === 200 && data.ref_id) {
-      console.log(`[Cashfree KYC] OTP sent successfully. Verification ID: ${verificationId}, Ref ID: ${data.ref_id}`);
       return { success: true, verificationId: verificationId };
     } else {
-      console.error('[Cashfree KYC] Failed to request OTP:', data);
       return { success: false, error: data.message || 'Failed to initiate OTP request.' };
     }
   } catch (error: any) {
-    console.error('[Cashfree KYC] API call error on OTP request:', error.response?.data || error.message);
     return { success: false, error: error.response?.data?.message || 'An unexpected error occurred.' };
   }
 }
@@ -93,7 +88,6 @@ export const initiateAadharVerification = defineLoggedFlow(
     // For local E2E testing purposes, if emulator mode is on and the Aadhar number is the test number, simulate success without a real API call.
     if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' && input.aadharNumber === '999999990019') {
       const mockVerificationId = `VERIF_MOCK_${Date.now()}`;
-      console.log(`[Cashfree KYC] Using mock OTP flow for test Aadhar (Emulator Mode). Verification ID: ${mockVerificationId}`);
       return {
         success: true,
         verificationId: mockVerificationId,
@@ -146,10 +140,8 @@ export type ConfirmAadharOutput = z.infer<typeof ConfirmAadharOutputSchema>;
  * @returns A verification status and KYC data.
  */
 async function callCashfreeToVerifyOtp(verificationId: string, otp: string): Promise<{ success: boolean; kycData?: z.infer<typeof ConfirmAadharOutputSchema>['kycData']; error?: string }> {
-  console.log(`[Cashfree KYC] Verifying OTP for Verification ID: ${verificationId}`);
-
   if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
-    console.error("[Cashfree KYC] Missing Cashfree API credentials.");
+
     return { success: false, error: 'Server configuration error: Missing KYC API credentials.' };
   }
 
@@ -169,7 +161,6 @@ async function callCashfreeToVerifyOtp(verificationId: string, otp: string): Pro
 
     const data = response.data;
     if (response.status === 200 && data.status === 'VALID' && data.verified === true) {
-      console.log('[Cashfree KYC] Verification successful. Returning KYC data.');
       return {
         success: true,
         kycData: {
@@ -179,11 +170,9 @@ async function callCashfreeToVerifyOtp(verificationId: string, otp: string): Pro
         }
       };
     } else {
-      console.error('[Cashfree KYC] OTP Verification failed:', data);
       return { success: false, error: data.message || 'OTP verification failed.' };
     }
   } catch (error: any) {
-    console.error('[Cashfree KYC] API call error on OTP verification:', error.response?.data || error.message);
     return { success: false, error: error.response?.data?.message || 'An unexpected error occurred.' };
   }
 }
@@ -211,7 +200,6 @@ export const confirmAadharVerification = defineLoggedFlow(
   async (input: z.infer<typeof ConfirmAadharInputSchema>) => {
     // For local E2E testing purposes, simulate success if in emulator mode.
     if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' && input.verificationId.startsWith('VERIF_MOCK_') && input.otp === '123456') {
-      console.log('[Cashfree KYC] Using mock verification for test OTP (Emulator Mode).');
       const mockKycData = {
         name: 'Ramesh Kumar',
         mobile: '9876543210',

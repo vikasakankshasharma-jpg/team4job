@@ -19,8 +19,8 @@ import { OfflineDetector } from "@/components/layout/offline-detector";
 export const metadata: Metadata = {
   metadataBase: new URL("https://dodo-beta.web.app"),
   title: "Team4Job | Professional Services Marketplace",
-  description: "The premier marketplace for skilled professionals. Connect with verified experts for your projects, starting with CCTV installations.",
-  keywords: ["Team4Job", "CCTV", "Security", "Installation", "Installer", "Project Management", "Marketplace", "Professional Services"],
+  description: "The premier marketplace for skilled technical professionals. Connect with verified experts for Networking, Electrical, Security, and more.",
+  keywords: ["Team4Job", "Technical Services", "Networking", "Electrical", "Security", "Installation", "Marketplace", "Professional Services"],
   authors: [{ name: "Team4Job Team" }],
   openGraph: {
     type: "website",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "CCTV Job Connect",
+        alt: "Team4Job Marketplace",
       },
     ],
   },
@@ -71,6 +71,9 @@ export default async function RootLayout({
         {/* PWA Manifest */}
         <link rel="manifest" href="/manifest.webmanifest" />
         {/* Preconnect to external services for faster loading */}
+        <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://sdk.cashfree.com" />
       </head>
@@ -78,6 +81,7 @@ export default async function RootLayout({
         className={cn(
           "min-h-screen bg-background font-sans antialiased"
         )}
+        suppressHydrationWarning
       >
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-foreground">
           Skip to main content
@@ -111,6 +115,7 @@ export default async function RootLayout({
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`}
               strategy="lazyOnload"
+              async
             />
             <Script id="google-analytics" strategy="lazyOnload">
               {`
@@ -153,7 +158,8 @@ export default async function RootLayout({
         {/* Cashfree Payment SDK - deferred */}
         <Script
           src="https://sdk.cashfree.com/js/v3/cashfree.js"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
+          async
         />
         {/* Service Worker Registration */}
         <Script id="register-sw" strategy="afterInteractive">
@@ -161,9 +167,7 @@ export default async function RootLayout({
             if ('serviceWorker' in navigator) {
               window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/sw.js').catch(function(err) {
-                  if (window.location.hostname === 'localhost') {
-                    console.error('Service Worker registration failed: ', err);
-                  }
+                  // Service Worker registration failed
                 });
               });
             }

@@ -20,7 +20,7 @@ export async function submitAIFeedback(feedbackData: Omit<AIFeedback, 'createdAt
                 const decodedToken = await auth.verifyIdToken(idToken);
                 userId = decodedToken.uid;
             } catch (e) {
-                console.warn("[AIFeedback] Invalid token, proceeding as anonymous/unverified if logic allows", e);
+                // Invalid token, proceed as anonymous
             }
         }
 
@@ -50,12 +50,9 @@ export async function submitAIFeedback(feedbackData: Omit<AIFeedback, 'createdAt
             // metrics: ai_feedback_count + 1
         }
 
-        if (process.env.NODE_ENV !== 'production') {
-            console.log(`[AIFeedback] Feedback recorded for ${data.flowName}`);
-        }
+        // Feedback recorded
 
     } catch (error) {
-        await logger.error(error, { action: 'submitAIFeedback', data: feedbackData });
         throw new Error("Failed to submit feedback");
     }
 }

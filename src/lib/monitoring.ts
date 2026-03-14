@@ -14,11 +14,6 @@ function sendToAnalytics(metric: Metric) {
         label: metric.id,
         value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),
     });
-
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-        console.log('Web Vital:', metric);
-    }
 }
 
 export function reportWebVitals() {

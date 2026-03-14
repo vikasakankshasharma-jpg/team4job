@@ -41,14 +41,14 @@ try {
 
     if (useMemoryCache) {
         try {
-            logger.warn('[Firebase Client] Memory cache disabled due to assertion errors, using default');
+
+            db = getFirestoreDefault(app);
             db = getFirestoreDefault(app);
         } catch (e) {
-            console.error('[Firebase Client] Failed to initialize memory cache, falling back to default:', e);
             db = getFirestoreDefault(app);
         }
     } else {
-        logger.info('[Firebase Client] Initializing Firestore with PERSISTENT MULTI-TAB CACHE');
+
         try {
             db = initializeFirestore(app, {
                 localCache: persistentLocalCache({
@@ -56,7 +56,7 @@ try {
                 })
             });
         } catch (e) {
-            logger.warn('[Firebase Client] Failed to initialize persistent cache, falling back to default:', { error: e });
+
             db = getFirestoreDefault(app);
         }
     }
@@ -72,19 +72,17 @@ try {
     if (emulatorFlag && isActualLocalhost && !isStaging) {
         const globalObj = typeof window !== 'undefined' ? (window as any) : globalThis;
         if (!globalObj[EMULATORS_STARTED]) {
-            logger.info('🔴 [INFRA-CLIENT] Connecting to Firebase Emulators...');
+
             try {
                 connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
                 connectFirestoreEmulator(db, '127.0.0.1', 8080);
                 connectStorageEmulator(storage, '127.0.0.1', 9199);
                 globalObj[EMULATORS_STARTED] = true;
-                logger.info('✅ Connected to Firebase Emulators');
+
             } catch (emuError: any) {
                 if (emuError?.code === 'auth/emulator-config-failed') {
-                    logger.warn('⚠️ Emulators already connected, ignoring error.');
+
                     globalObj[EMULATORS_STARTED] = true;
-                } else {
-                    console.error('Failed to connect to emulators:', emuError);
                 }
             }
         }
@@ -92,11 +90,10 @@ try {
 
     // CI Specific Persistence Overrides
     if (process.env.NEXT_PUBLIC_IS_CI === 'true') {
-        setPersistence(auth, browserLocalPersistence).catch(console.warn);
+        setPersistence(auth, browserLocalPersistence).catch(() => {});
     }
 
 } catch (error) {
-    console.warn("Firebase initialization skipped (expected during build/CI):", error);
     const mockApp = { name: '[DEFAULT]', options: firebaseConfig, automaticDataCollectionEnabled: false };
     app = mockApp;
     auth = { app: mockApp } as any;

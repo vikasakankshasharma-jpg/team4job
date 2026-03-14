@@ -58,7 +58,7 @@ export const grantProPlan = defineLoggedFlow(
         plan = planSnap.data() as SubscriptionPlan;
       } else {
         // Fallback: Find any 'Installer' plan that contains "Pro" in the name
-        console.warn(`Plan '${specificPlanId}' not found. Searching for alternative Pro plan.`);
+
         const querySnapshot = await db.collection('subscriptionPlans')
           .where('role', '==', 'Installer')
           .get();
@@ -102,7 +102,6 @@ export const grantProPlan = defineLoggedFlow(
       };
 
     } catch (error: any) {
-      console.error("Error granting pro plan:", error);
       return {
         success: false,
         message: error.message || 'An unexpected error occurred.',

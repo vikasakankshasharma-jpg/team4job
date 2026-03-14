@@ -60,7 +60,6 @@ export const AnalyticsService = {
      */
     async getAnalytics(userId: string): Promise<AnalyticsData> {
         if (!db) {
-            console.warn("[AnalyticsService] Firestore db not initialized");
             return {
                 summary: { totalJobs: 0, completedJobs: 0, totalSpend: 0, activeJobs: 0, avgRating: 0 },
                 timeToHire: [],

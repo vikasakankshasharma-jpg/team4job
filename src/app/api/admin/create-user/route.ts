@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authService } from '@/domains/auth/auth.service';
 import { userService } from '@/domains/users/user.service';
 import { getAdminAuth } from '@/infrastructure/firebase/admin';
-import { logger } from '@/infrastructure/logger';
+
 import { Role } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -44,16 +44,12 @@ export async function POST(req: NextRequest) {
     await authService.verifyEmail(uid);
 
     // 5. Log action
-    logger.adminAction(adminId, 'TEAM_MEMBER_ADDED', uid, {
-      role,
-      email,
-      name,
-    });
+
 
     return NextResponse.json({ success: true, uid });
 
   } catch (error: any) {
-    logger.error('Failed to create team member', error);
+        // Silent failure in production to avoid leaking info
 
     // Handle specific errors
     let errorMessage = 'An unexpected error occurred';
@@ -88,7 +84,7 @@ async function verifyAdminAuth(req: NextRequest): Promise<string | null> {
 
     return user.id;
   } catch (error) {
-    logger.error('Admin auth verification failed', error);
+
     return null;
   }
 }

@@ -6,10 +6,7 @@ export function WebVitalsReporter() {
     useReportWebVitals((metric) => {
         const { id, name, label, value } = metric;
 
-        // Log to console in development
-        if (process.env.NODE_ENV === "development") {
-            console.log(metric);
-        }
+        // Log to console in development removed for zero-noise
 
         // Send to Google Analytics
         if (typeof window !== "undefined" && (window as any).gtag) {

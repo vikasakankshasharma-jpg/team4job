@@ -29,7 +29,7 @@ const jobScopingPrompt = ai.definePrompt({
   name: 'jobScopingPrompt',
   input: { schema: JobScopingWizardInputSchema },
   output: { schema: GenerateJobDetailsOutputSchema },
-  prompt: `You are an expert CCTV and security consultant helping a non-technical user create a detailed job post.
+  prompt: `You are an expert security and technical consultant helping a non-technical user create a detailed job post.
   The user has provided a simple description of their needs. Your task is to transform this simple query into a professional, structured job post.
 
   User's Request: "{{{userQuery}}}"
@@ -38,14 +38,14 @@ const jobScopingPrompt = ai.definePrompt({
   - What type of property is it (e.g., home, office, store, warehouse)?
   - What is the approximate size (e.g., square footage, number of rooms)?
   - Is it for indoor, outdoor, or both?
-  - Are there any specific areas to monitor (e.g., entrances, cash counter, parking lot)?
-  - Is there existing lighting?
-  - Do you have a preference for video quality (e.g., basic, clear, high-definition)?
+  - Are there any specific areas to cover (e.g., entrances, reception, parking lot)?
+  - Is there existing power/cabling?
+  - Do you have a preference for technical specifications (e.g., basic, improved, professional)?
 
   Based on the user's initial query and your own simulated answers to these clarifying questions, generate the following:
 
-  1.  **Job Title:** A clear, professional title that installers will understand (e.g., "Security Camera Setup for a Small Retail Store").
-  2.  **Job Description:** A detailed description (150-200 words) that elaborates on the likely scope. Mention the type of property, potential camera count (make a reasonable estimate), and common objectives (e.g., "monitor entry points," "oversee sales area").
+  1.  **Job Title:** A clear, professional title that installers will understand (e.g., "Device Installation for a Small Retail Store").
+  2.  **Job Description:** A detailed description (150-200 words) that elaborates on the likely scope. Mention the type of property, potential device count (make a reasonable estimate), and common objectives (e.g., "cover entry points," "secure key areas").
   3.  **Suggested Skills:** A list of 5-7 relevant technical skills installers would need.
 
   Return the full output in the specified JSON format.

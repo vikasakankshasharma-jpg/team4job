@@ -22,7 +22,6 @@ export class AdminGuard {
             const roles = userDoc.data()?.roles as Role[] || [];
             return roles.includes('Admin') || roles.includes('Support Team');
         } catch (error) {
-            console.error('[AdminGuard] Verification failed:', error);
             return false;
         }
     }
@@ -40,7 +39,6 @@ export class AdminGuard {
             const roles = userDoc.data()?.roles as Role[] || [];
             return roles.includes('Admin');
         } catch (error) {
-            console.error('[AdminGuard] Admin verification failed:', error);
             return false;
         }
     }

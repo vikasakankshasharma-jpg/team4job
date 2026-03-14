@@ -41,11 +41,9 @@ function initializeFirebaseAdmin(): App {
             const app = initializeApp({
                 credential: cert(serviceAccount)
             });
-            console.log("Firebase Admin SDK initialized using service-account.json file.");
             return app;
         }
     } catch (error: any) {
-        console.error("Error reading or parsing service-account.json:", error);
         // Continue to check env var
     }
 
@@ -56,11 +54,9 @@ function initializeFirebaseAdmin(): App {
             const app = initializeApp({
                 credential: cert(serviceAccount)
             });
-            console.log("Firebase Admin SDK initialized using environment variable.");
             return app;
         } catch (error) {
-            console.error("Error parsing FIREBASE_SERVICE_ACCOUNT_KEY from .env:", error);
-            process.exit(1);
+
         }
     }
 
@@ -78,15 +74,13 @@ function initializeFirebaseAdmin(): App {
                     privateKey
                 })
             });
-            console.log("Firebase Admin SDK initialized using separate environment variables.");
             return app;
         } catch (error) {
-            console.error("Error with separate env vars:", error);
+
         }
     }
 
     // 4. If neither method works, exit
-    console.error("Could not initialize Firebase Admin SDK. Ensure either service-account.json exists or FIREBASE_SERVICE_ACCOUNT_KEY is set in your environment.");
     process.exit(1);
 }
 
@@ -145,7 +139,7 @@ const mockUsers: any[] = [
         installerProfile: {
             tier: 'Gold',
             points: 1250,
-            skills: ['ip camera', 'nvr setup', 'cabling', 'troubleshooting', 'ptz', 'vms'],
+            skills: ['system installation', 'security systems', 'cabling', 'troubleshooting', 'configuration', 'system management'],
             rating: 4.8,
             reviews: 25,
             verified: true,
@@ -179,7 +173,7 @@ const mockUsers: any[] = [
         installerProfile: {
             tier: 'Bronze',
             points: 150,
-            skills: ['ip camera', 'cabling', 'troubleshooting'],
+            skills: ['system setup', 'cabling', 'troubleshooting'],
             rating: 4.5,
             reviews: 5,
             verified: true,
@@ -218,7 +212,7 @@ const mockUsers: any[] = [
         installerProfile: {
             tier: 'Bronze',
             points: 50,
-            skills: ['analog cameras', 'dvr setup'],
+            skills: ['wiring', 'system setup'],
             rating: 0,
             reviews: 0,
             verified: true,
@@ -241,7 +235,7 @@ const mockUsers: any[] = [
         installerProfile: {
             tier: 'Bronze',
             points: 25,
-            skills: ['ip camera', 'troubleshooting'],
+            skills: ['system setup', 'troubleshooting'],
             rating: 2.5,
             reviews: 4,
             verified: false,
@@ -265,7 +259,7 @@ const mockUsers: any[] = [
         installerProfile: {
             tier: 'Silver',
             points: 600,
-            skills: ['vms', 'access control'],
+            skills: ['management software', 'access control'],
             rating: 3.1,
             reviews: 12,
             verified: true,
@@ -288,7 +282,7 @@ const mockUsers: any[] = [
         installerProfile: {
             tier: 'Platinum',
             points: 2500,
-            skills: ['ip camera', 'nvr setup', 'cabling', 'troubleshooting', 'ptz', 'vms', 'fiber optics', 'thermal cameras', 'access control'],
+            skills: ['system installation', 'server setup', 'cabling', 'troubleshooting', 'configuration', 'system management', 'fiber optics', 'advanced sensors', 'access control'],
             rating: 4.9,
             reviews: 55,
             verified: true,
@@ -316,11 +310,9 @@ const mockUsers: any[] = [
 // --- Seeding Functions ---
 
 async function clearCollection(collectionPath: string) {
-    console.log(`Clearing collection: ${collectionPath}...`);
     const collectionRef = adminDb.collection(collectionPath);
     const snapshot = await collectionRef.limit(500).get();
     if (snapshot.empty) {
-        console.log(`- Collection ${collectionPath} is already empty.`);
         return;
     }
 
@@ -329,34 +321,28 @@ async function clearCollection(collectionPath: string) {
     await batch.commit();
 
     if (snapshot.size === 500) {
-        console.log(`- Cleared part of ${collectionPath}. Running again...`);
         await clearCollection(collectionPath);
     } else {
-        console.log(`- Cleared ${snapshot.size} documents from ${collectionPath}.`);
     }
 }
 
 async function clearAuthUsers() {
-    console.log("\nClearing all authentication users...");
     try {
         const listUsersResult = await adminAuth.listUsers(1000);
         if (listUsersResult.users.length === 0) {
-            console.log("- No auth users to clear.");
             return;
         }
         const uidsToDelete = listUsersResult.users.map(u => u.uid);
         await adminAuth.deleteUsers(uidsToDelete);
-        console.log(`- Deleted ${uidsToDelete.length} auth users.`);
         if (listUsersResult.pageToken) {
             await clearAuthUsers();
         }
     } catch (error) {
-        console.error("Error clearing auth users:", error);
+        // Error
     }
 }
 
 async function seedAuthAndGetUIDs(users: any[]) {
-    console.log('\nCreating authentication users...');
     const userUIDs: { [email: string]: string } = {};
     for (const user of users) {
         try {
@@ -368,16 +354,13 @@ async function seedAuthAndGetUIDs(users: any[]) {
                 disabled: user.status === 'deactivated' || user.status === 'suspended',
             });
             userUIDs[user.email] = userRecord.uid;
-            console.log(`- Created auth user: ${user.email} (UID: ${userRecord.uid})`);
         } catch (error: any) {
             if (error.code === 'auth/email-already-exists') {
                 const userRecord = await adminAuth.getUserByEmail(user.email);
                 userUIDs[user.email] = userRecord.uid;
                 // Ensure password is set for existing user, in case it was created without one
                 await adminAuth.updateUser(userRecord.uid, { password: 'Test@1234', disabled: user.status === 'deactivated' || user.status === 'suspended' });
-                console.log(`- Auth user already exists, password updated: ${user.email} (UID: ${userRecord.uid})`);
             } else {
-                console.error(`- Error creating auth user ${user.email}:`, error.message);
             }
         }
     }
@@ -385,7 +368,6 @@ async function seedAuthAndGetUIDs(users: any[]) {
 }
 
 async function seedUserProfiles(users: any[], uids: { [email: string]: string }) {
-    console.log('\nCreating user profiles in Firestore...');
     const batch = adminDb.batch();
     const trialExpiry = new Date();
     trialExpiry.setDate(trialExpiry.getDate() + 30); // Default 30-day trial for all
@@ -433,11 +415,9 @@ async function seedUserProfiles(users: any[], uids: { [email: string]: string })
         batch.set(publicProfileRef, publicData);
     });
     await batch.commit();
-    console.log(`- Committed ${users.length} user profiles and public profiles.`);
 }
 
 async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
-    console.log('\nCreating jobs and related data...');
     const jobGiverUID = uids[mockUsers[1].email];
     const installerUID = uids[mockUsers[2].email];
     const justInstallerUID = uids[mockUsers[3].email];
@@ -463,8 +443,8 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     const job1Ref = adminDb.collection('jobs').doc(job1Id);
     await job1Ref.set({
         id: job1Id,
-        title: "Install 16 Dahua IP Cameras for a Commercial Building",
-        description: "We require the installation of 16 Dahua 5MP IP cameras across our 4-story commercial building in Ashok Nagar, Bengaluru. The job includes camera mounting, cabling (Cat6), and NVR configuration. All hardware will be provided.",
+        title: "Install 16 Smart Devices for a Commercial Building",
+        description: "We require the installation of 16 professional smart devices across our 4-story commercial building in Ashok Nagar, Bengaluru. The job includes device mounting, cabling (Cat6), and central unit configuration. All hardware will be provided.",
         jobGiver: refs.jobGiver,
         location: "560001",
         fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001',
@@ -492,8 +472,8 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     const job2Id = "JOB-20240615-C3D4";
     await adminDb.collection('jobs').doc(job2Id).set({
         id: job2Id,
-        title: "Factory Security System Overhaul - 32 Cameras",
-        description: "Complete overhaul of an existing security system at a factory in Peenya. Requires replacing 32 old analog cameras with new Hikvision IP cameras, setting up a new server room with 2 NVRs, and integrating with our existing network.",
+        title: "Factory Security System Overhaul - 32 Points",
+        description: "Complete overhaul of an existing security system at a factory in Peenya. Requires replacing 32 old units with new professional devices, setting up a new server room with recorders, and integrating with our existing network.",
         jobGiver: refs.jobGiver,
         location: "560058",
         fullAddress: 'Peenya Industrial Area, Bengaluru, 560058',
@@ -504,7 +484,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         postedAt: Timestamp.fromDate(new Date('2024-06-01')),
         jobStartDate: Timestamp.fromDate(new Date('2024-06-15')),
         awardedInstaller: refs.installer,
-        bids: [{ installer: refs.installer, amount: 52000, timestamp: Timestamp.fromDate(new Date('2024-06-03')), coverLetter: "I have extensive experience with large-scale factory installations and can complete this overhaul efficiently. My team is certified in Hikvision products." }],
+        bids: [{ installer: refs.installer, amount: 52000, timestamp: Timestamp.fromDate(new Date('2024-06-03')), coverLetter: "I have extensive experience with large-scale factory installations and can complete this overhaul efficiently. My team is certified in advanced platform integrations." }],
         bidderIds: [installerUID],
         rating: 5,
         completionOtp: "543210",
@@ -517,8 +497,8 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     const job3DisputeId = "DISPUTE-1721981880001";
     await adminDb.collection('jobs').doc(job3Id).set({
         id: job3Id,
-        title: "Residential Villa - 4 PTZ Cameras (Disputed)",
-        description: "Installation of 4 outdoor PTZ cameras for a 2-story villa. Requires weather-proof cabling and connection to a cloud-based storage service.",
+        title: "Residential Villa - 4 Technical Points (Disputed)",
+        description: "Installation of 4 outdoor specialized devices for a 2-story villa. Requires weather-proof cabling and connection to a cloud-based service.",
         jobGiver: refs.jobGiver,
         location: "400049",
         fullAddress: 'Villa 17, Juhu Tara Road, Juhu, Mumbai, 400049',
@@ -541,8 +521,8 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     const job4Id = "JOB-20240722-G7H8";
     await adminDb.collection('jobs').doc(job4Id).set({
         id: job4Id,
-        title: "Unbid Job: Small Shop Camera Setup",
-        description: "Looking for an installer to set up 2 dome cameras in a small retail shop. Simple setup, hardware provided.",
+        title: "Unbid Job: Small Shop Security Setup",
+        description: "Looking for an installer to set up 2 devices in a small retail shop. Simple setup, hardware provided.",
         jobGiver: refs.newJobGiver,
         location: "110001",
         fullAddress: 'Shop 5, Khan Market, New Delhi, 110001',
@@ -563,8 +543,8 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     const job5Id = "JOB-20240725-J9K0";
     await adminDb.collection('jobs').doc(job5Id).set({
         id: job5Id,
-        title: "Urgent: Replace 4 Cameras at Andheri Office",
-        description: "Need an experienced installer to urgently replace four faulty outdoor cameras at a corporate office in Andheri West. Must be familiar with Hikvision systems. Job needs to be completed this weekend.",
+        title: "Urgent: Replace 4 Devices at Andheri Office",
+        description: "Need an experienced installer to urgently replace four faulty specialized devices at a corporate office in Andheri West. Must be familiar with security systems. Job needs to be completed this weekend.",
         jobGiver: refs.newJobGiver,
         location: "400053", // Matches installer@example.com's residential pincode
         fullAddress: '5th Floor, Corporate Heights, Andheri West, Mumbai, 400053',
@@ -576,7 +556,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         jobStartDate: Timestamp.fromDate(new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)),
         bids: [
             { installer: refs.installer, amount: 7000, timestamp: Timestamp.fromDate(new Date(now.getTime() - 24 * 60 * 60 * 1000)), coverLetter: "Gold installer, ready to start immediately." },
-            { installer: refs.justInstaller, amount: 6500, timestamp: Timestamp.fromDate(new Date(now.getTime() - 12 * 60 * 60 * 1000)), coverLetter: "I'm available this weekend and have experience with Hikvision." }
+            { installer: refs.justInstaller, amount: 6500, timestamp: Timestamp.fromDate(new Date(now.getTime() - 12 * 60 * 60 * 1000)), coverLetter: "I'm available this weekend and have experience with professional security systems." }
         ],
         bidderIds: [installerUID, justInstallerUID],
         comments: [],
@@ -611,8 +591,8 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     const job7Id = "JOB-20240729-P5Q6";
     await adminDb.collection('jobs').doc(job7Id).set({
         id: job7Id,
-        title: "Cancelled: Home Security Camera Setup",
-        description: "Need a reliable installer to set up a 4-camera system for a 2BHK apartment. Should include DVR setup and mobile viewing configuration. Hardware will be provided by me.",
+        title: "Cancelled: Home Security System Setup",
+        description: "Need a reliable installer to set up a 4-point system for a 2BHK apartment. Should include central controller setup and mobile access configuration. Hardware will be provided by me.",
         jobGiver: refs.newJobGiver,
         location: "400053", // Matches installer@example.com's residential pincode
         fullAddress: 'A-501, Star Tower, S.V. Road, Andheri West, Mumbai, 400053',
@@ -633,8 +613,8 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     const job8Id = "JOB-20240801-R7S8";
     await adminDb.collection('jobs').doc(job8Id).set({
         id: job8Id,
-        title: "Corporate Tower - Full Fiber Optic CCTV Network",
-        description: "Full design and implementation of a fiber optic CCTV network for a 20-story corporate tower at Marine Drive. Requires expertise in fiber, VMS, and thermal cameras. Only highly experienced installers should bid.",
+        title: "Corporate Tower - Full Professional Network Infrastructure",
+        description: "Full design and implementation of a professional technical network for a 20-story corporate tower at Marine Drive. Requires expertise in networking, system management, and specialized technical sensors. Only highly experienced installers should bid.",
         jobGiver: refs.newJobGiver,
         location: "400002",
         fullAddress: 'Corporate Tower, Marine Drive, Mumbai, 400002',
@@ -645,7 +625,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         postedAt: Timestamp.fromDate(new Date()),
         jobStartDate: Timestamp.fromDate(new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000)),
         bids: [
-            { installer: refs.platinumInstaller, amount: 220000, timestamp: Timestamp.fromDate(new Date()), coverLetter: "As a Platinum installer specializing in large-scale enterprise solutions, my team is perfectly equipped for this project. We have extensive experience with fiber optic networks and VMS integration." }
+            { installer: refs.platinumInstaller, amount: 220000, timestamp: Timestamp.fromDate(new Date()), coverLetter: "As a Platinum installer specializing in large-scale enterprise solutions, my team is perfectly equipped for this project. We have extensive experience with complex technical networks and integrated platform management." }
         ],
         bidderIds: [platinumInstallerUID],
         comments: [],
@@ -657,8 +637,8 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     const job9Id = "JOB-20240901-ARCH1";
     await adminDb.collection('jobs').doc(job9Id).set({
         id: job9Id,
-        title: "Archived: Office CCTV Upgrade",
-        description: "Upgraded 8 analog cameras to IP cameras for a small office. Work was completed on time.",
+        title: "Archived: Office System Upgrade",
+        description: "Upgraded 8 technical points for a small office. Work was completed on time.",
         jobGiver: refs.jobGiver, // Explicitly for jobgiver@example.com
         location: "560001",
         fullAddress: 'C-20, MG Road, Bengaluru, 560001',
@@ -682,7 +662,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     const job10Id = "JOB-20240901-CANC1";
     await adminDb.collection('jobs').doc(job10Id).set({
         id: job10Id,
-        title: "Cancelled: Outdoor Camera Install",
+        title: "Cancelled: Outdoor Device Install",
         description: "Job cancelled due to change in requirements.",
         jobGiver: refs.jobGiver, // Explicitly for jobgiver@example.com
         location: "560001",
@@ -701,11 +681,10 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
     });
 
 
-    console.log(`- Committed 8 jobs.`);
+
 }
 
 async function seedDisputes(uids: { [email: string]: string }) {
-    console.log('\nCreating disputes...');
     const adminUID = uids[mockUsers[0].email];
     const jobGiverUID = uids[mockUsers[1].email];
     const installerUID = uids[mockUsers[2].email];
@@ -722,9 +701,9 @@ async function seedDisputes(uids: { [email: string]: string }) {
         id: dispute1Id,
         requesterId: installerUID,
         category: "Job Dispute",
-        title: "Dispute for job: Factory Security System Overhaul",
+        title: "Dispute for job: Factory System Overhaul",
         jobId: "JOB-20240615-C3D4",
-        jobTitle: "Factory Security System Overhaul - 32 Cameras",
+        jobTitle: "Factory Security System Overhaul - 32 Points",
         status: 'Resolved',
         reason: "The job giver has not released the payment even after the job was marked as complete two weeks ago. The work was finished to their satisfaction.",
         parties: { jobGiverId: jobGiverUID, installerId: installerUID },
@@ -744,11 +723,11 @@ async function seedDisputes(uids: { [email: string]: string }) {
         id: dispute2Id,
         requesterId: jobGiverUID,
         category: "Job Dispute",
-        title: "Dispute for job: Residential Villa - 4 PTZ Cameras",
+        title: "Dispute for job: Residential Villa - 4 Technical Points",
         jobId: "JOB-20240718-E5F6",
-        jobTitle: "Residential Villa - 4 PTZ Cameras (Disputed)",
+        jobTitle: "Residential Villa - 4 Technical Points (Disputed)",
         status: 'Open',
-        reason: "The installer damaged my property during the installation. One of the camera mount points has cracked the wall plaster. The installer is refusing to fix it.",
+        reason: "The installer damaged my property during the installation. One of the device mount points has cracked the wall plaster. The installer is refusing to fix it.",
         parties: { jobGiverId: jobGiverUID, installerId: justInstallerUID },
         messages: [
             { authorId: jobGiverUID, authorRole: 'Job Giver', content: "The wall is cracked and the installer is not taking responsibility. I have attached photos.", timestamp: Timestamp.fromDate(new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000)) },
@@ -765,7 +744,7 @@ async function seedDisputes(uids: { [email: string]: string }) {
         category: "Billing Inquiry",
         title: "Question about commission fee",
         jobId: "JOB-20240718-E5F6",
-        jobTitle: "Residential Villa - 4 PTZ Cameras (Disputed)",
+        jobTitle: "Residential Villa - 4 Technical Points (Disputed)",
         status: 'Under Review',
         reason: "I was charged a higher commission fee than I expected on my last payout. Can you please clarify the calculation?",
         parties: { jobGiverId: jobGiverUID, installerId: justInstallerUID },
@@ -775,12 +754,9 @@ async function seedDisputes(uids: { [email: string]: string }) {
         ],
         createdAt: Timestamp.fromDate(new Date(new Date().getTime() - 3 * 24 * 60 * 60 * 1000)),
     });
-
-    console.log(`- Committed 3 disputes.`);
 }
 
 async function seedBlacklist() {
-    console.log('\nSeeding blacklist...');
     const suspendedInstallerUID = (await adminAuth.getUserByEmail('sanjay.v@example.com')).uid;
 
     const blacklistEntry: any = {
@@ -802,12 +778,9 @@ async function seedBlacklist() {
         createdAt: Timestamp.now(),
     };
     await adminDb.collection('blacklist').doc(pincodeEntry.id).set(pincodeEntry);
-
-    console.log('- Committed 2 blacklist entries.');
 }
 
 async function seedTransactions(uids: { [email: string]: string }) {
-    console.log('\nSeeding transactions...');
     const batch = adminDb.batch();
     const now = new Date();
 
@@ -815,7 +788,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
     const t1: any = {
         id: `TXN-JOB2-${Date.now()}`,
         jobId: "JOB-20240615-C3D4",
-        jobTitle: "Factory Security System Overhaul",
+        jobTitle: "Factory System Overhaul",
         payerId: uids[mockUsers[1].email],
         payeeId: uids[mockUsers[2].email],
         amount: 52000,
@@ -837,7 +810,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
     const t2: any = {
         id: `TXN-JOB3-${Date.now()}`,
         jobId: "JOB-20240718-E5F6",
-        jobTitle: "Residential Villa - 4 PTZ Cameras (Disputed)",
+        jobTitle: "Residential Villa - 4 Technical Points (Disputed)",
         payerId: uids[mockUsers[1].email],
         payeeId: uids[mockUsers[3].email],
         amount: 8500,
@@ -878,7 +851,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
     const tOld2: any = {
         id: `TXN-OLD-2-${Date.now()}`,
         jobId: "JOB-OLD-2",
-        jobTitle: "CCTV Maintenance Contract - Q1",
+        jobTitle: "Security Maintenance Contract - Q1",
         payerId: uids[mockUsers[1].email],
         payeeId: uids[mockUsers[2].email], // Installer
         amount: 8000,
@@ -918,7 +891,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
     const t4: any = {
         id: `TXN-FAILED-${Date.now()}`,
         jobId: "JOB-20240725-J9K0",
-        jobTitle: "Urgent: Replace 4 Cameras at Andheri Office",
+        jobTitle: "Urgent: Replace 4 Devices at Andheri Office",
         payerId: uids[mockUsers[4].email],
         payeeId: uids[mockUsers[3].email],
         amount: 6500,
@@ -939,7 +912,7 @@ async function seedTransactions(uids: { [email: string]: string }) {
     const t5: any = {
         id: `TXN-REFUND-${Date.now()}`,
         jobId: "JOB-SOME-OLD-JOB",
-        jobTitle: "Office Camera Maintenance",
+        jobTitle: "Office System Maintenance",
         payerId: uids[mockUsers[1].email],
         payeeId: uids[mockUsers[8].email],
         amount: 5000,
@@ -958,11 +931,9 @@ async function seedTransactions(uids: { [email: string]: string }) {
     batch.set(adminDb.collection('transactions').doc(t5.id), t5);
 
     await batch.commit();
-    console.log(`- Committed 5 transactions.`);
 }
 
 async function seedSubscriptionPlans() {
-    console.log('\nSeeding default subscription plans...');
     const batch = adminDb.batch();
 
     const proInstallerPlan: any = {
@@ -988,7 +959,6 @@ async function seedSubscriptionPlans() {
     batch.set(adminDb.collection('subscriptionPlans').doc(businessJobGiverPlan.id), businessJobGiverPlan);
 
     await batch.commit();
-    console.log('- Committed 2 subscription plans.');
 }
 
 
@@ -1002,7 +972,6 @@ async function clearAllCollections() {
 
 async function main() {
     try {
-        console.log('--- Starting Database Seeding ---');
 
         // Clear Auth & Firestore
         await clearAuthUsers();
@@ -1028,10 +997,7 @@ async function main() {
 
         // Seed Transactions
         await seedTransactions(userUIDs);
-
-        console.log('\nDatabase seeding completed successfully! ✅');
     } catch (e) {
-        console.error('\nAn error occurred during database seeding:', e);
         process.exit(1);
     }
 }

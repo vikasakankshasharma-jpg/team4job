@@ -28,8 +28,6 @@ const VerifyGstOutputSchema = z.object({
 export type VerifyGstOutput = z.infer<typeof VerifyGstOutputSchema>;
 
 async function callCashfreeVerifyGst(gstin: string): Promise<{ success: boolean; data?: any; error?: string }> {
-    console.log(`[Cashfree KYC] Verifying GSTIN: ${gstin}...`);
-
     if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
         return { success: false, error: 'Server configuration error: Missing KYC API credentials.' };
     }
@@ -61,7 +59,6 @@ async function callCashfreeVerifyGst(gstin: string): Promise<{ success: boolean;
         }
 
     } catch (error: any) {
-        console.error('[Cashfree KYC] API call error (GST):', error.response?.data || error.message);
         return { success: false, error: error.response?.data?.message || 'An unexpected error occurred during GST verification.' };
     }
 }
@@ -75,9 +72,7 @@ export const verifyGst = defineLoggedFlow(
     async (input: z.infer<typeof VerifyGstInputSchema>) => {
         // Mock for Local E2E Testing
         if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' && input.gstin === '22AAAAA0000A1Z5') {
-            console.log('[Cashfree KYC] Using mock GST verification (Emulator Mode).');
             return {
-                isValid: true,
                 legalName: 'MOCK GSTIN BUSINESS',
                 message: 'GSTIN verified successfully (Mock).',
             };

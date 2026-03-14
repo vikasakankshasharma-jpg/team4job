@@ -13,6 +13,7 @@ import { Printer } from "lucide-react";
 import { format } from "date-fns";
 import { toDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/hooks/use-user";
 
 function InvoicePageSkeleton() {
     return (
@@ -36,9 +37,15 @@ function InvoiceContent() {
 
     const [job, setJob] = useState<Job | null>(null);
     const [transaction, setTransaction] = useState<Transaction | null>(null);
+    const { user, loading: userLoading } = useUser();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [clientLog, setClientLog] = useState<string[]>([]);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Expose logs to window for E2E debugging
     useEffect(() => {
@@ -48,14 +55,23 @@ function InvoiceContent() {
     }, [clientLog]);
 
     const log = useCallback((msg: string) => {
-        const timestamp = new Date().toISOString();
-        const logMsg = `[${timestamp}] ${msg}`;
-        console.log('[InvoicePage-Simple]', msg);
-        setClientLog(prev => [...prev, logMsg]);
+        // Disabled for production
     }, []);
 
     useEffect(() => {
-        log(`useEffect triggered - id: ${id}, type: ${type}`);
+        log(`useEffect triggered - id: ${id}, type: ${type}, userLoading: ${userLoading}, hasUser: ${!!user}`);
+        if (userLoading) {
+            log('User session still loading...');
+            return;
+        }
+
+        if (!user) {
+            log('ERROR: No authenticated user found');
+            setError("Authentication required to view invoices");
+            setLoading(false);
+            return;
+        }
+
         if (!id) {
             log('ERROR: No job ID provided');
             setError("No job ID provided");
@@ -71,8 +87,8 @@ function InvoiceContent() {
             const fetchStart = Date.now();
 
             try {
-                log('Calling getInvoiceDataAction...');
-                const res = await getInvoiceDataAction(id, '', type || undefined);
+                log(`Calling getInvoiceDataAction with UID: ${user.id}...`);
+                const res = await getInvoiceDataAction(id, user.id, type || undefined);
                 log(`getInvoiceDataAction returned in ${Date.now() - fetchStart}ms`);
                 log(`Response: success=${res.success}, error=${res.error}, hasData=${!!res.data}`);
 
@@ -105,18 +121,19 @@ function InvoiceContent() {
             log('Component unmounting');
             mounted = false;
         };
-    }, [id, type, toast, log]);
+    }, [id, type, toast, log, user, userLoading]);
 
     if (loading) {
         return (
             <div className="max-w-4xl mx-auto p-8" data-testid="invoice-loading-state">
                 <div className="text-4xl font-bold text-blue-600 mb-4">LOADING INVOICE PAGE...</div>
-                <div className="mb-4 p-4 bg-gray-100 text-xs font-mono max-h-40 overflow-auto">
-                    {clientLog.map((log, i) => <div key={i}>{log}</div>)}
-                </div>
                 <InvoicePageSkeleton />
             </div>
         );
+    }
+
+    if (!mounted) {
+        return <InvoicePageSkeleton />;
     }
 
     if (error || !job) {
@@ -124,11 +141,6 @@ function InvoiceContent() {
             <div className="p-8 text-center" data-testid="invoice-error-state">
                 <div className="text-6xl font-bold text-red-600 mb-4">ERROR!</div>
                 <div className="text-2xl text-red-500 mb-4">{error || "Job not found"}</div>
-                <div className="text-xl mb-4">hasJob: {String(!!job)}</div>
-                <div className="mt-8 p-4 bg-gray-100 text-left text-xs font-mono max-w-2xl mx-auto max-h-60 overflow-auto">
-                    <strong>Client Logs:</strong>
-                    {clientLog.map((log, i) => <div key={i}>{log}</div>)}
-                </div>
             </div>
         );
     }
@@ -174,7 +186,7 @@ function InvoiceContent() {
                         </div>
                     </div>
                     <div className="sm:text-right">
-                        <h2 className="text-xl font-bold text-primary">CCTV Job Connect</h2>
+                        <h2 className="text-xl font-bold text-primary">Team4Job</h2>
                         <p className="text-xs text-muted-foreground font-semibold">#{invoiceNumber}</p>
                     </div>
                 </div>
@@ -233,11 +245,6 @@ function InvoiceContent() {
                     </Button>
                 </div>
 
-                {/* Debug output at bottom */}
-                <div className="mt-8 p-4 bg-gray-100 text-left text-xs font-mono max-h-60 overflow-auto print:hidden">
-                    <div className="font-bold mb-2">Debug Logs:</div>
-                    {clientLog.map((log, i) => <div key={i}>{log}</div>)}
-                </div>
             </div>
         );
     }
@@ -333,11 +340,6 @@ function InvoiceContent() {
                 </Button>
             </div>
 
-            {/* Debug output at bottom */}
-            <div className="mt-8 p-4 bg-gray-100 text-left text-xs font-mono max-h-60 overflow-auto print:hidden">
-                <div className="font-bold mb-2">Debug Logs:</div>
-                {clientLog.map((log, i) => <div key={i}>{log}</div>)}
-            </div>
         </div>
     );
 }

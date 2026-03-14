@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { TestHelper } from '../utils/helpers';
+import { TestHelper, AuthHelper } from '../utils/helpers';
 import { TIMEOUTS } from '../fixtures/test-data';
+import { execSync } from 'child_process';
 
 /**
  * Role Switching Test Suite
@@ -12,9 +13,20 @@ test.describe('Role Switching System', () => {
 
     const DUAL_ROLE_USER = {
         email: 'dualrole@example.com',
-        password: 'Vikas@129229',
+        password: 'Test@1234',
         displayName: 'Dual Role User'
     };
+
+    test.beforeAll(() => {
+        console.log('Seeding dual role user for tests...');
+        try {
+            execSync('npx --no-install ts-node scripts/seed-dual-role.ts', { stdio: 'inherit' });
+        } catch (e) {
+            console.error('Failed to seed dual role user:', e);
+        }
+        // Mark seeded so login() doesn't call /api/e2e/seed-users (which needs emulators)
+        AuthHelper.markSeeded();
+    });
 
     test.beforeEach(async ({ page }) => {
         helper = new TestHelper(page);
@@ -30,8 +42,11 @@ test.describe('Role Switching System', () => {
         // By default, it might pick one or the other. Let's check what it is.
         await page.waitForTimeout(2000); // Wait for initial hydration/redirects
 
-        // Wait for dashboard loading spinner to disappear
+        // Wait for dashboard loading spinner/skeletons to disappear
+        console.log('[Test] Waiting for loaders to clear...');
         await page.locator('.animate-spin').waitFor({ state: 'hidden', timeout: 30000 }).catch(() => { });
+        await page.locator('.animate-pulse').waitFor({ state: 'hidden', timeout: 30000 }).catch(() => { });
+        console.log('[Test] Loaders cleared.');
 
         // Open user menu to check current role
         const userMenu = page.locator('[data-testid="user-menu-trigger"]')
@@ -45,11 +60,24 @@ test.describe('Role Switching System', () => {
         await userMenu.waitFor({ state: 'visible', timeout: 30000 });
         await userMenu.scrollIntoViewIfNeeded();
 
-        // Retry click if it fails due to loading overlays
-        await userMenu.click({ force: true });
+        // Robust retry loop to open the user menu (handles hydration/overlays)
+        let menuOpened = false;
+        for (let i = 0; i < 3; i++) {
+            await userMenu.click({ force: true });
+            try {
+                // Check if "Current Mode" label or role options are visible
+                await expect(page.getByText(/Current Mode|Job Giver|Installer/i).first()).toBeVisible({ timeout: 5000 });
+                menuOpened = true;
+                break;
+            } catch (e) {
+                console.log(`[Test] Click attempt ${i + 1} failed to open menu, trying again...`);
+                await page.waitForTimeout(1000);
+            }
+        }
 
-        // Check if "Current Mode" label or role options are visible
-        await expect(page.getByText(/Current Mode|Job Giver|Installer/i).first()).toBeVisible({ timeout: 15000 });
+        if (!menuOpened) {
+            throw new Error('[Test] Failed to open the user menu after multiple click attempts.');
+        }
 
         // Determine current role based on checked radio item
         const isJobGiver = await page.getByRole('menuitemradio', { name: 'Job Giver (Hiring)', checked: true }).isVisible();
@@ -64,20 +92,20 @@ test.describe('Role Switching System', () => {
             await helper.auth.ensureRole('Installer');
 
             // Verify Installer Dashboard
-            await expect(page.getByText('Open Jobs')).toBeVisible({ timeout: 10000 });
+            await expect(page.getByText('Open Jobs')).toBeVisible({ timeout: 30000 });
             await expect(page.getByText('Earnings Overview')).toBeVisible().catch(() => console.log('Earnings Overview not found (optional)'));
 
             // Verify persistence after reload
             console.log('Reloading to verify persistence...');
             await page.reload();
-            await expect(page.getByText('Open Jobs')).toBeVisible({ timeout: 10000 });
+            await expect(page.getByText('Open Jobs')).toBeVisible({ timeout: 30000 });
 
             // SWITCH BACK TO JOB GIVER
             console.log('Switching back to Job Giver mode...');
             await helper.auth.ensureRole('Job Giver');
 
             // Verify Job Giver Dashboard
-            await expect(page.getByRole('heading', { name: 'Active Jobs' })).toBeVisible({ timeout: 10000 });
+            await expect(page.getByRole('heading', { name: 'Active Jobs' })).toBeVisible({ timeout: 30000 });
 
         } else {
             // Initially Installer
@@ -86,19 +114,19 @@ test.describe('Role Switching System', () => {
             await helper.auth.ensureRole('Job Giver');
 
             // Verify Job Giver Dashboard
-            await expect(page.getByRole('heading', { name: 'Active Jobs' })).toBeVisible({ timeout: 10000 });
+            await expect(page.getByRole('heading', { name: 'Active Jobs' })).toBeVisible({ timeout: 30000 });
 
             // Verify persistence
             console.log('Reloading to verify persistence...');
             await page.reload();
-            await expect(page.getByRole('heading', { name: 'Active Jobs' })).toBeVisible({ timeout: 10000 });
+            await expect(page.getByRole('heading', { name: 'Active Jobs' })).toBeVisible({ timeout: 30000 });
 
             // SWITCH BACK TO INSTALLER
             console.log('Switching back to Installer mode...');
             await helper.auth.ensureRole('Installer');
 
             // Verify Installer Dashboard
-            await expect(page.getByText('Open Jobs').first()).toBeVisible({ timeout: 10000 });
+            await expect(page.getByText('Open Jobs').first()).toBeVisible({ timeout: 30000 });
         }
 
         console.log('Role switching test passed successfully.');

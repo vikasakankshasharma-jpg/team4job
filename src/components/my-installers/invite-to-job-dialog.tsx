@@ -59,8 +59,7 @@ export function InviteToJobDialog({
 
                 setOpenJobs(jobs);
             } catch (error) {
-                console.error("Error fetching open jobs:", error);
-                toast({
+               toast({
                     title: "Error",
                     description: "Failed to load open jobs",
                     variant: "destructive",
@@ -109,8 +108,7 @@ export function InviteToJobDialog({
             onClose();
             setSelectedJob(null);
         } catch (error) {
-            console.error("Error sending invite:", error);
-            toast({
+           toast({
                 title: "Error",
                 description: "Failed to send invitation. Please try again.",
                 variant: "destructive",

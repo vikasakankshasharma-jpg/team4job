@@ -36,12 +36,12 @@ export async function POST(req: NextRequest) {
         };
 
         const uploadedUrls: Record<string, string> = {};
+        const bucket = storage.bucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'dodo-beta.firebasestorage.app');
 
         for (const [key, file] of Object.entries(files)) {
             if (file && file.size > 0) {
                 const buffer = Buffer.from(await file.arrayBuffer());
                 const fileName = `kyc/${userId}/${key}_${Date.now()}.${file.name.split('.').pop()}`;
-                const bucket = storage.bucket();
                 const fileRef = bucket.file(fileName);
 
                 await fileRef.save(buffer, {
@@ -70,7 +70,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: "Application submitted successfully" });
 
     } catch (error: any) {
-        console.error("Onboarding submission error:", error);
         return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
     }
 }

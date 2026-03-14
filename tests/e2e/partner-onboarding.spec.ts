@@ -1,29 +1,70 @@
 import { test, expect } from '@playwright/test';
-// import { generateUser } from '../utils/data-generator';
+import { TestHelper } from '../utils/helpers';
+import { execSync } from 'child_process';
+import * as path from 'path';
+import * as fs from 'fs';
+
+/**
+ * E2E Test: Partner Onboarding
+ * Verifies the complete onboarding wizard for installers.
+ */
 
 test.describe('Partner Onboarding Flow', () => {
     test('Complete onboarding wizard successfully', async ({ page }) => {
-        // 1. Login as a clean user (or signup)
-        // For speed, let's assume we can hit the onboarding route directly if we mockauth or login first.
-        // We'll use a mocked session for simplicity in this generated test, or just navigate if dev env allows.
+        const helper = new TestHelper(page);
 
-        // Mocking auth or assuming logged in via global setup would be ideal.
-        // For now, let's just visit the page and check if it redirects to login or loads (if public).
-        // The onboarding page is protected, so we need to log in.
+        // 1. Setup: Reset installer onboarding state via script
+        await execSync('npx tsx scripts/reset-installer-onboarding.ts', { stdio: 'inherit' });
 
-        await page.goto('/login');
-        // ... Login logic here ... 
-        // Since we don't have credentials handy in this context, we might skip full E2E execution 
-        // and rely on component testing or manual verification steps.
-
-        // However, to verify the UI *renders*, we can try navigating to the route.
+        // 2. Navigation: Login and go to onboarding
+        await helper.auth.loginAsInstaller();
         await page.goto('/dashboard/onboarding');
 
-        // If redirected to login, that's a good sign of protection.
-        // If we were logged in, we'd check for "Basic Info".
+        // 3. Step 1: Basic Info
+        await page.locator('#firstName').clear();
+        await page.locator('#firstName').fill('Pro');
+        await page.locator('#lastName').clear();
+        await page.locator('#lastName').fill('Installer');
+        await page.locator('#shopName').clear();
+        await page.locator('#shopName').fill('Pro CCTV Solutions');
+        await page.locator('#city').clear();
+        await page.locator('#city').fill('Bangalore');
+        await page.locator('#pincode').clear();
+        await page.locator('#pincode').fill('560001');
 
-        // CHECK: Page title or header
-        // await expect(page).toHaveTitle(/Onboarding/);
-        // await expect(page.locator('h1')).toContainText('Partner Onboarding');
+        await page.getByRole('button', { name: 'Next' }).click();
+
+        // 4. Step 2: Experience & Skills
+        await page.check('#r2');
+        await page.check('[id="CCTV Installation"]');
+        await page.check('[id="Networking"]');
+        await page.getByRole('button', { name: 'Next' }).click();
+
+        // 5. Step 3: Documents (KYC)
+        const mockFilePath = path.join(process.cwd(), 'tests/fixtures/dummy.png');
+
+        // Upload Aadhar Front
+        await page.locator('div.space-y-2').filter({ has: page.getByText('Aadhar Card (Front)') }).locator('input[type="file"]').setInputFiles(mockFilePath);
+        await expect(page.locator('text=dummy.png').first()).toBeVisible({ timeout: 15000 });
+
+        // Upload PAN Card
+        await page.locator('div.space-y-2').filter({ has: page.getByText('PAN Card') }).locator('input[type="file"]').setInputFiles(mockFilePath);
+        await expect(page.locator('text=dummy.png').nth(1)).toBeVisible({ timeout: 15000 });
+
+        // Upload Profile Photo
+        await page.locator('div.space-y-2').filter({ has: page.getByText('Profile Photo (Selfie)') }).locator('input[type="file"]').setInputFiles(mockFilePath);
+        await expect(page.locator('text=dummy.png').nth(2)).toBeVisible({ timeout: 15000 });
+
+        await page.getByRole('button', { name: 'Next' }).click();
+
+        // 6. Step 4: Review and Submit
+        await expect(page.getByText('Review Your Details')).toBeVisible();
+        await page.getByRole('button', { name: 'Submit Application' }).click();
+
+        // 7. Verification: Success Redirect and Toast
+        await expect(page).toHaveURL(/\/dashboard$/, { timeout: 60000 });
+
+        // Use a more generic locator and wait for attachment to be extra resilient
+        await expect(page.locator('text=Application Submitted!')).toBeVisible({ timeout: 20000 });
     });
 });

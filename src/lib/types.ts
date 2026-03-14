@@ -219,7 +219,7 @@ export type Job = {
   disqualifiedInstallerIds?: string[];
   awardedInstaller?: User | DocumentReference;
   awardedInstallerId?: string; // Added for redundancy and robust querying
-  structuredRequirements?: Record<string, any>; // Stores raw answers from Fixed Question Flow (e.g. { camera_count: "3-4", location: "shop" })
+  structuredRequirements?: Record<string, any>; // Stores raw answers from Fixed Question Flow (e.g. { device_count: "3-4", location: "shop" })
   // Language metadata for user content
   description_original?: {
     text: string;

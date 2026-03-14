@@ -65,7 +65,7 @@ const findMatchingInstallersFlow = defineLoggedFlow(
     }
 
     // Use LLM to rank the candidates
-    const prompt = `You are a hiring manager for CCTV installers. Given a job description and a list of pre-filtered candidates, rank the top 5 candidates who are the best fit for the job. Consider their skills, tier, and rating. Respond ONLY with a JSON array of the user IDs of the top 5 candidates, in order from best to worst match.
+    const prompt = `You are a technical recruitment expert. Given a job description and a list of pre-filtered candidates, rank the top 5 candidates who are the best fit for the job. Consider their skills, tier, and rating. Respond ONLY with a JSON array of the user IDs of the top 5 candidates, in order from best to worst match.
 
     Job Description: "${jobDescription}"
     

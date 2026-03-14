@@ -32,15 +32,12 @@ export async function POST(request: Request) {
         // 3. Revoke sessions (optional but recommended)
         await adminAuth.revokeRefreshTokens(userId);
 
-        console.log(`[UserDelete] User ${userId} deactivated successfully.`);
-
         return NextResponse.json({
             success: true,
             message: 'Your account has been deactivated. You will be logged out.'
         });
 
     } catch (error: any) {
-        console.error('[UserDelete] Error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

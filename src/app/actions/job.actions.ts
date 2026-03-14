@@ -24,11 +24,6 @@ export async function createJobAction(
     userRole: Role
 ): Promise<{ success: boolean; jobId?: string; error?: string }> {
     try {
-        // Using console.log for simple action tracking, system logger for errors/business events
-        if (process.env.NODE_ENV !== 'production') {
-            console.log(`[Action] createJobAction called by ${userId} (${userRole})`);
-        }
-
         // Delegate business logic to the domain service
         const jobId = await jobService.createJob(userId, userRole, data);
 
@@ -36,18 +31,8 @@ export async function createJobAction(
         revalidatePath('/dashboard/jobs');
         revalidatePath('/dashboard/posted-jobs');
 
-        // Log Business Event
-        await logger.business({
-            eventType: 'JOB_POSTED',
-            actorId: userId,
-            entityId: jobId,
-            entityType: 'JOB',
-            metadata: { title: data.title, category: data.jobCategory }
-        });
-
         return { success: true, jobId };
     } catch (error: any) {
-        await logger.error(error, { action: 'createJobAction', data }, { id: userId, role: userRole });
         return {
             success: false,
             error: error.message || 'Failed to create job',
@@ -66,7 +51,6 @@ export async function getJobForEditAction(jobId: string, userId: string): Promis
         const serializedJob = JSON.parse(JSON.stringify(job));
         return { success: true, job: serializedJob };
     } catch (error: any) {
-        await logger.error(error, { action: 'getJobForEditAction', jobId });
         return {
             success: false,
             error: error.message || 'Failed to fetch job',
@@ -108,14 +92,6 @@ export async function updateJobAction(jobId: string, userId: string, data: Parti
                 });
 
                 if (moderation.isFlagged) {
-                    await logger.business({
-                        eventType: 'MODERATION_FLAG' as any,
-                        actorId: userId,
-                        entityId: jobId,
-                        entityType: 'JOB',
-                        metadata: { reason: moderation.reason, content: lastMsg.content }
-                    });
-
                     // Reject the update
                     return {
                         success: false,
@@ -132,7 +108,6 @@ export async function updateJobAction(jobId: string, userId: string, data: Parti
 
         return { success: true };
     } catch (error: any) {
-        await logger.error(error, { action: 'updateJobAction', jobId });
         return {
             success: false,
             error: error.message || 'Failed to update job',
@@ -147,18 +122,9 @@ export async function awardJobAction(jobId: string, userId: string, installerId:
     try {
         await jobService.awardJob(jobId, userId, installerId, new Date(acceptanceDeadline));
 
-        await logger.business({
-            eventType: 'BID_ACCEPTED',
-            actorId: userId,
-            entityId: jobId,
-            entityType: 'JOB',
-            metadata: { installerId, deadline: acceptanceDeadline }
-        });
-
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
     } catch (error: any) {
-        await logger.error(error, { action: 'awardJobAction', jobId, installerId }, { id: userId, role: 'Job Giver' });
         return { success: false, error: error.message || 'Failed to award job' };
     }
 }
@@ -172,7 +138,6 @@ export async function approveJobAction(jobId: string, userId: string): Promise<{
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
     } catch (error: any) {
-        await logger.error(error, { action: 'approveJobAction', jobId });
         return { success: false, error: error.message || 'Failed to approve job' };
     }
 }
@@ -187,7 +152,6 @@ export async function acceptJobAction(jobId: string, userId: string): Promise<{ 
         revalidatePath('/dashboard/jobs');
         return { success: true };
     } catch (error: any) {
-        await logger.error(error, { action: 'acceptJobAction', jobId });
         return { success: false, error: error.message || 'Failed to accept job' };
     }
 }
@@ -206,15 +170,10 @@ export async function completeJobWithOtpAction(
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
     } catch (error: any) {
-        await logger.error(error, { action: 'completeJobWithOtpAction', jobId });
         return { success: false, error: error.message || 'Failed to complete job' };
     }
 }
 
-// function verifyInstallerAction disabled to fix 500 error
-// export async function verifyInstallerAction(installerId: string): Promise<{ success: boolean; installer?: any }> {
-// return { success: false };
-// }
 
 
 type InvoiceData = {
@@ -239,7 +198,6 @@ export async function getInvoiceDataAction(jobId: string, userId: string, type?:
             data: JSON.parse(JSON.stringify(data))
         };
     } catch (error: any) {
-        await logger.error(error, { action: 'getInvoiceDataAction', jobId });
         return { success: false, error: error.message };
     }
 }
@@ -416,7 +374,6 @@ export async function raiseDisputeAction(
         revalidatePath(`/dashboard/disputes/${disputeRef.id}`);
         return { success: true };
     } catch (error: any) {
-        await logger.error(error, { action: 'raiseDisputeAction', jobId, reason }, { id: userId, role: 'unknown' });
         return { success: false, error: error.message };
     }
 }
@@ -429,7 +386,6 @@ export async function revealContactAction(jobId: string, userId: string): Promis
         const contact = await jobService.getCounterParty(jobId, userId);
         return { success: true, contact: contact || undefined };
     } catch (error: any) {
-        console.error('[Action] revealContactAction failed:', error);
         return { success: false, error: error.message || 'Failed to reveal contact' };
     }
 }
@@ -487,7 +443,6 @@ export async function sendMessageAction(
 
         return { success: true };
     } catch (error: any) {
-        console.error('[Action] sendMessageAction failed:', error);
         return { success: false, error: error.message };
     }
 }
@@ -551,7 +506,6 @@ export async function postDisputeMessageAction(
 
         return { success: true };
     } catch (error: any) {
-        console.error('[Action] postDisputeMessageAction failed:', error);
         return { success: false, error: error.message };
     }
 }
@@ -604,7 +558,6 @@ export async function updateDisputeStatusAction(
         revalidatePath(`/dashboard/disputes/${disputeId}`);
         return { success: true };
     } catch (error: any) {
-        console.error('[Action] updateDisputeStatusAction failed:', error);
         return { success: false, error: error.message };
     }
 }

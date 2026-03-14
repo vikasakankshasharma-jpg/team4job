@@ -86,8 +86,7 @@ export function InstallerCompletionSection({ job, user, onJobUpdate }: Installer
                     });
 
                 } catch (error: any) {
-                    console.error("OTP Verification failed:", error);
-                    toast({
+                   toast({
                         title: "OTP Verification Failed",
                         description: error.message || "Invalid OTP or system error.",
                         variant: "destructive"
@@ -110,7 +109,7 @@ export function InstallerCompletionSection({ job, user, onJobUpdate }: Installer
                         jobGiver.email,
                         "Action Required: Review Work",
                         `Installer ${user.name} has submitted proof of work for job "${job.title}". Please log in to review and release payment.`
-                    ).catch(err => console.error("Notification failed", err));
+                    ).catch(err => {});
                 }
 
                 toast({
@@ -121,8 +120,7 @@ export function InstallerCompletionSection({ job, user, onJobUpdate }: Installer
             }
 
         } catch (error: any) {
-            console.error("Error submitting for completion:", error);
-            toast({
+           toast({
                 title: "Submission Error",
                 description: "An unexpected error occurred while submitting your work.",
                 variant: "destructive",

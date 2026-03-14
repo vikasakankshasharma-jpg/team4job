@@ -325,7 +325,6 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
                 variant: "default",
             });
         } catch (error) {
-            console.error("Error saving settings:", error);
             toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });
         } finally {
             setIsSaving(false);
@@ -408,7 +407,6 @@ function UserReputationSettings() {
                 variant: "default",
             });
         } catch (error) {
-            console.error("Error saving settings:", error);
             toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });
         } finally {
             setIsSaving(false);
@@ -548,7 +546,6 @@ function PlatformRulesSettings({ blacklist, onDataChange }: { blacklist: Blackli
                 variant: "default",
             });
         } catch (error) {
-            console.error("Error saving settings:", error);
             toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });
         } finally {
             setIsSaving(false);

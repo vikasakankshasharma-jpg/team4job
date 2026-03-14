@@ -91,7 +91,6 @@ export default function AuditLogsClient() {
         // Disable real-time audit logs listener in E2E mode to prevent Firestore assertion errors
         const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
         if (isE2EMode) {
-            console.log('[AuditLogsClient] E2E mode detected - skipping real-time audit logs listener');
             setLogs([]);
             setLoading(false);
             return;

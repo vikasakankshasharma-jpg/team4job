@@ -90,7 +90,9 @@ async function seedDualRole() {
         try {
             const userRecord = await auth.getUserByEmail(DUAL_ROLE_USER.email);
             uid = userRecord.uid;
-            console.log(`✅ User ${DUAL_ROLE_USER.email} already exists in Auth.`);
+            // Update password to ensure it matches the test
+            await auth.updateUser(uid, { password: DUAL_ROLE_USER.password });
+            console.log(`✅ User ${DUAL_ROLE_USER.email} exists in Auth with UID: ${uid}. Password updated.`);
         } catch (e: any) {
             if (e.code === 'auth/user-not-found') {
                 // Create user

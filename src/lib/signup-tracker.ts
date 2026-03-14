@@ -61,7 +61,6 @@ export async function trackSignupProgress(
             await setDoc(docRef, newSignup);
         }
     } catch (error) {
-        console.error('Error tracking signup progress:', error);
         throw error;
     }
 }
@@ -92,7 +91,6 @@ export async function markSignupComplete(
         // }, 7 * 24 * 60 * 60 * 1000); // Delete after 7 days
 
     } catch (error) {
-        console.error('Error marking signup complete:', error);
         throw error;
     }
 }
@@ -116,7 +114,6 @@ export async function markUserContacted(
             contactNotes: notes || '',
         });
     } catch (error) {
-        console.error('Error marking user as contacted:', error);
         throw error;
     }
 }

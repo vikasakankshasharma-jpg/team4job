@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useFirebase, useUser } from './use-user';
-import { saveDraft, JobDraft } from '@/lib/api/drafts';
+import { useUser } from './use-user';
+import { saveDraftAction } from '@/app/actions/draft.actions';
+import { JobDraft } from '@/lib/api/drafts';
 import { useToast } from './use-toast';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -24,7 +25,6 @@ export function useAutoSave(
     } = options;
 
     const { user } = useUser();
-    const { db } = useFirebase();
     const { toast } = useToast();
 
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
@@ -37,7 +37,7 @@ export function useAutoSave(
 
     // Manual save function
     const saveNow = useCallback(async () => {
-        if (!user || !db || isSavingRef.current) {
+        if (!user || isSavingRef.current) {
             return;
         }
 
@@ -57,7 +57,13 @@ export function useAutoSave(
         setSaveStatus('saving');
 
         try {
-            const id = await saveDraft(db, user.id, draftData, draftId || undefined);
+            const result = await saveDraftAction(user.id, draftData, draftId || undefined);
+
+            if (!result.success || !result.draftId) {
+                throw new Error(result.error || 'Failed to save draft');
+            }
+
+            const id = result.draftId;
 
             setDraftId(id);
             setLastSavedData(JSON.stringify(draftData));
@@ -71,7 +77,6 @@ export function useAutoSave(
                 setSaveStatus('idle');
             }, 2000);
         } catch (error) {
-            console.error('Error saving draft:', error);
             setSaveStatus('error');
 
             toast({
@@ -84,7 +89,7 @@ export function useAutoSave(
         } finally {
             isSavingRef.current = false;
         }
-    }, [user, db, getDraftData, draftId, onSave, onError, toast]);
+    }, [user, getDraftData, draftId, onSave, onError, toast]);
 
     // Detect changes
     useEffect(() => {

@@ -59,7 +59,6 @@ export function BookmarkButton({ jobId, className, variant = "ghost", size = "ic
                 });
             }
         } catch (error) {
-            console.error("Error toggling bookmark:", error);
             toast({
                 title: "Error",
                 description: "Failed to update bookmark.",

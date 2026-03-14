@@ -20,8 +20,8 @@ class Logger {
         };
 
         if (isProduction) {
-            // In production, emit JSON for structured logging (e.g. Google Cloud Logging)
-            console.log(JSON.stringify(logEntry));
+            // Production is silent on console per Zero-Noise requirement.
+            // Sentry handled below.
         } else {
             // In development, pretty print
             const color = this.getColor(level);

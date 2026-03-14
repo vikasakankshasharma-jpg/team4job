@@ -52,7 +52,7 @@ const installerNavItems = [
 
 const jobGiverNavItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
-    { href: "/dashboard/post-job", icon: PlusCircle, label: "Post a Job" },
+    { href: "/wizard", icon: PlusCircle, label: "Post a Job" },
     { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs" },
     { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
 ];
@@ -125,7 +125,7 @@ export function HeaderClient() {
         if (role === 'Job Giver') {
             return (
                 <Button size="sm" className="h-8 gap-1 rounded-full shadow-sm" asChild data-testid="dashboard-post-job-btn">
-                    <Link href="/dashboard/post-job">
+                    <Link href="/wizard">
                         <PlusCircle className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                             Post New Job
@@ -172,7 +172,7 @@ export function HeaderClient() {
                             onClick={() => setIsSheetOpen(false)}
                         >
                             <Briefcase className="h-5 w-5 transition-all group-hover:scale-110" />
-                            <span className="sr-only">CCTV Job Connect</span>
+                            <span className="sr-only">Team4Job</span>
                         </Link>
                         {navItems.map(item => (
                             <Link
@@ -207,6 +207,16 @@ export function HeaderClient() {
                             <Settings className="h-5 w-5" />
                             Settings
                         </Link>
+                        {/* Utilities moved here from header for mobile */}
+                        <div className="border-t pt-4 mt-2 flex flex-col gap-4">
+                            <div className="flex items-center gap-4 px-2.5">
+                                <LanguageToggle />
+                            </div>
+                            <div className="flex items-center gap-4 px-2.5">
+                                <ThemeToggle />
+                                <span className="text-muted-foreground">Theme</span>
+                            </div>
+                        </div>
                     </nav>
                 </SheetContent>
             </Sheet>
@@ -267,21 +277,25 @@ export function HeaderClient() {
                         </Badge>
                     ) : null}
                 </div>
-
-                {renderContextualActions()}
+                {/* Only show contextual action when search input is not visible (avoids redundancy on Browse Jobs page) */}
+                {!(pathname.startsWith('/dashboard/users') || pathname.startsWith('/dashboard/jobs') || pathname.startsWith('/dashboard/all-jobs')) && renderContextualActions()}
                 <HelpDialog>
                     <Button
                         variant="ghost"
                         size="icon"
                         suppressHydrationWarning
-                        className="rounded-full h-9 w-9 bg-background/60 backdrop-blur-sm border border-border/40 shadow-sm hover:bg-accent hover:text-accent-foreground hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+                        className="hidden md:inline-flex rounded-full h-9 w-9 bg-background/60 backdrop-blur-sm border border-border/40 shadow-sm hover:bg-accent hover:text-accent-foreground hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
                     >
                         <HelpCircle className="h-5 w-5" />
                         <span className="sr-only">Help</span>
                     </Button>
                 </HelpDialog>
-                <LanguageToggle />
-                <ThemeToggle />
+                <div className="hidden md:block">
+                    <LanguageToggle />
+                </div>
+                <div className="hidden md:block">
+                    <ThemeToggle />
+                </div>
                 <NotificationBell />
                 <UserNav />
             </div>

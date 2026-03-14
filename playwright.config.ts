@@ -8,6 +8,8 @@ const __dirname = path.dirname(__filename);
 
 const getWebServerEnv = () => {
     const rawEnv: Record<string, string | undefined> = { ...process.env };
+    // Force CI indicator for consistency
+    if (rawEnv.GITHUB_ACTIONS) rawEnv.CI = 'true';
 
     const env: Record<string, string> = {};
     for (const [k, v] of Object.entries(rawEnv)) {
@@ -15,11 +17,13 @@ const getWebServerEnv = () => {
     }
 
     const inferredProjectId = env.GCLOUD_PROJECT || env.FIREBASE_PROJECT_ID || env.DO_FIREBASE_PROJECT_ID;
+    const isCi = !!env.CI;
 
-    env.ALLOW_E2E_SEED = 'true';
-    env.NEXT_PUBLIC_E2E = 'true';
-    env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = 'true';
-    env.NEXT_PUBLIC_USE_EMULATOR = 'true';
+    // Only force emulators/seeding if in CI or if not already explicitly disabled locally
+    env.ALLOW_E2E_SEED = isCi ? 'true' : (env.ALLOW_E2E_SEED ?? 'true');
+    env.NEXT_PUBLIC_E2E = isCi ? 'true' : (env.NEXT_PUBLIC_E2E ?? 'true');
+    env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = isCi ? 'true' : (env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR ?? 'true');
+    env.NEXT_PUBLIC_USE_EMULATOR = isCi ? 'true' : (env.NEXT_PUBLIC_USE_EMULATOR ?? 'true');
 
     // In emulator/E2E mode we MUST align the Firebase project id with the emulator project.
     // `firebase emulators:exec --project X` sets `GCLOUD_PROJECT=X`.
@@ -29,6 +33,14 @@ const getWebServerEnv = () => {
         env.DO_FIREBASE_PROJECT_ID = inferredProjectId;
     }
 
+    // Explicitly unset emulator hosts if we are not in CI and emulators are disabled
+    const useEmulator = env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' || env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+    if (!isCi && !useEmulator) {
+        delete env.FIRESTORE_EMULATOR_HOST;
+        delete env.FIREBASE_AUTH_EMULATOR_HOST;
+        delete env.FIREBASE_STORAGE_EMULATOR_HOST;
+    }
+
     return env;
 };
 
@@ -36,8 +48,8 @@ const getWebServerEnv = () => {
 if (!process.env.CI) {
     // Load environment variables from .env.local
     dotenv.config({ path: path.resolve(__dirname, '.env.local'), override: true });
-    // Load .env.test if it exists (for emulator support)
-    dotenv.config({ path: path.resolve(__dirname, '.env.test'), override: false });
+    // Load .env.test if it exists (for emulator support). Test variables MUST override local variables
+    dotenv.config({ path: path.resolve(__dirname, '.env.test'), override: true });
 }
 
 /**
@@ -48,17 +60,17 @@ export default defineConfig({
     testDir: './tests',
     testMatch: '**/*.spec.ts',
 
-    /* Run tests in files in parallel */
-    fullyParallel: true,
+    /* Beta Squad tests share a single mutable Firebase emulator — run serially */
+    fullyParallel: false,
 
     /* Fail the build on CI if you accidentally left test.only in the source code. */
     forbidOnly: !!process.env.CI,
 
-    /* Retry on CI only */
-    retries: process.env.CI ? 2 : 0,
+    /* Retry flaky tests caused by emulator timing (CI: 2, local: 1) */
+    retries: process.env.CI ? 2 : 1,
 
-    /* Opt out of parallel tests on CI. */
-    workers: process.env.CI ? 1 : undefined,
+    /* Single worker to prevent emulator state collisions */
+    workers: 1,
 
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
     reporter: 'html',
@@ -97,7 +109,7 @@ export default defineConfig({
     webServer: {
         command: process.env.CI
             ? 'npx next start -p 5000'
-            : 'npm run build && cross-env FIRESTORE_EMULATOR_HOST=localhost:8080 npx next start -p 5000',
+            : 'npm run build && npx next start -p 5000',
         url: 'http://localhost:5000',
         // Reusing an existing server can accidentally attach Playwright to `next dev`,
         // which is much more prone to reload/frame-detach issues during E2E.
@@ -105,16 +117,28 @@ export default defineConfig({
         timeout: 600000, // 10 mins for server start (Windows/CI can be slow)
         env: process.env.CI
             ? getWebServerEnv()
-            : {
-                ...getWebServerEnv(),
-                FIRESTORE_EMULATOR_HOST: 'localhost:8080',
-                FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199',
-                FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
-            },
+            : (() => {
+                const baseEnv = getWebServerEnv();
+                const useEmu = baseEnv.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' || baseEnv.NEXT_PUBLIC_USE_EMULATOR === 'true';
+                if (useEmu) {
+                    return {
+                        ...baseEnv,
+                        FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
+                        FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199',
+                        FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
+                    };
+                }
+                // When emulators are disabled, ensure these variables are actively stripped
+                // so they don't leak from the host environment
+                delete baseEnv.FIRESTORE_EMULATOR_HOST;
+                delete baseEnv.FIREBASE_STORAGE_EMULATOR_HOST;
+                delete baseEnv.FIREBASE_AUTH_EMULATOR_HOST;
+                return baseEnv;
+            })(),
     },
 
     /* Global timeout for each test */
-    timeout: 300000, // 5 mins per test
+    timeout: 600000, // 10 mins per test (Beta Squad tests are complex)
 
     /* Expect timeout */
     expect: {

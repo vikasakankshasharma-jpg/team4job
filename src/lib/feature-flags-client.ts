@@ -22,7 +22,6 @@ export function useFeatureFlag(key: FeatureFlagKey): boolean {
         // Disable real-time feature flags in E2E mode to prevent Firestore assertion errors
         const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
         if (isE2EMode) {
-            console.log('[useFeatureFlag] E2E mode detected - using default flag value');
             return;
         }
 
@@ -34,7 +33,6 @@ export function useFeatureFlag(key: FeatureFlagKey): boolean {
                 setIsEnabled(DEFAULT_FLAGS[key]);
             }
         }, (error) => {
-            console.error(`Error fetching feature flag ${key}:`, error);
             setIsEnabled(DEFAULT_FLAGS[key]);
         });
 

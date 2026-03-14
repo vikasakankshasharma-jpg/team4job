@@ -4,7 +4,7 @@ import { z } from 'genkit';
 export const GeneratePriceEstimateInputSchema = z.object({
     jobTitle: z.string().describe('The title of the job.'),
     jobDescription: z.string().describe('The detailed description of the job requirements.'),
-    jobCategory: z.string().describe('The category of the job (e.g., "IP Camera Installation", "CCTV Maintenance").'),
+    jobCategory: z.string().describe('The category of the job (e.g., "Network Setup", "Security System Installation").'),
 });
 export type GeneratePriceEstimateInput = z.infer<typeof GeneratePriceEstimateInputSchema>;
 

@@ -76,7 +76,6 @@ export const moderateMessageFlow = defineLoggedFlow(
             const result = await moderateMessagePrompt(input, { model: 'googleai/gemini-1.5-flash' });
             output = result.output;
         } catch (error) {
-            console.warn("AI Moderation failed (rate limit or key issue), falling back to Regex:", error);
             // output remains null, triggering fallback below
         }
 

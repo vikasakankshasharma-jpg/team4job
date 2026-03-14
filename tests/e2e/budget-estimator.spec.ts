@@ -101,9 +101,9 @@ test.describe('Budget Estimator & Templates', () => {
         await expect(saveDialog).toContainText('8500', { timeout: 10000 });
 
         const templateName = `Test Budget ${Date.now()}`;
-        await saveDialog.locator('input[placeholder*="Standard 4-Camera Install"]').fill(templateName);
+        await saveDialog.locator('input[placeholder*="Monthly Office Maintenance"]').fill(templateName);
 
-        const saveBtn = saveDialog.getByRole('button', { name: 'Save Template' });
+        const saveBtn = saveDialog.getByRole('button', { name: 'Save as Template' });
         await expect(saveBtn).toBeEnabled();
         await saveBtn.click();
 

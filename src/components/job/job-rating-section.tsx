@@ -104,14 +104,7 @@ export function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (up
         );
     }
 
-    // DEBUG: Log review state for CI diagnosis
-    console.log('[RatingSection] Render:', {
-        role,
-        isJobGiver,
-        hasJobGiverReview: !!jobGiverReview,
-        hasInstallerReview: !!installerReview,
-        theirReviewPresent: !!theirReview
-    });
+    // DEBUG: review state removed for production
 
     return (
         <Card>

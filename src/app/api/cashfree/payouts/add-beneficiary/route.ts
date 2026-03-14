@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
-import { logger } from '@/infrastructure/logger';
+
 import { User } from '@/lib/types';
 import axios from 'axios';
 
@@ -97,16 +97,11 @@ export async function POST(req: NextRequest) {
       'payouts.ifsc': ifsc,
     });
 
-    logger.info('Beneficiary added to Cashfree', {
-      userId,
-      beneficiaryId,
-    });
+
 
     return NextResponse.json({ success: true, beneficiaryId });
   } catch (error: any) {
-    logger.error('Failed to add Cash free beneficiary', error, {
-      metadata: error.response?.data,
-    });
+
     const errorMessage =
       error.response?.data?.message || 'Failed to add beneficiary';
     return NextResponse.json({ error: errorMessage }, { status: 500 });

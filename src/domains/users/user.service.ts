@@ -1,7 +1,7 @@
 // domains/users/user.service.ts
 
 import { userRepository } from './user.repository';
-import { logger } from '@/infrastructure/logger';
+
 import { User, UpdateProfileInput, InstallerFilters, Role } from '@/lib/types';
 
 export class UserService {
@@ -24,7 +24,7 @@ export class UserService {
         }
 
         await userRepository.update(userId, updates as Partial<User>);
-        logger.userActivity(userId, 'profile_updated', { fields: Object.keys(updates) });
+
     }
 
     async verifyInstaller(installerId: string, adminId: string): Promise<void> {
@@ -45,7 +45,7 @@ export class UserService {
             } as any,
         });
 
-        logger.adminAction(adminId, 'installer_verified', installerId);
+
     }
 
     async listInstallers(filters?: InstallerFilters): Promise<User[]> {
@@ -125,7 +125,7 @@ export class UserService {
         // 3. Update Repository
         await userRepository.update(userId, stats as any);
 
-        logger.info('User stats recalculated', { userId, stats });
+
         return stats;
     }
 

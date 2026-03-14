@@ -5,7 +5,6 @@ export async function sendServerEmail(to: string, subject: string, text: string,
     const apiKey = process.env.BREVO_API_KEY;
 
     if (!apiKey) {
-        console.warn("BREVO_API_KEY is missing. Email skipped (Mock Mode).");
         return { success: true, mocked: true };
     }
 
@@ -18,7 +17,7 @@ export async function sendServerEmail(to: string, subject: string, text: string,
                 'content-type': 'application/json'
             },
             body: JSON.stringify({
-                sender: { name: 'CCTV Job Connect', email: 'noreply@cctvjobconnect.com' },
+                sender: { name: 'Team4Job', email: 'noreply@team4job.com' },
                 to: [{ email: to }],
                 subject: subject,
                 textContent: text,
@@ -28,13 +27,11 @@ export async function sendServerEmail(to: string, subject: string, text: string,
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error("Brevo API Error:", errorData);
             throw new Error(`Email failed: ${JSON.stringify(errorData)}`);
         }
 
         return { success: true };
     } catch (error) {
-        console.error("ServerEmail Error:", error);
         throw error;
     }
 }

@@ -78,8 +78,7 @@ export function JobGiverConfirmationSection({ job, user, onJobUpdate, onCancel, 
             });
 
         } catch (error: any) {
-            console.error("Error approving job:", error);
-            toast({
+           toast({
                 title: "Error Approving Job",
                 description: error.message || "An unexpected error occurred.",
                 variant: "destructive",
@@ -144,8 +143,7 @@ export function JobGiverConfirmationSection({ job, user, onJobUpdate, onCancel, 
             router.push(`/dashboard/disputes/${newDisputeId}`);
 
         } catch (error) {
-            console.error(error);
-            toast({ title: "Error", description: "Failed to raise dispute.", variant: "destructive" });
+           toast({ title: "Error", description: "Failed to raise dispute.", variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
@@ -259,7 +257,6 @@ export function JobGiverConfirmationSection({ job, user, onJobUpdate, onCancel, 
                                             toast({ title: "Revision Requested", description: "Job status reverted to 'In Progress'." });
                                             setDisputeReason("");
                                         } catch (e) {
-                                            console.error(e);
                                             toast({ title: "Error", description: "Failed to request revision.", variant: "destructive" });
                                         } finally {
                                             setIsLoading(false);

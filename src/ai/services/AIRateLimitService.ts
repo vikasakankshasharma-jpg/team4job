@@ -41,7 +41,6 @@ export const aiRateLimitService = {
                     else if (userData?.subscription?.planId) role = 'pro'; // Simple check for now
                 }
             } catch (e) {
-                console.warn("[RateLimit] Failed to fetch user role, defaulting to FREE:", e);
             }
 
             const limit = TIER_LIMITS[type][role];
@@ -67,7 +66,6 @@ export const aiRateLimitService = {
             return { allowed: true };
 
         } catch (error) {
-            console.error("[RateLimit] Check failed (FAIL OPEN):", error);
             return { allowed: true }; // Fail Open
         }
     },
@@ -92,7 +90,6 @@ export const aiRateLimitService = {
             }, { merge: true });
 
         } catch (error) {
-            console.error("[RateLimit] Increment failed:", error);
         }
     }
 };

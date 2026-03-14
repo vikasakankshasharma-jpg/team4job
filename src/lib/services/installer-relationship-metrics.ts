@@ -108,7 +108,6 @@ export async function calculateInstallerMetrics(
             preferredCategories,
         };
     } catch (error) {
-        console.error("Error calculating installer metrics:", error);
         return {
             jobsCompleted: 0,
             totalSpent: 0,
@@ -230,8 +229,6 @@ export async function calculateBatchInstallerMetrics(
 
         return metricsMap;
     } catch (error) {
-        console.error("Error calculating batch installer metrics:", error);
-
         // Return empty metrics for all installers on error
         installerIds.forEach(id => {
             metricsMap.set(id, {

@@ -68,7 +68,7 @@ export function ApprovalsClient() {
 
             setInstallers(data);
         } catch (error) {
-            console.error("Error fetching installers:", error);
+            // Error fetching installers
         } finally {
             setLoading(false);
         }
@@ -100,7 +100,6 @@ export function ApprovalsClient() {
             setSelectedInstaller(null);
 
         } catch (error) {
-            console.error("Error updating status:", error);
             toast({
                 title: "Update Failed",
                 description: "Could not update installer status.",

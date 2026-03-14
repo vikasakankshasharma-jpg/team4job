@@ -3,7 +3,7 @@ import { reviewRepository } from './review.repository';
 import { CreateReviewInput, Review } from './review.types';
 import { jobService } from '../jobs/job.service';
 import { userService } from '../users/user.service';
-import { logger } from '@/infrastructure/logger';
+
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { aiLearningService } from '@/ai/services/ai-learning.service';
@@ -48,7 +48,7 @@ export class ReviewService {
             });
         }
 
-        logger.userActivity(input.reviewerId, 'review_submitted', { jobId: input.jobId, targetUserId: input.targetUserId });
+
 
         return id;
     }

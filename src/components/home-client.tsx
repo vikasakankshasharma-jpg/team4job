@@ -2,36 +2,62 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, Bot, ShieldCheck, CreditCard, MapPin, Briefcase, IndianRupee, Star, TrendingUp, CheckCircle, Clock } from "lucide-react";
+import { ArrowRight, Bot, ShieldCheck, CreditCard } from "lucide-react";
 import { trackFunnelEvent } from '@/lib/analytics';
 import { Logo } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrustProofSection } from "@/components/landing/trust-proof";
 import { LanguageToggle } from "@/components/layout/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
+
+// Lazy load non-critical sections
+const FeaturesSection = dynamic(() => import('./landing/features-section').then(mod => mod.FeaturesSection), {
+    ssr: true,
+    loading: () => <div className="h-96 animate-pulse bg-muted/20" />
+});
+const HowItWorksSection = dynamic(() => import('./landing/how-it-works-section').then(mod => mod.HowItWorksSection), {
+    ssr: true,
+    loading: () => <div className="h-96 animate-pulse bg-muted/20" />
+});
+const TrustProofSection = dynamic(() => import('./landing/trust-proof').then(mod => mod.TrustProofSection), {
+    ssr: true,
+    loading: () => <div className="h-64 animate-pulse bg-muted/20" />
+});
+
+// Footer and CTA are also candidates for late loading
+const CTASection = dynamic(() => Promise.resolve(({ t }: { t: any }) => (
+    <section className="py-20 md:py-24 bg-primary text-primary-foreground">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-bold mb-4">{t('ctaTitle')}</h2>
+            <p className="max-w-2xl mx-auto mb-8">
+                {t('ctaDesc')}
+            </p>
+            <div className="flex justify-center gap-4">
+                <Button size="lg" variant="secondary" asChild onClick={() => trackFunnelEvent('cta_click', { source: 'footer_cta' })}>
+                    <Link href="/login?tab=signup">
+                        {t('ctaButton')}
+                    </Link>
+                </Button>
+            </div>
+        </div>
+    </section>
+)), { ssr: true });
+
+const Footer = dynamic(() => Promise.resolve(({ t }: { t: any }) => (
+    <footer className="py-8 border-t">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-muted-foreground gap-4">
+            <p>&copy; {new Date().getFullYear()} {t('footerRights')}</p>
+            <div className="flex gap-6 text-sm">
+                <Link href="/terms-of-service" className="hover:underline hover:text-foreground">{t('footerTerms')}</Link>
+                <Link href="/privacy-policy" className="hover:underline hover:text-foreground">{t('footerPrivacy')}</Link>
+            </div>
+        </div>
+    </footer>
+)), { ssr: true });
 
 export default function HomeClient() {
     const t = useTranslations('landing');
-
-    const features = [
-        {
-            icon: <Bot className="h-10 w-10 text-primary" />,
-            title: t('featureAI'),
-            description: t('featureAIDesc'),
-        },
-        {
-            icon: <ShieldCheck className="h-10 w-10 text-primary" />,
-            title: t('featureVerified'),
-            description: t('featureVerifiedDesc'),
-        },
-        {
-            icon: <CreditCard className="h-10 w-10 text-primary" />,
-            title: t('featureEscrow'),
-            description: t('featureEscrowDesc'),
-        },
-    ];
 
     return (
         <div className="flex flex-col min-h-screen bg-background">
@@ -94,93 +120,16 @@ export default function HomeClient() {
                     </div>
                 </section>
 
-                <section id="features" className="py-20 md:py-24 bg-card/50">
-                    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-4xl font-bold">{t('sectionTitle')}</h2>
-                            <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-                                {t('sectionDesc')}
-                            </p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            {features.map((feature) => (
-                                <Card key={feature.title} className="text-center border-0 bg-transparent shadow-none">
-                                    <CardHeader>
-                                        <div className="flex justify-center mb-4">{feature.icon}</div>
-                                        <CardTitle>{feature.title}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-muted-foreground">{feature.description}</p>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                </section>
+                <FeaturesSection t={t} />
 
-                <section id="how-it-works" className="py-16 md:py-20">
-                    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="text-center mb-12">
-                            <h2 className="text-3xl md:text-4xl font-bold">{t('workflowTitle')}</h2>
-                            <p className="text-muted-foreground mt-2">
-                                {t('workflowDesc')}
-                            </p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-                            <div className="text-center p-6">
-                                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-2xl font-bold text-primary">1</span>
-                                </div>
-                                <h3 className="text-xl font-semibold mb-2">{t('step1Title')}</h3>
-                                <p className="text-muted-foreground">{t('step1Desc')}</p>
-                            </div>
-                            <div className="text-center p-6">
-                                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-2xl font-bold text-primary">2</span>
-                                </div>
-                                <h3 className="text-xl font-semibold mb-2">{t('step2Title')}</h3>
-                                <p className="text-muted-foreground">{t('step2Desc')}</p>
-                            </div>
-                            <div className="text-center p-6">
-                                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-2xl font-bold text-primary">3</span>
-                                </div>
-                                <h3 className="text-xl font-semibold mb-2">{t('step3Title')}</h3>
-                                <p className="text-muted-foreground">{t('step3Desc')}</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+                <HowItWorksSection t={t} />
 
-                {/* Trust Proof Section */}
                 <TrustProofSection />
 
-                <section className="py-20 md:py-24 bg-primary text-primary-foreground">
-                    <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                        <h2 className="text-3xl font-bold mb-4">{t('ctaTitle')}</h2>
-                        <p className="max-w-2xl mx-auto mb-8">
-                            {t('ctaDesc')}
-                        </p>
-                        <div className="flex justify-center gap-4">
-                            <Button size="lg" variant="secondary" asChild onClick={() => trackFunnelEvent('cta_click', { source: 'footer_cta' })}>
-                                <Link href="/login?tab=signup">
-                                    {t('ctaButton')}
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
-                </section>
+                <CTASection t={t} />
             </main>
 
-            <footer className="py-8 border-t">
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-muted-foreground gap-4">
-                    <p>&copy; {new Date().getFullYear()} {t('footerRights')}</p>
-                    <div className="flex gap-6 text-sm">
-                        <Link href="/terms-of-service" className="hover:underline hover:text-foreground">{t('footerTerms')}</Link>
-                        <Link href="/privacy-policy" className="hover:underline hover:text-foreground">{t('footerPrivacy')}</Link>
-                    </div>
-                </div>
-            </footer>
+            <Footer t={t} />
         </div>
     );
 }

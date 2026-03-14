@@ -19,18 +19,7 @@ import { userService } from '@/domains/users/user.service';
 export default async function DashboardPage() {
     const userId = await getUserIdFromSession();
 
-    // We fetch full user to get role/name
-    let user = null;
-    if (userId) {
-        try {
-            user = await userService.getProfile(userId);
-        } catch (e) {
-            // Handle error or redirect
-        }
-    }
-
-    if (!user) {
-        // Fallback or Redirect? DashboardClient handles loading state
+    if (!userId) {
         return (
             <Suspense fallback={
                 <div className="flex items-center justify-center h-full">
@@ -42,15 +31,13 @@ export default async function DashboardPage() {
         );
     }
 
-    // Fetch dashboard stats for the legacy client-side rendering path
-    // NOTE: JobGiverServerView and InstallerServerView are disabled due to
-    // "Functions cannot be passed to Client Components" serialization errors.
-    // Using the battle-tested DashboardClient as a stable fallback.
-    let initialData = undefined;
-    const result = await getDashboardStatsAction(userId!);
-    if (result.success) {
-        initialData = result.data;
-    }
+    // Parallelize profile and stats fetching
+    const [userResult, statsResult] = await Promise.all([
+        userService.getProfile(userId).catch(() => null),
+        getDashboardStatsAction(userId)
+    ]);
+
+    const initialData = statsResult.success ? statsResult.data : undefined;
 
     return (
         <Suspense fallback={

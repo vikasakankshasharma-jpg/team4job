@@ -34,8 +34,7 @@ export function IntlProvider({ children }: IntlProviderProps) {
                 setMessages(module.default);
             })
             .catch((error) => {
-                console.error(`Failed to load locale ${validLocale}:`, error);
-                // Fallback to English
+                // Fallback to English if locale load fails
                 import('@/i18n/locales/en.json').then((module) => {
                     setMessages(module.default);
                 });

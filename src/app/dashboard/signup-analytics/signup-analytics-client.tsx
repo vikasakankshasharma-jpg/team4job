@@ -40,7 +40,6 @@ export default function SignupAnalyticsClient() {
                 setOutreachData(outreach);
                 setRoleDistribution(roles);
             } catch (error) {
-                console.error("Error fetching analytics:", error);
                 toast({
                     title: t('error'),
                     description: t('loadingError'),

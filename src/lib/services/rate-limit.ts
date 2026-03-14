@@ -50,7 +50,6 @@ export async function checkRateLimit(userId: string, action: keyof typeof LIMITS
         return { allowed: true };
 
     } catch (error) {
-        console.error("Rate limit check failed:", error);
         // Fail open to avoid blocking reliable users on DB hiccups
         return { allowed: true };
     }

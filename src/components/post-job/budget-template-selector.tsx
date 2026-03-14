@@ -66,7 +66,7 @@ export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTempla
             const data = await getBudgetTemplates(db, user.id);
             setTemplates(data);
         } catch (error) {
-            console.error("Failed to load budget templates", error);
+            // Failed to load budget templates
         } finally {
             setLoading(false);
         }

@@ -7,9 +7,11 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export function OfflineDetector() {
     const [isOffline, setIsOffline] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const { toast } = useToast();
 
     useEffect(() => {
+        setMounted(true);
         const handleOnline = () => {
             setIsOffline(false);
             toast({
@@ -41,6 +43,8 @@ export function OfflineDetector() {
             window.removeEventListener("offline", handleOffline);
         };
     }, [toast]);
+
+    if (!mounted) return null;
 
     return (
         <AnimatePresence>

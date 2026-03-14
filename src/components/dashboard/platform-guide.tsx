@@ -24,7 +24,7 @@ export function PlatformGuide() {
                             Trusted Connections
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                            We connect verified CCTV professionals with clients. Our platform uses a <strong>Secure and Lock Payment System</strong> to ensure
+                            We connect verified technical professionals with clients. Our platform uses a <strong>Secure and Lock Payment System</strong> to ensure
                             payment safety for both parties.
                         </p>
                     </div>

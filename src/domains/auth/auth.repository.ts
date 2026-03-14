@@ -2,7 +2,7 @@
 
 import { getAdminDb, getAdminAuth } from '@/infrastructure/firebase/admin';
 import { COLLECTIONS } from '@/infrastructure/firebase/firestore';
-import { logger } from '@/infrastructure/logger';
+
 import { User } from '@/lib/types';
 
 /**
@@ -22,9 +22,9 @@ export class AuthRepository {
                 updatedAt: new Date(),
             });
 
-            logger.info('User created in Firestore', { userId: uid });
+
         } catch (error) {
-            logger.error('Failed to create user in Firestore', error, { userId: uid });
+
             throw error;
         }
     }
@@ -48,7 +48,7 @@ export class AuthRepository {
             const doc = snapshot.docs[0];
             return { id: doc.id, ...doc.data() } as User;
         } catch (error) {
-            logger.error('Failed to get user by email', error, { metadata: { email } });
+
             throw error;
         }
     }
@@ -67,7 +67,7 @@ export class AuthRepository {
 
             return { id: doc.id, ...doc.data() } as User;
         } catch (error) {
-            logger.error('Failed to get user by ID', error, { userId: uid });
+
             throw error;
         }
     }
@@ -83,9 +83,9 @@ export class AuthRepository {
                 updatedAt: new Date(),
             });
 
-            logger.info('Email verification updated', { userId: uid, verified });
+
         } catch (error) {
-            logger.error('Failed to update email verification', error, { userId: uid });
+
             throw error;
         }
     }
@@ -101,9 +101,9 @@ export class AuthRepository {
                 updatedAt: new Date(),
             });
 
-            logger.info('Mobile verification updated', { userId: uid, verified });
+
         } catch (error) {
-            logger.error('Failed to update mobile verification', error, { userId: uid });
+
             throw error;
         }
     }

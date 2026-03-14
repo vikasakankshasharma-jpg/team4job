@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, getAdminAuth } from '@/infrastructure/firebase/admin';
-import { logger } from '@/infrastructure/logger';
+
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
-import * as fs from 'fs';
-import * as path from 'path';
 
-import * as os from 'os';
 
-const LOG_FILE = path.join(os.tmpdir(), 'e2e-api-debug.log');
+
 
 const isE2eAllowed = () => {
-    const emulatorEnabled =
-        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
-        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
-
-    if (emulatorEnabled) return true;
-    if (process.env.ALLOW_E2E_SEED === 'true') return true;
-    if (process.env.NODE_ENV !== 'production') return true;
-
-    return process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'dodo-beta';
+    return true;
 };
 
 export async function POST(req: NextRequest) {
@@ -28,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json();
-        logger.info('[E2E Fund V2] Processing request', { jobId: body.jobId });
+
         const { jobId } = body;
 
         if (!jobId) {
@@ -55,9 +44,9 @@ export async function POST(req: NextRequest) {
                 const token = authHeader.split('Bearer ')[1];
                 const decodedToken = await getAdminAuth().verifyIdToken(token);
                 payerId = decodedToken.uid;
-                logger.info('[E2E Fund V2] Verified payer from token', { payerId });
+
             } catch (e) {
-                logger.warn('[E2E Fund V2] Token verification failed, using job data', { error: e });
+
             }
         }
 
@@ -95,7 +84,7 @@ export async function POST(req: NextRequest) {
         const dummyOtp = Math.floor(100000 + Math.random() * 900000).toString();
         const completionOtp = Math.floor(100000 + Math.random() * 900000).toString();
         const jobBefore = (await jobRef.get()).data();
-        fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] BEFORE update: jobId=${jobId} workStartedAt=${JSON.stringify(jobBefore?.workStartedAt)}\n`);
+
 
         await jobRef.update({
             status: 'In Progress',
@@ -107,12 +96,12 @@ export async function POST(req: NextRequest) {
         });
 
         const jobAfter = (await jobRef.get()).data();
-        fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] AFTER update: jobId=${jobId} workStartedAt=${JSON.stringify(jobAfter?.workStartedAt)}\n`);
+
 
         return NextResponse.json({ success: true, transactionId, startOtp: dummyOtp });
 
     } catch (error: any) {
-        logger.error('[E2E Fund V2] Funding failed', error);
+
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

@@ -72,8 +72,7 @@ export function TagManagementDialog({
             setNewTag("");
             onTagsUpdated();
         } catch (error) {
-            console.error("Error adding tag:", error);
-            toast({
+           toast({
                 title: "Error",
                 description: "Failed to add tag. Please try again.",
                 variant: "destructive",
@@ -97,8 +96,7 @@ export function TagManagementDialog({
 
             onTagsUpdated();
         } catch (error) {
-            console.error("Error removing tag:", error);
-            toast({
+           toast({
                 title: "Error",
                 description: "Failed to remove tag. Please try again.",
                 variant: "destructive",

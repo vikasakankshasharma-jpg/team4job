@@ -90,7 +90,6 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                 });
             }
         } catch (error: any) {
-            console.error("Failed to run automation:", error);
             toast({
                 title: t('topPerformers.automation.error'),
                 description: error.message || t('topPerformers.automation.errorDesc'),
@@ -340,7 +339,7 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
         setExporting(dataType);
         try {
             let data: any[] = [];
-            let filename = `cctv-export-${dataType}-${new Date().toISOString().split('T')[0]}.csv`;
+            let filename = `team4job-export-${dataType}-${new Date().toISOString().split('T')[0]}.csv`;
 
             switch (dataType) {
                 case 'users':
@@ -376,7 +375,6 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
             exportToCsv(filename, data);
             toast({ title: t('export.success'), description: t('export.successDesc', { count: data.length, type: dataType }) });
         } catch (error) {
-            console.error(`Failed to export ${dataType}:`, error);
             toast({ title: t('export.failed'), description: t('export.failedDesc'), variant: "destructive" });
         } finally {
             setExporting(null);

@@ -2,7 +2,7 @@
 
 import { NextResponse } from 'next/server';
 import { sendServerEmail } from '@/lib/server-email';
-import { logger } from '@/infrastructure/logger';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -23,12 +23,12 @@ export async function POST(req: Request) {
         // Send email
         const result = await sendServerEmail(to, subject, text, html);
 
-        logger.info('Email notification sent', { to, subject });
+
 
         return NextResponse.json(result);
 
     } catch (error: any) {
-        logger.error('Notification send failed', error, { metadata: { to: req.body } });
+
         return NextResponse.json({
             error: error.message || 'Failed to send notification'
         }, { status: 500 });

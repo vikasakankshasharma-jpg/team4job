@@ -30,13 +30,11 @@ export const NotificationsService = {
         const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
         
         if (isE2EMode) {
-            console.log('[NotificationsService] E2E mode detected - skipping realtime subscription');
             callback([]);
             return () => { };
         }
         
         if (!db) {
-            console.warn("[NotificationsService] Firestore db is not initialized.");
             if (onError) onError(new Error("Firestore not initialized"));
             return () => { };
         }
@@ -57,11 +55,9 @@ export const NotificationsService = {
 
                 callback(notifications);
             }, (error) => {
-                console.error("[NotificationsService] Subscription error:", error);
                 if (onError) onError(error);
             });
         } catch (error) {
-            console.error("[NotificationsService] Setup error:", error);
             if (onError) onError(error);
             return () => { };
         }

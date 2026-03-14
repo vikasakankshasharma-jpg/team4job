@@ -83,7 +83,6 @@ export function SaveSearchDialog({ currentFilters, trigger }: SaveSearchDialogPr
             setOpen(false);
             setName("");
         } catch (error) {
-            console.error("Error saving search:", error);
             toast({
                 title: "Error",
                 description: "Failed to save search. Please try again.",
@@ -118,7 +117,7 @@ export function SaveSearchDialog({ currentFilters, trigger }: SaveSearchDialogPr
                         </Label>
                         <Input
                             id="name"
-                            placeholder="e.g. CCTV in Bangalore"
+                            placeholder="e.g. WiFi in Bangalore"
                             className="col-span-3"
                             value={name}
                             onChange={(e) => setName(e.target.value)}

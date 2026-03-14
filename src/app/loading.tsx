@@ -11,7 +11,7 @@ export default function Loading() {
                 <ShieldCheck className="h-12 w-12 animate-pulse text-primary" />
             </div>
             <p className="mt-8 text-sm font-medium animate-pulse text-muted-foreground tracking-widest uppercase">
-                CCTV Job Connect
+                Team4Job
             </p>
             <div className="mt-2 h-1 w-24 overflow-hidden rounded-full bg-muted">
                 <div className="h-full w-full origin-left animate-progress bg-primary" />

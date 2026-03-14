@@ -55,7 +55,7 @@ export const analyzeBidsFlow = defineLoggedFlow(
     modelTier: 'pro', // Complex comparative analysis
   },
   async (input: z.infer<typeof AnalyzeBidsInputSchema>) => {
-    const prompt = `You are an expert hiring consultant for CCTV installation projects. Your task is to analyze a set of anonymous bids for a job and provide a clear, actionable recommendation to the Job Giver.
+    const prompt = `You are an expert hiring consultant for technical installation projects. Your task is to analyze a set of anonymous bids for a job and provide a clear, actionable recommendation to the Job Giver.
 
     **Job Details:**
     - Title: "${input.jobTitle}"

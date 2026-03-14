@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb, getAdminAuth } from '@/infrastructure/firebase/admin';
-import { logger } from '@/infrastructure/logger';
+
 import { User, Transaction, PlatformSettings } from '@/lib/types';
 import axios from 'axios';
 
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     try {
       decodedToken = await adminAuth.verifyIdToken(idToken);
     } catch (e) {
-      logger.error('Token verification failed', e);
+
       return NextResponse.json(
         { error: 'Unauthorized: Invalid token' },
         { status: 401 }
@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
           commissionRate = settings.installerCommissionRate || 0.1;
         }
       } catch (settingsError) {
-        logger.warn('Failed to fetch commission rate, using default 10%', { error: settingsError });
+
       }
 
       const commission = transaction.commission || transaction.amount * commissionRate;
@@ -181,17 +181,11 @@ export async function POST(req: NextRequest) {
       refundedAt: Timestamp.now() as any,
     });
 
-    logger.adminAction(decodedToken.uid, 'TRANSFER_REQUESTED', transactionId, {
-      transferId,
-      transferType,
-      amount: transferAmount,
-    });
+
 
     return NextResponse.json({ success: true, transferId });
   } catch (error: any) {
-    logger.error('Transfer request failed', error, {
-      metadata: error.response?.data,
-    });
+
     const errorMessage =
       error.response?.data?.message || 'Failed to request transfer';
     return NextResponse.json({ error: errorMessage }, { status: 500 });

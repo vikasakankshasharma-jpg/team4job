@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { TestHelper } from '../utils/helpers';
+import { TEST_ACCOUNTS } from '../fixtures/test-data';
 
 /**
  * Accessibility Testing Suite
@@ -38,12 +40,8 @@ test.describe('Accessibility Tests', () => {
     });
 
     test('Dashboard should not have accessibility violations', async ({ page }) => {
-        // Login first
-        await page.goto('/login');
-        await page.fill('input[name="identifier"]', 'installer@example.com');
-        await page.fill('input[type="password"]', 'Test@1234');
-        await page.click('button[type="submit"]');
-        await page.waitForURL(/\/dashboard.*/, { timeout: 90000 });
+        const helper = new TestHelper(page);
+        await helper.auth.loginAsInstaller();
 
         const accessibilityScanResults = await new AxeBuilder({ page })
             .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

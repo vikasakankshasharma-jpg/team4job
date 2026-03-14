@@ -2,7 +2,7 @@
 
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { COLLECTIONS } from '@/infrastructure/firebase/firestore';
-import { logger } from '@/infrastructure/logger';
+
 import { User, InstallerFilters } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -18,7 +18,7 @@ export class UserRepository {
 
             return { id: doc.id, ...doc.data() } as User;
         } catch (error) {
-            logger.error('Failed to fetch user', error, { userId });
+
             throw error;
         }
     }
@@ -31,9 +31,9 @@ export class UserRepository {
                 updatedAt: Timestamp.now(),
             });
 
-            logger.info('User updated', { userId, fields: Object.keys(updates) });
+
         } catch (error) {
-            logger.error('Failed to update user', error, { userId });
+
             throw error;
         }
     }
@@ -55,9 +55,9 @@ export class UserRepository {
             }
 
             await db.collection(COLLECTIONS.USERS).doc(userId).update(updates);
-            logger.info('User stats incremented', { userId, stats });
+
         } catch (error) {
-            logger.error('Failed to increment user stats', error, { userId });
+
             throw error;
         }
     }
@@ -93,7 +93,7 @@ export class UserRepository {
 
             return users;
         } catch (error) {
-            logger.error('Failed to query installers', error);
+
             throw error;
         }
     }
@@ -124,7 +124,7 @@ export class UserRepository {
             const snapshot = await query.limit(limit).get();
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
         } catch (error) {
-            logger.error('Failed to fetch installers', error, { limit, lastMemberSince });
+
             throw error;
         }
     }
@@ -153,7 +153,7 @@ export class UserRepository {
             }
             return usersMap;
         } catch (error) {
-            logger.error('Failed to fetch public profiles', error, { userIds });
+
             throw error;
         }
     }

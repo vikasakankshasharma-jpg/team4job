@@ -11,7 +11,6 @@ const app = express();
 
 app.post("/cashfree-webhook", async (req, res) => {
   const data = req.body;
-  console.log("Received Cashfree webhook data:", JSON.stringify(data, null, 2));
 
   try {
     // 1. Validate Signature (Simplified for MVP, ideally should verify x-webhook-signature)
@@ -21,7 +20,6 @@ app.post("/cashfree-webhook", async (req, res) => {
     const paymentStatus = data.data.payment.payment_status;
 
     if (!orderId || !paymentStatus) {
-      console.error("Invalid webhook payload");
       res.status(400).json({ status: "invalid_payload" });
       return;
     }
@@ -54,20 +52,17 @@ app.post("/cashfree-webhook", async (req, res) => {
             }
           });
 
-          console.log(`Transaction ${transactionDoc.id} funded successfully.`);
 
           // Notify Installer
           if (transactionData.payeeId) {
             await sendNotification(transactionData.payeeId, "Payment Secured!", "The Job Giver has funded the escrow. You can start the work.", "/dashboard/my-bids");
           }
         } else {
-          console.log(`Transaction ${transactionDoc.id} already funded.`);
         }
       } else {
         // It might be a Subscription payment
         // Format: SUB-{userId}-{planId}-{timestamp}
         if (orderId.startsWith("SUB-")) {
-          console.log("Processing subscription webhook...");
           const parts = orderId.split("-");
           if (parts.length >= 3) {
             const userId = parts[1];
@@ -99,17 +94,15 @@ app.post("/cashfree-webhook", async (req, res) => {
                 });
               }
             });
-            console.log(`Subscription updated for user ${userId}`);
           }
         } else {
-          console.warn(`No transaction found for orderId: ${orderId}`);
+          // No transaction found
         }
       }
     }
 
     res.json({ status: "processed" });
   } catch (error) {
-    console.error("Error processing webhook:", error);
     res.status(500).json({ status: "error" });
   }
 });
@@ -130,7 +123,6 @@ async function sendNotification(
 ) {
   try {
     if (!userId) {
-      console.log("No user ID provided, skipping notification.");
       return;
     }
 
@@ -138,7 +130,6 @@ async function sendNotification(
     const userData = userDoc.data();
 
     if (!userData || !userData.fcmTokens || userData.fcmTokens.length === 0) {
-      console.log(`User ${userId} has no FCM tokens. Cannot send notification.`);
       return;
     }
 
@@ -149,22 +140,16 @@ async function sendNotification(
       },
       webpush: {
         fcmOptions: {
-          link: link || "https://cctv-job-connect.web.app/dashboard",
+          link: link || "https://team4job.com/dashboard",
         },
       },
       tokens: userData.fcmTokens,
     };
 
-    console.log(
-      `Sending notification to user ${userId} with tokens:`,
-      userData.fcmTokens
-    );
     const response = await admin.messaging().sendMulticast(payload);
-    console.log("Successfully sent message:", response);
     // You can also handle failures and remove invalid tokens here
   } catch (error) {
-    console.error(`Error sending notification to user ${userId}:`, error);
-    // Suppress error so calling functions don't fail
+    // Suppress notification errors
   }
 }
 
@@ -200,7 +185,7 @@ export const onBidCreated = functions.firestore
             `/dashboard/jobs/${context.params.jobId}`
           );
         } catch (e) {
-          console.error("Error sending bid notification:", e);
+          // Silent failure
         }
       }
     }
@@ -241,7 +226,7 @@ export const onPrivateMessageCreated = functions.firestore
           `/dashboard/jobs/${context.params.jobId}`
         );
       } catch (e) {
-        console.error("Error sending message notification:", e);
+        // Silent failure
       }
     }
   });
@@ -260,7 +245,6 @@ export const onJobCompleted = functions.firestore
     if (beforeData.status !== "Completed" && afterData.status === "Completed") {
       const installerRef = afterData.awardedInstaller;
       if (!installerRef) {
-        console.log(`Job ${context.params.jobId} completed without an awarded installer.`);
         return;
       }
 
@@ -335,10 +319,9 @@ export const onJobCompleted = functions.firestore
           });
         });
 
-        console.log(`Successfully updated reputation for installer ${installerRef.id}. Awarded ${pointsEarned} points.`);
 
         // Fire and forget notification
-        sendNotification(installerRef.id, "Reputation Updated!", `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`, "/dashboard/profile").catch(console.error);
+        sendNotification(installerRef.id, "Reputation Updated!", `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`, "/dashboard/profile").catch(() => {});
 
         // --- Pro Installer Promotion Logic ---
         // Re-fetch the document AFTER the transaction to get the latest data.
@@ -350,13 +333,12 @@ export const onJobCompleted = functions.firestore
 
           if (finalReviewCount >= 5 && finalAverageRating >= 4.5 && disputesSnap.empty) {
             await installerRef.update({ "installerProfile.tier": "Silver" });
-            console.log(`Promoted installer ${installerRef.id} to Pro Installer (Silver).`);
-            sendNotification(installerRef.id, "Congratulations! You're a Pro Installer!", "You have been promoted to a Pro Installer for your excellent performance.", "/dashboard/profile").catch(console.error);
+            sendNotification(installerRef.id, "Congratulations! You're a Pro Installer!", "You have been promoted to a Pro Installer for your excellent performance.", "/dashboard/profile").catch(() => {});
           }
         }
 
       } catch (error) {
-        console.error("Error updating reputation or tier:", error);
+        // Silent failure
       }
     }
   });
@@ -368,7 +350,6 @@ export const onJobCompleted = functions.firestore
 export const handleUnfundedJobs = functions.pubsub.schedule(
   "every 6 hours"
 ).onRun(async (context) => {
-  console.log("Running scheduled function to handle stale funding...");
   const now = admin.firestore.Timestamp.now();
 
   // Set deadline to 48 hours ago
@@ -383,7 +364,6 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
   const snapshot = await q.get();
 
   if (snapshot.empty) {
-    console.log("No stale unfunded jobs found.");
     return null;
   }
 
@@ -392,7 +372,6 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
 
   snapshot.docs.forEach((doc) => {
     const job = doc.data();
-    console.log(`Cancelling job ${doc.id} due to funding timeout.`);
     batch.update(doc.ref, { status: "Cancelled" });
 
     // Notify Job Giver
@@ -418,7 +397,6 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
   // Ensure we don't crash if notifications fail
   await Promise.allSettled(notificationPromises);
 
-  console.log(`Cancelled ${snapshot.size} unfunded jobs.`);
   return null;
 });
 
@@ -427,7 +405,6 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
  * Runs every hour.
  */
 export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(async (context) => {
-  console.log("Running Job Rescue Plan for Unbid jobs...");
   const db = admin.firestore();
 
   // Query for jobs that are 'Unbid' and haven't been updated to 'Needs Assistance'
@@ -437,14 +414,12 @@ export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(
   const unbidSnapshot = await unbidQuery.get();
 
   if (unbidSnapshot.empty) {
-    console.log("No 'Unbid' jobs found needing assistance.");
     return null;
   }
 
   unbidSnapshot.forEach(async (doc) => {
     const job = doc.data();
     await doc.ref.update({ status: "Needs Assistance" });
-    console.log(`Job Rescue: Job ${doc.id} moved to 'Needs Assistance'.`);
 
     // Notify the Job Giver that their job needs attention and present recovery options.
     sendNotification(
@@ -452,7 +427,7 @@ export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(
       "Your Job Needs Attention",
       `Your job "${job.title}" did not receive any bids. You can now re-post or promote it from the job page.`,
       `/dashboard/jobs/${doc.id}`
-    ).catch(console.error);
+    ).catch(() => {});
   });
 
   return null;
@@ -495,7 +470,7 @@ export const onJobDateChange = functions.firestore
           }".`,
           `/dashboard/jobs/${jobId}`
         );
-      } catch (e) { console.error(e); }
+      } catch (e) { /* Silent */ }
     }
 
     // Date Change Accepted/Rejected
@@ -511,7 +486,7 @@ export const onJobDateChange = functions.firestore
         `Your proposed date change for job "${afterData.title}" was ${wasAccepted ? "accepted" : "rejected"
         }.`,
         `/dashboard/jobs/${jobId}`
-      ).catch(console.error);
+      ).catch(() => {});
     }
   });
 
@@ -522,7 +497,6 @@ export const onJobDateChange = functions.firestore
 export const handleExpiredAwards = functions.pubsub.schedule(
   "every 1 hours"
 ).onRun(async (context) => {
-  console.log("Running scheduled function to handle expired job awards...");
   const now = admin.firestore.Timestamp.now();
 
   const q = admin.firestore().collection("jobs")
@@ -532,7 +506,6 @@ export const handleExpiredAwards = functions.pubsub.schedule(
   const snapshot = await q.get();
 
   if (snapshot.empty) {
-    console.log("No expired awards found.");
     return null;
   }
 
@@ -541,9 +514,6 @@ export const handleExpiredAwards = functions.pubsub.schedule(
 
   snapshot.docs.forEach((doc) => {
     const job = doc.data();
-    console.log(
-      `Reverting job ${doc.id} to 'Bidding Closed' due to expired award.`
-    );
 
     const timedOutInstallerIds = (job.selectedInstallers || []).map(
       (s: { installerId: string; }) => s.installerId
@@ -582,7 +552,6 @@ export const handleExpiredAwards = functions.pubsub.schedule(
   await batch.commit();
   await Promise.allSettled(notificationPromises);
 
-  console.log(`Processed ${snapshot.size} expired awards.`);
   return null;
 });
 
@@ -600,7 +569,6 @@ export const onUserVerified = functions.firestore
     const wasJustVerified = (beforeData.installerProfile?.verified === false || beforeData.installerProfile?.verified === undefined) && afterData.installerProfile?.verified === true;
 
     if (wasJustVerified && !afterData.isFoundingInstaller && afterData.district) {
-      console.log(`User ${userId} in district ${afterData.district} has just been verified. Checking for Founding Installer eligibility.`);
       const db = admin.firestore();
 
       try {
@@ -617,7 +585,6 @@ export const onUserVerified = functions.firestore
             const userRef = db.collection("users").doc(userId);
             const freshSnap = await transaction.get(userRef);
             if (freshSnap.exists() && !freshSnap.data()?.isFoundingInstaller) {
-              console.log(`Founding Installer count in ${afterData.district} is ${foundingInstallersSnap.size}. Awarding badge to user ${userId}.`);
               transaction.update(userRef, { isFoundingInstaller: true });
             }
           });
@@ -629,10 +596,9 @@ export const onUserVerified = functions.firestore
             "/dashboard/profile"
           );
         } else {
-          console.log(`Founding Installer program in ${afterData.district} is full. No badge awarded.`);
         }
       } catch (error) {
-        console.error(`Error in Founding Installer transaction for user ${userId}:`, error);
+        // Silent failure
       }
     }
   });

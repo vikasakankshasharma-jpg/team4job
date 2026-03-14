@@ -47,7 +47,7 @@ export let users: User[] = [
     installerProfile: {
       tier: 'Gold',
       points: 1250,
-      skills: ['ip camera', 'nvr setup', 'cabling', 'troubleshooting', 'ptz', 'vms'],
+      skills: ['system installation', 'networking', 'cabling', 'troubleshooting', 'configuration', 'system management'],
       rating: 4.8,
       reviews: 25,
       verified: true,
@@ -72,7 +72,7 @@ export let users: User[] = [
     installerProfile: {
       tier: 'Bronze',
       points: 150,
-      skills: ['ip camera', 'cabling', 'troubleshooting'],
+      skills: ['system setup', 'cabling', 'troubleshooting'],
       rating: 4.5,
       reviews: 5,
       verified: true,
@@ -91,8 +91,8 @@ export let privateMessages: PrivateMessage[] = [];
 export let jobs: Job[] = [
   {
     id: "JOB-20240720-A1B2",
-    title: "Install 16 Dahua IP Cameras for a Commercial Building",
-    description: "We require the installation of 16 Dahua 5MP IP cameras across our 4-story commercial building in Ashok Nagar, Bengaluru. The job includes camera mounting, cabling (Cat6), and NVR configuration. All hardware will be provided.",
+    title: "Install 16 Smart Devices for a Commercial Building",
+    description: "We require the installation of 16 professional smart devices across our 4-story commercial building in Ashok Nagar, Bengaluru. The job includes device mounting, cabling (Cat6), and central unit configuration. All hardware will be provided.",
     jobGiver: users[1],
     location: "560001",
     fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001',
@@ -133,8 +133,8 @@ export let jobs: Job[] = [
   },
   {
     id: "JOB-20240615-C3D4",
-    title: "Factory Security System Overhaul - 32 Cameras",
-    description: "Complete overhaul of an existing security system at a factory in Peenya. Requires replacing 32 old analog cameras with new Hikvision IP cameras, setting up a new server room with 2 NVRs, and integrating with our existing network.",
+    title: "Factory Security System Overhaul - 32 Points",
+    description: "Complete overhaul of an existing security system at a factory in Peenya. Requires replacing 32 old points with new professional units, setting up a new server room with redundant recorders, and integrating with our existing network.",
     jobGiver: users[1],
     location: "560058",
     fullAddress: 'Peenya Industrial Area, Bengaluru, 560058',
@@ -153,7 +153,7 @@ export let jobs: Job[] = [
         installer: users[2],
         amount: 52000,
         timestamp: new Date('2024-06-03'),
-        coverLetter: "I have extensive experience with large-scale factory installations and can complete this overhaul efficiently. My team is certified in Hikvision products."
+        coverLetter: "I have extensive experience with large-scale factory installations and can complete this overhaul efficiently. My team is certified in advanced platform integrations."
       }
     ],
     bidderIds: [users[2].id],
@@ -164,8 +164,8 @@ export let jobs: Job[] = [
   },
   {
     id: "JOB-20240718-E5F6",
-    title: "Residential Villa - 4 PTZ Cameras",
-    description: "Installation of 4 outdoor PTZ cameras for a 2-story villa. Requires weather-proof cabling and connection to a cloud-based storage service.",
+    title: "Residential Villa - 4 Technical Points",
+    description: "Installation of 4 outdoor specialized devices for a 2-story villa. Requires weather-proof cabling and connection to a cloud-based service.",
     jobGiver: users[1],
     location: "400049",
     fullAddress: 'Villa 17, Juhu Tara Road, Juhu, Mumbai, 400049',
@@ -194,8 +194,8 @@ export let jobs: Job[] = [
   },
   {
     id: "JOB-20240722-G7H8",
-    title: "Unbid Job: Small Shop Camera Setup",
-    description: "Looking for an installer to set up 2 dome cameras in a small retail shop. Simple setup, hardware provided.",
+    title: "Unbid Job: Small Shop System Setup",
+    description: "Looking for an installer to set up 2 standard devices in a small retail shop. Simple setup, hardware provided.",
     jobGiver: users[1],
     location: "110001",
     fullAddress: 'Shop 5, Khan Market, New Delhi, 110001',
@@ -215,4 +215,4 @@ export let jobs: Job[] = [
   }
 ];
 
-export const allSkills = ["ip camera", "nvr setup", "cabling", "troubleshooting", "ptz", "vms", "access control", "analog cameras", "wireless cameras", "fiber optics", "thermal cameras", "ai analytics"];
+export const allSkills = ["system installation", "server setup", "cabling", "troubleshooting", "configuration", "system management", "access control", "wiring", "wireless setup", "fiber optics", "advanced sensors", "system analytics"];

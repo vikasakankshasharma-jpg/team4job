@@ -94,8 +94,6 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
       geocoder.geocode({ location: newMarkerPos }, (results, status) => {
         if (status === 'OK' && results && results[0]) {
           setValue(name, results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
-        } else {
-          console.error('Geocoder failed due to: ' + status);
         }
       });
     }

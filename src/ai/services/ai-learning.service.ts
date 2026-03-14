@@ -1,7 +1,7 @@
 
 import { getAdminDb } from '@/lib/firebase/server-init';
 import { FieldValue } from 'firebase-admin/firestore';
-import { logger } from '@/infrastructure/logger';
+
 
 export type AiInteractionType = 'price_estimate' | 'time_estimate' | 'skill_suggestion' | 'job_recommendation' | 'installer_matching';
 
@@ -48,7 +48,6 @@ class AiLearningService {
             });
             return docRef.id;
         } catch (error) {
-            console.error('Failed to log AI interaction:', error);
             return ''; // Fail silently to not block the user flow
         }
     }
@@ -71,10 +70,9 @@ class AiLearningService {
                 await doc.ref.update({
                     outcome: outcomeData
                 });
-                logger.info('AI Learning', { message: `Updated outcome for ${relatedEntityId} (${type})` });
+
             }
         } catch (error) {
-            console.error('Failed to update AI outcome:', error);
         }
     }
 
@@ -111,7 +109,6 @@ class AiLearningService {
 
             return ranked.slice(0, limit);
         } catch (error) {
-            console.error('Failed to fetch examples:', error);
             return [];
         }
     }
@@ -160,12 +157,11 @@ class AiLearningService {
                 if (!data.relatedEntityId) {
                     // Found it! Link it.
                     await doc.ref.update({ relatedEntityId: entityId });
-                    logger.info('AI Learning', { message: `Linked log ${doc.id} to entity ${entityId}` });
+
                     break; // Only link the latest one
                 }
             }
         } catch (error) {
-            console.warn('Failed to link log to entity:', error);
         }
     }
 }

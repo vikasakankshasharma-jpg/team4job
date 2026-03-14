@@ -55,7 +55,6 @@ export async function getDashboardStatsAction(userId: string) {
         }));
 
     } catch (error: any) {
-        logger.error('Error fetching dashboard stats', error);
         return {
             success: false,
             error: error.message

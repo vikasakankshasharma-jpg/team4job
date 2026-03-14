@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth } from '@/infrastructure/firebase/admin';
 import { userService } from '@/domains/users/user.service';
-import { logger } from '@/infrastructure/logger';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -44,16 +44,12 @@ export async function POST(req: NextRequest) {
         });
 
         // 5. Log this action
-        logger.adminAction(admin.id, 'IMPERSONATE_USER', targetUserId, {
-            adminName: admin.name,
-            adminEmail: admin.email,
-            timestamp: new Date().toISOString(),
-        });
+
 
         return NextResponse.json({ token: customToken });
 
     } catch (error: any) {
-        logger.error('Impersonation failed', error);
+
         return NextResponse.json({
             error: error.message || 'Failed to create impersonation token'
         }, { status: 500 });

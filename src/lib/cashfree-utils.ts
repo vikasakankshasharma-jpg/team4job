@@ -16,7 +16,6 @@ export function verifyWebhookSignature(
   const secretKey = process.env.CASHFREE_PAYMENTS_CLIENT_SECRET;
 
   if (!secretKey) {
-    console.error('Cashfree secret key is not configured for webhook verification.');
     return false;
   }
 
@@ -37,7 +36,6 @@ export function verifyWebhookSignature(
     return isSignatureValid;
 
   } catch (error) {
-    console.error('Error during webhook signature verification:', error);
     return false;
   }
 }

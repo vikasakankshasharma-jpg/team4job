@@ -42,14 +42,14 @@ export default async function middleware(request: NextRequest) {
     // 1. Rate Limiting Check
     const ip = request.headers.get('x-forwarded-for') || 'anonymous';
     try {
-        // Limit to 20 requests per minute per IP
-        await limiter.check(20, ip + pathname); // Scoping by IP + Path can be safer, or just IP. Let's do IP.
-        // Actually, just IP is better for global DOS protection.
-        // await limiter.check(50, ip); 
-        // Let's be generous for now: 50 req/min
+        // Bypass rate limiting in E2E mode to prevent flakiness
+        console.log(`[Proxy] Checking rate limit for ${ip} on ${pathname}. E2E Allowed: ${isE2eAllowed()}`);
+        if (!isE2eAllowed()) {
+            await limiter.check(20, ip + pathname);
+        }
     } catch (e) {
         // Rate Limited
-        console.warn(`[RateLimit] Blocked request from ${ip}`);
+        console.warn(`[Proxy] RATE LIMITED (429): ${ip} on ${pathname}. E2E Allowed: ${isE2eAllowed()}`);
         return NextResponse.json(
             { error: 'Too Many Requests' },
             { status: 429 }

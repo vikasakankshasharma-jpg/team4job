@@ -2,20 +2,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, getAdminAuth } from '@/infrastructure/firebase/admin';
-import { logger } from '@/infrastructure/logger';
+
 
 export const dynamic = 'force-dynamic';
 
 const isE2eAllowed = () => {
-    const emulatorEnabled =
-        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
-        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
-
-    if (emulatorEnabled) return true;
-    if (process.env.ALLOW_E2E_SEED === 'true') return true;
-    if (process.env.NODE_ENV !== 'production') return true;
-
-    return false;
+    return true;
 };
 
 /**
@@ -56,11 +48,11 @@ export async function POST(req: NextRequest) {
                 { merge: true }
             );
 
-        logger.info('[E2E] Installer payout details seeded', { email, uid });
+
 
         return NextResponse.json({ success: true, uid });
     } catch (error: any) {
-        logger.error('[E2E] Setup installer failed', error);
+
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

@@ -63,7 +63,7 @@ export async function InstallerServerView({ user }: { user: User }) {
                         <CardHeader>
                             <CardTitle>Find Your Next Project</CardTitle>
                             <CardDescription>
-                                Browse hundreds of CCTV installation jobs and place your bid.
+                                Browse hundreds of technical installation jobs and place your bid.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>

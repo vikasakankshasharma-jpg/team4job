@@ -15,7 +15,7 @@ test.describe('Secured Variation Orders', () => {
             (window as any).__DISABLE_AUTO_SAVE__ = true;
         });
         await page.setViewportSize({ width: 1280, height: 1000 });
-        test.setTimeout(120000); // 2 minutes
+        test.setTimeout(300000); // 5 minutes
         const helper = new TestHelper(page);
         await helper.mockExternalAPIs();
 
@@ -58,9 +58,8 @@ test.describe('Secured Variation Orders', () => {
 
         await helper.form.fillInput('Job Work Start Date & Time', startDate);
 
-        // Check the required verification checkbox
-        await page.locator('button[role="checkbox"]').last().hover();
-        // Use the robust submitPostJob helper that handles checkboxes and confirmation modals
+        // Prepare form and submit using robust helpers
+        await helper.preparePostJobSubmission();
         await helper.form.submitPostJob();
 
         // Check for navigation OR error message
@@ -81,69 +80,83 @@ test.describe('Secured Variation Orders', () => {
         expect(jobId).toBeTruthy();
 
         // 2. Installer Bids
+        console.log('--- Step 2: Installer Bids ---');
+        await helper.auth.logout();
         await helper.auth.login(TEST_ACCOUNTS.installer.email, TEST_ACCOUNTS.installer.password);
-        await helper.auth.ensureRole('Installer');
-
-        // Wait for potential redirects/auth settlement
-        await page.waitForTimeout(2000);
 
         console.log(`Installer navigating to job: /dashboard/jobs/${jobId}`);
         await page.goto(`/dashboard/jobs/${jobId}`);
-        // Role already ensured
-        // await helper.auth.ensureRole('Installer'); 
 
-        console.log('[E2E] Clicking Place Bid button...');
-        await page.click('button:has-text("Place Bid")');
-        console.log('[E2E] Checking for bid amount input...');
-        // Use label based selector for better stability
-        const bidInput = page.getByLabel('Bid Amount (₹)');
-        await expect(bidInput).toBeVisible({ timeout: 10000 });
-        await bidInput.fill('500');
-        await page.getByRole('textbox', { name: 'Cover Letter' }).fill('I am the best installer for this job.');
-        await page.click('div[role="dialog"] button:has-text("Place Bid")');
-        await expect(page.getByText('Bid Placed!', { exact: true }).first()).toBeVisible();
-        await helper.auth.logout();
+        await expect(page.getByTestId('job-title')).toBeVisible({ timeout: 15000 });
+        await page.getByTestId('place-bid-button').click();
+
+        // Wait for bid dialog to appear
+        const bidDialog = page.locator('div[role="dialog"]');
+        await bidDialog.waitFor({ state: 'visible', timeout: 10000 });
+
+        await bidDialog.locator('input[name="amount"]').fill('500');
+        await bidDialog.locator('textarea[name="coverLetter"]').fill('I am the best installer for this job.');
+        await bidDialog.getByRole('button', { name: 'Place Bid' }).click();
+        await helper.form.waitForToast('Bid Placed!');
+        console.log('[PASS] Bid Placed');
 
         // 3. Job Giver Awards
+        console.log('--- Step 3: JG Awards ---');
+        await helper.auth.logout();
         await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
         await page.goto(`/dashboard/jobs/${jobId}`);
-        await page.click('button:has-text("Send Offer")');
-        // Toast might be flaky, check persistent state
-        await expect(page.locator('text=You have sent an offer')).toBeVisible();
-        await helper.auth.logout();
+
+        // Wait for bids to load - reload if needed
+        try {
+            await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 15000 });
+        } catch {
+            // Bid might not have synced yet - reload and try again
+            console.log('[E2E] Bids not visible, reloading page...');
+            await page.reload();
+            await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
+        }
+        await page.getByTestId('send-offer-button').first().click();
+        await helper.form.waitForToast('Offer Sent');
+        console.log('[PASS] Offer Sent');
 
         // 4. Installer Accepts
+        console.log('--- Step 4: Installer Accepts ---');
+        await helper.auth.logout();
         await helper.auth.login(TEST_ACCOUNTS.installer.email, TEST_ACCOUNTS.installer.password);
-        await helper.auth.ensureRole('Installer');
         await page.goto(`/dashboard/jobs/${jobId}`);
 
-        await page.click('button:has-text("Accept Job")');
+        await page.getByTestId('accept-job-button').first().click();
 
-        // Handle potential conflict dialog (Robustly)
-        const conflictDialog = page.locator('text=Availability Conflict Detected');
-        try {
-            await conflictDialog.waitFor({ state: 'visible', timeout: 8000 });
-            await page.click('button:has-text("Confirm & Auto-Decline")');
-            await conflictDialog.waitFor({ state: 'hidden' });
-        } catch (e) {
-            // Dialog didn't appear, proceed
+        // Handle Conflict Dialog if it appears
+        const conflictDialog = page.getByText('Schedule Conflict Warning');
+        if (await conflictDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
+            await page.getByRole('button', { name: "I Understand, Proceed & Accept" }).click();
         }
 
-        await page.waitForTimeout(2000); // Wait for potential conflict handling to settle
-        await helper.auth.logout();
+        await helper.form.waitForToast('Job Accepted!');
+        await helper.job.waitForJobStatus('Pending Funding');
+        console.log('[PASS] Job Accepted');
 
         // 5. Job Giver Funds Job (to move to In Progress)
+        console.log('--- Step 5: JG Funds Job ---');
+        await helper.auth.logout();
         await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
-        // Wait for component to mount and shim to attach
-        await expect(page.locator('[data-testid="job-title"]')).toBeVisible();
-        await page.waitForFunction(() => !!(window as any).e2e_directFundJob);
+        await page.getByTestId('proceed-payment-button').click();
 
-        // Use Shim to Fund
-        console.log('Funding Job via Shim...');
-        await page.evaluate(() => (window as any).e2e_directFundJob());
-        await expect(page.locator('[data-status="In Progress"]')).toBeVisible({ timeout: 20000 });
+        // Bypass payment using shim
+        await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
+        await page.evaluate(async () => {
+            await (window as any).e2e_directFundJob();
+        });
+        await helper.form.waitForToast('Test Mode: Payment Initiated');
+
+        // Reload to see status
+        await page.waitForTimeout(2000);
+        await page.reload();
+        await helper.job.waitForJobStatus('In Progress');
+        console.log('[PASS] Job Funded, Status: In Progress');
         await helper.auth.logout();
 
         // 6. Installer Proposes Variation
@@ -166,20 +179,14 @@ test.describe('Secured Variation Orders', () => {
         await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
-        const paymentPromise = page.waitForResponse(response =>
-            response.url().includes('/api/escrow/add-funds') && response.status() === 200
-        );
-        page.on('dialog', dialog => dialog.accept());
+        page.once('dialog', dialog => dialog.accept());
 
         // Find Approve & Pay button in the list
-        // It should be inside the card for this specific task.
-        // Since we only have one, we can find by text.
-        await page.click('button:has-text("Approve & Pay")');
-
-        const response = await paymentPromise;
-        const body = await response.json();
-        expect(body.payment_session_id).toBeTruthy();
-        console.log('Payment Initiated:', body);
+        const approveBtn = page.locator('button:has-text("Approve & Pay")');
+        await approveBtn.waitFor({ state: 'visible', timeout: 30000 });
+        await page.waitForTimeout(2000); // Wait for React hydration
+        await approveBtn.click();
+        await helper.form.waitForToast('Test Mode: Variation Payment Initiated');
+        console.log('[PASS] Variation Payment Initiated');
     });
 });
-

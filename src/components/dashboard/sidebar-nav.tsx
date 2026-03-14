@@ -54,7 +54,7 @@ const installerNavItems: NavItem[] = [
 const jobGiverNavItems: NavItem[] = [
     { href: "/dashboard", icon: Home, labelKey: "dashboard", tourId: "dashboard-home" },
     { href: "/dashboard/installers", icon: Search, labelKey: "findInstallers", tourId: "find-installers", premium: true },
-    { href: "/dashboard/post-job", icon: PlusCircle, labelKey: "postJob", tourId: "post-job" },
+    { href: "/wizard", icon: PlusCircle, labelKey: "postJob", tourId: "post-job" },
     { href: "/dashboard/posted-jobs", icon: Briefcase, labelKey: "myJobs", tourId: "posted-jobs" },
     { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "analytics", tourId: "analytics" },
     { href: "/dashboard/my-installers", icon: Heart, labelKey: "myInstallers", tourId: "my-installers" },
@@ -121,7 +121,7 @@ export function SidebarNav() {
                         <Logo className="h-5 w-5 transition-all group-hover:scale-110" />
                     </div>
                     <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Beta</span>
-                    <span className="sr-only">CCTV Job Connect</span>
+                    <span className="sr-only">Team4Job</span>
                 </Link>
 
                 {navItems.map((item) => {

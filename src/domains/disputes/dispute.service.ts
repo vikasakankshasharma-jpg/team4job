@@ -1,7 +1,7 @@
 
 import { disputeRepository } from './dispute.repository';
 import { CreateDisputeInput, Dispute, DisputeMessage } from './dispute.types';
-import { logger } from '@/infrastructure/logger';
+
 import { jobService } from '../jobs/job.service';
 import { Role } from '@/lib/types';
 
@@ -22,10 +22,10 @@ export class DisputeService {
             }
 
             const id = await disputeRepository.create(input);
-            logger.info('Dispute created', { disputeId: id, requesterId: input.requesterId });
+
             return id;
         } catch (error: any) {
-            logger.error('Failed to create dispute', error, { input });
+
             throw new Error(error.message || 'Failed to create dispute');
         }
     }

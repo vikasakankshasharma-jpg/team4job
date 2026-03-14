@@ -72,7 +72,6 @@ export function SmartEstimatorDialog({
                 throw new Error(result.error);
             }
         } catch (err: any) {
-            console.error(err);
             setError(tError(err.message) || tError('estimationFailedDesc'));
         } finally {
             setLoading(false);

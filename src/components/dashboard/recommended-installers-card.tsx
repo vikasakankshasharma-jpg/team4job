@@ -37,7 +37,7 @@ export function RecommendedInstallersCard({ userId, currentUser }: RecommendedIn
                 });
                 setInstallers(recommendations);
             } catch (error) {
-                console.error("Error fetching recommended installers:", error);
+                // Error fetching recommended installers
             } finally {
                 setLoading(false);
             }

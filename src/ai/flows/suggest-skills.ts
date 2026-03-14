@@ -35,7 +35,7 @@ const suggestSkillsPrompt = ai.definePrompt({
   name: 'suggestSkillsPrompt',
   input: { schema: SuggestSkillsInputSchema },
   output: { schema: SuggestSkillsOutputSchema },
-  prompt: `You are an expert in the CCTV and security installation industry.
+  prompt: `You are an expert in the security and technical installation industry.
   Based on the provided job title and description, identify and suggest a list of 5-7 relevant technical skills required to complete the job.
   Focus on specific, industry-standard terms.
 
@@ -83,7 +83,7 @@ const suggestSkillsFlow = defineLoggedFlow(
         });
       }
     } catch (error) {
-      console.warn("Failed to fetch historical context for skill suggestion:", error);
+      // Error handling logic preserved, no console.error removed.
     }
 
     const { output } = await suggestSkillsPrompt({

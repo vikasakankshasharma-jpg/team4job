@@ -3,7 +3,7 @@
 import { authRepository } from './auth.repository';
 import { SignupData, AuthSession } from './auth.types';
 import { getAdminAuth } from '@/infrastructure/firebase/admin';
-import { logger } from '@/infrastructure/logger';
+
 import { User, Role } from '@/lib/types';
 import { emailService } from '@/lib/email/email-service';
 
@@ -73,22 +73,17 @@ export class AuthService {
             // Create Firestore user document
             await authRepository.createUser(userRecord.uid, userData);
 
-            logger.userActivity(userRecord.uid, 'signup', {
-                role: data.role,
-                email: data.email,
-            });
+
 
             // Send Welcome Email (Async)
             emailService.sendWelcomeEmail({
                 to: data.email,
                 userName: data.name
-            }).catch(e => logger.error('Welcome email failed', e));
+            }).catch(() => {});
 
             return { uid: userRecord.uid, user: userData };
         } catch (error: any) {
-            logger.error('Signup failed', error, {
-                metadata: { email: data.email, role: data.role },
-            });
+
             throw new Error(error.message || 'Failed to create account');
         }
     }
@@ -111,7 +106,7 @@ export class AuthService {
                 mobileVerified: user.isMobileVerified || false,
             };
         } catch (error) {
-            logger.error('Failed to get session', error, { userId: uid });
+
             return null;
         }
     }
@@ -122,9 +117,9 @@ export class AuthService {
     async verifyEmail(uid: string): Promise<void> {
         try {
             await authRepository.updateEmailVerification(uid, true);
-            logger.userActivity(uid, 'email_verified');
+
         } catch (error) {
-            logger.error('Email verification failed', error, { userId: uid });
+
             throw new Error('Failed to verify email');
         }
     }
@@ -144,15 +139,15 @@ export class AuthService {
                 resetLink: link
             });
 
-            logger.info('Password reset email sent', { metadata: { email } });
+
 
         } catch (error: any) {
             if (error.code === 'auth/user-not-found') {
                 // Don't reveal if email exists
-                logger.info('Password reset requested for non-existent email', { metadata: { email } });
+
                 return;
             }
-            logger.error('Password reset failed', error, { metadata: { email } });
+
             throw new Error('Failed to send password reset email');
         }
     }

@@ -47,7 +47,6 @@ export async function getSavedSearches(
             ...doc.data(),
         } as SavedSearch));
     } catch (error) {
-        console.error("Error fetching saved searches:", error);
         return [];
     }
 }
@@ -74,7 +73,6 @@ export async function saveSearch(
 
         return docRef.id;
     } catch (error) {
-        console.error("Error saving search:", error);
         throw error;
     }
 }
@@ -92,7 +90,6 @@ export async function updateSavedSearch(
         const searchRef = doc(db, "users", userId, "savedSearches", searchId);
         await updateDoc(searchRef, updates);
     } catch (error) {
-        console.error("Error updating saved search:", error);
         throw error;
     }
 }
@@ -109,7 +106,6 @@ export async function deleteSavedSearch(
         const searchRef = doc(db, "users", userId, "savedSearches", searchId);
         await deleteDoc(searchRef);
     } catch (error) {
-        console.error("Error deleting saved search:", error);
         throw error;
     }
 }

@@ -95,7 +95,7 @@ service cloud.firestore {
       // --- BIDS SUB-COLLECTION ---
       match /bids/{bidId} {
         allow read: if request.auth != null && (
-          resource.data.installerId == request.auth.uid || 
+          ('installerId' in resource.data && resource.data.installerId == request.auth.uid) || 
           get(/databases/$(database)/documents/jobs/$(jobId)).data.jobGiverId == request.auth.uid ||
           isAdmin() || 
           isSupport()

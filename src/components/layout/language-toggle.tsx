@@ -55,8 +55,8 @@ export function LanguageToggle() {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" disabled={isPending}>
-                    <Globe className="h-4 w-4 mr-2" />
-                    <span>{currentLanguage?.flag} {currentLanguage?.name || 'EN'}</span>
+                    <Globe className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">{currentLanguage?.flag} {currentLanguage?.name || 'EN'}</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

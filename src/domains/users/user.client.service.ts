@@ -17,9 +17,6 @@ export const userClientService = {
                 fcmTokens: arrayUnion(token)
             });
         } catch (error) {
-            if (process.env.NODE_ENV !== 'production') {
-                console.error('Error saving FCM token:', error);
-            }
             throw error;
         }
     }

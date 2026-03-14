@@ -2,7 +2,7 @@
 import { cashfreeClient } from './cashfree.client';
 import { CreatePaymentOrderInput, Transaction, PaymentStatus } from './payment.types';
 import { paymentRepository } from './payment.repository';
-import { logger } from '@/infrastructure/logger';
+
 import { Timestamp } from 'firebase-admin/firestore';
 import { userRepository } from '../users/user.repository';
 
@@ -11,9 +11,13 @@ import { userRepository } from '../users/user.repository';
  */
 export class PaymentService {
     private isEmulatorMode(): boolean {
-        return process.env.USE_EMULATOR === 'true'
+        const isEmu = process.env.USE_EMULATOR === 'true'
             || process.env.NEXT_PUBLIC_USE_EMULATOR === 'true'
+            || process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true'
             || !!process.env.FIRESTORE_EMULATOR_HOST;
+
+
+        return isEmu;
     }
 
     /**
@@ -54,14 +58,7 @@ export class PaymentService {
                 }
             });
 
-            logger.info('Transaction data prepared', { metadata: { jobId: data.jobId, amount: transactionData.totalPaidByGiver } });
-
             const transactionId = await paymentRepository.create(transactionData);
-
-            logger.userActivity(data.userId, 'payment_initiated', {
-                jobId: data.jobId,
-                amount: totalPaidByGiver
-            });
 
             // Fetch real user data
             const user = await userRepository.fetchById(data.userId);
@@ -69,14 +66,22 @@ export class PaymentService {
                 throw new Error('User not found');
             }
 
-            // Create Cashfree order
-            const order = await cashfreeClient.createOrder({
-                orderId,
-                orderAmount: totalPaidByGiver,
-                customerName: user.name || 'User',
-                customerEmail: user.email || 'user@example.com',
-                customerPhone: user.mobile || '0000000000',
-            });
+            // Create Cashfree order or mock if in emulator mode
+            let order;
+            if (this.isEmulatorMode()) {
+                order = {
+                    orderId,
+                    orderToken: `mock_token_${Date.now()}`
+                };
+            } else {
+                order = await cashfreeClient.createOrder({
+                    orderId,
+                    orderAmount: totalPaidByGiver,
+                    customerName: user.name || 'User',
+                    customerEmail: user.email || 'user@example.com',
+                    customerPhone: user.mobile || '0000000000',
+                });
+            }
 
             // Update transaction with order token
             await paymentRepository.update(transactionId, {
@@ -85,7 +90,6 @@ export class PaymentService {
 
             return order;
         } catch (error) {
-            logger.error('Failed to create payment order', error, { metadata: data });
             throw error;
         }
     }
@@ -121,15 +125,9 @@ export class PaymentService {
             if (job?.awardedInstallerId) {
                 userRepository.incrementStats(job.awardedInstallerId, {
                     projectedEarnings: transactionResult.data.payoutToInstaller
-                }).catch(e => logger.error('Failed to increment projectedEarnings', e));
+                }).catch(e => { /* Failed to increment projectedEarnings */ });
             }
-
-            logger.userActivity(transactionResult.data.payerId, 'payment_verified', {
-                jobId: transactionResult.data.jobId,
-                orderId
-            });
         } catch (error) {
-            logger.error('Failed to verify payment', error, { metadata: { orderId } });
             throw error;
         }
     }
@@ -143,7 +141,6 @@ export class PaymentService {
             const transaction = transactions.find(t => t.status === 'funded');
 
             if (!transaction) {
-                logger.warn('Release attempt on non-funded job', { jobId, installerId });
                 throw new Error('No funded transaction found for this job');
             }
 
@@ -155,14 +152,7 @@ export class PaymentService {
             // Create payout
             const transferId = `transfer_${jobId}_${Date.now()}`;
             if (this.isEmulatorMode()) {
-                logger.info('Skipping Cashfree payout in emulator mode', {
-                    metadata: {
-                        jobId,
-                        installerId,
-                        transferId,
-                        amount: transaction.payoutToInstaller,
-                    }
-                });
+                // Skiping Cashfree payout in emulator mode
             } else {
                 await cashfreeClient.createPayout({
                     beneficiaryId: installerId,
@@ -183,14 +173,9 @@ export class PaymentService {
             userRepository.incrementStats(installerId, {
                 projectedEarnings: -transaction.payoutToInstaller,
                 totalEarnings: transaction.payoutToInstaller
-            }).catch(e => logger.error('Failed to update earnings aggregation', e));
+            }).catch(e => { /* Failed to update earnings aggregation */ });
 
-            logger.userActivity(installerId, 'funds_released', {
-                jobId,
-                amount: transaction.payoutToInstaller
-            });
         } catch (error) {
-            logger.error('Failed to release funds', error, { metadata: { jobId } });
             throw error;
         }
     }
@@ -252,13 +237,10 @@ export class PaymentService {
                 if (job?.awardedInstallerId) {
                     userRepository.incrementStats(job.awardedInstallerId, {
                         projectedEarnings: -transaction.payoutToInstaller
-                    }).catch(e => logger.error('Failed to rollback projectedEarnings', e));
+                    }).catch(e => { /* Failed to rollback projectedEarnings */ });
                 }
             }
-
-            logger.adminAction('system', 'refund_processed', jobId, { reason, amount: transaction.totalPaidByGiver });
         } catch (error) {
-            logger.error('Failed to process refund', error, { metadata: { jobId } });
             throw error;
         }
     }
@@ -280,7 +262,6 @@ export class PaymentService {
 
             return Array.from(txMap.values());
         } catch (error) {
-            logger.error('Failed to fetch transaction history', error, { userId });
             throw error;
         }
     }
@@ -289,7 +270,6 @@ export class PaymentService {
         try {
             return await paymentRepository.findById(transactionId);
         } catch (error) {
-            logger.error('Failed to fetch transaction', error, { transactionId });
             throw error;
         }
     }
@@ -302,12 +282,6 @@ export class PaymentService {
             // Find transaction by payoutTransferId
             const transactionRecord = await paymentRepository.findByPayoutTransferId(transferId);
             if (!transactionRecord) {
-                logger.warn('Payout success for unknown transferId', { transferId });
-                return;
-            }
-
-            if (transactionRecord.data.status === 'released') {
-                logger.info('Payout success confirmed by webhook', { transferId, transactionId: transactionRecord.id });
                 return;
             }
 
@@ -315,10 +289,8 @@ export class PaymentService {
                 status: 'released',
                 releasedAt: transactionRecord.data.releasedAt || Timestamp.now() as any
             });
-
-            logger.info('Transaction marked as released via payout webhook', { transferId });
         } catch (error) {
-            logger.error('Failed to record payout success', error, { transferId });
+            // Failed to record payout success
         }
     }
 }

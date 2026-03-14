@@ -1,7 +1,7 @@
 // app/api/test-email/route.ts - REFACTORED to use infrastructure
 
 import { sendServerEmail } from '@/lib/server-email';
-import { logger } from '@/infrastructure/logger';
+
 import { NextRequest, NextResponse } from 'next/server';
 
 const isE2eAllowed = () => {
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       `
         );
 
-        logger.info('Test email sent successfully', { to });
+
 
         return NextResponse.json({
             success: true,
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
             result,
         });
     } catch (error) {
-        logger.error('Test email failed', error, { metadata: { to: request.url } });
+
         return NextResponse.json(
             {
                 error: 'Failed to send test email',
