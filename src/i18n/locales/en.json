@@ -217,6 +217,7 @@
         "billing": "Billing",
         "findProfessionals": "Find Professionals",
         "myProfessionals": "My Professionals",
+        "team": "Team Management",
         "teamManagement": "Team Management",
         "auditLog": "Audit Log",
         "pendingSignups": "Pending Signups",
@@ -249,6 +250,7 @@
     },
     "dashboard": {
         "welcome": "Welcome, {name}!",
+        "welcomeUser": "Welcome, {name}!",
         "welcomeGeneric": "Welcome",
         "roleHiring": "Hiring Mode",
         "roleService": "Professional Mode",

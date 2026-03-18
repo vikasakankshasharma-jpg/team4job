@@ -60,6 +60,7 @@
     },
     "dashboard": {
         "welcome": "स्वागत है, {name}!",
+        "welcomeUser": "वापसी पर स्वागत है, {name}!",
         "welcomeGeneric": "स्वागत",
         "roleHiring": "ग्राहक मोड",
         "roleService": "सेवा प्रदाता मोड",
@@ -345,14 +346,14 @@
                 "deactivated": "Deactivated"
             },
             "stats": {
-                "totalUsers": "Total Users",
-                "active": "{count} active",
-                "professionals": "सेवा प्रदाताs",
-                "verified": "{count} verified",
-                "clients": "Clients",
-                "clients": "Total clients",
-                "newToday": "New Today",
-                "joined": "{count} joined today"
+                "totalUsers": "कुल उपयोगकर्ता",
+                "active": "{count} सक्रिय",
+                "professionals": "सत्यापित सेवा प्रदाता",
+                "verified": "{count} सत्यापित",
+                "clients": "ग्राहक",
+                "clientsTotal": "कुल ग्राहक",
+                "newToday": "आज नए",
+                "joined": "{count} आज शामिल हुए"
             },
             "a11y": {
                 "actionsFor": "Actions for {name}"
@@ -1180,6 +1181,7 @@
         "billing": "बिलिंग",
         "findProfessionals": "पेशेवर्स ढूँढें",
         "myProfessionals": "मेरे पेशेवर्स",
+        "team": "टीम प्रबंधन",
         "teamManagement": "टीम प्रबंधन",
         "auditLog": "ऑडिट लॉग",
         "pendingSignups": "लंबित साइनअप",
