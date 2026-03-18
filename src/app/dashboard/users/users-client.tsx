@@ -88,7 +88,7 @@ const initialFilters = {
 type SortableKeys = 'name' | 'memberSince' | 'tier' | 'rating' | 'points' | 'status';
 
 function UserCard({ u, user, actionLoading, handleUserAction, setDeleteUser }: { u: User, user: User, actionLoading: string | null, handleUserAction: (user: User, status: User['status'] | Partial<User>, days?: number) => void, setDeleteUser: (user: User) => void }) {
-  const t = useTranslations('admin.users');
+  const t = useTranslations('users');
   const getUserStatusBadge = (status?: User['status']) => {
     switch (status) {
       case 'suspended': return <Badge variant="warning">{t('badges.suspended')}</Badge>;
@@ -98,7 +98,7 @@ function UserCard({ u, user, actionLoading, handleUserAction, setDeleteUser }: {
   };
 
   return (
-    <Card>
+    <Card className="border-0 shadow-sm shadow-primary/5 hover:shadow-md transition-shadow group">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-3">
@@ -107,7 +107,7 @@ function UserCard({ u, user, actionLoading, handleUserAction, setDeleteUser }: {
               <AvatarFallback>{u.name.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-base"><Link href={`/dashboard/users/${u.id}`} className="hover:underline">{u.name}</Link></CardTitle>
+              <CardTitle className="text-base font-bold tracking-tight group-hover:text-primary transition-colors"><Link href={`/dashboard/users/${u.id}`} className="hover:underline">{u.name}</Link></CardTitle>
               <CardDescription className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Unique ID: {u.id}</CardDescription>
             </div>
           </div>
@@ -119,19 +119,19 @@ function UserCard({ u, user, actionLoading, handleUserAction, setDeleteUser }: {
           <span className="text-muted-foreground">Roles</span>
           <div className="flex flex-wrap gap-1 justify-end">
             {u.roles.map(r => <Badge key={r} variant="outline" className="font-normal">{r}</Badge>)}
-            {u.installerProfile?.verified && <Badge variant="secondary" className="gap-1 pl-1.5 font-normal"><ShieldCheck className="h-3.5 w-3.5 text-green-600" /> {t('badges.verified')}</Badge>}
+            {u.professionalProfile?.verified && <Badge variant="secondary" className="gap-1 pl-1.5 font-normal"><ShieldCheck className="h-3.5 w-3.5 text-green-600" /> {t('badges.verified')}</Badge>}
           </div>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">{t('table.memberSince')}</span>
           <span className="font-medium">{format(toDate(u.memberSince), 'MMM, yyyy')}</span>
         </div>
-        {u.installerProfile && (
+        {u.professionalProfile && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">{t('table.tier')}</span>
             <div className="flex items-center gap-2 font-medium">
-              {tierIcons[u.installerProfile.tier]}
-              {u.installerProfile.tier}
+              {tierIcons[u.professionalProfile.tier]}
+              {u.professionalProfile.tier}
             </div>
           </div>
         )}
@@ -148,11 +148,11 @@ function UserCard({ u, user, actionLoading, handleUserAction, setDeleteUser }: {
                 <DropdownMenuItem asChild><Link href={`/dashboard/users/${u.id}`}>{t('actions.viewProfile')}</Link></DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuSeparator />
-                {u.roles.includes('Installer') && !u.installerProfile?.verified && (
+                {u.roles.includes('Professional') && !u.professionalProfile?.verified && (
                   <DropdownMenuItem onClick={() => {
                     handleUserAction(u, {
-                      installerProfile: {
-                        ...u.installerProfile!,
+                      professionalProfile: {
+                        ...u.professionalProfile!,
                         verified: true,
                         adminNotes: `Manually verified by admin on ${new Date().toISOString()}`
                       }
@@ -376,15 +376,15 @@ export default function UsersClient() {
       filtered = filtered.filter(user => (user.status || 'active') === filters.status);
     }
     if (filters.tier !== 'all') {
-      filtered = filtered.filter(user => user.installerProfile?.tier === filters.tier);
+      filtered = filtered.filter(user => user.professionalProfile?.tier === filters.tier);
     }
     if (filters.verified !== 'all') {
       const isVerified = filters.verified === 'true';
-      filtered = filtered.filter(user => !!user.installerProfile?.verified === isVerified);
+      filtered = filtered.filter(user => !!user.professionalProfile?.verified === isVerified);
     }
     if (filters.rating !== 'all') {
       filtered = filtered.filter(user => {
-        const rating = user.installerProfile?.rating || 0;
+        const rating = user.professionalProfile?.rating || 0;
         if (filters.rating === '5') return rating === 5;
         if (filters.rating === '4+') return rating >= 4;
         if (filters.rating === '3+') return rating >= 3;
@@ -400,8 +400,8 @@ export default function UsersClient() {
 
     if (sortConfig !== null) {
       filtered.sort((a, b) => {
-        const aVal = a.installerProfile;
-        const bVal = b.installerProfile;
+        const aVal = a.professionalProfile;
+        const bVal = b.professionalProfile;
         let valA: any, valB: any;
 
         switch (sortConfig.key) {
@@ -478,18 +478,18 @@ export default function UsersClient() {
     Roles: u.roles.join(', '),
     Status: u.status || 'active',
     'Member Since': format(toDate(u.memberSince), 'yyyy-MM-dd'),
-    'Installer Tier': u.installerProfile?.tier || 'N/A',
-    'Installer Points': u.installerProfile?.points || 0,
-    'Installer Rating': u.installerProfile?.rating || 0,
-    'Installer Verified': u.installerProfile?.verified ? 'Yes' : 'No',
+    'Professional Tier': u.professionalProfile?.tier || 'N/A',
+    'Professional Points': u.professionalProfile?.points || 0,
+    'Professional Rating': u.professionalProfile?.rating || 0,
+    'Professional Verified': u.professionalProfile?.verified ? 'Yes' : 'No',
   }));
 
   // Stats calculations
   const stats = React.useMemo(() => {
     const totalUsers = users.length;
-    const installers = users.filter(u => u.roles.includes('Installer')).length;
-    const jobGivers = users.filter(u => u.roles.includes('Job Giver')).length;
-    const verifiedInstallers = users.filter(u => u.installerProfile?.verified).length;
+    const professionals = users.filter(u => u.roles.includes('Professional')).length;
+    const clients = users.filter(u => u.roles.includes('Client')).length;
+    const verifiedProfessionals = users.filter(u => u.professionalProfile?.verified).length;
     const activeUsers = users.filter(u => !u.status || u.status === 'active').length;
     const suspendedUsers = users.filter(u => u.status === 'suspended').length;
 
@@ -503,9 +503,9 @@ export default function UsersClient() {
 
     return {
       totalUsers,
-      installers,
-      jobGivers,
-      verifiedInstallers,
+      professionals,
+      clients,
+      verifiedProfessionals,
       activeUsers,
       suspendedUsers,
       activeToday,
@@ -529,8 +529,8 @@ export default function UsersClient() {
       type: 'select',
       options: [
         { label: t('filters.allRoles'), value: 'all' },
-        { label: t('filters.installer'), value: 'Installer' },
-        { label: t('filters.jobGiver'), value: 'Job Giver' },
+        { label: t('filters.professional'), value: 'Professional' },
+        { label: t('filters.client'), value: 'Client' },
         { label: t('filters.admin'), value: 'Admin' },
         { label: t('filters.support'), value: 'Support Team' },
       ],
@@ -550,12 +550,12 @@ export default function UsersClient() {
   // Tab-based filtering
   const tabFilteredUsers = React.useMemo(() => {
     switch (activeTab) {
-      case 'installers':
-        return sortedAndFilteredUsers.filter(u => u.roles.includes('Installer'));
-      case 'jobgivers':
-        return sortedAndFilteredUsers.filter(u => u.roles.includes('Job Giver'));
+      case 'professionals':
+        return sortedAndFilteredUsers.filter(u => u.roles.includes('Professional'));
+      case 'clients':
+        return sortedAndFilteredUsers.filter(u => u.roles.includes('Client'));
       case 'pending':
-        return sortedAndFilteredUsers.filter(u => u.roles.includes('Installer') && !u.installerProfile?.verified);
+        return sortedAndFilteredUsers.filter(u => u.roles.includes('Professional') && !u.professionalProfile?.verified);
       default:
         return sortedAndFilteredUsers;
     }
@@ -580,16 +580,16 @@ export default function UsersClient() {
           description={t('stats.active', { count: stats.activeUsers })}
         />
         <StatCard
-          title={t('stats.installers')}
-          value={stats.installers}
+          title={t('stats.professionals')}
+          value={stats.professionals}
           icon={UserPlus}
-          description={t('stats.verified', { count: stats.verifiedInstallers })}
+          description={t('stats.verified', { count: stats.verifiedProfessionals })}
         />
         <StatCard
-          title={t('stats.jobGivers')}
-          value={stats.jobGivers}
+          title={t('stats.clients')}
+          value={stats.clients}
           icon={UserCheck2}
-          description={t('stats.clients')}
+          description={t('stats.clientsTotal')}
         />
         <StatCard
           title={t('stats.newToday')}
@@ -603,11 +603,11 @@ export default function UsersClient() {
         />
       </div>
 
-      <Card>
+      <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle>{t('title')}</CardTitle>
+              <CardTitle className="text-xl font-bold tracking-tight">{t('title')}</CardTitle>
               <CardDescription>
                 {t('description', { count: sortedAndFilteredUsers.length })}
               </CardDescription>
@@ -646,16 +646,16 @@ export default function UsersClient() {
             <>
               {/* Tabs */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-                <TabsList>
-                  <TabsTrigger value="all">{t('tabs.all', { count: sortedAndFilteredUsers.length })}</TabsTrigger>
-                  <TabsTrigger value="installers">
-                    {t('tabs.installers', { count: sortedAndFilteredUsers.filter(u => u.roles.includes('Installer')).length })}
+                <TabsList className="bg-muted/40 rounded-xl p-1">
+                  <TabsTrigger value="all" className="rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background">{t('tabs.all', { count: sortedAndFilteredUsers.length })}</TabsTrigger>
+                  <TabsTrigger value="professionals" className="rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background">
+                    {t('tabs.professionals', { count: sortedAndFilteredUsers.filter(u => u.roles.includes('Professional')).length })}
                   </TabsTrigger>
-                  <TabsTrigger value="jobgivers">
-                    {t('tabs.jobGivers', { count: sortedAndFilteredUsers.filter(u => u.roles.includes('Job Giver')).length })}
+                  <TabsTrigger value="clients" className="rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background">
+                    {t('tabs.clients', { count: sortedAndFilteredUsers.filter(u => u.roles.includes('Client')).length })}
                   </TabsTrigger>
-                  <TabsTrigger value="pending">
-                    {t('tabs.pending', { count: sortedAndFilteredUsers.filter(u => u.roles.includes('Installer') && !u.installerProfile?.verified).length })}
+                  <TabsTrigger value="pending" className="rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background">
+                    {t('tabs.pending', { count: sortedAndFilteredUsers.filter(u => u.roles.includes('Professional') && !u.professionalProfile?.verified).length })}
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -730,11 +730,11 @@ export default function UsersClient() {
                               {format(toDate(u.memberSince), 'MMM, yyyy')}
                             </TableCell>
                             <TableCell className="hidden sm:table-cell">
-                              {u.installerProfile ? (
+                              {u.professionalProfile ? (
                                 <div className="flex items-center gap-2">
-                                  {tierIcons[u.installerProfile.tier]}
-                                  {u.installerProfile.tier}
-                                  {u.installerProfile.verified && (
+                                  {tierIcons[u.professionalProfile.tier]}
+                                  {u.professionalProfile.tier}
+                                  {u.professionalProfile.verified && (
                                     <ShieldCheck className="h-4 w-4 text-green-600" />
                                   )}
                                 </div>

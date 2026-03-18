@@ -71,7 +71,7 @@ function MyBidRow({ bid, job, user, onWithdraw }: BidItemProps) {
   }
 
   const pointsEarned = useMemo(() => {
-    if (job.status !== 'Completed' || getRefId(job.awardedInstaller) !== user.id || !job.rating) return null;
+    if (job.status !== 'Completed' || getRefId(job.awardedProfessional) !== user.id || !job.rating) return null;
     const ratingPoints = job.rating === 5 ? 20 : job.rating === 4 ? 10 : 0;
     return 50 + ratingPoints; // 50 for completion
   }, [job, user.id]);
@@ -136,7 +136,7 @@ function MyBidCard({ bid, job, user, onWithdraw }: BidItemProps) {
   }
 
   return (
-    <Card onClick={() => router.push(`/dashboard/jobs/${bid.jobId}`)} className="cursor-pointer relative group">
+    <Card onClick={() => router.push(`/dashboard/jobs/${bid.jobId}`)} className="cursor-pointer relative group border-0 shadow-sm shadow-primary/5 hover:shadow-md transition-shadow">
       {canWithdraw && (
         <Button
           variant="ghost"
@@ -150,7 +150,7 @@ function MyBidCard({ bid, job, user, onWithdraw }: BidItemProps) {
       )}
       <CardHeader>
         <div className="flex justify-between items-start">
-          <CardTitle className="text-base leading-tight pr-8 overflow-wrap-anywhere">{job.title}</CardTitle>
+          <CardTitle className="text-base font-bold tracking-tight leading-tight pr-8 overflow-wrap-anywhere group-hover:text-primary transition-colors">{job.title}</CardTitle>
           <Badge variant={myBidStatus.variant}>{myBidStatus.text}</Badge>
         </div>
         <CardDescription className="font-mono text-xs pt-1">{job.id}</CardDescription>
@@ -192,13 +192,13 @@ export default function MyBidsClient() {
   const [view, setView] = React.useState<'list' | 'grid'>('list');
 
   useEffect(() => {
-    if (!userLoading && role && role !== 'Installer') {
+    if (!userLoading && role && role !== 'Professional') {
       router.push('/dashboard');
     }
   }, [role, userLoading, router]);
 
   const fetchMyBids = useCallback(async (isLoadMore = false) => {
-    if (!user || !role || role !== 'Installer') return;
+    if (!user || !role || role !== 'Professional') return;
 
     if (isLoadMore) {
       setLoadMoreLoading(true);
@@ -359,10 +359,10 @@ export default function MyBidsClient() {
 
   return (
     <div className="max-w-full overflow-x-hidden px-4 sm:px-6 grid flex-1 items-start gap-4 sm:gap-6 md:gap-8">
-      <Card>
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4">
           <div className="flex-1 min-w-0">
-            <CardTitle className="overflow-wrap-anywhere">{pageTitle}</CardTitle>
+            <CardTitle className="overflow-wrap-anywhere text-xl font-bold tracking-tight">{pageTitle}</CardTitle>
             <CardDescription className="overflow-wrap-anywhere">{pageDescription}</CardDescription>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">

@@ -8,8 +8,8 @@ test.describe('Wallet Withdrawals', () => {
         helper = new TestHelper(page);
     });
 
-    test('Installer can request wallet fund withdrawal', async ({ page }) => {
-        await helper.auth.loginAsInstaller();
+    test('Professional can request wallet fund withdrawal', async ({ page }) => {
+        await helper.auth.loginAsProfessional();
 
         await page.goto('/dashboard');
         await expect(page).toHaveURL(/.*\/dashboard/);
@@ -19,3 +19,4 @@ test.describe('Wallet Withdrawals', () => {
     });
 
 });
+

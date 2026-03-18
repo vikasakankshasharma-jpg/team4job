@@ -13,7 +13,7 @@ export type JobStatus =
     | 'bid_accepted'          // Bid accepted, awaiting funding
     | 'funded'                // Funded and ready to start
     | 'in_progress'           // Work has started
-    | 'work_submitted'        // Installer submitted work
+    | 'work_submitted'        // Professional submitted work
     | 'completed'             // Job completed successfully
     | 'disputed'              // Under dispute
     | 'cancelled'             // Job cancelled
@@ -60,10 +60,10 @@ export interface Job {
     jobCategory: string;
 
     // Actors
-    jobGiver: User | DocumentReference;
-    jobGiverId: string;
-    awardedInstaller?: User | DocumentReference;
-    awardedInstallerId?: string;
+    client: User | DocumentReference;
+    clientId: string;
+    awardedProfessional?: User | DocumentReference;
+    awardedProfessionalId?: string;
 
     // Location
     location: string;
@@ -86,14 +86,14 @@ export interface Job {
     isUrgent?: boolean;
     dateChangeProposal?: {
         newDate: Date | Timestamp;
-        proposedBy: 'Job Giver' | 'Installer';
+        proposedBy: 'Client' | 'Professional';
         status: 'pending' | 'accepted' | 'rejected';
     };
 
     // Bidding
     bids: Bid[];
     bidderIds?: string[];
-    disqualifiedInstallerIds?: string[];
+    disqualifiedProfessionalIds?: string[];
     acceptanceDeadline?: Date | Timestamp;
     fundingDeadline?: Date | Timestamp;
 
@@ -108,14 +108,14 @@ export interface Job {
     additionalTasks?: AdditionalTask[];
 
     // Reviews
-    jobGiverReview?: {
+    clientReview?: {
         rating: number;
         review: string;
         createdAt: Date | Timestamp;
         authorId: string;
         authorName: string;
     };
-    installerReview?: {
+    professionalReview?: {
         rating: number;
         review: string;
         createdAt: Date | Timestamp;
@@ -131,8 +131,8 @@ export interface Job {
     // Billing
     invoice?: Invoice;
     billingSnapshot?: {
-        installerName: string;
-        installerAddress: Address;
+        professionalName: string;
+        professionalAddress: Address;
         gstin?: string;
         pan?: string;
     };
@@ -140,7 +140,7 @@ export interface Job {
     // Admin
     disputeId?: string;
     cancellationReason?: string;
-    cancellationProposer?: 'Job Giver' | 'Installer';
+    cancellationProposer?: 'Client' | 'Professional';
     archived?: boolean;
     adminNotes?: string;
 
@@ -176,7 +176,7 @@ export interface CreateJobInput {
     isUrgent?: boolean;
     preferredTimeSlot?: 'Morning' | 'Afternoon' | 'Evening' | 'Weekend' | 'Any';
     attachments?: JobAttachment[];
-    directAwardInstallerId?: string;
+    directAwardProfessionalId?: string;
 }
 
 /**
@@ -208,7 +208,7 @@ export interface JobStats {
     totalEarned?: number;
 }
 
-export interface InstallerStats {
+export interface ProfessionalStats {
     openJobs: number;
     myBids: number;
     jobsWon: number;
@@ -218,10 +218,15 @@ export interface InstallerStats {
     totalEarnings?: number;
 }
 
-export interface JobGiverStats {
+export interface ClientStats {
     activeJobs: number;
     completedJobs: number;
     cancelledJobs: number;
     totalBids: number;
     openDisputes: number;
 }
+
+
+
+
+

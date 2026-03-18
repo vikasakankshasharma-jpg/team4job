@@ -23,10 +23,11 @@ export function StatCard({
     className,
 }: StatCardProps) {
     return (
-        <Card className={className}>
+        <Card className={cn("border-0 shadow-sm shadow-primary/5 hover:shadow-md transition-shadow relative overflow-hidden", className)}>
+            <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 rounded-l-xl opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{title}</CardTitle>
-                {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+                <CardTitle className="text-sm font-semibold tracking-tight">{title}</CardTitle>
+                {Icon && <Icon className="h-4 w-4 text-primary/60" />}
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{value}</div>

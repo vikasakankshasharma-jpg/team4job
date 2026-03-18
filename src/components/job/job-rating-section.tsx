@@ -26,13 +26,13 @@ export function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (up
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const { toast } = useToast();
 
-    const jobGiverReview = (job as any).jobGiverReview;
-    const installerReview = (job as any).installerReview;
+    const clientReview = (job as any).clientReview;
+    const ProfessionalReview = (job as any).professionalReview;
 
-    const isJobGiver = role === 'Job Giver';
-    const myReview = isJobGiver ? jobGiverReview : installerReview;
-    const theirReview = isJobGiver ? installerReview : jobGiverReview;
-    const canSeeReviews = !!(jobGiverReview && installerReview);
+    const isclient = role === 'Client';
+    const myReview = isclient ? clientReview : ProfessionalReview;
+    const theirReview = isclient ? ProfessionalReview : clientReview;
+    const canSeeReviews = !!(clientReview && ProfessionalReview);
 
     const handleRatingSubmit = async () => {
         if (!user) return;
@@ -50,9 +50,9 @@ export function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate: (up
             authorName: user.name
         };
 
-        const updatePayload: Partial<Job> = isJobGiver
-            ? { jobGiverReview: reviewData }
-            : { installerReview: reviewData };
+        const updatePayload: Partial<Job> = isclient
+            ? { clientReview: reviewData }
+            : { professionalReview: reviewData };
 
         await onJobUpdate(updatePayload);
 

@@ -42,7 +42,7 @@ import Link from "next/link";
 import { useTranslations } from 'next-intl';
 
 export default function TeamClient() {
-  const t = useTranslations('team');
+  const t = useTranslations('admin.team');
   const tCommon = useTranslations('common');
   const { user, isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
@@ -191,12 +191,12 @@ export default function TeamClient() {
 
       <TeamManagementCard onTeamMemberAdded={fetchTeamMembers} />
 
-      <Card>
+      <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <UserCog />
+              <CardTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
+                <UserCog className="h-5 w-5 text-primary/60" />
                 {t('currentMembers')}
               </CardTitle>
               <CardDescription>

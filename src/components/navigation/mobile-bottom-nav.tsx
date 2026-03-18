@@ -27,7 +27,7 @@ export function MobileBottomNav({ className }: MobileBottomNavProps) {
             { href: "/dashboard", icon: Home, label: "Home", exact: true },
         ];
 
-        if (role === 'Installer') {
+        if (role === 'Professional') {
             return [
                 ...commonItems,
                 { href: "/dashboard/jobs", icon: Search, label: "Browse" },
@@ -36,7 +36,7 @@ export function MobileBottomNav({ className }: MobileBottomNavProps) {
             ];
         }
 
-        if (role === 'Job Giver') {
+        if (role === 'Client') {
             return [
                 ...commonItems,
                 { href: "/wizard", icon: PlusCircle, label: "Post", primary: true },

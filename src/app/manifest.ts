@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Team4Job',
     short_name: 'Team4Job',
-    description: 'Connecting Job Givers with skilled professionals.',
+    description: 'Connecting Clients with skilled professionals.',
     start_url: '/',
     display: 'standalone',
     background_color: '#F0F2F5',

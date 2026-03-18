@@ -109,9 +109,9 @@ const jobSchema = z.object({
   jobStartDate: z.string().min(1, { message: "validation.startDateReq" }),
   preferredTimeSlot: z.enum(['Morning', 'Afternoon', 'Evening', 'Weekend', 'Any']).default('Any'),
   attachments: z.array(z.instanceof(File)).optional(),
-  directAwardInstallerId: z.string().optional(),
+  directAwardProfessionalId: z.string().optional(),
 }).refine(data => {
-  if (data.directAwardInstallerId) {
+  if (data.directAwardProfessionalId) {
     return !!data.priceEstimate && data.priceEstimate.min > 0;
   }
   return true;
@@ -119,7 +119,7 @@ const jobSchema = z.object({
   message: "validation.budgetReqDirect",
   path: ["priceEstimate.min"],
 }).refine(data => {
-  if (data.directAwardInstallerId) return true;
+  if (data.directAwardProfessionalId) return true;
   return data.deadline !== "";
 }, {
   message: "validation.deadlineReqPublic",
@@ -150,23 +150,23 @@ function DirectAwardInput({ control }: { control: Control<any> }) {
   const tJob = useTranslations('job');
   const tError = useTranslations('errors');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedInstaller, setSelectedInstaller] = useState<User | null>(null);
+  const [selectedProfessional, setSelectedProfessional] = useState<User | null>(null);
 
   const debouncedCheck = useMemo(
     () => debounce(async (id: string) => {
       if (!id) {
-        setSelectedInstaller(null);
+        setSelectedProfessional(null);
         setIsLoading(false);
         return;
       }
 
-      // const result = await verifyInstallerAction(id);
-      const result = { success: false, installer: undefined }; // Disabled for 500 error debugging
+      // const result = await verifyProfessionalAction(id);
+      const result = { success: false, professional: undefined }; // Disabled for 500 error debugging
 
-      if (result.success && result.installer) {
-        setSelectedInstaller(result.installer as User);
+      if (result.success && result.professional) {
+        setSelectedProfessional(result.professional as User);
       } else {
-        setSelectedInstaller(null);
+        setSelectedProfessional(null);
       }
       setIsLoading(false);
     }, 500),
@@ -179,25 +179,25 @@ function DirectAwardInput({ control }: { control: Control<any> }) {
     debouncedCheck(value);
   };
 
-  const installerId = useWatch({ control, name: "directAwardInstallerId" });
+  const professionalId = useWatch({ control, name: "directAwardProfessionalId" });
 
   useEffect(() => {
-    if (installerId) {
+    if (professionalId) {
       setIsLoading(true);
-      debouncedCheck(installerId);
+      debouncedCheck(professionalId);
     }
-  }, [installerId, debouncedCheck]);
+  }, [professionalId, debouncedCheck]);
 
   return (
     <FormField
       control={control}
-      name="directAwardInstallerId"
+      name="directAwardProfessionalId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{tJob('installerId')}</FormLabel>
+          <FormLabel>{tJob('professionalId')}</FormLabel>
           <FormControl>
             <Input
-              placeholder={tJob('installerIdPlaceholder')}
+              placeholder={tJob('professionalIdPlaceholder')}
               {...field}
               onChange={(e) => {
                 field.onChange(e);
@@ -206,18 +206,18 @@ function DirectAwardInput({ control }: { control: Control<any> }) {
             />
           </FormControl>
           <FormDescription>
-            {tJob('installerIdDesc')}
+            {tJob('professionalIdDesc')}
           </FormDescription>
           {isLoading && <p className="text-sm text-muted-foreground">{tJob('verifyingId')}</p>}
-          {selectedInstaller && !isLoading && (
+          {selectedProfessional && !isLoading && (
             <div className="flex items-center gap-2 p-2 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
               <Avatar className="h-9 w-9">
-                <AvatarImage src={selectedInstaller.realAvatarUrl} alt={selectedInstaller.name} />
-                <AvatarFallback>{selectedInstaller.name.substring(0, 2)}</AvatarFallback>
+                <AvatarImage src={selectedProfessional.realAvatarUrl} alt={selectedProfessional.name} />
+                <AvatarFallback>{selectedProfessional.name.substring(0, 2)}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-semibold text-sm">{selectedInstaller.name}</p>
-                <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-green-600" /> {tJob('verifiedInstaller')}</p>
+                <p className="font-semibold text-sm">{selectedProfessional.name}</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-green-600" /> {tJob('verifiedProfessional')}</p>
               </div>
             </div>
           )}
@@ -310,7 +310,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       deadline: "",
       jobStartDate: "",
       attachments: [],
-      directAwardInstallerId: "",
+      directAwardProfessionalId: "",
       priceEstimate: { min: 0, max: 0 },
       verifyDetails: false, // Must be false, not undefined, to prevent uncontrolled component warnings
     },
@@ -321,7 +321,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
 
   const repostJobId = searchParams.get('repostJobId');
   const editJobId = searchParams.get('editJobId');
-  const directAwardParam = searchParams.get('directAwardInstallerId');
+  const directAwardParam = searchParams.get('directAwardProfessionalId');
   const isEditMode = !!editJobId;
 
   // Auto-save hook
@@ -337,7 +337,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
 
     jobStartDate: form.getValues('jobStartDate') ? new Date(form.getValues('jobStartDate')) : undefined,
     travelTip: form.getValues('travelTip'),
-    directAwardInstallerId: form.getValues('directAwardInstallerId'),
+    directAwardProfessionalId: form.getValues('directAwardProfessionalId'),
     isGstInvoiceRequired: form.getValues('isGstInvoiceRequired'),
     attachments: form.getValues('attachments')?.map(f => ({ fileName: f.name, fileType: f.type })) as any,
   });
@@ -352,17 +352,18 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
 
   useEffect(() => {
     if (directAwardParam) {
-      form.setValue('directAwardInstallerId', directAwardParam, { shouldValidate: true });
+      form.setValue('directAwardProfessionalId', directAwardParam, { shouldValidate: true });
     }
     const checkForDraft = async () => {
       if (!user || isEditMode || repostJobId || isSubmitted) return;
       try {
         const { getLatestDraftAction } = await import('@/app/actions/draft.actions');
         const res = await getLatestDraftAction(user.id);
+        const wizardCompleted = searchParams.get('wizardCompleted');
         if (res.success && res.draft) {
           setLoadedDraft(res.draft);
           setShowDraftDialog(true);
-        } else if (!directAwardParam && process.env.NEXT_PUBLIC_IS_CI !== 'true') {
+        } else if (!directAwardParam && !wizardCompleted && process.env.NEXT_PUBLIC_IS_CI !== 'true') {
           // Wizard-first guard: No draft, no special params → redirect to wizard
           router.replace('/wizard');
         }
@@ -372,7 +373,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     };
 
     checkForDraft();
-  }, [isEditMode, repostJobId, user, isSubmitted]);
+  }, [isEditMode, repostJobId, user, isSubmitted, directAwardParam, form, router]);
 
   // Handle draft recovery
   const handleResumeDraft = useCallback(() => {
@@ -388,7 +389,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       address: loadedDraft.address || form.getValues('address'),
       deadline: '',
       jobStartDate: loadedDraft.jobStartDate ? format(toDate(loadedDraft.jobStartDate), "yyyy-MM-dd'T'HH:mm") : '',
-      directAwardInstallerId: loadedDraft.directAwardInstallerId || '',
+      directAwardProfessionalId: loadedDraft.directAwardProfessionalId || '',
       priceEstimate: loadedDraft.budget || { min: 0, max: 0 },
     });
 
@@ -409,7 +410,11 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       title: tSuccess('draftDiscarded'),
       description: tSuccess('draftDiscardedDesc'),
     });
-  }, [loadedDraft, user, toast, tSuccess]);
+    // Redirect to wizard if this was a fresh start (no wizardCompleted param)
+    if (!searchParams.get('wizardCompleted')) {
+        router.replace('/wizard');
+    }
+  }, [loadedDraft, user, toast, tSuccess, router]);
 
   // Handle template selection
   const handleTemplateSelect = useCallback(async (template: JobTemplate) => {
@@ -426,7 +431,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       address: fields.address || form.getValues('address'),
       deadline: '',
       jobStartDate: '',
-      directAwardInstallerId: '',
+      directAwardProfessionalId: '',
       priceEstimate: fields.budget || { min: 0, max: 0 },
     });
 
@@ -469,7 +474,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
             travelTip: jobData.travelTip || 0,
             deadline: isEditMode && jobData.deadline ? format(toDate(jobData.deadline), "yyyy-MM-dd") : "",
             jobStartDate: isEditMode && jobData.jobStartDate ? format(toDate(jobData.jobStartDate), "yyyy-MM-dd") : "",
-            directAwardInstallerId: "", // Never prefill direct award
+            directAwardProfessionalId: "", // Never prefill direct award
             priceEstimate: jobData.priceEstimate
           });
 
@@ -508,7 +513,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   }, [setHelp, isEditMode, isAiEnabled, tJob]);
 
   useEffect(() => {
-    if (!userLoading && role !== 'Job Giver') {
+    if (!userLoading && role !== 'Client') {
       router.push('/dashboard');
     }
   }, [role, userLoading, router]);
@@ -516,7 +521,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const jobTitle = useWatch({ control: form.control, name: "jobTitle" });
   const jobCategory = useWatch({ control: form.control, name: "jobCategory" });
   const jobDescription = useWatch({ control: form.control, name: "jobDescription" });
-  const directAwardInstallerId = useWatch({ control: form.control, name: "directAwardInstallerId" });
+  const directAwardProfessionalId = useWatch({ control: form.control, name: "directAwardProfessionalId" });
   const jobTitleState = form.getFieldState("jobTitle");
   const isJobTitleValid = jobTitle && !jobTitleState.invalid;
 
@@ -665,7 +670,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       if (result.success && result.data) {
         const estimate = result.data.priceEstimate;
         form.setValue("priceEstimate.min", estimate.min, { shouldValidate: true });
-        if (!directAwardInstallerId) {
+        if (!directAwardProfessionalId) {
           form.setValue("priceEstimate.max", estimate.max, { shouldValidate: true });
         }
 
@@ -760,9 +765,9 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       attachments: attachmentUrls,
       priceEstimate: values.priceEstimate ? {
         min: values.priceEstimate.min,
-        max: values.directAwardInstallerId ? values.priceEstimate.min : values.priceEstimate.max,
+        max: values.directAwardProfessionalId ? values.priceEstimate.min : values.priceEstimate.max,
       } : undefined,
-      directAwardInstallerId: values.directAwardInstallerId || undefined,
+      directAwardProfessionalId: values.directAwardProfessionalId || undefined,
       preferredTimeSlot: values.preferredTimeSlot,
     };
 
@@ -837,7 +842,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     );
   }
 
-  if (!userLoading && role !== 'Job Giver') {
+  if (!userLoading && role !== 'Client') {
     return null;
   }
 
@@ -926,7 +931,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{tJob('category')}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="job-category-select" className="h-12 md:h-10 text-base md:text-sm">
                           <SelectValue placeholder={tJob('categoryPlaceholder')} />
@@ -1129,7 +1134,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     <FormItem>
                       <FormLabel>{tJob('deadline')}</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardInstallerId} data-testid="job-deadline-input" />
+                        <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardProfessionalId} data-testid="job-deadline-input" />
                       </FormControl>
                       <FormDescription>{tJob('deadlineDesc')}</FormDescription>
                       <FormMessage />
@@ -1181,7 +1186,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>{tJob('preferredTime') || "Preferred Time"}</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a time" />
@@ -1196,7 +1201,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Best time for installer to visit
+                        Best time for Professional to visit
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -1211,7 +1216,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 <div>
                   <CardTitle>{tJob('budget')}</CardTitle>
                   <CardDescription>
-                    {directAwardInstallerId ? tJob('budgetDirectDesc') : tJob('budgetDesc')}
+                    {directAwardProfessionalId ? tJob('budgetDirectDesc') : tJob('budgetDesc')}
                   </CardDescription>
                 </div>
                 <Button
@@ -1229,7 +1234,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Budget Template Selector */}
-              {!directAwardInstallerId && (
+              {!directAwardProfessionalId && (
                 <div className="flex justify-end">
                   <BudgetTemplateSelector
                     onSelect={(template) => {
@@ -1251,7 +1256,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="priceEstimate.min"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{directAwardInstallerId ? tJob('offeredBudget') : tJob('minBudget')}</FormLabel>
+                      <FormLabel>{directAwardProfessionalId ? tJob('offeredBudget') : tJob('minBudget')}</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="e.g. 8000" {...field} data-testid="min-budget-input" />
                       </FormControl>
@@ -1427,7 +1432,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         }}
         onApply={(min, max) => {
           form.setValue('priceEstimate.min', min, { shouldValidate: true });
-          if (!directAwardInstallerId) {
+          if (!directAwardProfessionalId) {
             form.setValue('priceEstimate.max', max, { shouldValidate: true });
           }
         }}
@@ -1435,3 +1440,4 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     </div >
   );
 }
+

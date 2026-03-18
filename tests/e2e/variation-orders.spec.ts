@@ -7,7 +7,7 @@ test.describe('Secured Variation Orders', () => {
 
     // Shared Data
     let jobId: string;
-    const installerEmail = 'installer_variation@example.com';
+    const ProfessionalEmail = 'Professional_variation@example.com';
     const jobGiverEmail = 'giver_variation@example.com';
 
     test('Full Variation Order Cycle', async ({ page }) => {
@@ -19,8 +19,8 @@ test.describe('Secured Variation Orders', () => {
         const helper = new TestHelper(page);
         await helper.mockExternalAPIs();
 
-        // 1. Job Giver Creates Job
-        await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
+        // 1. Client Creates Job
+        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
         await helper.nav.goToPostJob();
 
         await helper.form.fillInput('Job Title', 'Variation Test Job ' + Date.now());
@@ -79,12 +79,12 @@ test.describe('Secured Variation Orders', () => {
         console.log(`Created Job: ${jobId}`);
         expect(jobId).toBeTruthy();
 
-        // 2. Installer Bids
-        console.log('--- Step 2: Installer Bids ---');
+        // 2. Professional Bids
+        console.log('--- Step 2: Professional Bids ---');
         await helper.auth.logout();
-        await helper.auth.login(TEST_ACCOUNTS.installer.email, TEST_ACCOUNTS.installer.password);
+        await helper.auth.login(TEST_ACCOUNTS.professional.email, TEST_ACCOUNTS.professional.password);
 
-        console.log(`Installer navigating to job: /dashboard/jobs/${jobId}`);
+        console.log(`Professional navigating to job: /dashboard/jobs/${jobId}`);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         await expect(page.getByTestId('job-title')).toBeVisible({ timeout: 15000 });
@@ -95,15 +95,15 @@ test.describe('Secured Variation Orders', () => {
         await bidDialog.waitFor({ state: 'visible', timeout: 10000 });
 
         await bidDialog.locator('input[name="amount"]').fill('500');
-        await bidDialog.locator('textarea[name="coverLetter"]').fill('I am the best installer for this job.');
+        await bidDialog.locator('textarea[name="coverLetter"]').fill('I am the best Professional for this job.');
         await bidDialog.getByRole('button', { name: 'Place Bid' }).click();
         await helper.form.waitForToast('Bid Placed!');
         console.log('[PASS] Bid Placed');
 
-        // 3. Job Giver Awards
+        // 3. Client Awards
         console.log('--- Step 3: JG Awards ---');
         await helper.auth.logout();
-        await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
+        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         // Wait for bids to load - reload if needed
@@ -119,10 +119,10 @@ test.describe('Secured Variation Orders', () => {
         await helper.form.waitForToast('Offer Sent');
         console.log('[PASS] Offer Sent');
 
-        // 4. Installer Accepts
-        console.log('--- Step 4: Installer Accepts ---');
+        // 4. Professional Accepts
+        console.log('--- Step 4: Professional Accepts ---');
         await helper.auth.logout();
-        await helper.auth.login(TEST_ACCOUNTS.installer.email, TEST_ACCOUNTS.installer.password);
+        await helper.auth.login(TEST_ACCOUNTS.professional.email, TEST_ACCOUNTS.professional.password);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         await page.getByTestId('accept-job-button').first().click();
@@ -137,10 +137,10 @@ test.describe('Secured Variation Orders', () => {
         await helper.job.waitForJobStatus('Pending Funding');
         console.log('[PASS] Job Accepted');
 
-        // 5. Job Giver Funds Job (to move to In Progress)
+        // 5. Client Funds Job (to move to In Progress)
         console.log('--- Step 5: JG Funds Job ---');
         await helper.auth.logout();
-        await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
+        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         await page.getByTestId('proceed-payment-button').click();
@@ -159,9 +159,9 @@ test.describe('Secured Variation Orders', () => {
         console.log('[PASS] Job Funded, Status: In Progress');
         await helper.auth.logout();
 
-        // 6. Installer Proposes Variation
-        await helper.auth.login(TEST_ACCOUNTS.installer.email, TEST_ACCOUNTS.installer.password);
-        await helper.auth.ensureRole('Installer');
+        // 6. Professional Proposes Variation
+        await helper.auth.login(TEST_ACCOUNTS.professional.email, TEST_ACCOUNTS.professional.password);
+        await helper.auth.ensureRole('Professional');
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         await page.click('[data-testid="propose-variation-button"]');
@@ -175,8 +175,8 @@ test.describe('Secured Variation Orders', () => {
         await expect(page.locator('text=QUOTED')).toBeVisible();
         await helper.auth.logout();
 
-        // 6. Job Giver Pays
-        await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
+        // 6. Client Pays
+        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         page.once('dialog', dialog => dialog.accept());
@@ -190,3 +190,5 @@ test.describe('Secured Variation Orders', () => {
         console.log('[PASS] Variation Payment Initiated');
     });
 });
+
+

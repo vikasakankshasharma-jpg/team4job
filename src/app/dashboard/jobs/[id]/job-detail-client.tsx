@@ -127,7 +127,7 @@ import { useHelp } from "@/hooks/use-help";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
-import { InstallerAcceptanceSection, tierIcons } from "@/components/job/installer-acceptance-section";
+import { ProfessionalAcceptanceSection, tierIcons } from "@/components/job/professional-acceptance-section";
 import { aiAssistedBidCreation } from "@/ai/flows/ai-assisted-bid-creation";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -142,8 +142,8 @@ import { RatingSection } from "@/components/job/job-rating-section";
 import { ReapplyCard } from "@/components/job/job-reapply-card";
 import { StartWorkInput } from "@/components/job/start-work-input";
 import { CancelJobDialog } from "@/components/job/cancel-job-dialog";
-import { InstallerCompletionSection } from "@/components/job/installer-completion-section";
-import { JobGiverConfirmationSection } from "@/components/job/job-giver-confirmation-section";
+import { ProfessionalCompletionSection } from "@/components/job/professional-completion-section";
+import { ClientConfirmationSection } from "@/components/job/client-confirmation-section";
 import { ReleasePaymentDialog } from "@/components/job/release-payment-dialog";
 import { DisputeDialog } from "@/components/job/dispute-dialog";
 import { JobTimeline } from "@/components/job/job-timeline";
@@ -178,8 +178,8 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
     const tCommon = useTranslations('common');
 
     // Calculate Fees
-    const jobGiverFeeRate = platformSettings?.jobGiverFeeRate || 2.5; // Default 2.5%
-    const fee = Math.ceil(amount * (jobGiverFeeRate / 100));
+    const clientFeeRate = platformSettings?.clientFeeRate || 2.5; // Default 2.5%
+    const fee = Math.ceil(amount * (clientFeeRate / 100));
     const total = amount + fee;
 
     const handleAddFunds = async () => {
@@ -256,7 +256,7 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
                                 <span>₹{amount}</span>
                             </div>
                             <div className="flex justify-between text-muted-foreground">
-                                <span>{t('processingFee')} ({jobGiverFeeRate}%):</span>
+                                <span>{t('processingFee')} ({clientFeeRate}%):</span>
                                 <span>₹{fee}</span>
                             </div>
                             <Separator className="my-1" />
@@ -280,7 +280,7 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
     );
 }
 
-// External components: InstallerCompletionSection, JobGiverConfirmationSection
+// External components: ProfessionalCompletionSection, ClientConfirmationSection
 
 
 /* --- MAIN CLIENT COMPONENT --- */
@@ -289,7 +289,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
     const { user, role, loading: userLoading, isAdmin } = useUser();
-    const isInstaller = role === 'Installer';
+    const isProfessional = role === 'Professional';
     const t = useTranslations('jobDetail');
     const tCommon = useTranslations('common');
     const tJob = useTranslations('job');
@@ -309,9 +309,9 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
     // Determine Winning Bid Amount (Hoisted for Payment Action)
     const winningBidAmount = React.useMemo(() => {
-        if (!job?.awardedInstaller || !bids) return 0;
-        const awardedId = getRefId(job.awardedInstaller);
-        const winningBid = bids.find(b => getRefId(b.installer) === awardedId);
+        if (!job?.awardedProfessional || !bids) return 0;
+        const awardedId = getRefId(job.awardedProfessional);
+        const winningBid = bids.find(b => getRefId(b.professional) === awardedId);
         return winningBid ? winningBid.amount : 0;
     }, [job, bids]);
 
@@ -320,7 +320,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
     const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
     const [counterParty, setCounterParty] = React.useState<User | null>(null);
-    const isJobGiver = !!(user && job && (user.id === getRefId(job.jobGiver) || user.id === job.jobGiverId));
+    const isClient = !!(user && job && (user.id === getRefId(job.client) || user.id === job.clientId));
 
     // State for Payment Dialog
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = React.useState(false);
@@ -357,10 +357,10 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     const [marketAnalysis, setMarketAnalysis] = React.useState<any>(null);
     const [isAnalyzingMarket, setIsAnalyzingMarket] = React.useState(false);
 
-    // Auto-trigger Market Analysis for Job Givers
+    // Auto-trigger Market Analysis for Clients
     React.useEffect(() => {
         const analyzeMarket = async () => {
-            if (!isJobGiver || job.status !== 'open' || bids.length > 0 || marketAnalysis || isAnalyzingMarket) return;
+            if (!isClient || job.status !== 'open' || bids.length > 0 || marketAnalysis || isAnalyzingMarket) return;
 
             // Check if job is at least 1 day old (simulated check)
             const postedDate = toDate(job.postedAt);
@@ -388,7 +388,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
         };
 
         analyzeMarket();
-    }, [isJobGiver, job, bids.length, marketAnalysis, isAnalyzingMarket]);
+    }, [isClient, job, bids.length, marketAnalysis, isAnalyzingMarket]);
 
     // Secure Contact Reveal Flow
     React.useEffect(() => {
@@ -465,7 +465,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             description,
             quoteAmount: amount,
             status: 'quoted',
-            createdBy: 'Installer',
+            createdBy: 'Professional',
             createdAt: new Date()
         };
         await handleJobUpdate({
@@ -480,7 +480,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             id: `TASK-${Date.now()}`,
             description,
             status: 'pending-quote',
-            createdBy: 'Job Giver',
+            createdBy: 'Client',
             createdAt: new Date()
         };
         await handleJobUpdate({
@@ -617,7 +617,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
                     <div className="space-y-2">
                         <h4 className="font-semibold text-sm border-b pb-1">{tJob('howItWorks')}</h4>
-                        {isJobGiver ? (
+                        {isClient ? (
                             <ul className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
                                 <li>
                                     <strong>{tJob('reviewAward')}:</strong> {tJob('reviewAwardDesc')}
@@ -647,7 +647,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             )
         });
         return () => setHelp({ title: null, content: null });
-    }, [setHelp, job, isJobGiver, t, tJob]);
+    }, [setHelp, job, isClient, t, tJob]);
 
     // Fetch Job Data & Listen for Changes
     // React.useEffect for job subscription removed. Handled by useJobSubscription hook.
@@ -764,8 +764,8 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     React.useEffect(() => {
         // Fallback defaults without DB call
         setPlatformSettings({
-            jobGiverFeeRate: 2.5,
-            installerCommissionRate: 5,
+            clientFeeRate: 2.5,
+            professionalCommissionRate: 5,
             minJobBudgetForMilestones: 5000
         } as any);
     }, []);
@@ -781,7 +781,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     }
 
     // Determine Role View
-    // isJobGiver is already defined at the top needed for useHelp hook
+    // isClient is already defined at the top needed for useHelp hook
 
 
     // Winning Bid Amount logic moved to top (lines ~720)
@@ -801,7 +801,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                 action,
                 proposedDate: rescheduleDate,
                 userId: user!.id,
-                userRole: isJobGiver ? 'Job Giver' : 'Installer'
+                userRole: isClient ? 'Client' : 'Professional'
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -848,8 +848,8 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                         {/* Pending Actions */}
                         {job.dateChangeProposal.status === 'pending' && (
                             <>
-                                {((job.dateChangeProposal.proposedBy === 'Job Giver' && !isJobGiver) ||
-                                    (job.dateChangeProposal.proposedBy === 'Installer' && isJobGiver)) ? (
+                                {((job.dateChangeProposal.proposedBy === 'Client' && !isClient) ||
+                                    (job.dateChangeProposal.proposedBy === 'Professional' && isClient)) ? (
                                     <div className="flex gap-2">
                                         <Button size="sm" variant="outline" onClick={() => handleReschedule('reject')} disabled={isLoading}>{tCommon('decline')}</Button>
                                         <Button size="sm" onClick={() => handleReschedule('accept')} disabled={isLoading}>{t('acceptNewDate')}</Button>
@@ -863,8 +863,8 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                         {/* Rejected Actions (Dismiss) */}
                         {job.dateChangeProposal.status === 'rejected' && (
                             <div className="flex gap-2">
-                                {/* If Job Giver was rejected, show Cancel Hint? */}
-                                {isJobGiver && (
+                                {/* If Client was rejected, show Cancel Hint? */}
+                                {isClient && (
                                     <Button size="sm" variant="destructive" onClick={() => setIsCancelDialogOpen(true)}>
                                         {tCommon('cancel')}
                                     </Button>
@@ -882,10 +882,10 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
 
 
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold overflow-wrap-anywhere" data-testid="job-title">{job.title}</h1>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight overflow-wrap-anywhere" data-testid="job-title">{job.title}</h1>
                 <div className="flex flex-col gap-4 mt-2">
                     <div className="flex items-center gap-2">
-                        <Badge variant={getStatusVariant(job.status)} className="w-fit px-3 py-1 text-sm font-semibold" data-testid="job-status-badge" data-status={job.status}>
+                        <Badge variant={getStatusVariant(job.status)} className="w-fit px-3.5 py-1.5 text-xs font-bold tracking-wider uppercase shadow-sm" data-testid="job-status-badge" data-status={job.status}>
                             {job.status.replace(/_/g, ' ').toUpperCase()}
                         </Badge>
                         {job.status === 'funded' && (
@@ -895,17 +895,18 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                             </Badge>
                         )}
                     </div>
-                    <Card>
-                        <CardContent className="pt-6 pb-2">
-                            <JobTimeline status={job.status} userRole={isJobGiver ? 'Job Giver' : 'Installer'} />
+                    <Card className="border-0 shadow-lg shadow-primary/5 overflow-hidden">
+                        <div className="h-1 w-full bg-gradient-to-r from-muted to-muted" />
+                        <CardContent className="pt-6 pb-4">
+                            <JobTimeline status={job.status} userRole={isClient ? 'Client' : 'Professional'} />
                         </CardContent>
                     </Card>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
                     <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-2 lg:order-1">
-                        <Card>
-                            <CardHeader><CardTitle>{t('description')}</CardTitle></CardHeader>
+                        <Card className="border-0 shadow-md shadow-primary/5">
+                            <CardHeader className="pb-4"><CardTitle className="text-xl font-bold tracking-tight">{t('description')}</CardTitle></CardHeader>
                             <CardContent>
                                 <p className="whitespace-pre-line mb-4 overflow-wrap-anywhere">{job.description}</p>
 
@@ -947,10 +948,10 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                         </Card>
 
                         {/* Bids Section */}
-                        <Card id="bids-section">
-                            <CardHeader><CardTitle>{tJob('bidsTab')} ({bids.length})</CardTitle></CardHeader>
+                        <Card id="bids-section" className="border-0 shadow-md shadow-primary/5">
+                            <CardHeader className="pb-4"><CardTitle className="text-xl font-bold tracking-tight">{tJob('bidsTab')} ({bids.length})</CardTitle></CardHeader>
                             <CardContent>
-                                {isJobGiver && marketAnalysis && bids.length === 0 && (
+                                {isClient && marketAnalysis && bids.length === 0 && (
                                     <div className="mb-6 p-4 bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl shadow-sm relative overflow-hidden group">
                                         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
                                             <TrendingUp className="h-20 w-20 text-indigo-900" />
@@ -987,20 +988,20 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                 <CardContent className="p-4 flex justify-between items-center">
                                                     <div>
                                                         <p className="font-semibold text-lg" data-testid="bid-amount">
-                                                            {isJobGiver || user?.id === getRefId(bid.installer) ? `₹${bid.amount}` : "₹ ••••"}
+                                                            {isClient || user?.id === getRefId(bid.professional) ? `₹${bid.amount}` : "₹ ••••"}
                                                         </p>
                                                         <p className="text-sm text-muted-foreground">{formatDistanceToNow(toDate(bid.timestamp))} ago</p>
-                                                        {(!isJobGiver && user?.id !== getRefId(bid.installer)) && (
+                                                        {(!isClient && user?.id !== getRefId(bid.professional)) && (
                                                             <p className="text-[10px] text-muted-foreground italic">{t('bidAmountHidden')}</p>
                                                         )}
                                                     </div>
-                                                    {/* Award Action (Only for Job Giver) */}
-                                                    {isJobGiver && job.status === 'open' && (
+                                                    {/* Award Action (Only for Client) */}
+                                                    {isClient && job.status === 'open' && (
                                                         <Button data-testid="send-offer-button" onClick={async () => {
                                                             // Award Logic
                                                             // 1. Update Job Status to 'Pending Acceptance' (Phase 4 of checklist)
                                                             // Or directly Awarded?
-                                                            // Actually, standard flow: Job Giver Selects -> Installer Accepts.
+                                                            // Actually, standard flow: Client Selects -> Professional Accepts.
                                                             // The 'Send Offer' button does this.
 
                                                             // We can handle this logic inside a "BidCard" component or here.
@@ -1008,9 +1009,9 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                             const acceptanceDeadline = new Date();
                                                             acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
 
-                                                            const installerId = bid.installerId || getRefId(bid.installer);
-                                                            if (!installerId) {
-                                                                toast({ title: tCommon('error'), description: "Cannot award: missing installer ID", variant: "destructive" });
+                                                            const professionalId = bid.professionalId || getRefId(bid.professional);
+                                                            if (!professionalId) {
+                                                                toast({ title: tCommon('error'), description: "Cannot award: missing professional ID", variant: "destructive" });
                                                                 return;
                                                             }
 
@@ -1018,7 +1019,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                                 const res = await awardJobAction(
                                                                     job.id,
                                                                     user.id,
-                                                                    installerId,
+                                                                    professionalId,
                                                                     acceptanceDeadline.toISOString()
                                                                 );
 
@@ -1046,7 +1047,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                         size="sm"
                                                         className="w-full text-xs text-muted-foreground hover:text-primary"
                                                         onClick={() => {
-                                                            const contactUrl = `/dashboard/messages?recipientId=${getRefId(bid.installer)}`;
+                                                            const contactUrl = `/dashboard/messages?recipientId=${getRefId(bid.professional)}`;
                                                             window.open(contactUrl, '_blank');
                                                         }}
                                                     >
@@ -1064,8 +1065,9 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
                     <div className="space-y-4 sm:space-y-6 order-1 lg:order-2 lg:sticky lg:top-24 h-fit">
                         {/* Actions Panel */}
-                        <Card data-testid="actions-panel">
-                            <CardHeader><CardTitle>{t('actions')}</CardTitle></CardHeader>
+                        <Card data-testid="actions-panel" className="border-0 shadow-xl shadow-primary/5 sticky top-24">
+                            <div className="h-1 w-full bg-gradient-to-r from-primary/50 to-accent/50" />
+                            <CardHeader className="pb-4"><CardTitle className="text-xl font-bold tracking-tight">{t('actions')}</CardTitle></CardHeader>
                             <CardContent className="space-y-4">
                                 <div className={cn("space-y-4", userLoading && "opacity-50 pointer-events-none")}>
                                     {userLoading && (
@@ -1075,15 +1077,15 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         </div>
                                     )}
 
-                                    {/* Job Giver Actions */}
-                                    {isJobGiver && job.status === 'open' && (
+                                    {/* Client Actions */}
+                                    {isClient && job.status === 'open' && (
                                         <Button variant="destructive" className="w-full min-h-[44px]" onClick={() => handleJobUpdate({ status: 'unbid' })}>{t('closeBidding')}</Button>
                                     )}
 
-                                    {/* Installer Actions: Place Bid */}
-                                    {!isJobGiver && job.status === 'open' && (
-                                        <Button className="w-full min-h-[48px]" onClick={() => setIsBidDialogOpen(true)} disabled={userLoading || bids.some(b => getRefId(b.installer) === user?.id)} data-testid="place-bid-button">
-                                            {bids.some(b => getRefId(b.installer) === user?.id) ? t('bidPlaced') : t('placeBid')}
+                                    {/* Professional Actions: Place Bid */}
+                                    {!isClient && job.status === 'open' && (
+                                        <Button className="w-full min-h-[48px]" onClick={() => setIsBidDialogOpen(true)} disabled={userLoading || bids.some(b => getRefId(b.professional) === user?.id)} data-testid="place-bid-button">
+                                            {bids.some(b => getRefId(b.professional) === user?.id) ? t('bidPlaced') : t('placeBid')}
                                         </Button>
                                     )}
 
@@ -1100,7 +1102,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                     )}
 
                                     {/* Retract Offer */}
-                                    {isJobGiver && job.status === 'bid_accepted' && (
+                                    {isClient && job.status === 'bid_accepted' && (
                                         <div className="space-y-4">
                                             <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
                                                 {t('offerSentMsg')}
@@ -1109,11 +1111,11 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                 variant="outline"
                                                 className="w-full text-amber-600 border-amber-200 hover:bg-amber-50"
                                                 onClick={async () => {
-                                                    if (!window.confirm("Retract offer? This will allow other installers to bid again.")) return;
+                                                    if (!window.confirm("Retract offer? This will allow other professionals to bid again.")) return;
                                                     await handleJobUpdate({
                                                         status: 'open',
-                                                        awardedInstaller: null as any,
-                                                        selectedInstallers: null as any
+                                                        awardedProfessional: null as any,
+                                                        selectedProfessionals: null as any
                                                     });
                                                     toast({ title: t('offerRetracted'), description: t('offerRetractedDesc') });
                                                 }}
@@ -1124,7 +1126,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         </div>
                                     )}
 
-                                    {isJobGiver && (job.status === 'bid_accepted' || job.status === 'Pending Funding') && (
+                                    {isClient && (job.status === 'bid_accepted' || job.status === 'Pending Funding') && (
                                         isPaymentsEnabled ? (
                                             <Button className="w-full min-h-[44px]" onClick={handleStartCheckout} data-testid="proceed-payment-button">{t('proceedToPayment')}</Button>
                                         ) : (
@@ -1135,7 +1137,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                     )}
 
                                     {/* Release Payment */}
-                                    {isJobGiver && job.status === 'work_submitted' && (
+                                    {isClient && job.status === 'work_submitted' && (
                                         isPaymentsEnabled ? (
                                             <Button className="w-full bg-green-600 hover:bg-green-700 min-h-[44px]" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
                                                 <CheckCircle className="mr-2 h-4 w-4" />
@@ -1206,7 +1208,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                     </Avatar>
                                                     <div>
                                                         <p className="font-bold text-lg leading-none">{counterParty.name}</p>
-                                                        <p className="text-sm text-muted-foreground">{isJobGiver ? t('installer') : t('jobGiver')}</p>
+                                                        <p className="text-sm text-muted-foreground">{isClient ? t('professional') : t('client')}</p>
                                                         <div className="flex items-center gap-1 mt-1 text-xs text-green-600 font-medium">
                                                             <CheckCircle2 className="h-3 w-3" />
                                                             {t('backgroundChecked')}
@@ -1228,27 +1230,27 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
                                     {/* Acceptance Section */}
                                     {
-                                        !isJobGiver && job.status === 'bid_accepted' && (
-                                            <InstallerAcceptanceSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
+                                        !isClient && job.status === 'bid_accepted' && (
+                                            <ProfessionalAcceptanceSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
                                         )
                                     }
 
                                     {/* Completion Sections */}
                                     {
-                                        !isJobGiver && (job.status === 'in_progress' || job.status === 'In Progress' || job.status === 'bid_accepted' || job.status === 'Pending Funding') && !job.workStartedAt && (
+                                        !isClient && (job.status === 'in_progress' || job.status === 'In Progress' || job.status === 'bid_accepted' || job.status === 'Pending Funding') && !job.workStartedAt && (
                                             <StartWorkInput job={job} user={user!} onJobUpdate={handleJobUpdate} />
                                         )
                                     }
 
                                     {
-                                        !isJobGiver && (job.status === 'in_progress' || job.status === 'In Progress') && job.workStartedAt && (
-                                            <InstallerCompletionSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
+                                        !isClient && (job.status === 'in_progress' || job.status === 'In Progress') && job.workStartedAt && (
+                                            <ProfessionalCompletionSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
                                         )
                                     }
 
                                     {
-                                        isJobGiver && (job.status === 'in_progress' || job.status === 'In Progress' || job.status === 'work_submitted' || job.status === 'Work Submitted' || job.status === 'Pending Confirmation') && (
-                                            <JobGiverConfirmationSection
+                                        isClient && (job.status === 'in_progress' || job.status === 'In Progress' || job.status === 'work_submitted' || job.status === 'Work Submitted' || job.status === 'Pending Confirmation') && (
+                                            <ClientConfirmationSection
                                                 job={job}
                                                 user={user!}
                                                 onJobUpdate={handleJobUpdate}
@@ -1275,18 +1277,18 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                         onConfirm={handleConfirmPayment}
                         onDirectConfirm={handleDirectConfirm}
                         platformSettings={platformSettings}
-                        bidAmount={bids.find((b: any) => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)))?.amount || (job as any).budget?.min || 0}
+                        bidAmount={bids.find((b: any) => getRefId(b.professional) === (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : getRefId(job.awardedProfessional)))?.amount || (job as any).budget?.min || 0}
                     />
 
                     {/* Variation Orders Section */}
                     {/* Variation Orders Section */}
                     <div className="md:col-span-3 mt-8 order-3">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <CardTitle>{t('variationOrders')}</CardTitle>
+                        <Card className="border-0 shadow-md shadow-primary/5">
+                            <CardHeader className="flex flex-row items-center justify-between pb-4">
+                                <CardTitle className="text-xl font-bold tracking-tight">{t('variationOrders')}</CardTitle>
                                 <Button onClick={() => setIsVariationDialogOpen(true)} variant="outline" size="sm" data-testid="propose-variation-button">
                                     <Plus className="h-4 w-4 mr-2" />
-                                    {isJobGiver ? t('requestVariation') : t('proposeVariation')}
+                                    {isClient ? t('requestVariation') : t('proposeVariation')}
                                 </Button>
                             </CardHeader>
                             <CardContent>
@@ -1294,7 +1296,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                     <VariationOrderList
                                         job={job}
                                         user={user}
-                                        isJobGiver={isJobGiver}
+                                        isClient={isClient}
                                         onJobUpdate={handleJobUpdate}
                                         onPayForTask={handlePayForVariation}
                                         onQuoteTask={handleQuoteVariation}
@@ -1310,9 +1312,9 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     <div className="md:col-span-3 mt-8 order-4">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold">{t('paymentMilestones')}</h3>
-                            {isJobGiver && job.status === 'in_progress' && (
+                            {isClient && job.status === 'in_progress' && (
                                 // Configurable Threshold Check
-                                ((bids.find(b => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)))?.amount || (job as any).priceEstimate?.min || 0) >= (platformSettings?.minJobBudgetForMilestones ?? 5000))
+                                ((bids.find(b => getRefId(b.professional) === (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : getRefId(job.awardedProfessional)))?.amount || (job as any).priceEstimate?.min || 0) >= (platformSettings?.minJobBudgetForMilestones ?? 5000))
                                     ? (
                                         <Button onClick={() => setIsMilestoneDialogOpen(true)} variant="outline" size="sm" data-testid="add-milestone-button">
                                             <Plus className="h-4 w-4 mr-2" />
@@ -1328,7 +1330,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                         <MilestoneList
                             job={job}
                             user={user || null}
-                            isJobGiver={isJobGiver}
+                            isClient={isClient}
                             onRelease={handleReleaseMilestone}
                         />
                     </div>
@@ -1338,7 +1340,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                         onOpenChange={setIsMilestoneDialogOpen}
                         onSubmit={handleCreateMilestone}
                         maxAmount={(() => {
-                            const awardedBid = bids.find(b => getRefId(b.installer) === (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : getRefId(job.awardedInstaller)));
+                            const awardedBid = bids.find(b => getRefId(b.professional) === (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : getRefId(job.awardedProfessional)));
                             const totalBudget = awardedBid?.amount || (job as any).priceEstimate?.max || 0;
                             const usedBudget = (job.milestones || []).reduce((acc: number, m: any) => acc + (Number(m.amount) || 0), 0);
                             return Math.max(0, totalBudget - usedBudget);
@@ -1351,7 +1353,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                         onOpenChange={setIsVariationDialogOpen}
                         onSubmitProposal={handleProposeVariation}
                         onSubmitRequest={handleRequestVariation}
-                        isInstaller={!isJobGiver}
+                        isProfessional={!isClient}
                     />
 
                     {
@@ -1371,7 +1373,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     }
 
                     {
-                        isJobGiver && user && (
+                        isClient && user && (
                             <CancelJobDialog
                                 job={job}
                                 user={user}
@@ -1383,7 +1385,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     }
 
                     {
-                        isJobGiver && user && (
+                        isClient && user && (
                             <AddFundsDialog
                                 job={job}
                                 user={user}
@@ -1395,7 +1397,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     }
 
                     {
-                        isJobGiver && user && isPaymentsEnabled && (
+                        isClient && user && isPaymentsEnabled && (
                             <ReleasePaymentDialog
                                 job={job}
                                 user={user}

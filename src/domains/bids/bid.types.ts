@@ -6,11 +6,11 @@ import { User } from '@/lib/types';
 export interface Bid {
   id?: string;
   jobId: string;
-  installer: User | DocumentReference;
-  installerId: string;
+  professional: User | DocumentReference;
+  professionalId: string;
   amount: number;
   timestamp: Date | Timestamp;
-  jobGiverId?: string;
+  clientId?: string;
   coverLetter?: string;
   includedItems?: string[];
   warrantyDuration?: string;

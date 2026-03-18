@@ -12,12 +12,12 @@ export class DisputeService {
             if (input.jobId) {
                 const job = await jobService.getJobById(input.jobId, input.requesterId);
                 input.jobTitle = job.title;
-                const jobGiverId = typeof job.jobGiver === 'string' ? job.jobGiver : job.jobGiver.id;
-                const installerId = job.awardedInstallerId || (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : job.awardedInstaller?.id);
+                const clientId = typeof job.client === 'string' ? job.client : job.client.id;
+                const professionalId = job.awardedProfessionalId || (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : job.awardedProfessional?.id);
 
                 input.parties = {
-                    jobGiverId,
-                    installerId: installerId || ''
+                    clientId,
+                    professionalId: professionalId || ''
                 };
             }
 
@@ -36,7 +36,7 @@ export class DisputeService {
 
         // Check permissions: requester, parties, or admin/support
         const isRequester = dispute.requesterId === userId;
-        const isParty = dispute.parties?.jobGiverId === userId || dispute.parties?.installerId === userId;
+        const isParty = dispute.parties?.clientId === userId || dispute.parties?.professionalId === userId;
         const isAdmin = userRole === 'Admin' || userRole === 'Support Team';
 
         if (!isRequester && !isParty && !isAdmin) {

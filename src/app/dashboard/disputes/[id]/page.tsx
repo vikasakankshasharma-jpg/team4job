@@ -52,8 +52,8 @@ const getStatusVariant = (status: Dispute['status']) => {
 const getRoleIcon = (role: DisputeMessage['authorRole']) => {
   switch (role) {
     case 'Admin': return <Shield className="h-4 w-4" />;
-    case 'Job Giver': return <UserIcon className="h-4 w-4" />;
-    case 'Installer': return <UserIcon className="h-4 w-4" />;
+    case 'Client': return <UserIcon className="h-4 w-4" />;
+    case 'Professional': return <UserIcon className="h-4 w-4" />;
     default: return <Bot className="h-4 w-4" />;
   }
 }
@@ -157,8 +157,8 @@ export default function DisputeDetailPage() {
 
       const userIds = new Set<string>([disputeData.requesterId]);
       if (disputeData.parties) {
-        userIds.add(disputeData.parties.jobGiverId);
-        userIds.add(disputeData.parties.installerId);
+        userIds.add(disputeData.parties.clientId);
+        userIds.add(disputeData.parties.professionalId);
       }
       if (disputeData.handledBy) {
         userIds.add(disputeData.handledBy);
@@ -188,7 +188,7 @@ export default function DisputeDetailPage() {
     notFound();
   }
 
-  const isParty = user.id === dispute.requesterId || (dispute.parties && (user.id === dispute.parties.jobGiverId || user.id === dispute.parties.installerId)) || isAdmin || role === 'Support Team';
+  const isParty = user.id === dispute.requesterId || (dispute.parties && (user.id === dispute.parties.clientId || user.id === dispute.parties.professionalId)) || isAdmin || role === 'Support Team';
   if (!isParty) {
     notFound();
   }
@@ -267,12 +267,12 @@ export default function DisputeDetailPage() {
 
       await axios.post('/api/cashfree/payouts/request-transfer', {
         transactionId: transaction.id,
-        userId: transaction.payerId, // The user to refund is the payer (Job Giver)
+        userId: transaction.payerId, // The user to refund is the payer (Client)
         transferType: 'refund',
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast({ title: "Refund Initiated", description: "The refund to the Job Giver has been processed." });
+      toast({ title: "Refund Initiated", description: "The refund to the Client has been processed." });
       setTransaction(prev => prev ? { ...prev, status: 'refunded' } : null);
     } catch (error: any) {
       toast({ title: "Refund Failed", description: error.response?.data?.error || "Could not process refund.", variant: "destructive" });
@@ -301,7 +301,7 @@ export default function DisputeDetailPage() {
         splitPercentage: 100, // Full Payout
         adminNotes: 'Manual Admin Release'
       });
-      toast({ title: "Funds Released", description: "The payment has been released to the installer.", variant: "default" });
+      toast({ title: "Funds Released", description: "The payment has been released to the professional.", variant: "default" });
       setTransaction(prev => prev ? { ...prev, status: 'released' } : null);
     } catch (error: any) {
       toast({ title: "Release Failed", description: error.response?.data?.error || "Could not release funds.", variant: "destructive" });
@@ -507,13 +507,13 @@ export default function DisputeDetailPage() {
             {dispute.parties && (
               <div className="space-y-3">
                 <h4 className="font-semibold">Parties Involved</h4>
-                <Link href={`/dashboard/users/${dispute.parties.jobGiverId}`} className="block hover:bg-accent p-2 rounded-md">
-                  <p className="font-medium">Job Giver: {involvedUsers[dispute.parties.jobGiverId]?.name || '...'}</p>
-                  <p className="text-xs text-muted-foreground font-mono">{dispute.parties.jobGiverId}</p>
+                <Link href={`/dashboard/users/${dispute.parties.clientId}`} className="block hover:bg-accent p-2 rounded-md">
+                  <p className="font-medium">Client: {involvedUsers[dispute.parties.clientId]?.name || '...'}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{dispute.parties.clientId}</p>
                 </Link>
-                <Link href={`/dashboard/users/${dispute.parties.installerId}`} className="block hover:bg-accent p-2 rounded-md">
-                  <p className="font-medium">Installer: {involvedUsers[dispute.parties.installerId]?.name || '...'}</p>
-                  <p className="text-xs text-muted-foreground font-mono">{dispute.parties.installerId}</p>
+                <Link href={`/dashboard/users/${dispute.parties.professionalId}`} className="block hover:bg-accent p-2 rounded-md">
+                  <p className="font-medium">Professional: {involvedUsers[dispute.parties.professionalId]?.name || '...'}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{dispute.parties.professionalId}</p>
                 </Link>
               </div>
             )}
@@ -562,7 +562,7 @@ export default function DisputeDetailPage() {
                               await updateDoc(doc(db, "jobs", dispute.jobId), { status: 'Completed' });
                             }
                           }}>
-                            Option B: Complete Job & Pay Installer
+                            Option B: Complete Job & Pay Professional
                           </Button>
                           <Button variant="secondary" onClick={async () => {
                             await handleResolveDispute('Resolved without further action');
@@ -589,11 +589,11 @@ export default function DisputeDetailPage() {
 
                       <Button variant="destructive" className="w-full" onClick={handleRefund} disabled={isRefunding || isReleasing || transaction.status === 'disputed'}>
                         {isRefunding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
-                        Refund to Job Giver
+                        Refund to Client
                       </Button>
                       <Button variant="success" className="w-full" onClick={handleReleaseFunds} disabled={isReleasing || isRefunding || transaction.status === 'disputed'}>
                         {isReleasing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Award className="mr-2 h-4 w-4" />}
-                        Release Funds to Installer
+                        Release Funds to Professional
                       </Button>
                     </>
                   )}

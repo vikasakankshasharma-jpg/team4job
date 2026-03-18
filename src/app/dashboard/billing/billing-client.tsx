@@ -66,7 +66,7 @@ function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () =
     const userDoc = await getDoc(doc(db, 'users', user.id));
     const userData = userDoc.data();
     const userRoles = userData?.roles || [];
-    const userRole = userRoles.includes('Installer') ? 'Installer' : 'Job Giver';
+    const userRole = userRoles.includes('Professional') ? 'Professional' : 'Client';
 
     if (coupon.applicableToRole !== 'Any' && coupon.applicableToRole !== userRole) {
       toast({ title: t('codeNotApplicable'), description: t('codeRoleError', { role: coupon.applicableToRole }), variant: "destructive" });
@@ -96,9 +96,9 @@ function RedeemCouponCard({ onSubscriptionUpdate }: { onSubscriptionUpdate: () =
   };
 
   return (
-    <Card>
+    <Card className="border-0 shadow-sm shadow-primary/5">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Ticket className="h-5 w-5" /> {t('redeemCardTitle')}</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-lg font-bold tracking-tight"><Ticket className="h-5 w-5 text-primary/60" /> {t('redeemCardTitle')}</CardTitle>
         <CardDescription>{t('redeemCardDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
@@ -208,12 +208,12 @@ export default function BillingClient() {
         body: JSON.stringify({
           jobId: `SUB-${user.id}-${plan.id}-${Date.now()}`,
           jobTitle: `Subscription: ${plan.name}`,
-          jobGiverId: user.id, // Payer is the user
+          clientId: user.id, // Payer is the user
           planId: plan.id, // Explicitly pass plan ID
-          installerId: 'PLATFORM', // Payee is the platform
+          professionalId: 'PLATFORM', // Payee is the platform
           amount: plan.price,
           travelTip: 0,
-          jobGiverFee: 0,
+          clientFee: 0,
         })
       });
 
@@ -275,15 +275,15 @@ export default function BillingClient() {
 
   return (
     <div className="grid gap-8 max-w-full overflow-x-hidden px-4">
-      <Card>
+      <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
         <CardHeader>
-          <CardTitle>{t('title')}</CardTitle>
+          <CardTitle className="text-xl font-bold tracking-tight">{t('title')}</CardTitle>
           <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent>
           {userLoading ? <Skeleton className="h-10 w-1/2" /> : (
             isSubscribed ? (
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-secondary">
+              <div className="flex items-center justify-between p-4 border-0 rounded-lg bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/10 shadow-sm">
                 <div>
                   <p className="text-lg font-semibold">{user.subscription?.planName}</p>
                   <p className="text-sm text-muted-foreground">
@@ -300,17 +300,17 @@ export default function BillingClient() {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="border-0 shadow-sm shadow-primary/5">
           <CardHeader>
-            <CardTitle>{t('availablePlans')}</CardTitle>
+            <CardTitle className="text-lg font-bold tracking-tight">{t('availablePlans')}</CardTitle>
             <CardDescription>{t('availablePlansDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {loading ? <Skeleton className="h-32 w-full" /> : (
               plans.map(plan => (
-                <Card key={plan.id} className="p-4">
-                  <CardTitle className="text-lg mb-2">{plan.name}</CardTitle>
-                  <p className="text-2xl font-bold mb-2">₹{plan.price.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">{t('year')}</span></p>
+                <Card key={plan.id} className="p-4 border-0 shadow-sm shadow-primary/5 hover:shadow-md transition-shadow">
+                  <CardTitle className="text-lg font-bold tracking-tight mb-2">{plan.name}</CardTitle>
+                  <p className="text-2xl font-extrabold mb-2">₹{plan.price.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">{t('year')}</span></p>
                   <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside mb-4">
                     {plan.features.map(f => <li key={f}>{f}</li>)}
                   </ul>

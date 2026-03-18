@@ -3,15 +3,15 @@
  */
 
 export const TEST_ACCOUNTS = {
-    jobGiver: {
+    client: {
         email: 'giver_vip_v3@team4job.com',
         password: 'Test@1234',
-        role: 'Job Giver',
+        role: 'Client',
     },
-    installer: {
-        email: 'installer_pro_v3@team4job.com',
+    professional: {
+        email: 'Professional_pro_v3@team4job.com',
         password: 'Test@1234',
-        role: 'Installer',
+        role: 'Professional',
     },
     admin: {
         email: 'vikasakankshasharma_v3@gmail.com',
@@ -39,7 +39,18 @@ export const TEST_CREDENTIALS = {
 export const TEST_JOB_DATA = {
     title: 'Install 4 CCTV Cameras for Retail Shop',
     description: 'Need professional installation of 4 outdoor cameras with DVR setup and remote access configuration. The cameras should cover the main entrance, cash counter, storage area, and parking lot.',
-    category: 'New Installation',
+    category: 'Security & Surveillance',
+    subType: 'CCTV / Video Surveillance',
+    branchAnswers: [
+        '3-4',          // How many areas/points?
+        'Both',         // Indoor, Outdoor, or Both?
+        'Commercial',   // Property type?
+        'FreshWiring',  // Existing wiring?
+        '1Week',        // Storage?
+        'NotNeeded',    // Audio?
+        'MobileOnly'    // Display?
+    ],
+    urgency: 'Within 1-2 Days',
     skills: 'CCTV Installation, Wiring, DVR Configuration',
     pincode: '560001',
     house: '1st Floor',
@@ -61,7 +72,7 @@ export const TIMEOUTS = {
 export const ROUTES = {
     login: '/login',
     dashboard: '/dashboard',
-    postJob: '/dashboard/post-job',
+    postJob: '/wizard',
     postedJobs: '/dashboard/posted-jobs',
     browseJobs: '/dashboard/jobs',
     myBids: '/dashboard/my-bids',
@@ -101,3 +112,4 @@ export function generateUniqueJobTitle(): string {
     const timestamp = Date.now();
     return `${TEST_JOB_DATA.title} - ${timestamp}`;
 }
+

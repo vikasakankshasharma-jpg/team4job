@@ -116,11 +116,11 @@ export async function updateJobAction(jobId: string, userId: string, data: Parti
 }
 
 /**
- * Server Action to award a job to an installer (Job Giver)
+ * Server Action to award a job to an Professional (Client)
  */
-export async function awardJobAction(jobId: string, userId: string, installerId: string, acceptanceDeadline: string): Promise<{ success: boolean; error?: string }> {
+export async function awardJobAction(jobId: string, userId: string, professionalId: string, acceptanceDeadline: string): Promise<{ success: boolean; error?: string }> {
     try {
-        await jobService.awardJob(jobId, userId, installerId, new Date(acceptanceDeadline));
+        await jobService.awardJob(jobId, userId, professionalId, new Date(acceptanceDeadline));
 
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
@@ -130,7 +130,7 @@ export async function awardJobAction(jobId: string, userId: string, installerId:
 }
 
 /**
- * Server Action to approve a job (Job Giver)
+ * Server Action to approve a job (Client)
  */
 export async function approveJobAction(jobId: string, userId: string): Promise<{ success: boolean; error?: string }> {
     try {
@@ -143,7 +143,7 @@ export async function approveJobAction(jobId: string, userId: string): Promise<{
 }
 
 /**
- * Server Action to accept a job assignment (Installer)
+ * Server Action to accept a job assignment (Professional)
  */
 export async function acceptJobAction(jobId: string, userId: string): Promise<{ success: boolean; error?: string }> {
     try {
@@ -157,7 +157,7 @@ export async function acceptJobAction(jobId: string, userId: string): Promise<{ 
 }
 
 /**
- * Server Action to complete a job with OTP (Installer)
+ * Server Action to complete a job with OTP (Professional)
  */
 export async function completeJobWithOtpAction(
     jobId: string,
@@ -177,7 +177,7 @@ export async function completeJobWithOtpAction(
 
 
 type InvoiceData = {
-    job: Job & { jobGiver?: User; awardedInstaller?: User };
+    job: Job & { client?: User; awardedProfessional?: User };
     transaction: Transaction | null;
 };
 
@@ -187,7 +187,7 @@ export async function getInvoiceDataAction(jobId: string, userId: string, type?:
 
         // Security check: Only parties or staff can see invoice data
         const isStaff = await AdminGuard.isStaff(userId);
-        const isParty = data.job.jobGiverId === userId || data.job.awardedInstallerId === userId;
+        const isParty = data.job.clientId === userId || data.job.awardedProfessionalId === userId;
 
         if (!isStaff && !isParty) {
             throw new Error('Unauthorized access to invoice data');
@@ -202,9 +202,9 @@ export async function getInvoiceDataAction(jobId: string, userId: string, type?:
     }
 }
 
-export async function listJobsForJobGiverAction(userId: string, limit = 50, lastPostedAt?: string): Promise<{ success: boolean; data: Job[]; error?: string }> {
+export async function listJobsForClientAction(userId: string, limit = 50, lastPostedAt?: string): Promise<{ success: boolean; data: Job[]; error?: string }> {
     try {
-        const jobs = await jobService.listJobsForJobGiver(userId, limit, lastPostedAt ? new Date(lastPostedAt) : undefined);
+        const jobs = await jobService.listJobsForClient(userId, limit, lastPostedAt ? new Date(lastPostedAt) : undefined);
         return { success: true, data: JSON.parse(JSON.stringify(jobs)) };
     } catch (error: any) {
         return { success: false, data: [], error: error.message || 'Failed to list jobs' };
@@ -293,7 +293,7 @@ export async function raiseDisputeAction(
         const job = doc.data() as Job;
 
         // 2. Validate Actor
-        if (job.jobGiverId !== userId && job.awardedInstallerId !== userId) {
+        if (job.clientId !== userId && job.awardedProfessionalId !== userId) {
             throw new Error("Unauthorized to dispute this job");
         }
 
@@ -311,12 +311,12 @@ export async function raiseDisputeAction(
             status: 'Open',
             createdAt: new Date(),
             parties: {
-                jobGiverId: job.jobGiverId,
-                installerId: job.awardedInstallerId
+                clientId: job.clientId,
+                professionalId: job.awardedProfessionalId
             },
             messages: [{
                 authorId: userId,
-                authorRole: job.jobGiverId === userId ? 'Job Giver' : 'Installer',
+                authorRole: job.clientId === userId ? 'Client' : 'Professional',
                 content: description,
                 attachments: attachments,
                 timestamp: new Date()
@@ -340,7 +340,7 @@ export async function raiseDisputeAction(
         });
 
         // 5. Send Notifications
-        const otherPartyId = job.jobGiverId === userId ? job.awardedInstallerId : job.jobGiverId;
+        const otherPartyId = job.clientId === userId ? job.awardedProfessionalId : job.clientId;
         if (otherPartyId) {
             const otherPartySnap = await db.collection('users').doc(otherPartyId).get();
             const requesterSnap = await db.collection('users').doc(userId).get();
@@ -403,22 +403,22 @@ export async function sendMessageAction(
         const job = jobDoc.data() as Job;
 
         // 1. Save to Firestore
-        const isJobGiver = job.jobGiverId === senderId;
-        const msgType = isJobGiver ? 'job_giver_message' : 'installer_message';
+        const isclient = job.clientId === senderId;
+        const msgType = isclient ? 'job_giver_message' : 'Professional_message';
 
         const commRef = await db.collection(`jobs/${jobId}/communications`).add({
             jobId,
             type: msgType,
             content: content.trim(),
             author: senderId,
-            authorName: isJobGiver ? 'Job Giver' : 'Installer', // Fallback or fetch from user
+            authorName: isclient ? 'Client' : 'Professional', // Fallback or fetch from user
             timestamp: FieldValue.serverTimestamp(),
             read: false,
             attachments
         });
 
         // 2. Notify recipient via email
-        const recipientId = isJobGiver ? job.awardedInstallerId : job.jobGiverId;
+        const recipientId = isclient ? job.awardedProfessionalId : job.clientId;
         if (recipientId) {
             const [recipientSnap, senderSnap] = await Promise.all([
                 db.collection('users').doc(recipientId).get(),
@@ -463,7 +463,7 @@ export async function postDisputeMessageAction(
 
         // Security Check
         const isStaff = await AdminGuard.isStaff(authorId);
-        const isParty = dispute.parties?.jobGiverId === authorId || dispute.parties?.installerId === authorId;
+        const isParty = dispute.parties?.clientId === authorId || dispute.parties?.professionalId === authorId;
 
         if (!isStaff && !isParty) {
             throw new Error("Unauthorized to post in this dispute");
@@ -484,7 +484,7 @@ export async function postDisputeMessageAction(
         // Notify other parties
         const parties = dispute.parties;
         if (parties) {
-            const recipientIds = [parties.jobGiverId, parties.installerId].filter(id => id !== authorId);
+            const recipientIds = [parties.clientId, parties.professionalId].filter(id => id !== authorId);
 
             for (const recipientId of recipientIds) {
                 const recipientSnap = await db.collection('users').doc(recipientId).get();
@@ -495,7 +495,7 @@ export async function postDisputeMessageAction(
                     await emailService.sendNewMessageEmail({
                         to: recipient.email,
                         userName: recipient.name,
-                        senderName: (authorRole as any) === 'Support Team' || (authorRole as any) === 'Admin' ? 'Support Team' : (authorRole === 'Job Giver' ? 'Job Giver' : 'Installer'),
+                        senderName: (authorRole as any) === 'Support Team' || (authorRole as any) === 'Admin' ? 'Support Team' : (authorRole === 'Client' ? 'Client' : 'Professional'),
                         jobTitle: dispute.jobTitle || 'Your Job',
                         messagePreview: content.substring(0, 100),
                         chatLink: `${baseUrl}/dashboard/disputes/${disputeId}`
@@ -538,7 +538,7 @@ export async function updateDisputeStatusAction(
         // Notify parties
         if (dispute.parties) {
             const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dodo-test.web.app';
-            const partyIds = [dispute.parties.jobGiverId, dispute.parties.installerId];
+            const partyIds = [dispute.parties.clientId, dispute.parties.professionalId];
 
             for (const pid of partyIds) {
                 const pSnap = await db.collection('users').doc(pid).get();
@@ -561,3 +561,6 @@ export async function updateDisputeStatusAction(
         return { success: false, error: error.message };
     }
 }
+
+
+

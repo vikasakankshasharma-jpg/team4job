@@ -5,7 +5,7 @@ import { Job } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { StatusBadge } from "@/components/job-giver/status-badge";
+import { StatusBadge } from "@/components/client/status-badge";
 import {
     DropdownMenu,
     DropdownMenuContent,

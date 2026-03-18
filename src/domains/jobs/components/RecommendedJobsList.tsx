@@ -14,6 +14,7 @@ import { useFirebase } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 import { toDate } from '@/lib/utils';
 
@@ -24,6 +25,7 @@ interface RecommendedJobsProps {
 export function RecommendedJobsList({ user }: RecommendedJobsProps) {
     const { db } = useFirebase();
     const router = useRouter();
+    const t = useTranslations('dashboard.recommender');
     const [isLoading, setIsLoading] = useState(false);
     const [recommendations, setRecommendations] = useState<RecommendJobsOutput['recommendations']>([]);
     const [availableJobs, setAvailableJobs] = useState<Job[]>([]); // Store full job objects
@@ -62,8 +64,8 @@ export function RecommendedJobsList({ user }: RecommendedJobsProps) {
 
             // 2. Call AI
             const actionResult = await recommendJobsAction({
-                installerSkills: user.installerProfile?.skills || [],
-                installerLocation: user.pincodes?.residential || '',
+                professionalSkills: user.professionalProfile?.skills || [],
+                professionalLocation: user.pincodes?.residential || '',
                 jobs: aiInputJobs
             });
 
@@ -88,24 +90,24 @@ export function RecommendedJobsList({ user }: RecommendedJobsProps) {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-amber-400">
                         <Sparkles className="h-5 w-5" />
-                        Neural Match
+                        {t('neuralMatch')}
                     </CardTitle>
                     <CardDescription className="text-slate-300">
-                        Get AI-powered job recommendations tailored to your skills and location.
+                        {t('aiPoweredDesc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2 text-sm">
                             <Lock className="h-4 w-4 text-amber-400" />
-                            <span>Unlock &quot;Smart Invites&quot; and see jobs 3x faster.</span>
+                            <span>{t('smartInvitesDesc')}</span>
                         </div>
                         <Button
                             variant="secondary"
                             className="w-full bg-amber-500 hover:bg-amber-600 text-black border-none"
                             onClick={() => router.push('/dashboard/subscription-plans')}
                         >
-                            Upgrade to Unlock
+                            {t('upgradeToUnlock')}
                         </Button>
                     </div>
                 </CardContent>
@@ -119,10 +121,10 @@ export function RecommendedJobsList({ user }: RecommendedJobsProps) {
                 <CardTitle className="flex items-center justify-between text-lg">
                     <span className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-amber-500" />
-                        Top Picks for You
+                        {t('topPicks')}
                     </span>
                     <Button variant="ghost" size="sm" onClick={fetchRecommendations} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh"}
+                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('refresh')}
                     </Button>
                 </CardTitle>
             </CardHeader>
@@ -138,7 +140,7 @@ export function RecommendedJobsList({ user }: RecommendedJobsProps) {
                                         <div className="flex justify-between items-start mb-1">
                                             <h4 className="font-semibold text-sm line-clamp-1">{job.title}</h4>
                                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
-                                                {rec.score}% Match
+                                                {t('matchScore', { score: rec.score })}
                                             </Badge>
                                         </div>
                                         <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
@@ -146,7 +148,7 @@ export function RecommendedJobsList({ user }: RecommendedJobsProps) {
                                         </p>
                                         <div className="flex gap-2 text-xs text-slate-500">
                                             <span>📍 {job.location}</span>
-                                            <span>💰 ₹{job.priceEstimate ? `${job.priceEstimate.min} - ${job.priceEstimate.max}` : 'Budget TBD'}</span>
+                                            <span>💰 ₹{job.priceEstimate ? `${job.priceEstimate.min} - ${job.priceEstimate.max}` : t('budgetTbd')}</span>
                                         </div>
                                     </div>
                                 </Link>
@@ -157,19 +159,19 @@ export function RecommendedJobsList({ user }: RecommendedJobsProps) {
                     <div className="text-center">
                         {isLoading ? (
                             <div className="py-6 text-muted-foreground text-sm flex items-center justify-center gap-2">
-                                <Loader2 className="h-4 w-4 animate-spin" /> Analyzing marketplace...
+                                <Loader2 className="h-4 w-4 animate-spin" /> {t('analyzingMarketplace')}
                             </div>
                         ) : (
                             <EmptyState
                                 icon={Sparkles}
-                                title="No matches yet"
-                                description="No perfect matches found right now. Check back later!"
+                                title={t('noMatches')}
+                                description={t('noMatchesDesc')}
                                 className="border-0 min-h-[150px] p-4 shadow-none"
                             />
                         )}
                     </div>
                 )}
-                {!isLoading && recommendations.length === 0 && <Button variant="outline" className="w-full mt-4" onClick={fetchRecommendations}>Scan Jobs</Button>}
+                {!isLoading && recommendations.length === 0 && <Button variant="outline" className="w-full mt-4" onClick={fetchRecommendations}>{t('scanJobs')}</Button>}
             </CardContent>
         </Card>
     );

@@ -1,5 +1,4 @@
-
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 
 const db = admin.firestore();
@@ -8,7 +7,7 @@ const db = admin.firestore();
 async function sendEmail(to: string, subject: string, text: string, html: string) {
     const apiKey = process.env.BREVO_API_KEY;
     if (!apiKey) {
-        console.warn("BREVO_API_KEY is missing. Email skipped.");
+        functions.logger.warn("BREVO_API_KEY is missing. Email skipped.");
         return;
     }
 
@@ -31,21 +30,21 @@ async function sendEmail(to: string, subject: string, text: string, html: string
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error("Brevo API Error:", errorData);
+            functions.logger.error("Brevo API Error:", errorData);
         }
     } catch (error) {
-        console.error("Email Sending Error:", error);
+        functions.logger.error("Email Sending Error:", error);
     }
 }
 
 export const onJobCreated = functions.firestore
     .document("jobs/{jobId}")
-    .onCreate(async (snap, context) => {
+    .onCreate(async (snap: functions.firestore.DocumentSnapshot, context: functions.EventContext) => {
         const job = snap.data();
         if (!job) return;
 
         const jobId = context.params.jobId;
-        console.log(`Checking saved searches for new job: ${jobId}`);
+        functions.logger.info(`Checking saved searches for new job: ${jobId}`);
 
         // 1. Get all active saved searches with 'instant' frequency
         // Optimization: In a real app, query by some criteria. Here we fetch all instant alerts.
@@ -106,7 +105,7 @@ export const onJobCreated = functions.firestore
                 if (userSnap.exists) {
                     const userData = userSnap.data();
                     if (userData?.email) {
-                        console.log(`Sending alert for search '${search.name}' to ${userData.email}`);
+                        functions.logger.info(`Sending alert for search '${search.name}' to ${userData.email}`);
 
                         const subject = `New Job Alert: ${job.title}`;
                         const text = `A new job matching your search "${search.name}" has been posted.\n\nTitle: ${job.title}\nBudget: ₹${job.budget?.min} - ₹${job.budget?.max}\nLocation: ${job.location}\n\nView Job: https://dodo-beta.web.app/dashboard/jobs/${jobId}`;

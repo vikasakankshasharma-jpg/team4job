@@ -1,68 +1,102 @@
-"use client";
-
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useTranslations } from "next-intl";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 
 interface ExperienceProps {
     data: any;
     updateData: (data: any) => void;
 }
 
-const SKILLS = ["Security & Surveillance", "Networking & IT", "Electrical & Power", "Smart Home Setup", "Video Doorbell", "Biometric Systems"];
+const CATEGORIES = [
+    { id: "security", icon: "🛡️" },
+    { id: "it_networking", icon: "🌐" },
+    { id: "electrical", icon: "⚡" },
+    { id: "plumbing", icon: "🚰" },
+    { id: "construction", icon: "🏗️" },
+    { id: "multimedia", icon: "🎬" }
+];
+
+const SKILLS_BY_CATEGORY: Record<string, string[]> = {
+    security: ["cctv", "alarm", "access_control", "fire_security", "biometrics"],
+    it_networking: ["home_network", "server_setup", "wifi_optimize", "it_support"],
+    electrical: ["wiring", "panel_repair", "lighting", "earthing"],
+    plumbing: ["pipeline", "sanitary", "leakage", "water_heater"],
+    construction: ["carpentry", "painting", "masonry", "tiling"],
+    multimedia: ["home_theater", "smart_display", "audio_video"]
+};
 
 export function Experience({ data, updateData }: ExperienceProps) {
+    const t = useTranslations('onboarding.experience');
+    const selectedCategory = data.category || "";
 
     const toggleSkill = (skill: string) => {
         const currentSkills = data.skills || [];
-        if (currentSkills.includes(skill)) {
-            updateData({ ...data, skills: currentSkills.filter((s: string) => s !== skill) });
-        } else {
-            updateData({ ...data, skills: [...currentSkills, skill] });
-        }
+        const newSkills = currentSkills.includes(skill)
+            ? currentSkills.filter((s: string) => s !== skill)
+            : [...currentSkills, skill];
+        updateData({ ...data, skills: newSkills });
     };
 
     return (
         <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Experience & Skills</h2>
-
-            <div className="space-y-3">
-                <Label className="text-base">Years of Experience</Label>
+            <div className="space-y-4">
+                <Label className="text-base font-semibold">{t('categoryLabel')}</Label>
                 <RadioGroup
-                    value={data.experience || "0-2"}
-                    onValueChange={(val) => updateData({ ...data, experience: val })}
-                    className="flex flex-col space-y-1"
+                    value={selectedCategory}
+                    onValueChange={(val) => updateData({ ...data, category: val, skills: [] })}
+                    className="grid grid-cols-2 gap-4"
                 >
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="0-2" id="r1" />
-                        <Label htmlFor="r1">0 - 2 Years</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="3-5" id="r2" />
-                        <Label htmlFor="r2">3 - 5 Years</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="5+" id="r3" />
-                        <Label htmlFor="r3">5+ Years</Label>
-                    </div>
+                    {CATEGORIES.map((cat) => (
+                        <div key={cat.id}>
+                            <RadioGroupItem
+                                value={cat.id}
+                                id={cat.id}
+                                className="peer sr-only"
+                            />
+                            <Label
+                                htmlFor={cat.id}
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                            >
+                                <span className="mb-2 text-2xl">{cat.icon}</span>
+                                <span className="text-center text-xs font-medium uppercase tracking-wider">
+                                    {t(`categories.${cat.id}`)}
+                                </span>
+                            </Label>
+                        </div>
+                    ))}
                 </RadioGroup>
             </div>
 
-            <div className="space-y-3">
-                <Label className="text-base">Select Your Skills</Label>
-                <div className="grid grid-cols-2 gap-4">
-                    {SKILLS.map((skill) => (
-                        <div key={skill} className="flex items-center space-x-2">
-                            <Checkbox
-                                id={skill}
-                                checked={(data.skills || []).includes(skill)}
-                                onCheckedChange={() => toggleSkill(skill)}
-                            />
-                            <Label htmlFor={skill} className="font-normal cursor-pointer select-none">{skill}</Label>
+            {selectedCategory && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center justify-between">
+                        <Label className="text-base font-semibold">{t('skillsLabel')}</Label>
+                        <Badge variant="secondary">{data.skills?.length || 0} {t('selected')}</Badge>
+                    </div>
+                    <ScrollArea className="h-48 rounded-md border p-4">
+                        <div className="grid grid-cols-1 gap-4">
+                            {SKILLS_BY_CATEGORY[selectedCategory].map((skill) => (
+                                <div key={skill} className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id={skill}
+                                        checked={(data.skills || []).includes(skill)}
+                                        onCheckedChange={() => toggleSkill(skill)}
+                                    />
+                                    <Label
+                                        htmlFor={skill}
+                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    >
+                                        {t(`skills.${skill}`)}
+                                    </Label>
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    </ScrollArea>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

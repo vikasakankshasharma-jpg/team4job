@@ -49,8 +49,8 @@ export default function AdminClient() {
     const quickActions: QuickAction[] = [
         { label: t('viewUsers'), icon: Users, href: '/dashboard/users', description: t('manageUsers'), variant: 'outline' },
         { label: t('allJobsLabel'), icon: Briefcase, href: '/dashboard/all-jobs', description: t('monitorJobs'), variant: 'outline' },
-        { label: t('disputes'), icon: ShieldAlert, href: '/dashboard/disputes', description: t('resolveDisputes'), variant: 'outline' },
-        { label: t('reports'), icon: FileText, href: '/dashboard/reports', description: t('viewAnalytics'), variant: 'outline' },
+        { label: t('disputesLabel'), icon: ShieldAlert, href: '/dashboard/disputes', description: t('resolveDisputes'), variant: 'outline' },
+        { label: t('reportsLabel'), icon: FileText, href: '/dashboard/reports', description: t('viewAnalytics'), variant: 'outline' },
     ];
     const { user, role, loading } = useUser();
     const { db } = useFirebase();
@@ -77,14 +77,14 @@ export default function AdminClient() {
 
     // 1. Authorization Guard
     React.useEffect(() => {
-        if (!loading && (!user || !user.roles.includes(USER_ROLES.ADMIN))) {
+        if (!loading && (!user || !user.roles.includes(USER_ROLES.admin))) {
             router.push('/dashboard');
         }
     }, [user, loading, router]);
 
     // 2. Fetch Enhanced Metrics
     React.useEffect(() => {
-        if (!db || !user || !user.roles.includes(USER_ROLES.ADMIN)) return;
+        if (!db || !user || !user.roles.includes(USER_ROLES.admin)) return;
 
         const fetchMetrics = async () => {
             try {
@@ -153,7 +153,7 @@ export default function AdminClient() {
 
     // 3. Live Alerts Feed
     React.useEffect(() => {
-        if (!db || !user || !user.roles.includes(USER_ROLES.ADMIN)) return;
+        if (!db || !user || !user.roles.includes(USER_ROLES.admin)) return;
 
         const alertsRef = collection(db, 'admin_alerts');
         const q = query(alertsRef, orderBy('timestamp', 'desc'), limit(50));
@@ -234,7 +234,7 @@ export default function AdminClient() {
         }
     };
 
-    if (loading || (user && !user.roles.includes(USER_ROLES.ADMIN))) {
+    if (loading || (user && !user.roles.includes(USER_ROLES.admin))) {
         return <div className="flex bg-muted/20 h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 

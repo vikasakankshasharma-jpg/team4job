@@ -32,7 +32,7 @@ export function SupportChatbot() {
         if (mounted && scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [messages]);
+    }, [messages, mounted]);
 
     const handleSend = async () => {
         if (!input.trim() || isLoading || !user) return;

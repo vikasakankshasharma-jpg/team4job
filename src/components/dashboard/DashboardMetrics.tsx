@@ -11,7 +11,7 @@ interface QuickMetrics {
     avgBidsPerJob: number;
     avgTimeToFirstBid: string;
     pendingReviews: number;
-    favoriteInstallers: number;
+    favoriteProfessionals: number;
 }
 
 interface DashboardMetricsProps {
@@ -67,9 +67,9 @@ export function DashboardMetrics({ userId, user, metrics }: DashboardMetricsProp
 
             <QuickMetricCard
                 label={t('metrics.yourNetwork')}
-                value={metrics.favoriteInstallers}
+                value={metrics.favoriteProfessionals}
                 icon={Users}
-                onClick={() => router.push("/dashboard/my-installers?tab=favorites")}
+                onClick={() => router.push("/dashboard/my-Professionals?tab=favorites")}
                 actionable
                 tooltip={t('metrics.yourNetworkTooltip')}
                 className="h-full"

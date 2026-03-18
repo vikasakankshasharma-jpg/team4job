@@ -53,25 +53,25 @@ const initialFilters = {
   pincode: "",
   status: "all",
   jobType: "all",
-  jobGiver: "",
+  client: "",
   date: undefined as DateRange | undefined,
 };
 
-type SortableKeys = 'title' | 'status' | 'jobGiver' | 'bids' | 'jobType' | 'postedAt';
+type SortableKeys = 'title' | 'status' | 'client' | 'bids' | 'jobType' | 'postedAt';
 
 function getJobType(job: Job) {
-  if (!job.awardedInstaller) return 'N/A';
+  if (!job.awardedProfessional) return 'N/A';
 
-  const awardedInstallerId = (job.awardedInstaller as DocumentReference)?.id || (job.awardedInstaller as User)?.id;
+  const awardedProfessionalId = (job.awardedProfessional as DocumentReference)?.id || (job.awardedProfessional as User)?.id;
 
   if (!job.bids || job.bids.length === 0) {
-    // If there are no bids but an installer is awarded, it's a Direct award.
-    return awardedInstallerId ? 'Direct' : 'N/A';
+    // If there are no bids but an Professional is awarded, it's a Direct award.
+    return awardedProfessionalId ? 'Direct' : 'N/A';
   }
 
-  const bidderIds = (job.bids || []).map(b => (b.installer as DocumentReference)?.id || (b.installer as User)?.id);
+  const bidderIds = (job.bids || []).map(b => (b.professional as DocumentReference)?.id || (b.professional as User)?.id);
 
-  return bidderIds.includes(awardedInstallerId as string) ? 'Bidding' : 'Direct';
+  return bidderIds.includes(awardedProfessionalId as string) ? 'Bidding' : 'Direct';
 };
 
 const getRefId = (ref: any): string | null => {
@@ -81,13 +81,13 @@ const getRefId = (ref: any): string | null => {
 }
 
 function JobCard({ job, onRowClick, t }: { job: Job, onRowClick: (jobId: string) => void, t: any }) {
-  const jobGiverName = (job.jobGiver as User)?.name || 'N/A';
+  const clientName = (job.client as User)?.name || 'N/A';
 
   return (
-    <Card onClick={() => onRowClick(job.id)} className="cursor-pointer">
+    <Card onClick={() => onRowClick(job.id)} className="cursor-pointer border-0 shadow-sm shadow-primary/5 hover:shadow-md transition-shadow group">
       <CardHeader>
         <div className="flex justify-between items-start">
-          <CardTitle className="text-base leading-tight pr-4">{job.title}</CardTitle>
+          <CardTitle className="text-base font-bold tracking-tight leading-tight pr-4 group-hover:text-primary transition-colors">{job.title}</CardTitle>
           <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
         </div>
         <CardDescription className="font-mono text-xs pt-1">{job.id}</CardDescription>
@@ -95,7 +95,7 @@ function JobCard({ job, onRowClick, t }: { job: Job, onRowClick: (jobId: string)
       <CardContent className="text-sm space-y-3">
         <div className="flex justify-between">
           <span className="text-muted-foreground">{t('table.giver')}</span>
-          <span className="font-medium">{jobGiverName}</span>
+          <span className="font-medium">{clientName}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">{t('table.bids')}</span>
@@ -115,7 +115,7 @@ function JobCard({ job, onRowClick, t }: { job: Job, onRowClick: (jobId: string)
 
 export default function AllJobsClient() {
   const router = useRouter();
-  const t = useTranslations('admin.allJobs');
+  const t = useTranslations('allJobs');
   const { user, isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const queryClient = useQueryClient();
@@ -159,15 +159,15 @@ export default function AllJobsClient() {
       // Fetch related users logic
       const userRefs = new Map<string, DocumentReference>();
       jobList.forEach(job => {
-        const jobGiverId = getRefId(job.jobGiver);
-        if (jobGiverId) userRefs.set(jobGiverId, doc(db, 'users', jobGiverId));
+        const clientId = getRefId(job.client);
+        if (clientId) userRefs.set(clientId, doc(db, 'users', clientId));
 
-        const awardedInstallerId = getRefId(job.awardedInstaller);
-        if (awardedInstallerId) userRefs.set(awardedInstallerId, doc(db, 'users', awardedInstallerId));
+        const awardedProfessionalId = getRefId(job.awardedProfessional);
+        if (awardedProfessionalId) userRefs.set(awardedProfessionalId, doc(db, 'users', awardedProfessionalId));
 
         (job.bids || []).forEach(bid => {
-          const installerId = getRefId(bid.installer);
-          if (installerId) userRefs.set(installerId, doc(db, 'users', installerId));
+          const professionalId = getRefId(bid.professional);
+          if (professionalId) userRefs.set(professionalId, doc(db, 'users', professionalId));
         });
       });
 
@@ -190,17 +190,17 @@ export default function AllJobsClient() {
       }
 
       const populatedJobs = jobList.map(job => {
-        const jobGiverId = getRefId(job.jobGiver);
-        const awardedInstallerId = getRefId(job.awardedInstaller);
+        const clientId = getRefId(job.client);
+        const awardedProfessionalId = getRefId(job.awardedProfessional);
         return {
           ...job,
-          jobGiver: jobGiverId ? usersMap.get(jobGiverId) || job.jobGiver : job.jobGiver,
-          awardedInstaller: awardedInstallerId ? usersMap.get(awardedInstallerId) || job.awardedInstaller : undefined,
+          client: clientId ? usersMap.get(clientId) || job.client : job.client,
+          awardedProfessional: awardedProfessionalId ? usersMap.get(awardedProfessionalId) || job.awardedProfessional : undefined,
           bids: (job.bids || []).map(bid => {
-            const installerId = getRefId(bid.installer);
+            const professionalId = getRefId(bid.professional);
             return {
               ...bid,
-              installer: installerId ? usersMap.get(installerId) || bid.installer : bid.installer,
+              professional: professionalId ? usersMap.get(professionalId) || bid.professional : bid.professional,
             }
           }),
         };
@@ -278,11 +278,11 @@ export default function AllJobsClient() {
     if (filters.status !== 'all') {
       filtered = filtered.filter(job => job.status === filters.status);
     }
-    if (filters.jobGiver) {
-      const giverFilter = filters.jobGiver.toLowerCase();
+    if (filters.client) {
+      const giverFilter = filters.client.toLowerCase();
       filtered = filtered.filter(job => {
-        const jobGiverName = (job.jobGiver as User)?.name || '';
-        return jobGiverName.toLowerCase().includes(giverFilter);
+        const clientName = (job.client as User)?.name || '';
+        return clientName.toLowerCase().includes(giverFilter);
       });
     }
     if (filters.jobType !== 'all') {
@@ -308,9 +308,9 @@ export default function AllJobsClient() {
             valA = a.status.toLowerCase();
             valB = b.status.toLowerCase();
             break;
-          case 'jobGiver':
-            valA = (a.jobGiver as User)?.name || '';
-            valB = (b.jobGiver as User)?.name || '';
+          case 'client':
+            valA = (a.client as User)?.name || '';
+            valB = (b.client as User)?.name || '';
             break;
           case 'bids':
             valA = (a.bids || []).length;
@@ -365,7 +365,7 @@ export default function AllJobsClient() {
     ID: job.id,
     Title: job.title,
     Status: job.status,
-    'Job Giver': (job.jobGiver as User)?.name || 'N/A',
+    'Client': (job.client as User)?.name || 'N/A',
     Bids: (job.bids || []).length,
     'Job Type': getJobType(job),
     'Posted Date': format(toDate(job.postedAt), 'yyyy-MM-dd'),
@@ -474,11 +474,11 @@ export default function AllJobsClient() {
         />
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
+        <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle>{t('title')}</CardTitle>
+              <CardTitle className="text-xl font-bold tracking-tight">{t('title')}</CardTitle>
               <CardDescription>
                 {t('description', { count: filteredAndSortedJobs.length, bidding: stats.biddingJobs, direct: stats.directJobs })}
               </CardDescription>
@@ -539,9 +539,9 @@ export default function AllJobsClient() {
                         </Button>
                       </TableHead>
                       <TableHead>
-                        <Button variant="ghost" onClick={() => requestSort('jobGiver')}>
+                        <Button variant="ghost" onClick={() => requestSort('client')}>
                           {t('table.giver')}
-                          {getSortIcon('jobGiver')}
+                          {getSortIcon('client')}
                         </Button>
                       </TableHead>
                       <TableHead>
@@ -582,8 +582,8 @@ export default function AllJobsClient() {
                             <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
                           </TableCell>
                           <TableCell>
-                            <Link href={`/dashboard/users/${(job.jobGiver as User)?.id || '#'}`} className="hover:underline" onClick={e => e.stopPropagation()}>
-                              {(job.jobGiver as User)?.name || t('common.na')}
+                            <Link href={`/dashboard/users/${(job.client as User)?.id || '#'}`} className="hover:underline" onClick={e => e.stopPropagation()}>
+                              {(job.client as User)?.name || t('common.na')}
                             </Link>
                           </TableCell>
                           <TableCell>

@@ -15,7 +15,7 @@ export type CompileSmartJobInput = z.infer<typeof CompileSmartJobInputSchema>;
 
 const CompileSmartJobOutputSchema = z.object({
     jobTitle: z.string().describe('A concise and professional job title.'),
-    jobDescription: z.string().describe('A clear, installer-friendly job description in bullet points.'),
+    jobDescription: z.string().describe('A clear, professional-friendly job description in bullet points.'),
     conflictWarning: z.string().optional().describe('A warning message if the user edit contradicts the fixed answers.'),
     priceEstimate: z.object({
         min: z.number(),
@@ -44,7 +44,7 @@ const compileSmartJobPrompt = ai.definePrompt({
 
   Role:
   - You are a COMPILER, not a creative writer.
-  - Use simple, direct, installer-friendly language (English).
+  - Use simple, direct, professional-friendly language (English).
   - Do not hallucinate details.
   - Preserve user intent exactly.
 

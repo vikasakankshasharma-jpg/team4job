@@ -65,7 +65,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["Job Giver", "Installer", "Admin", "Support Team"]
+            "enum": ["Client", "Professional", "Admin", "Support Team"]
           }
         },
         "status": {
@@ -115,25 +115,25 @@
             },
             "description": "An array of Firebase Cloud Messaging tokens for sending push notifications to the user's devices."
         },
-        "favoriteInstallerIds": {
+        "favoriteProfessionalIds": {
             "type": "array",
             "items": { "type": "string" },
-            "description": "A Job Giver's list of favorite installer IDs."
+            "description": "A Client's list of favorite professional IDs."
         },
-        "blockedInstallerIds": {
+        "blockedProfessionalIds": {
             "type": "array",
             "items": { "type": "string" },
-            "description": "A Job Giver's personal list of blocked installer IDs."
+            "description": "A Client's personal list of blocked professional IDs."
         },
-        "installerProfile": {
-          "$ref": "#/entities/InstallerProfile"
+        "professionalProfile": {
+          "$ref": "#/entities/ProfessionalProfile"
         }
       },
       "required": ["id", "name", "email", "mobile", "address", "avatarUrl", "pincodes", "roles", "memberSince", "status"]
     },
-    "InstallerProfile": {
-      "title": "Installer Profile",
-      "description": "Specific profile details for users who are installers, tracking their reputation and skills.",
+    "ProfessionalProfile": {
+      "title": "Professional Profile",
+      "description": "Specific profile details for users who are professionals, tracking their reputation and skills.",
       "type": "object",
       "properties": {
         "tier": {
@@ -180,7 +180,7 @@
             "name": { "type": "string" },
             "description": { "type": "string" },
             "price": { "type": "number" },
-            "role": { "type": "string", "enum": ["Job Giver", "Installer", "Any"] },
+            "role": { "type": "string", "enum": ["Client", "Professional", "Any"] },
             "features": { "type": "array", "items": { "type": "string" } },
             "isArchived": { "type": "boolean", "description": "Whether the plan is archived and can no longer be assigned." }
         },
@@ -209,7 +209,7 @@
         },
         "applicableToRole": {
           "type": "string",
-          "enum": ["Installer", "Job Giver", "Any"],
+          "enum": ["Professional", "Client", "Any"],
           "description": "The user role this coupon can be applied to."
         },
         "validFrom": {
@@ -240,7 +240,7 @@
         "description": {
           "type": "string"
         },
-        "jobGiver": {
+        "client": {
           "$ref": "#/entities/UserProfile"
         },
         "location": {
@@ -256,11 +256,11 @@
         },
         "isGstInvoiceRequired": {
             "type": "boolean",
-            "description": "Whether the job giver requires a GST invoice for this job."
+            "description": "Whether the client requires a GST invoice for this job."
         },
         "travelTip": {
           "type": "number",
-          "description": "An optional tip to make the job more attractive, paid commission-free to the installer."
+          "description": "An optional tip to make the job more attractive, paid commission-free to the professional."
         },
         "status": {
           "type": "string",
@@ -278,7 +278,7 @@
           "type": "object",
           "properties": {
             "newDate": { "type": "string", "format": "date-time" },
-            "proposedBy": { "type": "string", "enum": ["Job Giver", "Installer"] },
+            "proposedBy": { "type": "string", "enum": ["Client", "Professional"] },
             "status": { "type": "string", "enum": ["pending", "accepted", "rejected"] }
           }
         },
@@ -289,19 +289,19 @@
         "acceptanceDeadline": {
             "type": "string",
             "format": "date-time",
-            "description": "The timestamp by which an awarded installer must accept the job."
+            "description": "The timestamp by which an awarded professional must accept the job."
         },
         "fundingDeadline": {
           "type": "string",
           "format": "date-time",
-          "description": "The timestamp by which a Job Giver must fund an accepted job."
+          "description": "The timestamp by which a Client must fund an accepted job."
         },
-        "awardedInstaller": {
+        "awardedProfessional": {
           "$ref": "#/entities/UserProfile"
         },
-        "directAwardInstallerId": {
+        "directAwardProfessionalId": {
           "type": "string",
-          "description": "If this is a direct award, this is the ID of the installer it was sent to."
+          "description": "If this is a direct award, this is the ID of the professional it was sent to."
         },
         "bidderIds": {
             "type": "array",
@@ -310,7 +310,7 @@
             },
             "description": "A list of user IDs who have bid on the job, for efficient querying."
         },
-        "disqualifiedInstallerIds": {
+        "disqualifiedProfessionalIds": {
             "type": "array",
             "items": {
                 "type": "string"
@@ -354,18 +354,18 @@
                 "$ref": "#/entities/PrivateMessage"
             }
         },
-        "selectedInstallers": {
+        "selectedProfessionals": {
             "type": "array",
             "items": {
                 "type": "object",
                 "properties": {
-                    "installerId": { "type": "string" },
+                    "professionalId": { "type": "string" },
                     "rank": { "type": "number" }
                 }
             }
         }
       },
-      "required": ["id", "title", "description", "jobGiver", "location", "address", "status", "deadline", "postedAt"]
+      "required": ["id", "title", "description", "client", "location", "address", "status", "deadline", "postedAt"]
     },
     "JobAttachment": {
       "title": "Job Attachment",
@@ -388,7 +388,7 @@
         "status": { "type": "string", "enum": ["pending-quote", "quoted", "approved", "declined"] },
         "quoteAmount": { "type": "number" },
         "quoteDetails": { "type": "string" },
-        "createdBy": { "type": "string", "enum": ["Job Giver", "Installer"] },
+        "createdBy": { "type": "string", "enum": ["Client", "Professional"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "description", "status", "createdBy", "createdAt"]
@@ -412,10 +412,10 @@
     },
     "Bid": {
       "title": "Bid",
-      "description": "Represents a bid made by an installer on a job.",
+      "description": "Represents a bid made by an professional on a job.",
       "type": "object",
       "properties": {
-        "installer": {
+        "professional": {
           "$ref": "#/entities/UserProfile"
         },
         "amount": {
@@ -429,7 +429,7 @@
           "type": "string"
         }
       },
-      "required": ["installer", "amount", "timestamp"]
+      "required": ["professional", "amount", "timestamp"]
     },
     "Comment": {
       "title": "Comment",
@@ -451,7 +451,7 @@
     },
      "PrivateMessage": {
       "title": "Private Message",
-      "description": "A private message on a job between the job giver and the awarded installer.",
+      "description": "A private message on a job between the client and the awarded professional.",
       "type": "object",
       "properties": {
         "author": {
@@ -513,8 +513,8 @@
         "parties": {
           "type": "object",
           "properties": {
-            "jobGiverId": { "type": "string" },
-            "installerId": { "type": "string" }
+            "clientId": { "type": "string" },
+            "professionalId": { "type": "string" }
           }
         },
         "messages": {
@@ -548,7 +548,7 @@
       "type": "object",
       "properties": {
         "authorId": { "type": "string" },
-        "authorRole": { "type": "string", "enum": ["Job Giver", "Installer", "Admin", "Support Team"] },
+        "authorRole": { "type": "string", "enum": ["Client", "Professional", "Admin", "Support Team"] },
         "content": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" },
         "attachments": {
@@ -590,7 +590,7 @@
         },
         "role": {
           "type": "string",
-          "enum": ["Any", "Installer", "Job Giver"],
+          "enum": ["Any", "Professional", "Client"],
           "description": "The role for which the blacklist applies."
         },
         "reason": {
@@ -611,40 +611,40 @@
         "id": { "type": "string", "description": "Our internal unique ID for the transaction." },
         "jobId": { "type": "string" },
         "jobTitle": { "type": "string" },
-        "payerId": { "type": "string", "description": "The user ID of the Job Giver." },
-        "payeeId": { "type": "string", "description": "The user ID of the Installer." },
+        "payerId": { "type": "string", "description": "The user ID of the Client." },
+        "payeeId": { "type": "string", "description": "The user ID of the Professional." },
         "amount": { "type": "number", "description": "The original bid amount." },
         "travelTip": { "type": "number", "description": "The travel tip, if any." },
-        "commission": { "type": "number", "description": "The platform commission amount taken from the installer." },
-        "jobGiverFee": { "type": "number", "description": "The fee charged to the job giver." },
-        "totalPaidByGiver": { "type": "number", "description": "The total amount charged to the job giver (amount + jobGiverFee + travelTip)." },
-        "payoutToInstaller": { "type": "number", "description": "The net amount paid out to the installer (amount - commission + travelTip)." },
+        "commission": { "type": "number", "description": "The platform commission amount taken from the professional." },
+        "clientFee": { "type": "number", "description": "The fee charged to the client." },
+        "totalPaidByClient": { "type": "number", "description": "The total amount charged to the client (amount + clientFee + travelTip)." },
+        "payoutToProfessional": { "type": "number", "description": "The net amount paid out to the professional (amount - commission + travelTip)." },
         "status": {
           "type": "string",
           "enum": ["Initiated", "Funded", "Failed", "Released", "Refunded", "Disputed"]
         },
         "paymentGatewayOrderId": { "type": "string", "description": "The order ID from Cashfree Payments." },
         "paymentGatewaySessionId": { "type": "string", "description": "The session ID used to launch the Cashfree checkout." },
-        "payoutTransferId": { "type": "string", "description": "The transfer ID for the payout to the installer." },
-        "refundTransferId": { "type": "string", "description": "The transfer ID for a refund to the job giver." },
+        "payoutTransferId": { "type": "string", "description": "The transfer ID for the payout to the professional." },
+        "refundTransferId": { "type": "string", "description": "The transfer ID for a refund to the client." },
         "createdAt": { "type": "string", "format": "date-time" },
         "fundedAt": { "type": "string", "format": "date-time" },
         "failedAt": { "type": "string", "format": "date-time" },
         "releasedAt": { "type": "string", "format": "date-time" },
         "refundedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "jobId", "payerId", "payeeId", "amount", "commission", "jobGiverFee", "totalPaidByGiver", "payoutToInstaller", "status", "createdAt"]
+      "required": ["id", "jobId", "payerId", "payeeId", "amount", "commission", "clientFee", "totalPaidByClient", "payoutToProfessional", "status", "createdAt"]
     },
     "PlatformSettings": {
         "title": "Platform Settings",
         "description": "Global configuration settings for the platform, managed by the Admin.",
         "type": "object",
         "properties": {
-            "installerCommissionRate": { "type": "number" },
-            "jobGiverFeeRate": { "type": "number" },
+            "professionalCommissionRate": { "type": "number" },
+            "clientFeeRate": { "type": "number" },
             "defaultTrialPeriodDays": { "type": "number" },
-            "freeBidsForNewInstallers": { "type": "number" },
-            "freePostsForNewJobGivers": { "type": "number" },
+            "freeBidsForNewProfessionals": { "type": "number" },
+            "freePostsForNewClients": { "type": "number" },
             "pointsForJobCompletion": { "type": "number" },
             "pointsFor5StarRating": { "type": "number" },
             "pointsFor4StarRating": { "type": "number" },
@@ -654,7 +654,7 @@
             "goldTierPoints": { "type": "number" },
             "platinumTierPoints": { "type": "number" },
             "minJobBudget": { "type": "number" },
-            "autoVerifyInstallers": { "type": "boolean" }
+            "autoVerifyProfessionals": { "type": "boolean" }
         }
     }
   },
@@ -712,3 +712,8 @@
     }
   }
 }
+
+
+
+
+

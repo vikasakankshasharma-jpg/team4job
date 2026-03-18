@@ -4,137 +4,114 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    /* Clean white background - changed from grayish-blue */
-    --foreground: 222 47% 11%;
-    /* Deep slate for text - better contrast */
+    --background: 0 0% 100%;
+    /* Clean white background */
+    --foreground: 240 10% 3.9%;
+    /* Darkest neutral for text */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 212 100% 48%;
-    /* Vibrant blue #0066FF - changed from desaturated grayish-blue */
-    --primary-foreground: 0 0% 100%;
-    /* Pure white for better contrast */
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 220.9 39.3% 11%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
-    --accent: 142 76% 36%;
-    /* Success green #16A34A - changed from muted amber */
-    --accent-foreground: 0 0% 100%;
-    /* Pure white */
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 221.2 83.2% 53.3%;
+    /* Professional Blue #2563EB - refined from the previous loud blue */
+    --primary-foreground: 210 40% 98%;
+    /* Nearly white */
+    --secondary: 240 4.8% 95.9%;
+    /* Subtle gray */
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 210 40% 98%;
     --success: 142.1 76.2% 36.3%;
-    --success-foreground: 0 0% 100%;
+    --success-foreground: 355.7 100% 97.3%;
     --warning: 38 92% 50%;
-    /* Amber #F59E0B - more vibrant */
-    --warning-foreground: 0 0% 0%;
-    /* Black for better contrast */
-    --info: 199 89% 48%;
-    /* Bright cyan #0EA5E9 - more vibrant */
-    --info-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 212 100% 48%;
-    /* Matches new primary */
+    --warning-foreground: 48 96% 8.9%;
+    --info: 217.2 91.2% 59.8%;
+    --info-foreground: 210 40% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
     --radius: 0.5rem;
-    --chart-1: 212 100% 48%;
-    /* Vibrant blue */
-    --chart-2: 142 76% 36%;
-    /* Green */
-    --chart-3: 38 92% 50%;
-    /* Amber */
-    --chart-4: 271 81% 56%;
-    /* Purple */
+    --chart-1: 221.2 83.2% 53.3%;
+    --chart-2: 212 95% 68%;
+    --chart-3: 142 76% 36%;
+    --chart-4: 47 95% 53%;
     --chart-5: 0 84% 60%;
-    /* Red */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 212 100% 48%;
-    /* Vibrant blue */
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 10% 3.9%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 212 100% 48%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-ring: 240 4.9% 83.9%;
 
-    /* Job Status Colors - More Vibrant */
-    --status-open: 212 100% 48%;
-    /* Vibrant blue */
+    /* Job Status Colors - Logical & Sober */
+    --status-open: 221.2 83.2% 53.3%;
     --status-awarded: 38 92% 50%;
-    /* Amber */
-    --status-in-progress: 271 81% 56%;
-    /* Purple */
-    --status-completed: 142 76% 36%;
-    /* Green */
-    --status-cancelled: 0 84% 60%;
-    /* Red */
-    --status-pending: 38 92% 50%;
-    /* Amber */
+    --status-in-progress: 262.1 83.3% 57.8%;
+    --status-completed: 142.1 76.2% 36.3%;
+    --status-cancelled: 0 84.2% 60.2%;
+    --status-pending: 240 3.8% 46.1%;
 
-    /* Trust & Verification - Enhanced */
-    --trust-verified: 142 76% 36%;
-    /* Green */
-    --trust-favorite: 38 92% 50%;
-    /* Amber */
-    --trust-blocked: 0 84% 60%;
-    /* Red */
+    /* Trust & Verification */
+    --trust-verified: 142.1 76.2% 36.3%;
+    --trust-favorite: 47.9 95.8% 53.1%;
+    --trust-blocked: 0 84.2% 60.2%;
   }
 
   .dark {
-    --background: 220 13% 10%;
-    /* Darker grayish-blue */
-    --foreground: 210 20% 98%;
-    --card: 220 13% 14%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 212 90% 65%;
-    /* Vibrant light blue for dark mode */
-    --primary-foreground: 222 47% 11%;
-    /* Dark text for better contrast on light primary */
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 217.2 32.6% 67.5%;
-    /* Adjusted for visibility */
-    --accent: 30 54% 66%;
-    /* Lighter muted amber for dark mode */
-    --accent-foreground: 224 71.4% 4.1%;
+    --background: 240 10% 2%;
+    /* Deeper dark background (Zinc-950 style) */
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 2%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 226 70% 58%;
+    /* Punchy Premium Blue (#4F46E5 style) */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 3.7% 10%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 10%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
-    --success: 142.1 70.6% 35.3%;
-    --success-foreground: 210 20% 98%;
-    --warning: 47.9 95.8% 53.1%;
-    --warning-foreground: 48 96% 89%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 144 61% 91%;
+    --warning: 48 96% 89%;
+    --warning-foreground: 38 92% 50%;
     --info: 217.2 91.2% 59.8%;
-    --info-foreground: 210 20% 98%;
-    --border: 217.2 32.6% 27.5%;
-    --input: 217.2 32.6% 27.5%;
-    --ring: 221 15% 70%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
+    --info-foreground: 0 0% 98%;
+    --border: 240 3.7% 12%;
+    --input: 240 3.7% 12%;
+    --ring: 226 70% 58%;
+    --chart-1: 226 70% 58%;
+    --chart-2: 240 3.7% 15.9%;
+    --chart-3: 142.1 70.6% 45.3%;
+    --chart-4: 47.9 95.8% 53.1%;
+    --chart-5: 0 62.8% 30.6%;
+    --sidebar-background: 240 10% 2%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary: 226 70% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-border: 240 3.7% 12%;
+    --sidebar-ring: 226 70% 58%;
 
     /* Dark mode status colors */
-    --status-open: 217 91% 70%;
-    --status-awarded: 45 93% 60%;
-    --status-in-progress: 271 81% 66%;
-    --status-completed: 142 70% 45%;
-    --status-cancelled: 0 72% 61%;
-    --status-pending: 39 100% 65%;
+    --status-open: 217.2 91.2% 59.8%;
+    --status-awarded: 47.9 95.8% 53.1%;
+    --status-in-progress: 263.4 70% 50.4%;
+    --status-completed: 142.1 70.6% 45.3%;
+    --status-cancelled: 0 62.8% 30.6%;
+    --status-pending: 240 5% 64.9%;
   }
 }
 

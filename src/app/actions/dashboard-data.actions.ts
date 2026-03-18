@@ -3,16 +3,16 @@
 import { userService } from "@/domains/users/user.service";
 import { getAdminDb } from "@/infrastructure/firebase/admin";
 import { Transaction } from "@/lib/types";
-import { JobGiverStats, InstallerStats } from "@/domains/jobs/job.types";
+import { ClientStats, ProfessionalStats } from "@/domains/jobs/job.types";
 import { jobService } from "@/domains/jobs/job.service";
 import { userRepository } from "@/domains/users/user.repository";
 
-export async function fetchJobGiverStats(userId: string): Promise<JobGiverStats> {
-    const stats = await jobService.getStatsForJobGiver(userId);
+export async function fetchClientStats(userId: string): Promise<ClientStats> {
+    const stats = await jobService.getStatsForClient(userId);
 
-    // Map JobStats (domain) to JobGiverStats (UI)
+    // Map JobStats (domain) to ClientStats (UI)
     // JobStats: { totalJobs, openJobs, inProgressJobs, completedJobs, cancelledJobs, totalBids }
-    // JobGiverStats: { activeJobs, completedJobs, cancelledJobs, totalBids, openDisputes }
+    // ClientStats: { activeJobs, completedJobs, cancelledJobs, totalBids, openDisputes }
 
     return {
         activeJobs: stats.openJobs, // Using 'openJobs' which we calculated as all active/in-progress statuses
@@ -23,19 +23,19 @@ export async function fetchJobGiverStats(userId: string): Promise<JobGiverStats>
     };
 }
 
-export async function fetchInstallerStats(userId: string): Promise<InstallerStats> {
-    const stats = await jobService.getStatsForInstaller(userId);
+export async function fetchProfessionalStats(userId: string): Promise<ProfessionalStats> {
+    const stats = await jobService.getStatsForProfessional(userId);
 
     // Calculate earnings from transactions if needed (kept separate or integrated?)
     // The previous implementation calculated active/completed from fetching ALL jobs. 
     // We need to keep that logic or rely on the repository's count.
 
-    // Repository getStatsForInstaller returns:
+    // Repository getStatsForProfessional returns:
     // { openJobs (market), myBids, jobsWon, projectedEarnings: 0, totalEarnings: 0 }
 
     // We need "activeJobs" (In Progress) and "completedJobs" for the UI?
-    // InstallerStats interface: 
-    // export interface InstallerStats {
+    // ProfessionalStats interface: 
+    // export interface ProfessionalStats {
     //    projectedEarnings: number;
     //    totalEarnings: number;
     //    activeJobs: number;
@@ -50,11 +50,11 @@ export async function fetchInstallerStats(userId: string): Promise<InstallerStat
 
     const [activeSnap, completedSnap] = await Promise.all([
         db.collection('jobs')
-            .where('awardedInstallerId', '==', userId)
+            .where('awardedProfessionalId', '==', userId)
             .where('status', 'in', ['in_progress', 'In Progress', 'Pending Funding', 'Pending Confirmation', 'work_submitted', 'Work Submitted'])
             .count().get(),
         db.collection('jobs')
-            .where('awardedInstallerId', '==', userId)
+            .where('awardedProfessionalId', '==', userId)
             .where('status', 'in', ['Completed', 'completed'])
             .count().get()
     ]);
@@ -111,3 +111,6 @@ export async function fetchActivities(userId: string): Promise<any[]> {
         };
     });
 }
+
+
+

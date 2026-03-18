@@ -2,11 +2,11 @@
 // 'use server'; removed to fix invalid export error
 
 /**
- * @fileOverview This flow automates rewarding the top 3 monthly installers.
+ * @fileOverview This flow automates rewarding the top 3 monthly Professionals.
  *
  * It calculates monthly performance based on reputation points, then uses
  * rating and tenure as tie-breakers. The top 3 are granted a 30-day
- * Pro Installer subscription.
+ * Pro Professional subscription.
  */
 
 import { ai, defineLoggedFlow } from '@/ai/genkit';
@@ -42,22 +42,22 @@ export const rewardTopPerformers = defineLoggedFlow(
       // we rely on the implementation of `grantProPlan` and the caller's context 
       // in the frontend to be an admin (which is checked in ReportsPage).
 
-      // 1. Fetch all active installers
+      // 1. Fetch all active Professionals
       const db = getAdminDb();
       const snapshot = await db.collection('users')
-        .where('roles', 'array-contains', 'Installer')
+        .where('roles', 'array-contains', 'Professional')
         .where('status', '==', 'active')
         .get();
-      const installers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+      const Professionals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
 
       // 2. Calculate monthly performance and rank them using shared logic
-      const rankedInstallers = calculateMonthlyPerformance(installers);
+      const rankedProfessionals = calculateMonthlyPerformance(Professionals);
 
       // 3. Select top 3 performers
-      const top3 = rankedInstallers.slice(0, 3);
+      const top3 = rankedProfessionals.slice(0, 3);
 
       if (top3.length === 0) {
-        return { success: true, summary: "No eligible installers found to reward.", rewardedUsers: [] };
+        return { success: true, summary: "No eligible Professionals found to reward.", rewardedUsers: [] };
       }
 
       // 4. Grant rewards

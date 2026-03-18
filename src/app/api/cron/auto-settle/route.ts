@@ -82,9 +82,9 @@ export async function GET(req: NextRequest) {
             const txnDoc = txnSnap.docs[0];
             const transaction = txnDoc.data() as Transaction;
 
-            // Check installer beneficiary details
-            const installerSnap = await db.collection('users').doc(transaction.payeeId).get();
-            if (!installerSnap.exists || !installerSnap.data()?.payouts?.beneficiaryId) {
+            // Check Professional beneficiary details
+            const ProfessionalSnap = await db.collection('users').doc(transaction.payeeId).get();
+            if (!ProfessionalSnap.exists || !ProfessionalSnap.data()?.payouts?.beneficiaryId) {
                 results.push({
                     jobId: jobDoc.id,
                     status: 'Error',
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
                 continue;
             }
 
-            const beneficiaryId = installerSnap.data()?.payouts?.beneficiaryId;
+            const beneficiaryId = ProfessionalSnap.data()?.payouts?.beneficiaryId;
             const transferId = `AUTO_SETTLE_${transaction.id}`;
 
             try {
@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
                     `${CASHFREE_API_BASE}/payouts/standard`,
                     {
                         beneId: beneficiaryId,
-                        amount: transaction.payoutToInstaller.toFixed(2),
+                        amount: transaction.payoutToProfessional.toFixed(2),
                         transferId: transferId,
                     },
                     {

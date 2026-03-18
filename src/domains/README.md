@@ -107,7 +107,7 @@ import { paymentService } from '@/domains/payments/payment.service';
 
 await paymentService.createPaymentOrder(orderData);
 await paymentService.verifyPayment(orderId);
-await paymentService.releaseFunds(jobId, installerId);
+await paymentService.releaseFunds(jobId, professionalId);
 ```
 
 ---
@@ -124,7 +124,7 @@ export default async function JobsPage() {
   const userId = getCurrentUserId();
   
   // ✅ Direct service call
-  const jobs = await jobService.listJobsForJobGiver(userId);
+  const jobs = await jobService.listJobsForClient(userId);
   
   return <JobsList jobs={jobs} />;
 }
@@ -228,6 +228,9 @@ export class NewDomainService {
 - ✅ Jobs Domain (with state machine)
 - ✅ Bids Domain
 - ✅ Payments Domain
-- 🔄 Next: Migrate existing components to use services
+- ✅ All components migrated to use domain services
 
-See [walkthrough.md](file:///C:/Users/hp/.gemini/antigravity/brain/2a6d3c16-3432-4dbe-af55-e226c0b0548a/walkthrough.md) for full migration details.
+See [walkthrough.md](file:///C:/Users/hp/.gemini/antigravity/brain/56c6e1a1-c77c-4832-9c71-fc0d0ab85849/walkthrough.md) for full branding audit and redesign details.
+
+
+

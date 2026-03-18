@@ -3,37 +3,69 @@ import { JobCategoryTemplate } from "./types";
 
 export const jobCategoryTemplates: JobCategoryTemplate[] = [
   {
-    id: "new-installation",
-    name: "New Installation",
+    id: "Security & Surveillance",
+    name: "Security & Surveillance",
     includedItems: [
       "Site Assessment & System Placement Planning",
-      "Wiring & Cabling (up to X meters)",
-      "Technical Device & Controller Mounting",
-      "System Configuration & Setup",
-      "Remote Access Setup (Mobile/Web)",
-      "Basic User Training",
+      "Wiring & Cabling",
+      "Camera Installation & Configuration",
+      "Remote Access Setup",
+      "User Training & Handover"
     ],
   },
   {
-    id: "health-check",
-    name: "System Health Check",
+    id: "Networking & IT",
+    name: "Networking & IT",
     includedItems: [
-      "Visual Inspection of All Connections & Hardware",
-      "Check Storage & Recording Status",
-      "Verify Remote Access Functionality",
-      "Clean & Service External Surfaces",
-      "Check Power Supplies",
-      "Provide System Status Report",
+      "Network Infrastructure Design",
+      "WiFi Coverage Optimization",
+      "Hardware Installation & Cabling",
+      "Firewall & Security Configuration",
+      "System Testing & Documentation"
     ],
   },
   {
-    id: "repair-job",
-    name: "Repair Job",
+    id: "Smart Home & Automation",
+    name: "Smart Home & Automation",
     includedItems: [
-      "Diagnostics of the Reported Issue",
-      "Labor for Repair/Replacement of Faulty Part",
-      "System Testing Post-Repair",
-      "Confirmation of Issue Resolution",
+      "Smart Device Installation",
+      "Automation Sequence Programming",
+      "Hub & Gateway Integration",
+      "App Setup & Customization",
+      "Post-Installation Support"
+    ],
+  },
+  {
+    id: "Electrical & Power",
+    name: "Electrical & Power",
+    includedItems: [
+      "Electrical Wiring & Circuit Design",
+      "Inverter / UPS Installation",
+      "Panel & Switchboard Upgrades",
+      "Load Management Consult",
+      "Safety Certification & Testing"
+    ],
+  },
+  {
+    id: "Plumbing & Water Services",
+    name: "Plumbing & Water Services",
+    includedItems: [
+      "Leak Diagnostics & Repair",
+      "Sanitary Fitting Installation",
+      "Tank & Motor Setup",
+      "Pipeline Layout Services",
+      "System Pressure Testing"
+    ],
+  },
+  {
+    id: "Carpentry & Modular",
+    name: "Carpentry & Modular",
+    includedItems: [
+      "Modular Kitchen / Wardrobe Setup",
+      "Furniture Repair & Customization",
+      "Hardware Fitting & Replacement",
+      "Polishing & Finishing Services",
+      "Structural Woodwork Diagnostics"
     ],
   },
 ];

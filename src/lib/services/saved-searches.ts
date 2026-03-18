@@ -9,7 +9,7 @@ import { Firestore } from "firebase/firestore";
 export interface SavedSearch {
     id?: string;
     name: string;
-    page: 'posted-jobs' | 'installers' | 'my-installers';
+    page: 'posted-jobs' | 'Professionals' | 'my-Professionals';
     query: string;
     filters?: Record<string, any>;
     createdAt: Timestamp | Date;

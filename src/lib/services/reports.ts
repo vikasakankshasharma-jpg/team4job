@@ -6,7 +6,7 @@ export interface CreateReportParams {
     jobId: string;
     jobTitle: string;
     reporterId: string;
-    reporterRole: "Job Giver" | "Installer";
+    reporterRole: "Client" | "Professional";
     reportedId: string;
     reason: ReportType;
     details?: string;

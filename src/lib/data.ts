@@ -20,11 +20,11 @@ export let users: User[] = [
     status: 'active'
   },
   {
-    id: 'JOBGIVER-20240210-0002',
+    id: 'CLIENT-20240210-0002',
     name: 'Priya Singh',
-    email: 'jobgiver@example.com',
+    email: 'client@example.com',
     mobile: '9876543210',
-    roles: ['Job Giver'],
+    roles: ['Client'],
     memberSince: new Date('2024-02-10'),
     avatarUrl: PlaceHolderImages[1].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/priya/200/200',
@@ -33,21 +33,21 @@ export let users: User[] = [
     status: 'active'
   },
   {
-    id: 'INSTALLER-20240315-0003',
+    id: 'PROFESSIONAL-20240315-0003',
     name: 'Vikram Kumar',
-    email: 'installer@example.com',
+    email: 'professional@example.com',
     mobile: '8765432109',
-    roles: ['Installer', 'Job Giver'],
+    roles: ['Professional', 'Client'],
     memberSince: new Date('2024-03-15'),
     avatarUrl: PlaceHolderImages[2].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/vikram/200/200',
     address: { house: '42/C', street: 'Link Road', cityPincode: '400053, Andheri West S.O', fullAddress: '42/C, Link Road, Andheri West, Mumbai, 400053' },
     pincodes: { residential: '400053', office: '400063' },
     status: 'active',
-    installerProfile: {
+    professionalProfile: {
       tier: 'Gold',
       points: 1250,
-      skills: ['system installation', 'networking', 'cabling', 'troubleshooting', 'configuration', 'system management'],
+      skills: ['cctv', 'home_network', 'server_setup', 'wiring', 'configuration', 'troubleshooting'],
       rating: 4.8,
       reviews: 25,
       verified: true,
@@ -58,21 +58,21 @@ export let users: User[] = [
     },
   },
   {
-    id: 'INSTALLER-20240401-0004',
+    id: 'PROFESSIONAL-20240401-0004',
     name: 'Ravi Kumar',
-    email: 'just-installer@example.com',
+    email: 'just-pro@example.com',
     mobile: '7654321098',
-    roles: ['Installer'],
+    roles: ['Professional'],
     memberSince: new Date('2024-04-01'),
     avatarUrl: PlaceHolderImages[3].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/ravi/200/200',
     address: { house: 'Plot 88', street: 'Sector 18', cityPincode: '122022, Gurgaon S.O', fullAddress: 'Plot 88, Sector 18, Gurgaon, Haryana, 122022' },
     pincodes: { residential: '122022' },
     status: 'active',
-    installerProfile: {
+    professionalProfile: {
       tier: 'Bronze',
       points: 150,
-      skills: ['system setup', 'cabling', 'troubleshooting'],
+      skills: ['cctv', 'wiring', 'troubleshooting'],
       rating: 4.5,
       reviews: 5,
       verified: true,
@@ -93,7 +93,7 @@ export let jobs: Job[] = [
     id: "JOB-20240720-A1B2",
     title: "Install 16 Smart Devices for a Commercial Building",
     description: "We require the installation of 16 professional smart devices across our 4-story commercial building in Ashok Nagar, Bengaluru. The job includes device mounting, cabling (Cat6), and central unit configuration. All hardware will be provided.",
-    jobGiver: users[1],
+    client: users[1],
     location: "560001",
     fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001',
     address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O' },
@@ -107,10 +107,10 @@ export let jobs: Job[] = [
     bids: [
       {
         id: "bid-job1-user3",
-        installer: users[2],
+        professional: users[2],
         amount: 22500,
         timestamp: new Date(new Date().setDate(new Date().getDate() - 1)),
-        coverLetter: "I'm a Gold-tier installer with 5 years of experience in large commercial projects. I can start next week and ensure a clean, professional installation."
+        coverLetter: "I'm a Gold-tier professional with 5 years of experience in large commercial projects. I can start next week and ensure a clean, professional installation."
       }
     ],
     bidderIds: [users[2].id],
@@ -135,7 +135,7 @@ export let jobs: Job[] = [
     id: "JOB-20240615-C3D4",
     title: "Factory Security System Overhaul - 32 Points",
     description: "Complete overhaul of an existing security system at a factory in Peenya. Requires replacing 32 old points with new professional units, setting up a new server room with redundant recorders, and integrating with our existing network.",
-    jobGiver: users[1],
+    client: users[1],
     location: "560058",
     fullAddress: 'Peenya Industrial Area, Bengaluru, 560058',
     address: { house: 'Plot 42', street: 'Peenya Industrial Area', cityPincode: '560058, Peenya S.O' },
@@ -146,11 +146,11 @@ export let jobs: Job[] = [
     deadline: new Date('2024-06-10'),
     postedAt: new Date('2024-06-01'),
     jobStartDate: new Date('2024-06-15'),
-    awardedInstaller: users[2],
+    awardedProfessional: users[2],
     bids: [
       {
         id: "bid-job2-user3",
-        installer: users[2],
+        professional: users[2],
         amount: 52000,
         timestamp: new Date('2024-06-03'),
         coverLetter: "I have extensive experience with large-scale factory installations and can complete this overhaul efficiently. My team is certified in advanced platform integrations."
@@ -166,7 +166,7 @@ export let jobs: Job[] = [
     id: "JOB-20240718-E5F6",
     title: "Residential Villa - 4 Technical Points",
     description: "Installation of 4 outdoor specialized devices for a 2-story villa. Requires weather-proof cabling and connection to a cloud-based service.",
-    jobGiver: users[1],
+    client: users[1],
     location: "400049",
     fullAddress: 'Villa 17, Juhu Tara Road, Juhu, Mumbai, 400049',
     address: { house: 'Villa 17', street: 'Juhu Tara Road', cityPincode: '400049, Juhu S.O' },
@@ -177,11 +177,11 @@ export let jobs: Job[] = [
     deadline: new Date(new Date().setDate(new Date().getDate() - 2)),
     postedAt: new Date(new Date().setDate(new Date().getDate() - 7)),
     jobStartDate: new Date(),
-    awardedInstaller: users[3],
+    awardedProfessional: users[3],
     bids: [
       {
         id: "bid-job3-user4",
-        installer: users[3],
+        professional: users[3],
         amount: 8500,
         timestamp: new Date(new Date().setDate(new Date().getDate() - 3)),
         coverLetter: "I can handle this residential installation quickly and cleanly. I have the required tools and experience."
@@ -195,8 +195,8 @@ export let jobs: Job[] = [
   {
     id: "JOB-20240722-G7H8",
     title: "Unbid Job: Small Shop System Setup",
-    description: "Looking for an installer to set up 2 standard devices in a small retail shop. Simple setup, hardware provided.",
-    jobGiver: users[1],
+    description: "Looking for a professional to set up 2 standard devices in a small retail shop. Simple setup, hardware provided.",
+    client: users[1],
     location: "110001",
     fullAddress: 'Shop 5, Khan Market, New Delhi, 110001',
     address: { house: 'Shop 5', street: 'Khan Market', cityPincode: '110001, Connaught Place S.O' },
@@ -215,4 +215,29 @@ export let jobs: Job[] = [
   }
 ];
 
-export const allSkills = ["system installation", "server setup", "cabling", "troubleshooting", "configuration", "system management", "access control", "wiring", "wireless setup", "fiber optics", "advanced sensors", "system analytics"];
+export const allSkills = [
+  "cctv",
+  "alarm",
+  "access_control",
+  "fire_security",
+  "biometrics",
+  "home_network",
+  "server_setup",
+  "wifi_optimize",
+  "it_support",
+  "wiring",
+  "panel_repair",
+  "lighting",
+  "earthing",
+  "pipeline",
+  "sanitary",
+  "leakage",
+  "water_heater",
+  "carpentry",
+  "painting",
+  "masonry",
+  "tiling",
+  "home_theater",
+  "smart_display",
+  "audio_video"
+];

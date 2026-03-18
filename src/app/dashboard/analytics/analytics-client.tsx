@@ -7,12 +7,12 @@ import {
     AnalyticsSummary,
     TimeToHireData,
     SpendingTrendData,
-    InstallerPerformance
+    ProfessionalPerformance
 } from "@/lib/api/analytics";
 import { StatCards } from "@/components/dashboard/analytics/stat-cards-row";
 import { TimeToHireChart } from "@/components/dashboard/analytics/time-to-hire-chart";
 import { CostTrendsChart } from "@/components/dashboard/analytics/cost-trends-chart";
-import { InstallerPerformanceTable } from "@/components/dashboard/analytics/installer-performance-table";
+import { ProfessionalPerformanceTable } from "@/components/dashboard/analytics/professional-performance-table";
 import { InsightsPanel } from "@/components/dashboard/analytics/insights-panel";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2, RefreshCw } from "lucide-react";
@@ -32,7 +32,7 @@ export default function AnalyticsClient() {
     const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
     const [timeToHire, setTimeToHire] = useState<TimeToHireData[]>([]);
     const [spendingTrends, setSpendingTrends] = useState<SpendingTrendData[]>([]);
-    const [topInstallers, setTopInstallers] = useState<InstallerPerformance[]>([]);
+    const [topProfessionals, setTopProfessionals] = useState<ProfessionalPerformance[]>([]);
 
     const loadData = useCallback(async () => {
         if (!user?.id) return;
@@ -45,7 +45,7 @@ export default function AnalyticsClient() {
             setSummary(data.summary);
             setTimeToHire(data.timeToHire);
             setSpendingTrends(data.spendingTrends);
-            setTopInstallers(data.topInstallers);
+            setTopProfessionals(data.topProfessionals);
 
         } catch (error) {
             toast({
@@ -201,7 +201,7 @@ export default function AnalyticsClient() {
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
                 ) : (
-                    <InstallerPerformanceTable data={topInstallers} />
+                    <ProfessionalPerformanceTable data={topProfessionals} />
                 )}
             </div>
 

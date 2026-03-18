@@ -68,8 +68,8 @@
         "transactions": "లావాదేవీలు",
         "analytics": "విశ్లేషణలు",
         "billing": "బిల్లింగ్",
-        "findInstallers": "ఇన్‌స్టాలర్‌లను కనుగొనండి",
-        "myInstallers": "నా ఇన్‌స్టాలర్లు",
+        "findProfessionals": "ఇన్‌స్టాలర్‌లను కనుగొనండి",
+        "myProfessionals": "నా ఇన్‌స్టాలర్లు",
         "teamManagement": "టీమ్ మేనేజ్‌మెంట్",
         "auditLog": "ఆడిట్ లాగ్",
         "pendingSignups": "పెండింగ్‌లో ఉన్న సైన్అప్‌లు",
@@ -126,8 +126,8 @@
         "fundsInEscrowDesc": "యాక్టివ్ జాబ్స్ కోసం సురక్షితంగా లాక్ చేయబడింది",
         "openDisputes": "వివాదాలు తెరవండి",
         "openDisputesDesc": "పరిష్కారం అవసరమయ్యే వివాదాలు",
-        "needInstaller": "ఇన్‌స్టాలర్ కావాలా?",
-        "needInstallerDesc": "ఉద్యోగాన్ని పోస్ట్ చేయండి మరియు ధృవీకరించబడిన Technical నిపుణుల నుండి బిడ్‌లను పొందండి.",
+        "needProfessional": "ఇన్‌స్టాలర్ కావాలా?",
+        "needProfessionalDesc": "ఉద్యోగాన్ని పోస్ట్ చేయండి మరియు ధృవీకరించబడిన Technical నిపుణుల నుండి బిడ్‌లను పొందండి.",
         "manageJobs": "మీ ఉద్యోగాలను నిర్వహించండి",
         "manageJobsDesc": "బిడ్‌లను సమీక్షించండి, ప్రాజెక్ట్‌లను అవార్డు చేయండి మరియు మీ యాక్టివ్ పనులను ఒకే చోట నిర్వహించండి.",
         "goToMyJobs": "నా ఉద్యోగాలకు వెళ్లు",
@@ -140,7 +140,7 @@
         "manageProfile": "మీ ప్రొఫైల్‌ను నిర్వహించండి",
         "manageProfileDesc": "మరింత మంది జాబ్ గివర్‌లను ఆకర్షించడానికి మీ నైపుణ్యాలు మరియు కీర్తిని అప్‌డేట్‌గా ఉంచండి.",
         "goToProfile": "ప్రొఫైల్‌కు వెళ్లు",
-        "installerGuide": {
+        "professionalGuide": {
             "title": "ఇన్‌స్టాలర్ డాష్‌బోర్డ్ గైడ్",
             "welcome": "మీ డాష్‌బోర్డ్‌కు స్వాగతం! ప్లాట్‌ఫారమ్‌లో మీ పనిని నిర్వహించడానికి ఇది మీ కేంద్ర కేంద్రం.",
             "openJobsLabel": "ఉద్యోగాలను తెరవండి:",
@@ -157,7 +157,7 @@
             "findProjectDesc": "ఉద్యోగ బ్రౌజింగ్ పేజీకి నేరుగా వెళ్లడానికి శీఘ్ర లింక్.",
             "bottomText": "మీ కీర్తి మరియు నైపుణ్యాలను ట్రాక్ చేయగల మీ ప్రొఫైల్ వంటి ఇతర విభాగాలను యాక్సెస్ చేయడానికి ఎడమ వైపున ఉన్న నావిగేషన్‌ను ఉపయోగించండి."
         },
-        "jobGiverGuide": {
+        "clientGuide": {
             "title": "జాబ్ గివర్ డాష్‌బోర్డ్ గైడ్",
             "welcome": "మీ డాష్‌బోర్డ్‌కు స్వాగతం! ఇన్‌స్టాలర్‌లను నియమించడానికి మరియు నిర్వహించడానికి ఇది మీ నియంత్రణ కేంద్రం.",
             "activeJobsLabel": "యాక్టివ్ జాబ్స్:",
@@ -168,12 +168,12 @@
             "totalBidsDesc": "మీ అన్ని ఉద్యోగ పోస్టింగ్‌లలో సమర్పించబడిన మొత్తం బిడ్‌ల సంఖ్యను చూడండి.",
             "completedJobsLabel": "పూర్తయిన పనులు:",
             "completedJobsDesc": "మీ విజయవంతంగా పూర్తయిన అన్ని ప్రాజెక్ట్‌ల చరిత్రను వీక్షించండి. మీ ఆర్కైవ్ చేసిన ఉద్యోగాలను చూడటానికి క్లిక్ చేయండి.",
-            "needInstallerLabel": "ఇన్‌స్టాలర్ కావాలా?:",
-            "needInstallerDesc": "కొత్త ఉద్యోగాన్ని పోస్ట్ చేయడానికి మరియు నిపుణుల నుండి బిడ్‌లను స్వీకరించడం ప్రారంభించడానికి షార్ట్‌కట్.",
+            "needProfessionalLabel": "ఇన్‌స్టాలర్ కావాలా?:",
+            "needProfessionalDesc": "కొత్త ఉద్యోగాన్ని పోస్ట్ చేయడానికి మరియు నిపుణుల నుండి బిడ్‌లను స్వీకరించడం ప్రారంభించడానికి షార్ట్‌కట్.",
             "bottomText": "మీ యాక్టివ్ పోస్టింగ్‌లపై బిడ్‌లను సమీక్షించడానికి \"నా ఉద్యోగాలు\" వంటి ఇతర విభాగాలను యాక్సెస్ చేయడానికి ఎడమ వైపున ఉన్న నావిగేషన్‌ను ఉపయోగించండి."
         },
-        "verifyInstaller": "ధృవీకరించబడిన ఇన్‌స్టాలర్ అవ్వండి",
-        "verifyInstallerDesc": "నమ్మకాన్ని పెంచుకోవడానికి మరియు మరిన్ని ఉద్యోగాలను పొందడానికి ఆధార్ ధృవీకరణను పూర్తి చేయండి.",
+        "verifyProfessional": "ధృవీకరించబడిన ఇన్‌స్టాలర్ అవ్వండి",
+        "verifyProfessionalDesc": "నమ్మకాన్ని పెంచుకోవడానికి మరియు మరిన్ని ఉద్యోగాలను పొందడానికి ఆధార్ ధృవీకరణను పూర్తి చేయండి.",
         "verifyNow": "ఇప్పుడే ధృవీకరించండి",
         "totalEarningsDesc": "జీవితకాల చెల్లింపు ప్రాసెస్ చేయబడింది",
         "projectedEarningsDesc": "నిధులు ప్రస్తుతం లాక్ చేయబడ్డాయి",
@@ -269,11 +269,11 @@
         "gstInvoiceDesc": "మీరు వ్యాపారం అయితే మరియు ఈ ఉద్యోగం కోసం GST ఇన్‌వాయిస్ కావాలంటే దీన్ని ఎంచుకోండి.",
         "travelTip": "ప్రయాణ చిట్కా (ఐచ్ఛికం)",
         "travelTipDesc": "చిన్న చిట్కాను జోడించడం వల్ల దూరం నుండి ఇన్‌స్టాలర్‌లను ఆకర్షించవచ్చు.",
-        "installerId": "ఇన్‌స్టాలర్ పబ్లిక్ ID (ఐచ్ఛికం)",
-        "installerIdPlaceholder": "ఇన్‌స్టాలర్ పబ్లిక్ IDని ఇక్కడ పేస్ట్ చేయండి...",
-        "installerIdDesc": "నిర్దిష్ట ఇన్‌స్టాలర్‌కు ప్రైవేట్ జాబ్ అభ్యర్థనను పంపడానికి, వారి IDని ఇక్కడ పేస్ట్ చేయండి. పబ్లిక్ బిడ్డింగ్ నిలిపివేయబడుతుంది.",
+        "professionalId": "ఇన్‌స్టాలర్ పబ్లిక్ ID (ఐచ్ఛికం)",
+        "professionalIdPlaceholder": "ఇన్‌స్టాలర్ పబ్లిక్ IDని ఇక్కడ పేస్ట్ చేయండి...",
+        "professionalIdDesc": "నిర్దిష్ట ఇన్‌స్టాలర్‌కు ప్రైవేట్ జాబ్ అభ్యర్థనను పంపడానికి, వారి IDని ఇక్కడ పేస్ట్ చేయండి. పబ్లిక్ బిడ్డింగ్ నిలిపివేయబడుతుంది.",
         "verifyingId": "IDని ధృవీకరిస్తోంది...",
-        "verifiedInstaller": "ధృవీకరించబడిన ఇన్‌స్టాలర్",
+        "verifiedProfessional": "ధృవీకరించబడిన ఇన్‌స్టాలర్",
         "applyNow": "ఇప్పుడే దరఖాస్తు చేయండి",
         "placeBid": "బిడ్ వేయండి",
         "verifyDetails": "ఈ వివరాలు సరైనవని నేను ధృవీకరిస్తున్నాను.",
@@ -516,15 +516,15 @@
             "title": "My Bids Guide",
             "content": "This page tracks every job you have bid on. Use the filter to see jobs with a specific status.",
             "biddedTitle": "Bidded:",
-            "biddedDesc": "You have placed a bid, but the job is still open for other installers to bid on.",
+            "biddedDesc": "You have placed a bid, but the job is still open for other professionals to bid on.",
             "awardedTitle": "Awarded:",
-            "awardedDesc": "Congratulations! The Job Giver has selected you. You must accept the job to proceed.",
+            "awardedDesc": "Congratulations! The Client has selected you. You must accept the job to proceed.",
             "inProgressTitle": "In Progress:",
-            "inProgressDesc": "You have accepted the job and can now communicate with the Job Giver.",
+            "inProgressDesc": "You have accepted the job and can now communicate with the Client.",
             "completedTitle": "Completed & Won:",
             "completedDesc": "The job is finished and you have been paid. You'll see any reputation points you earned here.",
             "notSelectedTitle": "Not Selected:",
-            "notSelectedDesc": "The Job Giver chose another installer for this project."
+            "notSelectedDesc": "The Client chose another professional for this project."
         },
         "statuses": {
             "all": "All",
@@ -597,7 +597,7 @@
         "budgetEstimated": "బడ్జెట్ అంచనా వేయబడింది!",
         "budgetEstimatedDesc": "AI ₹{min} - ₹{max} పరిధిని సూచిస్తుంది."
     },
-    "installers": {
+    "professionals": {
         "title": "ఇన్‌స్టాలర్‌లను కనుగొనండి",
         "description": "ప్లాట్‌ఫారమ్‌లో ధృవీకరించబడిన అన్ని ఇన్‌స్టాలర్‌లను బ్రౌజ్ చేయండి మరియు ఫిల్టర్ చేయండి.",
         "searchPlaceholder": "పేరు లేదా నైపుణ్యం ద్వారా శోధించండి...",
@@ -606,7 +606,7 @@
         "skillPlaceholder": "నైపుణ్యం ద్వారా ఫిల్టర్ చేయండి...",
         "allTiers": "అన్ని టైర్లు",
         "allSkills": "అన్ని నైపుణ్యాలు",
-        "noInstallersFound": "మీ ప్రమాణాలకు సరిపోలే ఇన్‌స్టాలర్‌లు ఏవీ కనుగొనబడలేదు.",
+        "noProfessionalsFound": "మీ ప్రమాణాలకు సరిపోలే ఇన్‌స్టాలర్‌లు ఏవీ కనుగొనబడలేదు.",
         "inactive": "క్రియారహితంగా ఉన్నారు",
         "inactiveTooltip": "ఈ ఇన్‌స్టాలర్ {days} రోజులుగా ఆన్‌లైన్‌లో లేరు.",
         "tier": "{tier} టైర్",
@@ -631,7 +631,7 @@
             "actionDesc": "భవిష్యత్ డైరెక్ట్ అవార్డుల కోసం ఇన్‌స్టాలర్‌లను మీ వ్యక్తిగత \"ఇష్టమైన\" జాబితాకు జోడించడానికి లేదా మీ ఉద్యోగాలపై బిడ్డింగ్ చేయకుండా నిరోధించడానికి \"బ్లాక్\" చేయడానికి చర్య బటన్‌లను ఉపయోగించండి."
         }
     },
-    "myInstallers": {
+    "myProfessionals": {
         "title": "నా ఇన్‌స్టాలర్‌లు",
         "description": "మీకు ఇష్టమైన మరియు బ్లాక్ చేయబడిన ఇన్‌స్టాలర్‌లను నిర్వహించండి.",
         "platformRating": "ప్లాట్‌ఫారమ్ రేటింగ్",
@@ -842,19 +842,19 @@
         "yourDetailsHelp": "మీ పేరు, వినియోగదారు ID, ఇమెయిల్ మరియు స్థాన సమాచారాన్ని వీక్షించండి. మీ పేరు, పిన్‌కోడ్‌లు లేదా GSTINని నవీకరించడానికి \"ప్రొఫైల్‌ను సవరించండి\" క్లిక్ చేయండి.",
         "roleSwitching": "పాత్ర మార్పిడి",
         "roleSwitchingHelp": "మీకు \"ఉద్యోగం ఇచ్చేవారు\" మరియు \"ఇన్‌స్టాలర్\" పాత్రలు రెండూ ఉంటే, మీరు వినియోగదారు మెనూ (కుడి ఎగువ) లో వాటి మధ్య మారవచ్చు.",
-        "installerReputation": "ఇన్‌స్టాలర్ కీర్తి",
-        "installerReputationHelp": "ఈ విభాగం మీ పనితీరును ట్రాక్ చేస్తుంది. పాయింట్‌లను సంపాదించడానికి మరియు ఉన్నత స్థాయిలకు (కాంస్య, వెండి, బంగారం, ప్లాటినం) చేరుకోవడానికి ఉద్యోగాలను పూర్తి చేయండి మరియు మంచి రేటింగ్‌లను పొందండి.",
+        "professionalReputation": "ఇన్‌స్టాలర్ కీర్తి",
+        "professionalReputationHelp": "ఈ విభాగం మీ పనితీరును ట్రాక్ చేస్తుంది. పాయింట్‌లను సంపాదించడానికి మరియు ఉన్నత స్థాయిలకు (కాంస్య, వెండి, బంగారం, ప్లాటినం) చేరుకోవడానికి ఉద్యోగాలను పూర్తి చేయండి మరియు మంచి రేటింగ్‌లను పొందండి.",
         "skills": "నైపుణ్యాలు",
         "skillsHelp": "మీ ప్రొఫైల్ నుండి నైపుణ్యాలను జోడించడానికి లేదా తీసివేయడానికి పెన్సిల్ చిహ్నాన్ని క్లిక్ చేయండి. ఇది ఉద్యోగం ఇచ్చేవారు మిమ్మల్ని కనుగొనడంలో సహాయపడుతుంది.",
         "payoutSettingsHelp": "పూర్తయిన ఉద్యోగాలకు చెల్లింపులను స్వీకరించడానికి మీ బ్యాంక్ ఖాతా వివరాలను ఇక్కడ జోడించండి.",
-        "becomeInstallerJobGiver": "ఇన్‌స్టాలర్/ఉద్యోగం ఇచ్చేవారు అవ్వండి",
-        "becomeInstallerJobGiverHelp": "మీకు ఒకే పాత్ర ఉంటే, ప్లాట్‌ఫారమ్‌లో మీ అవకాశాలను విస్తృతం చేస్తూ, మరొకదాన్ని సక్రియం చేయడానికి మీరు ప్రాంప్ట్‌ను చూస్తారు.",
+        "becomeProfessionalClient": "ఇన్‌స్టాలర్/ఉద్యోగం ఇచ్చేవారు అవ్వండి",
+        "becomeProfessionalClientHelp": "మీకు ఒకే పాత్ర ఉంటే, ప్లాట్‌ఫారమ్‌లో మీ అవకాశాలను విస్తృతం చేస్తూ, మరొకదాన్ని సక్రియం చేయడానికి మీరు ప్రాంప్ట్‌ను చూస్తారు.",
         "loadingProfile": "ప్రొఫైల్ లోడ్ అవుతోంది...",
         "userNotFound": "వినియోగదారు కనుగొనబడలేదు.",
         "skillsUpdated": "నైపుణ్యాలు నవీకరించబడ్డాయి",
         "skillsUpdatedDesc": "మీ నైపుణ్యాల జాబితా సేవ్ చేయబడింది.",
-        "jobGiverRoleActivated": "ఉద్యోగం ఇచ్చేవారు పాత్ర సక్రియం చేయబడింది!",
-        "jobGiverRoleActivatedDesc": "మీరు ఇప్పుడు ఉద్యోగాలను పోస్ట్ చేయవచ్చు మరియు ఇన్‌స్టాలర్‌లను నియమించుకోవచ్చు."
+        "clientRoleActivated": "ఉద్యోగం ఇచ్చేవారు పాత్ర సక్రియం చేయబడింది!",
+        "clientRoleActivatedDesc": "మీరు ఇప్పుడు ఉద్యోగాలను పోస్ట్ చేయవచ్చు మరియు ఇన్‌స్టాలర్‌లను నియమించుకోవచ్చు."
     },
     "settings": {
         "title": "సెట్టింగ్‌లు",
@@ -906,7 +906,7 @@
         "optionIndoor": "ఇండోర్ మాత్రమే",
         "optionOutdoor": "అవుట్‌డోర్ మాత్రమే",
         "optionBoth": "ఇండోర్ & అవుట్‌డోర్ రెండూ",
-        "optionInstallerSuggest": "ఇన్‌స్టాలర్ సూచించనివ్వండి",
+        "optionProfessionalSuggest": "ఇన్‌స్టాలర్ సూచించనివ్వండి",
         "aiCompiling": "ఉద్యోగ వివరణను రూపొందిస్తోంది...",
         "jobPreview": "ఉద్యోగ ప్రివ్యూ",
         "looksGood": "బాగుంది, ఉద్యోగాన్ని పోస్ట్ చేయండి",

@@ -122,31 +122,31 @@ test.describe('Full Site Performance Audit', () => {
         await measurePage(page, '/privacy-policy', 'Public');
     });
 
-    test('Job Giver Pages Audit', async ({ page }) => {
+    test('Client Pages Audit', async ({ page }) => {
         // Login
         await page.goto('/login');
-        await page.fill('input[name="identifier"]', TEST_ACCOUNTS.jobGiver.email);
-        await page.fill('input[type="password"]', TEST_ACCOUNTS.jobGiver.password);
+        await page.fill('input[name="identifier"]', TEST_ACCOUNTS.client.email);
+        await page.fill('input[type="password"]', TEST_ACCOUNTS.client.password);
         await page.click('button[type="submit"]');
         await page.waitForURL(/\/dashboard/);
 
-        await measurePage(page, '/dashboard', 'Job Giver');
-        await measurePage(page, '/dashboard/post-job', 'Job Giver');
-        await measurePage(page, '/dashboard/posted-jobs', 'Job Giver');
-        await measurePage(page, '/dashboard/profile', 'Job Giver');
+        await measurePage(page, '/dashboard', 'Client');
+        await measurePage(page, '/dashboard/post-job', 'Client');
+        await measurePage(page, '/dashboard/posted-jobs', 'Client');
+        await measurePage(page, '/dashboard/profile', 'Client');
     });
 
-    test('Installer Pages Audit', async ({ page }) => {
+    test('Professional Pages Audit', async ({ page }) => {
         // Login
         await page.goto('/login');
-        await page.fill('input[name="identifier"]', TEST_ACCOUNTS.installer.email);
-        await page.fill('input[type="password"]', TEST_ACCOUNTS.installer.password);
+        await page.fill('input[name="identifier"]', TEST_ACCOUNTS.professional.email);
+        await page.fill('input[type="password"]', TEST_ACCOUNTS.professional.password);
         await page.click('button[type="submit"]');
         await page.waitForURL(/\/dashboard/);
 
-        await measurePage(page, '/dashboard', 'Installer');
-        await measurePage(page, '/dashboard/jobs', 'Installer');
-        await measurePage(page, '/dashboard/my-bids', 'Installer');
+        await measurePage(page, '/dashboard', 'Professional');
+        await measurePage(page, '/dashboard/jobs', 'Professional');
+        await measurePage(page, '/dashboard/my-bids', 'Professional');
     });
 
     test('Admin Pages Audit', async ({ page }) => {
@@ -163,3 +163,5 @@ test.describe('Full Site Performance Audit', () => {
         await measurePage(page, '/dashboard/analytics', 'Admin');
     });
 });
+
+

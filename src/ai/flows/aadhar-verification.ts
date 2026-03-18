@@ -186,7 +186,7 @@ async function getPlatformSettings(): Promise<Partial<PlatformSettings>> {
   }
   // Return default values if settings are not configured
   return {
-    autoVerifyInstallers: true, // Default to auto-verifying
+    autoVerifyProfessionals: true, // Default to auto-verifying
   };
 }
 
@@ -206,7 +206,7 @@ export const confirmAadharVerification = defineLoggedFlow(
         pincode: '110001'
       };
       const settings = await getPlatformSettings();
-      const autoVerify = settings.autoVerifyInstallers ?? true;
+      const autoVerify = settings.autoVerifyProfessionals ?? true;
       return {
         isVerified: autoVerify,
         message: autoVerify ? 'Aadhar verification successful. Your profile is now marked as verified.' : 'Aadhar verification successful. Your profile is pending admin approval.',
@@ -224,7 +224,7 @@ export const confirmAadharVerification = defineLoggedFlow(
     }
 
     const settings = await getPlatformSettings();
-    const autoVerify = settings.autoVerifyInstallers ?? true;
+    const autoVerify = settings.autoVerifyProfessionals ?? true;
 
     return {
       isVerified: autoVerify,

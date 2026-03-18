@@ -11,7 +11,7 @@ const AnalyzeShopPhotoOutputSchema = z.object({
     recognizedEquipment: z.array(z.string()).describe('List of tools/equipment identified in the photo.'),
     suggestedSkills: z.array(z.string()).describe('Suggested profile skills based on the equipment found.'),
     professionalGrade: z.boolean().describe('Whether the equipment appears to be professional-grade vs consumer-grade.'),
-    feedback: z.string().describe('Encouraging feedback for the installer about their gear.'),
+    feedback: z.string().describe('Encouraging feedback for the professional about their gear.'),
 });
 
 /**

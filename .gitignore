@@ -66,6 +66,7 @@ project_backup*.zip
 *.txt
 *.png
 *.log
+repair_en_json.*
 test-results/
 playwright-report/
 

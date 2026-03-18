@@ -43,13 +43,11 @@ export default async function middleware(request: NextRequest) {
     const ip = request.headers.get('x-forwarded-for') || 'anonymous';
     try {
         // Bypass rate limiting in E2E mode to prevent flakiness
-        console.log(`[Proxy] Checking rate limit for ${ip} on ${pathname}. E2E Allowed: ${isE2eAllowed()}`);
         if (!isE2eAllowed()) {
             await limiter.check(20, ip + pathname);
         }
     } catch (e) {
         // Rate Limited
-        console.warn(`[Proxy] RATE LIMITED (429): ${ip} on ${pathname}. E2E Allowed: ${isE2eAllowed()}`);
         return NextResponse.json(
             { error: 'Too Many Requests' },
             { status: 429 }

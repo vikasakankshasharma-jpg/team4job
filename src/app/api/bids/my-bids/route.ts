@@ -4,9 +4,9 @@ import { jobRepository } from '@/domains/jobs/job.repository';
 
 /**
  * GET /api/bids/my-bids
- * Fetch all bids for an installer with pagination
+ * Fetch all bids for an Professional with pagination
  * Query params:
- * - userId: Installer ID (required)
+ * - userId: Professional ID (required)
  * - limit: Number of bids per page (default 50)
  * - lastTimestamp: ISO string of last bid timestamp for cursor pagination
  */
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Fetch bids with pagination
-        const bids = await bidRepository.fetchBidsByInstaller(
+        const bids = await bidRepository.fetchBidsByProfessional(
             userId,
             limit,
             lastTimestamp ? new Date(lastTimestamp) : undefined

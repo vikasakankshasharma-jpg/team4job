@@ -79,19 +79,19 @@ export class BidRepository {
     }
 
     /**
-     * Get all bids by an installer with pagination using collectionGroup
-     * @param installerId - The installer user ID
+     * Get all bids by an Professional with pagination using collectionGroup
+     * @param professionalId - The Professional user ID
      * @param limit - Number of bids per page (default 50)
      * @param lastTimestamp - Cursor for pagination (timestamp of last bid)
      */
-    async fetchBidsByInstaller(installerId: string, limit = 50, lastTimestamp?: Date): Promise<Bid[]> {
+    async fetchBidsByProfessional(professionalId: string, limit = 50, lastTimestamp?: Date): Promise<Bid[]> {
         try {
             const db = getAdminDb();
 
             // Use collectionGroup to query across all job subcollections
             let query = db
                 .collectionGroup('bids')
-                .where('installerId', '==', installerId)
+                .where('professionalId', '==', professionalId)
                 .orderBy('timestamp', 'desc');
 
             if (lastTimestamp) {

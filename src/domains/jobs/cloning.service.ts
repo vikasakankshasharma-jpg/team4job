@@ -24,7 +24,7 @@ export class JobCloningService {
             const originalJob = jobSnap.data() as Job;
 
             // Map original job fields to CreateJobInput
-            // We EXCLUDE things like status, createdAt, id, and installer-specific data
+            // We EXCLUDE things like status, createdAt, id, and Professional-specific data
             const cloneInput: CreateJobInput = {
                 title: originalJob.title,
                 description: originalJob.description,

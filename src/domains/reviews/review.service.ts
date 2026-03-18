@@ -17,10 +17,10 @@ export class ReviewService {
         }
 
         // 2. Validate Ownership/Permissions
-        const jobGiverId = typeof job.jobGiver === 'string' ? job.jobGiver : job.jobGiver.id;
-        const installerId = job.awardedInstallerId || (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : job.awardedInstaller?.id);
+        const clientId = typeof job.client === 'string' ? job.client : job.client.id;
+        const professionalId = job.awardedProfessionalId || (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : job.awardedProfessional?.id);
 
-        if (input.reviewerId !== jobGiverId && input.reviewerId !== installerId) {
+        if (input.reviewerId !== clientId && input.reviewerId !== professionalId) {
             throw new Error('Forbidden. You must be involved in the job to review.');
         }
 
@@ -28,15 +28,15 @@ export class ReviewService {
         const id = await reviewRepository.create(input);
 
         // 4. Update Job Progress
-        const updateField = input.role === 'Job Giver' ? 'isReviewedByGiver' : 'isReviewedByInstaller';
+        const updateField = input.role === 'Client' ? 'isReviewedByGiver' : 'isReviewedByProfessional';
         await jobService.updateJob(input.jobId, input.reviewerId, { [updateField]: true } as any);
 
         // 5. Update Target User Stats
-        if (input.role === 'Job Giver') {
-            // Update installer rating count
+        if (input.role === 'Client') {
+            // Update Professional rating count
             const db = getAdminDb();
             await db.collection('users').doc(input.targetUserId).update({
-                'installerProfile.reviews': FieldValue.increment(1)
+                'professionalProfile.reviews': FieldValue.increment(1)
             });
 
             // AI Learning: Rate the skill suggestions that defined this job

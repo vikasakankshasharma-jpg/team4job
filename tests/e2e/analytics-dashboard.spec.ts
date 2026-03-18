@@ -4,7 +4,7 @@ import { AuthHelper } from '../utils/helpers';
 test.describe('Job Performance Analytics Dashboard', () => {
     test.beforeEach(async ({ page }) => {
         const auth = new AuthHelper(page);
-        await auth.loginAsJobGiver();
+        await auth.loginAsClient();
     });
 
     test('should display analytics dashboard with all components', async ({ page }) => {
@@ -30,8 +30,8 @@ test.describe('Job Performance Analytics Dashboard', () => {
         await expect(page.getByTestId('analytics-chart-time-to-hire')).toBeVisible();
         await expect(page.getByTestId('analytics-chart-spending-trends')).toBeVisible();
 
-        // 4. Verify Installer Performance Table
-        await expect(page.getByTestId('analytics-top-installers')).toBeVisible();
+        // 4. Verify Professional Performance Table
+        await expect(page.getByTestId('analytics-top-Professionals')).toBeVisible();
 
         // 5. Verify Export Button
         const exportBtn = page.getByTestId('analytics-export');
@@ -42,3 +42,5 @@ test.describe('Job Performance Analytics Dashboard', () => {
         await expect(page.getByText(/Export Complete/i).first()).toBeVisible({ timeout: 15000 });
     });
 });
+
+

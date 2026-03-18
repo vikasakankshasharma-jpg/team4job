@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Camera, Image as ImageIcon, Sparkles, Loader2, ArrowLeft, Upload } from "lucide-react";
+import NextImage from "next/image";
 
 interface ImageStepProps {
     onAnalyze: (base64: string) => Promise<void>;
@@ -50,33 +51,44 @@ export function ImageStep({ onAnalyze, onBack, category }: ImageStepProps) {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
             >
-                <Card className="p-8 shadow-xl border-2 border-primary/10 bg-gradient-to-b from-background to-secondary/5 text-center">
-                    <h2 className="text-2xl font-bold mb-2">Visual Job Posting</h2>
-                    <p className="text-muted-foreground mb-8">
-                        Upload a photo of the site or equipment. Our AI will analyze it to plan your {category} work.
+                <Card className="p-8 shadow-2xl border-0 overflow-hidden relative bg-card">
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-accent to-primary" />
+                    <h2 className="text-3xl font-extrabold tracking-tight mb-3">Visual Job Posting</h2>
+                    <p className="text-muted-foreground text-lg font-medium opacity-80 mb-10 max-w-sm mx-auto text-center">
+                        Upload a photo of the site or equipment. Our AI will analyze it to plan your <span className="text-primary font-bold">{category}</span> work.
                     </p>
-
-                    <div className="flex flex-col items-center justify-center gap-6">
+ 
+                    <div className="flex flex-col items-center justify-center gap-8">
                         <div 
-                            className="w-full aspect-video rounded-2xl border-2 border-dashed border-primary/20 bg-muted/30 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-all overflow-hidden relative group"
+                            className={`w-full aspect-video rounded-3xl border-2 border-dashed transition-all overflow-hidden relative group cursor-pointer flex flex-col items-center justify-center
+                                ${isProcessing ? 'border-primary/50 bg-primary/5' : 'border-muted-foreground/20 bg-muted/5 hover:border-primary/40 hover:bg-muted/10 shadow-sm hover:shadow-md'}
+                            `}
                             onClick={() => fileInputRef.current?.click()}
                         >
                             {preview ? (
-                                <img src={preview} alt="Upload Preview" className="w-full h-full object-cover" />
+                                <NextImage 
+                                    src={preview} 
+                                    alt="Upload Preview" 
+                                    fill 
+                                    className={`object-cover transition-opacity duration-300 ${isProcessing ? 'opacity-30 blur-sm' : 'opacity-100 group-hover:scale-105'}`} 
+                                    unoptimized
+                                />
                             ) : (
-                                <>
-                                    <div className="p-4 rounded-full bg-primary/10 text-primary mb-3 group-hover:scale-110 transition-transform">
-                                        <Camera className="h-8 w-8" />
+                                <div className="text-center p-6 flex flex-col items-center">
+                                    <div className="h-20 w-20 rounded-2xl bg-primary/5 flex items-center justify-center text-primary mb-6 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
+                                        <Camera className="h-10 w-10 text-primary/80" />
                                     </div>
-                                    <span className="text-sm font-medium">Click to upload or take a photo</span>
-                                    <span className="text-xs text-muted-foreground mt-1">PNG, JPG up to 5MB</span>
-                                </>
+                                    <span className="text-lg font-bold">Click to upload or take a photo</span>
+                                    <span className="text-sm font-medium text-muted-foreground mt-2 opacity-80 uppercase tracking-widest">PNG, JPG up to 5MB</span>
+                                </div>
                             )}
                             
                             {isProcessing && (
-                                <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center gap-2">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                    <span className="text-sm font-medium">Analyzing image...</span>
+                                <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] flex flex-col items-center justify-center gap-4">
+                                    <div className="h-16 w-16 bg-background rounded-2xl shadow-xl flex items-center justify-center">
+                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    </div>
+                                    <span className="text-sm font-bold uppercase tracking-widest text-foreground shadow-sm bg-background/80 px-4 py-1.5 rounded-full">Analyzing image...</span>
                                 </div>
                             )}
                         </div>
@@ -91,20 +103,20 @@ export function ImageStep({ onAnalyze, onBack, category }: ImageStepProps) {
                         />
 
                         <Button 
-                            className="w-full h-12 text-lg rounded-xl"
+                            className="w-full h-16 text-lg font-extrabold rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isProcessing}
                         >
-                            <Upload className="mr-2 h-5 w-5" /> Select Image
+                            <Upload className="mr-2 h-6 w-6" /> {preview ? 'Change Image' : 'Select Image'}
                         </Button>
                     </div>
-
-                    <div className="mt-8 flex justify-between pt-6 border-t border-border/50">
-                        <Button variant="ghost" onClick={onBack} disabled={isProcessing}>
+ 
+                    <div className="mt-10 flex justify-between items-center pt-6 border-t border-border/50">
+                        <Button variant="ghost" onClick={onBack} disabled={isProcessing} className="hover:bg-muted/50">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
                         </Button>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Sparkles className="h-3 w-3 text-primary" />
+                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground opacity-70">
+                            <Sparkles className="h-4 w-4 text-primary" />
                             Vision AI Analysis
                         </div>
                     </div>

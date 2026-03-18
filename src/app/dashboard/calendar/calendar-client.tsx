@@ -30,30 +30,30 @@ export default function CalendarClient() {
             try {
                 const jobsRef = collection(db, 'jobs');
 
-                // Fetch as Job Giver
+                // Fetch as Client
                 const qGiver = query(
                     jobsRef,
-                    where('jobGiverId', '==', user.id),
+                    where('clientId', '==', user.id),
                     where('status', 'in', ['Open for Bidding', 'Awarded', 'Pending Funding', 'In Progress', 'Pending Confirmation'])
                 );
 
-                // Fetch as Installer (Awarded)
-                const qInstaller = query(
+                // Fetch as Professional (Awarded)
+                const qProfessional = query(
                     jobsRef,
-                    where('awardedInstaller', '==', doc(db, 'users', user.id)),
+                    where('awardedProfessional', '==', doc(db, 'users', user.id)),
                     where('status', 'in', ['Awarded', 'Pending Funding', 'In Progress', 'Pending Confirmation'])
                 );
 
-                const [giverSnap, installerSnap] = await Promise.all([
+                const [giverSnap, ProfessionalSnap] = await Promise.all([
                     getDocs(qGiver),
-                    getDocs(query(jobsRef, where('awardedInstaller', '==', doc(db, 'users', user.id)), where('status', 'in', ['In Progress', 'Pending Funding', 'Awarded'])))
+                    getDocs(query(jobsRef, where('awardedProfessional', '==', doc(db, 'users', user.id)), where('status', 'in', ['In Progress', 'Pending Funding', 'Awarded'])))
                 ]);
 
                 const giverJobs = giverSnap.docs.map(d => ({ id: d.id, ...d.data() } as Job));
-                const installerJobs = installerSnap.docs.map(d => ({ id: d.id, ...d.data() } as Job));
+                const ProfessionalJobs = ProfessionalSnap.docs.map(d => ({ id: d.id, ...d.data() } as Job));
 
                 // Deduplicate just in case (though roles shouldn't overlap on same job ideally)
-                const allJobs = [...giverJobs, ...installerJobs].filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+                const allJobs = [...giverJobs, ...ProfessionalJobs].filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
 
                 setJobs(allJobs);
             } catch (error) {
@@ -105,9 +105,9 @@ export default function CalendarClient() {
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 {/* Calendar Card */}
-                <Card className="md:col-span-5 h-fit">
-                    <CardHeader>
-                        <CardTitle>{t('calendarTitle')}</CardTitle>
+                <Card className="md:col-span-5 h-fit border-0 shadow-md shadow-primary/5">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-lg font-bold tracking-tight">{t('calendarTitle')}</CardTitle>
                     </CardHeader>
                     <CardContent className="flex justify-center">
                         <DayPicker
@@ -122,9 +122,9 @@ export default function CalendarClient() {
                 </Card>
 
                 {/* Agenda Card */}
-                <Card className="md:col-span-7">
-                    <CardHeader>
-                        <CardTitle>
+                <Card className="md:col-span-7 border-0 shadow-md shadow-primary/5">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-lg font-bold tracking-tight">
                             {selectedDate ? format(selectedDate, 'EEEE, d MMMM yyyy') : t('selectDate')}
                         </CardTitle>
                         <CardDescription>
@@ -142,7 +142,7 @@ export default function CalendarClient() {
                                 {selectedJobs.map(job => (
                                     <div
                                         key={job.id}
-                                        className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                                        className="flex items-start gap-4 p-4 border-0 rounded-xl bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors shadow-sm hover:shadow-md"
                                         onClick={() => router.push(`/dashboard/jobs/${job.id}`)}
                                     >
                                         <div className="bg-primary/10 p-2 rounded-full mt-1">

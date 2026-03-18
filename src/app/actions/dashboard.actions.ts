@@ -12,14 +12,14 @@ export async function getDashboardStatsAction(userId: string) {
         const db = getAdminDb();
 
         // Fetch data in parallel
-        const [transactionsSnapshot, installerStats, jobGiverStats, quickMetrics] = await Promise.all([
+        const [transactionsSnapshot, ProfessionalStats, ClientStats, quickMetrics] = await Promise.all([
             db.collection('transactions')
                 .where('payeeId', '==', userId)
                 .orderBy('createdAt', 'desc')
                 .limit(10)
                 .get(),
-            jobService.getStatsForInstaller(userId),
-            jobService.getStatsForJobGiver(userId),
+            jobService.getStatsForProfessional(userId),
+            jobService.getStatsForClient(userId),
             jobService.getQuickMetrics(userId)
         ]);
 
@@ -48,8 +48,8 @@ export async function getDashboardStatsAction(userId: string) {
             success: true,
             data: {
                 transactions,
-                installerStats,
-                jobGiverStats,
+                ProfessionalStats,
+                ClientStats,
                 quickMetrics
             }
         }));
@@ -61,3 +61,6 @@ export async function getDashboardStatsAction(userId: string) {
         };
     }
 }
+
+
+

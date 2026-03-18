@@ -91,7 +91,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
     const { db } = useFirebase();
     const { toast } = useToast();
     const t = useTranslations('profile');
-    const isInstaller = user.roles.includes('Installer');
+    const isProfessional = user.roles.includes('Professional');
 
     const form = useForm<z.infer<typeof editProfileSchema>>({
         resolver: zodResolver(editProfileSchema),
@@ -106,7 +106,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
     async function onSubmit(values: z.infer<typeof editProfileSchema>) {
         if (!user) return;
 
-        const isVerified = user.installerProfile?.verified;
+        const isVerified = user.professionalProfile?.verified;
         const nameChanged = values.name !== user.name;
         const gstinChanged = values.gstin !== (user.gstin || "");
 
@@ -194,7 +194,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                             </FormItem>
                         )}
                     />
-                    {isInstaller && (
+                    {isProfessional && (
                         <FormField
                             control={form.control}
                             name="officePincode"
@@ -212,7 +212,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                             )}
                         />
                     )}
-                    {isInstaller && (
+                    {isProfessional && (
                         <div className="space-y-4">
                             <Separator />
                             <h4 className="text-sm font-medium">{t('businessGstInfo')}</h4>
@@ -248,7 +248,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
     );
 }
 
-const installerOnboardingSchema = z.object({
+const ProfessionalOnboardingSchema = z.object({
     pincode: z.string().regex(/^\d{6}$/, { message: "Must be a 6-digit Indian pincode." }),
     skills: z.array(z.string()).min(1, { message: "Please select at least one skill." }),
 });
@@ -272,7 +272,7 @@ function SkillsEditor({ initialSkills, onSave, userId }: { initialSkills: string
     const handleSave = async () => {
         if (!userId || !db) return;
         const userRef = doc(db, 'users', userId);
-        await updateDoc(userRef, { 'installerProfile.skills': selectedSkills });
+        await updateDoc(userRef, { 'professionalProfile.skills': selectedSkills });
         onSave(selectedSkills);
         setIsOpen(false);
     }
@@ -357,7 +357,7 @@ function CompletedJobsStat() {
     const [loading, setLoading] = React.useState(true);
 
     useEffect(() => {
-        if (!user || role !== 'Installer' || !db) {
+        if (!user || role !== 'Professional' || !db) {
             setLoading(false);
             return;
         }
@@ -366,7 +366,7 @@ function CompletedJobsStat() {
             const q = query(
                 collection(db, 'jobs'),
                 where('status', '==', 'Completed'),
-                where('awardedInstaller', '==', doc(db, 'users', user.id))
+                where('awardedProfessional', '==', doc(db, 'users', user.id))
             );
             const querySnapshot = await getDocs(q);
             setJobsCompletedCount(querySnapshot.size);
@@ -376,14 +376,16 @@ function CompletedJobsStat() {
     }, [user, role, db]);
 
     return (
-        <Link href="/dashboard/my-bids?status=Completed" className="block p-4 rounded-lg border hover:bg-accent transition-colors">
-            <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary" />
+        <Link href="/dashboard/my-bids?status=Completed" className="block p-6 rounded-xl border border-border/50 bg-background/50 shadow-sm hover:bg-accent/50 hover:border-border transition-all flex flex-col items-center justify-center group text-center mt-2 lg:mt-0">
+            <div className="p-3 bg-primary/10 rounded-full mb-3 group-hover:scale-110 transition-transform">
+                <Briefcase className="h-6 w-6 text-primary" />
+            </div>
             {loading ? (
                 <Skeleton className="h-8 w-1/2 mx-auto" />
             ) : (
-                <p className="text-2xl font-bold">{jobsCompletedCount}</p>
+                <p className="text-3xl font-extrabold">{jobsCompletedCount}</p>
             )}
-            <p className="text-sm text-muted-foreground">{t('jobsCompleted')}</p>
+            <p className="text-sm font-medium text-muted-foreground mt-1">{t('jobsCompleted')}</p>
         </Link>
     );
 }
@@ -449,9 +451,9 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Banknote className="h-5 w-5" /> {t('payoutSettings')}</CardTitle>
+        <Card className="border-0 shadow-md shadow-primary/5">
+            <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-xl font-bold tracking-tight"><Banknote className="h-5 w-5 text-primary" /> {t('payoutSettings')}</CardTitle>
                 <CardDescription>{t('payoutSettingsDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -537,13 +539,13 @@ function ReferralCard({ user }: { user: User }) {
     };
 
     return (
-        <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-indigo-900">
+        <Card className="bg-gradient-to-r from-indigo-50/50 to-purple-50/50 border-indigo-100/50 shadow-md shadow-indigo-900/5">
+            <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-indigo-900 text-xl font-bold tracking-tight">
                     <Gift className="h-5 w-5 text-indigo-600" />
                     {t('inviteAndEarn')}
                 </CardTitle>
-                <CardDescription className="text-indigo-700">
+                <CardDescription className="text-indigo-700/80">
                     {t('inviteAndEarnDesc')}
                 </CardDescription>
             </CardHeader>
@@ -613,13 +615,13 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
     }
 
     return (
-        <Card className="border-red-100 bg-red-50/10">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-red-900">
+        <Card className="border-red-100/50 bg-red-50/30 shadow-md shadow-red-900/5">
+            <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-red-900 text-xl font-bold tracking-tight">
                     <ShieldCheck className="h-5 w-5 text-red-600" />
                     {t('emergencyContacts')}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-red-800/70">
                     {t('emergencyContactsDesc')}
                 </CardDescription>
             </CardHeader>
@@ -728,9 +730,9 @@ function DeleteAccountCard({ user }: { user: User }) {
     };
 
     return (
-        <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900/50">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
+        <Card className="border-red-200/60 bg-red-50/50 dark:bg-red-950/20 dark:border-red-900/50 shadow-sm mt-8">
+            <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400 text-xl font-bold tracking-tight">
                     <AlertTriangle className="h-5 w-5" />
                     {t('dangerZone')}
                 </CardTitle>
@@ -823,14 +825,14 @@ export default function ProfileClient() {
                     <ul className="list-disc space-y-2 pl-5">
                         <li><span className="font-semibold">{t('yourDetails')}:</span> {t('yourDetailsHelp')}</li>
                         <li><span className="font-semibold">{t('roleSwitching')}:</span> {t('roleSwitchingHelp')}</li>
-                        {role === 'Installer' && (
+                        {role === 'Professional' && (
                             <>
-                                <li><span className="font-semibold">{t('installerReputation')}:</span> {t('installerReputationHelp')}</li>
+                                <li><span className="font-semibold">{t('ProfessionalReputation')}:</span> {t('ProfessionalReputationHelp')}</li>
                                 <li><span className="font-semibold">{t('skills')}:</span> {t('skillsHelp')}</li>
                                 <li><span className="font-semibold">{t('payoutSettings')}:</span> {t('payoutSettingsHelp')}</li>
                             </>
                         )}
-                        <li><span className="font-semibold">{t('becomeInstallerJobGiver')}:</span> {t('becomeInstallerJobGiverHelp')}</li>
+                        <li><span className="font-semibold">{t('becomeProfessionalclient')}:</span> {t('becomeProfessionalclientHelp')}</li>
                     </ul>
                 </div>
             )
@@ -852,12 +854,12 @@ export default function ProfileClient() {
         return <div>{t('userNotFound')}</div>
     }
 
-    const installerProfile = user.installerProfile;
-    const isJobGiverOnly = user.roles.length === 1 && user.roles[0] === "Job Giver";
-    const isInstallerOnly = user.roles.length === 1 && user.roles[0] === "Installer";
+    const professionalProfile = user.professionalProfile;
+    const isclientOnly = user.roles.length === 1 && user.roles[0] === "Client";
+    const isProfessionalOnly = user.roles.length === 1 && user.roles[0] === "Professional";
 
-    const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
-    const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
+    const currentTierInfo = professionalProfile ? tierData[professionalProfile.tier] : null;
+    const progressPercentage = currentTierInfo && professionalProfile ? ((professionalProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
 
     const handleProfileSave = (values: z.infer<typeof editProfileSchema>) => {
         if (setUser) {
@@ -879,9 +881,9 @@ export default function ProfileClient() {
     const handleSkillsSave = (newSkills: string[]) => {
         if (setUser) {
             setUser(prevUser => {
-                if (!prevUser || !prevUser.installerProfile) return prevUser;
-                const updatedProfile = { ...prevUser.installerProfile, skills: newSkills };
-                return { ...prevUser, installerProfile: updatedProfile };
+                if (!prevUser || !prevUser.professionalProfile) return prevUser;
+                const updatedProfile = { ...prevUser.professionalProfile, skills: newSkills };
+                return { ...prevUser, professionalProfile: updatedProfile };
             });
             toast({
                 title: t('skillsUpdated'),
@@ -890,16 +892,16 @@ export default function ProfileClient() {
         }
     }
 
-    const handleBecomeJobGiver = async () => {
+    const handleBecomeclient = async () => {
         if (setUser && setRole && user && db) {
             const userRef = doc(db, 'users', user.id);
-            await updateDoc(userRef, { roles: arrayUnion('Job Giver') });
-            const updatedUser = { ...user, roles: [...user.roles, 'Job Giver'] as User['roles'] };
+            await updateDoc(userRef, { roles: arrayUnion('Client') });
+            const updatedUser = { ...user, roles: [...user.roles, 'Client'] as User['roles'] };
             setUser(updatedUser);
-            setRole('Job Giver');
+            setRole('Client');
             toast({
-                title: t('jobGiverRoleActivated'),
-                description: t('jobGiverRoleActivatedDesc'),
+                title: t('clientRoleActivated'),
+                description: t('clientRoleActivatedDesc'),
                 variant: "default",
             });
         }
@@ -909,18 +911,19 @@ export default function ProfileClient() {
 
     return (
         <div className="grid gap-8 max-w-full overflow-x-hidden px-4">
-            <Card>
+            <Card className="border-0 shadow-xl shadow-primary/5 overflow-hidden">
+                <div className="h-1.5 w-full bg-gradient-to-r from-primary to-accent" />
                 <CardHeader>
                     <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                        <Avatar className="h-24 w-24 border-2 border-primary">
+                        <Avatar className="h-28 w-28 border-4 border-background shadow-md">
                             <AvatarImage src={user.realAvatarUrl} alt={user.name} />
-                            <AvatarFallback className="text-3xl">
+                            <AvatarFallback className="text-4xl font-bold bg-primary/10 text-primary">
                                 {user.name.charAt(0)}
                             </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-1">
                             <div className="flex items-center gap-4">
-                                <CardTitle className="text-3xl">{user.name}</CardTitle>
+                                <CardTitle className="text-3xl font-extrabold tracking-tight">{user.name}</CardTitle>
                             </div>
                             <div className="flex flex-col mt-1">
                                 <p className="text-muted-foreground">{user.email}</p>
@@ -947,10 +950,10 @@ export default function ProfileClient() {
                                 )}
                             </div>
 
-                            <div className="mt-4">
+                            <div className="mt-6">
                                 <Dialog>
                                     <DialogTrigger asChild>
-                                        <Button>{t('editProfileBtn')}</Button>
+                                        <Button className="font-semibold shadow-sm hover:-translate-y-0.5 transition-transform">{t('editProfileBtn')}</Button>
                                     </DialogTrigger>
                                     <EditProfileForm user={user} onSave={handleProfileSave} />
                                 </Dialog>
@@ -966,12 +969,12 @@ export default function ProfileClient() {
                 </CardHeader>
             </Card>
 
-            {role === "Installer" && installerProfile && (
+            {role === "Professional" && professionalProfile && (
                 <div className="grid gap-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{t('installerReputation')}</CardTitle>
-                            <CardDescription>{t('installerReputationDesc')}</CardDescription>
+                    <Card className="border-0 shadow-lg shadow-primary/5">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-2xl font-bold tracking-tight">{t('ProfessionalReputation')}</CardTitle>
+                            <CardDescription className="text-base">{t('ProfessionalReputationDesc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-6">
                             <Collapsible
@@ -979,20 +982,22 @@ export default function ProfileClient() {
                                 onOpenChange={setIsReputationOpen}
                             >
                                 <CollapsibleTrigger asChild>
-                                    <div className="flex items-center justify-between p-4 rounded-lg bg-accent/20 cursor-pointer hover:bg-accent/30 transition-colors">
+                                    <div className="flex items-center justify-between p-5 rounded-xl bg-accent/10 border border-accent/20 cursor-pointer hover:bg-accent/20 transition-all duration-200">
                                         <div className="flex items-center gap-4">
-                                            {tierIcons[installerProfile.tier]}
+                                            {tierIcons[professionalProfile.tier]}
                                             <div>
-                                                <p className="text-sm">{t('tier')}</p>
-                                                <p className="text-xl font-bold">{installerProfile.tier}</p>
+                                                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('tier')}</p>
+                                                <p className="text-2xl font-extrabold">{professionalProfile.tier}</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-6">
                                             <div className="text-right">
-                                                <p className="text-sm">{t('reputationPoints')}</p>
-                                                <p className="text-xl font-bold text-right">{installerProfile.points}</p>
+                                                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('reputationPoints')}</p>
+                                                <p className="text-2xl font-extrabold text-right text-primary">{professionalProfile.points}</p>
                                             </div>
-                                            <ChevronsUpDown className="h-5 w-5 text-muted-foreground" />
+                                            <div className="bg-background p-2 rounded-full shadow-sm">
+                                                <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+                                            </div>
                                         </div>
                                     </div>
                                 </CollapsibleTrigger>
@@ -1026,12 +1031,12 @@ export default function ProfileClient() {
                                         <div>
                                             <div className="flex justify-between items-center mb-1">
                                                 <p className="text-sm font-medium">{t('progressTo', { tier: currentTierInfo.next })}</p>
-                                                <p className="text-sm font-medium">{installerProfile.points} / {currentTierInfo.goal} pts</p>
+                                                <p className="text-sm font-medium">{professionalProfile.points} / {currentTierInfo.goal} pts</p>
                                             </div>
                                             <Progress value={progressPercentage} className="h-2" />
                                         </div>
                                     )}
-                                    {installerProfile.reputationHistory && installerProfile.reputationHistory.length > 0 && (
+                                    {professionalProfile.reputationHistory && professionalProfile.reputationHistory.length > 0 && (
                                         <Card>
                                             <CardHeader>
                                                 <CardTitle className="text-base flex items-center gap-2">
@@ -1041,7 +1046,7 @@ export default function ProfileClient() {
                                             </CardHeader>
                                             <CardContent>
                                                 <ChartContainer config={chartConfig} className="h-64 w-full">
-                                                    <AreaChart data={installerProfile.reputationHistory} margin={{ left: -20, right: 20, top: 10, bottom: 0 }}>
+                                                    <AreaChart data={professionalProfile.reputationHistory} margin={{ left: -20, right: 20, top: 10, bottom: 0 }}>
                                                         <CartesianGrid vertical={false} />
                                                         <XAxis
                                                             dataKey="month"
@@ -1071,35 +1076,41 @@ export default function ProfileClient() {
                             </Collapsible>
 
 
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-                                <div className="p-4 rounded-lg border">
-                                    <Star className="mx-auto h-6 w-6 mb-2 text-primary" />
-                                    <p className="text-2xl font-bold">{installerProfile.rating}/5.0</p>
-                                    <p className="text-sm text-muted-foreground">{t('fromReviews', { count: installerProfile.reviews })}</p>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center mt-2">
+                                <div className="p-6 rounded-xl border border-border/50 bg-background/50 shadow-sm flex flex-col items-center justify-center">
+                                    <div className="p-3 bg-primary/10 rounded-full mb-3">
+                                        <Star className="h-6 w-6 text-primary" />
+                                    </div>
+                                    <p className="text-3xl font-extrabold">{professionalProfile.rating}/5.0</p>
+                                    <p className="text-sm font-medium text-muted-foreground mt-1">{t('fromReviews', { count: professionalProfile.reviews })}</p>
                                 </div>
                                 <CompletedJobsStat />
-                                <div className="p-4 rounded-lg border">
-                                    <ShieldCheck className="mx-auto h-6 w-6 mb-2 text-primary" />
-                                    <p className="text-lg font-bold">{installerProfile.verified ? "Verified" : "Pending"}</p>
-                                    <p className="text-sm text-muted-foreground">{t('verifiedStatus')}</p>
+                                <div className="p-6 rounded-xl border border-border/50 bg-background/50 shadow-sm flex flex-col items-center justify-center">
+                                    <div className="p-3 bg-success/10 rounded-full mb-3">
+                                        <ShieldCheck className="h-6 w-6 text-success" />
+                                    </div>
+                                    <p className="text-2xl font-bold">{professionalProfile.verified ? "Verified" : "Pending"}</p>
+                                    <p className="text-sm font-medium text-muted-foreground mt-1">{t('verifiedStatus')}</p>
                                 </div>
-                                <div className="p-4 rounded-lg border">
-                                    <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary" />
-                                    <p className="text-lg font-bold">{installerProfile.skills.length}</p>
-                                    <p className="text-sm text-muted-foreground">{t('skillsLabel')}</p>
+                                <div className="p-6 rounded-xl border border-border/50 bg-background/50 shadow-sm flex flex-col items-center justify-center">
+                                    <div className="p-3 bg-secondary rounded-full mb-3">
+                                        <Briefcase className="h-6 w-6 text-primary" />
+                                    </div>
+                                    <p className="text-3xl font-extrabold">{professionalProfile.skills.length}</p>
+                                    <p className="text-sm font-medium text-muted-foreground mt-1">{t('skillsLabel')}</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     <div className="grid md:grid-cols-2 gap-8">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{t('mySkills')}</CardTitle>
+                        <Card className="border-0 shadow-md shadow-primary/5">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-xl font-bold tracking-tight">{t('mySkills')}</CardTitle>
                                 <CardDescription>{t('mySkillsDesc')}</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <SkillsEditor initialSkills={installerProfile.skills} onSave={handleSkillsSave} userId={user.id} />
+                                <SkillsEditor initialSkills={professionalProfile.skills} onSave={handleSkillsSave} userId={user.id} />
                             </CardContent>
                         </Card>
                         <PayoutsCard user={user} onUpdate={fetchUser} />
@@ -1113,7 +1124,7 @@ export default function ProfileClient() {
 
             {user && <ReferralCard user={user} />}
 
-            {isJobGiverOnly && (
+            {isclientOnly && (
                 <Card className="bg-accent/20 border-dashed">
                     <CardHeader>
                         <CardTitle>{t('expandOpportunities')}</CardTitle>
@@ -1121,22 +1132,22 @@ export default function ProfileClient() {
                     </CardHeader>
                     <CardContent>
                         <Button asChild>
-                            <Link href="/dashboard/verify-installer">
-                                {t('becomeInstaller')} <ArrowRight className="ml-2 h-4 w-4" />
+                            <Link href="/dashboard/verify-Professional">
+                                {t('becomeProfessional')} <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
                     </CardContent>
                 </Card>
             )}
 
-            {isInstallerOnly && (
+            {isProfessionalOnly && (
                 <Card className="bg-accent/20 border-dashed">
                     <CardHeader>
                         <CardTitle>{t('readyToHire')}</CardTitle>
                         <CardDescription>{t('readyToHireDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button onClick={handleBecomeJobGiver}>
+                        <Button onClick={handleBecomeclient}>
                             {t('startHiring')} <PlusCircle className="ml-2 h-4 w-4" />
                         </Button>
                     </CardContent>

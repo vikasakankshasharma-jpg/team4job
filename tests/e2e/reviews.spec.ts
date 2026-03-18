@@ -5,11 +5,11 @@ import { execSync } from 'child_process';
 
 /**
  * E2E Test: Reviews & Ratings
- * Verifies the review flow between Job Giver and Installer
+ * Verifies the review flow between Client and Professional
  */
 
 test.describe('Reviews & Ratings E2E', () => {
-    test('Job Giver and Installer can review each other', async ({ browser }) => {
+    test('Client and Professional can review each other', async ({ browser }) => {
         const context = await browser.newContext();
         const page = await context.newPage();
         const helper = new TestHelper(page);
@@ -28,35 +28,35 @@ test.describe('Reviews & Ratings E2E', () => {
             throw error;
         }
 
-        // 2. Login as Job Giver
-        await helper.auth.loginAsJobGiver();
+        // 2. Login as Client
+        await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await helper.job.waitForJobStatus('Completed');
         console.log(`Testing reviews on Job ID: ${jobId}`);
 
-        // 3. Submit Review as Job Giver
+        // 3. Submit Review as Client
         const reviewSection = page.getByText('Rate Your Experience');
         await expect(reviewSection).toBeVisible({ timeout: 15000 });
 
-        console.log('Submitting review as Job Giver...');
+        console.log('Submitting review as Client...');
         await page.getByTestId('rating-star-5').click();
         await page.getByTestId('rating-comment').fill('Test Review: Great work!');
         await page.getByTestId('submit-review-button').click();
 
         // Verify Locked/Sealed State
         await expect(page.getByTestId('review-locked-card')).toBeVisible();
-        console.log('[PASS] Job Giver Review Submitted');
+        console.log('[PASS] Client Review Submitted');
 
-        // 4. Login as Installer to Submit Review
+        // 4. Login as Professional to Submit Review
         await helper.auth.logout();
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await helper.job.waitForJobStatus('Completed');
 
-        const installerReviewSection = page.getByText('Rate Your Experience');
-        await expect(installerReviewSection).toBeVisible({ timeout: 15000 });
+        const ProfessionalReviewSection = page.getByText('Rate Your Experience');
+        await expect(ProfessionalReviewSection).toBeVisible({ timeout: 15000 });
 
-        console.log('Submitting review as Installer...');
+        console.log('Submitting review as Professional...');
 
         // Verify specific messaging (The other party has already reviewed you)
         // Note: The wording might be slightly different or localized, but let's check for the core idea
@@ -65,7 +65,7 @@ test.describe('Reviews & Ratings E2E', () => {
         await page.getByTestId('rating-star-5').click();
         await page.getByTestId('rating-comment').fill('Test Review: Great client!');
         await page.getByTestId('submit-review-button').click();
-        console.log('[PASS] Installer Review Submitted');
+        console.log('[PASS] Professional Review Submitted');
 
         // 5. Verify Reviews Revealed
         await expect(page.getByTestId('reviews-revealed-section')).toBeVisible({ timeout: TIMEOUTS.medium });
@@ -76,3 +76,5 @@ test.describe('Reviews & Ratings E2E', () => {
         await context.close();
     });
 });
+
+

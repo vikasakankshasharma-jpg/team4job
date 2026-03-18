@@ -22,8 +22,8 @@ test.describe('Dashboard Financials E2E', () => {
 
         console.log('--- START: Dashboard Financials verification ---');
 
-        // 1. Job Giver Posts Job
-        await helper.auth.loginAsJobGiver();
+        // 1. Client Posts Job
+        await helper.auth.loginAsClient();
         await helper.nav.goToPostJob();
 
         // Fill Post Job Form using robust helpers
@@ -51,9 +51,9 @@ test.describe('Dashboard Financials E2E', () => {
         jobId = await helper.job.getJobIdFromUrl();
         console.log(`[SETUP] Job Posted: ${jobId}`);
 
-        // 2. Installer Bids
+        // 2. Professional Bids
         await helper.auth.logout();
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('place-bid-button').click();
 
@@ -65,17 +65,17 @@ test.describe('Dashboard Financials E2E', () => {
         await helper.form.waitForToast('Bid Placed!');
         console.log('[SETUP] Bid Placed');
 
-        // 3. Job Giver Awards
+        // 3. Client Awards
         await helper.auth.logout();
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('send-offer-button').first().click();
         await helper.form.waitForToast('Offer Sent');
         console.log('[SETUP] Offer Sent');
 
-        // 4. Installer Accepts
+        // 4. Professional Accepts
         await helper.auth.logout();
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('accept-job-button').first().click();
 
@@ -94,9 +94,9 @@ test.describe('Dashboard Financials E2E', () => {
         await helper.job.waitForJobStatus('Pending Funding');
         console.log('[SETUP] Job Accepted');
 
-        // 5. Job Giver Funds (Mock Payment)
+        // 5. Client Funds (Mock Payment)
         await helper.auth.logout();
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('proceed-payment-button').click();
         await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
@@ -107,18 +107,18 @@ test.describe('Dashboard Financials E2E', () => {
         await helper.job.waitForJobStatus('In Progress');
         console.log('[SETUP] Job Funded');
 
-        // --- VERIFICATION: Job Giver Dashboard ---
+        // --- VERIFICATION: Client Dashboard ---
         await page.goto('/dashboard');
         // Check "Funds in Secure Deposit" or "Total Secure Deposit"
         await expect(page.getByText(/Funds in Secure Deposit|Total Secure Deposit/i)).toBeVisible();
         // Since test account accumulates data, we check for presence of a non-zero currency value
         await expect(page.locator('.text-2xl.font-bold').filter({ hasText: /^₹[\d,]+$/ }).first()).toBeVisible();
-        console.log('[PASS] Job Giver Dashboard: Funds in Escrow visible');
+        console.log('[PASS] Client Dashboard: Funds in Escrow visible');
 
 
-        // --- VERIFICATION: Installer Dashboard ---
+        // --- VERIFICATION: Professional Dashboard ---
         await helper.auth.logout();
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await page.goto('/dashboard');
 
         await expect(page.getByText('Projected Earnings')).toBeVisible();
@@ -126,8 +126,10 @@ test.describe('Dashboard Financials E2E', () => {
         const earningsCard = page.locator('div').filter({ has: page.getByText('Projected Earnings', { exact: true }) }).last();
         await expect(earningsCard.locator('.text-2xl.font-bold, h3').filter({ hasText: /^₹[\d,]+$/ }).first()).toBeVisible();
 
-        console.log('[PASS] Installer Dashboard: Projected Earnings visible');
+        console.log('[PASS] Professional Dashboard: Projected Earnings visible');
 
         await context.close();
     });
 });
+
+

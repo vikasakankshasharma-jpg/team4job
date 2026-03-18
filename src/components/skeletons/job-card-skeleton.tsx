@@ -21,7 +21,7 @@ export function JobCardSkeleton() {
                         <Skeleton className="h-4 w-32" />
                     </div>
                 </div>
-                {/* Job Giver Info */}
+                {/* Client Info */}
                 <div className="flex items-center gap-3 pt-4">
                     <Skeleton className="h-9 w-9 rounded-full" />
                     <div className="space-y-2 flex-1">

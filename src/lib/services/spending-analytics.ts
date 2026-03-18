@@ -13,7 +13,7 @@ export interface SpendingInsights {
 }
 
 /**
- * Calculate comprehensive spending insights for a Job Giver
+ * Calculate comprehensive spending insights for a Client
  */
 export async function calculateSpendingInsights(
     db: Firestore,
@@ -28,7 +28,7 @@ export async function calculateSpendingInsights(
         // Fetch all jobs for the user once to avoid multiple composite queries/indexes
         const allJobsQuery = query(
             collection(db, "jobs"),
-            where("jobGiverId", "==", userId)
+            where("clientId", "==", userId)
         );
 
         const allSnapshot = await getDocs(allJobsQuery);
@@ -46,7 +46,7 @@ export async function calculateSpendingInsights(
 
         // Calculate current month spend
         const currentMonthSpend = completedJobs.reduce((sum, job) => {
-            const amount = job.bids?.find(b => b.installerId === job.awardedInstallerId)?.amount || 0;
+            const amount = job.bids?.find(b => b.professionalId === job.awardedProfessionalId)?.amount || 0;
             return sum + amount;
         }, 0);
 
@@ -57,7 +57,7 @@ export async function calculateSpendingInsights(
 
         // Calculate projected spend (current + active jobs)
         const activeJobsAmount = activeJobs.reduce((sum, job) => {
-            const amount = job.bids?.find(b => b.installerId === job.awardedInstallerId)?.amount || 0;
+            const amount = job.bids?.find(b => b.professionalId === job.awardedProfessionalId)?.amount || 0;
             return sum + amount;
         }, 0);
 
@@ -73,7 +73,7 @@ export async function calculateSpendingInsights(
         const avgCostPerJob =
             last30DaysJobs.length > 0
                 ? last30DaysJobs.reduce((sum, job) => {
-                    const amount = job.bids?.find(b => b.installerId === job.awardedInstallerId)?.amount || 0;
+                    const amount = job.bids?.find(b => b.professionalId === job.awardedProfessionalId)?.amount || 0;
                     return sum + amount;
                 }, 0) / last30DaysJobs.length
                 : 0;
@@ -114,7 +114,7 @@ function calculateTopCategory(jobs: Job[]): { topCategory: string; topCategoryPe
 
     jobs.forEach(job => {
         if (job.jobCategory) {
-            const amount = job.bids?.find(b => b.installerId === job.awardedInstallerId)?.amount || 0;
+            const amount = job.bids?.find(b => b.professionalId === job.awardedProfessionalId)?.amount || 0;
             categorySpend[job.jobCategory] = (categorySpend[job.jobCategory] || 0) + amount;
             totalSpend += amount;
         }

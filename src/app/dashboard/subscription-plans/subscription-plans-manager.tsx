@@ -71,7 +71,7 @@ const planSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
   price: z.coerce.number().min(0, "Price must be a positive number."),
-  role: z.enum(['Installer', 'Job Giver', 'Any']),
+  role: z.enum(['Professional', 'Client', 'Any']),
   features: z.string().min(1, "Please list at least one feature."),
   isArchived: z.boolean(),
 });
@@ -145,7 +145,7 @@ function PlanForm({ plan, onSave }: { plan?: SubscriptionPlan, onSave: () => voi
                 <FormItem>
                   <FormLabel>{t('form.id')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., pro-installer-annual" {...field} disabled={!!plan} />
+                    <Input placeholder="e.g., pro-Professional-annual" {...field} disabled={!!plan} />
                   </FormControl>
                   <FormDescription>{t('form.idDesc')}</FormDescription>
                   <FormMessage />
@@ -158,7 +158,7 @@ function PlanForm({ plan, onSave }: { plan?: SubscriptionPlan, onSave: () => voi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('form.name')}</FormLabel>
-                  <FormControl><Input placeholder="e.g., Pro Installer (Annual)" {...field} /></FormControl>
+                  <FormControl><Input placeholder="e.g., Pro Professional (Annual)" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -195,8 +195,8 @@ function PlanForm({ plan, onSave }: { plan?: SubscriptionPlan, onSave: () => voi
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="Any">{t('form.roles.any')}</SelectItem>
-                      <SelectItem value="Installer">{t('form.roles.installer')}</SelectItem>
-                      <SelectItem value="Job Giver">{t('form.roles.jobGiver')}</SelectItem>
+                      <SelectItem value="Professional">{t('form.roles.professional')}</SelectItem>
+                      <SelectItem value="Client">{t('form.roles.client')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -278,8 +278,8 @@ export default function SubscriptionPlansManager({ plans, onDataChange }: { plan
           <span className="text-muted-foreground">{t('table.role')}</span>
           <Badge variant={plan.role === 'Any' ? 'secondary' : 'outline'}>
             {plan.role === 'Any' && t('form.roles.any')}
-            {plan.role === 'Installer' && t('form.roles.installer')}
-            {plan.role === 'Job Giver' && t('form.roles.jobGiver')}
+            {plan.role === 'Professional' && t('form.roles.professional')}
+            {plan.role === 'Client' && t('form.roles.client')}
           </Badge>
         </div>
         <div>
@@ -355,8 +355,8 @@ export default function SubscriptionPlansManager({ plans, onDataChange }: { plan
                     <TableCell>
                       <Badge variant={plan.role === 'Any' ? 'secondary' : 'outline'}>
                         {plan.role === 'Any' && t('form.roles.any')}
-                        {plan.role === 'Installer' && t('form.roles.installer')}
-                        {plan.role === 'Job Giver' && t('form.roles.jobGiver')}
+                        {plan.role === 'Professional' && t('form.roles.professional')}
+                        {plan.role === 'Client' && t('form.roles.client')}
                       </Badge>
                     </TableCell>
                     <TableCell>

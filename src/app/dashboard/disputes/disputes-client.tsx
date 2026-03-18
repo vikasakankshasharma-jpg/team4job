@@ -70,10 +70,10 @@ function DisputeCard({ dispute, involvedUsers }: { dispute: Dispute, involvedUse
     };
 
     return (
-        <Card onClick={() => router.push(`/dashboard/disputes/${dispute.id}`)} className="cursor-pointer">
+        <Card onClick={() => router.push(`/dashboard/disputes/${dispute.id}`)} className="cursor-pointer border-0 shadow-sm shadow-primary/5 hover:shadow-md transition-shadow group">
             <CardHeader>
                 <div className="flex justify-between items-start">
-                    <CardTitle className="text-base leading-tight pr-4">{dispute.title}</CardTitle>
+                    <CardTitle className="text-base font-bold tracking-tight leading-tight pr-4 group-hover:text-primary transition-colors">{dispute.title}</CardTitle>
                     <Badge variant={getStatusVariant(dispute.status)}>{getStatusText(dispute.status)}</Badge>
                 </div>
                 <CardDescription className="font-mono text-xs pt-1">#{dispute.id.slice(-6).toUpperCase()}</CardDescription>
@@ -222,30 +222,30 @@ export default function DisputesClient() {
         <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
             {isAdmin && (
                 <div className="grid gap-4 md:grid-cols-3">
-                    <Card>
+                    <Card className="border-0 shadow-sm shadow-primary/5">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{t('openDisputesCard')}</CardTitle>
-                            <AlertOctagon className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-semibold tracking-tight">{t('openDisputesCard')}</CardTitle>
+                            <AlertOctagon className="h-4 w-4 text-destructive/60" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats.open}</div>
                             <p className="text-xs text-muted-foreground">{t('openDisputesDesc')}</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="border-0 shadow-sm shadow-primary/5">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{t('underReviewCard')}</CardTitle>
-                            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-semibold tracking-tight">{t('underReviewCard')}</CardTitle>
+                            <MessageSquare className="h-4 w-4 text-warning/60" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats.underReview}</div>
                             <p className="text-xs text-muted-foreground">{t('underReviewDesc')}</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="border-0 shadow-sm shadow-primary/5">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{t('resolvedDisputesCard')}</CardTitle>
-                            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-semibold tracking-tight">{t('resolvedDisputesCard')}</CardTitle>
+                            <CheckCircle2 className="h-4 w-4 text-success/60" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats.resolved}</div>
@@ -254,10 +254,10 @@ export default function DisputesClient() {
                     </Card>
                 </div>
             )}
-            <Card>
-                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4">
                     <div>
-                        <CardTitle>{t('center')}</CardTitle>
+                        <CardTitle className="text-xl font-bold tracking-tight">{t('center')}</CardTitle>
                         <CardDescription>
                             {isAdmin ? t('centerDescAdmin') : t('centerDescUser')}
                         </CardDescription>

@@ -36,14 +36,14 @@ service cloud.firestore {
       
       // Strict Update Policy: Prevent Privilege Escalation
       // Users can ONLY update specific profile fields. 
-      // THEY CANNOT UPDATE: roles, status, subscription, kycStatus, installerProfile.verified, etc.
+      // THEY CANNOT UPDATE: roles, status, subscription, kycStatus, professionalProfile.verified, etc.
       allow update: if isOwner(userId) && 
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(
-          ['name', 'avatarUrl', 'address', 'pincodes', 'about', 'portfolio', 'installerProfile', 'fcmTokens', 'lastLoginAt', 'lastActiveAt', 'emergencyContacts']
+          ['name', 'avatarUrl', 'address', 'pincodes', 'about', 'portfolio', 'professionalProfile', 'fcmTokens', 'lastLoginAt', 'lastActiveAt', 'emergencyContacts']
         ) &&
-        // If updating installerProfile, ensure they aren't verifying themselves or changing ratings
-        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['installerProfile']) || 
-         (request.resource.data.installerProfile.diff(resource.data.installerProfile).affectedKeys().hasOnly(['skills', 'about']) || 
+        // If updating professionalProfile, ensure they aren't verifying themselves or changing ratings
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['professionalProfile']) || 
+         (request.resource.data.professionalProfile.diff(resource.data.professionalProfile).affectedKeys().hasOnly(['skills', 'about']) || 
           isAdmin())
         );
         
@@ -78,35 +78,35 @@ service cloud.firestore {
     match /jobs/{jobId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && 
-        "Job Giver" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles &&
-        request.resource.data.jobGiverId == request.auth.uid;
+        "Client" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles &&
+        request.resource.data.clientId == request.auth.uid;
       
       allow update: if request.auth != null && 
-        (resource.data.jobGiverId == request.auth.uid || 
-         resource.data.installerId == request.auth.uid ||
-         (resource.data.awardedInstaller != null && resource.data.awardedInstaller == /databases/$(database)/documents/users/$(request.auth.uid)) ||
-         (resource.data.awardedInstallerId != null && resource.data.awardedInstallerId == request.auth.uid) ||
+        (resource.data.clientId == request.auth.uid || 
+         resource.data.awardedProfessionalId == request.auth.uid ||
+         (resource.data.awardedProfessional != null && resource.data.awardedProfessional == /databases/$(database)/documents/users/$(request.auth.uid)) ||
+         (resource.data.awardedProfessionalId != null && resource.data.awardedProfessionalId == request.auth.uid) ||
          isAdmin() || 
          isSupport());
       
       allow delete: if request.auth != null && 
-        (resource.data.jobGiverId == request.auth.uid || isAdmin());
+        (resource.data.clientId == request.auth.uid || isAdmin());
 
       // --- BIDS SUB-COLLECTION ---
       match /bids/{bidId} {
         allow read: if request.auth != null && (
-          ('installerId' in resource.data && resource.data.installerId == request.auth.uid) || 
-          get(/databases/$(database)/documents/jobs/$(jobId)).data.jobGiverId == request.auth.uid ||
+          ('professionalId' in resource.data && resource.data.professionalId == request.auth.uid) || 
+          get(/databases/$(database)/documents/jobs/$(jobId)).data.clientId == request.auth.uid ||
           isAdmin() || 
           isSupport()
         );
         
         allow create: if request.auth != null && 
-          "Installer" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles &&
-          request.resource.data.installerId == request.auth.uid &&
-          get(/databases/$(database)/documents/jobs/$(jobId)).data.jobGiverId != request.auth.uid;
+          "Professional" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles &&
+          request.resource.data.professionalId == request.auth.uid &&
+          get(/databases/$(database)/documents/jobs/$(jobId)).data.clientId != request.auth.uid;
           
-        allow update, delete: if isOwner(resource.data.installerId) || isAdmin();
+        allow update, delete: if isOwner(resource.data.professionalId) || isAdmin();
       }
       
       // --- COMMUNICATIONS SUB-COLLECTION (Phase 11 Enhancement #7) ---
@@ -114,10 +114,10 @@ service cloud.firestore {
         // Helper to check if user is job participant
         function isJobParticipant() {
           let jobData = get(/databases/$(database)/documents/jobs/$(jobId)).data;
-          return request.auth.uid == jobData.jobGiverId ||
-                 request.auth.uid == jobData.awardedInstaller ||
-                 (jobData.awardedInstaller != null && 
-                  jobData.awardedInstaller == /databases/$(database)/documents/users/$(request.auth.uid));
+          return request.auth.uid == jobData.clientId ||
+                 request.auth.uid == jobData.awardedProfessional ||
+                 (jobData.awardedProfessional != null && 
+                  jobData.awardedProfessional == /databases/$(database)/documents/users/$(request.auth.uid));
         }
         
         // Job participants can read all communications
@@ -161,8 +161,8 @@ service cloud.firestore {
     match /disputes/{disputeId} {
       allow read: if request.auth != null && 
         (resource.data.requesterId == request.auth.uid ||
-         resource.data.parties.jobGiverId == request.auth.uid || 
-         resource.data.parties.installerId == request.auth.uid || 
+         resource.data.parties.clientId == request.auth.uid || 
+         resource.data.parties.professionalId == request.auth.uid || 
          isSupport());
       allow create: if request.auth != null && request.resource.data.requesterId == request.auth.uid;
       allow update: if request.auth != null && (resource.data.requesterId == request.auth.uid || isSupport());

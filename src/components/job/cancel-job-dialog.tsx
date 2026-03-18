@@ -86,7 +86,7 @@ export function CancelJobDialog({
                             <SelectContent>
                                 <SelectItem value="changed_mind">Changed my mind / Found another way</SelectItem>
                                 <SelectItem value="mistake">Posted by mistake</SelectItem>
-                                <SelectItem value="no_show">Installer No-Show / Unresponsive</SelectItem>
+                                <SelectItem value="no_show">Professional No-Show / Unresponsive</SelectItem>
                             </SelectContent>
                         </Select>
 

@@ -34,7 +34,7 @@
                             { "value": "Indoor", "label": "Indoor Only" },
                             { "value": "Outdoor", "label": "Outdoor Only" },
                             { "value": "Both", "label": "Both Indoor & Outdoor" },
-                            { "value": "InstallerSuggest", "label": "Let Installer Suggest" }
+                            { "value": "ProfessionalSuggest", "label": "Let Professional Suggest" }
                         ]
                     },
                     {
@@ -388,7 +388,7 @@
                     },
                     {
                         "id": "wiring_cutting",
-                        "label": "Does the installer need to cut walls for pipes (chasing)?",
+                        "label": "Does the professional need to cut walls for pipes (chasing)?",
                         "options": [
                             { "value": "Yes", "label": "Yes (Concealed wiring)" },
                             { "value": "NoPipesLaid", "label": "No, pipes are already laid" },
@@ -652,7 +652,7 @@
                         "label": "Are spare parts (screws/hinges/channels) available on site?",
                         "options": [
                             { "value": "Yes", "label": "Yes" },
-                            { "value": "NeedInstallerToBring", "label": "Need installer to bring them" }
+                            { "value": "NeedProfessionalToBring", "label": "Need professional to bring them" }
                         ]
                     }
                 ],
@@ -709,7 +709,7 @@
                         "label": "Who is providing the raw material (plywood, laminate, fixtures)?",
                         "options": [
                             { "value": "IHaveMaterial", "label": "I have material (Labor only)" },
-                            { "value": "InstallerMustProvide", "label": "Installer must provide material" }
+                            { "value": "ProfessionalMustProvide", "label": "Professional must provide material" }
                         ]
                     }
                 ],

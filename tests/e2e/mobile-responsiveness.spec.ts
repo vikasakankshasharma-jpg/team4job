@@ -26,9 +26,9 @@ test.describe('Mobile Responsiveness', () => {
         await expect(page.getByRole('heading', { name: 'Log In' })).toBeVisible();
         console.log('[Mobile] Login page loaded');
 
-        // 2. Login as Job Giver
+        // 2. Login as Client
         console.log('[Mobile] Attempting login...');
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
 
         // Wait for dashboard with increased timeout and debug logs
         console.log('[Mobile] Waiting for dashboard navigation...');
@@ -94,3 +94,5 @@ test.describe('Mobile Responsiveness', () => {
         console.log('[Mobile] Post Job form verified');
     });
 });
+
+

@@ -44,9 +44,9 @@ const jobScopingPrompt = ai.definePrompt({
 
   Based on the user's initial query and your own simulated answers to these clarifying questions, generate the following:
 
-  1.  **Job Title:** A clear, professional title that installers will understand (e.g., "Device Installation for a Small Retail Store").
+  1.  **Job Title:** A clear, professional title that professionals will understand (e.g., "Device Installation for a Small Retail Store").
   2.  **Job Description:** A detailed description (150-200 words) that elaborates on the likely scope. Mention the type of property, potential device count (make a reasonable estimate), and common objectives (e.g., "cover entry points," "secure key areas").
-  3.  **Suggested Skills:** A list of 5-7 relevant technical skills installers would need.
+  3.  **Suggested Skills:** A list of 5-7 relevant technical skills professionals would need.
 
   Return the full output in the specified JSON format.
   `,

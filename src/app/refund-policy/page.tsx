@@ -20,7 +20,7 @@ export default function RefundPolicyPage() {
                     <section>
                         <h2 className="text-2xl font-semibold mt-8 mb-4">1. Overview</h2>
                         <p>
-                            Team4Job operates as an escrow-based marketplace connecting Job Givers with Installers.
+                            Team4Job operates as an escrow-based marketplace connecting Clients with Professionals.
                             All payments are held securely in escrow until job completion. This policy governs refunds
                             and cancellations for both parties.
                         </p>
@@ -29,47 +29,47 @@ export default function RefundPolicyPage() {
                     <section>
                         <h2 className="text-2xl font-semibold mt-8 mb-4">2. Escrow Payment System</h2>
                         <p>
-                            When a Job Giver funds a job, the payment is held in a secure escrow account managed by
-                            our payment partner (Cashfree). Funds are only released to the Installer upon successful
-                            job completion and Job Giver approval.
+                            When a Client funds a job, the payment is held in a secure escrow account managed by
+                            our payment partner (Cashfree). Funds are only released to the Professional upon successful
+                            job completion and Client approval.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-2xl font-semibold mt-8 mb-4">3. Job Giver Cancellations & Refunds</h2>
+                        <h2 className="text-2xl font-semibold mt-8 mb-4">3. Client Cancellations & Refunds</h2>
 
-                        <h3 className="text-xl font-semibold mt-6 mb-3">3.1 Before Installer Acceptance</h3>
+                        <h3 className="text-xl font-semibold mt-6 mb-3">3.1 Before Professional Acceptance</h3>
                         <ul className="list-disc pl-6 space-y-2">
-                            <li><strong>Full Refund:</strong> If you cancel before an Installer accepts the job, you will receive a 100% refund minus payment gateway charges (typically 2-3%).</li>
+                            <li><strong>Full Refund:</strong> If you cancel before a Professional accepts the job, you will receive a 100% refund minus payment gateway charges (typically 2-3%).</li>
                             <li><strong>Processing Time:</strong> 5-7 business days to your original payment method.</li>
                         </ul>
 
-                        <h3 className="text-xl font-semibold mt-6 mb-3">3.2 After Installer Acceptance</h3>
+                        <h3 className="text-xl font-semibold mt-6 mb-3">3.2 After Professional Acceptance</h3>
                         <ul className="list-disc pl-6 space-y-2">
                             <li><strong>Mutual Cancellation:</strong> Both parties must agree. Refund amount depends on work completed.</li>
-                            <li><strong>Unilateral Cancellation:</strong> May result in partial payment to Installer based on dispute resolution.</li>
-                            <li><strong>Service Fee:</strong> Platform service fee (5-10%) is non-refundable after Installer acceptance.</li>
+                            <li><strong>Unilateral Cancellation:</strong> May result in partial payment to Professional based on dispute resolution.</li>
+                            <li><strong>Service Fee:</strong> Platform service fee (5-10%) is non-refundable after Professional acceptance.</li>
                         </ul>
 
                         <h3 className="text-xl font-semibold mt-6 mb-3">3.3 After Work Completion</h3>
                         <ul className="list-disc pl-6 space-y-2">
-                            <li><strong>No Refund:</strong> Once you approve work completion, funds are released to the Installer and no refund is possible.</li>
+                            <li><strong>No Refund:</strong> Once you approve work completion, funds are released to the Professional and no refund is possible.</li>
                             <li><strong>Dispute Process:</strong> If you believe work is unsatisfactory, raise a dispute before approving completion.</li>
                         </ul>
                     </section>
 
                     <section>
-                        <h2 className="text-2xl font-semibold mt-8 mb-4">4. Installer Cancellations</h2>
+                        <h2 className="text-2xl font-semibold mt-8 mb-4">4. Professional Cancellations</h2>
 
                         <h3 className="text-xl font-semibold mt-6 mb-3">4.1 Before Acceptance</h3>
                         <ul className="list-disc pl-6 space-y-2">
-                            <li>Installers can decline jobs without penalty before accepting.</li>
+                            <li>Professionals can decline jobs without penalty before accepting.</li>
                         </ul>
 
                         <h3 className="text-xl font-semibold mt-6 mb-3">4.2 After Acceptance</h3>
                         <ul className="list-disc pl-6 space-y-2">
                             <li><strong>Reputation Impact:</strong> Cancelling after acceptance may affect your reputation score.</li>
-                            <li><strong>Job Giver Refund:</strong> Full refund is issued to the Job Giver minus gateway charges.</li>
+                            <li><strong>Client Refund:</strong> Full refund is issued to the Client minus gateway charges.</li>
                             <li><strong>Account Suspension:</strong> Repeated cancellations may result in account suspension.</li>
                         </ul>
 
@@ -96,21 +96,21 @@ export default function RefundPolicyPage() {
                     <section>
                         <h2 className="text-2xl font-semibold mt-8 mb-4">6. Auto-Settlement Protection</h2>
                         <p>
-                            To protect Installers from non-responsive Job Givers:
+                            To protect Professionals from non-responsive Clients:
                         </p>
                         <ul className="list-disc pl-6 space-y-2">
-                            <li>If Job Giver fails to approve/reject completed work within <strong>5 days</strong>, funds are automatically released to the Installer.</li>
-                            <li>Job Givers receive multiple reminder notifications before auto-settlement.</li>
+                            <li>If Client fails to approve/reject completed work within <strong>5 days</strong>, funds are automatically released to the Professional.</li>
+                            <li>Clients receive multiple reminder notifications before auto-settlement.</li>
                         </ul>
                     </section>
 
                     <section>
                         <h2 className="text-2xl font-semibold mt-8 mb-4">7. Funding Deadline</h2>
                         <p>
-                            After Installer accepts a job:
+                            After Professional accepts a job:
                         </p>
                         <ul className="list-disc pl-6 space-y-2">
-                            <li>Job Giver has <strong>48 hours</strong> to fund the escrow account.</li>
+                            <li>Client has <strong>48 hours</strong> to fund the escrow account.</li>
                             <li>Failure to fund within 48 hours results in automatic job cancellation.</li>
                             <li>No refund is applicable (no payment was made).</li>
                         </ul>
@@ -122,9 +122,9 @@ export default function RefundPolicyPage() {
                             Team4Job charges service fees to maintain the platform:
                         </p>
                         <ul className="list-disc pl-6 space-y-2">
-                            <li><strong>Installer Commission:</strong> 10% deducted from payout (configurable by admin).</li>
-                            <li><strong>Job Giver Fee:</strong> Small platform fee may apply.</li>
-                            <li><strong>Non-Refundable:</strong> Service fees are non-refundable after Installer acceptance, even if job is cancelled.</li>
+                            <li><strong>Professional Commission:</strong> 10% deducted from payout (configurable by admin).</li>
+                            <li><strong>Client Fee:</strong> Small platform fee may apply.</li>
+                            <li><strong>Non-Refundable:</strong> Service fees are non-refundable after Professional acceptance, even if job is cancelled.</li>
                         </ul>
                     </section>
 

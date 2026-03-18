@@ -132,7 +132,7 @@ Apply filters to find specific users:
 ### Filtering Jobs
 
 - **Status**: Open, In Progress, Completed, Cancelled
-- **Type**: Installation type (CCTV, Access Control, etc.)
+- **Category**: Hardware, Software, Security, Network, etc.
 - **Date Range**: Filter by creation date
 - **Pincode**: Filter by location
 - **Budget Range**: Filter by job value
@@ -423,4 +423,4 @@ For technical issues or questions about the admin system:
 
 ---
 
-*Last Updated: January 2026 for Alpha Testing Launch*
+*Last Updated: March 2026 for Beta Squad Launch*

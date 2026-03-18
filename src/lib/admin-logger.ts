@@ -80,7 +80,7 @@ export function getActionTypeLabel(actionType: AdminActionType): string {
         USER_SUSPENDED: 'User Suspended',
         USER_ACTIVATED: 'User Activated',
         USER_DELETED: 'User Deleted',
-        USER_VERIFIED: 'Installer Verified',
+        USER_VERIFIED: 'Professional Verified',
         JOB_DELETED: 'Job Deleted',
         JOB_FLAGGED: 'Job Flagged',
         DISPUTE_RESOLVED: 'Dispute Resolved',

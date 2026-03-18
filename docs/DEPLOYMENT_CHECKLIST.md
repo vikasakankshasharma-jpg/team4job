@@ -232,7 +232,7 @@ No action needed from you - everything works automatically!
 Questions? Contact support.
 
 Best regards,
-CCTV Job Connect Team
+Team4Job Team
 ```
 
 ---

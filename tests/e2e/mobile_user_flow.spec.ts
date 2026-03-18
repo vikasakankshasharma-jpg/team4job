@@ -6,7 +6,7 @@ import { TEST_JOB_DATA, generateUniqueJobTitle, getDateString, getDateTimeString
 // Emulate iPhone 13
 const device = { name: 'iPhone 13', viewport: { width: 390, height: 844 }, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1' };
 
-test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff) @slow', () => {
+test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', () => {
   test.use({ ...device });
 
   test('Full end-to-end flow on mobile', async ({ page }) => {
@@ -25,32 +25,25 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff) @slow', 
     const uniqueJobTitle = generateUniqueJobTitle();
     let jobId: string;
 
-    // ---------- Login as Job Giver ----------
-    // Register handler for potential "Resume Draft" dialog from previous runs
-    await page.addLocatorHandler(
-      page.getByRole('dialog', { name: 'Resume your draft?' }),
-      async () => {
-        console.log('[Mobile] Draft dialog detected, clicking Discard...');
-        await page.getByRole('button', { name: 'Discard' }).click();
-      }
-    );
-
-    await helper.auth.loginAsJobGiver();
+    // ---------- Login as Client ----------
+    await helper.auth.loginAsClient();
     // Resilient dashboard check
     await expect(page.getByTestId('dashboard-post-job-btn').or(page.getByText(/Post New Job|Active Jobs/i)).first()).toBeVisible({ timeout: 60000 });
 
     // ---------- Post a Job ----------
     await helper.nav.goToPostJob();
 
-    // Check for "Resume Draft" dialog and discard if present - Handled by addLocatorHandler
-    // const resumeDialog = page.getByRole('dialog', { name: 'Resume your draft?' });
-    // if (await resumeDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
-    //  console.log('[Mobile] Draft found, discarding...');
-    //  await page.getByRole('button', { name: 'Discard' }).click();
-    //  await resumeDialog.waitFor({ state: 'hidden' });
-    // }
+    await helper.form.completeWizard(
+      TEST_JOB_DATA.category,
+      TEST_JOB_DATA.subType,
+      TEST_JOB_DATA.branchAnswers,
+      TEST_JOB_DATA.urgency
+    );
 
-    await helper.form.selectDropdown('Category', TEST_JOB_DATA.category);
+    // Synchronize with global draft handler
+    await helper.form.waitForDraftDialogHandled();
+
+    // Fill non-wizard fields on the review/final page (on mobile, layout is single column)
     await helper.form.fillInput('Job Title', uniqueJobTitle);
     await helper.form.fillTextarea('Job Description', TEST_JOB_DATA.description);
     await helper.form.fillInput('Skills', TEST_JOB_DATA.skills);
@@ -81,14 +74,17 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff) @slow', 
       throw new Error('[MOBILE E2E] Job ID could not be captured. Job posting likely failed.');
     }
 
-    // ---------- Switch to Installer logic ----------
+    // ---------- Switch to Professional logic ----------
     await helper.auth.logout();
-    await helper.auth.loginAsInstaller();
+    await helper.auth.loginAsProfessional();
 
     // Direct navigation to job (more robust than browsing)
     await page.goto(`/dashboard/jobs/${jobId}`);
 
     // Resilient wait for Place Bid button
+    await page.getByTestId('job-title').waitFor({ state: 'visible', timeout: 30000 }).catch(() => { });
+    await expect(page.getByTestId('job-title')).toContainText(/CCTV|Security|Test CCTV/i);
+
     const placeBidButton = page.getByRole('button', { name: /Place Bid/i }).first().or(page.getByTestId('place-bid-button').first());
     await placeBidButton.waitFor({ state: 'visible', timeout: 30000 });
 
@@ -120,23 +116,23 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff) @slow', 
 
     await helper.form.waitForToast('Bid Placed!');
 
-    // ---------- Job Giver Awards ----------
+    // ---------- Client Awards ----------
     await helper.auth.logout();
-    await helper.auth.loginAsJobGiver();
+    await helper.auth.loginAsClient();
     await page.goto(`/dashboard/jobs/${jobId}`);
 
     await page.getByTestId('send-offer-button').first().click();
     await helper.form.waitForToast('Offer Sent');
 
-    // ---------- Installer Accepts ----------
-    // Ensure Installer has Payouts Setup
-    await page.request.post('/api/e2e/setup-installer', {
-      data: { email: TEST_ACCOUNTS.installer.email }
+    // ---------- Professional Accepts ----------
+    // Ensure Professional has Payouts Setup
+    await page.request.post('/api/e2e/setup-Professional', {
+      data: { email: TEST_ACCOUNTS.professional.email }
     });
-    console.log('[INFO] Seeded installer payouts via API');
+    console.log('[INFO] Seeded Professional payouts via API');
 
     await helper.auth.logout();
-    await helper.auth.loginAsInstaller();
+    await helper.auth.loginAsProfessional();
     await page.goto(`/dashboard/jobs/${jobId}`);
     await page.getByTestId('accept-job-button').first().click();
 
@@ -188,3 +184,6 @@ test.describe('Mobile User Flow (Job Giver / Installer / Admin / Staff) @slow', 
     console.log('Mobile Flow Completed Successfully');
   });
 });
+
+
+

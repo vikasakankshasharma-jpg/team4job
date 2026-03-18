@@ -1,6 +1,6 @@
 # How to Connect Your Custom Domain
 
-This guide will walk you through the process of connecting a domain you've purchased (e.g., from GoDaddy, Google Domains, etc.) to your CCTV Job Connect application hosted on Firebase.
+This guide will walk you through the process of connecting a domain you've purchased (e.g., from GoDaddy, Google Domains, etc.) to your Team4Job application hosted on Firebase.
 
 The process involves two main parts:
 1.  Adding the domain to your Firebase project.

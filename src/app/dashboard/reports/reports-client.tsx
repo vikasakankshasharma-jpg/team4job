@@ -16,7 +16,7 @@ import { Loader2, Users, Briefcase, IndianRupee, PieChart, Download, Award, Star
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadialBar, RadialBarChart, PolarGrid, PolarAngleAxis } from "recharts";
 import { User, Job, SubscriptionPlan, Transaction, Dispute } from "@/lib/types";
 import { collection, getDocs, query, doc, updateDoc, where, Timestamp, orderBy, limit } from "firebase/firestore";
-import { toDate, exportToCsv, calculateMonthlyPerformance, RankedInstaller } from "@/lib/utils";
+import { toDate, exportToCsv, calculateMonthlyPerformance, RankedProfessional } from "@/lib/utils";
 import { format, startOfMonth, subMonths, getMonth, getYear, differenceInMilliseconds } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -41,9 +41,9 @@ interface KpiCardProps {
 
 function KpiCard({ title, value, description, icon: Icon, iconBgColor }: KpiCardProps) {
     return (
-        <Card>
+        <Card className="border-0 shadow-sm shadow-primary/5 overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{title}</CardTitle>
+                <CardTitle className="text-sm font-semibold tracking-tight">{title}</CardTitle>
                 <div className={`p-2 rounded-full ${iconBgColor}`}>
                     <Icon className="h-4 w-4 text-primary-foreground" />
                 </div>
@@ -63,14 +63,14 @@ const tierIcons: Record<string, React.ReactNode> = {
     Platinum: <Award className="h-4 w-4 text-cyan-400" />,
 };
 
-function TopPerformersCard({ installers }: { installers: User[] }) {
+function TopPerformersCard({ Professionals }: { Professionals: User[] }) {
     const t = useTranslations('admin.reports');
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
-    const rankedInstallers: RankedInstaller[] = useMemo(() => {
-        return calculateMonthlyPerformance(installers);
-    }, [installers]);
+    const rankedProfessionals: RankedProfessional[] = useMemo(() => {
+        return calculateMonthlyPerformance(Professionals);
+    }, [Professionals]);
 
     const handleRunAutomation = async () => {
         setIsLoading(true);
@@ -103,11 +103,11 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
     const lastMonthName = format(subMonths(new Date(), 1), 'MMMM yyyy');
 
     return (
-        <Card>
-            <CardHeader>
+        <Card className="border-0 shadow-md shadow-primary/5">
+            <CardHeader className="pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <CardTitle>{t('topPerformers.title')}</CardTitle>
+                        <CardTitle className="text-xl font-bold tracking-tight">{t('topPerformers.title')}</CardTitle>
                         <CardDescription>{t('topPerformers.description', { month: lastMonthName })}</CardDescription>
                     </div>
                     <Button onClick={handleRunAutomation} disabled={isLoading}>
@@ -122,35 +122,35 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>{t('topPerformers.rank')}</TableHead>
-                                <TableHead>{t('topPerformers.installer')}</TableHead>
+                                <TableHead>{t('topPerformers.professional')}</TableHead>
                                 <TableHead>{t('topPerformers.points')}</TableHead>
                                 <TableHead>{t('topPerformers.rating')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {rankedInstallers.slice(0, 5).map((installer, index) => (
-                                <TableRow key={installer.id} className={index < 3 ? "bg-primary/5" : ""}>
+                            {rankedProfessionals.slice(0, 5).map((Professional, index) => (
+                                <TableRow key={Professional.id} className={index < 3 ? "bg-primary/5" : ""}>
                                     <TableCell className="font-bold text-lg">{index + 1}</TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-9 w-9 hidden sm:flex">
-                                                <AnimatedAvatar svg={installer.avatarUrl} />
-                                                <AvatarFallback>{installer.name.substring(0, 2)}</AvatarFallback>
+                                                <AnimatedAvatar svg={Professional.avatarUrl} />
+                                                <AvatarFallback>{Professional.name.substring(0, 2)}</AvatarFallback>
                                             </Avatar>
                                             <div>
-                                                <p className="font-medium">{installer.name}</p>
+                                                <p className="font-medium">{Professional.name}</p>
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                    {tierIcons[installer.installerProfile?.tier || 'Bronze']}
-                                                    <span>{installer.installerProfile?.tier} {t('topPerformers.tier')}</span>
+                                                    {tierIcons[Professional.professionalProfile?.tier || 'Bronze']}
+                                                    <span>{Professional.professionalProfile?.tier} {t('topPerformers.tier')}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="font-semibold text-green-600">+{installer.monthlyPoints} pts</TableCell>
+                                    <TableCell className="font-semibold text-green-600">+{Professional.monthlyPoints} pts</TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-1">
                                             <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                                            <span>{installer.installerProfile?.rating.toFixed(1)}</span>
+                                            <span>{Professional.professionalProfile?.rating.toFixed(1)}</span>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -158,7 +158,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
                         </TableBody>
                     </Table>
                 </div>
-                {rankedInstallers.length === 0 && (
+                {rankedProfessionals.length === 0 && (
                     <p className="text-center py-8 text-muted-foreground">{t('topPerformers.empty')}</p>
                 )}
             </CardContent>
@@ -166,7 +166,7 @@ function TopPerformersCard({ installers }: { installers: User[] }) {
     );
 }
 
-function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
+function AllTimeLeaderboardCard({ Professionals }: { Professionals: User[] }) {
     const t = useTranslations('admin.reports');
     const { toast } = useToast();
     const [selectedState, setSelectedState] = useState<string>('all');
@@ -178,10 +178,10 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
         const citiesByState: Record<string, Set<string>> = {};
         const pincodesByCity: Record<string, Set<string>> = {};
 
-        installers.forEach(installer => {
-            if (installer.address?.fullAddress) {
-                const parts = installer.address.fullAddress.split(', ');
-                const pincode = installer.address.cityPincode?.split(',')[0]?.trim() || '';
+        Professionals.forEach(Professional => {
+            if (Professional.address?.fullAddress) {
+                const parts = Professional.address.fullAddress.split(', ');
+                const pincode = Professional.address.cityPincode?.split(',')[0]?.trim() || '';
 
                 if (parts.length >= 3) {
                     const city = parts[parts.length - 2];
@@ -205,7 +205,7 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
             citiesByState: Object.fromEntries(Object.entries(citiesByState).map(([k, v]) => [k, Array.from(v).sort()])),
             pincodesByCity: Object.fromEntries(Object.entries(pincodesByCity).map(([k, v]) => [k, Array.from(v).sort()]))
         };
-    }, [installers]);
+    }, [Professionals]);
 
     useEffect(() => {
         setSelectedCity('all');
@@ -216,8 +216,8 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
         setSelectedPincode('all');
     }, [selectedCity]);
 
-    const filteredInstallers = useMemo(() => {
-        let result = installers;
+    const filteredProfessionals = useMemo(() => {
+        let result = Professionals;
 
         if (selectedState !== 'all') {
             result = result.filter(u => u.address?.fullAddress?.includes(selectedState));
@@ -229,14 +229,14 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
             result = result.filter(u => u.address?.cityPincode?.startsWith(selectedPincode));
         }
 
-        return result.sort((a, b) => (b.installerProfile?.points || 0) - (a.installerProfile?.points || 0));
+        return result.sort((a, b) => (b.professionalProfile?.points || 0) - (a.professionalProfile?.points || 0));
 
-    }, [installers, selectedState, selectedCity, selectedPincode]);
+    }, [Professionals, selectedState, selectedCity, selectedPincode]);
 
-    const topInstallersForChart = filteredInstallers.slice(0, 10);
+    const topProfessionalsForChart = filteredProfessionals.slice(0, 10);
 
     const handleDownload = () => {
-        if (filteredInstallers.length === 0) {
+        if (filteredProfessionals.length === 0) {
             toast({
                 title: t('leaderboard.exportFailed'),
                 description: t('leaderboard.exportFailedDesc'),
@@ -245,16 +245,16 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
             return;
         }
 
-        const dataToExport = filteredInstallers.map(u => ({
+        const dataToExport = filteredProfessionals.map(u => ({
             id: u.id,
             name: u.name,
             email: u.email,
             mobile: u.mobile,
-            tier: u.installerProfile?.tier || 'N/A',
-            points: u.installerProfile?.points || 0,
-            rating: u.installerProfile?.rating || 0,
-            reviews: u.installerProfile?.reviews || 0,
-            verified: u.installerProfile?.verified ? 'Yes' : 'No',
+            tier: u.professionalProfile?.tier || 'N/A',
+            points: u.professionalProfile?.points || 0,
+            rating: u.professionalProfile?.rating || 0,
+            reviews: u.professionalProfile?.reviews || 0,
+            verified: u.professionalProfile?.verified ? 'Yes' : 'No',
             fullAddress: u.address?.fullAddress || '',
             residentialPincode: u.pincodes.residential || '',
             officePincode: u.pincodes.office || '',
@@ -264,7 +264,7 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
         const cityName = selectedCity === 'all' ? 'all-cities' : selectedCity.replace(' ', '-');
         const pincodeName = selectedPincode === 'all' ? 'all-pincodes' : selectedPincode;
 
-        const filename = `installers-report-${stateName}-${cityName}-${pincodeName}.csv`;
+        const filename = `Professionals-report-${stateName}-${cityName}-${pincodeName}.csv`;
         exportToCsv(filename, dataToExport);
     }
 
@@ -272,11 +272,11 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
     const pincodesForCity = selectedState !== 'all' && selectedCity !== 'all' ? locationData.pincodesByCity[`${selectedState}-${selectedCity}`] || [] : [];
 
     return (
-        <Card>
-            <CardHeader>
+        <Card className="border-0 shadow-md shadow-primary/5">
+            <CardHeader className="pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <CardTitle>{t('leaderboard.title')}</CardTitle>
+                        <CardTitle className="text-xl font-bold tracking-tight">{t('leaderboard.title')}</CardTitle>
                         <CardDescription>{t('leaderboard.description')}</CardDescription>
                     </div>
                     <Button onClick={handleDownload} variant="outline" size="sm">
@@ -309,15 +309,15 @@ function AllTimeLeaderboardCard({ installers }: { installers: User[] }) {
                 </div>
             </CardHeader>
             <CardContent>
-                {topInstallersForChart.length > 0 ? (
+                {topProfessionalsForChart.length > 0 ? (
                     <ResponsiveContainer width="100%" height={350}>
-                        <BarChart data={topInstallersForChart} layout="vertical" margin={{ left: 10, right: 10 }}>
+                        <BarChart data={topProfessionalsForChart} layout="vertical" margin={{ left: 10, right: 10 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                             <XAxis type="number" />
                             <YAxis type="category" dataKey="name" width={80} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                             <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} />
                             <Legend />
-                            <Bar dataKey="installerProfile.points" name={t('leaderboard.totalPoints')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                            <Bar dataKey="professionalProfile.points" name={t('leaderboard.totalPoints')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 ) : (
@@ -352,9 +352,9 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
                         status: u.status || 'active',
                         memberSince: format(toDate(u.memberSince), 'yyyy-MM-dd'),
                         pincode: u.pincodes.residential,
-                        installerTier: u.installerProfile?.tier || 'N/A',
-                        installerPoints: u.installerProfile?.points || 0,
-                        installerRating: u.installerProfile?.rating || 0,
+                        ProfessionalTier: u.professionalProfile?.tier || 'N/A',
+                        ProfessionalPoints: u.professionalProfile?.points || 0,
+                        ProfessionalRating: u.professionalProfile?.rating || 0,
                     }));
                     break;
                 case 'jobs':
@@ -389,9 +389,9 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
     );
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><HardDriveDownload /> {t('export.title')}</CardTitle>
+        <Card className="border-0 shadow-md shadow-primary/5">
+            <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-xl font-bold tracking-tight"><HardDriveDownload className="h-5 w-5 text-primary" /> {t('export.title')}</CardTitle>
                 <CardDescription>{t('export.description')}</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -437,9 +437,9 @@ function DisputeResolutionReport({ disputes }: { disputes: Dispute[] }) {
 
     if (!report) {
         return (
-            <Card>
-                <CardHeader>
-                    <CardTitle>{t('disputes.title')}</CardTitle>
+            <Card className="border-0 shadow-md shadow-primary/5">
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-xl font-bold tracking-tight">{t('disputes.title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex items-center justify-center h-[300px]">
                     <p className="text-muted-foreground">{t('disputes.empty')}</p>
@@ -457,19 +457,19 @@ function DisputeResolutionReport({ disputes }: { disputes: Dispute[] }) {
     } satisfies ChartConfig;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{t('disputes.title')}</CardTitle>
+        <Card className="border-0 shadow-md shadow-primary/5">
+            <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-bold tracking-tight">{t('disputes.title')}</CardTitle>
                 <CardDescription>{t('disputes.description')}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6 md:grid-cols-2">
                 <div className="grid grid-cols-2 gap-4">
-                    <Card className="flex flex-col items-center justify-center p-4 text-center">
+                    <Card className="flex flex-col items-center justify-center p-4 text-center border-0 shadow-sm bg-green-50/50 dark:bg-green-950/20">
                         <ShieldCheck className="h-6 w-6 mb-2 text-green-600" />
                         <p className="text-2xl font-bold">{report.resolutionRate.toFixed(0)}%</p>
                         <p className="text-sm text-muted-foreground">{t('disputes.resolutionRate')}</p>
                     </Card>
-                    <Card className="flex flex-col items-center justify-center p-4 text-center">
+                    <Card className="flex flex-col items-center justify-center p-4 text-center border-0 shadow-sm bg-amber-50/50 dark:bg-amber-950/20">
                         <Clock className="h-6 w-6 mb-2 text-amber-500" />
                         <p className="text-2xl font-bold">{report.avgResolutionTimeDays.toFixed(1)}</p>
                         <p className="text-sm text-muted-foreground">{t('disputes.avgDays')}</p>
@@ -497,15 +497,15 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
     const summary = useMemo(() => {
         return transactions.reduce((acc, t) => {
             if (t.status === 'released') {
-                acc.totalReleased += t.payoutToInstaller;
-                acc.platformRevenue += t.commission + t.jobGiverFee;
+                acc.totalReleased += t.payoutToProfessional;
+                acc.platformRevenue += t.commission + t.clientFee;
                 acc.payoutsCount++;
             }
             if (t.status === 'funded') {
-                acc.fundsHeld += t.totalPaidByGiver;
+                acc.fundsHeld += t.totalPaidByClient;
             }
             if (t.status === 'funded' || t.status === 'released') {
-                acc.totalVolume += t.totalPaidByGiver;
+                acc.totalVolume += t.totalPaidByClient;
             }
             if (t.status === 'refunded') {
                 acc.refundsCount++;
@@ -522,29 +522,30 @@ function FinancialSummaryCard({ transactions }: { transactions: Transaction[] })
     }, [transactions]);
 
     return (
-        <Card className="col-span-full">
-            <CardHeader>
-                <CardTitle>{t('financial.title')}</CardTitle>
+        <Card className="col-span-full border-0 shadow-md shadow-primary/5 overflow-hidden">
+            <div className="h-1.5 w-full bg-gradient-to-r from-primary to-accent" />
+            <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-bold tracking-tight">{t('financial.title')}</CardTitle>
                 <CardDescription>{t('financial.description')}</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-                <Card className="p-4">
+                <Card className="p-4 border-primary/10 shadow-sm bg-primary/5">
                     <p className="text-sm font-medium">{t('financial.volume')}</p>
-                    <p className="text-2xl font-bold">₹{summary.totalVolume.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-primary">₹{summary.totalVolume.toLocaleString()}</p>
                 </Card>
-                <Card className="p-4">
+                <Card className="p-4 border-green-500/10 shadow-sm bg-green-500/5">
                     <p className="text-sm font-medium">{t('financial.revenue')}</p>
                     <p className="text-2xl font-bold text-green-600">₹{summary.platformRevenue.toLocaleString()}</p>
                 </Card>
-                <Card className="p-4">
+                <Card className="p-4 border-0 shadow-sm">
                     <p className="text-sm font-medium">{t('financial.released')}</p>
                     <p className="text-2xl font-bold">₹{summary.totalReleased.toLocaleString()}</p>
                 </Card>
-                <Card className="p-4">
+                <Card className="p-4 border-0 shadow-sm">
                     <p className="text-sm font-medium">{t('financial.held')}</p>
                     <p className="text-2xl font-bold">₹{summary.fundsHeld.toLocaleString()}</p>
                 </Card>
-                <Card className="p-4">
+                <Card className="p-4 border-0 shadow-sm">
                     <p className="text-sm font-medium">{t('financial.refunds')}</p>
                     <p className="text-2xl font-bold">{summary.refundsCount}</p>
                 </Card>
@@ -562,15 +563,15 @@ export default function ReportsClient() {
     const queryClient = useQueryClient();
 
     // React Query Hooks
-    const { data: userData = { users: [], installers: [] }, isLoading: usersLoading } = useQuery({
+    const { data: userData = { users: [], Professionals: [] }, isLoading: usersLoading } = useQuery({
         queryKey: ['reports-users', isAdmin],
         queryFn: async () => {
-            if (!db || !isAdmin) return { users: [], installers: [] };
+            if (!db || !isAdmin) return { users: [], Professionals: [] };
             const usersSnap = await getDocs(query(collection(db, 'users'), limit(1000)));
             const users = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as User);
             return {
                 users,
-                installers: users.filter(u => u.roles.includes('Installer'))
+                Professionals: users.filter(u => u.roles.includes('Professional'))
             };
         },
         enabled: !!db && !!isAdmin,
@@ -639,7 +640,7 @@ export default function ReportsClient() {
 
     const loading = usersLoading || jobsLoading || transactionsLoading || disputesLoading;
     const users = userData.users;
-    const installers = userData.installers;
+    const Professionals = userData.Professionals;
     const lastFetchTime = 0; // Removed manual tracking, relied on Query staleness
 
     useEffect(() => {
@@ -653,8 +654,8 @@ export default function ReportsClient() {
         if (users.length === 0 && jobs.length === 0) return null;
 
         const totalUsers = users.length;
-        const installerCount = users.filter(u => u.roles.includes("Installer")).length;
-        const jobGiverCount = users.filter(u => u.roles.includes("Job Giver")).length;
+        const ProfessionalCount = users.filter(u => u.roles.includes("Professional")).length;
+        const clientCount = users.filter(u => u.roles.includes("Client")).length;
 
         const totalJobs = jobs.length;
         const completedJobs = jobs.filter(j => j.status === 'Completed');
@@ -666,8 +667,8 @@ export default function ReportsClient() {
             const monthName = format(monthDate, 'MMM');
             return {
                 name: monthName,
-                Installers: 0,
-                "Job Givers": 0,
+                Professionals: 0,
+                "Clients": 0,
             };
         }).reverse();
 
@@ -677,8 +678,8 @@ export default function ReportsClient() {
                 const monthName = format(joinDate, 'MMM');
                 const monthData = userGrowthData.find(m => m.name === monthName);
                 if (monthData) {
-                    if (user.roles.includes('Installer')) monthData.Installers++;
-                    if (user.roles.includes('Job Giver')) monthData["Job Givers"]++;
+                    if (user.roles.includes('Professional')) monthData.Professionals++;
+                    if (user.roles.includes('Client')) monthData["Clients"]++;
                 }
             }
         });
@@ -689,17 +690,17 @@ export default function ReportsClient() {
         }, {} as Record<string, number>);
         const jobStatusData = Object.entries(jobStatusDistribution).map(([name, value]) => ({ name, value }));
 
-        const allInstallers = users.filter(u => u.installerProfile);
+        const allProfessionals = users.filter(u => u.professionalProfile);
 
         return {
             totalUsers,
-            installerCount,
-            jobGiverCount,
+            ProfessionalCount,
+            clientCount,
             totalJobs,
             fillRate,
             userGrowthData,
             jobStatusData,
-            allInstallers,
+            allProfessionals,
         };
     }, [users, jobs]);
 
@@ -711,16 +712,16 @@ export default function ReportsClient() {
         return <p>No data available to generate reports.</p>
     }
 
-    const { totalUsers, installerCount, jobGiverCount, totalJobs, fillRate, userGrowthData, jobStatusData, allInstallers } = reportData;
+    const { totalUsers, ProfessionalCount, clientCount, totalJobs, fillRate, userGrowthData, jobStatusData, allProfessionals } = reportData;
 
     return (
         <GlobalErrorBoundary>
             <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
-                <Card className="col-span-full">
+                <Card className="col-span-full border-0 shadow-sm shadow-primary/5 bg-muted/20">
                     <CardHeader>
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div>
-                                <CardTitle>{t('title')}</CardTitle>
+                                <CardTitle className="text-2xl tracking-tight">{t('title')}</CardTitle>
                                 <CardDescription>
                                     {t('description')}
                                     {lastFetchTime > 0 && (
@@ -751,7 +752,7 @@ export default function ReportsClient() {
                 <FinancialSummaryCard transactions={transactions} />
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <KpiCard title={t('kpi.totalUsers')} value={totalUsers} description={t('kpi.usersDesc', { installers: installerCount, givers: jobGiverCount })} icon={Users} iconBgColor="bg-blue-500" />
+                    <KpiCard title={t('kpi.totalUsers')} value={totalUsers} description={t('kpi.usersDesc', { Professionals: ProfessionalCount, givers: clientCount })} icon={Users} iconBgColor="bg-blue-500" />
                     <KpiCard title={t('kpi.totalJobs')} value={totalJobs} description={t('kpi.jobsDesc')} icon={Briefcase} iconBgColor="bg-purple-500" />
                     <KpiCard title={t('kpi.fillRate')} value={`${fillRate.toFixed(1)}%`} description={t('kpi.fillRateDesc')} icon={PieChart} iconBgColor="bg-amber-500" />
                 </div>
@@ -759,16 +760,16 @@ export default function ReportsClient() {
                 <DataExportCard users={users} jobs={jobs} transactions={transactions} disputes={disputes} />
 
                 <div className="grid gap-6 lg:grid-cols-2">
-                    <TopPerformersCard installers={allInstallers} />
-                    <AllTimeLeaderboardCard installers={allInstallers} />
+                    <TopPerformersCard Professionals={allProfessionals} />
+                    <AllTimeLeaderboardCard Professionals={allProfessionals} />
                 </div>
 
                 <DisputeResolutionReport disputes={disputes} />
 
                 <div className="grid gap-6 lg:grid-cols-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{t('charts.userGrowth')}</CardTitle>
+                    <Card className="border-0 shadow-md shadow-primary/5">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-xl font-bold tracking-tight">{t('charts.userGrowth')}</CardTitle>
                             <CardDescription>{t('charts.userGrowthDesc')}</CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -779,15 +780,15 @@ export default function ReportsClient() {
                                     <YAxis />
                                     <Tooltip />
                                     <Legend />
-                                    <Area type="monotone" dataKey="Installers" stackId="1" stroke="#8884d8" fill="#8884d8" />
-                                    <Area type="monotone" dataKey="Job Givers" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
+                                    <Area type="monotone" dataKey="Professionals" stackId="1" stroke="#8884d8" fill="#8884d8" />
+                                    <Area type="monotone" dataKey="Clients" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{t('charts.jobStatus')}</CardTitle>
+                    <Card className="border-0 shadow-md shadow-primary/5">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-xl font-bold tracking-tight">{t('charts.jobStatus')}</CardTitle>
                             <CardDescription>{t('charts.jobStatusDesc')}</CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -808,3 +809,4 @@ export default function ReportsClient() {
         </GlobalErrorBoundary>
     );
 }
+

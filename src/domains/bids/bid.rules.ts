@@ -8,9 +8,9 @@ export class BidRules {
     /**
      * Check if user can place a bid
      */
-    canPlaceBid(userRole: Role, jobStatus: JobStatus, jobGiverId: string, userId: string): boolean {
-        // Must be an installer
-        if (userRole !== 'Installer') {
+    canPlaceBid(userRole: Role, jobStatus: JobStatus, clientId: string, userId: string): boolean {
+        // Must be an Professional
+        if (userRole !== 'Professional') {
             return false;
         }
 
@@ -20,7 +20,7 @@ export class BidRules {
         }
 
         // Cannot bid on own job
-        if (jobGiverId === userId) {
+        if (clientId === userId) {
             return false;
         }
 
@@ -59,9 +59,9 @@ export class BidRules {
     /**
      * Check if user can withdraw bid
      */
-    canWithdrawBid(userId: string, bidInstallerId: string, jobStatus: JobStatus): boolean {
+    canWithdrawBid(userId: string, bidprofessionalId: string, jobStatus: JobStatus): boolean {
         // Can only withdraw own bid
-        if (userId !== bidInstallerId) {
+        if (userId !== bidprofessionalId) {
             return false;
         }
 

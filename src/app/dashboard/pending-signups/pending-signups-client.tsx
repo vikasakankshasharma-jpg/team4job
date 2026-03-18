@@ -430,8 +430,8 @@ export default function PendingSignupsClient() {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">{t("filters.allRoles")}</SelectItem>
-                                <SelectItem value="Installer">{t("filters.installer")}</SelectItem>
-                                <SelectItem value="Job Giver">{t("filters.jobGiver")}</SelectItem>
+                                <SelectItem value="Professional">{t("filters.professional")}</SelectItem>
+                                <SelectItem value="Client">{t("filters.client")}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

@@ -22,19 +22,19 @@ export default function HowItWorksCarousel() {
       step: 1,
       title: "AI-Assisted Job Post",
       description:
-        "Describe your needs in plain English. Our AI crafts a professional job post, suggests a fair budget, and can even find matching installers for you.",
+        "Describe your needs in plain English. Our AI crafts a professional job post, suggests a fair budget, and can even find matching professionals for you.",
     },
     {
       step: 2,
       title: "Receive Smart Bids",
       description:
-        "Verified installers submit detailed bids. Our AI Bid Assistant helps them write professional proposals.",
+        "Verified professionals submit detailed bids. Our AI Bid Assistant helps them write professional proposals.",
     },
     {
       step: 3,
       title: "Analyze & Award Strategically",
       description:
-        "Use our AI Bid Analysis to compare offers. Award the job to multiple installers simultaneously or rank them for sequential offers.",
+        "Use our AI Bid Analysis to compare offers. Award the job to multiple professionals simultaneously or rank them for sequential offers.",
     },
     {
       step: 4,
@@ -52,7 +52,7 @@ export default function HowItWorksCarousel() {
       step: 6,
       title: "Dual-Confirmation & Review",
       description:
-        "The installer submits proof of work, and you explicitly approve it. Only then are funds released. Leave a review to build the community.",
+        "The professional submits proof of work, and you explicitly approve it. Only then are funds released. Leave a review to build the community.",
     },
   ];
 

@@ -4,7 +4,7 @@ import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { Job, Transaction, User } from '@/lib/types';
 
 export type InvoiceData = {
-    job: Job & { jobGiver?: User; awardedInstaller?: User };
+    job: Job & { client?: User; awardedProfessional?: User };
     transaction: Transaction | null;
 };
 
@@ -38,22 +38,22 @@ export class InvoiceService {
             }
         }
 
-        // 2. Expand Job Giver and Installer for Invoice Details
+        // 2. Expand Client and Professional for Invoice Details
         let expandedJob = { ...jobData } as any;
 
-        if (jobData.jobGiverId) {
-            const giverSnap = await db.collection('users').doc(jobData.jobGiverId).get();
+        if (jobData.clientId) {
+            const giverSnap = await db.collection('users').doc(jobData.clientId).get();
             if (giverSnap.exists) {
-                expandedJob.jobGiver = { id: giverSnap.id, ...giverSnap.data() } as User;
+                expandedJob.client = { id: giverSnap.id, ...giverSnap.data() } as User;
             }
         }
 
-        const installerId = jobData.awardedInstallerId || (typeof jobData.awardedInstaller === 'string' ? jobData.awardedInstaller : jobData.awardedInstaller?.id);
+        const professionalId = jobData.awardedProfessionalId || (typeof jobData.awardedProfessional === 'string' ? jobData.awardedProfessional : jobData.awardedProfessional?.id);
 
-        if (installerId) {
-            const installerSnap = await db.collection('users').doc(installerId).get();
-            if (installerSnap.exists) {
-                expandedJob.awardedInstaller = { id: installerSnap.id, ...installerSnap.data() } as User;
+        if (professionalId) {
+            const ProfessionalSnap = await db.collection('users').doc(professionalId).get();
+            if (ProfessionalSnap.exists) {
+                expandedJob.awardedProfessional = { id: ProfessionalSnap.id, ...ProfessionalSnap.data() } as User;
             }
         }
 

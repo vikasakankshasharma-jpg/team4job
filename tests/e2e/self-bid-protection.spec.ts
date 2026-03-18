@@ -20,10 +20,10 @@ test.describe('Self-Interaction Guardrails', () => {
     test('Dual-role user cannot bid on their own job', async ({ page }) => {
         const helper = new TestHelper(page);
 
-        // 1. Login as Job Giver and Post a Job
-        console.log('Logging in as dual-role user (Job Giver mode)...');
+        // 1. Login as Client and Post a Job
+        console.log('Logging in as dual-role user (Client mode)...');
         await helper.auth.login(DUAL_ROLE_USER.email, DUAL_ROLE_USER.password);
-        await helper.auth.ensureRole('Job Giver');
+        await helper.auth.ensureRole('Client');
 
         console.log('Posting a new job...');
         const reachedPostJob = await helper.nav.goToPostJob();
@@ -69,12 +69,12 @@ test.describe('Self-Interaction Guardrails', () => {
         jobId = await helper.job.getJobIdFromUrl();
         console.log(`Job posted with ID: ${jobId}`);
 
-        // 2. Switch to Installer Mode
-        console.log('Switching to Installer mode...');
-        await helper.auth.ensureRole('Installer');
+        // 2. Switch to Professional Mode
+        console.log('Switching to Professional mode...');
+        await helper.auth.ensureRole('Professional');
 
         // 3. Navigate to the Job
-        console.log(`Navigating to job ${jobId} as Installer (same user)...`);
+        console.log(`Navigating to job ${jobId} as Professional (same user)...`);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         // 4. Verification
@@ -86,10 +86,10 @@ test.describe('Self-Interaction Guardrails', () => {
         const placeBidBtn = page.getByTestId('place-bid-button');
         const closeBiddingBtn = page.getByRole('button', { name: "Close Bidding" });
 
-        // Since the user is the OWNER of the job, the UI should strictly show the Job Giver view (Close Bidding)
+        // Since the user is the OWNER of the job, the UI should strictly show the Client view (Close Bidding)
         // and HIDE the Place Bid button, regardless of the selected 'role' in the user menu.
         // This is the primary safeguard in job-detail-client.tsx: 
-        // const isJobGiver = !!(user && job && (user.id === getRefId(job.jobGiver) || user.id === job.jobGiverId));
+        // const isClient = !!(user && job && (user.id === getRefId(job.jobGiver) || user.id === job.jobGiverId));
 
         if (await placeBidBtn.isVisible()) {
             console.log('WARNING: Place Bid button IS visible initially. Checking if it disappears...');
@@ -104,9 +104,11 @@ test.describe('Self-Interaction Guardrails', () => {
         console.log('       (Close Bidding button is visible, Place Bid button is hidden)');
 
         // 5. Cleanup (Cancel Job) - Optional, but good practice
-        // Switch back to Job Giver to cancel?
-        // await helper.auth.ensureRole('Job Giver');
+        // Switch back to Client to cancel?
+        // await helper.auth.ensureRole('Client');
         // await page.goto(`/dashboard/jobs/${jobId}`);
         // ... cancellation logic ...
     });
 });
+
+

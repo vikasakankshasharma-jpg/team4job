@@ -97,18 +97,18 @@ function PersonalSettingsCard() {
 
     return (
         <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>{t('appearance')}</CardTitle>
+            <Card className="border-0 shadow-md shadow-primary/5">
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-xl font-bold tracking-tight">{t('appearance')}</CardTitle>
                     <CardDescription>{t('appearanceDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ThemeSelector />
                 </CardContent>
             </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" /> {t('notifications')}</CardTitle>
+            <Card className="border-0 shadow-md shadow-primary/5">
+                <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-xl font-bold tracking-tight"><Bell className="h-5 w-5 text-primary" /> {t('notifications')}</CardTitle>
                     <CardDescription>{t('notificationsDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -128,7 +128,7 @@ function PersonalSettingsCard() {
                                 {t('newBidsDesc')}
                             </p>
                         </div>
-                        <Switch defaultChecked disabled={role !== 'Job Giver'} />
+                        <Switch defaultChecked disabled={role !== 'Client'} />
                     </div>
                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div className="space-y-0.5">
@@ -137,7 +137,7 @@ function PersonalSettingsCard() {
                                 {t('jobAwardedDesc')}
                             </p>
                         </div>
-                        <Switch defaultChecked disabled={role !== 'Installer'} />
+                        <Switch defaultChecked disabled={role !== 'Professional'} />
                     </div>
                     <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div className="space-y-0.5">
@@ -155,9 +155,9 @@ function PersonalSettingsCard() {
                     </p>
                 </CardFooter>
             </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>{t('accountManagement')}</CardTitle>
+            <Card className="border-0 shadow-md shadow-primary/5">
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-xl font-bold tracking-tight">{t('accountManagement')}</CardTitle>
                     <CardDescription>
                         {t('accountManagementDesc')}
                     </CardDescription>
@@ -201,10 +201,10 @@ function PersonalSettingsCard() {
                         </Button>
                     </div>
                     {!isTeamMember && (
-                        <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-3">
+                        <div className="flex items-center justify-between rounded-lg border border-destructive/20 bg-destructive/5 p-4 shadow-sm">
                             <div>
-                                <Label className="text-destructive">{t('deleteAccount')}</Label>
-                                <p className="text-xs text-destructive/70">
+                                <Label className="text-destructive font-semibold text-base">{t('deleteAccount')}</Label>
+                                <p className="text-sm text-destructive/80 mt-1">
                                     {t('deleteAccountDesc')}
                                 </p>
                             </div>
@@ -276,11 +276,11 @@ function PersonalSettingsCard() {
 }
 
 const initialSettings: Partial<PlatformSettings> = {
-    installerCommissionRate: 5,
-    jobGiverFeeRate: 2,
+    professionalCommissionRate: 5,
+    clientFeeRate: 2,
     defaultTrialPeriodDays: 30,
-    freeBidsForNewInstallers: 10,
-    freePostsForNewJobGivers: 3,
+    freeBidsForNewProfessionals: 10,
+    freePostsForNewClients: 3,
     pointsForJobCompletion: 50,
     pointsFor5StarRating: 20,
     pointsFor4StarRating: 10,
@@ -290,7 +290,7 @@ const initialSettings: Partial<PlatformSettings> = {
     goldTierPoints: 1000,
     platinumTierPoints: 2000,
     minJobBudget: 500,
-    autoVerifyInstallers: true
+    autoVerifyProfessionals: true
 };
 
 function MonetizationSettings({ plans, coupons, onDataChange }: { plans: SubscriptionPlan[], coupons: Coupon[], onDataChange: () => void }) {
@@ -342,22 +342,22 @@ function MonetizationSettings({ plans, coupons, onDataChange }: { plans: Subscri
 
     return (
         <div className="grid gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>{t('platformCommission')}</CardTitle>
+            <Card className="border-0 shadow-md shadow-primary/5">
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-xl font-bold tracking-tight">{t('platformCommission')}</CardTitle>
                     <CardDescription>{t('platformCommissionDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="installerCommissionRate">{t('installerCommission')}</Label>
-                            <Input id="installerCommissionRate" type="number" value={settings.installerCommissionRate ?? ''} onChange={handleInputChange} min="0" max="100" />
-                            <p className="text-xs text-muted-foreground">{t('installerCommissionHelp')}</p>
+                            <Label htmlFor="professionalCommissionRate">{t('ProfessionalCommission')}</Label>
+                            <Input id="professionalCommissionRate" type="number" value={settings.professionalCommissionRate ?? ''} onChange={handleInputChange} min="0" max="100" />
+                            <p className="text-xs text-muted-foreground">{t('ProfessionalCommissionHelp')}</p>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="jobGiverFeeRate">{t('jobGiverFee')}</Label>
-                            <Input id="jobGiverFeeRate" type="number" value={settings.jobGiverFeeRate ?? ''} onChange={handleInputChange} min="0" max="100" />
-                            <p className="text-xs text-muted-foreground">{t('jobGiverFeeHelp')}</p>
+                            <Label htmlFor="clientFeeRate">{t('clientFee')}</Label>
+                            <Input id="clientFeeRate" type="number" value={settings.clientFeeRate ?? ''} onChange={handleInputChange} min="0" max="100" />
+                            <p className="text-xs text-muted-foreground">{t('clientFeeHelp')}</p>
                         </div>
                     </div>
                 </CardContent>
@@ -423,9 +423,9 @@ function UserReputationSettings() {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{t('userReputationSystem')}</CardTitle>
+        <Card className="border-0 shadow-md shadow-primary/5">
+            <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-bold tracking-tight">{t('userReputationSystem')}</CardTitle>
                 <CardDescription>{t('userReputationSystemDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -440,15 +440,15 @@ function UserReputationSettings() {
                             </p>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="freeBidsForNewInstallers">{t('freeBids')}</Label>
-                            <Input id="freeBidsForNewInstallers" type="number" value={settings.freeBidsForNewInstallers} onChange={handleInputChange} min="0" />
+                            <Label htmlFor="freeBidsForNewProfessionals">{t('freeBids')}</Label>
+                            <Input id="freeBidsForNewProfessionals" type="number" value={settings.freeBidsForNewProfessionals} onChange={handleInputChange} min="0" />
                             <p className="text-xs text-muted-foreground">
                                 {t('freeBidsHelp')}
                             </p>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="freePostsForNewJobGivers">{t('freePosts')}</Label>
-                            <Input id="freePostsForNewJobGivers" type="number" value={settings.freePostsForNewJobGivers} onChange={handleInputChange} min="0" />
+                            <Label htmlFor="freePostsForNewClients">{t('freePosts')}</Label>
+                            <Input id="freePostsForNewClients" type="number" value={settings.freePostsForNewClients} onChange={handleInputChange} min="0" />
                             <p className="text-xs text-muted-foreground">
                                 {t('freePostsHelp')}
                             </p>
@@ -558,7 +558,7 @@ function PlatformRulesSettings({ blacklist, onDataChange }: { blacklist: Blackli
     };
 
     const handleSwitchChange = (checked: boolean) => {
-        setSettings(prev => ({ ...prev, autoVerifyInstallers: checked }));
+        setSettings(prev => ({ ...prev, autoVerifyProfessionals: checked }));
     }
 
     if (isLoading) {
@@ -567,9 +567,9 @@ function PlatformRulesSettings({ blacklist, onDataChange }: { blacklist: Blackli
 
     return (
         <div className="grid gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>{t('jobContentRules')}</CardTitle>
+            <Card className="border-0 shadow-md shadow-primary/5">
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-xl font-bold tracking-tight">{t('jobContentRules')}</CardTitle>
                     <CardDescription>{t('jobContentRulesDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -591,14 +591,14 @@ function PlatformRulesSettings({ blacklist, onDataChange }: { blacklist: Blackli
                         </p>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="autoVerifyInstallers" className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> {t('autoVerify')}</Label>
+                        <Label htmlFor="autoVerifyProfessionals" className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> {t('autoVerify')}</Label>
                         <div className="flex items-center space-x-2">
                             <Switch
-                                id="autoVerifyInstallers"
-                                checked={settings.autoVerifyInstallers}
+                                id="autoVerifyProfessionals"
+                                checked={settings.autoVerifyProfessionals}
                                 onCheckedChange={handleSwitchChange}
                             />
-                            <Label htmlFor="autoVerifyInstallers" className="text-sm font-normal">{t('autoVerifyHelp')}</Label>
+                            <Label htmlFor="autoVerifyProfessionals" className="text-sm font-normal">{t('autoVerifyHelp')}</Label>
                         </div>
                     </div>
                 </CardContent>
@@ -654,9 +654,9 @@ export default function SettingsClient() {
                     {isAdmin ? (
                         <ul className="list-disc space-y-2 pl-5">
                             <li><span className="font-semibold">Monetization:</span> Manage subscription plans, create promotional coupons, and set your platform&apos;s commission rates. This is where you control how your platform makes money.</li>
-                            <li><span className="font-semibold">User &amp; Reputation:</span> Define the &quot;welcome kit&quot; for new users (like free trials) and configure the entire reputation system for installers, including points and tier levels.</li>
+                            <li><span className="font-semibold">User &amp; Reputation:</span> Define the &quot;welcome kit&quot; for new users (like free trials) and configure the entire reputation system for Professionals, including points and tier levels.</li>
                             <li><span className="font-semibold">Platform Rules:</span> Set global rules like the minimum job budget and manage the blacklist for users and pincodes.</li>
-                            <li><span className="font-semibold">Growth Strategy:</span> Use the coupon system to execute your growth strategy. For example, create a coupon for a &quot;120-day Pro Installer Plan&quot; and manually send it to the first few high-quality installers who sign up in a new city to bootstrap that local market.</li>
+                            <li><span className="font-semibold">Growth Strategy:</span> Use the coupon system to execute your growth strategy. For example, create a coupon for a &quot;120-day Pro Professional Plan&quot; and manually send it to the first few high-quality Professionals who sign up in a new city to bootstrap that local market.</li>
                             <li><span className="font-semibold">General:</span> Change your personal settings like theme and notifications.</li>
                         </ul>
                     ) : (
@@ -695,20 +695,20 @@ export default function SettingsClient() {
         <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
             <h1 className="text-3xl font-bold">{t('title')}</h1>
             <Tabs defaultValue="monetization" className="w-full">
-                <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto p-1 bg-muted/50">
-                    <TabsTrigger value="monetization" className="flex-shrink-0">
+                <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto p-1.5 bg-muted/40 rounded-xl mb-6 shadow-sm">
+                    <TabsTrigger value="monetization" className="flex-shrink-0 rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-medium py-2 px-4 transition-all">
                         <Package className="mr-2 h-4 w-4" />
                         <span>{t('tabMonetization')}</span>
                     </TabsTrigger>
-                    <TabsTrigger value="reputation" className="flex-shrink-0">
+                    <TabsTrigger value="reputation" className="flex-shrink-0 rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-medium py-2 px-4 transition-all">
                         <Gem className="mr-2 h-4 w-4" />
                         <span>{t('tabReputation')}</span>
                     </TabsTrigger>
-                    <TabsTrigger value="platform" className="flex-shrink-0">
+                    <TabsTrigger value="platform" className="flex-shrink-0 rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-medium py-2 px-4 transition-all">
                         <Ban className="mr-2 h-4 w-4" />
                         <span>{t('tabPlatform')}</span>
                     </TabsTrigger>
-                    <TabsTrigger value="general" className="flex-shrink-0">
+                    <TabsTrigger value="general" className="flex-shrink-0 rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-medium py-2 px-4 transition-all">
                         <SettingsIcon className="mr-2 h-4 w-4" />
                         <span>{t('tabGeneral')}</span>
                     </TabsTrigger>

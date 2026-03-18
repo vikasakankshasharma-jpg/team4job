@@ -24,7 +24,7 @@ export interface TimelineEvent {
 export interface CommunicationItem {
     id: string;
     jobId: string;
-    type: 'job_giver_message' | 'installer_message' | 'system_update';
+    type: 'job_giver_message' | 'Professional_message' | 'system_update';
     content: string;
     author: string | 'system';  // User ID or 'system'
     authorName?: string;
@@ -50,7 +50,7 @@ export function buildJobTimeline(
         title: 'Job Posted',
         description: job.title,
         timestamp: job.postedAt,
-        actor: job.jobGiverId,
+        actor: job.clientId,
         icon: 'CheckCircle',
         color: 'green',
     });
@@ -64,8 +64,8 @@ export function buildJobTimeline(
                 title: 'New Bid Received',
                 description: `₹${bid.amount.toLocaleString()}`,
                 timestamp: bid.timestamp,
-                actor: bid.installerId || 'unknown',
-                actorName: (bid.installer as any).name || 'Installer',
+                actor: bid.professionalId || 'unknown',
+                actorName: (bid.professional as any).name || 'Professional',
                 metadata: { bidAmount: bid.amount },
                 icon: 'DollarSign',
                 color: 'blue',
@@ -109,14 +109,14 @@ export function buildJobTimeline(
     }
 
     // 5. Award event (if no statusHistory)
-    if (job.awardedInstallerId && !job.statusHistory?.some(h => h.newStatus === 'Awarded')) {
+    if (job.awardedProfessionalId && !job.statusHistory?.some(h => h.newStatus === 'Awarded')) {
         events.push({
             id: `event-${eventId++}`,
             type: 'status_change',
             title: 'Job Awarded',
-            description: 'Installer selected',
+            description: 'Professional selected',
             timestamp: job.postedAt, // Fallback as awardedAt is not available
-            actor: job.jobGiverId,
+            actor: job.clientId,
             icon: 'Award',
             color: 'green',
         });
@@ -130,7 +130,7 @@ export function buildJobTimeline(
             title: 'Payment Completed',
             description: job.invoice.totalAmount ? `₹${job.invoice.totalAmount.toLocaleString()}` : '',
             timestamp: job.invoice.date || job.postedAt,
-            actor: job.jobGiverId,
+            actor: job.clientId,
             icon: 'Wallet',
             color: 'blue',
         });
@@ -142,9 +142,9 @@ export function buildJobTimeline(
             id: `event-${eventId++}`,
             type: 'status_change',
             title: 'Work Started',
-            description: 'Installer began work',
+            description: 'Professional began work',
             timestamp: job.workStartedAt,
-            actor: typeof job.awardedInstaller === 'string' ? job.awardedInstaller : 'installer',
+            actor: typeof job.awardedProfessional === 'string' ? job.awardedProfessional : 'Professional',
             icon: 'PlayCircle',
             color: 'green',
         });
@@ -156,36 +156,36 @@ export function buildJobTimeline(
             id: `event-${eventId++}`,
             type: 'status_change',
             title: 'Work Completed',
-            description: 'Installer marked as complete',
+            description: 'Professional marked as complete',
             timestamp: job.workSubmittedAt,
-            actor: typeof job.awardedInstaller === 'string' ? job.awardedInstaller : 'installer',
+            actor: typeof job.awardedProfessional === 'string' ? job.awardedProfessional : 'Professional',
             icon: 'CheckCircle2',
             color: 'green',
         });
     }
 
     // 9. Reviews exchanged
-    if (job.jobGiverReview) {
+    if (job.clientReview) {
         events.push({
             id: `event-${eventId++}`,
             type: 'review',
             title: 'Review Given',
-            description: `${job.jobGiverReview.rating} stars`,
-            timestamp: job.jobGiverReview.createdAt,
-            actor: job.jobGiverId,
+            description: `${job.clientReview.rating} stars`,
+            timestamp: job.clientReview.createdAt,
+            actor: job.clientId,
             icon: 'Star',
             color: 'yellow',
         });
     }
 
-    if (job.installerReview) {
+    if (job.professionalReview) {
         events.push({
             id: `event-${eventId++}`,
             type: 'review',
             title: 'Review Received',
-            description: `${job.installerReview.rating} stars`,
-            timestamp: job.installerReview.createdAt,
-            actor: job.installerReview.authorId,
+            description: `${job.professionalReview.rating} stars`,
+            timestamp: job.professionalReview.createdAt,
+            actor: job.professionalReview.authorId,
             icon: 'Star',
             color: 'yellow',
         });

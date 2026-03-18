@@ -6,10 +6,10 @@
     - /url: "#main-content"
   - generic [ref=e3]:
     - banner [ref=e4]:
-      - link "CCTV Job Connect" [ref=e6] [cursor=pointer]:
+      - link "Team4Job" [ref=e6] [cursor=pointer]:
         - /url: /
         - img
-        - generic [ref=e7]: CCTV Job Connect
+        - generic [ref=e7]: Team4Job
       - generic [ref=e8]:
         - button "Help" [ref=e9] [cursor=pointer]:
           - img [ref=e10]

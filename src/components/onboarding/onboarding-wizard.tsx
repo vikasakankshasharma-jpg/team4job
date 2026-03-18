@@ -10,20 +10,21 @@ import { Experience } from "./steps/experience";
 import { Documents } from "./steps/documents";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-
-// Placeholder steps
-const steps = [
-    { id: 1, name: "Basic Info" },
-    { id: 2, name: "Experience & Skills" },
-    { id: 3, name: "Documents (KYC)" },
-    { id: 4, name: "Review" }
-];
+import { useTranslations } from "next-intl";
 
 export function OnboardingWizard() {
+    const t = useTranslations('onboarding');
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
+
+    const steps = [
+        { id: 1, name: t('steps.basic') },
+        { id: 2, name: t('steps.experience') },
+        { id: 3, name: t('steps.documents') },
+        { id: 4, name: t('steps.review') }
+    ];
 
     // Connect to store
     const data = useOnboardingStore();
@@ -31,7 +32,6 @@ export function OnboardingWizard() {
     const resetStore = useOnboardingStore((state) => state.reset);
 
     const nextStep = () => {
-        // Basic validation could go here
         setCurrentStep((prev) => Math.min(prev + 1, steps.length));
         window.scrollTo(0, 0);
     };
@@ -77,8 +77,8 @@ export function OnboardingWizard() {
             }
 
             toast({
-                title: "Application Submitted!",
-                description: "Your profile is under review. We will notify you once verified.",
+                title: t('submit.success'),
+                description: t('submit.successDesc'),
             });
 
             resetStore(); // Clear local state
@@ -86,8 +86,8 @@ export function OnboardingWizard() {
 
         } catch (error) {
             toast({
-                title: "Submission Failed",
-                description: "Please try again later.",
+                title: t('submit.failed'),
+                description: t('submit.failedDesc'),
                 variant: "destructive"
             });
         } finally {
@@ -131,26 +131,27 @@ export function OnboardingWizard() {
                     {currentStep === 3 && <Documents data={data} updateData={updateData} />}
                     {currentStep === 4 && (
                         <div className="space-y-6">
-                            <h2 className="text-xl font-semibold">Review Your Details</h2>
+                            <h2 className="text-xl font-semibold">{t('review.title')}</h2>
                             <div className="grid md:grid-cols-2 gap-6 text-sm">
                                 <div className="space-y-2">
-                                    <h3 className="font-semibold text-muted-foreground">Basic Info</h3>
-                                    <p><span className="font-medium">Name:</span> {data.firstName} {data.lastName}</p>
-                                    <p><span className="font-medium">City:</span> {data.city} ({data.pincode})</p>
-                                    <p><span className="font-medium">Shop:</span> {data.shopName || "N/A"}</p>
+                                    <h3 className="font-semibold text-muted-foreground">{t('review.basicInfo')}</h3>
+                                    <p><span className="font-medium">{t('review.name')}:</span> {data.firstName} {data.lastName}</p>
+                                    <p><span className="font-medium">{t('review.city')}:</span> {data.city} ({data.pincode})</p>
+                                    <p><span className="font-medium">{t('review.shop')}:</span> {data.shopName || "N/A"}</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="font-semibold text-muted-foreground">Experience</h3>
-                                    <p><span className="font-medium">Years:</span> {data.experience}</p>
-                                    <p><span className="font-medium">Skills:</span> {data.skills.join(", ") || "None selected"}</p>
+                                    <h3 className="font-semibold text-muted-foreground">{t('review.experience')}</h3>
+                                    <p><span className="font-medium">{t('review.years')}:</span> {t(`experience.years${data.experience?.replace('-', '').replace('+', 'plus')}`)}</p>
+                                    <p><span className="font-medium">{t('experience.categoryLabel')}:</span> {data.category ? t(`experience.categories.${data.category}.label`) : t('review.noneSelected')}</p>
+                                    <p><span className="font-medium">{t('review.skills')}:</span> {data.skills.map((s: string) => t(`experience.categories.${data.category}.skills.${s}`)).join(", ") || t('review.noneSelected')}</p>
                                 </div>
                             </div>
 
                             <div className="p-4 border rounded-lg bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800 flex gap-3 text-yellow-800 dark:text-yellow-200">
                                 <AlertCircle className="h-5 w-5 shrink-0" />
                                 <div className="text-sm">
-                                    <p className="font-semibold">Pending Verification</p>
-                                    <p>Once submitted, our team will verify your documents (Aadhar/PAN). This usually takes 24-48 hours.</p>
+                                    <p className="font-semibold">{t('review.pendingTitle')}</p>
+                                    <p>{t('review.pendingDesc')}</p>
                                 </div>
                             </div>
                         </div>
@@ -161,15 +162,15 @@ export function OnboardingWizard() {
             {/* Navigation Buttons */}
             <div className="flex justify-between">
                 <Button variant="outline" onClick={prevStep} disabled={currentStep === 1 || isSubmitting}>
-                    Back
+                    {t('steps.back') || 'Back'}
                 </Button>
                 {currentStep === steps.length ? (
                     <Button onClick={handleSubmit} disabled={isSubmitting}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Submit Application
+                        {t('submit.button')}
                     </Button>
                 ) : (
-                    <Button onClick={nextStep}>Next</Button>
+                    <Button onClick={nextStep}>{t('steps.next') || 'Next'}</Button>
                 )}
             </div>
         </div>

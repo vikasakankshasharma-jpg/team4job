@@ -39,24 +39,24 @@ test.describe('Visual Regression Tests', () => {
         });
     });
 
-    test('Installer dashboard should match baseline', async ({ page }) => {
+    test('Professional dashboard should match baseline', async ({ page }) => {
         const helper = new TestHelper(page);
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await helper.nav.injectCookieHide();
         await page.waitForLoadState('networkidle');
 
         // Wait for charts to render
         await page.waitForTimeout(2000);
 
-        await expect(page).toHaveScreenshot('installer-dashboard.png', {
+        await expect(page).toHaveScreenshot('Professional-dashboard.png', {
             fullPage: true,
             maxDiffPixels: 200, // Charts may have slight variations
         });
     });
 
-    test('Job Giver dashboard should match baseline', async ({ page }) => {
+    test('Client dashboard should match baseline', async ({ page }) => {
         const helper = new TestHelper(page);
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
         await helper.nav.injectCookieHide();
         await page.waitForLoadState('networkidle');
 
@@ -71,7 +71,7 @@ test.describe('Visual Regression Tests', () => {
 
     test('Job listing page should match baseline', async ({ page }) => {
         const helper = new TestHelper(page);
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await helper.nav.goToBrowseJobs();
         await helper.nav.injectCookieHide();
 
@@ -99,7 +99,7 @@ test.describe('Visual Regression Tests', () => {
         await page.setViewportSize({ width: 375, height: 667 });
 
         const helper = new TestHelper(page);
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await helper.nav.injectCookieHide();
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(2000);
@@ -126,3 +126,5 @@ test.describe('Visual Regression Tests', () => {
         });
     });
 });
+
+

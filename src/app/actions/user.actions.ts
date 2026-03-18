@@ -32,15 +32,15 @@ export async function getProfileAction(userId: string) {
 
 
 /**
- * Server Action to get related installers for "My Installers" page
- * Fetches installers from completed jobs + favorites + blocked
+ * Server Action to get related Professionals for "My Professionals" page
+ * Fetches Professionals from completed jobs + favorites + blocked
  */
-export async function getRelatedInstallersAction(userId: string) {
+export async function getRelatedProfessionalsAction(userId: string) {
     try {
         const { jobService } = await import('@/domains/jobs/job.service');
 
-        // 1. Get unique installer IDs from completed jobs
-        const hiredInstallerIds = await jobService.getRelatedInstallerIds(userId);
+        // 1. Get unique Professional IDs from completed jobs
+        const hiredprofessionalIds = await jobService.getRelatedprofessionalIds(userId);
 
         // 2. Get User Profile to check favorites/blocked
         // We can't trust client-side user object for security, so fetch from service or use what's passed if we verify auth
@@ -48,51 +48,53 @@ export async function getRelatedInstallersAction(userId: string) {
         const user = await userService.getProfile(userId);
 
         const allIds = new Set([
-            ...hiredInstallerIds,
-            ...(user.favoriteInstallerIds || []),
-            ...(user.blockedInstallerIds || [])
+            ...hiredprofessionalIds,
+            ...(user.favoriteProfessionalIds || []),
+            ...(user.blockedProfessionalIds || [])
         ]);
 
         if (allIds.size === 0) {
-            return { success: true, installers: [] };
+            return { success: true, Professionals: [] };
         }
 
         // 3. Fetch Public Profiles
         // We need array of User objects. userService.getPublicProfiles returns a Map currently?
         // Let's check user.service definition: Returns Map<string, any>
-        // But the MyInstallersClient needs an Array of User objects.
+        // But the MyProfessionalsClient needs an Array of User objects.
         // I will use userRepository directly or add listUsers(ids) to service.
-        // user.service.ts had listInstallers but that takes filters.
+        // user.service.ts had listProfessionals but that takes filters.
         // Let's use `userRepository.fetchPublicProfiles` which returns Map, and convert to array.
         // Or better: use `userService.getPublicProfiles` which calls repo.
 
         const profileMap = await userService.getPublicProfiles(Array.from(allIds));
-        const installers = Array.from(profileMap.values()).map((p: any) => ({ ...p, id: p.id || p.uid } as User));
-        // Ensure ID is present. MyInstallersClient expects User[].
+        const Professionals = Array.from(profileMap.values()).map((p: any) => ({ ...p, id: p.id || p.uid } as User));
+        // Ensure ID is present. MyProfessionalsClient expects User[].
 
-        return { success: true, installers: JSON.parse(JSON.stringify(installers)) };
+        return { success: true, Professionals: JSON.parse(JSON.stringify(Professionals)) };
 
     } catch (error: any) {
-        return { success: false, error: error.message || 'Failed to fetch installers' };
+        return { success: false, error: error.message || 'Failed to fetch Professionals' };
     }
 }
 
 /**
- * Server Action to list installers with pagination
- * @param limit - Number of installers per page (default 50)
- * @param lastMemberSince - ISO string of last installer's memberSince for cursor pagination
+ * Server Action to list Professionals with pagination
+ * @param limit - Number of Professionals per page (default 50)
+ * @param lastMemberSince - ISO string of last Professional's memberSince for cursor pagination
  * @param verified - Filter by verified status (default true)
  */
-export async function listInstallersAction(limit = 50, lastMemberSince?: string, verified = true) {
+export async function listProfessionalsAction(limit = 50, lastMemberSince?: string, verified = true) {
     try {
-        const installers = await userService.listInstallersWithPagination(
+        const Professionals = await userService.listProfessionalsWithPagination(
             limit,
             lastMemberSince ? new Date(lastMemberSince) : undefined,
             verified
         );
-        return { success: true, data: JSON.parse(JSON.stringify(installers)) };
+        return { success: true, data: JSON.parse(JSON.stringify(Professionals)) };
     } catch (error: any) {
-        return { success: false, data: [], error: error.message || 'Failed to list installers' };
+        return { success: false, data: [], error: error.message || 'Failed to list Professionals' };
     }
 }
+
+
 

@@ -20,7 +20,7 @@ interface QuickMetrics {
     avgBidsPerJob: number;
     avgTimeToFirstBid: string;
     pendingReviews: number;
-    favoriteInstallers: number;
+    favoriteProfessionals: number;
 }
 
 export function JobsMetricsRow({ userId, user }: QuickMetricsRowProps) {
@@ -43,7 +43,7 @@ export function JobsMetricsRow({ userId, user }: QuickMetricsRowProps) {
                 // Query jobs from last 90 days
                 const jobsQuery = query(
                     collection(db, "jobs"),
-                    where("jobGiverId", "==", userId),
+                    where("clientId", "==", userId),
                     where("postedAt", ">=", Timestamp.fromDate(ninetyDaysAgo))
                 );
 
@@ -55,7 +55,7 @@ export function JobsMetricsRow({ userId, user }: QuickMetricsRowProps) {
                     avgBidsPerJob: 0,
                     avgTimeToFirstBid: "No data",
                     pendingReviews: 0,
-                    favoriteInstallers: 0
+                    favoriteProfessionals: 0
                 };
 
                 try {
@@ -141,17 +141,17 @@ export function JobsMetricsRow({ userId, user }: QuickMetricsRowProps) {
 
         // 3. Pending Reviews (Completed jobs without ratings)
         const pendingReviews = jobs.filter(
-            job => job.status === "Completed" && !job.installerReview
+            job => job.status === "Completed" && !job.professionalReview
         ).length;
 
-        // 4. Favorite Installers Count
-        const favoriteInstallers = currentUser.favoriteInstallerIds?.length || 0;
+        // 4. Favorite Professionals Count
+        const favoriteProfessionals = currentUser.favoriteProfessionalIds?.length || 0;
 
         return {
             avgBidsPerJob: Math.round(avgBidsPerJob * 10) / 10,
             avgTimeToFirstBid,
             pendingReviews,
-            favoriteInstallers,
+            favoriteProfessionals,
         };
     };
 
@@ -208,13 +208,14 @@ export function JobsMetricsRow({ userId, user }: QuickMetricsRowProps) {
 
             <QuickMetricCard
                 label="Your Network"
-                value={metrics.favoriteInstallers}
+                value={metrics.favoriteProfessionals}
                 icon={Users}
-                onClick={() => router.push("/dashboard/my-installers?tab=favorites")}
+                onClick={() => router.push("/dashboard/my-Professionals?tab=favorites")}
                 actionable
-                tooltip="Installers you've favorited. Click to view them."
+                tooltip="Professionals you've favorited. Click to view them."
                 className="h-full"
             />
         </div>
     );
 }
+

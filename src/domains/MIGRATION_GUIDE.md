@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const jobRef = await db.collection('jobs').add({
     title,
     description,
-    jobGiverId: userId,
+    clientId: userId,
     status: 'Open for Bidding',
     postedAt: new Date(),
   });
@@ -75,7 +75,7 @@ export default async function JobsPage() {
   // ❌ Direct Firestore query in component
   const snapshot = await db
     .collection('jobs')
-    .where('jobGiverId', '==', userId)
+    .where('clientId', '==', userId)
     .orderBy('postedAt', 'desc')
     .get();
   
@@ -98,7 +98,7 @@ export default async function JobsPage() {
   const userId = getCurrentUserId();
   
   // ✅ Service handles query logic
-  const jobs = await jobService.listJobsForJobGiver(userId);
+  const jobs = await jobService.listJobsForClient(userId);
   
   return <JobsList jobs={jobs} />;
 }
@@ -262,7 +262,7 @@ export default async function PostedJobsPage() {
 
 ### Step 2: Find/Create Appropriate Service
 
-✅ Use `jobService.listJobsForJobGiver(userId)`
+✅ Use `jobService.listJobsForClient(userId)`
 
 ### Step 3: Replace Implementation
 
@@ -272,7 +272,7 @@ import { jobService } from '@/domains/jobs/job.service';
 
 export default async function PostedJobsPage() {
   const userId = await getCurrentUserId();
-  const jobs = await jobService.listJobsForJobGiver(userId);
+  const jobs = await jobService.listJobsForClient(userId);
   return <JobsList jobs={jobs} />;
 }
 ```
@@ -342,3 +342,6 @@ Migration examples:
 4. **Run tests** - Ensure nothing broke
 
 The foundation is complete. Now it's just systematic refactoring using these patterns!
+
+
+

@@ -99,8 +99,8 @@ export function PlaceBidDialog({
         try {
             const result = await aiAssistedBidCreationAction({
                 jobDescription: job.description,
-                installerSkills: user.installerProfile?.skills?.join(", ") || "",
-                installerExperience: "General",
+                professionalSkills: user.professionalProfile?.skills?.join(", ") || "",
+                professionalExperience: "General",
                 bidContext: currentLetter,
                 userId: user.id
             });
@@ -137,7 +137,7 @@ export function PlaceBidDialog({
         }
 
         try {
-            const result = await placeBidAction(job.id, user.id, 'Installer', {
+            const result = await placeBidAction(job.id, user.id, 'Professional', {
                 jobId: job.id,
                 amount: values.amount,
                 coverLetter: values.coverLetter,
@@ -146,7 +146,7 @@ export function PlaceBidDialog({
             });
 
             if (result.success) {
-                toast({ title: "Bid Placed!", description: "The Job Giver has been notified." });
+                toast({ title: "Bid Placed!", description: "The Client has been notified." });
                 onBidSubmit();
                 onOpenChange(false);
             } else {

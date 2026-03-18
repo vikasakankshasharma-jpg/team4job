@@ -10,6 +10,7 @@ interface OnboardingState {
     pincode: string;
 
     // Step 2
+    category: string;
     experience: string;
     skills: string[];
 
@@ -32,6 +33,7 @@ export const useOnboardingStore = create<OnboardingState>()(
             shopName: "",
             city: "",
             pincode: "",
+            category: "",
             experience: "0-2",
             skills: [],
 
@@ -42,6 +44,7 @@ export const useOnboardingStore = create<OnboardingState>()(
                 shopName: "",
                 city: "",
                 pincode: "",
+                category: "",
                 experience: "0-2",
                 skills: [],
                 aadharFront: undefined,
@@ -59,6 +62,7 @@ export const useOnboardingStore = create<OnboardingState>()(
                 shopName: state.shopName,
                 city: state.city,
                 pincode: state.pincode,
+                category: state.category,
                 experience: state.experience,
                 skills: state.skills
             }),

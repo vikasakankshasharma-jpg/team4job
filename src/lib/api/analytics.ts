@@ -29,7 +29,7 @@ export interface SpendingTrendData {
     amount: number;
 }
 
-export interface InstallerPerformance {
+export interface ProfessionalPerformance {
     id: string;
     name: string;
     avatarUrl?: string;
@@ -50,7 +50,7 @@ export interface AnalyticsData {
     summary: AnalyticsSummary;
     timeToHire: TimeToHireData[];
     spendingTrends: SpendingTrendData[];
-    topInstallers: InstallerPerformance[];
+    topProfessionals: ProfessionalPerformance[];
 }
 
 export const AnalyticsService = {
@@ -64,14 +64,14 @@ export const AnalyticsService = {
                 summary: { totalJobs: 0, completedJobs: 0, totalSpend: 0, activeJobs: 0, avgRating: 0 },
                 timeToHire: [],
                 spendingTrends: [],
-                topInstallers: []
+                topProfessionals: []
             };
         }
 
         // 1. Single efficient read of all user's jobs (up to safe limit)
         const q = query(
             collection(db, JOBS_COLLECTION),
-            where('jobGiverId', '==', userId),
+            where('clientId', '==', userId),
             orderBy('postedAt', 'desc'),
             limit(1000) // Safety cap
         );
@@ -84,7 +84,7 @@ export const AnalyticsService = {
             summary: this.calculateSummary(allJobs),
             timeToHire: this.calculateTimeToHire(allJobs),
             spendingTrends: this.calculateSpendingTrends(allJobs),
-            topInstallers: this.calculateInstallerPerformance(allJobs)
+            topProfessionals: this.calculateProfessionalPerformance(allJobs)
         };
     },
 
@@ -193,12 +193,12 @@ export const AnalyticsService = {
     },
 
     /**
-     * Calculate installer performance (In-Memory)
+     * Calculate Professional performance (In-Memory)
      */
-    calculateInstallerPerformance(jobs: Job[]): InstallerPerformance[] {
+    calculateProfessionalPerformance(jobs: Job[]): ProfessionalPerformance[] {
         const completedJobs = jobs.filter(j => j.status === 'Completed');
 
-        const installerMap: Record<string, {
+        const ProfessionalMap: Record<string, {
             name: string;
             count: number;
             totalPaid: number;
@@ -207,12 +207,12 @@ export const AnalyticsService = {
         }> = {};
 
         completedJobs.forEach(job => {
-            const installerId = job.awardedInstallerId;
-            if (!installerId) return;
+            const professionalId = job.awardedProfessionalId;
+            if (!professionalId) return;
 
-            if (!installerMap[installerId]) {
-                const name = job.billingSnapshot?.installerName || 'Unknown Installer';
-                installerMap[installerId] = {
+            if (!ProfessionalMap[professionalId]) {
+                const name = job.billingSnapshot?.professionalName || 'Unknown Professional';
+                ProfessionalMap[professionalId] = {
                     name,
                     count: 0,
                     totalPaid: 0,
@@ -222,16 +222,16 @@ export const AnalyticsService = {
             }
 
             const amount = job.invoice?.totalAmount || 0;
-            installerMap[installerId].count += 1;
-            installerMap[installerId].totalPaid += amount;
+            ProfessionalMap[professionalId].count += 1;
+            ProfessionalMap[professionalId].totalPaid += amount;
 
-            if (job.installerReview?.rating) {
-                installerMap[installerId].totalRating += job.installerReview.rating;
-                installerMap[installerId].ratedCount += 1;
+            if (job.professionalReview?.rating) {
+                ProfessionalMap[professionalId].totalRating += job.professionalReview.rating;
+                ProfessionalMap[professionalId].ratedCount += 1;
             }
         });
 
-        return Object.entries(installerMap).map(([id, data]) => ({
+        return Object.entries(ProfessionalMap).map(([id, data]) => ({
             id,
             name: data.name,
             jobsCount: data.count,
@@ -245,6 +245,6 @@ export const AnalyticsService = {
     getSummary: async () => ({ totalJobs: 0, completedJobs: 0, totalSpend: 0, activeJobs: 0, avgRating: 0 }),
     getTimeToHire: async () => [],
     getSpendingTrends: async () => [],
-    getInstallerPerformance: async () => [],
+    getProfessionalPerformance: async () => [],
     getCategoryBreakdown: async () => []
 };

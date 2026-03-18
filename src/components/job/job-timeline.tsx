@@ -6,7 +6,7 @@ import { JobStatus } from '@/domains/jobs/job.types';
 interface JobTimelineProps {
     status: JobStatus | string;
     className?: string;
-    userRole: 'Job Giver' | 'Installer' | 'Admin' | 'Support Team';
+    userRole: 'Client' | 'Professional' | 'Admin' | 'Support Team';
 }
 
 const STEPS = [

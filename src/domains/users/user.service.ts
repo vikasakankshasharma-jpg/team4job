@@ -2,7 +2,7 @@
 
 import { userRepository } from './user.repository';
 
-import { User, UpdateProfileInput, InstallerFilters, Role } from '@/lib/types';
+import { User, UpdateProfileInput, ProfessionalFilters, Role } from '@/lib/types';
 
 export class UserService {
     async getProfile(userId: string): Promise<User> {
@@ -27,19 +27,19 @@ export class UserService {
 
     }
 
-    async verifyInstaller(installerId: string, adminId: string): Promise<void> {
-        const user = await userRepository.fetchById(installerId);
+    async verifyProfessional(professionalId: string, adminId: string): Promise<void> {
+        const user = await userRepository.fetchById(professionalId);
         if (!user) {
             throw new Error('User not found');
         }
 
-        if (!user.roles?.includes('Installer')) {
-            throw new Error('User is not an installer');
+        if (!user.roles?.includes('Professional')) {
+            throw new Error('User is not an Professional');
         }
 
-        await userRepository.update(installerId, {
-            installerProfile: {
-                ...user.installerProfile,
+        await userRepository.update(professionalId, {
+            professionalProfile: {
+                ...user.professionalProfile,
                 verified: true,
                 verificationLevel: 'Basic',
             } as any,
@@ -48,18 +48,18 @@ export class UserService {
 
     }
 
-    async listInstallers(filters?: InstallerFilters): Promise<User[]> {
-        return userRepository.queryInstallers(filters);
+    async listProfessionals(filters?: ProfessionalFilters): Promise<User[]> {
+        return userRepository.queryProfessionals(filters);
     }
 
     /**
-     * List installers with pagination support
-     * @param limit - Number of installers to fetch
+     * List Professionals with pagination support
+     * @param limit - Number of Professionals to fetch
      * @param lastMemberSince - Cursor for pagination
      * @param verified - Filter by verified status
      */
-    async listInstallersWithPagination(limit = 50, lastMemberSince?: Date, verified = true): Promise<User[]> {
-        return userRepository.fetchInstallers(limit, lastMemberSince, verified);
+    async listProfessionalsWithPagination(limit = 50, lastMemberSince?: Date, verified = true): Promise<User[]> {
+        return userRepository.fetchProfessionals(limit, lastMemberSince, verified);
     }
 
     async getPublicProfiles(userIds: string[]): Promise<Map<string, any>> {
@@ -75,11 +75,11 @@ export class UserService {
 
         // 1. Count Jobs (Active, Completed, Won)
         const jobsSnap = await db.collection('jobs')
-            .where('jobGiverId', '==', userId)
+            .where('clientId', '==', userId)
             .get();
 
         const awardedSnap = await db.collection('jobs')
-            .where('awardedInstallerId', '==', userId)
+            .where('awardedProfessionalId', '==', userId)
             .get();
 
         const stats = {
@@ -91,7 +91,7 @@ export class UserService {
             totalEarnings: 0
         };
 
-        // Job Giver logic
+        // Client logic
         jobsSnap.docs.forEach(doc => {
             const status = doc.data().status;
             if (['open', 'in_progress', 'funded', 'work_submitted'].includes(status.toLowerCase())) {
@@ -101,7 +101,7 @@ export class UserService {
             }
         });
 
-        // Installer logic
+        // Professional logic
         awardedSnap.docs.forEach(doc => {
             const status = doc.data().status;
             stats.jobsWon++;
@@ -111,14 +111,14 @@ export class UserService {
                 stats.completedJobs++;
                 // Sum earnings
                 const bids = doc.data().bids || [];
-                const myBid = bids.find((b: any) => (b.installerId === userId || b.installer === userId));
+                const myBid = bids.find((b: any) => (b.professionalId === userId || b.professional === userId));
                 if (myBid) stats.totalEarnings += (myBid.amount || 0);
             }
         });
 
         // 2. Count Bids
         const bidsSnap = await db.collectionGroup('bids')
-            .where('installerId', '==', userId)
+            .where('professionalId', '==', userId)
             .get();
         stats.myBids = bidsSnap.size;
 

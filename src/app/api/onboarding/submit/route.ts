@@ -58,12 +58,12 @@ export async function POST(req: NextRequest) {
             name: `${firstName} ${lastName}`.trim(),
             "address.cityPincode": pincode,
             "address.city": city, // Assuming schema supports this or we map it
-            "installerProfile.shopName": shopName, // Add to schema if missing
-            "installerProfile.experience": experience,
-            "installerProfile.skills": skills,
-            "installerProfile.verificationStatus": "pending", // New field
-            "installerProfile.documents": uploadedUrls,
-            "installerProfile.submittedAt": Timestamp.now(),
+            "professionalProfile.shopName": shopName, // Add to schema if missing
+            "professionalProfile.experience": experience,
+            "professionalProfile.skills": skills,
+            "professionalProfile.verificationStatus": "pending", // New field
+            "professionalProfile.documents": uploadedUrls,
+            "professionalProfile.submittedAt": Timestamp.now(),
             "realAvatarUrl": uploadedUrls.profilePhoto || undefined,
         });
 

@@ -9,7 +9,7 @@ test.describe('Bulk Job Suite & AI Features Verification @bulk-ai', () => {
     
     test.beforeEach(async ({ page }) => {
         const helper = new TestHelper(page);
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
         await expect(page).toHaveURL(/\/dashboard/);
     });
 
@@ -68,3 +68,4 @@ test.describe('Bulk Job Suite & AI Features Verification @bulk-ai', () => {
         await expect(page.getByText('Based on your recent 3 Delhi office jobs.')).toBeVisible();
     });
 });
+

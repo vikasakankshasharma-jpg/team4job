@@ -9,7 +9,7 @@ test.describe('Support Tickets', () => {
     });
 
     test('User can interact with AI Support Chatbot', async ({ page }) => {
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
 
         // Navigate to dashboard where support dialog is available
         await page.goto('/dashboard');
@@ -34,3 +34,4 @@ test.describe('Support Tickets', () => {
     });
 
 });
+

@@ -42,52 +42,55 @@ import { Badge } from "../ui/badge";
 import { toDate } from "@/lib/utils";
 import { differenceInDays } from "date-fns";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-
-const installerNavItems = [
-    { href: "/dashboard", icon: Home, label: "Dashboard" },
-    { href: "/dashboard/jobs", icon: Search, label: "Browse Jobs" },
-    { href: "/dashboard/my-bids", icon: Briefcase, label: "My Bids" },
-    { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-];
-
-const jobGiverNavItems = [
-    { href: "/dashboard", icon: Home, label: "Dashboard" },
-    { href: "/wizard", icon: PlusCircle, label: "Post a Job" },
-    { href: "/dashboard/posted-jobs", icon: Briefcase, label: "My Jobs" },
-    { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-];
-
-const adminNavItems = [
-    { href: "/dashboard", icon: Home, label: "Dashboard" },
-    { href: "/dashboard/reports", icon: FileText, label: "Reports" },
-    { href: "/dashboard/users", icon: UsersIcon, label: "Users" },
-    { href: "/dashboard/team", icon: UserCog, label: "Team Management" },
-    { href: "/dashboard/all-jobs", icon: Briefcase, label: "All Jobs" },
-    { href: "/dashboard/transactions", icon: IndianRupee, label: "Transactions" },
-    { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-];
-
-const supportTeamNavItems = [
-    { href: "/dashboard", icon: Home, label: "Dashboard" },
-    { href: "/dashboard/disputes", icon: AlertOctagon, label: "Disputes" },
-];
+import { useTranslations } from "next-intl";
 
 export function HeaderClient() {
     const pathname = usePathname();
     const { user, role } = useUser();
     const { searchQuery, setSearchQuery } = useSearch();
     const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+    const t = useTranslations('nav');
+    const dashT = useTranslations('dashboard');
 
     const getNavItems = () => {
+        const ProfessionalNavItems = [
+            { href: "/dashboard", icon: Home, label: t('dashboard') },
+            { href: "/dashboard/jobs", icon: Search, label: t('browseJobs') },
+            { href: "/dashboard/my-bids", icon: Briefcase, label: t('myBids') },
+            { href: "/dashboard/disputes", icon: AlertOctagon, label: t('disputes') },
+        ];
+
+        const clientNavItems = [
+            { href: "/dashboard", icon: Home, label: t('dashboard') },
+            { href: "/wizard", icon: PlusCircle, label: t('postJob') },
+            { href: "/dashboard/posted-jobs", icon: Briefcase, label: t('myJobs') },
+            { href: "/dashboard/disputes", icon: AlertOctagon, label: t('disputes') },
+        ];
+
+        const adminNavItems = [
+            { href: "/dashboard", icon: Home, label: t('dashboard') },
+            { href: "/dashboard/reports", icon: FileText, label: t('reports') },
+            { href: "/dashboard/users", icon: UsersIcon, label: t('users') },
+            { href: "/dashboard/team", icon: UserCog, label: t('team') },
+            { href: "/dashboard/all-jobs", icon: Briefcase, label: t('allJobs') },
+            { href: "/dashboard/transactions", icon: IndianRupee, label: t('transactions') },
+            { href: "/dashboard/disputes", icon: AlertOctagon, label: t('disputes') },
+        ];
+
+        const supportTeamNavItems = [
+            { href: "/dashboard", icon: Home, label: t('dashboard') },
+            { href: "/dashboard/disputes", icon: AlertOctagon, label: t('disputes') },
+        ];
+
         switch (role) {
             case "Admin":
                 return adminNavItems;
             case "Support Team":
                 return supportTeamNavItems;
-            case "Installer":
-                return installerNavItems;
-            case "Job Giver":
-                return jobGiverNavItems;
+            case "Professional":
+                return ProfessionalNavItems;
+            case "Client":
+                return clientNavItems;
             default:
                 return [];
         }
@@ -122,25 +125,25 @@ export function HeaderClient() {
     }
 
     const renderContextualActions = () => {
-        if (role === 'Job Giver') {
+        if (role === 'Client') {
             return (
                 <Button size="sm" className="h-8 gap-1 rounded-full shadow-sm" asChild data-testid="dashboard-post-job-btn">
                     <Link href="/wizard">
                         <PlusCircle className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                            Post New Job
+                            {t('postJob')}
                         </span>
                     </Link>
                 </Button>
             );
         }
-        if (role === 'Installer') {
+        if (role === 'Professional') {
             return (
                 <Button size="sm" className="h-8 gap-1 rounded-full shadow-sm" asChild>
                     <Link href="/dashboard/jobs">
                         <Search className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                            Browse Jobs
+                            {t('browseJobs')}
                         </span>
                     </Link>
                 </Button>
@@ -195,7 +198,7 @@ export function HeaderClient() {
                             onClick={() => setIsSheetOpen(false)}
                         >
                             <UserIcon className="h-5 w-5" />
-                            Profile
+                            {t('profile')}
                         </Link>
                         <Link
                             href="/dashboard/settings"
@@ -205,7 +208,7 @@ export function HeaderClient() {
                             onClick={() => setIsSheetOpen(false)}
                         >
                             <Settings className="h-5 w-5" />
-                            Settings
+                            {t('settings')}
                         </Link>
                         {/* Utilities moved here from header for mobile */}
                         <div className="border-t pt-4 mt-2 flex flex-col gap-4">
@@ -224,7 +227,7 @@ export function HeaderClient() {
                 <BreadcrumbList>
                     <BreadcrumbItem>
                         <BreadcrumbLink asChild>
-                            <Link href="/dashboard">Dashboard</Link>
+                            <Link href="/dashboard">{t('dashboard')}</Link>
                         </BreadcrumbLink>
                     </BreadcrumbItem>
                     {renderBreadcrumbs()}
@@ -255,25 +258,25 @@ export function HeaderClient() {
                 ) : <div className="hidden md:block md:flex-grow"></div>}
 
                 <div className="hidden md:flex items-center mr-2">
-                    {role === 'Job Giver' ? (
+                    {role === 'Client' ? (
                         <Badge variant="outline" className="gap-1 border-primary/20 bg-primary/5 text-primary">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                             </span>
-                            Hiring Mode
+                            {dashT('roleHiring')}
                         </Badge>
-                    ) : role === 'Installer' ? (
+                    ) : role === 'Professional' ? (
                         <Badge variant="outline" className="gap-1 border-blue-500/20 bg-blue-500/5 text-blue-600">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                             </span>
-                            Work Mode
+                            {dashT('roleService')}
                         </Badge>
                     ) : role === 'Admin' ? (
                         <Badge variant="destructive" className="gap-1">
-                            Admin Mode
+                            {dashT('roleAdmin')}
                         </Badge>
                     ) : null}
                 </div>

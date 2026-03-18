@@ -3,7 +3,7 @@ import { useUser, useFirebase } from "@/hooks/use-user";
 import { saveDraft } from "@/lib/api/drafts";
 import { useToast } from "@/hooks/use-toast";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FixedQuestionStep } from "@/components/post-job/wizard/fixed-question-step";
@@ -62,6 +62,40 @@ export default function SmartWizardPage() {
 
     const [bulkJobs, setBulkJobs] = useState<any[]>([]);
     const [isSubmittingBulk, setIsSubmittingBulk] = useState(false);
+    const [wizardDraftId, setWizardDraftId] = useState<string | null>(null);
+    const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // --- Auto-save wizard progress ---
+    const autoSaveWizardProgress = useCallback(async () => {
+        if (!user || !db || !selectedCategory) return;
+        // Only auto-save if user has answered at least one question
+        if (Object.keys(answers).length === 0) return;
+
+        try {
+            const id = await saveDraft(db, user.id, {
+                title: `[Draft] ${selectedCategory}`,
+                description: `Wizard in progress — ${Object.keys(answers).length} questions answered`,
+                jobCategory: selectedCategory,
+            }, wizardDraftId || undefined);
+            setWizardDraftId(id);
+        } catch {
+            // Silent fail — don't disrupt the wizard
+        }
+    }, [user, db, selectedCategory, answers, wizardDraftId]);
+
+    useEffect(() => {
+        if (flowState !== 'questions' || Object.keys(answers).length === 0) return;
+
+        // Debounce: save 3 seconds after the last answer change
+        if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = setTimeout(() => {
+            autoSaveWizardProgress();
+        }, 3000);
+
+        return () => {
+            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+        };
+    }, [answers, flowState, autoSaveWizardProgress]);
 
     // --- Initial Load ---
     useEffect(() => {
@@ -257,9 +291,10 @@ export default function SmartWizardPage() {
                 } : undefined,
             };
 
-            await saveDraft(db, user.id, draftData);
+            // Save final draft, reusing wizard draft ID if one exists
+            await saveDraft(db, user.id, draftData, wizardDraftId || undefined);
             toast({ title: "Draft Saved", description: "Redirecting to final review..." });
-            router.push('/dashboard/post-job');
+            router.push('/dashboard/post-job?wizardCompleted=true');
         } catch (error) {
             toast({ title: "Error", description: "Failed to save job details.", variant: "destructive" });
         }
@@ -350,7 +385,7 @@ export default function SmartWizardPage() {
                                     <div className="flex items-center gap-3">
                                         <Sparkles className="h-5 w-5 text-primary animate-pulse" />
                                         <div>
-                                            <p className="text-sm font-medium">Smart Suggestion: Save "{patternSuggestion.templateName}"?</p>
+                                            <p className="text-sm font-medium">Smart Suggestion: Save &quot;{patternSuggestion.templateName}&quot;?</p>
                                             <p className="text-xs text-muted-foreground">{patternSuggestion.templateDescription}</p>
                                         </div>
                                     </div>
@@ -451,7 +486,7 @@ export default function SmartWizardPage() {
             <div className="container mx-auto px-4">
                 <div className="text-center mb-12">
                     <h1 className="text-3xl font-bold tracking-tight">{selectedCategory} Setup</h1>
-                    <p className="text-muted-foreground mt-2">Answer a few simple questions to get installers.</p>
+                    <p className="text-muted-foreground mt-2">Answer a few simple questions to get Professionals.</p>
                 </div>
 
                 {currentQuestion && (

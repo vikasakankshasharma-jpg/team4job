@@ -25,7 +25,7 @@ import { sendMessageAction } from "@/app/actions/job.actions";
 interface CommunicationFeedProps {
     jobId: string;
     currentUser: User;
-    otherParticipant?: User;  // The installer (if known)
+    otherParticipant?: User;  // The Professional (if known)
 }
 
 export function CommunicationFeed({
@@ -131,7 +131,7 @@ export function CommunicationFeed({
                         <div className="text-center py-8 text-muted-foreground">
                             <Send className="h-12 w-12 mx-auto mb-2 opacity-20" />
                             <p className="text-sm">No messages yet</p>
-                            <p className="text-xs mt-1">Start a conversation with your installer</p>
+                            <p className="text-xs mt-1">Start a conversation with your Professional</p>
                         </div>
                     ) : (
                         messages.map(msg => {

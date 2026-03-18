@@ -20,13 +20,13 @@ app/
 │
 ├── (dashboard)/          # Authenticated routes
 │   ├── layout.tsx       # Shared dashboard layout
-│   ├── job-giver/       # Job Giver specific
+│   ├── client/           # Client specific
 │   │   ├── page.tsx    # Dashboard home
 │   │   ├── jobs/
 │   │   ├── posted-jobs/
 │   │   └── profile/
 │   │
-│   ├── installer/       # Installer specific
+│   ├── professional/       # Professional specific
 │   │   ├── page.tsx    # Dashboard home
 │   │   ├── jobs/       # Browse jobs
 │   │   ├── my-bids/
@@ -68,8 +68,8 @@ app/
 mkdir app/(public)
 mkdir app/(auth)
 mkdir app/(dashboard)
-mkdir app/(dashboard)/job-giver
-mkdir app/(dashboard)/installer
+mkdir app/(dashboard)/client
+mkdir app/(dashboard)/professional
 mkdir app/(dashboard)/admin
 ```
 
@@ -78,20 +78,20 @@ mkdir app/(dashboard)/admin
 Move pages to appropriate groups:
 - `app/page.tsx` → `app/(public)/page.tsx`
 - `app/login` → `app/(auth)/login`
-- `app/dashboard` → `app/(dashboard)/job-giver` or `app/(dashboard)/installer`
+- `app/dashboard` → `app/(dashboard)/client` or `app/(dashboard)/professional`
 
 ### Step 3: Create Shared Layouts
 
 Each route group gets its own layout:
 - `app/(public)/layout.tsx` - Public header/footer
 - `app/(dashboard)/layout.tsx` - Dashboard sidebar/nav
-- `app/(dashboard)/job-giver/layout.tsx` - Job giver specific nav
+- `app/(dashboard)/client/layout.tsx` - Client specific nav
 
 ### Step 4: Update Navigation
 
 Update links to use new paths:
-- `/dashboard/posted-jobs` → `/dashboard/job-giver/posted-jobs`
-- `/dashboard/browse-jobs` → `/dashboard/installer/jobs`
+- `/dashboard/posted-jobs` → `/dashboard/client/posted-jobs`
+- `/dashboard/browse-jobs` → `/dashboard/professional/jobs`
 
 ## Current Status
 
@@ -113,6 +113,7 @@ Moving files now would break existing navigation. Complete refactoring first, th
 
 Keep current structure but introduce new route groups for NEW features:
 - Keep existing `app/dashboard/**` working
-- Add `app/(dashboard)/job-giver/**` for refactored pages
+- Add `app/(dashboard)/client/**` for refactored pages
 - Gradually migrate page by  page
 - Less risky, allows incremental rollout
+

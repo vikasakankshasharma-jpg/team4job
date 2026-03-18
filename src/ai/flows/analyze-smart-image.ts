@@ -20,7 +20,7 @@ const analyzeSmartImagePrompt = ai.definePrompt({
     input: { schema: AnalyzeSmartImageInputSchema },
     output: { schema: AnalyzeSmartImageOutputSchema },
     prompt: `You are an expert technical site surveyor and job planner.
-  Analyze the provided image to create a detailed job posting for a technician or installer.
+  Analyze the provided image to create a detailed job posting for a technician or professional.
   
   Expected Category Context: {{category}}
 

@@ -66,7 +66,7 @@ export function Documents({ data, updateData }: DocumentsProps) {
         <div className="space-y-6">
             <h2 className="text-xl font-semibold">Verify Identity (KYC)</h2>
             <p className="text-sm text-muted-foreground -mt-4">
-                We need to verify your identity to approve your installer profile.
+                We need to verify your identity to approve your Professional profile.
             </p>
 
             <div className="grid md:grid-cols-2 gap-6">

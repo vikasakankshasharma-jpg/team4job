@@ -129,7 +129,7 @@ export const getRefId = (ref: string | { id: string } | DocumentReference | null
 }
 
 export const getMyBidStatus = (job: Job, user: User): { text: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "destructive" | "outline" | null | undefined } => {
-    const awardedId = getRefId(job.awardedInstaller);
+    const awardedId = getRefId(job.awardedProfessional);
     const won = awardedId === user.id;
 
     if (won) {
@@ -149,28 +149,28 @@ export const getMyBidStatus = (job: Job, user: User): { text: string; variant: "
     return { text: job.status, variant: getStatusVariant(job.status) };
 }
 
-export interface RankedInstaller extends User {
+export interface RankedProfessional extends User {
     monthlyPoints: number;
 }
 
 /**
- * Calculates monthly performance points for a list of installers and ranks them.
+ * Calculates monthly performance points for a list of Professionals and ranks them.
  * 
- * @param installers List of users (installers)
+ * @param Professionals List of users (Professionals)
  * @param referenceDate The date relative to which "last month" is calculated. Defaults to now.
- * @returns Sorted list of installers with 'monthlyPoints' property.
+ * @returns Sorted list of Professionals with 'monthlyPoints' property.
  */
-export function calculateMonthlyPerformance(installers: User[], referenceDate: Date = new Date()): RankedInstaller[] {
+export function calculateMonthlyPerformance(Professionals: User[], referenceDate: Date = new Date()): RankedProfessional[] {
     const lastMonthDate = subMonths(referenceDate, 1);
     const lastMonthName = format(lastMonthDate, 'MMMM yyyy');
 
     const twoMonthsAgoDate = subMonths(referenceDate, 2);
     // We don't rely solely on exact name match for the baseline, but use it as a primary lookup
 
-    return installers
-        .filter(i => i.roles.includes('Installer') && i.installerProfile)
-        .map(installer => {
-            const history = installer.installerProfile?.reputationHistory || [];
+    return Professionals
+        .filter(i => i.roles.includes('Professional') && i.professionalProfile)
+        .map(Professional => {
+            const history = Professional.professionalProfile?.reputationHistory || [];
 
             // 1. Find the cumulative points at the end of Last Month
             let lastMonthPoints = 0;
@@ -218,7 +218,7 @@ export function calculateMonthlyPerformance(installers: User[], referenceDate: D
             // Calculate delta
             const monthlyPoints = Math.max(0, lastMonthPoints - baselinePoints);
 
-            return { ...installer, monthlyPoints };
+            return { ...Professional, monthlyPoints };
         })
         .sort((a, b) => {
             // 1. Sort by monthly points (descending)
@@ -226,8 +226,8 @@ export function calculateMonthlyPerformance(installers: User[], referenceDate: D
                 return b.monthlyPoints - a.monthlyPoints;
             }
             // 2. Sort by rating (descending)
-            if ((b.installerProfile?.rating || 0) !== (a.installerProfile?.rating || 0)) {
-                return (b.installerProfile?.rating || 0) - (a.installerProfile?.rating || 0);
+            if ((b.professionalProfile?.rating || 0) !== (a.professionalProfile?.rating || 0)) {
+                return (b.professionalProfile?.rating || 0) - (a.professionalProfile?.rating || 0);
             }
             // 3. Sort by memberSince (oldest first, so ascending)
             return toDate(a.memberSince).getTime() - toDate(b.memberSince).getTime();

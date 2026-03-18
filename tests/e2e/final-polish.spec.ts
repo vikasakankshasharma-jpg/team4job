@@ -7,7 +7,7 @@ test.describe('Final UX Polish', () => {
 
     test.beforeEach(async ({ page }) => {
         helper = new TestHelper(page);
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
     });
 
     test('Verify Skeleton Loaders (Deterministic)', async ({ page }) => {
@@ -74,3 +74,4 @@ test.describe('Final UX Polish', () => {
         expect(scrollWidth).toBeLessThanOrEqual(clientWidth + HORIZONTAL_SCROLL_TOLERANCE);
     });
 });
+

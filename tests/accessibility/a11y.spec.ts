@@ -41,7 +41,7 @@ test.describe('Accessibility Tests', () => {
 
     test('Dashboard should not have accessibility violations', async ({ page }) => {
         const helper = new TestHelper(page);
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
 
         const accessibilityScanResults = await new AxeBuilder({ page })
             .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
@@ -109,3 +109,4 @@ test.describe('Accessibility Tests', () => {
         expect(contrastViolations).toEqual([]);
     });
 });
+

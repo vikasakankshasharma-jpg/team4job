@@ -17,7 +17,7 @@ export const Logo = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-export const FoundingInstallerIcon = (props: SVGProps<SVGSVGElement>) => (
+export const FoundingProfessionalIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"

@@ -22,9 +22,10 @@ export function ActionRequiredDashboard() {
     if (urgentActions.length === 0) return null;
 
     return (
-        <Card className="border-l-4 border-l-amber-500 bg-amber-50/10 dark:bg-amber-900/10">
+        <Card className="border-l-4 border-l-warning bg-warning/5 overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-1 h-full bg-warning" />
             <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2 text-amber-700 dark:text-amber-500">
+                <CardTitle className="text-lg flex items-center gap-2 text-warning font-bold">
                     <AlertCircle className="h-5 w-5" />
                     Action Required
                 </CardTitle>
@@ -33,12 +34,12 @@ export function ActionRequiredDashboard() {
                 {urgentActions.map(action => (
                     <div key={action.id} className="flex items-center justify-between p-3 bg-background rounded-md border shadow-sm">
                         <div className="flex items-start gap-3">
-                            <div className="mt-1 bg-amber-100 dark:bg-amber-900/30 p-1.5 rounded-full">
-                                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                            <div className="mt-1 bg-warning/10 p-1.5 rounded-full">
+                                <Clock className="h-4 w-4 text-warning" />
                             </div>
                             <div>
-                                <h4 className="font-medium text-sm">{action.title}</h4>
-                                <p className="text-xs text-muted-foreground">{action.message}</p>
+                                <h4 className="font-semibold text-sm">{action.title}</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">{action.message}</p>
                             </div>
                         </div>
                         {action.actionUrl && (

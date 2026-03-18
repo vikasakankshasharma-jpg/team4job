@@ -3,7 +3,7 @@
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { COLLECTIONS } from '@/infrastructure/firebase/firestore';
 
-import { User, InstallerFilters } from '@/lib/types';
+import { User, ProfessionalFilters } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export class UserRepository {
@@ -62,15 +62,15 @@ export class UserRepository {
         }
     }
 
-    async queryInstallers(filters?: InstallerFilters, limit = 50): Promise<User[]> {
+    async queryProfessionals(filters?: ProfessionalFilters, limit = 50): Promise<User[]> {
         try {
             const db = getAdminDb();
             let query = db
                 .collection(COLLECTIONS.USERS)
-                .where('roles', 'array-contains', 'Installer');
+                .where('roles', 'array-contains', 'Professional');
 
             if (filters?.verified) {
-                query = query.where('installerProfile.verified', '==', true);
+                query = query.where('professionalProfile.verified', '==', true);
             }
 
             if (filters?.pincode) {
@@ -78,7 +78,7 @@ export class UserRepository {
             }
 
             if (filters?.minRating) {
-                query = query.where('installerProfile.rating', '>=', filters.minRating);
+                query = query.where('professionalProfile.rating', '>=', filters.minRating);
             }
 
             const snapshot = await query.limit(limit).get();
@@ -87,7 +87,7 @@ export class UserRepository {
             // Client-side filter for skills (array-contains doesn't work with multiple values)
             if (filters?.skills && filters.skills.length > 0) {
                 return users.filter(user =>
-                    filters.skills!.some(skill => user.installerProfile?.skills?.includes(skill))
+                    filters.skills!.some(skill => user.professionalProfile?.skills?.includes(skill))
                 );
             }
 
@@ -99,20 +99,20 @@ export class UserRepository {
     }
 
     /**
-     * Fetch installers with pagination support (for public_profiles collection)
-     * @param limit - Number of installers to fetch
+     * Fetch Professionals with pagination support (for public_profiles collection)
+     * @param limit - Number of Professionals to fetch
      * @param lastMemberSince - Cursor for pagination (memberSince timestamp of last item)
      * @param verified - Filter by verified status
      */
-    async fetchInstallers(limit = 50, lastMemberSince?: Date, verified = true): Promise<User[]> {
+    async fetchProfessionals(limit = 50, lastMemberSince?: Date, verified = true): Promise<User[]> {
         try {
             const db = getAdminDb();
             let query = db
                 .collection(COLLECTIONS.PUBLIC_PROFILES)
-                .where('roles', 'array-contains', 'Installer');
+                .where('roles', 'array-contains', 'Professional');
 
             if (verified) {
-                query = query.where('installerProfile.verified', '==', true);
+                query = query.where('professionalProfile.verified', '==', true);
             }
 
             query = query.orderBy('memberSince', 'desc');

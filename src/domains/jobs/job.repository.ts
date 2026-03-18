@@ -3,7 +3,7 @@
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { COLLECTIONS, getDocData } from '@/infrastructure/firebase/firestore';
 
-import { Job, JobFilters, JobStats, InstallerStats } from './job.types';
+import { Job, JobFilters, JobStats, ProfessionalStats } from './job.types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { toDate } from '@/lib/utils';
 
@@ -63,14 +63,14 @@ export class JobRepository {
     }
 
     /**
-     * Get jobs for a job giver
+     * Get jobs for a client
      */
-    async fetchByJobGiver(jobGiverId: string, limit = 50): Promise<Job[]> {
+    async fetchByClient(clientId: string, limit = 50): Promise<Job[]> {
         try {
             const db = getAdminDb();
             const snapshot = await db
                 .collection(COLLECTIONS.JOBS)
-                .where('jobGiverId', '==', jobGiverId)
+                .where('clientId', '==', clientId)
                 .limit(limit)
                 .get();
 
@@ -84,14 +84,14 @@ export class JobRepository {
     }
 
     /**
-     * Get completed jobs for a job giver (for finding related installers)
+     * Get completed jobs for a client (for finding related Professionals)
      */
-    async fetchCompletedJobsForJobGiver(jobGiverId: string): Promise<Job[]> {
+    async fetchCompletedJobsForClient(clientId: string): Promise<Job[]> {
         try {
             const db = getAdminDb();
             const snapshot = await db
                 .collection(COLLECTIONS.JOBS)
-                .where('jobGiverId', '==', jobGiverId)
+                .where('clientId', '==', clientId)
                 .where('status', 'in', ['Completed', 'completed']) // Handle case sensitivity
                 .get();
 
@@ -103,14 +103,14 @@ export class JobRepository {
     }
 
     /**
-     * Get jobs for a job giver filtered by date
+     * Get jobs for a client filtered by date
      */
-    async fetchByJobGiverSince(jobGiverId: string, sinceDate: Date): Promise<Job[]> {
+    async fetchByClientSince(clientId: string, sinceDate: Date): Promise<Job[]> {
         try {
             const db = getAdminDb();
             const snapshot = await db
                 .collection(COLLECTIONS.JOBS)
-                .where('jobGiverId', '==', jobGiverId)
+                .where('clientId', '==', clientId)
                 .where('postedAt', '>=', Timestamp.fromDate(sinceDate))
                 .get();
 
@@ -160,23 +160,23 @@ export class JobRepository {
     }
 
     /**
-     * Get jobs for an installer (where they bid or were awarded)
+     * Get jobs for an Professional (where they bid or were awarded)
      */
-    async fetchByInstaller(installerId: string, limit = 50): Promise<Job[]> {
+    async fetchByProfessional(professionalId: string, limit = 50): Promise<Job[]> {
         try {
             const db = getAdminDb();
 
-            // Fetch jobs where installer bid
+            // Fetch jobs where Professional bid
             const biddedSnapshot = await db
                 .collection(COLLECTIONS.JOBS)
-                .where('bidderIds', 'array-contains', installerId)
+                .where('bidderIds', 'array-contains', professionalId)
                 .limit(limit)
                 .get();
 
-            // Fetch jobs awarded to installer
+            // Fetch jobs awarded to Professional
             const awardedSnapshot = await db
                 .collection(COLLECTIONS.JOBS)
-                .where('awardedInstallerId', '==', installerId)
+                .where('awardedProfessionalId', '==', professionalId)
                 .limit(limit)
                 .get();
 
@@ -256,7 +256,7 @@ export class JobRepository {
     /**
      * Get job statistics for a user
      */
-    async getStatsForJobGiver(jobGiverId: string): Promise<JobStats> {
+    async getStatsForClient(clientId: string): Promise<JobStats> {
         try {
             const db = getAdminDb();
 
@@ -266,31 +266,31 @@ export class JobRepository {
                 // This might be tricky with 'in' limit of 10. Let's simplify or do multiple counts if needed.
                 // Or just count total - (completed + cancelled).
                 db.collection(COLLECTIONS.JOBS)
-                    .where('jobGiverId', '==', jobGiverId)
+                    .where('clientId', '==', clientId)
                     .where('status', 'in', ['open', 'Open for Bidding', 'in_progress', 'In Progress', 'Pending Funding', 'Pending Confirmation'])
                     .count()
                     .get(),
 
                 db.collection(COLLECTIONS.JOBS)
-                    .where('jobGiverId', '==', jobGiverId)
+                    .where('clientId', '==', clientId)
                     .where('status', 'in', ['Completed', 'completed'])
                     .count()
                     .get(),
 
                 db.collection(COLLECTIONS.JOBS)
-                    .where('jobGiverId', '==', jobGiverId)
+                    .where('clientId', '==', clientId)
                     .where('status', 'in', ['Cancelled', 'cancelled'])
                     .count()
                     .get(),
 
                 db.collection(COLLECTIONS.JOBS)
-                    .where('jobGiverId', '==', jobGiverId)
+                    .where('clientId', '==', clientId)
                     .count()
                     .get()
             ]);
 
             // Fetch user for cached totalBids
-            const userDoc = await db.collection(COLLECTIONS.USERS).doc(jobGiverId).get();
+            const userDoc = await db.collection(COLLECTIONS.USERS).doc(clientId).get();
             const userData = userDoc.data();
 
             return {
@@ -325,26 +325,26 @@ export class JobRepository {
         }
     }
     /**
-     * Get statistics for an installer
+     * Get statistics for an Professional
      */
-    async getStatsForInstaller(installerId: string): Promise<InstallerStats> {
+    async getStatsForProfessional(professionalId: string): Promise<ProfessionalStats> {
         try {
             const db = getAdminDb();
 
             // Parallelize the queries for performance
             const [openJobsSnap, myBidsSnap, jobsWonSnap, activeJobsSnap, completedJobsSnap, userDoc] = await Promise.all([
                 db.collection(COLLECTIONS.JOBS).where('status', 'in', ['open', 'Open for Bidding']).count().get(),
-                db.collection(COLLECTIONS.JOBS).where('bidderIds', 'array-contains', installerId).count().get(),
-                db.collection(COLLECTIONS.JOBS).where('awardedInstallerId', '==', installerId).count().get(),
+                db.collection(COLLECTIONS.JOBS).where('bidderIds', 'array-contains', professionalId).count().get(),
+                db.collection(COLLECTIONS.JOBS).where('awardedProfessionalId', '==', professionalId).count().get(),
                 db.collection(COLLECTIONS.JOBS)
-                    .where('awardedInstallerId', '==', installerId)
+                    .where('awardedProfessionalId', '==', professionalId)
                     .where('status', 'in', ['in_progress', 'funded', 'bid_accepted'])
                     .count().get(),
                 db.collection(COLLECTIONS.JOBS)
-                    .where('awardedInstallerId', '==', installerId)
+                    .where('awardedProfessionalId', '==', professionalId)
                     .where('status', '==', 'completed')
                     .count().get(),
-                db.collection(COLLECTIONS.USERS).doc(installerId).get()
+                db.collection(COLLECTIONS.USERS).doc(professionalId).get()
             ]);
 
             const userData = userDoc.data();
@@ -366,3 +366,6 @@ export class JobRepository {
 }
 
 export const jobRepository = new JobRepository();
+
+
+

@@ -20,8 +20,8 @@ export interface Dispute {
     status: 'Open' | 'Under Review' | 'Resolved';
     reason: string;
     parties?: {
-        jobGiverId: string;
-        installerId: string;
+        clientId: string;
+        professionalId: string;
     };
     messages: DisputeMessage[];
     resolution?: string;

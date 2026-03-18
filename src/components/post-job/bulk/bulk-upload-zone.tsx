@@ -166,7 +166,7 @@ export function BulkUploadZone({ template, onUploadSuccess }: BulkUploadZoneProp
             <div className="flex items-center gap-3 text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg border">
                 <FileText className="h-5 w-5 text-primary" />
                 <p>
-                    <strong>Tip:</strong> Ensure your columns match the sample file. We automatically map "Title", "Address", "Pincode", and "Budget".
+                    <strong>Tip:</strong> Ensure your columns match the sample file. We automatically map &quot;Title&quot;, &quot;Address&quot;, &quot;Pincode&quot;, and &quot;Budget&quot;.
                 </p>
             </div>
         </div>

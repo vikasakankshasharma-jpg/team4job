@@ -71,16 +71,16 @@ const chartConfig = {
 
 
 const wasJobAwardedDirectly = (job: Job) => {
-  if (!job.awardedInstaller) return false;
+  if (!job.awardedProfessional) return false;
 
-  const awardedInstallerId = getRefId(job.awardedInstaller);
-  if (!awardedInstallerId) return false;
+  const awardedProfessionalId = getRefId(job.awardedProfessional);
+  if (!awardedProfessionalId) return false;
 
   if (!job.bids || job.bids.length === 0) {
     return true;
   }
 
-  const hasBidFromAwarded = (job.bids || []).some(bid => getRefId(bid.installer) === awardedInstallerId);
+  const hasBidFromAwarded = (job.bids || []).some(bid => getRefId(bid.professional) === awardedProfessionalId);
 
   return !hasBidFromAwarded;
 };
@@ -360,7 +360,7 @@ function JobListItem({ job }: { job: Job }) {
             <span className="flex items-center gap-1">
               {(job.bids || []).length} Bids
             </span>
-            {getRefId(job.awardedInstaller) && (
+            {getRefId(job.awardedProfessional) && (
               <span className="flex items-center gap-1">
                 <Award className="h-3 w-3" />
                 {isDirectAward ? 'Direct Award' : 'Bidding'}
@@ -510,20 +510,20 @@ export default function UserProfileClient() {
       setProfileUser(fetchedUser);
 
       const { roles } = fetchedUser;
-      const isInstaller = roles.includes('Installer');
-      const isJobGiver = roles.includes('Job Giver');
+      const isProfessional = roles.includes('Professional');
+      const isClient = roles.includes('Client');
       const isTeamMember = roles.includes('Admin') || roles.includes('Support Team');
 
       const promises: Promise<any>[] = [];
 
-      if (isJobGiver) {
-        promises.push(getDocs(query(collection(db, "jobs"), where('jobGiver', '==', userDocRef))));
+      if (isClient) {
+        promises.push(getDocs(query(collection(db, "jobs"), where('client', '==', userDocRef))));
       } else {
         promises.push(Promise.resolve({ docs: [] }));
       }
 
-      if (isInstaller) {
-        promises.push(getDocs(query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedInstaller', '==', userDocRef))));
+      if (isProfessional) {
+        promises.push(getDocs(query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedProfessional', '==', userDocRef))));
       } else {
         promises.push(Promise.resolve({ docs: [] }));
       }
@@ -544,8 +544,8 @@ export default function UserProfileClient() {
         ];
 
         allJobsRaw.forEach(job => {
-          if (getRefId(job.jobGiver)) allJobUsers.add(getRefId(job.jobGiver)!);
-          if (getRefId(job.awardedInstaller)) allJobUsers.add(getRefId(job.awardedInstaller)!);
+          if (getRefId(job.client)) allJobUsers.add(getRefId(job.client)!);
+          if (getRefId(job.awardedProfessional)) allJobUsers.add(getRefId(job.awardedProfessional)!);
         });
 
         const usersMap = new Map<string, User>();
@@ -556,12 +556,12 @@ export default function UserProfileClient() {
         }
 
         const populateJob = (job: Job) => {
-          const jobGiverId = getRefId(job.jobGiver);
-          const awardedInstallerId = getRefId(job.awardedInstaller);
+          const clientId = getRefId(job.client);
+          const awardedProfessionalId = getRefId(job.awardedProfessional);
           return {
             ...job,
-            jobGiver: jobGiverId ? usersMap.get(jobGiverId) : undefined,
-            awardedInstaller: awardedInstallerId ? usersMap.get(awardedInstallerId) : undefined,
+            client: clientId ? usersMap.get(clientId) : undefined,
+            awardedProfessional: awardedProfessionalId ? usersMap.get(awardedProfessionalId) : undefined,
           }
         };
 
@@ -598,15 +598,15 @@ export default function UserProfileClient() {
   }
 
   const { name, email, id: userId, memberSince, realAvatarUrl, address, roles, subscription, status, suspensionEndDate } = profileUser;
-  const installerProfile = profileUser.installerProfile;
-  const isInstaller = roles.includes('Installer');
-  const isJobGiver = roles.includes('Job Giver');
+  const professionalProfile = profileUser.professionalProfile;
+  const isProfessional = roles.includes('Professional');
+  const isClient = roles.includes('Client');
   const isTeamMember = roles.includes('Admin') || roles.includes('Support Team');
 
   const jobsCompletedCount = userCompletedJobs.length;
 
-  const currentTierInfo = installerProfile ? tierData[installerProfile.tier] : null;
-  const progressPercentage = currentTierInfo && installerProfile ? ((installerProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
+  const currentTierInfo = professionalProfile ? tierData[professionalProfile.tier] : null;
+  const progressPercentage = currentTierInfo && professionalProfile ? ((professionalProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
 
   const getUserStatusBadge = () => {
     switch (status) {
@@ -645,7 +645,7 @@ export default function UserProfileClient() {
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground mt-1">
                 {roles.map(r => <Badge key={r} variant="outline" className="font-normal">{r}</Badge>)}
-                {installerProfile?.verified && <Badge variant="secondary" className="gap-1 pl-2 font-normal"><ShieldCheck className="h-4 w-4 text-green-600" /> Verified</Badge>}
+                {professionalProfile?.verified && <Badge variant="secondary" className="gap-1 pl-2 font-normal"><ShieldCheck className="h-4 w-4 text-green-600" /> Verified</Badge>}
               </div>
               <div className="flex flex-col mt-2">
                 <div className="flex items-center gap-2">
@@ -669,9 +669,9 @@ export default function UserProfileClient() {
               </div>
             </div>
             {isAdmin && subscription && <ManageSubscriptionDialog user={profileUser} onSubscriptionUpdate={handleSubscriptionUpdate} />}
-            {authUser?.roles.includes('Job Giver') && isInstaller && (
+            {authUser?.roles.includes('Client') && isProfessional && (
               <Button asChild>
-                <Link href={`/dashboard/post-job?directAwardInstallerId=${userId}`}>
+                <Link href={`/dashboard/post-job?directAwardProfessionalId=${userId}`}>
                   <UserPlus className="mr-2 h-4 w-4" />
                   Hire Now for a Project
                 </Link>
@@ -695,32 +695,32 @@ export default function UserProfileClient() {
 
       {isTeamMember && involvedDisputes.length > 0 && <DisputePerformanceCard disputes={involvedDisputes} />}
 
-      {isInstaller && (
+      {isProfessional && (
         <Card>
           <CardHeader>
-            <CardTitle>Installer Reputation</CardTitle>
+            <CardTitle>Professional Reputation</CardTitle>
             <CardDescription>This user&apos;s performance and trust score on the platform.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">
-            {!installerProfile ? (
+            {!professionalProfile ? (
               <div className="text-center py-8 bg-muted/50 rounded-lg">
-                <p className="font-semibold">New Installer</p>
-                <p className="text-sm text-muted-foreground">This user has not completed their installer setup.</p>
+                <p className="font-semibold">New Professional</p>
+                <p className="text-sm text-muted-foreground">This user has not completed their professional setup.</p>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between p-4 rounded-lg bg-accent/20">
                   <div className="flex items-center gap-4">
-                    {tierIcons[installerProfile.tier]}
+                    {tierIcons[professionalProfile.tier]}
                     <div>
                       <p className="text-sm">Tier</p>
-                      <p className="text-xl font-bold">{installerProfile.tier}</p>
+                      <p className="text-xl font-bold">{professionalProfile.tier}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <p className="text-sm">Reputation Points</p>
-                      <p className="text-xl font-bold text-right">{installerProfile.points}</p>
+                      <p className="text-xl font-bold text-right">{professionalProfile.points}</p>
                     </div>
                   </div>
                 </div>
@@ -729,7 +729,7 @@ export default function UserProfileClient() {
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <p className="text-sm font-medium">Progress to {currentTierInfo.next}</p>
-                      <p className="text-sm font-medium">{installerProfile.points} / {currentTierInfo.goal} pts</p>
+                      <p className="text-sm font-medium">{professionalProfile.points} / {currentTierInfo.goal} pts</p>
                     </div>
                     <Progress value={progressPercentage} className="h-2" />
                   </div>
@@ -738,8 +738,8 @@ export default function UserProfileClient() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
                   <div className="p-4 rounded-lg border">
                     <Star className="mx-auto h-6 w-6 mb-2 text-primary" />
-                    <p className="text-2xl font-bold">{(installerProfile.rating || 0).toFixed(1)}/5.0</p>
-                    <p className="text-sm text-muted-foreground">from {installerProfile.reviews || 0} reviews</p>
+                    <p className="text-2xl font-bold">{(professionalProfile.rating || 0).toFixed(1)}/5.0</p>
+                    <p className="text-sm text-muted-foreground">from {professionalProfile.reviews || 0} reviews</p>
                   </div>
                   <div className="p-4 rounded-lg border">
                     <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary" />
@@ -751,13 +751,13 @@ export default function UserProfileClient() {
                 <div>
                   <h4 className="font-semibold mb-3">Skills</h4>
                   <div className="flex flex-wrap gap-2">
-                    {(installerProfile.skills || []).length > 0 ? installerProfile.skills.map(skill => (
+                    {(professionalProfile.skills || []).length > 0 ? professionalProfile.skills.map(skill => (
                       <Badge key={skill} variant="secondary">{skill}</Badge>
                     )) : <p className="text-sm text-muted-foreground">No skills added.</p>}
                   </div>
                 </div>
 
-                {installerProfile.reputationHistory && installerProfile.reputationHistory.length > 0 && (
+                {professionalProfile.reputationHistory && professionalProfile.reputationHistory.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
@@ -767,7 +767,7 @@ export default function UserProfileClient() {
                     </CardHeader>
                     <CardContent>
                       <ChartContainer config={chartConfig} className="h-64 w-full">
-                        <AreaChart data={installerProfile.reputationHistory} margin={{ left: -20, right: 20, top: 10, bottom: 0 }}>
+                        <AreaChart data={professionalProfile.reputationHistory} margin={{ left: -20, right: 20, top: 10, bottom: 0 }}>
                           <CartesianGrid vertical={false} />
                           <XAxis
                             dataKey="month"
@@ -804,8 +804,8 @@ export default function UserProfileClient() {
           <CardHeader>
             <div className="flex justify-between items-center">
               <TabsList>
-                {isJobGiver && <TabsTrigger value="posted">Posted Jobs ({userPostedJobs.length})</TabsTrigger>}
-                {isInstaller && <TabsTrigger value="completed">Completed Jobs ({userCompletedJobs.length})</TabsTrigger>}
+                {isClient && <TabsTrigger value="posted">Posted Jobs ({userPostedJobs.length})</TabsTrigger>}
+                {isProfessional && <TabsTrigger value="completed">Completed Jobs ({userCompletedJobs.length})</TabsTrigger>}
               </TabsList>
               <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
                 <Button
@@ -828,7 +828,7 @@ export default function UserProfileClient() {
             </div>
           </CardHeader>
           <CardContent>
-            {isJobGiver && (
+            {isClient && (
               <TabsContent value="posted">
                 {userPostedJobs.length > 0 ? (
                   jobsView === 'grid' ? (
@@ -848,7 +848,7 @@ export default function UserProfileClient() {
               </TabsContent>
             )}
 
-            {isInstaller && (
+            {isProfessional && (
               <TabsContent value="completed">
                 {userCompletedJobs.length > 0 ? (
                   jobsView === 'grid' ? (
@@ -864,7 +864,7 @@ export default function UserProfileClient() {
                       ))}
                     </div>
                   )
-                ) : <p className="text-muted-foreground col-span-full text-center py-8">This installer has not completed any jobs yet.</p>}
+                ) : <p className="text-muted-foreground col-span-full text-center py-8">This professional has not completed any jobs yet.</p>}
               </TabsContent>
             )}
           </CardContent>

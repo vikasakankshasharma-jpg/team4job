@@ -20,7 +20,7 @@ import { Loader2, MessageSquare, Clock } from "lucide-react";
 interface JobTimelineCardProps {
     job: Job;
     currentUser: User;
-    otherParticipant?: User;  // The installer
+    otherParticipant?: User;  // The Professional
     onRefresh?: () => void;
 }
 
@@ -95,7 +95,7 @@ export function JobTimelineCard({
                     Job Timeline
                 </CardTitle>
                 <CardDescription>
-                    Track progress and communicate with your installer
+                    Track progress and communicate with your Professional
                 </CardDescription>
             </CardHeader>
             <CardContent>

@@ -48,8 +48,8 @@ export class AuthService {
             };
 
             // Add role-specific fields
-            if (data.role === 'Installer') {
-                userData.installerProfile = {
+            if (data.role === 'Professional') {
+                userData.professionalProfile = {
                     tier: 'Bronze',
                     points: 0,
                     skills: [],
@@ -100,7 +100,7 @@ export class AuthService {
 
             return {
                 uid: user.id,
-                role: user.roles?.[0] || 'Job Giver',
+                role: user.roles?.[0] || 'Client',
                 email: user.email,
                 emailVerified: user.isEmailVerified || false,
                 mobileVerified: user.isMobileVerified || false,
@@ -172,7 +172,7 @@ export class AuthService {
             throw new Error('Password must be at least 6 characters');
         }
 
-        if (!['Job Giver', 'Installer'].includes(data.role)) {
+        if (!['Client', 'Professional'].includes(data.role)) {
             throw new Error('Invalid role');
         }
     }

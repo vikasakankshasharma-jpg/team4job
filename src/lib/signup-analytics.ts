@@ -38,8 +38,8 @@ export interface OutreachEffectiveness {
 }
 
 export interface RoleDistribution {
-    Installer: number;
-    'Job Giver': number;
+    professional: number;
+    client: number;
     unknown: number;
 }
 
@@ -56,15 +56,8 @@ export interface AnalyticsData {
 export async function getSignupAnalytics(db: Firestore): Promise<AnalyticsData> {
     // 1. Single efficient read
     const pendingRef = collection(db, 'pending_signups');
-    // Using a broad query to get all relevant processing data
-    // We could optimize further by excluding 'converted' if we only wanted pending,
-    // but for funnel analysis we actually need BOTH converted and pending to see the full picture.
-    // However, the original code queried 'pending_signups' collection which presumably holds both
-    // (or moved converted ones? The types suggest 'converted' is a boolean flag).
-    // Let's assume the collection holds history.
-
-    // Safety Limit: If this collection grows huge, we simply cap it for analytics to avoid bill shock.
-    // 2000 records is plenty for a trend analysis and costs only ~2000 reads ($0.06).
+    
+    // Safety Limit: 2000 records
     const q = query(pendingRef, orderBy('startedAt', 'desc'), limit(2000));
     const snapshot = await getDocs(q);
 
@@ -81,7 +74,7 @@ export async function getSignupAnalytics(db: Firestore): Promise<AnalyticsData> 
  * Calculate signup funnel metrics (In-Memory)
  */
 function calculateFunnelMetrics(allSignups: PendingSignup[]): SignupFunnelData {
-    // Count signups at each step (with safe property access)
+    // Count signups at each step
     const step1Complete = allSignups.filter(s => s.stepDetails?.step1?.completed).length;
     const step2Complete = allSignups.filter(s => s.stepDetails?.step2?.completed).length;
     const step3Complete = allSignups.filter(s => s.stepDetails?.step3?.completed).length;
@@ -89,7 +82,7 @@ function calculateFunnelMetrics(allSignups: PendingSignup[]): SignupFunnelData {
     const totalConverted = allSignups.filter(s => s.converted).length;
     const totalStarted = allSignups.length;
 
-    // Calculate drop rates (percentage who didn't proceed to next step)
+    // Calculate drop rates
     const dropRates = {
         step1: totalStarted > 0 ? ((totalStarted - step1Complete) / totalStarted) * 100 : 0,
         step2: step1Complete > 0 ? ((step1Complete - step2Complete) / step1Complete) * 100 : 0,
@@ -115,7 +108,6 @@ function calculateFunnelMetrics(allSignups: PendingSignup[]): SignupFunnelData {
  * Calculate outreach effectiveness (In-Memory)
  */
 function getOutreachEffectiveness(allSignups: PendingSignup[]): OutreachEffectiveness {
-    // Split by contacted vs non-contacted
     const contacted = allSignups.filter(s => s.contacted);
     const nonContacted = allSignups.filter(s => !s.contacted);
 
@@ -152,16 +144,16 @@ function getOutreachEffectiveness(allSignups: PendingSignup[]): OutreachEffectiv
  */
 function getRoleDistribution(allSignups: PendingSignup[]): RoleDistribution {
     const distribution = {
-        Installer: 0,
-        'Job Giver': 0,
+        professional: 0,
+        client: 0,
         unknown: 0,
     };
 
     for (const signup of allSignups) {
-        if (signup.role === 'Installer') {
-            distribution.Installer++;
-        } else if (signup.role === 'Job Giver') {
-            distribution['Job Giver']++;
+        if (signup.role === 'Professional') {
+            distribution.professional++;
+        } else if (signup.role === 'Client') {
+            distribution.client++;
         } else {
             distribution.unknown++;
         }

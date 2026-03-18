@@ -92,7 +92,7 @@ export function SmartSplitZone({ onSplitSuccess }: SmartSplitZoneProps) {
             <div className="mt-6 flex items-start gap-3 p-4 bg-primary/5 rounded-lg border border-primary/10">
                 <MessageSquare className="h-5 w-5 text-primary mt-0.5" />
                 <p className="text-sm text-muted-foreground italic">
-                    "Hamare 3 branches hain - Pune, Bangalore aur Chennai. Har jagah networking aur electrical repairs karwane hain urgent basis pe."
+                    &quot;Hamare 3 branches hain - Pune, Bangalore aur Chennai. Har jagah networking aur electrical repairs karwane hain urgent basis pe.&quot;
                 </p>
             </div>
         </Card>

@@ -2,7 +2,7 @@
 // 'use server'; removed to fix invalid export error
 
 /**
- * @fileOverview Grants a 30-day Pro Installer subscription to a user.
+ * @fileOverview Grants a 30-day Pro Professional subscription to a user.
  * This is an admin-only flow intended to be used as a reward.
  */
 
@@ -50,17 +50,17 @@ export const grantProPlan = defineLoggedFlow(
 
       // Dynamic Plan Resolution
       let plan: SubscriptionPlan | null = null;
-      const specificPlanId = 'pro-installer-annual';
+      const specificPlanId = 'pro-Professional-annual';
       const planRef = db.collection('subscriptionPlans').doc(specificPlanId);
       const planSnap = await planRef.get();
 
       if (planSnap.exists) {
         plan = planSnap.data() as SubscriptionPlan;
       } else {
-        // Fallback: Find any 'Installer' plan that contains "Pro" in the name
+        // Fallback: Find any 'Professional' plan that contains "Pro" in the name
 
         const querySnapshot = await db.collection('subscriptionPlans')
-          .where('role', '==', 'Installer')
+          .where('role', '==', 'Professional')
           .get();
 
         const proPlanDoc = querySnapshot.docs.find(d => (d.data() as SubscriptionPlan).name.toLowerCase().includes('pro'));
@@ -71,7 +71,7 @@ export const grantProPlan = defineLoggedFlow(
       }
 
       if (!plan) {
-        throw new Error("Could not find a valid 'Pro Installer' subscription plan to grant.");
+        throw new Error("Could not find a valid 'Pro Professional' subscription plan to grant.");
       }
 
       const user = userSnap.data() as User;

@@ -17,7 +17,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Sparkles, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Loader2, Sparkles, AlertTriangle, CheckCircle2, ArrowRight } from "lucide-react";
 import { useTranslations } from 'next-intl';
 
 interface CompileOutput {
@@ -110,54 +110,65 @@ export function JobReviewStep({
         .slice(0, 4);
 
     return (
-        <div className="w-full max-w-3xl mx-auto p-4 space-y-8">
-            <div className="text-center space-y-2">
-                <h2 className="text-2xl font-bold">{tJob('reviewTitle')}</h2>
-                <p className="text-muted-foreground">
+        <div className="w-full max-w-4xl mx-auto p-4 space-y-10">
+            <div className="text-center space-y-3">
+                <h2 className="text-3xl font-extrabold tracking-tight">{tJob('reviewTitle')}</h2>
+                <p className="text-muted-foreground text-lg font-medium opacity-80">
                     {tJob('reviewDesc')}
                 </p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-3">
-                <div className="md:col-span-2 space-y-6">
-                    <Card className={`p-6 border-2 transition-colors duration-500 relative ${justUpdated ? "border-green-500/50 bg-green-50/10" : "border-primary/10"}`}>
+            <div className="grid gap-8 lg:grid-cols-12">
+                <div className="lg:col-span-8 space-y-8">
+                    <Card className={`p-8 border-0 shadow-2xl transition-all duration-700 relative overflow-hidden bg-card ${justUpdated ? "ring-2 ring-success shadow-success/20 scale-[1.01]" : ""}`}>
+                        {/* Elegant Corner Accent */}
+                        <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary/5 to-transparent transition-opacity duration-700 ${justUpdated ? 'opacity-100' : 'opacity-0'}`} />
+                        
                         {justUpdated && (
-                            <div className="absolute top-4 right-4 text-green-600 flex items-center text-sm font-medium animate-in fade-in zoom-in duration-300">
-                                <CheckCircle2 className="w-4 h-4 mr-1" /> {tJob('updated')}
+                            <div className="absolute top-6 right-6 text-success flex items-center text-xs font-bold uppercase tracking-widest animate-in fade-in slide-in-from-right-4 duration-500">
+                                <CheckCircle2 className="w-4 h-4 mr-2" /> {tJob('updated')}
                             </div>
                         )}
-
-                        <div className="space-y-4">
+ 
+                        <div className="space-y-8 relative">
                             <div>
-                                <Label className="text-muted-foreground">{tJob('title')}</Label>
-                                <div className="text-xl font-bold">
+                                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground opacity-70 mb-3 block">{tJob('title') || 'Job Title'}</Label>
+                                <div className="text-2xl font-extrabold tracking-tight text-foreground">
                                     {data.jobTitle}
                                 </div>
                             </div>
-
-                            <div className="bg-muted/30 p-4 rounded-lg">
-                                <Label className="text-muted-foreground mb-2 block">{tJob('description')}</Label>
-                                <ul className="space-y-2 text-foreground/90 list-disc pl-4">
-                                    {data.jobDescription.split('\n').map((line, i) => (
-                                        line.trim().startsWith('-')
-                                            ? <li key={i}>{line.replace(/^-/, '').trim()}</li>
-                                            : <p key={i} className="mb-2">{line}</p>
-                                    ))}
-                                </ul>
+ 
+                            <div className="bg-muted/5 p-6 rounded-2xl border border-muted-foreground/10">
+                                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground opacity-70 mb-4 block">{tJob('description') || 'Job description'}</Label>
+                                <div className="space-y-4 text-foreground/90 text-base leading-relaxed font-medium">
+                                    {(data.jobDescription || "").split('\n').map((line, i) => {
+                                        const trimmed = line.trim();
+                                        if (!trimmed) return <div key={i} className="h-2" />;
+                                        if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
+                                            return (
+                                                <div key={i} className="flex gap-3 group">
+                                                    <div className="mt-2 h-1.5 w-1.5 rounded-full bg-primary/40 shrink-0 group-hover:bg-primary transition-colors" />
+                                                    <span>{trimmed.replace(/^[-•]\s*/, '').trim()}</span>
+                                                </div>
+                                            );
+                                        }
+                                        return <p key={i} className="mb-4">{trimmed}</p>;
+                                    })}
+                                </div>
                             </div>
                         </div>
                     </Card>
-
-                    <Card className="p-6 border-dashed border-2 bg-accent/20">
-                        <Label className="mb-2 block font-medium">
+ 
+                    <Card className="p-8 border-2 border-dashed border-muted-foreground/20 bg-muted/5 shadow-sm hover:border-primary/30 transition-all duration-300">
+                        <Label className="mb-4 block text-sm font-bold uppercase tracking-widest text-muted-foreground opacity-70">
                             {tJob('editPrompt')}
                         </Label>
-                        <div className="flex gap-2">
+                        <div className="flex gap-3">
                             <Textarea
                                 placeholder={tJob('editPlaceholder')}
                                 value={userEdit}
                                 onChange={(e) => setUserEdit(e.target.value)}
-                                className="bg-background resize-none"
+                                className="bg-background resize-none rounded-xl border-input/50 focus:border-primary transition-all p-4 text-sm font-medium"
                                 rows={2}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -169,61 +180,67 @@ export function JobReviewStep({
                             <Button
                                 onClick={handleRecompile}
                                 disabled={!userEdit.trim() || isRecompiling}
-                                className="h-auto w-24 shrink-0"
+                                className="h-auto w-28 shrink-0 rounded-xl shadow-lg shadow-primary/20"
                             >
                                 {isRecompiling ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <Loader2 className="h-5 w-5 animate-spin" />
                                 ) : (
-                                    <Sparkles className="h-4 w-4" />
+                                    <Sparkles className="h-5 w-5 mr-1" />
                                 )}
-                                <span className="sr-only">{tCommon('update')}</span>
+                                <span className={`${isRecompiling ? 'sr-only' : 'font-bold'}`}>{tCommon('update')}</span>
                             </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                            {tJob('editDesc')}
+                        <p className="text-xs text-muted-foreground mt-4 font-medium opacity-70 flex items-center gap-2">
+                            <Sparkles className="h-3 w-3 text-primary" /> {tJob('editDesc')}
                         </p>
                     </Card>
                 </div>
 
-                <div className="space-y-6">
+                <div className="lg:col-span-4 space-y-6">
                     {data.priceEstimate && (
-                        <Card className="p-4 bg-primary/5 border-primary/20">
-                            <h3 className="font-semibold text-sm text-primary mb-1">{tJob('priceEstimateTitle')}</h3>
-                            <div className="text-2xl font-bold">
+                        <Card className="p-6 bg-primary/5 border-0 shadow-lg shadow-primary/5 overflow-hidden relative">
+                            <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />
+                            <h3 className="font-bold text-xs uppercase tracking-widest text-primary mb-3 opacity-80">{tJob('priceEstimateTitle')}</h3>
+                            <div className="text-3xl font-extrabold tracking-tight">
                                 ₹{data.priceEstimate.min.toLocaleString()} - ₹{data.priceEstimate.max.toLocaleString()}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-2 text-primary/80 font-medium">
-                                {selectedCategory} requirement analysis
+                            <p className="text-xs text-muted-foreground mt-4 font-bold opacity-60 flex items-center justify-between">
+                                <span>{selectedCategory} Market</span>
+                                <CheckCircle2 className="h-3 w-3 text-primary" />
                             </p>
                         </Card>
                     )}
-
-                    <Card className="p-4 bg-muted/20">
-                        <h3 className="font-semibold text-sm mb-3">{tJob('jobSummary')}</h3>
-                        <div className="space-y-2 text-sm">
-                            {summaryItems.map(([key, value]) => (
-                                <div key={key} className="flex justify-between items-center">
-                                    <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
-                                    <span className="font-medium">{String(value)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </Card>
-
-                    <div className="space-y-3">
+ 
+                    {summaryItems.length > 0 && (
+                        <Card className="p-6 bg-muted/20 border-0 shadow-sm">
+                            <h3 className="font-bold text-xs uppercase tracking-widest text-muted-foreground mb-5 opacity-70">{tJob('jobSummary')}</h3>
+                            <div className="space-y-4 text-sm">
+                                {summaryItems.map(([key, value]) => (
+                                    <div key={key} className="flex justify-between items-center group">
+                                        <span className="text-muted-foreground capitalize font-medium group-hover:text-foreground transition-colors">{key.replace(/_/g, ' ')}</span>
+                                        <div className="h-px bg-muted-foreground/10 flex-grow mx-3 group-hover:bg-primary/20 transition-colors" />
+                                        <span className="font-bold text-foreground">{String(value)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
+                    )}
+ 
+                    <div className="space-y-4 pt-4">
                         <Button
                             size="lg"
-                            className="w-full text-lg shadow-lg shadow-primary/20 h-14"
+                            className="w-full text-lg font-extrabold shadow-xl shadow-primary/20 h-16 rounded-2xl group transition-all duration-300 hover:scale-[1.02]"
                             onClick={() => onPostJob(data)}
                         >
                             {tJob('looksGood')}
+                            <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                         </Button>
                         <Button
                             variant="outline"
-                            className="w-full text-muted-foreground"
+                            className="w-full text-sm font-bold h-12 rounded-xl border-input/50 hover:bg-primary/5 transition-all"
                             onClick={() => setShowSaveDialog(true)}
                         >
-                            <Sparkles className="mr-2 h-4 w-4" /> Save as Template
+                            <Sparkles className="mr-2 h-4 w-4 text-primary" /> Save as Template
                         </Button>
                     </div>
                 </div>
@@ -234,7 +251,7 @@ export function JobReviewStep({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Save as Template</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Give this configuration a name (e.g. "Office 4-Device Setup" or "Basic Home Wiring") to reuse it instantly next time.
+                            Give this configuration a name (e.g. &quot;Office 4-Device Setup&quot; or &quot;Basic Home Wiring&quot;) to reuse it instantly next time.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-2">

@@ -35,7 +35,7 @@ export type User = {
   };
   address: Address;
   district?: string; // Added for district-wise queries
-  roles: ('Job Giver' | 'Installer' | 'Admin' | 'Support Team')[];
+  roles: ('Client' | 'Professional' | 'Admin' | 'Support Team')[];
   memberSince: Date | Timestamp;
   lastLoginAt?: Date | Timestamp;
   lastActiveAt?: Date | Timestamp; // For tracking inactivity
@@ -65,11 +65,11 @@ export type User = {
   blockedByUserIds?: string[]; // IDs of users who have blocked this user
   preferredLanguage?: 'en' | 'hi'; // User's preferred UI language
   fcmTokens?: string[];
-  favoriteInstallerIds?: string[];
-  blockedInstallerIds?: string[];
-  installerTags?: { [installerId: string]: string[] }; // Custom tags for organizing installers
-  isFoundingInstaller?: boolean;
-  installerProfile?: {
+  favoriteProfessionalIds?: string[];
+  blockedProfessionalIds?: string[];
+  professionalTags?: { [professionalId: string]: string[] }; // Custom tags for organizing Professionals
+  isFoundingProfessional?: boolean;
+  professionalProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;
     skills: string[];
@@ -132,7 +132,7 @@ export type PrivateMessage = {
 
 export type Bid = {
   id?: string;
-  installer: User | DocumentReference;
+  professional: User | DocumentReference;
   amount: number;
   timestamp: Date | Timestamp;
   coverLetter?: string;
@@ -140,7 +140,7 @@ export type Bid = {
   warrantyDuration?: string;
   estimatedDuration?: number; // Phase 10
   durationUnit?: 'Hours' | 'Days'; // Phase 10
-  installerId?: string; // Added for Collection Group queries
+  professionalId?: string; // Added for Collection Group queries
 };
 
 export type JobAttachment = {
@@ -173,7 +173,7 @@ export type AdditionalTask = {
   status: 'pending-quote' | 'quoted' | 'approved' | 'declined' | 'funded';
   quoteAmount?: number;
   quoteDetails?: string;
-  createdBy: 'Job Giver' | 'Installer';
+  createdBy: 'Client' | 'Professional';
   createdAt: Date | Timestamp;
 }
 
@@ -192,8 +192,8 @@ export type Job = {
   description: string;
   skills?: string[];
   jobCategory: string;
-  jobGiver: User | DocumentReference;
-  jobGiverId?: string;
+  client: User | DocumentReference;
+  clientId?: string;
   location: string;
   fullAddress: string;
   address: Address;
@@ -207,7 +207,7 @@ export type Job = {
   priceEstimate?: { min: number; max: number };
   dateChangeProposal?: {
     newDate: Date | Timestamp;
-    proposedBy: 'Job Giver' | 'Installer';
+    proposedBy: 'Client' | 'Professional';
     status: 'pending' | 'accepted' | 'rejected';
   };
   postedAt: Date | Timestamp;
@@ -216,9 +216,9 @@ export type Job = {
   completionTimestamp?: Date | Timestamp;
   bids: Bid[];
   bidderIds?: string[];
-  disqualifiedInstallerIds?: string[];
-  awardedInstaller?: User | DocumentReference;
-  awardedInstallerId?: string; // Added for redundancy and robust querying
+  disqualifiedProfessionalIds?: string[];
+  awardedProfessional?: User | DocumentReference;
+  awardedProfessionalId?: string; // Added for redundancy and robust querying
   structuredRequirements?: Record<string, any>; // Stores raw answers from Fixed Question Flow (e.g. { device_count: "3-4", location: "shop" })
   // Language metadata for user content
   description_original?: {
@@ -227,18 +227,18 @@ export type Job = {
   };
   description_compiled_en?: string | null; // AI-generated English version
   description_compiled_hi?: string | null; // (Future) AI-generated Hindi version
-  selectedInstallers?: { installerId: string, rank: number }[];
-  directAwardInstallerId?: string; // ID of the installer this job was directly sent to
+  selectedProfessionals?: { professionalId: string, rank: number }[];
+  directAwardProfessionalId?: string; // ID of the Professional this job was directly sent to
   rating?: number;
   review?: string;
-  jobGiverReview?: {
+  clientReview?: {
     rating: number;
     review: string;
     createdAt: Date | Timestamp;
     authorId: string;
     authorName: string;
   };
-  installerReview?: {
+  professionalReview?: {
     rating: number;
     review: string;
     createdAt: Date | Timestamp;
@@ -252,16 +252,16 @@ export type Job = {
   additionalTasks?: AdditionalTask[];
   milestones?: Milestone[];
   billingSnapshot?: {
-    installerName: string;
-    installerAddress: Address; // or string? strict Address type preferred
+    professionalName: string;
+    professionalAddress: Address; // or string? strict Address type preferred
     gstin?: string;
     pan?: string;
   };
   comments: Comment[];
   privateMessages?: PrivateMessage[];
-  cancellationProposer?: 'Job Giver' | 'Installer';
-  startOtp?: string; // Generated when funded, shared by Giver
-  workStartedAt?: Date | Timestamp; // Set when Installer verifies startOtp
+  cancellationProposer?: 'Client' | 'Professional';
+  startOtp?: string; // Generated when funded, shared by Client
+  workStartedAt?: Date | Timestamp; // Set when Professional verifies startOtp
   completionOtp?: string;
   cancellationReason?: string;
   archived?: boolean;
@@ -300,8 +300,8 @@ export type Dispute = {
   status: 'Open' | 'Under Review' | 'Resolved';
   reason: string;
   parties?: {
-    jobGiverId: string;
-    installerId: string;
+    clientId: string;
+    professionalId: string;
   };
   messages: DisputeMessage[];
   resolution?: string;
@@ -310,14 +310,14 @@ export type Dispute = {
   handledBy?: string; // Support Team member ID
 };
 
-export type Role = "Job Giver" | "Installer" | "Admin" | "Support Team";
+export type Role = "Client" | "Professional" | "Admin" | "Support Team";
 
 export type SubscriptionPlan = {
   id: string;
   name: string;
   description: string;
   price: number;
-  role: 'Job Giver' | 'Installer' | 'Any';
+  role: 'Client' | 'Professional' | 'Any';
   features: string[];
   isArchived: boolean;
 };
@@ -327,7 +327,7 @@ export type Coupon = {
   description: string;
   planId: string;
   durationDays: number;
-  applicableToRole: 'Installer' | 'Job Giver' | 'Any';
+  applicableToRole: 'Professional' | 'Client' | 'Any';
   validFrom: Date | Timestamp;
   validUntil: Date | Timestamp;
   isActive: boolean;
@@ -337,7 +337,7 @@ export type BlacklistEntry = {
   id: string;
   type: 'user' | 'pincode';
   value: string;
-  role: 'Any' | 'Installer' | 'Job Giver';
+  role: 'Any' | 'Professional' | 'Client';
   reason: string;
   createdAt: Date | Timestamp;
 };
@@ -346,14 +346,14 @@ export type Transaction = {
   id: string; // Our internal ID
   jobId: string;
   jobTitle: string;
-  payerId: string; // Job Giver ID
-  payeeId: string; // Installer ID
+  payerId: string; // Client ID
+  payeeId: string; // Professional ID
   amount: number; // The original bid amount
   travelTip?: number;
-  commission: number; // The platform commission amount taken from installer
-  jobGiverFee: number; // The fee charged to the job giver
-  totalPaidByGiver: number; // The total amount charged to the job giver (amount + jobGiverFee + travelTip)
-  payoutToInstaller: number; // The net amount paid out to the installer (amount - commission + travelTip)
+  commission: number; // The platform commission amount taken from Professional
+  clientFee: number; // The fee charged to the client
+  totalPaidByClient: number; // The total amount charged to the client (amount + clientFee + travelTip)
+  payoutToProfessional: number; // The net amount paid out to the Professional (amount - commission + travelTip)
   status: 'initiated' | 'funded' | 'released' | 'refunded' | 'failed' | 'disputed';
   paymentGatewayOrderId?: string;
   paymentGatewaySessionId?: string;
@@ -371,12 +371,12 @@ export type Transaction = {
 };
 
 export type PlatformSettings = {
-  installerCommissionRate?: number;
+  professionalCommissionRate?: number;
   categoryCommissionRates?: Record<string, number>;
-  jobGiverFeeRate?: number;
+  clientFeeRate?: number;
   defaultTrialPeriodDays: number;
-  freeBidsForNewInstallers: number;
-  freePostsForNewJobGivers: number;
+  freeBidsForNewProfessionals: number;
+  freePostsForNewClients: number;
   pointsForJobCompletion: number;
   pointsFor5StarRating: number;
   pointsFor4StarRating: number;
@@ -386,7 +386,7 @@ export type PlatformSettings = {
   goldTierPoints: number;
   platinumTierPoints: number;
   minJobBudget: number;
-  autoVerifyInstallers: boolean;
+  autoVerifyProfessionals: boolean;
   minJobBudgetForMilestones: number; // Added for verification
 };
 
@@ -450,7 +450,7 @@ export type PendingSignup = {
   mobile: string; // PRIMARY - captured first
   email?: string; // Captured at Step 3
   name?: string; // From profile step
-  role?: 'Installer' | 'Job Giver';
+  role?: 'Professional' | 'Client';
   currentStep: SignupStep; // Last completed step
   stepDetails: {
     step1: { completed: boolean; timestamp?: Date | Timestamp }; // Role selection
@@ -487,7 +487,7 @@ export type PendingSignup = {
 export type NotificationType =
   | 'NEW_BID'
   | 'BID_UPDATED'
-  | 'FAVORITE_INSTALLER_BID'
+  | 'FAVORITE_PROFESSIONAL_BID'
   | 'FUNDING_DEADLINE_APPROACHING'
   | 'AWARD_DEADLINE_APPROACHING'
   | 'JOB_STARTED'
@@ -611,12 +611,18 @@ export interface UpdateProfileInput {
     residential: string;
     office?: string;
   };
-  installerProfile?: Partial<User["installerProfile"]>;
+  professionalProfile?: Partial<User["professionalProfile"]>;
 }
 
-export interface InstallerFilters {
+export interface ProfessionalFilters {
   skills?: string[];
   minRating?: number;
   verified?: boolean;
   pincode?: string;
 }
+
+
+
+
+
+

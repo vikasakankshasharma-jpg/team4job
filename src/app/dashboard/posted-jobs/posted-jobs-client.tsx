@@ -57,8 +57,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Briefcase, Archive, Inbox } from "lucide-react";
-import { StatusBadge } from "@/components/job-giver/status-badge";
-import { EnhancedEmptyState } from "@/components/job-giver/enhanced-empty-state";
+import { StatusBadge } from "@/components/client/status-badge";
+import { EnhancedEmptyState } from "@/components/client/enhanced-empty-state";
 import { BulkActionsToolbar } from "@/components/posted-jobs/bulk-actions-toolbar";
 import { AdvancedFilters, type JobFilters } from "@/components/posted-jobs/advanced-filters";
 import { MobileJobCard } from "@/components/posted-jobs/mobile-job-card";
@@ -179,18 +179,18 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
   const tCommon = useTranslations('common');
 
   const getJobType = (job: Job) => {
-    if (!job.awardedInstaller) return 'N/A';
+    if (!job.awardedProfessional) return 'N/A';
 
-    const awardedInstallerId = getRefId(job.awardedInstaller);
+    const awardedProfessionalId = getRefId(job.awardedProfessional);
 
     if (!job.bids || job.bids.length === 0) {
-      if (awardedInstallerId) return tJob('jobTypeDirect');
+      if (awardedProfessionalId) return tJob('jobTypeDirect');
       return 'N/A';
     }
 
-    const bidderIds = (job.bids || []).map(b => getRefId(b.installer));
+    const bidderIds = (job.bids || []).map(b => getRefId(b.professional));
 
-    return bidderIds.includes(awardedInstallerId) ? tJob('jobTypeBidding') : tJob('jobTypeDirect');
+    return bidderIds.includes(awardedProfessionalId) ? tJob('jobTypeBidding') : tJob('jobTypeDirect');
   };
 
   const getActionsForJob = (job: Job) => {
@@ -211,9 +211,9 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
 
   return (
     <TooltipProvider>
-      <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
+      <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl font-bold tracking-tight">{title}</CardTitle>
           <CardDescription>
             {description}
           </CardDescription>
@@ -243,9 +243,9 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
                     </TableCell>
                   </TableRow>
                 ) : jobs.length > 0 ? jobs.map(job => (
-                  <TableRow key={job.id}>
+                  <TableRow key={job.id} className="group">
                     <TableCell className="font-medium">
-                      <Link href={`/dashboard/jobs/${job.id}`} className="hover:underline">{job.title}</Link>
+                      <Link href={`/dashboard/jobs/${job.id}`} className="hover:underline group-hover:text-primary transition-colors">{job.title}</Link>
                       <p className="text-xs text-muted-foreground font-mono">{job.id}</p>
                     </TableCell>
                     <TableCell>
@@ -360,7 +360,7 @@ export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] 
   const [filters, setFilters] = useState<JobFilters>({});
 
   useEffect(() => {
-    if (!userLoading && user && (user.roles.includes('Admin') || role === 'Installer')) {
+    if (!userLoading && user && (user.roles.includes('Admin') || role === 'Professional')) {
       router.push('/dashboard');
     }
   }, [user, userLoading, router, role]);
@@ -462,10 +462,10 @@ export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] 
         if (jobDate > toDateFilter) return false;
       }
 
-      // Installer filter
-      if (filters.installer) {
-        const awardedInstallerName = typeof job.awardedInstaller === 'object' && 'name' in job.awardedInstaller ? job.awardedInstaller.name : '';
-        if (!awardedInstallerName || !awardedInstallerName.toLowerCase().includes(filters.installer.toLowerCase())) {
+      // Professional filter
+      if (filters.professional) {
+        const awardedProfessionalName = typeof job.awardedProfessional === 'object' && 'name' in job.awardedProfessional ? job.awardedProfessional.name : '';
+        if (!awardedProfessionalName || !awardedProfessionalName.toLowerCase().includes(filters.professional.toLowerCase())) {
           return false;
         }
       }
@@ -474,7 +474,7 @@ export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] 
     });
   };
 
-  if (userLoading || (!userLoading && role !== 'Job Giver')) {
+  if (userLoading || (!userLoading && role !== 'Client')) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-6 w-6 animate-spin" />

@@ -16,8 +16,7 @@ import { updateSessionTokenAction, removeSessionTokenAction } from "@/app/action
 // Re-export firebase hooks for convenience
 export { useFirestore, useFirebase, useStorage } from "@/lib/firebase/client-provider";
 
-// --- Types ---
-type Role = "Job Giver" | "Installer" | "Admin" | "Support Team";
+type Role = "Client" | "Professional" | "Admin" | "Support Team";
 
 interface UserContextType {
   user: User | null;
@@ -42,12 +41,12 @@ const PUBLIC_PAGES = ['/login', '/', '/privacy', '/terms', '/privacy-policy', '/
 const inferE2ERolesFromIdentity = (firebaseUser: FirebaseUser): Role[] => {
   const email = (firebaseUser.email || '').toLowerCase();
 
-  if (email.includes('installer')) return ['Installer'];
-  if (email.includes('giver')) return ['Job Giver'];
+  if (email.includes('Professional')) return ['Professional'];
+  if (email.includes('giver')) return ['Client'];
   if (email.includes('admin') || email.includes('vikasakankshasharma')) return ['Admin'];
-  if (email.includes('dualrole')) return ['Installer', 'Job Giver'];
+  if (email.includes('dualrole')) return ['Professional', 'Client'];
 
-  return ['Job Giver'];
+  return ['Client'];
 };
 
 const isPublicPath = (path: string) => {
@@ -63,12 +62,11 @@ const isPublicPath = (path: string) => {
 };
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  console.log("CORTEX_CANARY_ACTIVE_V1");
   const { auth } = useFirebase();
   const db = useFirestore();
 
   const [user, setUser] = useState<User | null>(null);
-  const [role, setRoleState] = useState<Role>("Job Giver");
+  const [role, setRoleState] = useState<Role>("Client");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasAuthUser, setHasAuthUser] = useState(false);
@@ -122,7 +120,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRoleState("Support Team");
         localStorage.setItem('userRole', "Support Team");
       } else {
-        const initialRole = userData.roles.includes("Installer") ? "Installer" : "Job Giver";
+        const initialRole = userData.roles.includes("Professional") ? "Professional" : "Client";
         setRoleState(initialRole);
         localStorage.setItem('userRole', initialRole);
       }
@@ -288,74 +286,59 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // If still loading auth state, we are not ready to decide
     if (loading) return null;
 
-    // 1. Handling Public Paths
-    if (isPublicPath(pathname)) {
-      // If user is logged in and on login/home page, redirect to dashboard
-      if (user && (pathname === '/login' || pathname === '/')) {
+    const res = ((): string | null => {
+      // 1. Handling Public Paths
+      if (isPublicPath(pathname)) {
+        if (user && (pathname === '/login' || pathname === '/')) {
+          return '/dashboard';
+        }
+        return null;
+      }
+
+      // 2. Handling Private Paths (Auth Check)
+      if (!user && !hasAuthUser) {
+        return '/login';
+      }
+
+      if (hasAuthUser && !user) {
+        return null;
+      }
+
+      const professionalPaths = ['/dashboard/my-bids', '/dashboard/verify-professional', '/dashboard/jobs'];
+      const clientPaths = ['/dashboard/post-job', '/dashboard/posted-jobs', '/dashboard/my-professionals', '/dashboard/professionals'];
+      const adminPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/subscription-plans', '/dashboard/coupons', '/dashboard/blacklist'];
+      const supportPaths = ['/dashboard/disputes'];
+
+      const isBrowseJobsPage = pathname === '/dashboard/jobs';
+      const isOtherProfessionalPage = ['/dashboard/my-bids', '/dashboard/verify-professional'].some(p => pathname.startsWith(p));
+      const isProfessionalOnlyPage = isBrowseJobsPage || isOtherProfessionalPage;
+
+      const isClientPage = clientPaths.some(p => pathname.startsWith(p));
+      const isAdminPage = adminPaths.some(p => pathname.startsWith(p));
+      const isSupportPage = supportPaths.some(p => pathname.startsWith(p));
+
+      if (role === 'Client' && isProfessionalOnlyPage) {
+        return '/dashboard';
+      } else if (role === 'Professional' && isClientPage) {
+        return '/dashboard';
+      } else if (role === 'Support Team' && !isSupportPage && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/profile')) {
+        return '/dashboard/disputes';
+      } else if (!user?.roles.includes("Admin") && isAdminPage) {
         return '/dashboard';
       }
-      // Otherwise, public pages are accessible
+
       return null;
+    })();
+
+    if (res && res !== pathname) {
     }
-
-    // 2. Handling Private Paths (Auth Check)
-    // IMPORTANT: In E2E mode, we must be VERY careful not to redirect to /login
-    // if a Firebase Auth user is present but Firestore hasn't hydrated yet.
-    const isE2E = process.env.NEXT_PUBLIC_E2E === 'true' ||
-      (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'));
-
-    if (!user && !hasAuthUser) {
-      // In E2E, wait longer before giving up if we are on a protected path
-      if (isE2E && pathname.startsWith('/dashboard')) {
-        return null; // Stay on loader
-      }
-      // Only redirect to login if we explicitly have NO auth user
-      return '/login';
-    }
-
-    if (hasAuthUser && !user) {
-      // If we have an auth user but no Firestore profile yet,
-      // stay on the loader (don't redirect to /login)
-      return null;
-    }
-
-    // 3. Handling Role Protection & Role-Specific Pages
-    if (!user) return null; // Should be covered above, but for type safety check
-
-    // Role protection
-    const installerPaths = ['/dashboard/my-bids', '/dashboard/verify-installer', '/dashboard/jobs'];
-    const jobGiverPaths = ['/dashboard/post-job', '/dashboard/posted-jobs', '/dashboard/my-installers', '/dashboard/installers'];
-    const adminPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/subscription-plans', '/dashboard/coupons', '/dashboard/blacklist'];
-    const supportPaths = ['/dashboard/disputes'];
-
-    const isBrowseJobsPage = pathname === '/dashboard/jobs';
-    const isOtherInstallerPage = ['/dashboard/my-bids', '/dashboard/verify-installer'].some(p => pathname.startsWith(p));
-    const isInstallerOnlyPage = isBrowseJobsPage || isOtherInstallerPage;
-
-    const isJobGiverPage = jobGiverPaths.some(p => pathname.startsWith(p));
-    const isAdminPage = adminPaths.some(p => pathname.startsWith(p));
-    const isSupportPage = supportPaths.some(p => pathname.startsWith(p));
-
-    if (role === 'Job Giver' && isInstallerOnlyPage) {
-      return '/dashboard';
-    } else if (role === 'Installer' && isJobGiverPage) {
-      return '/dashboard';
-    } else if (role === 'Support Team' && !isSupportPage && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/profile')) {
-      return '/dashboard/disputes';
-    } else if (!user.roles.includes("Admin") && isAdminPage) {
-      return '/dashboard';
-    }
-
-    return null;
+    return res;
   };
 
   const redirectPath = getRedirectPath();
 
   useEffect(() => {
     if (redirectPath && !isLoggingOut.current) {
-      if (typeof window !== 'undefined' && window.location.hostname !== 'ssr') {
-        console.log(`[UseUser] Redirecting: ${pathname} -> ${redirectPath} (Role: ${role}, User: ${user?.email || 'none'})`);
-      }
       smartPush(redirectPath);
     }
   }, [redirectPath, smartPush, pathname, role, user?.email]);

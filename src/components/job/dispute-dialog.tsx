@@ -30,7 +30,7 @@ interface DisputeDialogProps {
 const DISPUTE_REASONS = [
     "Work Not Completed",
     "Poor Quality Work",
-    "Installer Didn't Show Up",
+    "Professional Didn't Show Up",
     "Payment Issue",
     "Harassment / Safety",
     "Other"

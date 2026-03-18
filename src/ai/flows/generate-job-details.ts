@@ -24,7 +24,7 @@ const generateJobDetailsPrompt = ai.definePrompt({
 
   Job Title: {{{jobTitle}}}
 
-  1.  **Job Description:** Write a detailed and compelling job description (150-250 words). Include typical responsibilities, required expertise, and potential benefits. Make it sound professional and attractive to qualified installers.
+  1.  **Job Description:** Write a detailed and compelling job description (150-250 words). Include typical responsibilities, required expertise, and potential benefits. Make it sound professional and attractive to qualified Professionals.
   2.  **Suggested Skills:** Identify a list of 5-7 relevant technical skills. Use industry-standard terms.
 
   Return the full output in the specified JSON format.

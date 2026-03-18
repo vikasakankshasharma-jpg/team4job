@@ -7,17 +7,17 @@ import { TestHelper } from '../utils/helpers';
  */
 test.describe('Role Based Redirects', () => {
 
-    // Test Case 1: Job Giver trying to access Installer Page
-    test('Job Giver is redirected from Installer-only pages', async ({ page }) => {
+    // Test Case 1: Client trying to access Professional Page
+    test('Client is redirected from Professional-only pages', async ({ page }) => {
         const helper = new TestHelper(page);
 
-        // Login as Job Giver
-        await helper.auth.loginAsJobGiver();
+        // Login as Client
+        await helper.auth.loginAsClient();
 
         // Wait for dashboard to ensure login is complete
         await expect(page).toHaveURL(/\/dashboard/);
 
-        // Attempt to go to an Installer-only page
+        // Attempt to go to an Professional-only page
         const unauthorizedPage = '/dashboard/my-bids';
         await page.goto(unauthorizedPage);
 
@@ -27,17 +27,17 @@ test.describe('Role Based Redirects', () => {
         await expect(page).toHaveURL(/\/dashboard/);
     });
 
-    // Test Case 2: Installer trying to access Job Giver Page
-    test('Installer is redirected from Job Giver-only pages', async ({ page }) => {
+    // Test Case 2: Professional trying to access Client Page
+    test('Professional is redirected from Client-only pages', async ({ page }) => {
         const helper = new TestHelper(page);
 
-        // Login as Installer
-        await helper.auth.loginAsInstaller();
+        // Login as Professional
+        await helper.auth.loginAsProfessional();
 
         // Wait for dashboard
         await expect(page).toHaveURL(/\/dashboard/);
 
-        // Attempt to go to a Job Giver-only page
+        // Attempt to go to a Client-only page
         const unauthorizedPage = '/dashboard/post-job';
         await page.goto(unauthorizedPage);
 
@@ -49,7 +49,7 @@ test.describe('Role Based Redirects', () => {
     // Test Case 3: Public Page access (should not redirect if already logged in unless it's login page)
     test('Logged in user redirected from /login to dashboard', async ({ page }) => {
         const helper = new TestHelper(page);
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
 
         // Try to go back to login
         await page.goto('/login');
@@ -59,3 +59,5 @@ test.describe('Role Based Redirects', () => {
     });
 
 });
+
+

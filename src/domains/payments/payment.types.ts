@@ -14,14 +14,14 @@ export interface Transaction {
     id: string;
     jobId: string;
     jobTitle: string;
-    payerId: string; // Job Giver
-    payeeId: string; // Installer
+    payerId: string; // Client
+    payeeId: string; // Professional
     amount: number;
     travelTip?: number;
-    commission: number; // Platform fee from installer
-    jobGiverFee: number; // Fee charged to job giver
-    totalPaidByGiver: number; // amount + jobGiverFee + travelTip
-    payoutToInstaller: number; // amount - commission + travelTip
+    commission: number; // Platform fee from Professional
+    clientFee: number; // Fee charged to client
+    totalPaidByClient: number; // amount + clientFee + travelTip
+    payoutToProfessional: number; // amount - commission + travelTip
     status: PaymentStatus;
     paymentGatewayOrderId?: string;
     paymentGatewaySessionId?: string;
@@ -52,3 +52,4 @@ export interface PaymentVerification {
     orderId: string;
     status: 'success' | 'failed';
 }
+

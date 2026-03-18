@@ -1,8 +1,8 @@
-# Guide to Invoicing & GST on CCTV Job Connect
+# Guide to Invoicing & GST on Team4Job
 
 This guide explains how invoices are generated on the platform, especially concerning Goods and Services Tax (GST). It is crucial for both Job Givers and Installers to understand these details for proper accounting and tax compliance.
 
-**Disclaimer:** CCTV Job Connect is a marketplace facilitator. We provide the tools to generate compliant invoices based on the data provided. However, the ultimate responsibility for collecting and remitting the correct GST to the government lies with the **Installer** (the service provider) for their services, and with the **Platform** for its commission fees.
+**Disclaimer:** Team4Job is a marketplace facilitator. We provide the tools to generate compliant invoices based on the data provided. However, the ultimate responsibility for collecting and remitting the correct GST to the government lies with the **Installer** (the service provider) for their services, and with the **Platform** for its commission fees.
 
 ---
 
@@ -83,7 +83,7 @@ The platform provides its services to *both* the Job Giver and the Installer. Th
 
 #### **Invoice 2: From Platform to Installer**
 
-*   **Who issues it?** **CCTV Job Connect** (The Platform).
+*   **Who issues it?** **Team4Job** (The Platform).
 *   **Who receives it?** The **Installer**.
 *   **What's on it?** The commission fee for finding the job.
 
@@ -97,7 +97,7 @@ The platform provides its services to *both* the Job Giver and the Installer. Th
 
 #### **Invoice 3: From Platform to Job Giver**
 
-*   **Who issues it?** **CCTV Job Connect** (The Platform).
+*   **Who issues it?** **Team4Job** (The Platform).
 *   **Who receives it?** The **Job Giver**.
 *   **What's on it?** The platform fee for using the marketplace.
 

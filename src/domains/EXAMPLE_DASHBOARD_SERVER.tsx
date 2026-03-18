@@ -6,10 +6,10 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 /**
- * Job Giver Dashboard - Server Component
+ * Client Dashboard - Server Component
  * ✅ Uses domain service for data fetching
  */
-export default async function JobGiverDashboard() {
+export default async function ClientDashboard() {
     // Get current user from session
     const cookieStore = cookies();
     const userId = await getUserIdFromSession(cookieStore);
@@ -20,8 +20,8 @@ export default async function JobGiverDashboard() {
 
     // ✅ CORRECT: Server component calls service directly
     const [jobs, stats] = await Promise.all([
-        jobService.listJobsForJobGiver(userId),
-        jobService.getStatsForJobGiver(userId),
+        jobService.listJobsForClient(userId),
+        jobService.getStatsForClient(userId),
     ]);
 
     return (
@@ -102,3 +102,6 @@ async function getUserIdFromSession(cookieStore: any): Promise<string | null> {
  * - ✅ Business logic in service layer
  * - ✅ Easy to test
  */
+
+
+

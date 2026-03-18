@@ -111,14 +111,14 @@ export function FilterFormFields({
                 />
             </div>
 
-            {/* Installer */}
+            {/* Professional */}
             <div className="space-y-2">
-                <Label htmlFor="filter-installer">Installer Name</Label>
+                <Label htmlFor="filter-professional">Professional Name</Label>
                 <Input
-                    id="filter-installer"
-                    placeholder="Search by installer..."
-                    value={localFilters.installer || ""}
-                    onChange={(e) => handleFilterUpdate("installer", e.target.value)}
+                    id="filter-professional"
+                    placeholder="Search by Professional..."
+                    value={localFilters.professional || ""}
+                    onChange={(e) => handleFilterUpdate("professional", e.target.value)}
                     className="h-12 md:h-10 text-base md:text-sm"
                 />
             </div>

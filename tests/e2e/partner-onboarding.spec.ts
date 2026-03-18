@@ -6,25 +6,25 @@ import * as fs from 'fs';
 
 /**
  * E2E Test: Partner Onboarding
- * Verifies the complete onboarding wizard for installers.
+ * Verifies the complete onboarding wizard for Professionals.
  */
 
 test.describe('Partner Onboarding Flow', () => {
     test('Complete onboarding wizard successfully', async ({ page }) => {
         const helper = new TestHelper(page);
 
-        // 1. Setup: Reset installer onboarding state via script
-        await execSync('npx tsx scripts/reset-installer-onboarding.ts', { stdio: 'inherit' });
+        // 1. Setup: Reset Professional onboarding state via script
+        await execSync('npx tsx scripts/reset-Professional-onboarding.ts', { stdio: 'inherit' });
 
         // 2. Navigation: Login and go to onboarding
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await page.goto('/dashboard/onboarding');
 
         // 3. Step 1: Basic Info
         await page.locator('#firstName').clear();
         await page.locator('#firstName').fill('Pro');
         await page.locator('#lastName').clear();
-        await page.locator('#lastName').fill('Installer');
+        await page.locator('#lastName').fill('Professional');
         await page.locator('#shopName').clear();
         await page.locator('#shopName').fill('Pro CCTV Solutions');
         await page.locator('#city').clear();
@@ -68,3 +68,4 @@ test.describe('Partner Onboarding Flow', () => {
         await expect(page.locator('text=Application Submitted!')).toBeVisible({ timeout: 20000 });
     });
 });
+

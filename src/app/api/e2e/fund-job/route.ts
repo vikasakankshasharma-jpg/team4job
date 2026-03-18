@@ -50,11 +50,11 @@ export async function POST(req: NextRequest) {
             jobId,
             jobTitle: job?.title || 'Unknown',
             payerId:
-                job?.jobGiverId || (job?.jobGiver ? (job.jobGiver as any).id : 'UNKNOWN'),
+                job?.clientId || (job?.client ? (job.client as any).id : 'UNKNOWN'),
             payeeId:
-                job?.awardedInstallerId ||
-                (job?.awardedInstaller
-                    ? (job.awardedInstaller as any).id
+                job?.awardedProfessionalId ||
+                (job?.awardedProfessional
+                    ? (job.awardedProfessional as any).id
                     : 'ESCROW_HOLD'),
             amount: 1000,
             status: 'funded',
@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
             fundedAt: Timestamp.now(),
             paymentGatewayOrderId: `TEST_ORDER_${Date.now()}`,
             paymentGatewaySessionId: `TEST_SESSION_${Date.now()}`,
-            totalPaidByGiver: 2360,
-            payoutToInstaller: 2000,
+            totalPaidByClient: 2360,
+            payoutToProfessional: 2000,
             platformFee: 360,
         };
 
@@ -86,3 +86,4 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
+

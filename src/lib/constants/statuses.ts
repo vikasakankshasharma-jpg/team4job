@@ -36,10 +36,10 @@ export const DISPUTE_STATUS = {
 } as const;
 
 export const USER_ROLES = {
-    ADMIN: 'Admin',
-    INSTALLER: 'Installer',
-    JOB_GIVER: 'Job Giver',
-    SUPPORT_TEAM: 'Support Team'
+    admin: 'Admin',
+    professional: 'Professional',
+    client: 'Client',
+    supportTeam: 'Support Team'
 } as const;
 
 export const USER_STATUS = {

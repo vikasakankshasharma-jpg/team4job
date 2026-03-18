@@ -145,7 +145,7 @@ function InvoiceContent() {
         );
     }
 
-    const jobGiver = job.jobGiver as User;
+    const client = job.client as User;
 
     // PLATFORM RECEIPT
     if (type === 'platform') {
@@ -157,11 +157,11 @@ function InvoiceContent() {
             );
         }
 
-        const recipientName = jobGiver.name;
-        const recipientAddress = jobGiver.address?.fullAddress || "";
-        const recipientGst = jobGiver.gstin || "";
+        const recipientName = client.name;
+        const recipientAddress = client.address?.fullAddress || "";
+        const recipientGst = client.gstin || "";
         const feeDescription = "Platform Service Fee";
-        const feeAmount = transaction.jobGiverFee || 0;
+        const feeAmount = transaction.clientFee || 0;
         const invoiceNumber = `INV-PLT-${transaction.id?.slice(-6)?.toUpperCase() || 'XXXXXX'}-JG`;
 
         const isInclusive = true;
@@ -258,14 +258,14 @@ function InvoiceContent() {
         );
     }
 
-    const jobGiverName = jobGiver?.name || "Job Giver";
-    const jobGiverAddress = jobGiver?.address?.fullAddress || "";
-    const jobGiverEmail = jobGiver?.email || "";
+    const clientName = client?.name || "Client";
+    const clientAddress = client?.address?.fullAddress || "";
+    const clientEmail = client?.email || "";
 
-    const installer = job.awardedInstaller as User;
-    const installerName = installer?.name || "Installer";
-    const installerAddress = installer?.address?.fullAddress || "";
-    const installerEmail = installer?.email || "";
+    const professional = job.awardedProfessional as User;
+    const professionalName = professional?.name || "Professional";
+    const professionalAddress = professional?.address?.fullAddress || "";
+    const professionalEmail = professional?.email || "";
 
     const invoiceNumber = `INV-SVC-${transaction.id?.slice(-6)?.toUpperCase() || 'XXXXXX'}-JG`;
     const serviceAmount = transaction.amount || 0;
@@ -279,19 +279,19 @@ function InvoiceContent() {
 
             <div className="grid sm:grid-cols-2 gap-8 mb-8">
                 <div>
-                    <h3 className="font-semibold mb-2">Billed To (Job Giver):</h3>
+                    <h3 className="font-semibold mb-2">Billed To (Client):</h3>
                     <div className="text-sm text-muted-foreground">
-                        <p className="font-bold text-foreground">{jobGiverName}</p>
-                        <p>{jobGiverAddress}</p>
-                        <p>{jobGiverEmail}</p>
+                        <p className="font-bold text-foreground">{clientName}</p>
+                        <p>{clientAddress}</p>
+                        <p>{clientEmail}</p>
                     </div>
                 </div>
                 <div className="sm:text-right">
-                    <h3 className="font-semibold mb-2">Payable To (Installer):</h3>
+                    <h3 className="font-semibold mb-2">Payable To (Professional):</h3>
                     <div className="text-sm text-muted-foreground">
-                        <p className="font-bold text-foreground">{installerName}</p>
-                        <p>{installerAddress}</p>
-                        <p>{installerEmail}</p>
+                        <p className="font-bold text-foreground">{professionalName}</p>
+                        <p>{professionalAddress}</p>
+                        <p>{professionalEmail}</p>
                     </div>
                     <div className="mt-4">
                         <p className="text-xs text-muted-foreground font-semibold">#{invoiceNumber}</p>

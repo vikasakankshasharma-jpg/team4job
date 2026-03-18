@@ -7,23 +7,23 @@ import { TEST_ACCOUNTS } from '../fixtures/test-data';
  */
 
 test.describe('Smoke Tests @smoke', () => {
-    test('User can login as Job Giver', async ({ page }) => {
+    test('User can login as Client', async ({ page }) => {
         const helper = new TestHelper(page);
 
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
         await expect(page).toHaveURL(/\/dashboard/);
         
-        // Verify we're on dashboard - look for Job Giver-specific navigation
+        // Verify we're on dashboard - look for Client-specific navigation
         await expect(page.getByText('Post Job').or(page.getByText('Active Jobs')).first()).toBeVisible({ timeout: 90000 });
     });
 
-    test('User can login as Installer', async ({ page }) => {
+    test('User can login as Professional', async ({ page }) => {
         const helper = new TestHelper(page);
 
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await expect(page).toHaveURL(/\/dashboard/);
         
-        // Verify we're on dashboard - look for Installer-specific navigation
+        // Verify we're on dashboard - look for Professional-specific navigation
         await expect(page.getByText('Browse Jobs').or(page.getByText('Open Jobs')).first()).toBeVisible({ timeout: 90000 });
     });
 
@@ -37,23 +37,23 @@ test.describe('Smoke Tests @smoke', () => {
         await expect(page.getByTestId('nav-link-auditLog')).toBeVisible({ timeout: 90000 });
     });
 
-    test('Job Giver can access Post Job page', async ({ page }) => {
+    test('Client can access Post Job page', async ({ page }) => {
         const helper = new TestHelper(page);
 
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
         await helper.nav.goToPostJob();
 
-        await expect(page).toHaveURL(/\/post-job/);
+        await expect(page).toHaveURL(/\/wizard/);
         
-        // Verify form elements using stable selectors
-        await expect(page.getByTestId('job-title-input')).toBeVisible();
-        await expect(page.getByTestId('job-description-input')).toBeVisible();
+        // Verify wizard starts with category selection
+        await expect(page.getByText('What do you need help with?')).toBeVisible();
+        await expect(page.locator('[data-testid*="-category-card"]').first()).toBeVisible();
     });
 
-    test('Installer can access Browse Jobs page', async ({ page }) => {
+    test('Professional can access Browse Jobs page', async ({ page }) => {
         const helper = new TestHelper(page);
 
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await helper.nav.goToBrowseJobs();
 
         await expect(page).toHaveURL(/\/jobs/);
@@ -115,3 +115,5 @@ test.describe('Smoke Tests @smoke', () => {
         expect(criticalErrors).toHaveLength(0);
     });
 });
+
+

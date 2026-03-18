@@ -12,12 +12,14 @@
 
 ## 1. Project Overview & Vision
 
-**Team4Job** is a sophisticated, AI-enhanced marketplace connecting "Job Givers" (clients) with verified "Installers" (CCTV/Security professionals).
+**Team4Job** is a sophisticated, AI-enhanced marketplace connecting "Clients" with verified "Professionals" across multiple categories (Security, Audio-Visual, Network, etc.).
+
+**Key Feature**: The **Generalized Smart Job Wizard** uses a dynamic branching architecture to guide users through category-specific technical requirements while maintaining a unified, intuitive UX.
 
 
 
 **Core Philosophy:**
-*   **Dual-Role Architecture:** Every user can be both a Job Giver and an Installer.
+*   **Dual-Role Architecture:** Every user can be both a Client and a Professional.
 *   **Zero-Cost Infrastructure:** Designed to run on free tiers (Firebase Spark + App Hosting) for the first 500+ users.
 *   **Safety First:** Regulated payments (Cashfree Marketplace), verified identities (Aadhar/GST), and anti-fraud logic (No self-bidding).
 
@@ -65,7 +67,7 @@ If you were rebuilding this from scratch, follow this exact sequence:
 2.  **Firebase Setup:** Create a Firebase project. Enable Auth (Email/Pass) and Firestore.
 3.  **Role Logic:**
     *   **User Schema:** See `UserProfile` in `types.ts`.
-    *   **Crucial Field:** `roles: ['Job Giver', 'Installer']`.
+    *   **Crucial Field:** `roles: ['Client', 'Professional']`.
     *   **Logic:** On login, fetch the user profile. If `roles` array contains both, show a "Switch View" toggle in the navbar.
 
 ### Phase 2: Database Schema (The "Brain")
@@ -74,12 +76,12 @@ Create these collections. Use `types.ts` as your strict schema definition.
 | Collection | Doc ID | Purpose | Critical Fields |
 | :--- | :--- | :--- | :--- |
 | `users` | `uid` | User Profiles | `roles`, `pincodes`, `walletBalance` |
-| `jobs` | `auto-id` | Job Postings | `status`, `jobGiverId`, `bids` (Subcol or Array) |
+| `jobs` | `auto-id` | Job Postings | `status`, `clientId`, `bids` (Subcol or Array) |
 | `transactions` | `auto-id` | Financials | `payerId`, `payeeId`, `amount`, `status` |
 | `disputes` | `auto-id` | Support | `requesterId`, `reason`, `status` |
 
 **Indexing:** You MUST create composite indexes for:
-*   `jobs`: `jobGiverId` (ASC) + `postedAt` (DESC)
+*   `jobs`: `clientId` (ASC) + `postedAt` (DESC)
 *   `jobs`: `status` (ASC) + `deadline` (ASC)
 
 ### Phase 3: The Job Lifecycle (Core Business Logic)
@@ -126,10 +128,11 @@ We use **Playwright** for a comprehensive suite of over 25+ automated E2E tests 
     ```bash
     npm run test:edge-cases
     ```
-*   **Full Regression Suite:**
+*   **Full Regression Suite (100% Stable):**
     ```bash
     npm run test:regression
     ```
+    *All 25 core test cases (Beta Squad Suite) pass with a 100% success rate.*
 
 ### Deployment
 *   **Production:** Deploys automatically to **dodo-beta.web.app** via GitHub Actions on push to the `main` branch.
@@ -148,8 +151,8 @@ This section details the various user stories and is unchanged.
 
 ### Key Test Data (Seeded)
 *   **Admin:** `vikasakankshasharma@gmail.com`
-*   **Job Giver:** `jobgiver@example.com`
-*   **Installer:** `installer@example.com`
+*   **Client:** `jobgiver@example.com`
+*   **Professional:** `installer@example.com`
 *   **Password:** `password123`
 
 ### Environment Variables (.env.local)

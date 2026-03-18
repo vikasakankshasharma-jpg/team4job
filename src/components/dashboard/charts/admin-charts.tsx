@@ -66,8 +66,8 @@ export function AdminUserGrowthChart({ data }: { data: any[] }) {
                         <YAxis />
                         <Tooltip />
                         <Legend />
-                        <Bar dataKey="Installers" stackId="a" fill="hsl(var(--primary))" />
-                        <Bar dataKey="Job Givers" stackId="a" fill="hsl(var(--secondary))" />
+                        <Bar dataKey="Professionals" stackId="a" fill="hsl(var(--primary))" />
+                        <Bar dataKey="Clients" stackId="a" fill="hsl(var(--secondary))" />
                     </BarChart>
                 </ResponsiveContainer>
             </CardContent>

@@ -30,7 +30,7 @@ export function useMyJobs(initialData?: Job[]): UseMyJobsReturn {
     }, [jobs]);
 
     const fetchJobs = useCallback(async (isLoadMore = false) => {
-        if (!user || role !== 'Job Giver') {
+        if (!user || role !== 'Client') {
             setLoading(false);
             return;
         }
@@ -43,7 +43,7 @@ export function useMyJobs(initialData?: Job[]): UseMyJobsReturn {
         setError(null);
 
         try {
-            const { listJobsForJobGiverAction } = await import('@/app/actions/job.actions');
+            const { listJobsForClientAction } = await import('@/app/actions/job.actions');
 
             // Calculate cursor using ref
             let lastPostedAt: string | undefined = undefined;
@@ -56,7 +56,7 @@ export function useMyJobs(initialData?: Job[]): UseMyJobsReturn {
                 }
             }
 
-            const res = await listJobsForJobGiverAction(user.id, 50, lastPostedAt);
+            const res = await listJobsForClientAction(user.id, 50, lastPostedAt);
 
             if (!res.success || !res.data) {
                 throw new Error(res.error || 'Failed to fetch jobs');
@@ -103,3 +103,6 @@ export function useMyJobs(initialData?: Job[]): UseMyJobsReturn {
 
     return { jobs, loading, error, refetch: () => fetchJobs(false), loadMore: () => fetchJobs(true), hasMore, loadMoreLoading };
 }
+
+
+

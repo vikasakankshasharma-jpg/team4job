@@ -5,7 +5,7 @@
 
 ## 🌟 Highlights
 
-Welcome to the first production release of **Team4Job** (formerly CCTV Job Connect). This platform revolutionizes the connection between Job Givers and Installers with AI-powered matching, secure escrow payments, and comprehensive role-based management.
+Welcome to the first production release of **Team4Job** (formerly Team4Job). This platform revolutionizes the connection between Job Givers and Installers with AI-powered matching, secure escrow payments, and comprehensive role-based management.
 
 ## 🆕 Key Features
 

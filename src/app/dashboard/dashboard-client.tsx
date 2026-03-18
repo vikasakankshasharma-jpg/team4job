@@ -14,21 +14,21 @@ const SupportTeamDashboard = dynamic(() => import("@/components/dashboard/suppor
   loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />,
   ssr: false
 });
-const InstallerDashboard = dynamic(() => import("@/domains/jobs").then(mod => mod.InstallerDashboard), {
+const ProfessionalDashboard = dynamic(() => import("@/domains/jobs").then(mod => mod.ProfessionalDashboard), {
   loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />,
   ssr: false
 });
-const JobGiverDashboard = dynamic(() => import("@/domains/jobs").then(mod => mod.JobGiverDashboard), {
+const ClientDashboard = dynamic(() => import("@/domains/jobs").then(mod => mod.ClientDashboard), {
   loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />,
   ssr: false
 });
 
-import { JobGiverStats, InstallerStats } from "@/domains/jobs/job.types";
+import { ClientStats, ProfessionalStats } from "@/domains/jobs/job.types";
 import { Transaction } from "@/lib/types";
 
 interface DashboardData {
-  jobGiverStats?: JobGiverStats;
-  installerStats?: InstallerStats;
+  ClientStats?: ClientStats;
+  ProfessionalStats?: ProfessionalStats;
   transactions: Transaction[];
   quickMetrics?: any; // Strictly type this if sharing types, for now any matching the Metrics component
 }
@@ -53,18 +53,18 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
         return <AdminDashboardView />;
       case "Support Team":
         return <SupportTeamDashboard />;
-      case "Installer":
+      case "Professional":
         return (
-          <InstallerDashboard
-            stats={initialData?.installerStats || { openJobs: 0, myBids: 0, jobsWon: 0, projectedEarnings: 0, totalEarnings: 0, activeJobs: 0, completedJobs: 0 }}
+          <ProfessionalDashboard
+            stats={initialData?.ProfessionalStats || { openJobs: 0, myBids: 0, jobsWon: 0, projectedEarnings: 0, totalEarnings: 0, activeJobs: 0, completedJobs: 0 }}
             transactions={initialData?.transactions || []}
             loading={!initialData}
           />
         );
-      case "Job Giver":
+      case "Client":
         return (
-          <JobGiverDashboard
-            stats={initialData?.jobGiverStats || { activeJobs: 0, completedJobs: 0, cancelledJobs: 0, totalBids: 0, openDisputes: 0 }}
+          <ClientDashboard
+            stats={initialData?.ClientStats || { activeJobs: 0, completedJobs: 0, cancelledJobs: 0, totalBids: 0, openDisputes: 0 }}
             transactions={initialData?.transactions || []}
             loading={!initialData}
             quickMetrics={initialData?.quickMetrics}
@@ -72,8 +72,8 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
         );
       default:
         return (
-          <JobGiverDashboard
-            stats={initialData?.jobGiverStats || { activeJobs: 0, completedJobs: 0, cancelledJobs: 0, totalBids: 0, openDisputes: 0 }}
+          <ClientDashboard
+            stats={initialData?.ClientStats || { activeJobs: 0, completedJobs: 0, cancelledJobs: 0, totalBids: 0, openDisputes: 0 }}
             transactions={initialData?.transactions || []}
             loading={!initialData}
             quickMetrics={initialData?.quickMetrics}
@@ -88,3 +88,6 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
     </>
   );
 }
+
+
+

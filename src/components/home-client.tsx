@@ -61,60 +61,85 @@ export default function HomeClient() {
 
     return (
         <div className="flex flex-col min-h-screen bg-background">
-            <header className="container mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Link href="/" className="flex items-center gap-2">
-                        <Logo className="h-8 w-8 text-primary" />
-                        <span className="text-xl font-bold">Team4Job</span>
-                    </Link>
-                </div>
+            <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+                            <Logo className="h-9 w-9 text-primary" />
+                            <span className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">Team4Job</span>
+                        </Link>
+                    </div>
 
-                <nav className="flex items-center gap-2 sm:gap-4">
-                    <LanguageToggle />
-                    <ThemeToggle />
-                    <Button variant="ghost" asChild className="sm:hidden px-2" onClick={() => trackFunnelEvent('cta_click', { source: 'header_login_mobile' })}>
-                        <Link href="/login?tab=login">{t('loginButton')}</Link>
-                    </Button>
-                    <Button variant="secondary" asChild className="hidden sm:inline-flex" onClick={() => trackFunnelEvent('cta_click', { source: 'header_login_desktop' })}>
-                        <Link href="/login?tab=login">{t('loginButton')}</Link>
-                    </Button>
-                    <Button asChild className="px-3 sm:px-4" onClick={() => trackFunnelEvent('cta_click', { source: 'header_signup' })}>
-                        <Link href="/login?tab=signup">{t('getStartedButton')}</Link>
-                    </Button>
-                </nav>
+                    <nav className="flex items-center gap-3 sm:gap-6">
+                        <div className="flex items-center gap-4 border-r pr-6 mr-2 hidden lg:flex">
+                            <LanguageToggle />
+                            <ThemeToggle />
+                        </div>
+                        <Button variant="ghost" asChild className="hidden sm:inline-flex text-base font-medium" onClick={() => trackFunnelEvent('cta_click', { source: 'header_login_desktop' })}>
+                            <Link href="/login?tab=login">{t('loginButton')}</Link>
+                        </Button>
+                        <Button asChild className="px-6 h-11 text-base font-semibold shadow-md hover:shadow-lg transition-all rounded-full" onClick={() => trackFunnelEvent('cta_click', { source: 'header_signup' })}>
+                            <Link href="/login?tab=signup">{t('getStartedButton')}</Link>
+                        </Button>
+                        <div className="lg:hidden flex items-center gap-2">
+                             <LanguageToggle />
+                             <ThemeToggle />
+                        </div>
+                    </nav>
+                </div>
             </header>
 
             <main id="main-content" className="flex-grow">
-                <section className="py-20 md:py-32">
-                    <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                        <Badge variant="outline" className="text-sm py-1 px-4 border-primary/50 text-primary mb-6">
-                            {t('tagline')}
-                        </Badge>
-                        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter mb-6">
+                <section className="py-24 md:py-40 overflow-hidden relative">
+                    {/* Background decoration */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 opacity-40 pointer-events-none">
+                        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/10 blur-[140px] rounded-full" />
+                        <div className="absolute top-[10%] right-[-10%] w-[40%] h-[60%] bg-blue-500/10 blur-[140px] rounded-full" />
+                    </div>
+
+                    <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+                        <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-6 py-2 text-sm font-medium text-primary mb-10 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                             <span className="mr-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
+                             {t('tagline')}
+                        </div>
+                        
+                        <h1 className="text-6xl md:text-8xl font-black tracking-tight mb-8 text-balance leading-[1.1]">
                             {t('hero')}
                         </h1>
-                        <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground mb-10">
+                        
+                        <p className="max-w-3xl mx-auto text-xl md:text-2xl text-muted-foreground/80 mb-14 text-balance leading-relaxed font-medium">
                             {t('heroDescription')}
                         </p>
-                        <div className="flex flex-col sm:flex-row justify-center gap-4">
-                            <Button size="lg" asChild onClick={() => trackFunnelEvent('cta_click', { source: 'hero_primary' })}>
-                                <Link href="/login?tab=signup">
-                                    {t('postJobButton')} <ArrowRight className="ml-2 h-5 w-5" />
+                        
+                        <div className="flex flex-col sm:flex-row justify-center gap-5 mb-24">
+                            <Button size="lg" asChild className="h-16 px-10 text-xl font-bold rounded-xl shadow-blue-500/20 shadow-2xl hover:translate-y-[-2px] transition-all group" onClick={() => trackFunnelEvent('cta_click', { source: 'hero_primary' })}>
+                                <Link href="/login?tab=signup" className="flex items-center">
+                                    {t('postJobButton')} <ArrowRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                                 </Link>
                             </Button>
-                            <Button size="lg" variant="secondary" asChild onClick={() => trackFunnelEvent('cta_click', { source: 'hero_secondary' })}>
+                            <Button size="lg" variant="secondary" asChild className="h-16 px-10 text-xl font-bold rounded-xl bg-secondary/50 backdrop-blur-sm hover:bg-secondary/80 transition-all" onClick={() => trackFunnelEvent('cta_click', { source: 'hero_secondary' })}>
                                 <Link href="/login?tab=signup">{t('findWorkButton')}</Link>
                             </Button>
                         </div>
-                        <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-4xl mx-auto">
-                            <div className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
-                                <Bot className="h-5 w-5 text-primary" /> AI-Powered Matchmaking
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 max-w-5xl mx-auto border-t border-border/50 pt-16">
+                            <div className="flex items-center justify-center gap-3 text-base font-semibold text-foreground/80">
+                                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                                    <Bot className="h-6 w-6" />
+                                </div>
+                                {t('feature1Title')}
                             </div>
-                            <div className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
-                                <ShieldCheck className="h-5 w-5 text-primary" /> Verified Professionals
+                            <div className="flex items-center justify-center gap-3 text-base font-semibold text-foreground/80">
+                                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                                    <ShieldCheck className="h-6 w-6" />
+                                </div>
+                                {t('feature2Title')}
                             </div>
-                            <div className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
-                                <CreditCard className="h-5 w-5 text-primary" /> Secure Escrow System
+                            <div className="flex items-center justify-center gap-3 text-base font-semibold text-foreground/80">
+                                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                                    <CreditCard className="h-6 w-6" />
+                                </div>
+                                {t('feature3Title')}
                             </div>
                         </div>
                     </div>

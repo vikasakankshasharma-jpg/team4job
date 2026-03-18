@@ -3,7 +3,7 @@
 import { jobRepository } from './job.repository';
 import { bidRepository } from '../bids/bid.repository';
 import { jobRules } from './job.rules';
-import { Job, JobStatus, CreateJobInput, JobFilters, JobStats, InstallerStats } from './job.types'; // Updated imports
+import { Job, JobStatus, CreateJobInput, JobFilters, JobStats, ProfessionalStats } from './job.types'; // Updated imports
 
 import { Role, User } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -24,7 +24,7 @@ export class JobService {
     async createJob(userId: string, userRole: Role, data: CreateJobInput): Promise<string> {
         // Validate user can create job
         if (!jobRules.canCreateJob(userRole)) {
-            throw new Error('Only Job Givers can create jobs');
+            throw new Error('Only Clients can create jobs');
         }
 
         // Validate job data
@@ -37,7 +37,7 @@ export class JobService {
             // Prepare job document
             const job: Partial<Job> = {
                 ...data,
-                jobGiverId: userId,
+                clientId: userId,
                 status: 'open',
                 bids: [],
                 comments: [],
@@ -47,7 +47,7 @@ export class JobService {
 
             const jobId = await jobRepository.create(job);
 
-            // Increment Job Giver stats
+            // Increment Client stats
             userRepository.incrementStats(userId, { activeJobs: 1 }).catch(e => { /* Failed to increment activeJobs */ });
 
             // AI Learning Linkage (Async, don't block)
@@ -70,7 +70,7 @@ export class JobService {
         }
 
         // Verify ownership
-        if (userRole !== 'Admin' && job.jobGiverId !== userId) {
+        if (userRole !== 'Admin' && job.clientId !== userId) {
             throw new Error('Not authorized to post this job');
         }
 
@@ -83,37 +83,37 @@ export class JobService {
     }
 
     /**
-     * Get jobs for job giver dashboard
+     * Get jobs for client dashboard
      */
-    async listJobsForJobGiver(userId: string, limit = 50, lastPostedAt?: Date): Promise<Job[]> {
+    async listJobsForClient(userId: string, limit = 50, lastPostedAt?: Date): Promise<Job[]> {
         try {
-            return await jobRepository.fetchByJobGiver(userId, limit);
+            return await jobRepository.fetchByClient(userId, limit);
         } catch (error) {
             throw error;
         }
     }
 
     /**
-     * Get bids placed by a specific installer across all jobs
+     * Get bids placed by a specific Professional across all jobs
      */
-    async getBidsByInstaller(userId: string): Promise<any[]> {
-        const jobs = await jobRepository.fetchByInstaller(userId);
+    async getBidsByProfessional(userId: string): Promise<any[]> {
+        const jobs = await jobRepository.fetchByProfessional(userId);
         const userBids: any[] = [];
 
         jobs.forEach(job => {
             const bids = (job as any).bids || [];
             bids.forEach((bid: any) => {
-                const installerId = typeof bid.installer === 'string'
-                    ? bid.installer
-                    : bid.installer?.id || bid.installerId;
+                const professionalId = typeof bid.professional === 'string'
+                    ? bid.professional
+                    : bid.professional?.id || bid.professionalId;
 
-                if (installerId === userId) {
+                if (professionalId === userId) {
                     userBids.push({
                         ...bid,
                         jobId: job.id,
                         jobTitle: job.title,
                         jobStatus: job.status,
-                        jobGiverId: job.jobGiverId,
+                        clientId: job.clientId,
                         job: job
                     });
                 }
@@ -124,7 +124,7 @@ export class JobService {
     }
 
     /**
-     * Get open jobs for browsing (installer view)
+     * Get open jobs for browsing (Professional view)
      */
     async listOpenJobs(filters?: JobFilters, limit = 50, lastPostedAt?: Date): Promise<Job[]> {
         try {
@@ -135,11 +135,11 @@ export class JobService {
     }
 
     /**
-     * Get jobs for installer (bids + awarded jobs)
+     * Get jobs for Professional (bids + awarded jobs)
      */
-    async listJobsForInstaller(installerId: string): Promise<Job[]> {
+    async listJobsForProfessional(professionalId: string): Promise<Job[]> {
         try {
-            return await jobRepository.fetchByInstaller(installerId);
+            return await jobRepository.fetchByProfessional(professionalId);
         } catch (error) {
             throw error;
         }
@@ -156,9 +156,9 @@ export class JobService {
 
         // Check visibility permissions
         const isPublic = ['open', 'Open for Bidding'].includes(job.status);
-        const ownerId = job.jobGiverId || (typeof job.jobGiver === 'string' ? job.jobGiver : job.jobGiver?.id);
+        const ownerId = job.clientId || (typeof job.client === 'string' ? job.client : job.client?.id);
         const isOwner = ownerId === userId;
-        const isAwardee = job.awardedInstallerId === userId;
+        const isAwardee = job.awardedProfessionalId === userId;
         const isAdmin = userRole === 'Admin' || userRole === 'Support Team';
         const isBidder = job.bidderIds?.includes(userId);
 
@@ -180,10 +180,10 @@ export class JobService {
             throw new Error('Job not found');
         }
 
-        const ownerId = job.jobGiverId || (typeof job.jobGiver === 'string' ? job.jobGiver : job.jobGiver?.id);
+        const ownerId = job.clientId || (typeof job.client === 'string' ? job.client : job.client?.id);
         const isOwner = ownerId === userId;
-        // Use awardedInstallerId specific field first
-        const awardedId = job.awardedInstallerId || (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : job.awardedInstaller?.id);
+        // Use awardedProfessionalId specific field first
+        const awardedId = job.awardedProfessionalId || (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : job.awardedProfessional?.id);
         const isAwarded = awardedId === userId;
 
         if (!isOwner && !isAwarded) {
@@ -194,40 +194,40 @@ export class JobService {
     }
 
     /**
-     * Award a job to an installer
+     * Award a job to an Professional
      */
-    async awardJob(jobId: string, userId: string, installerId: string, acceptanceDeadline: Date): Promise<void> {
+    async awardJob(jobId: string, userId: string, professionalId: string, acceptanceDeadline: Date): Promise<void> {
         const job = await jobRepository.fetchById(jobId);
         if (!job) throw new Error('Job not found');
 
-        const ownerId = job.jobGiverId || (typeof job.jobGiver === 'string' ? job.jobGiver : job.jobGiver?.id);
+        const ownerId = job.clientId || (typeof job.client === 'string' ? job.client : job.client?.id);
         if (ownerId !== userId) throw new Error('Unauthorized: Only job owner can award job');
 
         if (job.status !== 'open' && job.status !== 'Open for Bidding') {
             throw new Error(`Job is not available for awarding (Status: ${job.status})`);
         }
 
-        if (!installerId) {
-            throw new Error('Installer ID is required to award job');
+        if (!professionalId) {
+            throw new Error('Professional ID is required to award job');
         }
 
         const updates: Partial<Job> = {
             status: 'bid_accepted',
-            awardedInstallerId: installerId,
+            awardedProfessionalId: professionalId,
             acceptanceDeadline: acceptanceDeadline,
         };
 
         await jobRepository.update(jobId, updates);
 
-        // Increment Installer stats (Awarded/Won)
-        userRepository.incrementStats(installerId, { jobsWon: 1 }).catch(e => { /* Failed to increment jobsWon */ });
+        // Increment Professional stats (Awarded/Won)
+        userRepository.incrementStats(professionalId, { jobsWon: 1 }).catch(e => { /* Failed to increment jobsWon */ });
 
         // Send Job Awarded Email
-        userRepository.fetchById(installerId).then(installer => {
-            if (installer) {
+        userRepository.fetchById(professionalId).then(Professional => {
+            if (Professional) {
                 emailService.sendJobAwardedEmail({
-                    to: installer.email,
-                    userName: installer.name,
+                    to: Professional.email,
+                    userName: Professional.name,
                     jobTitle: job.title,
                     jobLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:5000'}/dashboard/jobs/${jobId}`
                 });
@@ -245,9 +245,9 @@ export class JobService {
         const bids = await bidRepository.fetchByJob(jobId);
 
         // Filter bids based on visibility rules
-        // Job Giver sees all bids
+        // Client sees all bids
         // Admin sees all bids
-        // Installer sees only their own bid? Or open bidding platform?
+        // Professional sees only their own bid? Or open bidding platform?
         // Assuming open bidding for now or restricted visibility
 
         return bids || [];
@@ -264,7 +264,7 @@ export class JobService {
         }
 
         // Validate permissions
-        if (!jobRules.canAcceptBid(job.status, userId, job.jobGiverId, userRole)) {
+        if (!jobRules.canAcceptBid(job.status, userId, job.clientId, userRole)) {
             throw new Error('Cannot accept bid - check job status and permissions');
         }
 
@@ -274,33 +274,33 @@ export class JobService {
             throw new Error('Bid not found');
         }
 
-        // Extract installer ID
-        const installerId = typeof bid.installer === 'string'
-            ? bid.installer
-            : (bid.installer as any).id || bid.installerId;
+        // Extract Professional ID
+        const professionalId = typeof bid.professional === 'string'
+            ? bid.professional
+            : (bid.professional as any).id || bid.professionalId;
 
         // Update job
         await jobRepository.update(jobId, {
-            awardedInstallerId: installerId,
-            awardedInstaller: bid.installer,
+            awardedProfessionalId: professionalId,
+            awardedProfessional: bid.professional,
         });
 
         await jobRepository.updateStatus(
             jobId,
             'Awarded',
             userId,
-            `Accepted bid from ${installerId}`
+            `Accepted bid from ${professionalId}`
         );
 
-        // Increment Installer stats (Awarded/Won)
-        userRepository.incrementStats(installerId, { jobsWon: 1 }).catch(e => { /* Failed to increment jobsWon */ });
+        // Increment Professional stats (Awarded/Won)
+        userRepository.incrementStats(professionalId, { jobsWon: 1 }).catch(e => { /* Failed to increment jobsWon */ });
 
         // Send Job Awarded Email
-        userRepository.fetchById(installerId).then(installer => {
-            if (installer) {
+        userRepository.fetchById(professionalId).then(Professional => {
+            if (Professional) {
                 emailService.sendJobAwardedEmail({
-                    to: installer.email,
-                    userName: installer.name,
+                    to: Professional.email,
+                    userName: Professional.name,
                     jobTitle: job.title,
                     jobLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:5000'}/dashboard/jobs/${jobId}`
                 });
@@ -309,7 +309,7 @@ export class JobService {
     }
 
     /**
-     * Accept a job assignment (Installer accepts the award)
+     * Accept a job assignment (Professional accepts the award)
      */
     async acceptJobAssignment(jobId: string, userId: string): Promise<void> {
         const job = await jobRepository.fetchById(jobId);
@@ -321,8 +321,8 @@ export class JobService {
             throw new Error(`Job is not available for acceptance (Status: ${job.status})`);
         }
 
-        const awardedId = job.awardedInstallerId || (
-            typeof job.awardedInstaller === 'string' ? job.awardedInstaller : job.awardedInstaller?.id
+        const awardedId = job.awardedProfessionalId || (
+            typeof job.awardedProfessional === 'string' ? job.awardedProfessional : job.awardedProfessional?.id
         );
 
         if (awardedId !== userId) {
@@ -341,7 +341,7 @@ export class JobService {
             jobId,
             'Pending Funding',
             userId,
-            'Installer accepted job'
+            'Professional accepted job'
         );
     }
 
@@ -354,7 +354,7 @@ export class JobService {
             throw new Error('Job not found');
         }
 
-        if (job.jobGiverId !== userId) {
+        if (job.clientId !== userId) {
             throw new Error('Not authorized to fund this job');
         }
 
@@ -385,7 +385,7 @@ export class JobService {
             throw new Error('Job not found');
         }
 
-        if (!jobRules.canStartWork(job.status, userId, job.awardedInstallerId)) {
+        if (!jobRules.canStartWork(job.status, userId, job.awardedProfessionalId)) {
             throw new Error('Cannot start work - check status and permissions');
         }
 
@@ -410,7 +410,7 @@ export class JobService {
             throw new Error('Job not found');
         }
 
-        if (job.awardedInstallerId !== userId) {
+        if (job.awardedProfessionalId !== userId) {
             throw new Error('Not authorized');
         }
 
@@ -422,11 +422,11 @@ export class JobService {
             workSubmittedAt: new Date(),
         });
 
-        await jobRepository.updateStatus(jobId, 'Pending Confirmation', userId, 'Work submitted by installer');
+        await jobRepository.updateStatus(jobId, 'Pending Confirmation', userId, 'Work submitted by Professional');
     }
 
     /**
-     * Mark job as complete using OTP (Installer flows)
+     * Mark job as complete using OTP (Professional flows)
      */
     async completeJobWithOtp(jobId: string, userId: string, otp: string, attachments: any[] = []): Promise<void> {
         const job = await jobRepository.fetchById(jobId);
@@ -434,7 +434,7 @@ export class JobService {
             throw new Error('Job not found');
         }
 
-        if (job.awardedInstallerId !== userId && (typeof job.awardedInstaller === 'string' ? job.awardedInstaller !== userId : job.awardedInstaller?.id !== userId)) {
+        if (job.awardedProfessionalId !== userId && (typeof job.awardedProfessional === 'string' ? job.awardedProfessional !== userId : job.awardedProfessional?.id !== userId)) {
             throw new Error('Not authorized');
         }
 
@@ -444,8 +444,8 @@ export class JobService {
         }
 
         // Release Funds
-        const installerId = userId;
-        await paymentService.releaseFunds(jobId, installerId);
+        const professionalId = userId;
+        await paymentService.releaseFunds(jobId, professionalId);
 
         // Update Job
         await jobRepository.update(jobId, {
@@ -458,13 +458,13 @@ export class JobService {
         await jobRepository.updateStatus(jobId, 'Completed', userId, 'Job marked complete with OTP');
 
         // Data Aggregation: Update Stats
-        const jobGiverId = job.jobGiverId;
-        userRepository.incrementStats(jobGiverId, { activeJobs: -1, completedJobs: 1 });
+        const clientId = job.clientId;
+        userRepository.incrementStats(clientId, { activeJobs: -1, completedJobs: 1 });
 
-        // Find amount for installer earnings
-        const finalBid = job.bids?.find(b => (typeof b.installer === 'string' ? b.installer : b.installer?.id) === installerId);
+        // Find amount for Professional earnings
+        const finalBid = job.bids?.find(b => (typeof b.professional === 'string' ? b.professional : b.professional?.id) === professionalId);
         const amount = finalBid?.amount || 0;
-        userRepository.incrementStats(installerId, { activeJobs: -1, completedJobs: 1, totalEarnings: amount });
+        userRepository.incrementStats(professionalId, { activeJobs: -1, completedJobs: 1, totalEarnings: amount });
 
 
 
@@ -476,8 +476,8 @@ export class JobService {
             const durationHours = !isNaN(startTime.getTime()) ? (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60) : 0;
 
             const acceptedBid = job.bids.find(b => {
-                const bInstallerId = typeof b.installer === 'string' ? b.installer : (b.installer as any)?.id || b.installerId;
-                return bInstallerId === userId;
+                const bprofessionalId = typeof b.professional === 'string' ? b.professional : (b.professional as any)?.id || b.professionalId;
+                return bprofessionalId === userId;
             });
             const finalPrice = acceptedBid?.amount || 0;
 
@@ -489,18 +489,18 @@ export class JobService {
     }
 
     /**
-     * Approve Job (Job Giver Manually confirms)
+     * Approve Job (Client Manually confirms)
      */
     async approveJob(jobId: string, userId: string): Promise<void> {
         const job = await jobRepository.fetchById(jobId);
         if (!job) throw new Error('Job not found');
 
-        if (job.jobGiverId !== userId) throw new Error('Not authorized');
+        if (job.clientId !== userId) throw new Error('Not authorized');
         if (job.status !== 'Pending Confirmation') throw new Error('Job not ready for approval');
 
         // Release Funds
-        const installerId = job.awardedInstallerId || (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : job.awardedInstaller?.id!);
-        await paymentService.releaseFunds(jobId, installerId);
+        const professionalId = job.awardedProfessionalId || (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : job.awardedProfessional?.id!);
+        await paymentService.releaseFunds(jobId, professionalId);
 
         await jobRepository.update(jobId, {
             status: 'Completed',
@@ -513,9 +513,9 @@ export class JobService {
         // Data Aggregation: Update Stats
         userRepository.incrementStats(userId, { activeJobs: -1, completedJobs: 1 });
 
-        const winningBid = job.bids?.find(b => (typeof b.installer === 'string' ? b.installer : b.installer?.id) === installerId);
+        const winningBid = job.bids?.find(b => (typeof b.professional === 'string' ? b.professional : b.professional?.id) === professionalId);
         const amount = winningBid?.amount || 0;
-        userRepository.incrementStats(installerId, { activeJobs: -1, completedJobs: 1, totalEarnings: amount });
+        userRepository.incrementStats(professionalId, { activeJobs: -1, completedJobs: 1, totalEarnings: amount });
 
 
 
@@ -527,8 +527,8 @@ export class JobService {
             const durationHours = !isNaN(startTime.getTime()) ? (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60) : 0;
 
             const winningBid = job.bids.find(b => {
-                const bInstallerId = typeof b.installer === 'string' ? b.installer : (b.installer as any)?.id || b.installerId;
-                return bInstallerId === job.awardedInstallerId;
+                const bprofessionalId = typeof b.professional === 'string' ? b.professional : (b.professional as any)?.id || b.professionalId;
+                return bprofessionalId === job.awardedProfessionalId;
             });
             const finalPrice = winningBid?.amount || 0;
 
@@ -548,36 +548,36 @@ export class JobService {
             throw new Error('Job not found');
         }
 
-        // Verify authorization (jobGiver or admin)
-        if (job.jobGiverId !== userId && job.awardedInstallerId !== userId) {
+        // Verify authorization (client or admin)
+        if (job.clientId !== userId && job.awardedProfessionalId !== userId) {
             throw new Error('Not authorized to cancel this job');
         }
 
         await jobRepository.update(jobId, {
             cancellationReason: reason,
-            cancellationProposer: job.jobGiverId === userId ? 'Job Giver' : 'Installer',
+            cancellationProposer: job.clientId === userId ? 'Client' : 'Professional',
         });
 
         await jobRepository.updateStatus(jobId, 'Cancelled', userId, reason);
     }
 
     /**
-     * Get job statistics for a job giver
+     * Get job statistics for a client
      */
-    async getStatsForJobGiver(userId: string): Promise<JobStats> {
+    async getStatsForClient(userId: string): Promise<JobStats> {
         try {
-            return await jobRepository.getStatsForJobGiver(userId);
+            return await jobRepository.getStatsForClient(userId);
         } catch (error) {
             throw error;
         }
     }
 
     /**
-     * Get job statistics for an installer
+     * Get job statistics for an Professional
      */
-    async getStatsForInstaller(userId: string): Promise<InstallerStats> {
+    async getStatsForProfessional(userId: string): Promise<ProfessionalStats> {
         try {
-            return await jobRepository.getStatsForInstaller(userId);
+            return await jobRepository.getStatsForProfessional(userId);
         } catch (error) {
             throw error;
         }
@@ -590,7 +590,7 @@ export class JobService {
         const job = await jobRepository.fetchById(jobId);
         if (!job) throw new Error('Job not found');
 
-        if (job.jobGiverId !== userId) {
+        if (job.clientId !== userId) {
             throw new Error('Unauthorized');
         }
 
@@ -614,11 +614,11 @@ export class JobService {
         const job = await jobRepository.fetchById(jobId);
         if (!job) throw new Error('Job not found');
 
-        const isJobGiver = (typeof job.jobGiver === 'string' ? job.jobGiver : job.jobGiver.id) === userId;
-        const installerId = job.awardedInstallerId || (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : job.awardedInstaller?.id);
-        const isInstaller = installerId === userId;
+        const isclient = (typeof job.client === 'string' ? job.client : job.client.id) === userId;
+        const professionalId = job.awardedProfessionalId || (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : job.awardedProfessional?.id);
+        const isProfessional = professionalId === userId;
 
-        if (!isJobGiver && !isInstaller) {
+        if (!isclient && !isProfessional) {
             throw new Error('Unauthorized');
         }
 
@@ -627,7 +627,7 @@ export class JobService {
             await jobRepository.update(jobId, {
                 dateChangeProposal: {
                     newDate: proposedDate,
-                    proposedBy: isJobGiver ? 'Job Giver' : 'Installer',
+                    proposedBy: isclient ? 'Client' : 'Professional',
                     status: 'pending',
                 },
             });
@@ -635,8 +635,8 @@ export class JobService {
             if (!job.dateChangeProposal || job.dateChangeProposal.status !== 'pending') {
                 throw new Error('No pending proposal found');
             }
-            if ((job.dateChangeProposal.proposedBy === 'Job Giver' && isJobGiver) ||
-                (job.dateChangeProposal.proposedBy === 'Installer' && isInstaller)) {
+            if ((job.dateChangeProposal.proposedBy === 'Client' && isclient) ||
+                (job.dateChangeProposal.proposedBy === 'Professional' && isProfessional)) {
                 throw new Error('You cannot accept your own proposal');
             }
             const newDate = (job.dateChangeProposal.newDate as any).toDate ? (job.dateChangeProposal.newDate as any).toDate() : new Date(job.dateChangeProposal.newDate as any);
@@ -662,7 +662,7 @@ export class JobService {
         let count = 0;
         for (const jobId of jobIds) {
             const job = await jobRepository.fetchById(jobId);
-            if (job && job.jobGiverId === userId) {
+            if (job && job.clientId === userId) {
                 if (action === 'archive') {
                     await jobRepository.archive(jobId);
                 } else if (action === 'delete') {
@@ -681,12 +681,12 @@ export class JobService {
         avgBidsPerJob: number;
         avgTimeToFirstBid: string;
         pendingReviews: number;
-        favoriteInstallers: number;
+        favoriteProfessionals: number;
     }> {
         const ninetyDaysAgo = new Date();
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-        const jobs = await jobRepository.fetchByJobGiverSince(userId, ninetyDaysAgo);
+        const jobs = await jobRepository.fetchByClientSince(userId, ninetyDaysAgo);
 
         const jobsWithBids = jobs.filter(job => job.bids && job.bids.length > 0);
         const totalBids = jobsWithBids.reduce((sum, job) => sum + (job.bids?.length || 0), 0);
@@ -695,33 +695,33 @@ export class JobService {
         const avgTimeToFirstBid = "~";
 
         const pendingReviews = jobs.filter(
-            job => (job.status === "Completed" || job.status === "completed") && !job.installerReview
+            job => (job.status === "Completed" || job.status === "completed") && !job.professionalReview
         ).length;
 
-        const favoriteInstallers = 0;
+        const favoriteProfessionals = 0;
 
         return {
             avgBidsPerJob,
             avgTimeToFirstBid,
             pendingReviews,
-            favoriteInstallers
+            favoriteProfessionals
         };
     }
 
     /**
-     * Get unique installer IDs that a job giver has worked with (completed jobs)
+     * Get unique Professional IDs that a client has worked with (completed jobs)
      */
-    async getRelatedInstallerIds(userId: string): Promise<string[]> {
-        const jobs = await jobRepository.fetchCompletedJobsForJobGiver(userId);
-        const installerIds = new Set<string>();
+    async getRelatedprofessionalIds(userId: string): Promise<string[]> {
+        const jobs = await jobRepository.fetchCompletedJobsForClient(userId);
+        const professionalIds = new Set<string>();
 
         jobs.forEach(job => {
-            if (job.awardedInstallerId) {
-                installerIds.add(job.awardedInstallerId);
+            if (job.awardedProfessionalId) {
+                professionalIds.add(job.awardedProfessionalId);
             }
         });
 
-        return Array.from(installerIds);
+        return Array.from(professionalIds);
     }
 
     /**
@@ -737,15 +737,15 @@ export class JobService {
             return null;
         }
 
-        const isJobGiver = job.jobGiverId === userId;
-        const installerId = job.awardedInstallerId || (typeof job.awardedInstaller === 'string' ? job.awardedInstaller : job.awardedInstaller?.id);
-        const isInstaller = installerId === userId;
+        const isclient = job.clientId === userId;
+        const professionalId = job.awardedProfessionalId || (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : job.awardedProfessional?.id);
+        const isProfessional = professionalId === userId;
 
-        if (!isJobGiver && !isInstaller) {
+        if (!isclient && !isProfessional) {
             throw new Error('Not authorized to view contacts for this job');
         }
 
-        const targetId = isJobGiver ? installerId : job.jobGiverId;
+        const targetId = isclient ? professionalId : job.clientId;
         if (!targetId) return null;
 
         const targetUser = await userRepository.fetchById(targetId);
@@ -763,3 +763,6 @@ export class JobService {
 }
 
 export const jobService = new JobService();
+
+
+

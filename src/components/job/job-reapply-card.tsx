@@ -40,7 +40,7 @@ export function ReapplyCard({ job, user, onJobUpdate }: { job: Job, user: User, 
                 jobId: job.id
             });
 
-            await onJobUpdate({ disqualifiedInstallerIds: arrayRemove(user.id) as any });
+            await onJobUpdate({ disqualifiedProfessionalIds: arrayRemove(user.id) as any });
 
             toast({
                 title: "Re-application Request Sent",
@@ -96,3 +96,4 @@ export function ReapplyCard({ job, user, onJobUpdate }: { job: Job, user: User, 
         </Card>
     );
 }
+

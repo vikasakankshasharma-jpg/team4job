@@ -84,7 +84,7 @@ export function BidComparisonModal({
                                             Criteria
                                         </th>
                                         {bids.map((bid) => {
-                                            const installer = bid.installer as User;
+                                            const Professional = bid.professional as User;
                                             const isLowest = bid.id === lowestBid.id;
                                             return (
                                                 <th
@@ -94,11 +94,11 @@ export function BidComparisonModal({
                                                 >
                                                     <div className="flex flex-col items-center gap-2">
                                                         <Avatar className="h-12 w-12">
-                                                            <AnimatedAvatar svg={installer.realAvatarUrl} />
-                                                            <AvatarFallback>{installer.name.substring(0, 2)}</AvatarFallback>
+                                                            <AnimatedAvatar svg={Professional.realAvatarUrl} />
+                                                            <AvatarFallback>{Professional.name.substring(0, 2)}</AvatarFallback>
                                                         </Avatar>
                                                         <div>
-                                                            <p className="font-semibold text-sm">{installer.name}</p>
+                                                            <p className="font-semibold text-sm">{Professional.name}</p>
                                                             {isLowest && (
                                                                 <Badge variant="default" className="mt-1 bg-green-600 hover:bg-green-700 text-xs">
                                                                     <TrendingDown className="h-3 w-3 mr-1" />
@@ -144,13 +144,13 @@ export function BidComparisonModal({
                                             </div>
                                         </td>
                                         {bids.map((bid) => {
-                                            const installer = bid.installer as User;
+                                            const Professional = bid.professional as User;
                                             return (
                                                 <td key={bid.id} className="text-center p-3">
                                                     <div className="flex items-center justify-center gap-1">
                                                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                                        <span className="font-semibold">{installer.installerProfile?.rating.toFixed(1)}</span>
-                                                        <span className="text-xs text-muted-foreground">({installer.installerProfile?.reviews})</span>
+                                                        <span className="font-semibold">{Professional.professionalProfile?.rating.toFixed(1)}</span>
+                                                        <span className="text-xs text-muted-foreground">({Professional.professionalProfile?.reviews})</span>
                                                     </div>
                                                 </td>
                                             );
@@ -166,18 +166,18 @@ export function BidComparisonModal({
                                             </div>
                                         </td>
                                         {bids.map((bid) => {
-                                            const installer = bid.installer as User;
+                                            const Professional = bid.professional as User;
                                             const tierColor = {
                                                 Bronze: "text-amber-700 bg-amber-100 border-amber-200",
                                                 Silver: "text-slate-600 bg-slate-100 border-slate-200",
                                                 Gold: "text-yellow-600 bg-yellow-100 border-yellow-200",
                                                 Platinum: "text-cyan-600 bg-cyan-100 border-cyan-200",
-                                            }[installer.installerProfile?.tier || "Bronze"];
+                                            }[Professional.professionalProfile?.tier || "Bronze"];
 
                                             return (
                                                 <td key={bid.id} className="text-center p-3">
                                                     <Badge variant="outline" className={`${tierColor} border`}>
-                                                        {installer.installerProfile?.tier}
+                                                        {Professional.professionalProfile?.tier}
                                                     </Badge>
                                                 </td>
                                             );

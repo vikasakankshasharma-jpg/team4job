@@ -6,7 +6,7 @@ test.describe('UX Enhancements - Visual Verification', () => {
 
     test.beforeEach(async ({ page }) => {
         helper = new TestHelper(page);
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await helper.nav.goToBrowseJobs();
     });
 
@@ -36,3 +36,4 @@ test.describe('UX Enhancements - Visual Verification', () => {
         expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 20);
     });
 });
+

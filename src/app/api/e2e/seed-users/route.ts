@@ -14,19 +14,19 @@ const getAdminPassword = () => process.env.E2E_ADMIN_PASSWORD || 'Vks2bhdj@9229'
 
 const TEST_USERS = [
     {
-        name: 'Test Job Giver',
+        name: 'Test Client',
         email: 'giver_vip_v3@team4job.com',
         password: getTestPassword(),
-        roles: ['Job Giver'],
+        roles: ['Client'],
         mobile: '9000000001',
     },
     {
-        name: 'Test Installer',
-        email: 'installer_pro_v3@team4job.com',
+        name: 'Test Professional',
+        email: 'Professional_pro_v3@team4job.com',
         password: getTestPassword(),
-        roles: ['Installer'],
+        roles: ['Professional'],
         mobile: '9000000002',
-        installerProfile: {
+        professionalProfile: {
             verified: true,
             tier: 'Silver',
             rating: 4.8,
@@ -35,8 +35,8 @@ const TEST_USERS = [
             skills: ['Security & Surveillance', 'Wiring', 'System Setup'],
         },
         payouts: {
-            beneficiaryId: 'TEST_BENE_INSTALLER',
-            accountHolderName: 'Test Installer',
+            beneficiaryId: 'TEST_BENE_Professional',
+            accountHolderName: 'Test Professional',
             accountNumberMasked: '**** 1234',
             ifsc: 'TEST0001234',
         },
@@ -52,9 +52,9 @@ const TEST_USERS = [
         name: 'Dual Role User',
         email: 'dualrole@example.com',
         password: getTestPassword(),
-        roles: ['Job Giver', 'Installer'],
+        roles: ['Client', 'Professional'],
         mobile: '9000000004',
-        installerProfile: {
+        professionalProfile: {
             verified: true,
             tier: 'Gold',
             rating: 4.9,
@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
                 status: 'active',
                 isMobileVerified: true,
                 kycStatus: 'verified',
-                installerProfile: user.installerProfile,
+                professionalProfile: user.professionalProfile,
                 payouts: user.payouts,
                 memberSince: now,
                 createdAt: now,

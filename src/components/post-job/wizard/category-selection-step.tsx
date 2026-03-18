@@ -32,37 +32,37 @@ export function CategorySelectionStep({ categories, onSelect }: CategorySelectio
                 </p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-8 md:grid-cols-3">
                 {categories.map((category) => {
                     const Icon = IconMap[category.icon] || Globe;
                     return (
                         <motion.div
                             key={category.id}
-                            whileHover={{ y: -5, scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            transition={{ duration: 0.2 }}
+                            whileHover={{ y: -8 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         >
                             <Card
-                                className="p-6 cursor-pointer border-2 hover:border-primary/50 transition-all h-full flex flex-col group relative overflow-hidden bg-card"
+                                className="p-8 cursor-pointer border-0 shadow-sm hover:shadow-xl transition-all h-full flex flex-col group relative overflow-hidden bg-card"
                                 onClick={() => onSelect(category.id)}
+                                data-testid={`${category.id}-category-card`}
                             >
-                                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <ArrowRight className="h-5 w-5 text-primary" />
+                                <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <ArrowRight className="h-6 w-6 text-primary" />
                                 </div>
                                 
-                                <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
+                                <div className="h-16 w-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-8 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
                                     <Icon className="h-8 w-8 text-primary" />
                                 </div>
                                 
-                                <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
+                                <h3 className="text-2xl font-bold mb-3 group-hover:text-primary transition-colors tracking-tight">
                                     {category.id}
                                 </h3>
-                                <p className="text-muted-foreground text-sm leading-relaxed">
+                                <p className="text-muted-foreground text-sm leading-relaxed font-medium">
                                     {category.description}
                                 </p>
                                 
-                                <div className="mt-auto pt-6 flex items-center text-primary font-semibold text-sm opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
-                                    Get Started
+                                <div className="mt-8 flex items-center text-primary font-bold text-sm opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0">
+                                    Get Started <ArrowRight className="ml-2 h-4 w-4" />
                                 </div>
                             </Card>
                         </motion.div>
@@ -71,7 +71,7 @@ export function CategorySelectionStep({ categories, onSelect }: CategorySelectio
             </div>
             
             <p className="text-center text-muted-foreground text-sm mt-12 italic">
-                Don't see your category? Choose the closest one and describe it later.
+                Don&apos;t see your category? Choose the closest one and describe it later.
             </p>
         </div>
     );

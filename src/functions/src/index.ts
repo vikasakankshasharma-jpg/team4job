@@ -1,7 +1,7 @@
 
 // Firebase Functions entry point (No 'use server' allowed)
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import express from "express";
 
@@ -53,9 +53,9 @@ app.post("/cashfree-webhook", async (req, res) => {
           });
 
 
-          // Notify Installer
+          // Notify Professional
           if (transactionData.payeeId) {
-            await sendNotification(transactionData.payeeId, "Payment Secured!", "The Job Giver has funded the escrow. You can start the work.", "/dashboard/my-bids");
+            await sendNotification(transactionData.payeeId, "Payment Secured!", "The Client has funded the escrow. You can start the work.", "/dashboard/my-bids");
           }
         } else {
         }
@@ -146,7 +146,7 @@ async function sendNotification(
       tokens: userData.fcmTokens,
     };
 
-    const response = await admin.messaging().sendMulticast(payload);
+    const response = await admin.messaging().sendEachForMulticast(payload);
     // You can also handle failures and remove invalid tokens here
   } catch (error) {
     // Suppress notification errors
@@ -156,13 +156,15 @@ async function sendNotification(
 
 /**
  * Triggered when a new bid is created on a job.
- * Notifies the Job Giver about the new bid.
+ * Notifies the Client about the new bid.
  */
 export const onBidCreated = functions.firestore
   .document("jobs/{jobId}")
-  .onUpdate(async (change, context) => {
+  .onUpdate(async (change: functions.Change<functions.firestore.DocumentSnapshot>, context: functions.EventContext) => {
     const beforeData = change.before.data();
     const afterData = change.after.data();
+
+    if (!beforeData || !afterData) return;
 
     const oldBidsCount = beforeData.bids?.length || 0;
     const newBidsCount = afterData.bids?.length || 0;
@@ -170,17 +172,17 @@ export const onBidCreated = functions.firestore
     // If a new bid was added
     if (newBidsCount > oldBidsCount) {
       const newBid = afterData.bids[newBidsCount - 1];
-      const jobGiverId = afterData.jobGiver.id;
+      const clientId = afterData.client.id;
 
-      if (newBid.installer && typeof newBid.installer.get === "function") {
+      if (newBid.professional && typeof newBid.professional.get === "function") {
         try {
-          const installerDoc = await newBid.installer.get();
-          const installerName = installerDoc.data()?.name || "An installer";
+          const ProfessionalDoc = await newBid.professional.get();
+          const ProfessionalName = ProfessionalDoc.data()?.name || "An Professional";
 
           await sendNotification(
-            jobGiverId,
+            clientId,
             "New Bid on Your Job!",
-            `${installerName} placed a bid of ₹${newBid.amount} ` +
+            `${ProfessionalName} placed a bid of ₹${newBid.amount} ` +
             `on your job: "${afterData.title}"`,
             `/dashboard/jobs/${context.params.jobId}`
           );
@@ -197,9 +199,11 @@ export const onBidCreated = functions.firestore
  */
 export const onPrivateMessageCreated = functions.firestore
   .document("jobs/{jobId}")
-  .onUpdate(async (change, context) => {
+  .onUpdate(async (change: functions.Change<functions.firestore.DocumentSnapshot>, context: functions.EventContext) => {
     const beforeData = change.before.data();
     const afterData = change.after.data();
+
+    if (!beforeData || !afterData) return;
 
     const oldMessagesCount = beforeData.privateMessages?.length || 0;
     const newMessagesCount = afterData.privateMessages?.length || 0;
@@ -207,13 +211,13 @@ export const onPrivateMessageCreated = functions.firestore
     if (newMessagesCount > oldMessagesCount) {
       const newMessage = afterData.privateMessages[newMessagesCount - 1];
       const authorId = newMessage.author.id;
-      const jobGiverId = afterData.jobGiver.id;
-      const awardedInstallerId = afterData.awardedInstaller.id;
+      const clientId = afterData.client.id;
+      const awardedProfessionalId = afterData.awardedProfessional.id;
 
       // Determine the recipient
-      const recipientId = authorId === jobGiverId ?
-        awardedInstallerId :
-        jobGiverId;
+      const recipientId = authorId === clientId ?
+        awardedProfessionalId :
+        clientId;
 
       try {
         const authorDoc = await newMessage.author.get();
@@ -237,14 +241,16 @@ export const onPrivateMessageCreated = functions.firestore
  */
 export const onJobCompleted = functions.firestore
   .document("jobs/{jobId}")
-  .onUpdate(async (change, context) => {
+  .onUpdate(async (change: functions.Change<functions.firestore.DocumentSnapshot>, context: functions.EventContext) => {
     const beforeData = change.before.data();
     const afterData = change.after.data();
 
+    if (!beforeData || !afterData) return;
+
     // Check if the job status just changed to "Completed"
     if (beforeData.status !== "Completed" && afterData.status === "Completed") {
-      const installerRef = afterData.awardedInstaller;
-      if (!installerRef) {
+      const ProfessionalRef = afterData.awardedProfessional;
+      if (!ProfessionalRef) {
         return;
       }
 
@@ -277,21 +283,21 @@ export const onJobCompleted = functions.firestore
 
       try {
         await db.runTransaction(async (transaction) => {
-          const installerDoc = await transaction.get(installerRef);
-          if (!installerDoc.exists) throw new Error("Installer profile not found!");
-          const installerData = installerDoc.data();
-          if (!installerData || !installerData.installerProfile) throw new Error("Installer profile data is missing.");
+          const ProfessionalDoc = await transaction.get(ProfessionalRef as admin.firestore.DocumentReference);
+          if (!ProfessionalDoc.exists) throw new Error("Professional profile not found!");
+          const ProfessionalData = ProfessionalDoc.data();
+          if (!ProfessionalData || !ProfessionalData.professionalProfile) throw new Error("Professional profile data is missing.");
 
-          const currentPoints = installerData.installerProfile.points || 0;
+          const currentPoints = ProfessionalData.professionalProfile.points || 0;
           const newPoints = currentPoints + pointsEarned;
 
-          let newTier = installerData.installerProfile.tier || "Bronze";
+          let newTier = ProfessionalData.professionalProfile.tier || "Bronze";
           if (newPoints >= platinumTierPoints) newTier = "Platinum";
           else if (newPoints >= goldTierPoints) newTier = "Gold";
           else if (newPoints >= silverTierPoints) newTier = "Silver";
 
           const monthYear = new Date().toLocaleString("default", { month: "long", year: "numeric" });
-          const history = installerData.installerProfile.reputationHistory || [];
+          const history = ProfessionalData.professionalProfile.reputationHistory || [];
           const monthIndex = history.findIndex((h: { month: string; }) => h.month === monthYear);
 
           if (monthIndex > -1) {
@@ -302,38 +308,38 @@ export const onJobCompleted = functions.firestore
           }
           if (history.length > 12) history.shift();
 
-          const currentReviews = installerData.installerProfile.reviews || 0;
+          const currentReviews = ProfessionalData.professionalProfile.reviews || 0;
           const newReviewCount = currentReviews + 1;
-          const currentTotalRating = (installerData.installerProfile.rating || 0) * currentReviews;
+          const currentTotalRating = (ProfessionalData.professionalProfile.rating || 0) * currentReviews;
           const newAverageRating = (currentTotalRating + afterData.rating) / newReviewCount;
 
           finalAverageRating = newAverageRating;
           finalReviewCount = newReviewCount;
 
-          transaction.update(installerRef, {
-            "installerProfile.points": newPoints,
-            "installerProfile.tier": newTier,
-            "installerProfile.reputationHistory": history,
-            "installerProfile.reviews": newReviewCount,
-            "installerProfile.rating": newAverageRating,
+          transaction.update(ProfessionalRef, {
+            "professionalProfile.points": newPoints,
+            "professionalProfile.tier": newTier,
+            "professionalProfile.reputationHistory": history,
+            "professionalProfile.reviews": newReviewCount,
+            "professionalProfile.rating": newAverageRating,
           });
         });
 
 
         // Fire and forget notification
-        sendNotification(installerRef.id, "Reputation Updated!", `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`, "/dashboard/profile").catch(() => {});
+        sendNotification(ProfessionalRef.id, "Reputation Updated!", `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`, "/dashboard/profile").catch(() => {});
 
-        // --- Pro Installer Promotion Logic ---
+        // --- Pro Professional Promotion Logic ---
         // Re-fetch the document AFTER the transaction to get the latest data.
-        const installerDoc = await installerRef.get();
-        const installerData = installerDoc.data();
-        if (installerData && installerData.installerProfile.tier === "Bronze") {
-          const disputesQuery = db.collection("disputes").where("parties.installerId", "==", installerRef.id).where("status", "!=", "Resolved");
+        const ProfessionalDoc = await ProfessionalRef.get();
+        const ProfessionalData = ProfessionalDoc.data();
+        if (ProfessionalData && ProfessionalData.professionalProfile.tier === "Bronze") {
+          const disputesQuery = db.collection("disputes").where("parties.professionalId", "==", ProfessionalRef.id).where("status", "!=", "Resolved");
           const disputesSnap = await disputesQuery.get();
 
           if (finalReviewCount >= 5 && finalAverageRating >= 4.5 && disputesSnap.empty) {
-            await installerRef.update({ "installerProfile.tier": "Silver" });
-            sendNotification(installerRef.id, "Congratulations! You're a Pro Installer!", "You have been promoted to a Pro Installer for your excellent performance.", "/dashboard/profile").catch(() => {});
+            await ProfessionalRef.update({ "professionalProfile.tier": "Silver" });
+            sendNotification(ProfessionalRef.id, "Congratulations! You're a Pro Professional!", "You have been promoted to a Pro Professional for your excellent performance.", "/dashboard/profile").catch(() => {});
           }
         }
 
@@ -349,7 +355,7 @@ export const onJobCompleted = functions.firestore
  */
 export const handleUnfundedJobs = functions.pubsub.schedule(
   "every 6 hours"
-).onRun(async (context) => {
+).onRun(async (context: functions.EventContext) => {
   const now = admin.firestore.Timestamp.now();
 
   // Set deadline to 48 hours ago
@@ -374,20 +380,20 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
     const job = doc.data();
     batch.update(doc.ref, { status: "Cancelled" });
 
-    // Notify Job Giver
+    // Notify Client
     notificationPromises.push(sendNotification(
-      job.jobGiver.id,
+      job.client.id,
       "Job Cancelled",
       `Your job "${job.title}" was automatically cancelled ` +
       "because it was not funded within 48 hours of acceptance.",
       `/dashboard/jobs/${doc.id}`
     ));
 
-    // Notify Installer
+    // Notify Professional
     notificationPromises.push(sendNotification(
-      job.awardedInstaller.id,
+      job.awardedProfessional.id,
       "Job Cancelled",
-      `Job "${job.title}" was cancelled as the Job Giver did not ` +
+      `Job "${job.title}" was cancelled as the Client did not ` +
       "complete payment. You are now free to bid on other jobs.",
       `/dashboard/jobs/${doc.id}`
     ));
@@ -404,7 +410,7 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
  * Implements the "Job Rescue Plan" for jobs that have officially become "Unbid".
  * Runs every hour.
  */
-export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(async (context) => {
+export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(async (context: functions.EventContext) => {
   const db = admin.firestore();
 
   // Query for jobs that are 'Unbid' and haven't been updated to 'Needs Assistance'
@@ -421,9 +427,9 @@ export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(
     const job = doc.data();
     await doc.ref.update({ status: "Needs Assistance" });
 
-    // Notify the Job Giver that their job needs attention and present recovery options.
+    // Notify the Client that their job needs attention and present recovery options.
     sendNotification(
-      job.jobGiver.id,
+      job.client.id,
       "Your Job Needs Attention",
       `Your job "${job.title}" did not receive any bids. You can now re-post or promote it from the job page.`,
       `/dashboard/jobs/${doc.id}`
@@ -439,9 +445,10 @@ export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(
  */
 export const onJobDateChange = functions.firestore
   .document("jobs/{jobId}")
-  .onUpdate(async (change, context) => {
+  .onUpdate(async (change: functions.Change<functions.firestore.DocumentSnapshot>, context: functions.EventContext) => {
     const beforeData = change.before.data();
     const afterData = change.after.data();
+    if (!beforeData || !afterData) return;
     const jobId = context.params.jobId;
 
     // Date Change Proposed
@@ -449,14 +456,14 @@ export const onJobDateChange = functions.firestore
       afterData.dateChangeProposal &&
       afterData.dateChangeProposal.status === "pending") {
       const proposal = afterData.dateChangeProposal;
-      const jobGiverId = afterData.jobGiver.id;
-      const awardedInstallerId = afterData.awardedInstaller.id;
-      const proposerId = proposal.proposedBy === "Job Giver" ?
-        jobGiverId :
-        awardedInstallerId;
-      const recipientId = proposal.proposedBy === "Job Giver" ?
-        awardedInstallerId :
-        jobGiverId;
+      const clientId = afterData.client.id;
+      const awardedProfessionalId = afterData.awardedProfessional.id;
+      const proposerId = proposal.proposedBy === "Client" ?
+        clientId :
+        awardedProfessionalId;
+      const recipientId = proposal.proposedBy === "Client" ?
+        awardedProfessionalId :
+        clientId;
 
       try {
         const proposerDoc = await admin.firestore().collection("users")
@@ -478,7 +485,7 @@ export const onJobDateChange = functions.firestore
       (afterData.dateChangeProposal?.status !== "pending")) {
       const wasAccepted = afterData.jobStartDate !== beforeData.jobStartDate;
       const proposerId = beforeData.dateChangeProposal.proposedBy ===
-        "Job Giver" ? afterData.jobGiver.id : afterData.awardedInstaller.id;
+        "Client" ? afterData.client.id : afterData.awardedProfessional.id;
 
       sendNotification(
         proposerId,
@@ -496,7 +503,7 @@ export const onJobDateChange = functions.firestore
  */
 export const handleExpiredAwards = functions.pubsub.schedule(
   "every 1 hours"
-).onRun(async (context) => {
+).onRun(async (context: functions.EventContext) => {
   const now = admin.firestore.Timestamp.now();
 
   const q = admin.firestore().collection("jobs")
@@ -515,14 +522,14 @@ export const handleExpiredAwards = functions.pubsub.schedule(
   snapshot.docs.forEach((doc) => {
     const job = doc.data();
 
-    const timedOutInstallerIds = (job.selectedInstallers || []).map(
-      (s: { installerId: string; }) => s.installerId
+    const timedOutprofessionalIds = (job.selectedProfessionals || []).map(
+      (s: { professionalId: string; }) => s.professionalId
     );
 
-    // Notify each installer whose offer expired
-    timedOutInstallerIds.forEach(installerId => {
+    // Notify each Professional whose offer expired
+    timedOutprofessionalIds.forEach((professionalId: string) => {
       notificationPromises.push(sendNotification(
-        installerId,
+        professionalId,
         "Offer Expired",
         `Your offer for job "${job.title}" has expired. You can request to re-apply from the job page.`,
         `/dashboard/jobs/${doc.id}`
@@ -531,20 +538,20 @@ export const handleExpiredAwards = functions.pubsub.schedule(
 
     batch.update(doc.ref, {
       status: "Bidding Closed",
-      awardedInstaller: admin.firestore.FieldValue.delete(),
+      awardedProfessional: admin.firestore.FieldValue.delete(),
       acceptanceDeadline: admin.firestore.FieldValue.delete(),
-      selectedInstallers: [],
-      disqualifiedInstallerIds: admin.firestore.FieldValue.arrayUnion(
-        ...timedOutInstallerIds
+      selectedProfessionals: [],
+      disqualifiedProfessionalIds: admin.firestore.FieldValue.arrayUnion(
+        ...timedOutprofessionalIds
       ),
     });
 
-    // Notify Job Giver that the offer expired
+    // Notify Client that the offer expired
     notificationPromises.push(sendNotification(
-      job.jobGiver.id,
+      job.client.id,
       "Offer Expired",
       `Your offer for job "${job.title}" expired without being accepted. ` +
-      "You can now award it to another installer.",
+      "You can now award it to another Professional.",
       `/dashboard/jobs/${doc.id}`
     ));
   });
@@ -557,42 +564,46 @@ export const handleExpiredAwards = functions.pubsub.schedule(
 
 /**
  * Triggered when a user's verification status changes.
- * Awards the "Founding Installer" badge to the first 100 verified installers in a district.
+ * Awards the "Founding Professional" badge to the first 100 verified Professionals in a district.
  */
 export const onUserVerified = functions.firestore
   .document("users/{userId}")
-  .onUpdate(async (change, context) => {
+  .onUpdate(async (change: functions.Change<functions.firestore.DocumentSnapshot>, context: functions.EventContext) => {
     const beforeData = change.before.data();
     const afterData = change.after.data();
     const userId = context.params.userId;
 
-    const wasJustVerified = (beforeData.installerProfile?.verified === false || beforeData.installerProfile?.verified === undefined) && afterData.installerProfile?.verified === true;
+    if (!beforeData || !afterData) return;
+    const beforeprofessionalProfile = beforeData.professionalProfile;
+    const afterprofessionalProfile = afterData.professionalProfile;
 
-    if (wasJustVerified && !afterData.isFoundingInstaller && afterData.district) {
+    const wasJustVerified = (beforeData.professionalProfile?.verified === false || beforeData.professionalProfile?.verified === undefined) && afterData.professionalProfile?.verified === true;
+
+    if (wasJustVerified && !afterData.isFoundingProfessional && afterData.district) {
       const db = admin.firestore();
 
       try {
         // Query must be done outside the transaction
-        const foundingInstallersQuery = db.collection("users")
-          .where("isFoundingInstaller", "==", true)
+        const foundingProfessionalsQuery = db.collection("users")
+          .where("isFoundingProfessional", "==", true)
           .where("district", "==", afterData.district);
-        const foundingInstallersSnap = await foundingInstallersQuery.get();
+        const foundingProfessionalsSnap = await foundingProfessionalsQuery.get();
 
-        if (foundingInstallersSnap.size < 100) {
+        if (foundingProfessionalsSnap.size < 100) {
           await db.runTransaction(async (transaction) => {
             // Re-verify inside transaction to ensure atomicity, even though it's not ideal.
             // For this specific, low-contention case, it's acceptable.
             const userRef = db.collection("users").doc(userId);
             const freshSnap = await transaction.get(userRef);
-            if (freshSnap.exists() && !freshSnap.data()?.isFoundingInstaller) {
-              transaction.update(userRef, { isFoundingInstaller: true });
+            if (freshSnap.exists && !freshSnap.data()?.isFoundingProfessional) {
+              transaction.update(userRef, { isFoundingProfessional: true });
             }
           });
 
           await sendNotification(
             userId,
-            "Congratulations, You're a Founding Installer!",
-            `You are one of the first 100 installers in ${afterData.district} to be verified. Enjoy your exclusive badge!`,
+            "Congratulations, You're a Founding Professional!",
+            `You are one of the first 100 Professionals in ${afterData.district} to be verified. Enjoy your exclusive badge!`,
             "/dashboard/profile"
           );
         } else {
@@ -602,6 +613,7 @@ export const onUserVerified = functions.firestore
       }
     }
   });
+
 
 
 

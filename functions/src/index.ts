@@ -1,6 +1,6 @@
 'use server';
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import * as express from "express";
 
@@ -9,7 +9,7 @@ admin.initializeApp();
 const app = express();
 
 app.post("/cashfree-webhook", (req, res) => {
-  console.log("Received Cashfree webhook data:", req.body);
+  functions.logger.info("Received Cashfree webhook data:", req.body);
   res.json({ status: "received" });
 });
 

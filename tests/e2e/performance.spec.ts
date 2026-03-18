@@ -16,8 +16,8 @@ const JOB_GIVER_PAGES = [
     { url: ROUTES.profile, name: 'Profile (JG)' },
 ];
 
-const INSTALLER_PAGES = [
-    { url: ROUTES.dashboard, name: 'Dashboard (Installer)' },
+const Professional_PAGES = [
+    { url: ROUTES.dashboard, name: 'Dashboard (Professional)' },
     { url: ROUTES.browseJobs, name: 'Browse Jobs' },
     { url: ROUTES.myBids, name: 'My Bids' },
     { url: ROUTES.transactions, name: 'Transactions' },
@@ -39,12 +39,12 @@ test.describe('Performance Benchmark', () => {
         }
     });
 
-    test.describe('Job Giver Session', () => {
-        test('Measure full Job Giver session load times', async ({ page }) => {
+    test.describe('Client Session', () => {
+        test('Measure full Client session load times', async ({ page }) => {
             const helper = new TestHelper(page);
 
-            console.log('[PERF_FLOW] Starting Job Giver Session');
-            await helper.auth.loginAsJobGiver();
+            console.log('[PERF_FLOW] Starting Client Session');
+            await helper.auth.loginAsClient();
 
             for (const pageInfo of JOB_GIVER_PAGES) {
                 const startTime = Date.now();
@@ -58,14 +58,14 @@ test.describe('Performance Benchmark', () => {
         });
     });
 
-    test.describe('Installer Session', () => {
-        test('Measure full Installer session load times', async ({ page }) => {
+    test.describe('Professional Session', () => {
+        test('Measure full Professional session load times', async ({ page }) => {
             const helper = new TestHelper(page);
 
-            console.log('[PERF_FLOW] Starting Installer Session');
-            await helper.auth.loginAsInstaller();
+            console.log('[PERF_FLOW] Starting Professional Session');
+            await helper.auth.loginAsProfessional();
 
-            for (const pageInfo of INSTALLER_PAGES) {
+            for (const pageInfo of Professional_PAGES) {
                 const startTime = Date.now();
                 await page.goto(pageInfo.url, { waitUntil: 'domcontentloaded' });
                 const endTime = Date.now();
@@ -78,3 +78,5 @@ test.describe('Performance Benchmark', () => {
     });
 
 });
+
+

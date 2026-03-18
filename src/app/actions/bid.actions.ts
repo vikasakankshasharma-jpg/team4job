@@ -22,13 +22,13 @@ export async function placeBidAction(jobId: string, userId: string, role: Role, 
 }
 
 /**
- * Server Action to list bids placed by a specific installer
+ * Server Action to list bids placed by a specific Professional
  */
 export async function listMyBidsAction(userId: string) {
     try {
         // Implementation logic moved from api/bids/my-bids
         // For simplicity, we'll implement it here or in jobService
-        const bids = await jobService.getBidsByInstaller(userId);
+        const bids = await jobService.getBidsByProfessional(userId);
         return { success: true, bids: JSON.parse(JSON.stringify(bids)) };
     } catch (error: any) {
         return { success: false, error: error.message || 'Failed to list bids' };

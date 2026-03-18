@@ -5,11 +5,11 @@ import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 import { aiLearningService } from '@/ai/services/ai-learning.service';
 
-// Input: Installer's skills and a list of job summaries
+// Input: Professional's skills and a list of job summaries
 const RecommendJobsInputSchema = z.object({
-    installerSkills: z.array(z.string()).describe('Skills of the installer.'),
-    installerLocation: z.string().optional().describe('City/Location of installer.'),
-    availability: z.string().optional().describe('Installer availability (e.g., "Weekends only", "Full time").'),
+    professionalSkills: z.array(z.string()).describe('Skills of the professional.'),
+    professionalLocation: z.string().optional().describe('City/Location of professional.'),
+    availability: z.string().optional().describe('Professional availability (e.g., "Weekends only", "Full time").'),
     jobs: z.array(z.object({
         id: z.string(),
         title: z.string(),
@@ -44,11 +44,11 @@ const recommendJobsPrompt = ai.definePrompt({
     input: { schema: PromptInputSchema },
     output: { schema: RecommendJobsOutputSchema },
     prompt: `You are a Career Matchmaker AI.
-  Rank the provided jobs for an installer based on skills, location, and availability match.
+  Rank the provided jobs for a professional based on skills, location, and availability match.
   
-  Installer Profile:
-  - Skills: {{#each installerSkills}}{{this}}, {{/each}}
-  - Location: {{{installerLocation}}}
+  Professional Profile:
+  - Skills: {{#each professionalSkills}}{{this}}, {{/each}}
+  - Location: {{{professionalLocation}}}
   - Availability: {{{availability}}}
 
   {{#if historicalContext}}
@@ -89,7 +89,7 @@ const recommendJobsFlow = defineLoggedFlow(
         try {
             // RAG: Find successful matches for key skills
             // We use the first 3 skills as a proxy for the "profile" query
-            const skillQuery = input.installerSkills.slice(0, 3).join(' ');
+            const skillQuery = input.professionalSkills.slice(0, 3).join(' ');
             const learnedExamples = await aiLearningService.getSuccessfulExamples(
                 'job_recommendation',
                 skillQuery,
@@ -97,7 +97,7 @@ const recommendJobsFlow = defineLoggedFlow(
             );
 
             if (learnedExamples.length > 0) {
-                historicalContext += "Installers with similar skills have excelled in:\n";
+                historicalContext += "Professionals with similar skills have excelled in:\n";
                 learnedExamples.forEach(ex => {
                     const outcome = ex.outcome;
                     if (outcome?.success) {

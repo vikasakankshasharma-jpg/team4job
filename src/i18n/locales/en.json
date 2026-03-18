@@ -1,5 +1,6 @@
 {
     "common": {
+        "na": "N/A",
         "postJob": "Post Job",
         "dashboard": "Dashboard",
         "next": "Next",
@@ -37,6 +38,7 @@
         "noResults": "No results found",
         "tryAgain": "Try again",
         "update": "Update",
+        "updated": "Updated",
         "unbid": "Unbid",
         "loadMore": "Load More",
         "error": "Error",
@@ -49,9 +51,9 @@
         "checkFormDesc": "Please check the form description and required fields."
     },
     "landing": {
-        "tagline": "The Professional Technical Marketplace",
+        "tagline": "The Professional Service Provider's Marketplace",
         "hero": "Your Project, Our Priority",
-        "heroDescription": "The only platform that combines verified professionals, AI-powered tools, and secure escrow payments to ensure your Technical project is a success from start to finish.",
+        "heroDescription": "The only platform that combines verified professionals, AI-powered tools, and secure escrow payments to ensure your service and technical projects are a success from start to finish.",
         "postJobButton": "Post a Job For Free",
         "findWorkButton": "Find Work",
         "loginButton": "Log In",
@@ -61,7 +63,7 @@
         "feature3Title": "Secure Escrow System",
         "featureAI": "AI-Powered Tools",
         "featureAIDesc": "Generate job descriptions, analyze bids, and get budget suggestions with our intelligent assistants, saving you time and effort.",
-        "featureVerified": "Vetted & Verified Installers",
+        "featureVerified": "Vetted & Verified Professionals",
         "featureVerifiedDesc": "Connect with a network of trusted professionals whose identities and skills have been verified, ensuring quality and reliability.",
         "featureEscrow": "Secure Escrow Payments",
         "featureEscrowDesc": "Your funds are held securely in a regulated Marketplace Settlement account and are only released upon your explicit approval of the completed work.",
@@ -84,10 +86,10 @@
         "trustProof": {
             "heading": "Built on Trust and Security",
             "subheading": "We engineered our platform to remove risk, so you can focus on getting the job done right.",
-            "verifiedInstallersTitle": "100% Verified Installers",
-            "verifiedInstallersDesc": "Every installer undergoes strict Aadhar/PAN verification before they can place a bid.",
+            "verifiedProfessionalsTitle": "100% Verified Professionals",
+            "verifiedProfessionalsDesc": "Every professional undergoes strict Aadhar/PAN verification before they can place a bid.",
             "escrowTitle": "Secure Escrow Payments",
-            "escrowDesc": "Funds are securely held in escrow and only released when you are 100% satisfied with the installation.",
+            "escrowDesc": "Funds are securely held in escrow and only released when you are 100% satisfied with the work.",
             "guaranteeTitle": "Platform Guarantee",
             "guaranteeDesc": "Backed by our rapid dispute resolution process and robust community rating system."
         }
@@ -98,14 +100,14 @@
         "signupTab": "Sign Up",
         "loginTitle": "Log In",
         "loginDescription": "Enter your credentials to access your dashboard.",
-        "signupTitle": "Create an Account",
-        "signupDescription": "Choose your role and fill in your details to get started.",
+        "signupTitle": "Create Your Professional Account",
+        "signupDescription": "Complete the steps below to join our verified community.",
         "helpTitle": "Login & Sign Up",
         "helpContent": "Welcome to Team4Job! Here you can access your account or create a new one.",
         "helpLoginLabel": "Log In:",
         "helpLoginText": "If you already have an account, enter your email and password to access your dashboard.",
         "helpSignupLabel": "Sign Up:",
-        "helpSignupText": "New here? Click the \"Sign Up\" tab to begin. You'll choose whether you want to hire professionals or find work as an installer.",
+        "helpSignupText": "New here? Click the \"Sign Up\" tab to begin. You'll choose whether you want to hire professionals or find work as a service provider.",
         "help": "Help",
         "logout": "Log out",
         "emailMobileLabel": "Email or Mobile Number",
@@ -113,6 +115,7 @@
         "passwordLabel": "Password",
         "passwordPlaceholder": "••••••••",
         "loginButton": "Log In",
+        "loginSubmit": "Log In",
         "showPassword": "Show password",
         "hidePassword": "Hide password",
         "loginLocked": "Login Locked",
@@ -136,9 +139,27 @@
         "deviceAccessDenied": "Device Access Denied",
         "deviceAccessDeniedDesc": "Please enable Device permissions in your browser settings to take a photo.",
         "stepRoleSelection": "Step 1: Choose Your Role",
+        "roleLabel": "I want to...",
+        "rolePlaceholder": "Select your primary role",
+        "roleClient": "Hire a Professional",
+        "roleProfessional": "Find Work as a Professional",
         "stepDetails": "Step 2: Basic Details",
         "stepPhoto": "Step 3: Profile Photo",
         "stepVerification": "Step 4: KYC Verification",
+        "stepVerificationTitle": "Step 1: Aadhar Verification",
+        "stepVerificationDesc": "To ensure a trustworthy platform, professionals are required to complete KYC verification.",
+        "manualVerificationTitle": "Manual Verification Required",
+        "manualVerificationDescShort": "Please enter your government ID details below. Our team will verify them manually within 24 hours.",
+        "aadharPlaceholder": "XXXX XXXX XXXX",
+        "otpTitle": "One-Time Password (OTP)",
+        "cameraAccessRequired": "Camera Access Required",
+        "cameraAccessRequiredDesc": "Please allow camera access in your browser to continue.",
+        "fullName": "Full Name",
+        "email": "Email",
+        "mobileNumber": "Mobile Number",
+        "mobilePlaceholder": "10-digit mobile number",
+        "identityVerified": "Identity Verified",
+        "identityVerifiedDesc": "Aadhar, Mobile, and PAN records have been validated.",
         "stepSkills": "Step 5: Select Skills",
         "termsAccepted": "Terms and Conditions",
         "termsAcceptedDesc": "I agree to the terms and conditions",
@@ -155,7 +176,7 @@
         "profilePhotoDesc": "A real photo increases trust. This photo will be used for your Virtual ID Card.",
         "profilePreview": "Profile preview",
         "useTestPhoto": "Use Test Photo",
-        "skillsDesc": "Choose the services you offer. This will help Job Givers find you for relevant projects.",
+        "skillsDesc": "Choose the services you offer. This will help Clients find you for relevant projects.",
         "verified": "Verified",
         "mobileVerifiedId": "Verified mobile number will be your registered ID.",
         "confirmPasswordLabel": "Confirm Password",
@@ -164,10 +185,17 @@
         "iAgreeToLabel": "I agree to the {terms} and {privacy}.",
         "verifyBothToContinue": "Verify Mobile & Email to Continue",
         "createAccount": "Create Account",
+        "contactVerificationTitle": "Verify Your Contact Info",
         "verifyMobileTitle": "Verify Mobile Number",
         "verifyEmailTitle": "Verify Email Address",
         "enterCodeSentTo": "Enter the 6-digit code sent to {target}",
-        "confirm": "Confirm"
+        "confirm": "Confirm",
+        "resendOtp": "Resend Code",
+        "resendIn": "Resend in {seconds}s",
+        "invalidOtp": "Invalid verification code. Please try again.",
+        "otpSent": "Code Sent Successfully",
+        "mobileVerified": "Mobile Verified!",
+        "emailVerified": "Email Verified!"
     },
     "nav": {
         "dashboard": "Dashboard",
@@ -187,8 +215,8 @@
         "users": "Users",
         "transactions": "Transactions",
         "billing": "Billing",
-        "findInstallers": "Find Installers",
-        "myInstallers": "My Installers",
+        "findProfessionals": "Find Professionals",
+        "myProfessionals": "My Professionals",
         "teamManagement": "Team Management",
         "auditLog": "Audit Log",
         "pendingSignups": "Pending Signups",
@@ -202,10 +230,10 @@
         "experience": "How was your experience?",
         "category": "Category",
         "selectCategory": "Select topic",
-        "catBug": "Ã°Å¸Ââ€º Bug Report",
-        "catFeature": "ðŸ’¡ Feature Request",
-        "catImprovement": "ðŸ”§ Improvement",
-        "catOther": "Ã°Å¸â€œÂ Other",
+        "catBug": "🐞 Bug Report",
+        "catFeature": "💡 Feature Request",
+        "catImprovement": "🔧 Improvement",
+        "catOther": "📁 Other",
         "details": "Details",
         "detailsPlaceholder": "Tell us what happened or what you'd like to see...",
         "send": "Send Feedback",
@@ -220,84 +248,39 @@
         "incompleteMessage": "Please describe your feedback."
     },
     "dashboard": {
-        "welcome": "Welcome",
-        "welcomeUser": "Welcome, {name}!",
-        "overview": "Overview",
-        "recentActivity": "Recent Activity",
-        "quickActions": "Quick Actions",
-        "stats": "Statistics",
-        "activeJobs": "Active Jobs",
-        "activeJobsDesc": "Jobs not yet completed",
-        "pendingBids": "Pending Bids",
-        "completedJobs": "Completed Jobs",
-        "completedJobsDesc": "Successfully finished projects",
-        "cancelledJobs": "Cancelled Jobs",
-        "totalEarnings": "Total Earnings",
-        "projectedEarnings": "Projected Earnings",
-        "hiringMode": "Hiring Mode",
-        "workMode": "Work Mode",
-        "adminMode": "Admin Mode",
-        "postNewJob": "Post New Job",
+        "welcome": "Welcome, {name}!",
+        "welcomeGeneric": "Welcome",
+        "roleHiring": "Hiring Mode",
+        "roleService": "Professional Mode",
+        "roleAdmin": "Admin",
+        "verifyTitle": "Become a Verified Professional",
+        "verifyDesc": "Complete Aadhar verification to build trust and get more jobs.",
+        "verifyButton": "Verify Now",
+        "findProjectTitle": "Find Your Next Project",
+        "findProjectDesc": "Browse hundreds of professional service projects and place your bid.",
         "browseJobs": "Browse Jobs",
-        "noDataYet": "No data yet",
-        "getStarted": "Get started by posting your first job",
-        "fundsInEscrow": "Funds in Secure Deposit",
-        "fundsInEscrowDesc": "Securely Locked for active jobs",
-        "openDisputes": "Open Disputes",
-        "openDisputesDesc": "Disputes needing resolution",
-        "needInstaller": "Need an Installer?",
-        "needInstallerDesc": "Post a job and get bids from verified Technical professionals.",
-        "manageJobs": "Manage Your Jobs",
-        "manageJobsDesc": "Review bids, award projects, and manage your active jobs all in one place.",
-        "goToMyJobs": "Go to My Jobs",
-        "openJobs": "Open Jobs",
-        "openJobsDesc": "Available for bidding",
-        "myBids": "My Bids",
-        "myBidsDesc": "Bids you have placed",
-        "jobsWon": "Jobs Won",
-        "jobsWonDesc": "Jobs awarded to you",
-        "findNextProject": "Find Your Next Project",
-        "findNextProjectDesc": "Browse hundreds of Technical installation jobs and place your bid.",
-        "manageProfile": "Manage Your Profile",
-        "manageProfileDesc": "Keep your skills and reputation up-to-date to attract more Job Givers.",
+        "manageProfileTitle": "Manage Your Profile",
+        "manageProfileDesc": "Keep your skills and reputation up-to-date to attract more Clients.",
         "goToProfile": "Go to Profile",
-        "installerGuide": {
-            "title": "Installer Dashboard Guide",
-            "welcome": "Welcome to your Dashboard! This is your central hub for managing your work on the platform.",
-            "openJobsLabel": "Open Jobs:",
-            "openJobsDesc": "This shows the total number of jobs currently available for bidding. Click it to find your next opportunity.",
-            "myBidsLabel": "My Bids:",
-            "myBidsDesc": "Tracks all the jobs you've bid on and their current status (Bidded, Awarded, etc.). Click to see your bidding history.",
-            "jobsWonLabel": "Jobs Won:",
-            "jobsWonDesc": "Displays the number of jobs you've won that are currently active or in progress.",
-            "projectedEarningsLabel": "Projected Earnings:",
-            "projectedEarningsDesc": "The total value of jobs currently in the \"Funded\" (Locked) state that you are working on.",
-            "verificationLabel": "Verification:",
-            "verificationDesc": "Complete your Aadhar verification to become a trusted installer and increase your chances of winning jobs.",
-            "findProjectLabel": "Find Your Next Project:",
-            "findProjectDesc": "A quick link to jump directly to the job browsing page.",
-            "bottomText": "Use the navigation on the left to access other sections like your Profile, where you can track your reputation and skills."
+        "recommender": {
+            "neuralMatch": "Neural Match",
+            "aiPoweredDesc": "Get AI-powered job recommendations tailored to your skills and location.",
+            "smartInvitesDesc": "Unlock \"Smart Invites\" and see jobs 3x faster.",
+            "upgradeToUnlock": "Upgrade to Unlock",
+            "topPicks": "Top Picks for You",
+            "refresh": "Refresh",
+            "analyzingMarketplace": "Analyzing marketplace...",
+            "noMatches": "No matches yet",
+            "noMatchesDesc": "No perfect matches found right now. Check back later!",
+            "scanJobs": "Scan Jobs",
+            "matchScore": "{score}% Match",
+            "budgetTbd": "Budget TBD"
         },
-        "jobGiverGuide": {
-            "title": "Job Giver Dashboard Guide",
-            "welcome": "Welcome to your Dashboard! This is your control center for hiring and managing installers.",
-            "activeJobsLabel": "Active Jobs:",
-            "activeJobsDesc": "This shows the number of jobs you've posted that are currently open for bidding or in progress. Click to manage them.",
-            "fundsEscrowLabel": "Funds in Secure Deposit:",
-            "fundsInEscrowDesc": "The total amount you have currently deposited in safe Lock for active jobs.",
-            "totalBidsLabel": "Total Bids Received:",
-            "totalBidsDesc": "See the total number of bids submitted across all your job postings.",
-            "completedJobsLabel": "Completed Jobs:",
-            "completedJobsDesc": "View a history of all your successfully completed projects. Click to see your archived jobs.",
-            "needInstallerLabel": "Need an Installer?:",
-            "needInstallerDesc": "A shortcut to post a new job and start receiving bids from professionals.",
-            "bottomText": "Use the navigation on the left to access other sections, like \"My Jobs\" to review bids on your active postings."
-        },
-        "verifyInstaller": "Become a Verified Installer",
-        "verifyInstallerDesc": "Complete Aadhar verification to build trust and get more jobs.",
-        "verifyNow": "Verify Now",
-        "totalEarningsDesc": "Lifetime payout processed",
-        "projectedEarningsDesc": "Funds currently Locked",
+        "recentActivityTitle": "Recent Activity",
+        "recentActivityDesc": "Your latest actions and updates.",
+        "loading": "Loading...",
+        "noRecentActivity": "No recent activity",
+        "noRecentActivityDesc": "Your recent jobs and transactions will appear here.",
         "metrics": {
             "avgBids": "Avg Bids/Job",
             "avgBidsTooltip": "Average number of bids you receive per job (last 90 days)",
@@ -307,13 +290,8 @@
             "pendingReviewsActionTooltip": "Click to review completed jobs",
             "pendingReviewsNoneTooltip": "All completed jobs have been reviewed",
             "yourNetwork": "Your Network",
-            "yourNetworkTooltip": "Installers you've favorited. Click to view them."
+            "yourNetworkTooltip": "Professionals you've favorited. Click to view them."
         },
-        "recentActivityTitle": "Recent Activity",
-        "recentActivityDesc": "Your latest actions and updates.",
-        "loading": "Loading...",
-        "noRecentActivity": "No recent activity",
-        "noRecentActivityDesc": "Your recent jobs and transactions will appear here.",
         "support": {
             "title": "Contact Support",
             "description": "Choose how you'd like to get in touch with our team.",
@@ -324,26 +302,6 @@
             "emailButton": "Email Us",
             "tooltip": "Contact Support",
             "srOnly": "Support"
-        },
-        "admin": {
-            "welcome": "Welcome, Admin!",
-            "totalUsers": "Total Users",
-            "totalJobs": "Total Jobs",
-            "openDisputes": "Open Disputes",
-            "valueReleased": "Value Released",
-            "recentSignups": "Recent Signups",
-            "unknownUser": "Unknown User",
-            "guide": {
-                "title": "Admin Dashboard Guide",
-                "welcome": "Welcome, Admin. This dashboard provides a high-level overview of the entire platform.",
-                "totalUsers": "Total Users: The total number of registered users.",
-                "totalJobs": "Total Jobs: The total number of jobs created.",
-                "openDisputes": "Open Disputes: Active disputes requiring review.",
-                "valueReleased": "Value Released: Total monetary value released to installers.",
-                "financialSummary": "Financial Summary: Real-time platform revenue and funds held.",
-                "topPerformers": "Top Performers: Leaderboard of best installers (Last Month).",
-                "userGrowth": "User Growth: New user sign-ups chart (6 Months)."
-            }
         }
     },
     "notifications": {
@@ -494,9 +452,9 @@
             "title": "Transactions",
             "content": "This page provides a detailed audit trail of every financial transaction that occurs on the platform. It's an essential tool for accounting and tracking revenue.",
             "kpiTitle": "KPI Cards & Date Filters:",
-            "kpiContent": "At the top, you'll find key performance indicators. Use the date filter to see the total value of funds released to installers over specific periods. \"Currently Held\" always shows the real-time balance.",
+            "kpiContent": "At the top, you'll find key performance indicators. Use the date filter to see the total value of funds released to professionals over specific periods. \"Currently Held\" always shows the real-time balance.",
             "logTitle": "Transaction Log:",
-            "logContent": "The main table shows a chronological list of all transactions, including payments from Job Givers, payouts to Installers, and any refunds.",
+            "logContent": "The main table shows a chronological list of all transactions, including payments from Clients, payouts to Professionals, and any refunds.",
             "searchTitle": "Search & Filter:",
             "searchContent": "Use the controls to quickly find specific transactions. You can search by Transaction ID, Job ID, or user name, and filter by the transaction status."
         }
@@ -506,13 +464,13 @@
         "bidsTab": "Bids",
         "waitAward": "Waiting for Award",
         "titlePlaceholder": "e.g., Technical Installation for 2 BHK Apartment",
-        "titleDesc": "Be specific! A clear title helps attract the right installers.",
+        "titleDesc": "Be specific! A clear title helps attract the right professionals.",
         "description": "Job Description",
         "descriptionPlaceholder": "Describe the project requirements, scope, and any important details...",
-        "descriptionDesc": "Detailed description helps installers provide accurate bids.",
+        "descriptionDesc": "Detailed description helps professionals provide accurate bids.",
         "category": "Job Category",
         "categoryPlaceholder": "Select a category for your job",
-        "categoryDesc": "This helps installers understand the scope of work.",
+        "categoryDesc": "This helps professionals understand the scope of work.",
         "skills": "Required Skills",
         "skillsPlaceholder": "e.g., Smart Devices, Professional, Wiring",
         "skillsDesc": "Enter a comma-separated list of skills.",
@@ -549,9 +507,9 @@
         "saveChangesDesc": "Editing a live job will remove all existing bids to ensure fairness. Previous bidders will be notified and will need to bid again on the updated job details. This action cannot be undone.",
         "confirmAndSave": "Confirm & Save",
         "confirmPostTitle": "Confirm Job Posting",
-        "confirmPostDesc": "Your job will be visible to installers immediately. Ensure all details are correct.",
+        "confirmPostDesc": "Your job will be visible to professionals immediately. Ensure all details are correct.",
         "directRequest": "Direct Request (Optional)",
-        "directRequestDesc": "Know an installer you trust? Send a private request for them to bid on this job.",
+        "directRequestDesc": "Know a professional you trust? Send a private request for them to bid on this job.",
         "saveAsTemplate": "Save as Template",
         "saveTemplateDesc": "Save this job configuration to reuse later for similar projects.",
         "preferredTime": "Preferred Time",
@@ -569,17 +527,17 @@
         "gstInvoice": "GST Invoice Required",
         "gstInvoiceDesc": "Select this if you are a business and require a GST invoice for this job.",
         "travelTip": "Travel Tip (Optional)",
-        "travelTipDesc": "Adding a small tip can attract installers from further away.",
-        "installerId": "Installer's Public ID (Optional)",
-        "installerIdPlaceholder": "Paste installer's public ID here...",
-        "installerIdDesc": "To send a private job request to a specific installer, paste their ID here. Public bidding will be disabled.",
+        "travelTipDesc": "Adding a small tip can attract professionals from further away.",
+        "professionalId": "Professional's Public ID (Optional)",
+        "professionalIdPlaceholder": "Paste professional's public ID here...",
+        "professionalIdDesc": "To send a private job request to a specific professional, paste their ID here. Public bidding will be disabled.",
         "verifyingId": "Verifying ID...",
-        "verifiedInstaller": "Verified Installer",
+        "verifiedProfessional": "Verified Professional",
         "applyNow": "Apply Now",
         "placeBid": "Place Bid",
         "verifyDetails": "I verify that these details are correct.",
-        "originalDescription": "Job Description (User Provided â€“ {language})",
-        "compiledDescription": "Job Description (System Compiled â€“ English)",
+        "originalDescription": "Job Description (User Provided – {language})",
+        "compiledDescription": "Job Description (System Compiled – English)",
         "noBidsYet": "No bids yet",
         "bidsReceived": "Bids Received",
         "awardJob": "Award Job",
@@ -591,20 +549,20 @@
         "archived": "Archived",
         "helpTitle": "Post a New Job",
         "editHelpTitle": "Edit Job",
-        "helpIntro": "Follow these steps to create a job listing and attract the best installers.",
+        "helpIntro": "Follow these steps to create a job listing and attract the best professionals.",
         "helpBudget": "Budget",
         "helpBudgetDesc": "Provide a realistic budget range. {aiText}",
         "helpAiSuggest": "Use the \"AI Estimate\" button to get a fair market estimate based on your job details.",
         "helpCategory": "Job Category",
-        "helpCategoryDesc": "Selecting the right category is crucial. This determines the checklist installers must agree to when bidding.",
+        "helpCategoryDesc": "Selecting the right category is crucial. This determines the checklist professionals must agree to when bidding.",
         "helpAiFields": "AI-Powered Fields",
         "helpAiFieldsDesc": "Use the \"AI Generate\" button next to the description to get a head start based on your job title.",
         "helpLocation": "Location & Address",
         "helpLocationDesc": "Start by typing your pincode to find your area, then use the map to pin your exact location. An accurate location is crucial.",
         "helpAttachments": "Attachments",
-        "helpAttachmentsDesc": "Upload site photos, floor plans, or any other relevant documents to give installers a better understanding of the job.",
+        "helpAttachmentsDesc": "Upload site photos, floor plans, or any other relevant documents to give professionals a better understanding of the job.",
         "helpDirectAward": "Direct Award (Optional)",
-        "helpDirectAwardDesc": "If you already know an installer on our platform, you can enter their public ID here to send them a private request to bid on this job.",
+        "helpDirectAwardDesc": "If you already Know a professional on our platform, you can enter their public ID here to send them a private request to bid on this job.",
         "houseReq": "Please enter a valid house/building detail.",
         "streetReq": "Please enter a valid street/area.",
         "pincodeReq": "Please select a pincode and post office.",
@@ -645,7 +603,7 @@
         "loadFromTemplate": "Load from template...",
         "noTemplates": "No templates yet",
         "saveAsTemplateHelp": "Save this job as a template to reuse later",
-        "usedCount": "Used {count}Ãƒâ€”",
+        "usedCount": "Used {count}×",
         "manageTemplates": "Manage Templates",
         "stepOfTotal": "Step {step} of {total}",
         "percentCompleted": "{percent}% Completed",
@@ -664,20 +622,20 @@
         "editAgain": "Edit Again",
         "analyzingRequirements": "Analyzing Requirements...",
         "clearingRequirements": "Clarifying your requirements...",
-        "structuringDetails": "Structuring details for installers",
+        "structuringDetails": "Structuring details for professionals",
         "checkingContradictions": "Checking for contradictions",
         "calculatingPrice": "Calculating price estimate",
         "promoteAndRelist": "Promote & Re-list",
         "promoteUnbidJob": "Promote Unbid Job",
-        "promoteUnbidJobDesc": "Attract more installers by offering a travel tip and re-listing the job. This tip is commission-free for the installer.",
+        "promoteUnbidJobDesc": "Attract more professionals by offering a travel tip and re-listing the job. This tip is commission-free for the professional.",
         "travelTipAmount": "Travel Tip (₹)",
-        "travelTipHelp": "This amount will be added to the total cost and paid directly to the installer.",
+        "travelTipHelp": "This amount will be added to the total cost and paid directly to the professional.",
         "newBiddingDeadline": "New Bidding Deadline",
         "promoteAndRelistJob": "Promote & Re-list Job",
         "jobPromoted": "Job Promoted!",
         "jobPromotedDesc": "Your job is now open for bidding to a wider audience.",
         "myActiveJobs": "My Active Jobs",
-        "activeJobsDesc": "Manage your job postings and review bids from installers.",
+        "activeJobsDesc": "Manage your job postings and review bids from professionals.",
         "activeJobsFooter": "You have {count} active jobs.",
         "unbidJobsDesc": "Jobs that received no bids. You can repost or promote them.",
         "unbidJobsFooter": "You have {count} unbid jobs requiring attention.",
@@ -685,7 +643,7 @@
         "archivedJobsDesc": "A history of your completed or cancelled projects.",
         "archivedJobsFooter": "You have {count} archived jobs.",
         "noActiveJobs": "No active jobs yet",
-        "noActiveJobsDesc": "Start by creating your first job posting to find qualified installers.",
+        "noActiveJobsDesc": "Start by creating your first job posting to find qualified professionals.",
         "postFirstJob": "Post Your First Job",
         "noUnbidJobs": "No unbid jobs",
         "noUnbidJobsDesc": "All your jobs have received bids. Great work!",
@@ -732,23 +690,26 @@
         "noNearbyJobs": "No nearby jobs right now",
         "noNearbyJobsDesc": "Check back soon, or browse all jobs to find opportunities in other areas.",
         "showingNearbyCount": "Showing {count} nearby jobs",
-        "guideOpen": "This job is open for bids. Installers can view details and submit their quotes.",
+        "guideOpen": "This job is open for bids. Professionals can view details and submit their quotes.",
         "guideBidAccepted": "A bid has been accepted. Awaiting funding to begin work.",
-        "guideInProgress": "Work is in progress. The installer is on the job.",
-        "guideWorkSubmitted": "The installer has submitted their work for review.",
+        "guideInProgress": "Work is in progress. The professional is on the job.",
+        "guideWorkSubmitted": "The professional has submitted their work for review.",
         "howItWorks": "How It Works",
         "reviewAward": "Review & Award",
-        "reviewAwardDesc": "Review incoming bids and award the job to the best installer.",
+        "reviewAwardDesc": "Review incoming bids and award the job to the best professional.",
         "secureFunding": "Secure Funding",
         "secureFundingDesc": "Fund the escrow to begin work. Your money is held safely.",
         "approveWork": "Approve Work",
         "approveWorkDesc": "Review the completed work and approve to release payment.",
         "placeBidDesc": "Submit your competitive bid for this job.",
-        "waitAwardDesc": "The job giver will review bids and award the job.",
+        "waitAwardDesc": "The client will review bids and award the job.",
         "submitWork": "Submit Work",
         "submitWorkDesc": "After completing the job, submit your work for approval."
     },
     "jobDetail": {
+        "currentStatus": "Current Status",
+        "professional": "Professional",
+        "client": "Client",
         "addExtraFunds": "Add Extra Funds",
         "downloadServiceInvoice": "Download Service Invoice",
         "addFundsDesc": "Add funds to the escrow for extra tasks or materials.",
@@ -764,7 +725,7 @@
         "bidAmountHidden": "Bid amount hidden",
         "sendOffer": "Send Offer",
         "offerSent": "Offer Sent",
-        "waitingAcceptance": "Waiting for installer acceptance.",
+        "waitingAcceptance": "Waiting for professional acceptance.",
         "askQuestionChat": "Ask Question / Chat",
         "actions": "Actions",
         "syncingPermissions": "Syncing permissions...",
@@ -772,7 +733,7 @@
         "placeBid": "Place Bid",
         "bidPlaced": "Bid Placed",
         "requestReschedule": "Request Reschedule",
-        "offerSentMsg": "You have sent an offer. Waiting for installer to accept.",
+        "offerSentMsg": "You have sent an offer. Waiting for professional to accept.",
         "retractOffer": "Retract Offer",
         "offerRetracted": "Offer Retracted",
         "offerRetractedDesc": "Job is open for bidding again.",
@@ -807,15 +768,15 @@
         "notifications": {
             "milestoneCreated": "Milestone has been added to the job.",
             "milestoneGenericError": "Failed to create milestone",
-            "paymentReleased": "Milestone payment released to installer.",
+            "paymentReleased": "Milestone payment released to professional.",
             "paymentGenericError": "Payment Initialization Failed",
             "variationProposed": "Variation Proposed",
-            "variationProposedDesc": "Sent to Job Giver for approval.",
+            "variationProposedDesc": "Sent to Client for approval.",
             "variationRequested": "Variation Requested",
-            "variationRequestedDesc": "Sent to Installer for a quote.",
+            "variationRequestedDesc": "Sent to Professional for a quote.",
             "enterQuoteAmount": "Enter quote amount (₹):",
             "quoteSubmitted": "Quote Submitted",
-            "quoteSubmittedDesc": "Job Giver notified.",
+            "quoteSubmittedDesc": "Client notified.",
             "confirmVariationPayment": "Confirm payment of ₹{amount} for \"{description}\"?",
             "variationPaid": "Variation Paid",
             "variationDeclined": "Variation Declined",
@@ -865,15 +826,15 @@
             "title": "My Bids Guide",
             "content": "This page tracks every job you have bid on. Use the filter to see jobs with a specific status.",
             "biddedTitle": "Bidded:",
-            "biddedDesc": "You have placed a bid, but the job is still open for other installers to bid on.",
+            "biddedDesc": "You have placed a bid, but the job is still open for other professionals to bid on.",
             "awardedTitle": "Awarded:",
-            "awardedDesc": "Congratulations! The Job Giver has selected you. You must accept the job to proceed.",
+            "awardedDesc": "Congratulations! The Client has selected you. You must accept the job to proceed.",
             "inProgressTitle": "In Progress:",
-            "inProgressDesc": "You have accepted the job and can now communicate with the Job Giver.",
+            "inProgressDesc": "You have accepted the job and can now communicate with the Client.",
             "completedTitle": "Completed & Won:",
             "completedDesc": "The job is finished and you have been paid. You'll see any reputation points you earned here.",
             "notSelectedTitle": "Not Selected:",
-            "notSelectedDesc": "The Job Giver chose another installer for this project."
+            "notSelectedDesc": "The Client chose another professional for this project."
         },
         "statuses": {
             "all": "All",
@@ -911,7 +872,7 @@
         "protected": "Your payment is protected",
         "subtext": "Money released only after job completion",
         "success": "Payment secured",
-        "successSubtext": "Installer can now start work",
+        "successSubtext": "Professional can now start work",
         "confirm": "Is the work complete?",
         "confirmSubtext": "Payment will be released only after confirmation",
         "amount": "Amount",
@@ -969,6 +930,7 @@
         "deleted": "Deleted successfully",
         "submitted": "Submitted successfully",
         "jobPosted": "Job posted successfully",
+        "jobLive": "Your job is now live!",
         "bidPlaced": "Bid placed successfully",
         "draftLoaded": "Draft loaded",
         "draftLoadedDesc": "Your previous work has been restored.",
@@ -985,18 +947,18 @@
         "jobUpdated": "Job Updated",
         "jobUpdatedDesc": "Your job posting has been successfully updated."
     },
-    "installers": {
-        "title": "Find Installers",
-        "description": "Browse and filter through all verified installers on the platform.",
+    "professionals": {
+        "title": "Find Professionals",
+        "description": "Browse and filter through all verified professionals on the platform.",
         "searchPlaceholder": "Search by name or skill...",
         "pincodePlaceholder": "Filter by pincode...",
         "tierPlaceholder": "Filter by tier...",
         "skillPlaceholder": "Filter by skill...",
         "allTiers": "All Tiers",
         "allSkills": "All Skills",
-        "noInstallersFound": "No installers found matching your criteria.",
+        "noProfessionalsFound": "No professionals found matching your criteria.",
         "inactive": "Inactive",
-        "inactiveTooltip": "This installer hasn't been online for {days} days.",
+        "inactiveTooltip": "This professional hasn't been online for {days} days.",
         "tier": "{tier} Tier",
         "tierBronze": "Bronze",
         "tierSilver": "Silver",
@@ -1011,21 +973,21 @@
         "blocked": "Blocked",
         "block": "Block",
         "guide": {
-            "title": "Find Installers",
-            "content": "This is your directory to discover and vet professional installers on the platform.",
+            "title": "Find Professionals",
+            "content": "This is your directory to discover and vet professional professionals on the platform.",
             "premiumLabel": "Premium Feature:",
             "premiumDesc": "Access to this directory requires an active subscription.",
             "searchLabel": "Search & Filter:",
-            "searchDesc": "Use the filters to find installers by name, location (pincode), skill set, or reputation tier.",
+            "searchDesc": "Use the filters to find professionals by name, location (pincode), skill set, or reputation tier.",
             "reviewLabel": "Review Profiles:",
-            "reviewDesc": "Click on any installer's name to view their detailed profile, including their full work history and reviews.",
+            "reviewDesc": "Click on any professional's name to view their detailed profile, including their full work history and reviews.",
             "actionLabel": "Favorite & Block:",
-            "actionDesc": "Use the action buttons to add installers to your personal \"Favorite\" list for future Direct Awards, or \"Block\" them to prevent them from bidding on your jobs."
+            "actionDesc": "Use the action buttons to add professionals to your personal \"Favorite\" list for future Direct Awards, or \"Block\" them to prevent them from bidding on your jobs."
         }
     },
-    "myInstallers": {
-        "title": "My Installers",
-        "description": "Manage your network of previously hired, favorite, and blocked installers.",
+    "myProfessionals": {
+        "title": "My Professionals",
+        "description": "Manage your network of previously hired, favorite, and blocked professionals.",
         "platformRating": "Platform Rating",
         "yourRelationship": "Your Relationship",
         "jobsCompleted": "{count} jobs",
@@ -1044,19 +1006,19 @@
             "blocked": "Blocked"
         },
         "empty": {
-            "hired": "You haven't hired any installers yet.",
-            "favorites": "You haven't added any installers to your favorites.",
+            "hired": "You haven't hired any professionals yet.",
+            "favorites": "You haven't added any professionals to your favorites.",
             "blocked": "Your blocked list is empty."
         },
         "guide": {
-            "title": "My Installers",
-            "content": "This is your personal CRM for managing installers you've worked with on the platform.",
+            "title": "My Professionals",
+            "content": "This is your personal CRM for managing professionals you've worked with on the platform.",
             "hiredLabel": "Previously Hired:",
-            "hiredDesc": "A list of all installers who have completed jobs for you. This is your primary network.",
+            "hiredDesc": "A list of all professionals who have completed jobs for you. This is your primary network.",
             "favoritesLabel": "Favorites:",
-            "favoritesDesc": "From your \"Previously Hired\" list, you can add installers to this curated list for quick access when you want to use the \"Direct Award\" feature.",
+            "favoritesDesc": "From your \"Previously Hired\" list, you can add professionals to this curated list for quick access when you want to use the \"Direct Award\" feature.",
             "blockedLabel": "Blocked:",
-            "blockedDesc": "Add installers from your \"Previously Hired\" list here to prevent them from seeing or bidding on your future public jobs."
+            "blockedDesc": "Add professionals from your \"Previously Hired\" list here to prevent them from seeing or bidding on your future public jobs."
         }
     },
     "disputes": {
@@ -1108,7 +1070,7 @@
             "adminViewLabel": "Admin View:",
             "adminViewDesc": "As an admin, you see all disputes on the platform. Use the filters to search by Ticket ID, status, or category to quickly find what you're looking for.",
             "userViewLabel": "User View:",
-            "userViewDesc": "As a Job Giver or Installer, you will only see disputes that you are directly involved in.",
+            "userViewDesc": "As a Client or Professional, you will only see disputes that you are directly involved in.",
             "ticketStatusLabel": "Ticket Status:",
             "ticketStatusOpen": "Open:",
             "ticketStatusOpenDesc": "A new ticket that needs attention.",
@@ -1137,47 +1099,7 @@
             "authError": "Authentication details are missing. Please log in again."
         }
     },
-    "team": {
-        "title": "Team Management",
-        "description": "This page is where you, as a primary admin, can manage your administrative team.",
-        "guide": {
-            "addMember": "Add Team Member:",
-            "addMemberDesc": "Use the form to create a new Admin or Support Team user. They will be sent an email to log in with the temporary password you set.",
-            "rolesPermissions": "Roles & Permissions:",
-            "admin": "Admin:",
-            "adminDesc": "Full platform access - can manage users, jobs, transactions, settings, team members, and resolve disputes.",
-            "support": "Support Team:",
-            "supportDesc": "Limited access - can view users, jobs, and transactions (read-only), manage disputes, and provide customer support.",
-            "securityNote": "Security Note:",
-            "securityNoteDesc": "Support Team members cannot access platform settings, financial configurations, or team management. They focus on dispute resolution and customer service.",
-            "manageAccounts": "Manage Accounts:",
-            "manageAccountsDesc": "View team member details by clicking their name. Account deletion must be handled in the Firebase Console for security reasons."
-        },
-        "stats": {
-            "totalMembers": "Total Members",
-            "allMembers": "All team members",
-            "admins": "Admins",
-            "fullAccess": "Full platform access",
-            "supportTeam": "Support Team",
-            "customerSupport": "Customer support"
-        },
-        "currentMembers": "Current Team Members",
-        "membersShown": "{count} members shown • Administrative and support staff",
-        "searchPlaceholder": "Search by name or email...",
-        "noMembersFound": "No team members found",
-        "noMembersMatch": "No members match your current filters",
-        "table": {
-            "name": "Name",
-            "email": "Email",
-            "role": "Role",
-            "dateAdded": "Date Added"
-        },
-        "roles": {
-            "all": "All Roles",
-            "admin": "Admin",
-            "support": "Support Team"
-        }
-    },
+
     "profile": {
         "editProfile": "Edit Profile",
         "editProfileDesc": "Make changes to your profile here. Click save when you're done.",
@@ -1259,8 +1181,8 @@
         "verificationFailed": "Verification Failed",
         "verificationFailedDesc": "Please type DELETE to confirm.",
         "editProfileBtn": "Edit Profile",
-        "installerReputation": "Installer Reputation",
-        "installerReputationDesc": "Your performance and trust score on the platform.",
+        "professionalReputation": "Professional Reputation",
+        "professionalReputationDesc": "Your performance and trust score on the platform.",
         "tier": "Tier",
         "reputationPoints": "Reputation Points",
         "howReputationWorks": "How Reputation Works",
@@ -1280,11 +1202,11 @@
         "mySkills": "My Skills",
         "mySkillsDesc": "Manage the skills shown on your profile.",
         "expandOpportunities": "Expand Your Opportunities",
-        "expandOpportunitiesDesc": "Want to find work on the platform? Become a verified installer to start bidding on jobs.",
-        "becomeInstaller": "Become an Installer",
+        "expandOpportunitiesDesc": "Want to find work on the platform? Become a verified professional to start bidding on jobs.",
+        "becomeProfessional": "Become an Professional",
         "readyToHire": "Ready to Hire?",
-        "readyToHireDesc": "Activate your Job Giver profile to post jobs and find the perfect installer for your projects.",
-        "startHiring": "Start Hiring as a Job Giver",
+        "readyToHireDesc": "Activate your Client profile to post jobs and find the perfect professional for your projects.",
+        "startHiring": "Start Hiring as a Client",
         "cancel": "Cancel",
         "unexpectedError": "An unexpected error occurred.",
         "noEmergencyContactsYet": "No emergency contacts added yet.",
@@ -1301,157 +1223,22 @@
         "yourDetails": "Your Details",
         "yourDetailsHelp": "View your name, user ID, email, and location info. Click \"Edit Profile\" to update your name, pincodes, or GSTIN.",
         "roleSwitching": "Role Switching",
-        "roleSwitchingHelp": "If you have both \"Job Giver\" and \"Installer\" roles, you can switch between them in the user menu (top right).",
-        "installerReputationHelpTitle": "Installer Reputation",
-        "installerReputationHelp": "This section tracks your performance. Complete jobs and get good ratings to earn points and advance to higher tiers (Bronze, Silver, Gold, Platinum).",
+        "roleSwitchingHelp": "If you have both \"Client\" and \"Professional\" roles, you can switch between them in the user menu (top right).",
+        "professionalReputationHelpTitle": "Professional Reputation",
+        "professionalReputationHelp": "This section tracks your performance. Complete jobs and get good ratings to earn points and advance to higher tiers (Bronze, Silver, Gold, Platinum).",
         "skills": "Skills",
-        "skillsHelp": "Click the pencil icon to add or remove skills from your profile. This helps Job Givers find you.",
+        "skillsHelp": "Click the pencil icon to add or remove skills from your profile. This helps Clients find you.",
         "payoutSettingsHelp": "Add your bank account details here to receive payments for completed jobs.",
-        "becomeInstallerJobGiver": "Become an Installer/Job Giver",
-        "becomeInstallerJobGiverHelp": "If you only have one role, you'll see a prompt to activate the other, expanding your opportunities on the platform.",
+        "becomeProfessionalClient": "Become an Professional/Client",
+        "becomeProfessionalClientHelp": "If you only have one role, you'll see a prompt to activate the other, expanding your opportunities on the platform.",
         "loadingProfile": "Loading Profile...",
         "userNotFound": "User not found.",
         "skillsUpdated": "Skills Updated",
         "skillsUpdatedDesc": "Your list of skills has been saved.",
-        "jobGiverRoleActivated": "Job Giver Role Activated!",
-        "jobGiverRoleActivatedDesc": "You can now post jobs and hire installers."
+        "clientRoleActivated": "Client Role Activated!",
+        "clientRoleActivatedDesc": "You can now post jobs and hire professionals."
     },
-    "verifyInstaller": {
-        "title": "Become a Verified Installer",
-        "description": {
-            "enterAadhar": "Verify your identity using Aadhar to create an installer profile.",
-            "enterOtp": "An OTP has been sent to your Aadhar-linked mobile number. Enter it below.",
-            "selectSkills": "Verification complete! Now, select your skills to finish setting up your installer profile.",
-            "enterBusinessProof": "Optional: Add business details for 'Pro' status. Freelancers can also reach Pro status later by maintaining high ratings."
-        },
-        "steps": {
-            "aadhar": {
-                "label": "Aadhar Number",
-                "placeholder": "Enter your 12-digit Aadhar number",
-                "helperTextApi": "An OTP will be sent to your linked mobile number.",
-                "helperTextManual": "This will be manually verified by our team.",
-                "buttonApi": "Send OTP",
-                "buttonNext": "Next",
-                "validation": "Aadhar number must be 12 digits."
-            },
-            "otp": {
-                "label": "One-Time Password (OTP)",
-                "placeholder": "Enter the 6-digit OTP",
-                "description": "Enter the OTP sent to your mobile.",
-                "button": "Verify",
-                "validation": "OTP must be 6 digits.",
-                "manualTitle": "Confirm Submission",
-                "manualDesc": "Since automated verification is currently disabled for maintenance, your details will be submitted for manual review by our admin team.",
-                "manualButton": "Confirm & Continue",
-                "manualToastTitle": "Submitted",
-                "manualToastDesc": "Proceeding to skills selection."
-            },
-            "skills": {
-                "title": "Select Your Skills",
-                "subtitle": "Choose all that apply. This helps in matching you with the right jobs.",
-                "button": "Next: Business Proof",
-                "validation": "Please select at least one skill."
-            },
-            "business": {
-                "gstLabel": "GST Number (Optional)",
-                "gstPlaceholder": "Enter your 15-digit GSTIN",
-                "photoLabel": "Shop/Business Photo URL (Optional)",
-                "photoPlaceholder": "Enter a URL to your shop photo",
-                "photoHelper": "Proof of physical shop enhances trust with Job Givers.",
-                "buttonFinish": "Finish & Get Pro",
-                "buttonSkip": "Skip & Start as Freelancer"
-            }
-        },
-        "alerts": {
-            "otpSent": "OTP Sent",
-            "verificationSuccess": "Verification Successful",
-            "verificationSuccessDesc": "Please select your skills to complete the process.",
-            "verificationFailed": "Verification Failed",
-            "skillsSaved": "Skills Saved!",
-            "skillsSavedDesc": "One last step: add business proof to get 'Pro' status (optional).",
-            "gstVerified": "GST Verified!",
-            "gstCheckError": "Could not verify GSTIN. Please check or try again.",
-            "profileActivated": "Installer Profile Activated!",
-            "profileActivatedDesc": "Congrats! You are now a verified Installer.",
-            "profileSubmitted": "Profile Submitted!",
-            "profileSubmittedDesc": "Your installer profile is pending manual verification. You will be notified once approved.",
-            "detailsRecorded": "Details Recorded",
-            "detailsRecordedDesc": "Please confirm your details.",
-            "error": "Error",
-            "failedToInitiate": "Failed to initiate verification",
-            "unexpectedError": "An unexpected error occurred. Please try again.",
-            "updateError": "Failed to create installer profile. Please try again."
-        },
-        "help": {
-            "title": "Become a Verified Installer",
-            "contentIntro": "This secure process verifies your identity and adds the \"Installer\" role to your profile.",
-            "itemAadhar": "Aadhar OTP:",
-            "itemAadharDesc": "First, enter your 12-digit Aadhar number. You'll receive an OTP on your linked mobile.",
-            "itemSkills": "Select Skills:",
-            "itemSkillsDesc": "After successful verification, choose the skills you specialize in. This is crucial for getting matched with the right jobs.",
-            "contentOutro": "Once completed, you'll be able to switch to your Installer role and start bidding on jobs."
-        }
-    },
-    "allJobs": {
-        "title": "All Jobs",
-        "description": "{count} jobs shown • {bidding} bidding, {direct} direct",
-        "stats": {
-            "total": "Total Jobs",
-            "totalDesc": "All jobs posted",
-            "active": "Active Jobs",
-            "activeDesc": "Currently open/in-progress",
-            "completed": "Completed",
-            "completedDesc": "Successfully finished",
-            "disputed": "Disputed",
-            "disputedDesc": "Require attention"
-        },
-        "tabs": {
-            "all": "All",
-            "active": "Active",
-            "completed": "Completed",
-            "disputed": "Disputed"
-        },
-        "filters": {
-            "jobIdLabel": "Job Title",
-            "jobIdPlaceholder": "Filter by Job Title...",
-            "statusLabel": "Status",
-            "allStatuses": "All Statuses",
-            "typeLabel": "Job Type",
-            "allTypes": "All Types"
-        },
-        "table": {
-            "title": "Job Title",
-            "status": "Status",
-            "giver": "Job Giver",
-            "bids": "Bids",
-            "type": "Job Type",
-            "posted": "Posted"
-        },
-        "buttons": {
-            "export": "Export to CSV",
-            "reset": "Reset Filters",
-            "loadMore": "Load More Jobs",
-            "loadingMore": "Loading more..."
-        },
-        "empty": {
-            "noJobs": "No jobs found",
-            "tryAdjusting": "Try adjusting your filters or search criteria",
-            "loading": "Loading jobs...",
-            "wait": "Please wait while we fetch the job list"
-        },
-        "help": {
-            "title": "All Jobs",
-            "intro": "This is the master view of every job ever created on the platform. As an admin, you can monitor all activity from here.",
-            "filters": "Filters:",
-            "filtersDesc": "Use the filter bar to narrow down jobs by status, type, or search by title.",
-            "sort": "Sorting:",
-            "sortDesc": "Click on column headers to sort the table.",
-            "export": "Export:",
-            "exportDesc": "Download the current view as a CSV file for external analysis.",
-            "details": "Job Details:",
-            "detailsDesc": "Click on any row to view the full details of that job."
-        }
-    },
+
     "components": {
         "export": {
             "button": "Export",
@@ -1473,622 +1260,8 @@
             "reset": "Reset Filters"
         }
     },
-    "auditLogs": {
-        "title": "Admin Audit Log",
-        "description": "{count} actions shown • Chronological record of all admin actions",
-        "stats": {
-            "total": "Total Actions",
-            "totalDesc": "Last 100 actions",
-            "today": "Today",
-            "todayDesc": "Actions performed today",
-            "week": "This Week",
-            "weekDesc": "Last 7 days"
-        },
-        "table": {
-            "timestamp": "Timestamp",
-            "admin": "Admin",
-            "action": "Action",
-            "target": "Target",
-            "details": "Details"
-        },
-        "filters": {
-            "searchLabel": "Search",
-            "searchPlaceholder": "Search by admin, action, or target...",
-            "actionTypeLabel": "Action Type",
-            "allActions": "All Actions"
-        },
-        "empty": {
-            "title": "No audit logs found",
-            "description": "No admin actions match your current filters"
-        },
-        "actions": {
-            "USER_SUSPENDED": "User Suspended",
-            "USER_ACTIVATED": "User Activated",
-            "USER_DELETED": "User Deleted",
-            "USER_VERIFIED": "User Verified",
-            "JOB_DELETED": "Job Deleted",
-            "JOB_FLAGGED": "Job Flagged",
-            "DISPUTE_RESOLVED": "Dispute Resolved",
-            "REFUND_PROCESSED": "Refund Processed",
-            "SETTINGS_CHANGED": "Settings Changed",
-            "TEAM_MEMBER_ADDED": "Team Member Added",
-            "TEAM_MEMBER_REMOVED": "Team Member Removed",
-            "SUBSCRIPTION_GRANTED": "Subscription Granted",
-            "COUPON_CREATED": "Coupon Created",
-            "BLACKLIST_UPDATED": "Blacklist Updated"
-        },
-        "helper": {
-            "viewTarget": "View {target}",
-            "noDetails": "No additional details",
-            "booleanYes": "Yes",
-            "booleanNo": "No"
-        }
-    },
-    "users": {
-        "title": "User Directory",
-        "description": "Manage all registered users. {count} users shown",
-        "stats": {
-            "totalUsers": "Total Users",
-            "active": "{count} active",
-            "installers": "Installers",
-            "verified": "{count} verified",
-            "jobGivers": "Job Givers",
-            "clients": "Clients",
-            "newToday": "New Today",
-            "joined": "+{count} joined"
-        },
-        "tabs": {
-            "all": "All ({count})",
-            "installers": "Installers ({count})",
-            "jobGivers": "Job Givers ({count})",
-            "pending": "Pending Verification ({count})"
-        },
-        "filters": {
-            "search": "Search",
-            "searchPlaceholder": "Search by name, email, mobile, or ID...",
-            "role": "Role",
-            "allRoles": "All Roles",
-            "installer": "Installer",
-            "jobGiver": "Job Giver",
-            "admin": "Admin",
-            "support": "Support Team",
-            "status": "Status",
-            "allStatuses": "All Statuses",
-            "active": "Active",
-            "suspended": "Suspended",
-            "deactivated": "Deactivated"
-        },
-        "table": {
-            "user": "User / Unique ID",
-            "status": "Status",
-            "memberSince": "Member Since",
-            "tier": "Tier",
-            "actions": "Actions"
-        },
-        "actions": {
-            "viewProfile": "View Profile",
-            "markVerified": "Mark as Verified",
-            "deactivate": "Deactivate",
-            "suspend": "Suspend (7 Days)",
-            "reactivate": "Re-activate",
-            "delete": "Delete Permanently"
-        },
-        "badges": {
-            "active": "Active",
-            "suspended": "Suspended",
-            "deactivated": "Deactivated",
-            "verified": "Verified"
-        },
-        "messages": {
-            "userSuspended": "User Suspended",
-            "userSuspendedDesc": "{name} has been suspended for {days} days.",
-            "userReactivated": "User Reactivated",
-            "userReactivatedDesc": "{name}'s account is now active.",
-            "userDeactivated": "User Deactivated",
-            "userDeactivatedDesc": "{name}'s account has been deactivated.",
-            "userUpdated": "User Updated",
-            "userUpdatedDesc": "User profile has been updated successfully.",
-            "userDeleted": "User Deleted",
-            "userDeletedDesc": "{name} has been permanently deleted.",
-            "error": "Error",
-            "errorDesc": "Failed to update user status."
-        },
-        "guide": {
-            "title": "User Directory",
-            "intro": "This page provides a complete directory of all registered users on the platform. As an admin, you have full control to manage these accounts.",
-            "filteringTitle": "Filtering & Sorting:",
-            "filtering": "Use the various filter controls to narrow down the user list. You can search by name/email/ID, or filter by role, tier, and status. Click on table headers to sort the data.",
-            "exportTitle": "Export Data:",
-            "export": "Click the \"Export to CSV\" button to download the currently filtered list of users for offline analysis or record-keeping.",
-            "statusTitle": "User Status:",
-            "activeTitle": "Active:",
-            "active": "The user can access the platform normally.",
-            "suspendedTitle": "Suspended:",
-            "suspended": "The user's account is temporarily disabled.",
-            "deactivatedTitle": "Deactivated:",
-            "deactivated": "The user's account is disabled and can be re-activated or permanently deleted.",
-            "actionsTitle": "Actions Menu:",
-            "actions": "The actions menu on each row allows you to suspend, deactivate, re-activate, or permanently delete a user account.",
-            "viewProfileTitle": "View Profile:",
-            "viewProfile": "Click on a user's name or use the actions menu to go to their detailed profile page."
-        },
-        "dialogs": {
-            "deleteTitle": "Are you absolutely sure?",
-            "deleteDescription": "This will permanently delete the user <bold>{name}</bold>. This action is irreversible. Please type <bold>DELETE</bold> to confirm.",
-            "deletePlaceholder": "Type DELETE to confirm",
-            "cancel": "Cancel",
-            "confirmDelete": "Delete"
-        },
-        "empty": {
-            "title": "No users found",
-            "description": "Try adjusting your filters or search criteria",
-            "reset": "Reset Filters"
-        },
-        "loading": {
-            "title": "Loading users...",
-            "description": "Please wait while we fetch the user directory",
-            "more": "Loading more...",
-            "loadMore": "Load More Users ({count} loaded)"
-        },
-        "a11y": {
-            "actionsFor": "Actions for {name}"
-        }
-    },
-    "pendingSignups": {
-        "title": "Pending Signups CRM",
-        "description": "Manage and follow up with incomplete signups",
-        "refresh": "Refresh",
-        "stats": {
-            "total": "Total Pending",
-            "new": "New Leads",
-            "contacted": "Contacted",
-            "followUp": "Follow Up",
-            "highPriority": "High Priority",
-            "today": "Follow Up Today",
-            "overdue": "Overdue",
-            "denied": "Denied"
-        },
-        "tabs": {
-            "all": "All Pending",
-            "today": "Today's Follow-ups",
-            "overdue": "Overdue",
-            "highPriority": "High Priority"
-        },
-        "filters": {
-            "search": "Search",
-            "searchPlaceholder": "Search by mobile, email, or name...",
-            "status": "Status",
-            "allStatuses": "All Statuses",
-            "priority": "Priority",
-            "allPriorities": "All Priorities",
-            "role": "Role",
-            "allRoles": "All Roles",
-            "installer": "Installer",
-            "jobGiver": "Job Giver"
-        },
-        "table": {
-            "contact": "Contact",
-            "status": "Status",
-            "priority": "Priority",
-            "role": "Role",
-            "followUp": "Follow-Up",
-            "lastActive": "Last Active",
-            "attempts": "Attempts",
-            "actions": "Actions"
-        },
-        "actions": {
-            "call": "Call",
-            "sms": "SMS",
-            "email": "Email",
-            "schedule": "Schedule Follow-Up",
-            "markDenied": "Mark as Denied",
-            "viewTimeline": "View Activity Timeline",
-            "setPriority": "Set Priority"
-        },
-        "dialogs": {
-            "schedule": {
-                "title": "Schedule Follow-Up",
-                "description": "Schedule a follow-up call with {name}",
-                "date": "Follow-Up Date",
-                "pickDate": "Pick a date",
-                "time": "Time",
-                "priority": "Priority",
-                "nextAction": "Next Action",
-                "nextActionPlaceholder": "e.g., Follow up call, Send pricing info",
-                "notes": "Notes",
-                "notesPlaceholder": "Add any notes about this follow-up...",
-                "cancel": "Cancel",
-                "submit": "Schedule Follow-Up"
-            },
-            "deny": {
-                "title": "Mark as Denied",
-                "description": "Record why {name} declined to sign up",
-                "reason": "Denial Reason",
-                "customReason": "Specify Reason",
-                "customReasonPlaceholder": "Please specify the reason...",
-                "notes": "Additional Notes",
-                "notesPlaceholder": "Add any additional context about why they declined...",
-                "cancel": "Cancel",
-                "submit": "Mark as Denied",
-                "reasons": {
-                    "not_interested": "Not Interested",
-                    "too_expensive": "Too Expensive",
-                    "found_alternative": "Found Alternative Solution",
-                    "technical_issues": "Technical Issues",
-                    "trust_concerns": "Trust/Security Concerns",
-                    "other": "Other Reason"
-                }
-            },
-            "timeline": {
-                "title": "Activity Timeline",
-                "description": "Complete contact history for {name}",
-                "empty": "No activity recorded yet",
-                "by": "by {name}",
-                "next": "Next: {action}",
-                "followUp": "Follow-up: {date}"
-            }
-        },
-        "badges": {
-            "status": {
-                "new": "New Lead",
-                "contacted": "Contacted",
-                "follow_up": "Follow-Up Scheduled",
-                "busy": "Busy - Reschedule",
-                "denied": "Denied",
-                "converted": "Converted"
-            },
-            "priority": {
-                "high": "High",
-                "medium": "Medium",
-                "low": "Low"
-            }
-        }
-    },
-    "systemHealth": {
-        "title": "System Health & Observability",
-        "description": "Real-time pulse of the platform.",
-        "cards": {
-            "stuckJobs": "Stuck Jobs",
-            "stuckJobsDesc": "Inactive for > 7 days",
-            "recentErrors": "Recent Errors",
-            "recentErrorsDesc": "Last 10 events captured",
-            "businessEvents": "Business Events",
-            "businessEventsDesc": "Recent transactions/actions",
-            "systemStatus": "System Status",
-            "systemStatusDesc": "No outages detected",
-            "operational": "Operational",
-            "noOutages": "No outages detected"
-        },
-        "sections": {
-            "recentErrors": "Recent System Errors",
-            "recentBusinessEvents": "Recent Business Events",
-            "stuckJobs": "Stuck Jobs",
-            "stuckJobsDesc": "Jobs active but not updated in 7+ days. Requires attention."
-        },
-        "table": {
-            "jobTitle": "Job Title",
-            "status": "Status",
-            "lastUpdated": "Last Updated",
-            "jobGiver": "Job Giver",
-            "action": "Action",
-            "inspect": "Inspect",
-            "allHealthy": "All active jobs are healthy."
-        },
-        "empty": {
-            "noErrors": "No recent errors.",
-            "noEvents": "No events found."
-        },
-        "loading": "Loading system health..."
-    },
-    "reports": {
-        "title": "Platform Reports",
-        "description": "An overview of key metrics and trends (last 90 days).",
-        "updated": "Updated {{time}}",
-        "refresh": "Refresh Data",
-        "financial": {
-            "title": "Financial Summary",
-            "description": "A real-time overview of financial activities on the platform.",
-            "volume": "Total Volume",
-            "revenue": "Platform Revenue",
-            "released": "Funds Released",
-            "held": "Funds Held",
-            "refunds": "Refunds Processed"
-        },
-        "kpi": {
-            "totalUsers": "Total Users",
-            "usersDesc": "{{installers}} Installers, {{givers}} Job Givers",
-            "totalJobs": "Total Jobs",
-            "jobsDesc": "All jobs created on the platform",
-            "fillRate": "Job Fill Rate",
-            "fillRateDesc": "Of jobs posted are completed"
-        },
-        "export": {
-            "title": "Data Export",
-            "description": "Download a full CSV backup of your platform's core data collections.",
-            "users": "Export All Users",
-            "jobs": "Export All Jobs",
-            "transactions": "Export All Transactions",
-            "disputes": "Export All Disputes",
-            "noData": "No Data",
-            "noDataDesc": "There is no data to export for {{type}}.",
-            "success": "Export Successful",
-            "successDesc": "{{count}} records exported for {{type}}.",
-            "failed": "Export Failed",
-            "failedDesc": "An error occurred during the export."
-        },
-        "topPerformers": {
-            "title": "Top Performers Report",
-            "description": "Installers ranked by performance for {{month}}.",
-            "runAutomation": "Run Monthly Reward Automation",
-            "automation": {
-                "complete": "Automation Complete!",
-                "failed": "Automation Failed",
-                "error": "Automation Error",
-                "errorDesc": "Could not grant rewards. Please try again."
-            },
-            "rank": "Rank",
-            "installer": "Installer",
-            "points": "Monthly Points",
-            "rating": "Rating",
-            "tier": "Tier",
-            "empty": "Not enough data to generate performance report."
-        },
-        "leaderboard": {
-            "title": "All-Time Reputation Leaderboard",
-            "description": "Top installers by total reputation points, with geographic filters.",
-            "download": "Download Report",
-            "filterState": "filter by State",
-            "filterCity": "Filter by City",
-            "filterPincode": "Filter by Pincode",
-            "allStates": "All States",
-            "allCities": "All Cities",
-            "allPincodes": "All Pincodes",
-            "totalPoints": "Total Points",
-            "empty": "No installers found for the selected filters.",
-            "exportFailed": "Export Failed",
-            "exportFailedDesc": "No data to export for the current filter."
-        },
-        "disputes": {
-            "title": "Dispute Resolution Report",
-            "description": "An overview of support ticket performance.",
-            "resolutionRate": "Resolution Rate",
-            "avgDays": "Avg. Days to Resolve",
-            "byCategory": "Disputes by Category",
-            "count": "Count",
-            "empty": "No dispute data available."
-        },
-        "charts": {
-            "userGrowth": "User Growth",
-            "userGrowthDesc": "New users registered in the last 6 months.",
-            "jobStatus": "Job Status Distribution",
-            "jobStatusDesc": "Current status of all jobs on the platform.",
-            "numberOfJobs": "Number of Jobs"
-        }
-    },
-    "subscriptionPlans": {
-        "title": "Subscription Plans",
-        "description": "Manage the subscription plans available to your users.",
-        "createButton": "Create New Plan",
-        "editButton": "Edit Plan",
-        "empty": "No subscription plans found.",
-        "emptyCreate": "No subscription plans found. Create one to get started.",
-        "table": {
-            "name": "Plan Name",
-            "price": "Price (Yearly)",
-            "role": "Applicable Role",
-            "status": "Status",
-            "actions": "Actions"
-        },
-        "form": {
-            "createTitle": "Create New Plan",
-            "editTitle": "Edit Plan",
-            "createDesc": "Create a new subscription plan for users.",
-            "editDesc": "Edit the details of this subscription plan.",
-            "id": "Plan ID",
-            "idDesc": "A unique ID for the plan. Cannot be changed later.",
-            "name": "Plan Name",
-            "description": "Description",
-            "price": "Price (₹ per year)",
-            "role": "Applicable To",
-            "features": "Features",
-            "featuresDesc": "A comma-separated list of features for this plan.",
-            "archived": "Archived",
-            "archivedDesc": "Archived plans cannot be assigned to new users.",
-            "cancel": "Cancel",
-            "save": "Save Plan",
-            "roles": {
-                "any": "Any Role",
-                "installer": "Installer Only",
-                "jobGiver": "Job Giver Only"
-            }
-        },
-        "status": {
-            "active": "Active",
-            "archived": "Archived"
-        },
-        "actions": {
-            "edit": "Edit",
-            "delete": "Delete",
-            "manage": "Manage Plan"
-        },
-        "toasts": {
-            "created": "Plan Created",
-            "updated": "Plan Updated",
-            "saved": "Subscription plan \"{{name}}\" has been saved.",
-            "deleted": "Plan Deleted",
-            "deletedDesc": "Plan \"{{name}}\" has been permanently deleted.",
-            "error": "Error",
-            "failed": "Failed to save plan."
-        },
-        "confirmDelete": "Are you sure you want to delete the plan \"{{name}}\"? This is a destructive action."
-    },
-    "coupons": {
-        "title": "Coupon Management",
-        "description": "Create and manage promotional coupon codes for your users.",
-        "createButton": "Create New Coupon",
-        "editButton": "Edit Coupon",
-        "empty": "No coupons found.",
-        "emptyCreate": "No coupons found. Create your first one to get started.",
-        "table": {
-            "code": "Code",
-            "description": "Description",
-            "role": "Role",
-            "duration": "Duration",
-            "validity": "Validity",
-            "status": "Status",
-            "actions": "Actions"
-        },
-        "form": {
-            "createTitle": "Create New Coupon",
-            "editTitle": "Edit Coupon",
-            "createDesc": "Create a new promotional coupon for users.",
-            "editDesc": "Edit the details of this coupon.",
-            "code": "Coupon Code",
-            "description": "Description",
-            "planId": "Plan ID",
-            "duration": "Duration (Days)",
-            "role": "Applicable To",
-            "validFrom": "Valid From",
-            "validUntil": "Valid Until",
-            "pickDate": "Pick a date",
-            "isActive": "Active",
-            "isActiveDesc": "Users can only redeem active coupons.",
-            "cancel": "Cancel",
-            "save": "Save Coupon",
-            "roles": {
-                "any": "Any Role",
-                "installer": "Installer Only",
-                "jobGiver": "Job Giver Only"
-            }
-        },
-        "status": {
-            "active": "Active",
-            "scheduled": "Scheduled",
-            "expired": "Expired"
-        },
-        "actions": {
-            "edit": "Edit",
-            "delete": "Delete",
-            "activate": "Activate",
-            "deactivate": "Deactivate"
-        },
-        "toasts": {
-            "created": "Coupon Created",
-            "updated": "Coupon Updated",
-            "saved": "Coupon code \"{{code}}\" has been saved.",
-            "deleted": "Coupon Deleted",
-            "deletedDesc": "Coupon \"{{code}}\" has been permanently deleted.",
-            "statusUpdated": "Coupon Status Updated",
-            "statusUpdatedDesc": "Coupon \"{{code}}\" is now {{status}}.",
-            "error": "Error",
-            "failed": "Failed to save coupon."
-        },
-        "confirmDelete": "Are you sure you want to delete coupon \"{{code}}\"? This cannot be undone.",
-        "days": "{{count}} days"
-    },
-    "blacklist": {
-        "title": "Current Blacklist",
-        "description": "A list of all currently blacklisted users and pincodes.",
-        "empty": "The blacklist is currently empty.",
-        "add": {
-            "title": "Add to Blacklist",
-            "description": "Add a user ID or a pincode to the blacklist to restrict their access or visibility.",
-            "button": "Add Entry",
-            "success": "Entry Added",
-            "successDesc": "Successfully blacklisted {{type}}: {{value}}.",
-            "error": "Error",
-            "failed": "Failed to add blacklist entry."
-        },
-        "form": {
-            "type": "Type",
-            "selectType": "Select type",
-            "types": {
-                "user": "User",
-                "pincode": "Pincode"
-            },
-            "value": "Value",
-            "enterUserId": "Enter User ID",
-            "enterPincode": "Enter 6-digit Pincode",
-            "role": "Applicable To Role",
-            "selectRole": "Select role",
-            "roles": {
-                "any": "Any Role",
-                "installer": "Installer",
-                "jobGiver": "Job Giver"
-            },
-            "reason": "Reason",
-            "reasonPlaceholder": "Explain why this entry is being added to the blacklist..."
-        },
-        "table": {
-            "type": "Type",
-            "value": "Value",
-            "role": "Applied to Role",
-            "reason": "Reason",
-            "dateAdded": "Date Added",
-            "actions": "Actions"
-        },
-        "actions": {
-            "remove": "Remove",
-            "removeTooltip": "Remove from blacklist",
-            "confirmRemove": "Are you sure you want to remove \"{{value}}\" from the blacklist?",
-            "removed": "Entry Removed",
-            "removedDesc": "\"{{value}}\" has been removed from the blacklist."
-        },
-        "addedOn": "Added on: {{date}}"
-    },
-    "signupAnalytics": {
-        "title": "Signup Analytics",
-        "description": "Conversion funnel and outreach effectiveness metrics",
-        "accessDenied": "Access denied. Admin only.",
-        "loadingError": "Failed to load analytics data",
-        "error": "Error",
-        "cards": {
-            "totalStarted": "Total Started",
-            "attempts": "Signup attempts",
-            "conversionRate": "Conversion Rate",
-            "converted": "converted",
-            "biggestDropOff": "Biggest Drop-Off",
-            "step": "Step",
-            "dropRate": "drop rate",
-            "outreachImpact": "Outreach Impact",
-            "improvement": "Improvement",
-            "decrease": "Decrease"
-        },
-        "funnel": {
-            "title": "Signup Funnel",
-            "description": "User drop-off at each step of the signup process",
-            "stages": {
-                "started": "Started",
-                "step1": "Step 1",
-                "step2": "Step 2",
-                "step3": "Step 3",
-                "converted": "Converted"
-            }
-        },
-        "outreach": {
-            "title": "Outreach Effectiveness",
-            "description": "Conversion rate comparison: contacted vs non-contacted users",
-            "contacted": "Contacted Users",
-            "nonContacted": "Non-Contacted Users",
-            "labels": {
-                "contacted": "Contacted",
-                "notContacted": "Not Contacted",
-                "conversionRate": "Conversion Rate",
-                "total": "Total"
-            },
-            "stats": {
-                "total": "Total: {{count}}",
-                "converted": "Converted: {{count}}"
-            }
-        },
-        "roles": {
-            "title": "Role Distribution",
-            "description": "Breakdown of pending signups by role",
-            "installer": "Installers",
-            "jobGiver": "Job Givers",
-            "unknown": "Unknown"
-        }
-    },
+
+
     "validation": {
         "titleMin": "Job title must be at least 10 characters.",
         "descMin": "Description must be at least 50 characters.",
@@ -2126,17 +1299,44 @@
         }
     },
     "admin": {
+        "dashboard": {
+            "welcome": "Admin Console",
+            "totalUsers": "Total Registered Users",
+            "totalJobs": "Transaction Volume (Jobs)",
+            "activeDisputes": "Active Disputes",
+            "valueReleased": "Total Funds Released",
+            "recentSignups": "Recent Signups",
+            "unknownUser": "Unidentified User",
+            "guide": {
+                "title": "Admin Console Overview",
+                "welcome": "Welcome to the Platform Administration Console. Monitor real-time platform metrics and operational health.",
+                "totalUsers": "Cumulative count of all users registered on the platform.",
+                "totalJobs": "The total number of job listings processed by the system.",
+                "activeDisputes": "Current unresolved disputes requiring administrative review.",
+                "valueReleased": "Total monetary value successfully disbursed to professionals.",
+                "financialSummary": "Consolidated view of platform fees and transaction flow.",
+                "topPerformers": "Professionals with the highest reputation and successful completion rates.",
+                "userGrowth": "Platform adoption trends over the previous 6 months."
+            }
+        },
+        "financials": {
+            "title": "Platform Financial Summary",
+            "totalVolume": "Cumulative Transaction Volume",
+            "revenue": "Platform Net Revenue",
+            "released": "Successful Funds Disbursed",
+            "held": "Funds Currently in Escrow"
+        },
         "title": "Admin Dashboard",
         "description": "Platform overview and operational management.",
-        "subscriptionPlans": "Subscription Plans",
-        "coupons": "Coupons",
+        "subscriptionPlansLabel": "Subscription Plans",
+        "couponsLabel": "Coupons",
         "viewUsers": "View Users",
         "manageUsers": "Manage all platform users",
         "allJobsLabel": "All Jobs",
         "monitorJobs": "Monitor all job postings",
-        "disputes": "Disputes",
+        "disputesLabel": "Disputes",
         "resolveDisputes": "Resolve user disputes",
-        "reports": "Reports",
+        "reportsLabel": "Reports",
         "viewAnalytics": "View analytics & reports",
         "allSystemsOperational": "All Systems Operational",
         "systemIssuesDetected": "System Issues Detected",
@@ -2144,7 +1344,7 @@
         "commonTasks": "Common administrative tasks",
         "activeJobs": "Active Jobs",
         "currentlyOperational": "Currently operational",
-        "openDisputes": "Open Disputes",
+        "openDisputes": "Active Disputes",
         "requireAttention": "Requiring attention",
         "totalUsers": "Total Users",
         "registeredPlatform": "Registered on platform",
@@ -2153,57 +1353,845 @@
         "jobsPostedToday": "Jobs Posted Today",
         "last24Hours": "In the last 24 hours",
         "jobsThisWeek": "Jobs This Week",
-        "postedThisWeek": "Posted this week",
-        "completedThisWeek": "Completed This Week",
-        "jobsFinished": "Jobs finished this week",
-        "liveSafetyAlerts": "Live Safety Alerts",
-        "unread": "{count} unread",
-        "alertsDescription": "Real-time alerts for disputes, refunds, and flagged activity.",
-        "allAlerts": "All Alerts",
-        "unreadOnly": "Unread Only",
-        "critical": "Critical",
-        "warning": "Warning",
-        "info": "Info",
-        "markAllRead": "Mark All Read",
-        "noAlerts": "No alerts at this time.",
-        "noFilterAlerts": "No {filter} alerts found.",
-        "read": "Read",
-        "justNow": "Just now",
-        "jobId": "Job #{id}",
-        "amount": "₹{amount}",
-        "release": "Release",
-        "refund": "Refund",
-        "split": "Split 50/50",
-        "markRead": "Mark Read",
-        "success": "Success",
-        "alertsMarkedRead": "{count} alerts marked as read.",
-        "confirmSplit": "Are you sure you want to split the escrow 50/50 for job {id}?",
-        "confirmAction": "Are you sure you want to {resolution} the escrow for job {id}?",
-        "resolutionSuccess": "Dispute resolution applied successfully.",
-        "resolutionFailed": "Resolution Failed",
-        "resolutionFailedDesc": "Could not apply the resolution. Please try again.",
-        "blacklist": {
-            "form": {
-                "roles": {
-                    "installer": "Installer",
-                    "jobGiver": "Job Giver"
-                },
-                "types": {
-                    "user": "User",
-                    "pincode": "Pincode"
-                },
-                "reason": "Reason",
-                "reasonPlaceholder": "Explain why this entry is being added to the blacklist..."
+        "users": {
+            "title": "User Management",
+            "description": "View and manage all registered users on the platform ({count} shown).",
+            "badges": {
+                "suspended": "Suspended",
+                "deactivated": "Deactivated",
+                "active": "Active",
+                "verified": "Verified"
             },
-            "coupons": {
-                "title": "Coupon Management",
-                "form": {
-                    "save": "Save Coupon",
-                    "create": "Create Coupon",
-                    "code": "Coupon Code",
-                    "discount": "Discount Amount (₹)",
-                    "expiry": "Expiry Date"
+            "table": {
+                "user": "User / ID",
+                "status": "Status",
+                "memberSince": "Member Since",
+                "tier": "Tier",
+                "actions": "Actions"
+            },
+            "actions": {
+                "viewProfile": "View Profile",
+                "markVerified": "Mark as Verified",
+                "deactivate": "Deactivate",
+                "suspend": "Suspend (7 Days)",
+                "reactivate": "Re-activate",
+                "delete": "Delete Permanently"
+            },
+            "guide": {
+                "title": "User Management Guide",
+                "intro": "Use this page to monitor and manage user accounts.",
+                "filteringTitle": "Filtering:",
+                "filtering": "Use the filter bar to find users by role, status, or verification.",
+                "exportTitle": "Export:",
+                "export": "Download use data in CSV or JSON format.",
+                "statusTitle": "Status:",
+                "actionsTitle": "Actions:",
+                "actions": "Use the action menu to verify, suspend, or delete users.",
+                "viewProfileTitle": "View Profile:",
+                "viewProfile": "Click a user's name to view their full activity and history.",
+                "activeTitle": "Active:",
+                "active": "Users with full access to the platform.",
+                "suspendedTitle": "Suspended:",
+                "suspended": "Temporary restriction (usually due to policy violations).",
+                "deactivatedTitle": "Deactivated:",
+                "deactivated": "User has closed their account or been banned."
+            },
+            "messages": {
+                "userSuspended": "User Suspended",
+                "userSuspendedDesc": "{name} has been suspended for {days} days.",
+                "userReactivated": "User Reactivated",
+                "userReactivatedDesc": "{name}'s account is now active.",
+                "userDeactivated": "User Deactivated",
+                "userDeactivatedDesc": "{name}'s account has been deactivated.",
+                "userUpdated": "User Updated",
+                "userUpdatedDesc": "User profile has been updated successfully.",
+                "userDeleted": "User Deleted",
+                "userDeletedDesc": "{name} has been permanently deleted.",
+                "error": "Error",
+                "errorDesc": "Failed to update user status."
+            },
+            "tabs": {
+                "all": "All ({count})",
+                "professionals": "Professionals ({count})",
+                "clients": "Clients ({count})",
+                "pending": "Pending Verification ({count})"
+            },
+            "filters": {
+                "search": "Search Users",
+                "searchPlaceholder": "Name, email, or ID...",
+                "role": "Role",
+                "allRoles": "All Roles",
+                "professional": "Professional",
+                "client": "Client",
+                "admin": "Admin",
+                "support": "Support Team",
+                "status": "Status",
+                "active": "Active",
+                "suspended": "Suspended",
+                "deactivated": "Deactivated"
+            },
+            "stats": {
+                "totalUsers": "Total Users",
+                "active": "{count} active",
+                "professionals": "Professionals",
+                "verified": "{count} verified",
+                "clients": "Clients",
+                "clientsTotal": "Total clients",
+                "newToday": "New Today",
+                "joined": "{count} joined today"
+            },
+            "a11y": {
+                "actionsFor": "Actions for {name}"
+            }
+        },
+        "verifyProfessional": {
+            "title": "Become a Verified Professional",
+            "description": {
+                "enterAadhar": "Verify your identity using Aadhar to create an professional profile.",
+                "enterOtp": "An OTP has been sent to your Aadhar-linked mobile number. Enter it below.",
+                "selectSkills": "Verification complete! Now, select your skills to finish setting up your professional profile.",
+                "enterBusinessProof": "Optional: Add business details for 'Pro' status. Freelancers can also reach Pro status later by maintaining high ratings."
+            },
+            "steps": {
+                "aadhar": {
+                    "label": "Aadhar Number",
+                    "placeholder": "Enter your 12-digit Aadhar number",
+                    "helperTextApi": "An OTP will be sent to your linked mobile number.",
+                    "helperTextManual": "This will be manually verified by our team.",
+                    "buttonApi": "Send OTP",
+                    "buttonNext": "Next",
+                    "validation": "Aadhar number must be 12 digits."
+                },
+                "otp": {
+                    "label": "One-Time Password (OTP)",
+                    "placeholder": "Enter the 6-digit OTP",
+                    "description": "Enter the OTP sent to your mobile.",
+                    "button": "Verify",
+                    "validation": "OTP must be 6 digits.",
+                    "manualTitle": "Confirm Submission",
+                    "manualDesc": "Since automated verification is currently disabled for maintenance, your details will be submitted for manual review by our admin team.",
+                    "manualButton": "Confirm & Continue",
+                    "manualToastTitle": "Submitted",
+                    "manualToastDesc": "Proceeding to skills selection."
+                },
+                "skills": {
+                    "title": "Select Your Skills",
+                    "subtitle": "Choose all that apply. This helps in matching you with the right jobs.",
+                    "button": "Next: Business Proof",
+                    "validation": "Please select at least one skill."
+                },
+                "business": {
+                    "gstLabel": "GST Number (Optional)",
+                    "gstPlaceholder": "Enter your 15-digit GSTIN",
+                    "photoLabel": "Shop/Business Photo URL (Optional)",
+                    "photoPlaceholder": "Enter a URL to your shop photo",
+                    "photoHelper": "Proof of physical shop enhances trust with Clients.",
+                    "buttonFinish": "Finish & Get Pro",
+                    "buttonSkip": "Skip & Start as Freelancer"
                 }
+            },
+            "alerts": {
+                "otpSent": "OTP Sent",
+                "verificationSuccess": "Verification Successful",
+                "verificationSuccessDesc": "Please select your skills to complete the process.",
+                "verificationFailed": "Verification Failed",
+                "skillsSaved": "Skills Saved!",
+                "skillsSavedDesc": "One last step: add business proof to get 'Pro' status (optional).",
+                "gstVerified": "GST Verified!",
+                "gstCheckError": "Could not verify GSTIN. Please check or try again.",
+                "profileActivated": "Professional Profile Activated!",
+                "profileActivatedDesc": "Congrats! You are now a verified Professional.",
+                "profileSubmitted": "Profile Submitted!",
+                "profileSubmittedDesc": "Your professional profile is pending manual verification. You will be notified once approved.",
+                "detailsRecorded": "Details Recorded",
+                "detailsRecordedDesc": "Please confirm your details.",
+                "error": "Error",
+                "failedToInitiate": "Failed to initiate verification",
+                "unexpectedError": "An unexpected error occurred. Please try again.",
+                "updateError": "Failed to create professional profile. Please try again."
+            },
+            "help": {
+                "title": "Become a Verified Professional",
+                "contentIntro": "This secure process verifies your identity and adds the \"Professional\" role to your profile.",
+                "itemAadhar": "Aadhar OTP:",
+                "itemAadharDesc": "First, enter your 12-digit Aadhar number. You'll receive an OTP on your linked mobile.",
+                "itemSkills": "Select Skills:",
+                "itemSkillsDesc": "After successful verification, choose the skills you specialize in. This is crucial for getting matched with the right jobs.",
+                "contentOutro": "Once completed, you'll be able to switch to your Professional role and start bidding on jobs."
+            }
+        },
+        "allJobs": {
+            "title": "All Jobs",
+            "description": "{count} jobs shown • {bidding} bidding, {direct} direct",
+            "stats": {
+                "total": "Total Jobs",
+                "totalDesc": "All jobs posted",
+                "active": "Active Jobs",
+                "activeDesc": "Currently open/in-progress",
+                "completed": "Completed",
+                "completedDesc": "Successfully finished",
+                "disputed": "Disputed",
+                "disputedDesc": "Require attention"
+            },
+            "tabs": {
+                "all": "All",
+                "active": "Active",
+                "completed": "Completed",
+                "disputed": "Disputed"
+            },
+            "filters": {
+                "jobIdLabel": "Job Title",
+                "jobIdPlaceholder": "Filter by Job Title...",
+                "statusLabel": "Status",
+                "allStatuses": "All Statuses",
+                "typeLabel": "Job Type",
+                "allTypes": "All Types"
+            },
+            "table": {
+                "title": "Job Title",
+                "status": "Status",
+                "giver": "Client",
+                "bids": "Bids",
+                "type": "Job Type",
+                "posted": "Posted"
+            },
+            "common": {
+                "na": "N/A"
+            },
+            "buttons": {
+                "export": "Export to CSV",
+                "reset": "Reset Filters",
+                "loadMore": "Load More Jobs",
+                "loadingMore": "Loading more..."
+            },
+            "empty": {
+                "noJobs": "No jobs found",
+                "tryAdjusting": "Try adjusting your filters or search criteria",
+                "loading": "Loading jobs...",
+                "wait": "Please wait while we fetch the job list"
+            },
+            "help": {
+                "title": "All Jobs",
+                "intro": "This is the master view of every job ever created on the platform. As an admin, you can monitor all activity from here.",
+                "filters": "Filters:",
+                "filtersDesc": "Use the filter bar to narrow down jobs by status, type, or search by title.",
+                "sort": "Sorting:",
+                "sortDesc": "Click on column headers to sort the table.",
+                "export": "Export:",
+                "exportDesc": "Download the current view as a CSV file for external analysis.",
+                "details": "Job Details:",
+                "detailsDesc": "Click on any row to view the full details of that job."
+            }
+        },
+        "auditLogs": {
+            "title": "Admin Audit Log",
+            "description": "{count} actions shown • Chronological record of all admin actions",
+            "stats": {
+                "total": "Total Actions",
+                "totalDesc": "Last 100 actions",
+                "today": "Today",
+                "todayDesc": "Actions performed today",
+                "week": "This Week",
+                "weekDesc": "Last 7 days"
+            },
+            "table": {
+                "timestamp": "Timestamp",
+                "admin": "Admin",
+                "action": "Action",
+                "target": "Target",
+                "details": "Details"
+            },
+            "filters": {
+                "searchLabel": "Search",
+                "searchPlaceholder": "Search by admin, action, or target...",
+                "actionTypeLabel": "Action Type",
+                "allActions": "All Actions"
+            },
+            "empty": {
+                "title": "No audit logs found",
+                "description": "No admin actions match your current filters"
+            },
+            "actions": {
+                "USER_SUSPENDED": "User Suspended",
+                "USER_ACTIVATED": "User Activated",
+                "USER_DELETED": "User Deleted",
+                "USER_VERIFIED": "User Verified",
+                "JOB_DELETED": "Job Deleted",
+                "JOB_FLAGGED": "Job Flagged",
+                "DISPUTE_RESOLVED": "Dispute Resolved",
+                "REFUND_PROCESSED": "Refund Processed",
+                "SETTINGS_CHANGED": "Settings Changed",
+                "TEAM_MEMBER_ADDED": "Team Member Added",
+                "TEAM_MEMBER_REMOVED": "Team Member Removed",
+                "SUBSCRIPTION_GRANTED": "Subscription Granted",
+                "COUPON_CREATED": "Coupon Created",
+                "BLACKLIST_UPDATED": "Blacklist Updated"
+            },
+            "helper": {
+                "viewTarget": "View {target}",
+                "noDetails": "No additional details",
+                "booleanYes": "Yes",
+                "booleanNo": "No"
+            }
+        },
+        "pendingSignups": {
+            "title": "Pending Signups CRM",
+            "description": "Manage and follow up with incomplete signups",
+            "refresh": "Refresh",
+            "stats": {
+                "total": "Total Pending",
+                "new": "New Leads",
+                "contacted": "Contacted",
+                "followUp": "Follow Up",
+                "highPriority": "High Priority",
+                "today": "Follow Up Today",
+                "overdue": "Overdue",
+                "denied": "Denied"
+            },
+            "tabs": {
+                "all": "All Pending",
+                "today": "Today's Follow-ups",
+                "overdue": "Overdue",
+                "highPriority": "High Priority"
+            },
+            "filters": {
+                "search": "Search",
+                "searchPlaceholder": "Search by mobile, email, or name...",
+                "status": "Status",
+                "allStatuses": "All Statuses",
+                "priority": "Priority",
+                "allPriorities": "All Priorities",
+                "role": "Role",
+                "allRoles": "All Roles",
+                "professional": "Professional",
+                "client": "Client"
+            },
+            "table": {
+                "contact": "Contact",
+                "status": "Status",
+                "priority": "Priority",
+                "role": "Role",
+                "followUp": "Follow-Up",
+                "lastActive": "Last Active",
+                "attempts": "Attempts",
+                "actions": "Actions"
+            },
+            "actions": {
+                "call": "Call",
+                "sms": "SMS",
+                "email": "Email",
+                "schedule": "Schedule Follow-Up",
+                "markDenied": "Mark as Denied",
+                "viewTimeline": "View Activity Timeline",
+                "setPriority": "Set Priority"
+            },
+            "dialogs": {
+                "schedule": {
+                    "title": "Schedule Follow-Up",
+                    "description": "Schedule a follow-up call with {name}",
+                    "date": "Follow-Up Date",
+                    "pickDate": "Pick a date",
+                    "time": "Time",
+                    "priority": "Priority",
+                    "nextAction": "Next Action",
+                    "nextActionPlaceholder": "e.g., Follow up call, Send pricing info",
+                    "notes": "Notes",
+                    "notesPlaceholder": "Add any notes about this follow-up...",
+                    "cancel": "Cancel",
+                    "submit": "Schedule Follow-Up"
+                },
+                "deny": {
+                    "title": "Mark as Denied",
+                    "description": "Record why {name} declined to sign up",
+                    "reason": "Denial Reason",
+                    "customReason": "Specify Reason",
+                    "customReasonPlaceholder": "Please specify the reason...",
+                    "notes": "Additional Notes",
+                    "notesPlaceholder": "Add any additional context about why they declined...",
+                    "cancel": "Cancel",
+                    "submit": "Mark as Denied",
+                    "reasons": {
+                        "not_interested": "Not Interested",
+                        "too_expensive": "Too Expensive",
+                        "found_alternative": "Found Alternative Solution",
+                        "technical_issues": "Technical Issues",
+                        "trust_concerns": "Trust/Security Concerns",
+                        "other": "Other Reason"
+                    }
+                },
+                "timeline": {
+                    "title": "Activity Timeline",
+                    "description": "Complete contact history for {name}",
+                    "empty": "No activity recorded yet",
+                    "by": "by {name}",
+                    "next": "Next: {action}",
+                    "followUp": "Follow-up: {date}"
+                }
+            },
+            "badges": {
+                "status": {
+                    "new": "New Lead",
+                    "contacted": "Contacted",
+                    "follow_up": "Follow-Up Scheduled",
+                    "busy": "Busy - Reschedule",
+                    "denied": "Denied",
+                    "converted": "Converted"
+                },
+                "priority": {
+                    "high": "High",
+                    "medium": "Medium",
+                    "low": "Low"
+                }
+            }
+        },
+        "systemHealth": {
+            "title": "System Health & Observability",
+            "description": "Real-time pulse of the platform.",
+            "cards": {
+                "stuckJobs": "Stuck Jobs",
+                "stuckJobsDesc": "Inactive for > 7 days",
+                "recentErrors": "Recent Errors",
+                "recentErrorsDesc": "Last 10 events captured",
+                "businessEvents": "Business Events",
+                "businessEventsDesc": "Recent transactions/actions",
+                "systemStatus": "System Status",
+                "systemStatusDesc": "No outages detected",
+                "operational": "Operational",
+                "noOutages": "No outages detected"
+            },
+            "sections": {
+                "recentErrors": "Recent System Errors",
+                "recentBusinessEvents": "Recent Business Events",
+                "stuckJobs": "Stuck Jobs",
+                "stuckJobsDesc": "Jobs active but not updated in 7+ days. Requires attention."
+            },
+            "table": {
+                "jobTitle": "Job Title",
+                "status": "Status",
+                "lastUpdated": "Last Updated",
+                "client": "Client",
+                "action": "Action",
+                "inspect": "Inspect",
+                "allHealthy": "All active jobs are healthy."
+            },
+            "empty": {
+                "noErrors": "No recent errors.",
+                "noEvents": "No events found."
+            },
+            "loading": "Loading system health..."
+        },
+        "reports": {
+            "title": "Platform Reports",
+            "description": "An overview of key metrics and trends (last 90 days).",
+            "updated": "Updated {{time}}",
+            "refresh": "Refresh Data",
+            "financial": {
+                "title": "Financial Summary",
+                "description": "A real-time overview of financial activities on the platform.",
+                "volume": "Total Volume",
+                "revenue": "Platform Revenue",
+                "released": "Funds Released",
+                "held": "Funds Held",
+                "refunds": "Refunds Processed"
+            },
+            "kpi": {
+                "totalUsers": "Total Users",
+                "usersDesc": "{{professionals}} Professionals, {{givers}} Clients",
+                "totalJobs": "Total Jobs",
+                "jobsDesc": "All jobs created on the platform",
+                "fillRate": "Job Fill Rate",
+                "fillRateDesc": "Of jobs posted are completed"
+            },
+            "export": {
+                "title": "Data Export",
+                "description": "Download a full CSV backup of your platform's core data collections.",
+                "users": "Export All Users",
+                "jobs": "Export All Jobs",
+                "transactions": "Export All Transactions",
+                "disputes": "Export All Disputes",
+                "noData": "No Data",
+                "noDataDesc": "There is no data to export for {{type}}.",
+                "success": "Export Successful",
+                "successDesc": "{{count}} records exported for {{type}}.",
+                "failed": "Export Failed",
+                "failedDesc": "An error occurred during the export."
+            },
+            "topPerformers": {
+                "title": "Top Performers Report",
+                "description": "Professionals ranked by performance for {{month}}.",
+                "runAutomation": "Run Monthly Reward Automation",
+                "automation": {
+                    "complete": "Automation Complete!",
+                    "failed": "Automation Failed",
+                    "error": "Automation Error",
+                    "errorDesc": "Could not grant rewards. Please try again."
+                },
+                "rank": "Rank",
+                "professional": "Professional",
+                "points": "Monthly Points",
+                "rating": "Rating",
+                "tier": "Tier",
+                "empty": "Not enough data to generate performance report."
+            },
+            "leaderboard": {
+                "title": "All-Time Reputation Leaderboard",
+                "description": "Top professionals by total reputation points, with geographic filters.",
+                "download": "Download Report",
+                "filterState": "filter by State",
+                "filterCity": "Filter by City",
+                "filterPincode": "Filter by Pincode",
+                "allStates": "All States",
+                "allCities": "All Cities",
+                "allPincodes": "All Pincodes",
+                "totalPoints": "Total Points",
+                "empty": "No professionals found for the selected filters.",
+                "exportFailed": "Export Failed",
+                "exportFailedDesc": "No data to export for the current filter."
+            },
+            "disputes": {
+                "title": "Dispute Resolution Report",
+                "description": "An overview of support ticket performance.",
+                "resolutionRate": "Resolution Rate",
+                "avgDays": "Avg. Days to Resolve",
+                "byCategory": "Disputes by Category",
+                "count": "Count",
+                "status": "Resolution Status"
+            }
+        },
+        "subscriptionPlans": {
+            "title": "Subscription Plans",
+            "description": "Manage platform subscription tiers and pricing.",
+            "tabs": {
+                "active": "Active Plans",
+                "archived": "Archived",
+                "create": "Create Plan"
+            },
+            "table": {
+                "name": "Plan Name",
+                "price": "Price",
+                "interval": "Interval",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "form": {
+                "name": "Name",
+                "description": "Description",
+                "price": "Price (₹)",
+                "interval": "Billing Interval",
+                "features": "Features (comma separated)",
+                "submit": "Save Plan",
+                "cancel": "Cancel"
+            },
+            "actions": {
+                "edit": "Edit",
+                "archive": "Archive",
+                "delete": "Delete",
+                "activate": "Activate"
+            },
+            "messages": {
+                "saved": "Plan saved successfully.",
+                "archived": "Plan moved to archives.",
+                "deleted": "Plan permanently deleted.",
+                "activated": "Plan is now active.",
+                "error": "Failed to update plan."
+            }
+        },
+        "coupons": {
+            "title": "Promotional Coupons",
+            "description": "Create and manage discount codes for platform services.",
+            "refresh": "Refresh",
+            "create": "Create New Coupon",
+            "table": {
+                "code": "Coupon Code",
+                "discount": "Discount",
+                "expiry": "Expiry Date",
+                "status": "Status",
+                "usage": "Usage Count"
+            },
+            "empty": "No coupons found.",
+            "emptyCreate": "No coupons found. Create your first one to get started.",
+            "form": {
+                "code": "Coupon Code",
+                "type": "Discount Type",
+                "value": "Discount Value",
+                "minSpend": "Minimum Spend (₹)",
+                "maxDiscount": "Max Discount (₹)",
+                "expiry": "Expiry Date",
+                "usageLimit": "Total Usage Limit",
+                "submit": "Create Coupon",
+                "cancel": "Cancel"
+            },
+            "types": {
+                "percentage": "Percentage (%)",
+                "fixed": "Fixed Amount (₹)"
+            },
+            "messages": {
+                "created": "Coupon created successfully.",
+                "deleted": "Coupon deleted.",
+                "error": "Failed to process coupon.",
+                "isActive": "Active",
+                "isActiveDesc": "Users can only redeem active coupons.",
+                "isInactive": "Inactive"
+            }
+        },
+        "blacklist": {
+            "title": "Current Blacklist",
+            "description": "A list of all currently blacklisted users and pincodes.",
+            "empty": "The blacklist is currently empty.",
+            "add": {
+                "title": "Add to Blacklist",
+                "description": "Add a user ID or a pincode to the blacklist to restrict their access or visibility.",
+                "label": "Value",
+                "placeholder": "Enter User ID or Pincode",
+                "type": "Entry Type",
+                "reason": "Reason for Blacklisting",
+                "submit": "Blacklist",
+                "success": "Added to Blacklist",
+                "successDesc": "Successfully blacklisted {{type}}: {{value}}.",
+                "failed": "Failed to add blacklist entry."
+            },
+            "table": {
+                "type": "Type",
+                "value": "Value",
+                "addedAt": "Added On",
+                "addedBy": "Added By",
+                "reason": "Reason",
+                "actions": "Actions"
+            },
+            "types": {
+                "user": "User ID",
+                "pincode": "Pincode"
+            },
+            "actions": {
+                "reason": "View Reason",
+                "reasonTitle": "Blacklist Reason",
+                "reasonPlaceholder": "Explain why this entry is being added to the blacklist...",
+                "remove": "Remove",
+                "removeTitle": "Remove from Blacklist",
+                "removeDescription": "This will restore access/visibility for this entry. Are you sure?",
+                "removeConfirm": "Confirm Removal",
+                "removeCancel": "Cancel",
+                "removeTooltip": "Remove from blacklist",
+                "confirmRemove": "Are you sure you want to remove \"{{value}}\" from the blacklist?",
+                "success": "Removed from Blacklist",
+                "removedDesc": "\"{{value}}\" has been removed from the blacklist.",
+                "failed": "Failed to remove entry."
+            }
+        },
+        "signupAnalytics": {
+            "title": "Signup Analytics",
+            "description": "Conversion funnel and outreach effectiveness metrics",
+            "accessDenied": "Access denied. Admin only.",
+            "loadingError": "Failed to load analytics data",
+            "error": "Error",
+            "cards": {
+                "totalStarted": "Total Started",
+                "attempts": "Signup attempts",
+                "conversionRate": "Conversion Rate",
+                "converted": "converted",
+                "biggestDropOff": "Biggest Drop-Off",
+                "step": "Step",
+                "dropRate": "drop rate",
+                "outreachImpact": "Outreach Impact",
+                "improvement": "Improvement",
+                "decrease": "Decrease"
+            },
+            "funnel": {
+                "title": "Signup Funnel",
+                "description": "User drop-off at each step of the signup process",
+                "stages": {
+                    "started": "Started",
+                    "step1": "Step 1",
+                    "step2": "Step 2",
+                    "step3": "Step 3",
+                    "converted": "Converted"
+                }
+            },
+            "outreach": {
+                "title": "Outreach Effectiveness",
+                "description": "Conversion rate comparison: contacted vs non-contacted users",
+                "contacted": "Contacted Users",
+                "nonContacted": "Non-Contacted Users",
+                "labels": {
+                    "contacted": "Contacted",
+                    "notContacted": "Not Contacted",
+                    "conversionRate": "Conversion Rate",
+                    "total": "Total"
+                },
+                "stats": {
+                    "total": "Total: {{count}}",
+                    "converted": "Converted: {{count}}"
+                }
+            },
+            "roles": {
+                "title": "Role Distribution",
+                "description": "Breakdown of pending signups by role",
+                "professional": "Professionals",
+                "client": "Clients",
+                "unknown": "Unknown"
+            }
+        },
+        "alerts": {
+            "postedThisWeek": "Posted this week",
+            "completedThisWeek": "Completed This Week",
+            "jobsFinished": "Jobs finished this week",
+            "liveSafetyAlerts": "Live Safety Alerts",
+            "unread": "{count} unread",
+            "alertsDescription": "Real-time alerts for disputes, refunds, and flagged activity.",
+            "allAlerts": "All Alerts",
+            "unreadOnly": "Unread Only",
+            "critical": "Critical",
+            "warning": "Warning",
+            "info": "Info",
+            "markAllRead": "Mark All Read",
+            "noAlerts": "No alerts at this time.",
+            "noFilterAlerts": "No {filter} alerts found.",
+            "read": "Read",
+            "justNow": "Just now",
+            "jobId": "Job #{id}",
+            "amount": "₹{amount}",
+            "release": "Release",
+            "refund": "Refund",
+            "split": "Split 50/50",
+            "markRead": "Mark Read",
+            "success": "Success",
+            "alertsMarkedRead": "{count} alerts marked as read."
+        },
+        "team": {
+            "title": "Team Management",
+            "description": "This page is where you, as a primary admin, can manage your administrative team.",
+            "guide": {
+                "addMember": "Add Team Member:",
+                "addMemberDesc": "Use the form to create a new Admin or Support Team user. They will be sent an email to log in with the temporary password you set.",
+                "rolesPermissions": "Roles & Permissions:",
+                "admin": "Admin:",
+                "adminDesc": "Full platform access - can manage users, jobs, transactions, settings, team members, and resolve disputes.",
+                "support": "Support Team:",
+                "supportDesc": "Limited access - can view users, jobs, and transactions (read-only), manage disputes, and provide customer support.",
+                "securityNote": "Security Note:",
+                "securityNoteDesc": "Support Team members cannot access platform settings, financial configurations, or team management. They focus on dispute resolution and customer service.",
+                "manageAccounts": "Manage Accounts:",
+                "manageAccountsDesc": "View team member details by clicking their name. Account deletion must be handled in the Firebase Console for security reasons."
+            },
+            "stats": {
+                "totalMembers": "Total Members",
+                "allMembers": "All team members",
+                "admins": "Admins",
+                "fullAccess": "Full platform access",
+                "supportTeam": "Support Team",
+                "customerSupport": "Customer support"
+            },
+            "currentMembers": "Current Team Members",
+            "membersShown": "{count} members shown • Administrative and support staff",
+            "searchPlaceholder": "Search by name or email...",
+            "noMembersFound": "No team members found",
+            "noMembersMatch": "No members match your current filters",
+            "table": {
+                "name": "Name",
+                "email": "Email",
+                "role": "Role",
+                "dateAdded": "Date Added"
+            },
+            "roles": {
+                "all": "All Roles",
+                "admin": "Admin",
+                "support": "Support Team"
+            }
+        }
+    },
+    "professional": {
+        "dashboard": {
+            "welcome": "Welcome back, {name}",
+            "openJobs": "Open Jobs",
+            "openJobsDesc": "Available for bidding",
+            "myBids": "My Bids",
+            "myBidsDesc": "Bids you have placed",
+            "jobsWon": "Jobs Won",
+            "jobsWonDesc": "Jobs awarded to you",
+            "findNextProject": "Find Your Next Project",
+            "findNextProjectDesc": "Browse hundreds of technical installation jobs and place your bid.",
+            "browseJobs": "Browse Jobs",
+            "manageProfile": "Manage Your Profile",
+            "manageProfileDesc": "Keep your skills and reputation up-to-date to attract more Clients.",
+            "goToProfile": "Go to Profile",
+            "totalEarnings": "Total Earnings",
+            "totalEarningsDesc": "Lifetime payout processed",
+            "projectedEarnings": "Projected Earnings",
+            "projectedEarningsDesc": "Funds currently locked in secure deposit",
+            "guide": {
+                "title": "Professional Dashboard Guide",
+                "welcome": "Welcome to your Dashboard! This is your central hub for managing your work on the platform.",
+                "openJobsLabel": "Open Jobs:",
+                "openJobsDesc": "This shows the total number of jobs currently available for bidding. Click it to find your next opportunity.",
+                "myBidsLabel": "My Bids:",
+                "myBidsDesc": "Tracks all the jobs you've bid on and their current status (Bidded, Awarded, etc.). Click to see your bidding history.",
+                "jobsWonLabel": "Jobs Won:",
+                "jobsWonDesc": "Displays the number of jobs you've won that are currently active or in progress.",
+                "projectedEarningsLabel": "Projected Earnings:",
+                "projectedEarningsDesc": "The total value of jobs currently in the \"Funded\" (Locked) state that you are working on.",
+                "verificationLabel": "Verification:",
+                "verificationDesc": "Complete your Aadhar verification to become a trusted professional and increase your chances of winning jobs.",
+                "findProjectLabel": "Find Your Next Project:",
+                "findProjectDesc": "A quick link to jump directly to the job browsing page.",
+                "bottomText": "Use the navigation on the left to access other sections like your Profile, where you can track your reputation and skills."
+            }
+        }
+    },
+    "client": {
+        "dashboard": {
+            "welcome": "Welcome, {name}!",
+            "dashboardDesc": "Manage your jobs and track spending inclusive of escrow security.",
+            "activeJobs": "Active Jobs",
+            "activeJobsDesc": "Jobs you have posted that are not yet completed",
+            "fundsInEscrow": "Funds in Secure Deposit",
+            "fundsInEscrowDesc": "The total amount you have currently deposited in safe lock for active jobs.",
+            "completedJobs": "Completed Jobs",
+            "completedJobsDesc": "View a history of all your successfully completed projects.",
+            "openDisputes": "Open Disputes",
+            "openDisputesDesc": "Disputes needing resolution",
+            "needProfessional": "Need an Professional?",
+            "needProfessionalDesc": "Post a job and get bids from verified technical professionals.",
+            "manageJobs": "Manage Your Jobs",
+            "manageJobsDesc": "Review bids, award projects, and manage your active jobs all in one place.",
+            "goToMyJobs": "Go to My Jobs",
+            "postNewJob": "Post New Job",
+            "guide": {
+                "title": "Client Dashboard Guide",
+                "welcome": "Welcome to your Dashboard! This is your control center for hiring and managing professionals.",
+                "activeJobsLabel": "Active Jobs:",
+                "activeJobsDesc": "This shows the number of jobs you've posted that are currently open for bidding or in progress. Click to manage them.",
+                "fundsEscrowLabel": "Funds in Secure Deposit:",
+                "fundsInEscrowDesc": "The total amount you have currently deposited in safe Lock for active jobs.",
+                "totalBidsLabel": "Total Bids Received:",
+                "totalBidsDesc": "See the total number of bids submitted across all your job postings.",
+                "completedJobsLabel": "Completed Jobs:",
+                "completedJobsDesc": "View a history of all your successfully completed projects. Click to see your archived jobs.",
+                "needProfessionalLabel": "Need an Professional?:",
+                "needProfessionalDesc": "A shortcut to post a new job and start receiving bids from professionals.",
+                "bottomText": "Use the navigation on the left to access other sections, like \"My Jobs\" to review bids on your active postings."
+            }
+        }
+    },
+    "support": {
+        "dashboard": {
+            "welcome": "Support Dashboard",
+            "openDisputes": "Open Disputes",
+            "openDisputesDesc": "New cases that need attention",
+            "underReview": "Under Review",
+            "underReviewDesc": "Disputes you are currently investigating",
+            "disputeCenter": "Dispute Center",
+            "disputeCenterDesc": "Review, manage, and resolve all user-submitted disputes across the platform.",
+            "goToDisputes": "Go to Disputes",
+            "guide": {
+                "title": "Support Dashboard Guide",
+                "welcome": "Welcome to the Support Dashboard. your primary focus is managing and resolving user disputes.",
+                "openDisputes": "Open Disputes:",
+                "openDisputesDesc": "These are new cases that require your immediate attention.",
+                "underReview": "Under Review:",
+                "underReviewDesc": "These are disputes that you are actively investigating.",
+                "performance": "Performance:",
+                "performanceDesc": "This card shows your individual dispute resolution metrics, helping you track your progress.",
+                "bottomText": "Click on the stat cards to navigate to the Dispute Center and start resolving cases."
             }
         }
     },
@@ -2225,12 +2213,79 @@
         "optionIndoor": "Indoor Only",
         "optionOutdoor": "Outdoor Only",
         "optionBoth": "Both Indoor & Outdoor Setup Setup",
-        "optionInstallerSuggest": "Let Installer Suggest",
-        "aiCompiling": "Generating job descriptionâ€¦",
+        "optionProfessionalSuggest": "Let Professional Suggest",
+        "aiCompiling": "Generating job description…",
         "jobPreview": "Job Preview",
         "looksGood": "Looks good, post job",
         "editDescription": "Edit description",
         "editPrompt": "If you want to change anything, write it here freely",
         "editSubtext": "(We'll refine it and show you again)"
+    },
+    "onboarding": {
+        "title": "Professional Onboarding",
+        "description": "Please complete your profile details to start finding work on the platform.",
+        "steps": {
+            "basic": "Basic Info",
+            "experience": "Experience & Skills",
+            "documents": "Documents (KYC)",
+            "review": "Review"
+        },
+        "experience": {
+            "title": "Experience & Skills",
+            "categoryLabel": "Professional Category",
+            "selectCategory": "Select your field of expertise",
+            "yearsLabel": "Years of Experience",
+            "years02": "0 - 2 Years",
+            "years35": "3 - 5 Years",
+            "years5plus": "5+ Years",
+            "skillsLabel": "Select Your Specialized Skills"
+        },
+        "review": {
+            "title": "Review Your Details",
+            "basicInfo": "Basic Info",
+            "name": "Name",
+            "city": "City",
+            "shop": "Shop/Business",
+            "experience": "Experience",
+            "years": "Years",
+            "skills": "Skills",
+            "noneSelected": "None selected",
+            "pendingTitle": "Pending Verification",
+            "pendingDesc": "Once submitted, our team will verify your documents (Aadhar/PAN). This usually takes 24-48 hours."
+        },
+        "submit": {
+            "success": "Application Submitted!",
+            "successDesc": "Your profile is under review. We will notify you once verified.",
+            "failed": "Submission Failed",
+            "failedDesc": "Please try again later.",
+            "button": "Submit Application"
+        }
+    },
+    "skills": {
+        "cctv": "CCTV Installation",
+        "alarm": "Alarm Systems",
+        "access_control": "Access Control",
+        "fire_security": "Fire Security",
+        "biometrics": "Biometric Systems",
+        "home_network": "Home Networking",
+        "server_setup": "Server Setup",
+        "wifi_optimize": "Wi-Fi Optimization",
+        "it_support": "IT Technical Support",
+        "wiring": "House Wiring",
+        "panel_repair": "Panel Repair",
+        "lighting": "Lighting Systems",
+        "earthing": "Earthing Solutions",
+        "pipeline": "Pipeline Repair",
+        "sanitary": "Sanitary Installation",
+        "leakage": "Leakage Fixes",
+        "water_heater": "Water Heater Setup",
+        "carpentry": "Carpentry Work",
+        "painting": "Professional Painting",
+        "masonry": "Masonry/Brickwork",
+        "tiling": "Tiling & Flooring",
+        "home_theater": "Home Theater Setup",
+        "smart_display": "Smart Display Install",
+        "audio_video": "Audio/Video Solutions"
     }
 }
+

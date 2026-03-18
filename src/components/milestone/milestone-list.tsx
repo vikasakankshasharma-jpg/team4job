@@ -8,11 +8,11 @@ import { CheckCircle, Lock, Clock } from "lucide-react";
 interface MilestoneListProps {
     job: Job;
     user: User | null;
-    isJobGiver: boolean;
+    isClient: boolean;
     onRelease: (milestoneId: string) => Promise<void>;
 }
 
-export function MilestoneList({ job, user, isJobGiver, onRelease }: MilestoneListProps) {
+export function MilestoneList({ job, user, isClient, onRelease }: MilestoneListProps) {
     const milestones = job.milestones || [];
 
     if (milestones.length === 0) return null;
@@ -39,7 +39,7 @@ export function MilestoneList({ job, user, isJobGiver, onRelease }: MilestoneLis
                                 </div>
                             </div>
 
-                            {isJobGiver && milestone.status === 'funded' && (
+                            {isClient && milestone.status === 'funded' && (
                                 <Button size="sm" onClick={() => onRelease(milestone.id)} className="w-full sm:w-auto">
                                     <CheckCircle className="h-4 w-4 mr-2" />
                                     Release Payment

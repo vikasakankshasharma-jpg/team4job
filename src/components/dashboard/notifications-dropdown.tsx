@@ -50,10 +50,10 @@ export function NotificationsDropdown() {
             const newNotifs: NotificationItem[] = [];
 
             try {
-                if (role === 'Job Giver') {
+                if (role === 'Client') {
                     // 1. Find recent bids on my active jobs
                     // This is expensive in real world without index, but okay for MVP demo limits.
-                    const myJobsQuery = query(collection(db, 'jobs'), where('jobGiverId', '==', user.id), limit(10));
+                    const myJobsQuery = query(collection(db, 'jobs'), where('clientId', '==', user.id), limit(10));
                     const jobsSnap = await getDocs(myJobsQuery);
 
                     jobsSnap.forEach(jobDoc => {
@@ -73,9 +73,9 @@ export function NotificationsDropdown() {
                             });
                         }
                     });
-                } else if (role === 'Installer') {
+                } else if (role === 'Professional') {
                     // 1. Find jobs awarded to me
-                    const awardedQuery = query(collection(db, 'jobs'), where('awardedInstaller.id', '==', user.id), limit(5));
+                    const awardedQuery = query(collection(db, 'jobs'), where('awardedProfessional.id', '==', user.id), limit(5));
                     const awardedSnap = await getDocs(awardedQuery);
                     awardedSnap.forEach(jobDoc => {
                         const job = jobDoc.data();
@@ -94,7 +94,7 @@ export function NotificationsDropdown() {
                 // 2. Transactions (Payments) for everyone
                 const txQuery = query(
                     collection(db, 'transactions'),
-                    where(role === 'Job Giver' ? 'payerId' : 'payeeId', '==', user.id),
+                    where(role === 'Client' ? 'payerId' : 'payeeId', '==', user.id),
                     limit(20) // Get more to ensure we have recent ones after client-side sort
                 );
                 const txSnap = await getDocs(txQuery);

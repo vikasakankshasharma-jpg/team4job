@@ -124,7 +124,7 @@ export function LoginForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" noValidate>
+      <form onSubmit={form.handleSubmit(onSubmit)} method="POST" className="space-y-6" noValidate>
         {lockoutUntil && (
           <Alert variant="destructive">
             <AlertTitle>{t('loginLocked')}</AlertTitle>
@@ -138,9 +138,9 @@ export function LoginForm() {
           name="identifier"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('emailMobileLabel')}</FormLabel>
+              <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('emailMobileLabel')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('emailMobilePlaceholder')} {...field} disabled={!!lockoutUntil} className="h-11" autoComplete="off" aria-label={t('emailMobileLabel')} data-testid="login-identifier" />
+                <Input placeholder={t('emailMobilePlaceholder')} {...field} disabled={!!lockoutUntil} className="h-11 shadow-sm focus:shadow-md transition-shadow" autoComplete="off" aria-label={t('emailMobileLabel')} data-testid="login-identifier" />
               </FormControl>
               <FormMessage data-testid="email-error" />
             </FormItem>
@@ -151,7 +151,7 @@ export function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('passwordLabel')}</FormLabel>
+              <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('passwordLabel')}</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
@@ -159,7 +159,7 @@ export function LoginForm() {
                     placeholder={t('passwordPlaceholder')}
                     {...field}
                     disabled={!!lockoutUntil}
-                    className="h-11 pr-12"
+                    className="h-11 pr-12 shadow-sm focus:shadow-md transition-shadow"
                     autoComplete="new-password"
                     aria-label={t('passwordLabel')}
                     data-testid="login-password"
@@ -168,13 +168,13 @@ export function LoginForm() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent z-10"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent z-10 text-muted-foreground hover:text-foreground"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
                     ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                      <Eye className="h-4 w-4" aria-hidden="true" />
                     )}
                     <span className="sr-only">{showPassword ? t('hidePassword') : t('showPassword')}</span>
                   </Button>
@@ -184,9 +184,9 @@ export function LoginForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full h-11" disabled={isLoading || !!lockoutUntil} data-testid="login-submit-btn">
+        <Button type="submit" className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] transition-all" disabled={isLoading || !!lockoutUntil} data-testid="login-submit-btn">
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Log In
+          {t('loginSubmit') || 'Log In'}
         </Button>
       </form>
     </Form>

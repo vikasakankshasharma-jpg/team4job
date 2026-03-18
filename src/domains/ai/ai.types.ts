@@ -73,8 +73,8 @@ export interface VerifyPanOutput {
 }
 
 export interface RecommendJobsInput {
-    installerSkills: string[];
-    installerLocation?: string;
+    professionalSkills: string[];
+    professionalLocation?: string;
     jobs: Array<{
         id: string;
         title: string;
@@ -94,8 +94,8 @@ export interface RecommendJobsOutput {
 
 export interface AiAssistedBidCreationInput {
     jobDescription: string;
-    installerSkills: string;
-    installerExperience: string;
+    professionalSkills: string;
+    professionalExperience: string;
     bidContext?: string;
     userId: string;
 }

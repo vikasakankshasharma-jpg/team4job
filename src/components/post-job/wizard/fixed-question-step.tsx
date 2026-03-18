@@ -49,12 +49,19 @@ export function FixedQuestionStep({
     return (
         <div className="mx-auto w-full max-w-lg p-4">
             {/* Progress Bar */}
-            <div className="mb-8">
-                <div className="flex justify-between text-xs font-medium text-muted-foreground mb-2">
+            <div className="mb-10">
+                <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 opacity-70">
                     <span>{tJob('stepOfTotal', { step: stepIndex + 1, total: totalSteps })}</span>
-                    <span>{tJob('percentCompleted', { percent: Math.round(progress) })}</span>
+                    <span>{Math.round(progress)}% {tCommon('completed') || 'Completed'}</span>
                 </div>
-                <Progress value={progress} className="h-2" />
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className="h-full bg-primary"
+                    />
+                </div>
             </div>
 
             <motion.div
@@ -64,12 +71,15 @@ export function FixedQuestionStep({
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
             >
-                <Card className="p-6 shadow-lg border-2 border-primary/5">
-                    <h2 className="text-xl font-bold text-center mb-6 text-foreground">
+                <Card className="p-8 shadow-2xl border-0 bg-card overflow-hidden relative">
+                    {/* Subtle Top Accent */}
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-primary/10" />
+                    
+                    <h2 className="text-2xl font-extrabold text-center mb-8 tracking-tight">
                         {question.label}
                     </h2>
-
-                    <div className="space-y-3">
+ 
+                    <div className="space-y-4">
                         {question.options.map((option) => {
                             const isSelected = currentAnswer === option.value;
                             return (
@@ -78,19 +88,20 @@ export function FixedQuestionStep({
                                     onClick={() => {
                                         onAnswer(option.value);
                                     }}
-                                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center justify-between
+                                    className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 flex items-center justify-between group active:scale-[0.99]
                     ${isSelected
-                                            ? "border-primary bg-primary/5 shadow-md"
-                                            : "border-muted bg-card hover:border-primary/50 hover:bg-accent"
+                                            ? "border-primary bg-primary/5 shadow-md shadow-primary/5 ring-1 ring-primary/20"
+                                            : "border-muted bg-card hover:border-primary/30 hover:bg-accent/50 hover:shadow-sm"
                                         }
                    `}
+                                    data-test-id={`question-option-${option.value}`}
                                 >
-                                    <span className={`font-medium ${isSelected ? "text-primary" : "text-foreground"}`}>
+                                    <span className={`text-base font-bold transition-colors ${isSelected ? "text-primary" : "text-foreground group-hover:text-primary"}`}>
                                         {option.label}
                                     </span>
-                                    {isSelected && (
-                                        <div className="h-4 w-4 rounded-full bg-primary" />
-                                    )}
+                                    <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-primary bg-primary shadow-sm" : "border-muted group-hover:border-primary/50"}`}>
+                                        {isSelected && <div className="h-2 w-2 rounded-full bg-primary-foreground" />}
+                                    </div>
                                 </button>
                             );
                         })}
@@ -102,6 +113,7 @@ export function FixedQuestionStep({
                             onClick={onBack}
                             disabled={isFirst}
                             className={isFirst ? "invisible" : ""}
+                            data-testid="wizard-back-button"
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             {tCommon('back')}
@@ -112,6 +124,7 @@ export function FixedQuestionStep({
                             disabled={!currentAnswer}
                             className="px-8"
                             size="lg"
+                            data-testid="wizard-next-button"
                         >
                             {isLast ? tJob('reviewRequirement') : tCommon('next')}
                             {!isLast && <ArrowRight className="ml-2 h-4 w-4" />}

@@ -35,7 +35,7 @@ interface StuckJob {
     title: string;
     status: string;
     updatedAt: Timestamp;
-    jobGiverId: string;
+    clientId: string;
 }
 
 export default function SystemHealthClient() {
@@ -222,7 +222,7 @@ export default function SystemHealthClient() {
                                     <TableHead>{t('table.jobTitle')}</TableHead>
                                     <TableHead>{t('table.status')}</TableHead>
                                     <TableHead>{t('table.lastUpdated')}</TableHead>
-                                    <TableHead>{t('table.jobGiver')}</TableHead>
+                                    <TableHead>{t('table.client')}</TableHead>
                                     <TableHead>{t('table.action')}</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -237,7 +237,7 @@ export default function SystemHealthClient() {
                                             <TableCell className="font-medium">{job.title}</TableCell>
                                             <TableCell><Badge variant="outline">{job.status}</Badge></TableCell>
                                             <TableCell>{formatDistanceToNow(job.updatedAt.toDate(), { addSuffix: true })}</TableCell>
-                                            <TableCell className="font-mono text-xs">{job.jobGiverId.slice(0, 8)}...</TableCell>
+                                            <TableCell className="font-mono text-xs">{job.clientId.slice(0, 8)}...</TableCell>
                                             <TableCell>
                                                 <Button size="sm" variant="ghost" asChild>
                                                     <Link href={`/dashboard/jobs/${job.id}`}>{t('table.inspect')}</Link>

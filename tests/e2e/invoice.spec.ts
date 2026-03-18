@@ -8,7 +8,7 @@ import { execSync } from 'child_process';
  */
 
 test.describe('Invoice Generation E2E', () => {
-    test('Job Giver can view invoice for completed job', async ({ browser }) => {
+    test('Client can view invoice for completed job', async ({ browser }) => {
         const context = await browser.newContext();
         const page = await context.newPage();
         const helper = new TestHelper(page);
@@ -27,7 +27,7 @@ test.describe('Invoice Generation E2E', () => {
             throw error;
         }
 
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
 
         // 2. Navigate directly to the seeded job
         await page.goto(`/dashboard/jobs/${seededJobId}`);
@@ -60,3 +60,5 @@ test.describe('Invoice Generation E2E', () => {
         await context.close();
     });
 });
+
+

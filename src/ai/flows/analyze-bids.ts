@@ -14,12 +14,12 @@ import { z } from 'zod';
 
 const BidderProfileSchema = z.object({
   anonymousId: z.string().describe("The anonymous ID of the bidder (e.g., 'Bidder-1')."),
-  bidAmount: z.number().describe('The amount the installer has bid for the job in INR.'),
-  tier: z.string().describe("The installer's reputation tier (e.g., Bronze, Silver, Gold, Platinum)."),
-  rating: z.number().describe('The installer\'s average star rating (0-5).'),
-  reviewCount: z.number().describe('The total number of reviews the installer has received.'),
-  isFavorite: z.boolean().optional().describe('Whether the job giver has marked this installer as a favorite in the past.'),
-  isBlocked: z.boolean().optional().describe('Whether the job giver has blocked this installer.'),
+  bidAmount: z.number().describe('The amount the professional has bid for the job in INR.'),
+  tier: z.string().describe("The professional's reputation tier (e.g., Bronze, Silver, Gold, Platinum)."),
+  rating: z.number().describe('The professional\'s average star rating (0-5).'),
+  reviewCount: z.number().describe('The total number of reviews the professional has received.'),
+  isFavorite: z.boolean().optional().describe('Whether the client has marked this professional as a favorite in the past.'),
+  isBlocked: z.boolean().optional().describe('Whether the client has blocked this professional.'),
 });
 
 export const AnalyzeBidsInputSchema = z.object({
@@ -34,14 +34,14 @@ export const AnalyzeBidsOutputSchema = z.object({
   topRecommendation: z.object({
     anonymousId: z.string(),
     reasoning: z.string().describe('A detailed justification for why this bidder is the top recommendation, considering their tier, rating, bid price, and relationship (Favorite).'),
-  }).describe('The single best recommendation for the Job Giver.'),
+  }).describe('The single best recommendation for the Client.'),
   bestValue: z.object({
     anonymousId: z.string(),
     reasoning: z.string().describe('A justification for why this bidder represents the best value for money, balancing cost and qualifications.'),
   }).describe('The bid that offers the best balance of price and quality.'),
   redFlags: z.array(z.object({
     anonymousId: z.string(),
-    concern: z.string().describe('A specific concern about this bid (e.g., "Bid is significantly lower than average", "Installer is blocked").'),
+    concern: z.string().describe('A specific concern about this bid (e.g., "Bid is significantly lower than average", "Professional is blocked").'),
   })).describe('A list of any bids that warrant extra caution.'),
 });
 export type AnalyzeBidsOutput = z.infer<typeof AnalyzeBidsOutputSchema>;
@@ -55,7 +55,7 @@ export const analyzeBidsFlow = defineLoggedFlow(
     modelTier: 'pro', // Complex comparative analysis
   },
   async (input: z.infer<typeof AnalyzeBidsInputSchema>) => {
-    const prompt = `You are an expert hiring consultant for technical installation projects. Your task is to analyze a set of anonymous bids for a job and provide a clear, actionable recommendation to the Job Giver.
+    const prompt = `You are an expert hiring consultant for technical installation projects. Your task is to analyze a set of anonymous bids for a job and provide a clear, actionable recommendation to the Client.
 
     **Job Details:**
     - Title: "${input.jobTitle}"
@@ -67,9 +67,9 @@ export const analyzeBidsFlow = defineLoggedFlow(
     **Your Analysis Must Include:**
     1.  **Summary:** A single sentence summarizing the number of bids and the price range.
     2.  **Top Recommendation:** Identify the single best bidder. 
-        - **CRITICAL:** If a bidder is marked as **FAVORITE**, they should be your Top Recommendation unless their price is unreasonably high (e.g., >50% higher than average) or their recent rating is very poor. Trust is the most important factor. Explicitly mention they are a trusted/favorite installer in the reasoning.
+        - **CRITICAL:** If a bidder is marked as **FAVORITE**, they should be your Top Recommendation unless their price is unreasonably high (e.g., >50% higher than average) or their recent rating is very poor. Trust is the most important factor. Explicitly mention they are a trusted/favorite professional in the reasoning.
         - If no favorite, prioritize experience and reliability (Platinum/Gold, high reviews) over lowest price.
-    3.  **Best Value:** Identify the bidder who offers the best balance of cost and quality. This might be a Silver or Gold tier installer with a good rating and a competitive price.
+    3.  **Best Value:** Identify the bidder who offers the best balance of cost and quality. This might be a Silver or Gold tier professional with a good rating and a competitive price.
     4.  **Red Flags:** Identify any potential red flags. 
         - **CRITICAL:** Any bidder marked as **BLOCKED** must be listed here with a severe warning ("You have previously blocked this user").
         - Flag bids significantly lower than others (potential misunderstanding of scope).

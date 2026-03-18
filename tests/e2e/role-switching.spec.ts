@@ -66,7 +66,7 @@ test.describe('Role Switching System', () => {
             await userMenu.click({ force: true });
             try {
                 // Check if "Current Mode" label or role options are visible
-                await expect(page.getByText(/Current Mode|Job Giver|Installer/i).first()).toBeVisible({ timeout: 5000 });
+                await expect(page.getByText(/Current Mode|Client|Professional/i).first()).toBeVisible({ timeout: 5000 });
                 menuOpened = true;
                 break;
             } catch (e) {
@@ -80,18 +80,18 @@ test.describe('Role Switching System', () => {
         }
 
         // Determine current role based on checked radio item
-        const isJobGiver = await page.getByRole('menuitemradio', { name: 'Job Giver (Hiring)', checked: true }).isVisible();
-        console.log(`Initial role is Job Giver: ${isJobGiver}`);
+        const isClient = await page.getByRole('menuitemradio', { name: 'Client (Hiring)', checked: true }).isVisible();
+        console.log(`Initial role is Client: ${isClient}`);
 
         // Close menu to reset state for switching
         await page.keyboard.press('Escape');
 
-        if (isJobGiver) {
-            // SWITCH TO INSTALLER
-            console.log('Switching to Installer mode...');
-            await helper.auth.ensureRole('Installer');
+        if (isClient) {
+            // SWITCH TO Professional
+            console.log('Switching to Professional mode...');
+            await helper.auth.ensureRole('Professional');
 
-            // Verify Installer Dashboard
+            // Verify Professional Dashboard
             await expect(page.getByText('Open Jobs')).toBeVisible({ timeout: 30000 });
             await expect(page.getByText('Earnings Overview')).toBeVisible().catch(() => console.log('Earnings Overview not found (optional)'));
 
@@ -100,20 +100,20 @@ test.describe('Role Switching System', () => {
             await page.reload();
             await expect(page.getByText('Open Jobs')).toBeVisible({ timeout: 30000 });
 
-            // SWITCH BACK TO JOB GIVER
-            console.log('Switching back to Job Giver mode...');
-            await helper.auth.ensureRole('Job Giver');
+            // SWITCH BACK TO Client
+            console.log('Switching back to Client mode...');
+            await helper.auth.ensureRole('Client');
 
-            // Verify Job Giver Dashboard
+            // Verify Client Dashboard
             await expect(page.getByRole('heading', { name: 'Active Jobs' })).toBeVisible({ timeout: 30000 });
 
         } else {
-            // Initially Installer
-            // SWITCH TO JOB GIVER
-            console.log('Switching to Job Giver mode...');
-            await helper.auth.ensureRole('Job Giver');
+            // Initially Professional
+            // SWITCH TO Client
+            console.log('Switching to Client mode...');
+            await helper.auth.ensureRole('Client');
 
-            // Verify Job Giver Dashboard
+            // Verify Client Dashboard
             await expect(page.getByRole('heading', { name: 'Active Jobs' })).toBeVisible({ timeout: 30000 });
 
             // Verify persistence
@@ -121,11 +121,11 @@ test.describe('Role Switching System', () => {
             await page.reload();
             await expect(page.getByRole('heading', { name: 'Active Jobs' })).toBeVisible({ timeout: 30000 });
 
-            // SWITCH BACK TO INSTALLER
-            console.log('Switching back to Installer mode...');
-            await helper.auth.ensureRole('Installer');
+            // SWITCH BACK TO Professional
+            console.log('Switching back to Professional mode...');
+            await helper.auth.ensureRole('Professional');
 
-            // Verify Installer Dashboard
+            // Verify Professional Dashboard
             await expect(page.getByText('Open Jobs').first()).toBeVisible({ timeout: 30000 });
         }
 
@@ -134,23 +134,23 @@ test.describe('Role Switching System', () => {
 
     // Skipping this test as dual-role users currently have full route access across both modes
     test.skip('Role-based route protection works', async ({ page }) => {
-        // Login and ensure Installer role
+        // Login and ensure Professional role
         await helper.auth.login(DUAL_ROLE_USER.email, DUAL_ROLE_USER.password);
-        await helper.auth.ensureRole('Installer');
+        await helper.auth.ensureRole('Professional');
 
-        // Try to access a Job Giver only page (e.g., Post Job)
-        console.log('Attempting to access restricted Job Giver page as Installer...');
+        // Try to access a Client only page (e.g., Post Job)
+        console.log('Attempting to access restricted Client page as Professional...');
         await page.goto('/dashboard/post-job');
 
         // Should be redirected to dashboard
         await page.waitForURL(/\/dashboard$/, { timeout: 10000 });
         console.log('Redirected to dashboard as expected.');
 
-        // Now switch to Job Giver
-        await helper.auth.ensureRole('Job Giver');
+        // Now switch to Client
+        await helper.auth.ensureRole('Client');
 
         // Try to access Post Job again
-        console.log('Attempting to access Post Job page as Job Giver...');
+        console.log('Attempting to access Post Job page as Client...');
         await page.goto('/dashboard/post-job');
 
         // Should NOT be redirected (should stay on post-job)
@@ -159,3 +159,5 @@ test.describe('Role Switching System', () => {
     });
 
 });
+
+

@@ -76,21 +76,21 @@ export function RecentActivity({ initialActivities = EMPTY_ACTIVITIES }: { initi
         });
 
         return () => unsubscribe();
-    }, [user, db, initialActivities]);
+    }, [user, db, initialActivities, loading]);
 
     if (loading) {
         return (
-            <Card>
-                <CardHeader><CardTitle>{t('recentActivityTitle')}</CardTitle></CardHeader>
+            <Card className="border-0 shadow-md shadow-primary/5">
+                <CardHeader><CardTitle className="text-lg font-bold tracking-tight">{t('recentActivityTitle')}</CardTitle></CardHeader>
                 <CardContent><div className="h-[300px] flex items-center justify-center text-muted-foreground">{t('loading')}</div></CardContent>
             </Card>
         )
     }
 
     return (
-        <Card data-tour="recent-activity">
+        <Card data-tour="recent-activity" className="border-0 shadow-md shadow-primary/5">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg font-bold tracking-tight">
                     <ActivityIcon className="h-5 w-5 text-primary" />
                     {t('recentActivityTitle')}
                 </CardTitle>

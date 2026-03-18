@@ -38,7 +38,7 @@ export function ReleasePaymentDialog({
             if (res.success) {
                 toast({
                     title: "Payment Released",
-                    description: "Funds have been transferred to the installer."
+                    description: "Funds have been transferred to the Professional."
                 });
                 onOpenChange(false);
                 if (onSuccess) onSuccess();
@@ -65,7 +65,7 @@ export function ReleasePaymentDialog({
                         Release Payment?
                     </DialogTitle>
                     <DialogDescription>
-                        You are about to release funds from <strong>Secure Escrow</strong> to the installer.
+                        You are about to release funds from <strong>Secure Escrow</strong> to the Professional.
                     </DialogDescription>
                 </DialogHeader>
 

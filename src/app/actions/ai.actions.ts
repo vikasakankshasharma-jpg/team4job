@@ -380,10 +380,13 @@ export async function analyzeUserPatternsAction(): Promise<{ success: boolean; d
         const decodedClaims = await getAdminAuth().verifySessionCookie(sessionCookie);
         const userId = decodedClaims.uid;
 
-        const recentJobs = await jobRepository.fetchByJobGiver(userId, 10);
+        const recentJobs = await jobRepository.fetchByClient(userId, 10);
         const result = await analyzeUserPatternsFlow({ userId, recentJobs });
         return { success: true, data: result };
     } catch (error: any) {
         return { success: false, error: formatFriendlyError(error) };
     }
 }
+
+
+

@@ -13,11 +13,11 @@ interface VariationOrderDialogProps {
     onOpenChange: (open: boolean) => void;
     onSubmitProposal: (description: string, amount: number) => Promise<void>;
     onSubmitRequest: (description: string) => Promise<void>;
-    isInstaller: boolean;
+    isProfessional: boolean;
 }
 
-export function VariationOrderDialog({ open, onOpenChange, onSubmitProposal, onSubmitRequest, isInstaller }: VariationOrderDialogProps) {
-    const [activeTab, setActiveTab] = useState(isInstaller ? 'propose' : 'request');
+export function VariationOrderDialog({ open, onOpenChange, onSubmitProposal, onSubmitRequest, isProfessional }: VariationOrderDialogProps) {
+    const [activeTab, setActiveTab] = useState(isProfessional ? 'propose' : 'request');
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState<number>(0);
     const [isLoading, setIsLoading] = useState(false);
@@ -47,16 +47,16 @@ export function VariationOrderDialog({ open, onOpenChange, onSubmitProposal, onS
                 <DialogHeader>
                     <DialogTitle>Manage Variation Order</DialogTitle>
                     <DialogDescription>
-                        {isInstaller
+                        {isProfessional
                             ? "Propose a scope change (Variation Order) to the client."
-                            : "Request additional work from the installer."}
+                            : "Request additional work from the Professional."}
                     </DialogDescription>
                 </DialogHeader>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     {/* Hide Tabs if role is fixed, or allow switching if agile? Usually roles are fixed per session. */}
                     {/* Actually, user might want to REQUEST (Price TBD) or PROPOSE (if they discussed offline).
-                        But usually: Installer proposes Price. User requests Scope. 
+                        But usually: Professional proposes Price. User requests Scope. 
                         Let's keep it simple based on role for now. */}
 
                     <div className="space-y-4 py-4">
@@ -82,7 +82,7 @@ export function VariationOrderDialog({ open, onOpenChange, onSubmitProposal, onS
                             </div>
                         )}
 
-                        {/* If User is Requesting, they don't set price yet. Installer will Quote. */}
+                        {/* If User is Requesting, they don't set price yet. Professional will Quote. */}
                     </div>
                 </Tabs>
 

@@ -1,5 +1,4 @@
-
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 
 /**
@@ -13,8 +12,8 @@ import * as admin from "firebase-admin";
  * 
  * Logs with severity 'ERROR' if thresholds are exceeded, which can trigger GCP alerts.
  */
-export const monitorSystemHealth = functions.pubsub.schedule("every 24 hours").onRun(async (context) => {
-    console.log("Running System Health Monitor...");
+export const monitorSystemHealth = functions.pubsub.schedule("every 24 hours").onRun(async (context: functions.EventContext) => {
+    functions.logger.info("Running System Health Monitor...");
     const db = admin.firestore();
     const now = admin.firestore.Timestamp.now();
     const alerts: string[] = [];
@@ -64,9 +63,9 @@ export const monitorSystemHealth = functions.pubsub.schedule("every 24 hours").o
     }
 
     if (alerts.length === 0) {
-        console.log("System Health Check Passed: No critical issues found.");
+        functions.logger.info("System Health Check Passed: No critical issues found.");
     } else {
-        console.log(`System Health Check Completed with ${alerts.length} alerts.`);
+        functions.logger.info(`System Health Check Completed with ${alerts.length} alerts.`);
     }
 
     return null;

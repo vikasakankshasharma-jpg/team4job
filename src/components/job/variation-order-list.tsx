@@ -10,14 +10,14 @@ import { cn, toDate } from '@/lib/utils';
 interface VariationOrderListProps {
     job: Job;
     user: User;
-    isJobGiver: boolean;
+    isClient: boolean;
     onJobUpdate: (updatedJob: Partial<Job>) => Promise<void>;
     onPayForTask: (task: AdditionalTask) => void;
     onQuoteTask: (task: AdditionalTask) => void;
     onDeclineTask: (task: AdditionalTask) => void;
 }
 
-export function VariationOrderList({ job, user, isJobGiver, onJobUpdate, onPayForTask, onQuoteTask, onDeclineTask }: VariationOrderListProps) {
+export function VariationOrderList({ job, user, isClient, onJobUpdate, onPayForTask, onQuoteTask, onDeclineTask }: VariationOrderListProps) {
     const tasks = job.additionalTasks || [];
 
     if (tasks.length === 0) {
@@ -77,15 +77,15 @@ export function VariationOrderList({ job, user, isJobGiver, onJobUpdate, onPayFo
                     {(task.status !== 'funded' && task.status !== 'declined') && (
                         <CardFooter className="bg-muted/10 py-3 flex justify-end gap-2">
 
-                            {/* Scenario 1: Pending Quote (User requested, needs Installer Quote) */}
-                            {task.status === 'pending-quote' && !isJobGiver && (
+                            {/* Scenario 1: Pending Quote (User requested, needs Professional Quote) */}
+                            {task.status === 'pending-quote' && !isClient && (
                                 <Button size="sm" onClick={() => onQuoteTask(task)}>
                                     Submit Quote
                                 </Button>
                             )}
 
-                            {/* Scenario 2: Quoted (Installer proposed/quoted, needs User Approval) */}
-                            {task.status === 'quoted' && isJobGiver && (
+                            {/* Scenario 2: Quoted (Professional proposed/quoted, needs User Approval) */}
+                            {task.status === 'quoted' && isClient && (
                                 <>
                                     <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => onDeclineTask(task)}>
                                         <XCircle className="h-4 w-4 mr-1" />
@@ -99,12 +99,12 @@ export function VariationOrderList({ job, user, isJobGiver, onJobUpdate, onPayFo
                             )}
 
                             {/* Scenario 3: Waiting (User waiting for quote) */}
-                            {task.status === 'pending-quote' && isJobGiver && (
-                                <span className="text-xs text-muted-foreground italic">Waiting for Installer&apos;s Quote...</span>
+                            {task.status === 'pending-quote' && isClient && (
+                                <span className="text-xs text-muted-foreground italic">Waiting for Professional&apos;s Quote...</span>
                             )}
-                            {/* Scenario 4: Waiting (Installer waiting for approval) */}
-                            {task.status === 'quoted' && !isJobGiver && (
-                                <span className="text-xs text-muted-foreground italic">Waiting for Job Giver to Approve...</span>
+                            {/* Scenario 4: Waiting (Professional waiting for approval) */}
+                            {task.status === 'quoted' && !isClient && (
+                                <span className="text-xs text-muted-foreground italic">Waiting for Client to Approve...</span>
                             )}
 
                         </CardFooter>

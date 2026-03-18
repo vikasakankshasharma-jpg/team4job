@@ -3,7 +3,7 @@
 /**
  * @fileOverview This file defines a Genkit flow for suggesting relevant skills based on a job title and description.
  *
- * It helps Job Givers who may not know the technical terms for the skills required for their project.
+ * It helps Clients who may not know the technical terms for the skills required for their project.
  * It exports:
  * - `suggestSkills`: An async function that takes a job title/description and returns a list of suggested skills.
  * - `SuggestSkillsInput`: The input type for the `suggestSkills` function.

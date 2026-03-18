@@ -37,7 +37,7 @@ export interface JobFilters {
     category?: string;
     dateFrom?: string;
     dateTo?: string;
-    installer?: string;
+    professional?: string;
     search?: string;
 }
 
@@ -266,14 +266,14 @@ export function AdvancedFilters({
                             </Button>
                         </Badge>
                     )}
-                    {appliedFilters.installer && (
+                    {appliedFilters.professional && (
                         <Badge variant="secondary" className="gap-1 pl-2 pr-1">
-                            Installer: {appliedFilters.installer}
+                            Professional: {appliedFilters.professional}
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 className="h-auto p-0.5 hover:bg-transparent"
-                                onClick={() => removeFilter("installer")}
+                                onClick={() => removeFilter("professional")}
                             >
                                 <X className="h-3 w-3" />
                             </Button>

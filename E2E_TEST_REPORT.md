@@ -7,7 +7,7 @@
 
 ## 📋 Executive Summary
 
-This document provides a comprehensive report on the End-to-End transaction cycle testing for the CCTV Job Connect platform. The test aims to verify the complete workflow: **Post → Bid → Award → Pay → Complete → Release**.
+This document provides a comprehensive report on the End-to-End transaction cycle testing for the Team4Job platform. The test aims to verify the complete workflow: **Post → Bid → Award → Pay → Complete → Release**.
 
 ---
 

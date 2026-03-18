@@ -2,14 +2,14 @@
 import { test, expect } from '@playwright/test';
 import { TEST_ACCOUNTS } from '../fixtures/test-data';
 
-test.describe('Job Giver Enhancements Verification', () => {
+test.describe('Client Enhancements Verification', () => {
     test('Verify Draft Auto-Save and Design Elements', async ({ page }) => {
 
-        // 1. Login as Job Giver
+        // 1. Login as Client
         console.log('Logging in...');
         await page.goto('/login');
-        await page.fill('input[name="identifier"]', TEST_ACCOUNTS.jobGiver.email);
-        await page.fill('input[type="password"]', TEST_ACCOUNTS.jobGiver.password);
+        await page.fill('input[name="identifier"]', TEST_ACCOUNTS.client.email);
+        await page.fill('input[type="password"]', TEST_ACCOUNTS.client.password);
         await page.getByRole('button', { name: /Log In/i }).click();
         await page.waitForURL(/\/dashboard/);
 
@@ -69,3 +69,5 @@ test.describe('Job Giver Enhancements Verification', () => {
 
     });
 });
+
+

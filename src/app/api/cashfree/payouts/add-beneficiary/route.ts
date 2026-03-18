@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     const user = userSnap.data() as User;
 
     // Generate unique beneficiary ID
-    const beneficiaryId = `INSTALLER_${userId.slice(0, 8)}_${Date.now()}`;
+    const beneficiaryId = `Professional_${userId.slice(0, 8)}_${Date.now()}`;
 
     // Authenticate with Cashfree
     const token = await getCashfreeBearerToken();

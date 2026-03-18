@@ -62,7 +62,7 @@ export class InvoiceService {
             description = `Subscription: ${plan.name}`;
         }
 
-        tableRows.push([description, transaction.totalPaidByGiver.toFixed(2)]);
+        tableRows.push([description, transaction.totalPaidByClient.toFixed(2)]);
 
         (doc as any).autoTable({
             startY: 90,
@@ -76,7 +76,7 @@ export class InvoiceService {
         // Totals
         const finalY = (doc as any).lastAutoTable.finalY || 90;
 
-        doc.text(`Total Amount: Rs. ${transaction.totalPaidByGiver.toFixed(2)}`, 140, finalY + 10);
+        doc.text(`Total Amount: Rs. ${transaction.totalPaidByClient.toFixed(2)}`, 140, finalY + 10);
         doc.setFontSize(8);
         doc.text('This is a computer generated invoice.', 14, finalY + 30);
 
@@ -86,3 +86,4 @@ export class InvoiceService {
 }
 
 export const invoiceService = new InvoiceService();
+

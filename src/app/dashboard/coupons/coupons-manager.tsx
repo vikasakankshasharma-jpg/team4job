@@ -81,7 +81,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
     description: z.string().min(10, "Description must be at least 10 characters."),
     planId: z.string().min(1, "Plan ID is required."),
     durationDays: z.coerce.number().min(1, "Duration must be at least 1 day."),
-    applicableToRole: z.enum(['Installer', 'Job Giver', 'Any']),
+    applicableToRole: z.enum(['Professional', 'Client', 'Any']),
     validFrom: z.date({ required_error: "Start date is required." }),
     validUntil: z.date({ required_error: "End date is required." }),
     isActive: z.boolean(),
@@ -99,7 +99,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
     } : {
       code: "",
       description: "",
-      planId: "pro-installer-annual",
+      planId: "pro-Professional-annual",
       durationDays: 30,
       applicableToRole: 'Any',
       isActive: true,
@@ -165,7 +165,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
                 <FormItem>
                   <FormLabel>{t('form.description')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., 30-day Pro Installer Plan" {...field} />
+                    <Input placeholder="e.g., 30-day Pro Professional Plan" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -179,7 +179,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
                   <FormItem>
                     <FormLabel>{t('form.planId')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="pro-installer-annual" {...field} />
+                      <Input placeholder="pro-Professional-annual" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -211,8 +211,8 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="Any">{t('form.roles.any')}</SelectItem>
-                      <SelectItem value="Installer">{t('form.roles.installer')}</SelectItem>
-                      <SelectItem value="Job Giver">{t('form.roles.jobGiver')}</SelectItem>
+                      <SelectItem value="Professional">{t('form.roles.professional')}</SelectItem>
+                      <SelectItem value="Client">{t('form.roles.client')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -364,8 +364,8 @@ export default function CouponsManager({ coupons, onDataChange }: { coupons: Cou
             <span className="text-muted-foreground">{t('table.role')}</span>
             <Badge variant={coupon.applicableToRole === 'Any' ? 'secondary' : 'outline'}>
               {coupon.applicableToRole === 'Any' && t('form.roles.any')}
-              {coupon.applicableToRole === 'Installer' && t('form.roles.installer')}
-              {coupon.applicableToRole === 'Job Giver' && t('form.roles.jobGiver')}
+              {coupon.applicableToRole === 'Professional' && t('form.roles.professional')}
+              {coupon.applicableToRole === 'Client' && t('form.roles.client')}
             </Badge>
           </div>
           <div className="flex justify-between">
@@ -449,8 +449,8 @@ export default function CouponsManager({ coupons, onDataChange }: { coupons: Cou
                       <TableCell>
                         <Badge variant={coupon.applicableToRole === 'Any' ? 'secondary' : 'outline'}>
                           {coupon.applicableToRole === 'Any' && t('form.roles.any')}
-                          {coupon.applicableToRole === 'Installer' && t('form.roles.installer')}
-                          {coupon.applicableToRole === 'Job Giver' && t('form.roles.jobGiver')}
+                          {coupon.applicableToRole === 'Professional' && t('form.roles.professional')}
+                          {coupon.applicableToRole === 'Client' && t('form.roles.client')}
                         </Badge>
                       </TableCell>
                       <TableCell>{t('days', { count: coupon.durationDays })}</TableCell>

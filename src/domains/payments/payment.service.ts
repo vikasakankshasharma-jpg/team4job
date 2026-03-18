@@ -30,8 +30,8 @@ export class PaymentService {
 
             // Calculate fees
             const commission = data.amount * 0.05; // 5% platform commission
-            const jobGiverFee = data.amount * 0.02; // 2% job giver fee
-            const totalPaidByGiver = data.amount + jobGiverFee + (data.travelTip || 0);
+            const clientFee = data.amount * 0.02; // 2% client fee
+            const totalPaidByClient = data.amount + clientFee + (data.travelTip || 0);
 
             // Create transaction record
             const transactionData: Partial<Transaction> = {
@@ -40,9 +40,9 @@ export class PaymentService {
                 amount: data.amount,
                 travelTip: data.travelTip || 0,
                 commission,
-                jobGiverFee,
-                totalPaidByGiver,
-                payoutToInstaller: data.amount - commission + (data.travelTip || 0),
+                clientFee,
+                totalPaidByClient,
+                payoutToProfessional: data.amount - commission + (data.travelTip || 0),
                 status: 'initiated',
                 transactionType: data.transactionType || 'JOB',
                 relatedTaskId: data.taskId || undefined,
@@ -76,7 +76,7 @@ export class PaymentService {
             } else {
                 order = await cashfreeClient.createOrder({
                     orderId,
-                    orderAmount: totalPaidByGiver,
+                    orderAmount: totalPaidByClient,
                     customerName: user.name || 'User',
                     customerEmail: user.email || 'user@example.com',
                     customerPhone: user.mobile || '0000000000',
@@ -118,13 +118,13 @@ export class PaymentService {
                 fundedAt: Timestamp.now() as any,
             });
 
-            // Data Aggregation: Update Installer's Projected Earnings
-            // We need to find the awarded installer for this job
+            // Data Aggregation: Update Professional's Projected Earnings
+            // We need to find the awarded Professional for this job
             const { jobRepository } = await import('../jobs/job.repository');
             const job = await jobRepository.fetchById(transactionResult.data.jobId);
-            if (job?.awardedInstallerId) {
-                userRepository.incrementStats(job.awardedInstallerId, {
-                    projectedEarnings: transactionResult.data.payoutToInstaller
+            if (job?.awardedProfessionalId) {
+                userRepository.incrementStats(job.awardedProfessionalId, {
+                    projectedEarnings: transactionResult.data.payoutToProfessional
                 }).catch(e => { /* Failed to increment projectedEarnings */ });
             }
         } catch (error) {
@@ -133,9 +133,9 @@ export class PaymentService {
     }
 
     /**
-     * Release funds to installer
+     * Release funds to Professional
      */
-    async releaseFunds(jobId: string, installerId: string): Promise<void> {
+    async releaseFunds(jobId: string, professionalId: string): Promise<void> {
         try {
             const transactions = await paymentRepository.findByJobId(jobId);
             const transaction = transactions.find(t => t.status === 'funded');
@@ -155,8 +155,8 @@ export class PaymentService {
                 // Skiping Cashfree payout in emulator mode
             } else {
                 await cashfreeClient.createPayout({
-                    beneficiaryId: installerId,
-                    amount: transaction.payoutToInstaller,
+                    beneficiaryId: professionalId,
+                    amount: transaction.payoutToProfessional,
                     transferId,
                 });
             }
@@ -166,13 +166,13 @@ export class PaymentService {
                 status: 'released',
                 releasedAt: Timestamp.now() as any,
                 payoutTransferId: transferId,
-                payeeId: installerId,
+                payeeId: professionalId,
             });
 
             // Data Aggregation: Transition Projected to Total Earnings
-            userRepository.incrementStats(installerId, {
-                projectedEarnings: -transaction.payoutToInstaller,
-                totalEarnings: transaction.payoutToInstaller
+            userRepository.incrementStats(professionalId, {
+                projectedEarnings: -transaction.payoutToProfessional,
+                totalEarnings: transaction.payoutToProfessional
             }).catch(e => { /* Failed to update earnings aggregation */ });
 
         } catch (error) {
@@ -219,7 +219,7 @@ export class PaymentService {
             const refundId = `refund_${jobId}_${Date.now()}`;
             await cashfreeClient.processRefund({
                 orderId: transaction.paymentGatewayOrderId!,
-                refundAmount: transaction.totalPaidByGiver,
+                refundAmount: transaction.totalPaidByClient,
                 refundId,
             });
 
@@ -234,9 +234,9 @@ export class PaymentService {
             if (transaction.status === 'funded') {
                 const { jobRepository } = await import('../jobs/job.repository');
                 const job = await jobRepository.fetchById(transaction.jobId);
-                if (job?.awardedInstallerId) {
-                    userRepository.incrementStats(job.awardedInstallerId, {
-                        projectedEarnings: -transaction.payoutToInstaller
+                if (job?.awardedProfessionalId) {
+                    userRepository.incrementStats(job.awardedProfessionalId, {
+                        projectedEarnings: -transaction.payoutToProfessional
                     }).catch(e => { /* Failed to rollback projectedEarnings */ });
                 }
             }
@@ -296,3 +296,4 @@ export class PaymentService {
 }
 
 export const paymentService = new PaymentService();
+

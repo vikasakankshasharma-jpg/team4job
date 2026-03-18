@@ -36,7 +36,7 @@ const AdminUserGrowthChart = dynamic(() => import("@/components/dashboard/charts
 export function AdminDashboardView() {
     const { db } = useFirebase();
     const { setHelp } = useHelp();
-    const t = useTranslations('dashboard');
+    const t = useTranslations('admin.dashboard');
     const [stats, setStats] = React.useState({ totalUsers: 0, totalJobs: 0, openDisputes: 0, totalValueReleased: 0 });
     const [loading, setLoading] = React.useState(true);
     const [transactions, setTransactions] = React.useState<Transaction[]>([]);
@@ -95,7 +95,7 @@ export function AdminDashboardView() {
                 const txs = snap.docs.map(d => d.data() as Transaction);
                 setTransactions(txs);
                 const total = txs.reduce((acc, t) => acc + t.amount, 0);
-                const released = txs.filter(t => t.status === TRANSACTION_STATUS.RELEASED).reduce((acc, t) => acc + (t.payoutToInstaller || 0), 0);
+                const released = txs.filter(t => t.status === TRANSACTION_STATUS.RELEASED).reduce((acc, t) => acc + (t.payoutToProfessional || 0), 0);
                 const commission = txs.reduce((acc, t) => acc + (t.commission || 0), 0);
                 setStats(prev => ({ ...prev, totalValueReleased: released }));
             });
@@ -113,18 +113,18 @@ export function AdminDashboardView() {
 
     React.useEffect(() => {
         setHelp({
-            title: t('admin.guide.title'),
+            title: t('guide.title'),
             content: (
                 <div className="space-y-4 text-sm">
-                    <p>{t('admin.guide.welcome')}</p>
+                    <p>{t('guide.welcome')}</p>
                     <ul className="list-disc space-y-2 pl-5">
-                        <li><span className="font-semibold">{t('admin.guide.totalUsers')}</span></li>
-                        <li><span className="font-semibold">{t('admin.guide.totalJobs')}</span></li>
-                        <li><span className="font-semibold">{t('admin.guide.openDisputes')}</span></li>
-                        <li><span className="font-semibold">{t('admin.guide.valueReleased')}</span></li>
-                        <li><span className="font-semibold">{t('admin.guide.financialSummary')}</span></li>
-                        <li><span className="font-semibold">{t('admin.guide.topPerformers')}</span></li>
-                        <li><span className="font-semibold">{t('admin.guide.userGrowth')}</span></li>
+                        <li><span className="font-semibold">{t('guide.totalUsers')}</span></li>
+                        <li><span className="font-semibold">{t('guide.totalJobs')}</span></li>
+                        <li><span className="font-semibold">{t('guide.activeDisputes')}</span></li>
+                        <li><span className="font-semibold">{t('guide.valueReleased')}</span></li>
+                        <li><span className="font-semibold">{t('guide.financialSummary')}</span></li>
+                        <li><span className="font-semibold">{t('guide.topPerformers')}</span></li>
+                        <li><span className="font-semibold">{t('guide.userGrowth')}</span></li>
                     </ul>
                 </div>
             )
@@ -136,7 +136,7 @@ export function AdminDashboardView() {
         const data = Array.from({ length: 6 }).map((_, i) => {
             const monthDate = subMonths(startOfMonth(now), i);
             const monthName = format(monthDate, 'MMM');
-            return { name: monthName, Installers: 0, "Job Givers": 0 };
+            return { name: monthName, professionals: 0, clients: 0 };
         }).reverse();
 
         (allUsers || []).forEach(user => {
@@ -147,8 +147,8 @@ export function AdminDashboardView() {
                 const monthName = format(joinDate, 'MMM');
                 const monthData = data.find(m => m.name === monthName);
                 if (monthData) {
-                    if (user.roles?.includes(USER_ROLES.INSTALLER)) monthData.Installers++;
-                    if (user.roles?.includes(USER_ROLES.JOB_GIVER)) monthData["Job Givers"]++;
+                    if (user.roles?.includes(USER_ROLES.professional)) monthData.professionals++;
+                    if (user.roles?.includes(USER_ROLES.client)) monthData.clients++;
                 }
             }
         });
@@ -173,7 +173,7 @@ export function AdminDashboardView() {
                 const monthData = months.find(m => m.fullName === monthStr);
                 if (monthData) {
                     const commission = t.commission || 0;
-                    const fee = t.jobGiverFee || 0;
+                    const fee = t.clientFee || 0;
                     monthData.revenue += (commission + fee);
                 }
             }
@@ -201,15 +201,15 @@ export function AdminDashboardView() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold tracking-tight">{t('admin.welcome')}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t('welcome')}</h1>
             <div className="space-y-6">
                 <FinancialSummaryCard transactions={transactions} />
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <StatCard title={t('admin.totalUsers')} value={stats.totalUsers} icon={Users} href="/dashboard/users" iconBgColor="bg-blue-500" iconColor="text-white" />
-                    <StatCard title={t('admin.totalJobs')} value={stats.totalJobs} icon={Briefcase} href="/dashboard/all-jobs" iconBgColor="bg-purple-500" iconColor="text-white" />
-                    <StatCard title={t('admin.openDisputes')} value={stats.openDisputes} icon={AlertOctagon} href="/dashboard/disputes" iconBgColor="bg-red-500" iconColor="text-white" />
-                    <StatCard title={t('admin.valueReleased')} value={`₹${stats.totalValueReleased.toLocaleString()}`} icon={IndianRupee} href="/dashboard/transactions" iconBgColor="bg-green-500" iconColor="text-white" />
+                    <StatCard title={t('totalUsers')} value={stats.totalUsers} icon={Users} href="/dashboard/users" iconBgColor="bg-blue-500" iconColor="text-white" />
+                    <StatCard title={t('totalJobs')} value={stats.totalJobs} icon={Briefcase} href="/dashboard/all-jobs" iconBgColor="bg-purple-500" iconColor="text-white" />
+                    <StatCard title={t('activeDisputes')} value={stats.openDisputes} icon={AlertOctagon} href="/dashboard/disputes" iconBgColor="bg-red-500" iconColor="text-white" />
+                    <StatCard title={t('valueReleased')} value={`₹${stats.totalValueReleased.toLocaleString()}`} icon={IndianRupee} href="/dashboard/transactions" iconBgColor="bg-green-500" iconColor="text-white" />
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -221,14 +221,14 @@ export function AdminDashboardView() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="col-span-1">
                         {/* Recent Signups or Activity - simplified to Card structure for safety */}
-                        <Card>
-                            <CardHeader><CardTitle>{t('admin.recentSignups')}</CardTitle></CardHeader>
+                        <Card className="border-0 shadow-md shadow-primary/5">
+                            <CardHeader className="pb-4"><CardTitle className="text-xl font-bold tracking-tight">{t('recentSignups')}</CardTitle></CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
                                     {[...allUsers].sort((a, b) => toDate(b.memberSince).getTime() - toDate(a.memberSince).getTime()).slice(0, 5).filter(u => u.id).map((u, index) => (
                                         <div key={u.id || `user-${index}`} className="flex items-center gap-4">
                                             <Avatar className="h-8 w-8"><AnimatedAvatar svg={u.avatarUrl} /></Avatar>
-                                            <div><p className="text-sm font-medium">{u.name || t('admin.unknownUser')}</p><p className="text-xs text-muted-foreground">{u.roles?.join(', ') || 'User'}</p></div>
+                                            <div><p className="text-sm font-medium">{u.name || t('unknownUser')}</p><p className="text-xs text-muted-foreground">{u.roles?.join(', ') || 'User'}</p></div>
                                         </div>
                                     ))}
                                 </div>
@@ -236,7 +236,7 @@ export function AdminDashboardView() {
                         </Card>
                     </div>
                     <div className="lg:col-span-2">
-                        <TopPerformersCard installers={(allUsers || []).filter(u => Array.isArray(u.roles) && u.roles.includes(USER_ROLES.INSTALLER))} />
+                        <TopPerformersCard Professionals={(allUsers || []).filter(u => Array.isArray(u.roles) && u.roles.includes(USER_ROLES.professional))} />
                     </div>
                 </div>
 

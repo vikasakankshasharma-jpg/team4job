@@ -9,7 +9,7 @@ test.describe('Profile & Settings Management', () => {
     });
 
     test('User can manage their profile and settings', async ({ page }) => {
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
 
         await page.goto('/dashboard/profile');
         await expect(page).toHaveURL(/.*\/dashboard\/profile/);
@@ -19,3 +19,4 @@ test.describe('Profile & Settings Management', () => {
     });
 
 });
+

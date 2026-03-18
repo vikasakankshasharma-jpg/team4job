@@ -33,7 +33,7 @@ const processSmartVoicePrompt = ai.definePrompt({
 
   Generate:
   - A professional **Job Title**.
-  - A detailed **Description** formatting it for an installer/technician.
+  - A detailed **Description** formatting it for an Professional/technician.
   - The most appropriate **Category** (if not provided, suggest the best fit).
   - A list of **Skills** (e.g., "Wiring", "Configuration", specific tech).
   - A list of **Equipment** mentioned.

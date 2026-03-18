@@ -33,7 +33,7 @@ async function getCashfreeBearerToken(): Promise<string> {
  * Admin route for transfers (refunds/payouts)
  * ✅ REFACTORED: Uses infrastructure logger and Firebase
  * 
- * Note: Normal installer payouts use /api/escrow/release-funds
+ * Note: Normal Professional payouts use /api/escrow/release-funds
  * This is for admin-initiated transfers like refunds
  */
 export async function POST(req: NextRequest) {
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
         const settingsSnap = await settingsRef.get();
         if (settingsSnap.exists) {
           const settings = settingsSnap.data() as PlatformSettings;
-          commissionRate = settings.installerCommissionRate || 0.1;
+          commissionRate = settings.professionalCommissionRate || 0.1;
         }
       } catch (settingsError) {
 

@@ -30,7 +30,7 @@ const getIcon = (type: Notification['type']) => {
             return <MessageSquare className="h-4 w-4 text-purple-500" />;
         case 'PAYMENT_RELEASED':
             return <CreditCard className="h-4 w-4 text-emerald-500" />;
-        case 'FAVORITE_INSTALLER_BID':
+        case 'FAVORITE_PROFESSIONAL_BID':
             return <Briefcase className="h-4 w-4 text-pink-500" />;
         default:
             return <Bell className="h-4 w-4 text-gray-500" />;
@@ -109,3 +109,4 @@ export function NotificationList({ notifications, onMarkAsRead, onItemClick, cla
         </ScrollArea>
     );
 }
+

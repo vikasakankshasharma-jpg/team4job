@@ -43,7 +43,7 @@ type NavItem = {
     premium?: boolean;
 };
 
-const installerNavItems: NavItem[] = [
+const professionalNavItems: NavItem[] = [
     { href: "/dashboard", icon: Home, labelKey: "dashboard", tourId: "dashboard-home" },
     { href: "/dashboard/jobs", icon: Briefcase, labelKey: "browseJobs", tourId: "all-jobs" },
     { href: "/dashboard/my-bids", icon: FileText, labelKey: "myBids", tourId: "my-bids" },
@@ -51,13 +51,13 @@ const installerNavItems: NavItem[] = [
     { href: "/dashboard/disputes", icon: AlertOctagon, labelKey: "disputes" },
 ];
 
-const jobGiverNavItems: NavItem[] = [
+const clientNavItems: NavItem[] = [
     { href: "/dashboard", icon: Home, labelKey: "dashboard", tourId: "dashboard-home" },
-    { href: "/dashboard/installers", icon: Search, labelKey: "findInstallers", tourId: "find-installers", premium: true },
+    { href: "/dashboard/professionals", icon: Search, labelKey: "findProfessionals", tourId: "find-professionals", premium: true },
     { href: "/wizard", icon: PlusCircle, labelKey: "postJob", tourId: "post-job" },
     { href: "/dashboard/posted-jobs", icon: Briefcase, labelKey: "myJobs", tourId: "posted-jobs" },
     { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "analytics", tourId: "analytics" },
-    { href: "/dashboard/my-installers", icon: Heart, labelKey: "myInstallers", tourId: "my-installers" },
+    { href: "/dashboard/my-professionals", icon: Heart, labelKey: "myProfessionals", tourId: "my-professionals" },
     { href: "/dashboard/billing", icon: CreditCard, labelKey: "billing" },
     { href: "/dashboard/disputes", icon: AlertOctagon, labelKey: "disputes" },
 ];
@@ -99,10 +99,10 @@ export function SidebarNav() {
                 return adminNavItems;
             case "Support Team":
                 return supportTeamNavItems;
-            case "Installer":
-                return installerNavItems;
-            case "Job Giver":
-                return jobGiverNavItems;
+            case "Professional":
+                return professionalNavItems;
+            case "Client":
+                return clientNavItems;
             default:
                 return [];
         }

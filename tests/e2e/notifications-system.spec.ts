@@ -5,8 +5,8 @@ import { Notification } from '../../src/lib/types';
 import { Timestamp } from 'firebase/firestore';
 
 test.describe('Notification System', () => {
-    // Use Job Giver account
-    const { email, password } = TEST_ACCOUNTS.jobGiver;
+    // Use Client account
+    const { email, password } = TEST_ACCOUNTS.client;
 
     test.beforeEach(async ({ page }) => {
         // Login
@@ -54,3 +54,5 @@ test.describe('Notification System', () => {
         await expect(page.getByText('In-App Notifications')).toBeVisible();
     });
 });
+
+

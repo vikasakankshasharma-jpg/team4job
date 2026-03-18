@@ -25,7 +25,7 @@ export default function SignupAnalyticsClient() {
     const [loading, setLoading] = useState(true);
     const [funnelData, setFunnelData] = useState<SignupFunnelData | null>(null);
     const [outreachData, setOutreachData] = useState<OutreachEffectiveness | null>(null);
-    const [roleDistribution, setRoleDistribution] = useState<{ Installer: number; 'Job Giver': number; unknown: number } | null>(null);
+    const [roleDistribution, setRoleDistribution] = useState<{ professional: number; client: number; unknown: number } | null>(null);
 
     useEffect(() => {
         if (!db || !isAdmin) return;
@@ -254,12 +254,12 @@ export default function SignupAnalyticsClient() {
                 <CardContent>
                     <div className="grid grid-cols-3 gap-4">
                         <div className="text-center border rounded-lg p-4">
-                            <p className="text-sm font-medium">{t('roles.installer')}</p>
-                            <p className="text-3xl font-bold mt-2">{roleDistribution.Installer}</p>
+                            <p className="text-sm font-medium">{t('roles.professional')}</p>
+                            <p className="text-3xl font-bold mt-2">{roleDistribution.professional}</p>
                         </div>
                         <div className="text-center border rounded-lg p-4">
-                            <p className="text-sm font-medium">{t('roles.jobGiver')}</p>
-                            <p className="text-3xl font-bold mt-2">{roleDistribution['Job Giver']}</p>
+                            <p className="text-sm font-medium">{t('roles.client')}</p>
+                            <p className="text-3xl font-bold mt-2">{roleDistribution.client}</p>
                         </div>
                         <div className="text-center border rounded-lg p-4">
                             <p className="text-sm font-medium">{t('roles.unknown')}</p>

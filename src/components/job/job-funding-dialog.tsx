@@ -31,10 +31,10 @@ export function FundingBreakdownDialog({
     platformSettings: PlatformSettings | null,
     bidAmount: number
 }) {
-    const jobGiverFeeRate = platformSettings?.jobGiverFeeRate || 0;
+    const clientFeeRate = platformSettings?.clientFeeRate || 0;
     const subtotal = bidAmount;
     const travelTip = job.travelTip || 0;
-    const platformFee = Math.round(subtotal * (jobGiverFeeRate / 100));
+    const platformFee = Math.round(subtotal * (clientFeeRate / 100));
     const total = subtotal + travelTip + platformFee;
 
     return (
@@ -57,7 +57,7 @@ export function FundingBreakdownDialog({
                     )}
                     {platformFee > 0 && (
                         <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Platform Fee ({jobGiverFeeRate}%)</span>
+                            <span className="text-muted-foreground">Platform Fee ({clientFeeRate}%)</span>
                             <span>₹{platformFee.toLocaleString()}</span>
                         </div>
                     )}

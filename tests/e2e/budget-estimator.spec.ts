@@ -12,7 +12,7 @@ test.describe('Budget Estimator & Templates', () => {
         await page.setViewportSize({ width: 1280, height: 1000 });
         helper = new TestHelper(page);
         await helper.mockExternalAPIs();
-        await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
+        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
     });
 
     async function handleDraftDialog(page: Page) {
@@ -168,3 +168,4 @@ test.describe('Budget Estimator & Templates', () => {
         }
     });
 });
+

@@ -18,7 +18,7 @@ import { Label } from "./ui/label";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { FoundingInstallerIcon } from "./icons";
+import { FoundingProfessionalIcon } from "./icons";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 export function UserNav() {
@@ -59,14 +59,14 @@ export function UserNav() {
             <div className="flex flex-col space-y-1">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium leading-none">{user.name}</p>
-                {user.isFoundingInstaller && (
+                {user.isFoundingProfessional && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <FoundingInstallerIcon className="h-4 w-4 text-amber-500" />
+                        <FoundingProfessionalIcon className="h-4 w-4 text-amber-500" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Founding Installer</p>
+                        <p>Founding Professional</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -94,7 +94,7 @@ export function UserNav() {
               <DropdownMenuRadioGroup value={role} onValueChange={handleRoleChange}>
                 {availableRoles.map((r) => (
                   <DropdownMenuRadioItem key={r} value={r} className="cursor-pointer">
-                    {r === "Job Giver" ? "Job Giver (Hiring)" : r === "Installer" ? "Installer (Working)" : r}
+                    {r === "Client" ? "Client (Hiring)" : r === "Professional" ? "Professional (Working)" : r}
                   </DropdownMenuRadioItem>
                 ))}
               </DropdownMenuRadioGroup>

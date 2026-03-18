@@ -57,7 +57,7 @@ import { useTranslations } from "next-intl";
 const blacklistSchema = z.object({
   type: z.enum(["user", "pincode"]),
   value: z.string().min(1, "Value is required."),
-  role: z.enum(["Any", "Installer", "Job Giver"]),
+  role: z.enum(["Any", "Professional", "Client"]),
   reason: z.string().min(10, "Reason must be at least 10 characters long."),
 });
 
@@ -178,8 +178,8 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="Any">{t('form.roles.any')}</SelectItem>
-                        <SelectItem value="Installer">{t('form.roles.installer')}</SelectItem>
-                        <SelectItem value="Job Giver">{t('form.roles.jobGiver')}</SelectItem>
+                        <SelectItem value="Professional">{t('form.roles.professional')}</SelectItem>
+                        <SelectItem value="Client">{t('form.roles.client')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -288,8 +288,8 @@ export default function BlacklistManager({ blacklist, onDataChange }: { blacklis
                       <TableCell>
                         <Badge variant="outline">
                           {entry.role === 'Any' && t('form.roles.any')}
-                          {entry.role === 'Installer' && t('form.roles.installer')}
-                          {entry.role === 'Job Giver' && t('form.roles.jobGiver')}
+                          {entry.role === 'Professional' && t('form.roles.professional')}
+                          {entry.role === 'Client' && t('form.roles.client')}
                         </Badge>
                       </TableCell>
                       <TableCell className="max-w-xs truncate">
@@ -332,8 +332,8 @@ export default function BlacklistManager({ blacklist, onDataChange }: { blacklis
                         </Badge>
                         <Badge variant="outline">
                           {entry.role === 'Any' && t('form.roles.any')}
-                          {entry.role === 'Installer' && t('form.roles.installer')}
-                          {entry.role === 'Job Giver' && t('form.roles.jobGiver')}
+                          {entry.role === 'Professional' && t('form.roles.professional')}
+                          {entry.role === 'Client' && t('form.roles.client')}
                         </Badge>
                       </CardDescription>
                     </CardHeader>

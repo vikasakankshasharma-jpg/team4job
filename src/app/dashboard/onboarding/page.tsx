@@ -12,9 +12,9 @@ export default function OnboardingPage() {
 
     useEffect(() => {
         if (!loading && user) {
-            // Correct check: Redirect if NOT an installer OR if already verified (optional, maybe they want to edit)
-            // For now, let's assume this page is accessible to any Installer who needs to complete their profile.
-            if (!user.roles.includes('Installer')) {
+            // Correct check: Redirect if NOT an Professional OR if already verified (optional, maybe they want to edit)
+            // For now, let's assume this page is accessible to any Professional who needs to complete their profile.
+            if (!user.roles.includes('Professional')) {
                 router.push('/dashboard');
             }
         }

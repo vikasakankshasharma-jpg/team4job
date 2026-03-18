@@ -247,12 +247,12 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
   const filteredJobs = filterJobs(openForBiddingJobs);
 
   const recommendedJobs = React.useMemo(() => {
-    if (!user?.installerProfile) return [];
+    if (!user?.professionalProfile) return [];
 
-    const installerSkills = new Set(
-      (user.installerProfile.skills || []).map(s => s.toLowerCase())
+    const ProfessionalSkills = new Set(
+      (user.professionalProfile.skills || []).map(s => s.toLowerCase())
     );
-    const { city: installerCity, state: installerState } = getLocationParts(
+    const { city: ProfessionalCity, state: ProfessionalState } = getLocationParts(
       user.address?.fullAddress
     );
 
@@ -284,16 +284,16 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
           );
 
           // Tier 2: City Match
-          if (installerCity && jobCity &&
-            jobCity.toLowerCase() === installerCity.toLowerCase()) {
+          if (ProfessionalCity && jobCity &&
+            jobCity.toLowerCase() === ProfessionalCity.toLowerCase()) {
             if (!locationMatchType) {
               locationMatchType = 'city';
               score += 10;
             }
           }
           // Tier 3: State Match
-          else if (installerState && jobState &&
-            jobState.toLowerCase() === installerState.toLowerCase()) {
+          else if (ProfessionalState && jobState &&
+            jobState.toLowerCase() === ProfessionalState.toLowerCase()) {
             if (!locationMatchType) {
               locationMatchType = 'state';
               score += 5;
@@ -313,7 +313,7 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
         if (job.skills && job.skills.length > 0) {
           const jobSkills = new Set(job.skills.map(s => s.toLowerCase()));
           const matchingSkills = [...jobSkills].filter(skill =>
-            installerSkills.has(skill)
+            ProfessionalSkills.has(skill)
           );
           score += matchingSkills.length * 5; // Add points for each matching skill
         }
@@ -348,7 +348,7 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
     selectedSkills.length > 0
   ].filter(Boolean).length;
 
-  if (role === 'Admin' || role === 'Job Giver') {
+  if (role === 'Admin' || role === 'Client') {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">{tCommon('loading')}</p>
@@ -361,10 +361,11 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
       <div className="flex flex-col lg:flex-row gap-8 items-start">
 
         {/* DESKTOP SIDEBAR */}
-        <aside className="hidden lg:block w-72 flex-shrink-0 sticky top-20">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle>{tCommon('filters')}</CardTitle>
+        <aside className="hidden lg:block w-72 flex-shrink-0 sticky top-24">
+          <Card className="border-0 shadow-xl shadow-primary/5 bg-card overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-accent/50" />
+            <CardHeader className="flex flex-row items-center justify-between pb-4 pt-6">
+              <CardTitle className="text-lg font-bold tracking-tight">{tCommon('filters')}</CardTitle>
               <SaveSearchDialog
                 currentFilters={{
                   query: searchQuery,
@@ -389,27 +390,27 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
 
         {/* MAIN CONTENT AREA */}
         <div className="flex-1 w-full min-w-0">
-          <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <TabsList className="w-full sm:w-auto h-auto p-1">
-                <TabsTrigger value="nearby" className="flex-1 sm:flex-none gap-2 min-h-[44px]">
+          <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-8">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <TabsList className="w-full sm:w-auto h-auto p-1.5 bg-muted/40 rounded-xl">
+                <TabsTrigger value="nearby" className="flex-1 sm:flex-none gap-2 min-h-[44px] rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-semibold">
                   <MapPin className="h-4 w-4" />
                   {tJob('nearYou')}
                   {filteredRecommendedJobs.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 rounded-full">
+                    <Badge variant="secondary" className="ml-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20">
                       {filteredRecommendedJobs.length}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="saved" className="flex-1 sm:flex-none gap-2 min-h-[44px]">
+                <TabsTrigger value="saved" className="flex-1 sm:flex-none gap-2 min-h-[44px] rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-semibold">
                   {tJob('saved')}
                   {user?.bookmarks && user.bookmarks.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 rounded-full">
+                    <Badge variant="secondary" className="ml-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20">
                       {user.bookmarks.filter(id => jobs.find(j => j.id === id)).length}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="all" className="flex-1 sm:flex-none min-h-[44px]">{tJob('browseAll')}</TabsTrigger>
+                <TabsTrigger value="all" className="flex-1 sm:flex-none min-h-[44px] rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-semibold">{tJob('browseAll')}</TabsTrigger>
               </TabsList>
 
               <div className="ml-auto flex items-center gap-2 lg:hidden">
@@ -465,11 +466,11 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
               </div>
             </div>
 
-            <TabsContent value="all" className="m-0">
-              <Card className="max-w-full overflow-hidden border-none shadow-none sm:border sm:shadow-sm bg-transparent sm:bg-card">
-                <CardHeader className="px-0 sm:px-6">
-                  <CardTitle className="overflow-wrap-anywhere">{tJob('availableJobs')}</CardTitle>
-                  <CardDescription className="overflow-wrap-anywhere">
+            <TabsContent value="all" className="m-0 focus-visible:outline-none focus-visible:ring-0">
+              <Card className="max-w-full overflow-hidden border-0 shadow-none bg-transparent">
+                <CardHeader className="px-0 pb-6 pt-2">
+                  <CardTitle className="text-2xl font-bold tracking-tight">{tJob('availableJobs')}</CardTitle>
+                  <CardDescription className="text-base font-medium opacity-80">
                     {tJob('availableJobsDesc')}
                   </CardDescription>
                 </CardHeader>
@@ -512,16 +513,16 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
               </Card>
             </TabsContent>
 
-            <TabsContent value="nearby" className="m-0">
-              <Card className="max-w-full overflow-hidden border-none shadow-none sm:border sm:shadow-sm bg-transparent sm:bg-card">
-                <CardHeader className="px-0 sm:px-6">
+            <TabsContent value="nearby" className="m-0 focus-visible:outline-none focus-visible:ring-0">
+              <Card className="max-w-full overflow-hidden border-0 shadow-none bg-transparent">
+                <CardHeader className="px-0 pb-6 pt-2">
                   <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="overflow-wrap-anywhere flex items-center gap-2">
-                        <MapPin className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                        <MapPin className="h-6 w-6 text-primary" />
                         {tJob('nearYou')}
                       </CardTitle>
-                      <CardDescription className="overflow-wrap-anywhere">
+                      <CardDescription className="text-base font-medium opacity-80 mt-1">
                         {tJob('unbidOppPincode').replace('{unbid}', 'Unbid')}
                       </CardDescription>
                     </div>
@@ -579,11 +580,11 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
               </Card>
             </TabsContent>
 
-            <TabsContent value="saved" className="m-0">
-              <Card className="max-w-full overflow-hidden border-none shadow-none sm:border sm:shadow-sm bg-transparent sm:bg-card">
-                <CardHeader className="px-0 sm:px-6">
-                  <CardTitle className="overflow-wrap-anywhere">{tJob('savedJobs')}</CardTitle>
-                  <CardDescription className="overflow-wrap-anywhere">
+            <TabsContent value="saved" className="m-0 focus-visible:outline-none focus-visible:ring-0">
+              <Card className="max-w-full overflow-hidden border-0 shadow-none bg-transparent">
+                <CardHeader className="px-0 pb-6 pt-2">
+                  <CardTitle className="text-2xl font-bold tracking-tight">{tJob('savedJobs')}</CardTitle>
+                  <CardDescription className="text-base font-medium opacity-80 mt-1">
                     {tJob('savedJobsDesc')}
                   </CardDescription>
                 </CardHeader>

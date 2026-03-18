@@ -28,7 +28,7 @@ export class BidService {
         }
 
         // Check permissions
-        if (!bidRules.canPlaceBid(userRole, job.status, job.jobGiverId, userId)) {
+        if (!bidRules.canPlaceBid(userRole, job.status, job.clientId, userId)) {
             throw new Error('Cannot place bid on this job');
         }
 
@@ -47,8 +47,8 @@ export class BidService {
         // Create bid object
         const bid: Partial<Bid> = {
             ...data,
-            installerId: userId,
-            jobGiverId: job.jobGiverId,
+            professionalId: userId,
+            clientId: job.clientId,
             status: 'active',
             // timestamp added by repository
         };
@@ -65,11 +65,11 @@ export class BidService {
         });
 
         // Data Aggregation: Update Stats
-        userRepository.incrementStats(job.jobGiverId, { totalBids: 1 }).catch(() => {});
+        userRepository.incrementStats(job.clientId, { totalBids: 1 }).catch(() => {});
         userRepository.incrementStats(userId, { myBids: 1 }).catch(() => {});
 
-        // Send Bid Received Notification to Job Giver
-        userRepository.fetchById(job.jobGiverId).then(giver => {
+        // Send Bid Received Notification to Client
+        userRepository.fetchById(job.clientId).then(giver => {
             if (giver) {
                 emailService.sendBidReceivedEmail({
                     to: giver.email,
@@ -97,11 +97,11 @@ export class BidService {
             throw new Error('Bid not found');
         }
 
-        const bidInstallerId = typeof bid.installer === 'string'
-            ? bid.installer
-            : (bid.installer as any).id || bid.installerId;
+        const bidprofessionalId = typeof bid.professional === 'string'
+            ? bid.professional
+            : (bid.professional as any).id || bid.professionalId;
 
-        if (!bidRules.canWithdrawBid(userId, bidInstallerId!, job.status)) {
+        if (!bidRules.canWithdrawBid(userId, bidprofessionalId!, job.status)) {
             throw new Error('Cannot withdraw this bid');
         }
 
@@ -113,7 +113,7 @@ export class BidService {
         });
 
         // Data Aggregation: Decrement Stats
-        userRepository.incrementStats(job.jobGiverId, { totalBids: -1 }).catch(() => {});
+        userRepository.incrementStats(job.clientId, { totalBids: -1 }).catch(() => {});
         userRepository.incrementStats(userId, { myBids: -1 }).catch(() => {});
 
 

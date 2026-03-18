@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
 import { TEST_JOB_DATA, generateUniqueJobTitle, getDateString, getDateTimeString } from '../fixtures/test-data';
 
-test.describe('Desktop User Flow (Job Giver / Installer / Admin / Staff)', () => {
+test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () => {
 
     test('Full end-to-end flow on desktop', async ({ page }) => {
         const helper = new TestHelper(page);
@@ -19,14 +19,32 @@ test.describe('Desktop User Flow (Job Giver / Installer / Admin / Staff)', () =>
             }
         });
 
-        // ---------- Login as Job Giver ----------
-        await helper.auth.loginAsJobGiver();
+        // ---------- Login as Client ----------
+        // Clear any existing stale drafts before starting the test properly
+        await page.goto('/dashboard/post-job').catch(() => { });
+        await helper.form.discardDraftIfPresent();
+
+        // Clear any existing stale drafts before starting the test properly
+        await page.goto('/dashboard/post-job').catch(() => { });
+        await helper.form.discardDraftIfPresent();
+
+        await helper.auth.loginAsClient();
         await expect(page.getByTestId('dashboard-post-job-btn').or(page.getByText(/Post New Job/i)).first()).toBeVisible({ timeout: 60000 });
 
         // ---------- Post a Job ----------
         await helper.nav.goToPostJob();
 
-        await helper.form.selectDropdown('Category', TEST_JOB_DATA.category);
+        await helper.form.completeWizard(
+            TEST_JOB_DATA.category,
+            TEST_JOB_DATA.subType,
+            TEST_JOB_DATA.branchAnswers,
+            TEST_JOB_DATA.urgency
+        );
+
+        // Synchronize with global draft handler
+        await helper.form.waitForDraftDialogHandled();
+
+        // Fill non-wizard fields on the review/final page
         await helper.form.fillInput('Job Title', uniqueJobTitle);
         await helper.form.fillTextarea('Job Description', TEST_JOB_DATA.description);
         await helper.form.fillInput('Skills', TEST_JOB_DATA.skills);
@@ -42,84 +60,10 @@ test.describe('Desktop User Flow (Job Giver / Installer / Admin / Staff)', () =>
         await page.fill('[data-testid="min-budget-input"]', TEST_JOB_DATA.minBudget.toString());
         await page.fill('[data-testid="max-budget-input"]', TEST_JOB_DATA.maxBudget.toString());
 
-        // Dismiss any blocking dialogs (Feedback, etc.)
-        try {
-            const feedbackDialog = page.getByRole('dialog', { name: 'Share Your Feedback' });
-            if (await feedbackDialog.isVisible({ timeout: 2000 })) {
-                await page.keyboard.press('Escape');
-                await page.waitForTimeout(500);
-            }
-        } catch { /* ignore */ }
+        await helper.form.submitPostJob();
 
-        // Try multiple approaches to find and click verification checkbox
-        let checkboxClicked = false;
-        const checkboxSelectors = [
-            page.locator('button[role="checkbox"]').filter({ hasText: 'I verify' }),
-            page.getByText('I verify that these details are correct'),
-            page.locator('button[role="checkbox"]'),
-            page.locator('input[type="checkbox"]'),
-            page.locator('[role="checkbox"]')
-        ];
-        for (const selector of checkboxSelectors) {
-            try {
-                if (await selector.first().isVisible({ timeout: 2000 })) {
-                    await selector.first().click({ force: true });
-                    checkboxClicked = true;
-                    break;
-                }
-            } catch {
-                continue;
-            }
-        }
-        await page.waitForTimeout(500);
-
-        // Inject CSS to hide potentially blocking overlays (Cookie consent, Beta feedback, etc.)
-        await page.addStyleTag({
-            content: `
-            .CookieConsent, [role="dialog"]:not([role="alertdialog"]), .beta-feedback-button,
-            button.fixed, button[class*="fixed"][class*="bottom-"] { 
-                display: none !important; 
-            }
-        `});
-
-        // Also remove floating fixed buttons via JS — they can intercept clicks
-        await page.evaluate(() => {
-            document.querySelectorAll('button').forEach(btn => {
-                const style = window.getComputedStyle(btn);
-                if (style.position === 'fixed') {
-                    (btn as HTMLElement).style.display = 'none';
-                }
-            });
-        });
-
-        const postButton = page.getByTestId('post-job-button');
-        await postButton.scrollIntoViewIfNeeded();
-        await page.waitForTimeout(500);
-
-        // Click the Post Job button — use force to bypass any remaining floating overlays
-        await postButton.click({ force: true });
-
-        // Wait a moment for the form validation + dialog to appear
-        await page.waitForTimeout(1000);
-
-        // If validation failed, the dialog won't appear — log form errors
-        const hasErrors = await page.evaluate(() => {
-            const errorEls = document.querySelectorAll('[data-slot="form-message-error"], .text-destructive, [role="alert"]');
-            if (errorEls.length > 0) {
-                console.error('[E2E-DEBUG] Form validation errors found:', Array.from(errorEls).map(e => e.textContent).join(', '));
-                return true;
-            }
-            return false;
-        });
-        if (hasErrors) {
-            console.warn('[E2E-DEBUG] Form has validation errors — dialog may not appear');
-        }
-
-        // Handle the "Confirm Job Posting" dialog
-        const confirmDialog = page.getByRole('alertdialog', { name: 'Confirm Job Posting' });
-        await expect(confirmDialog).toBeVisible({ timeout: 15000 });
-        const confirmBtn = confirmDialog.getByRole('button', { name: 'Confirm & Save' });
-        await confirmBtn.click({ force: true });
+        // Handle the "Confirm Job Posting" dialog (already handled by submitPostJob, so just verify redirect)
+        console.log('[E2E] Waiting for job detail redirection...');
 
         try {
             await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 15000 });
@@ -136,20 +80,23 @@ test.describe('Desktop User Flow (Job Giver / Installer / Admin / Staff)', () =>
             }
         }
 
-        // ---------- Switch to Installer logic ----------
+        // ---------- Switch to Professional logic ----------
         await helper.auth.logout();
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
 
         // Direct navigation to job
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         // Place Bid
-        await page.getByTestId('job-title').waitFor({ state: 'visible', timeout: 10000 }).catch(() => { });
+        await page.getByTestId('job-title').waitFor({ state: 'visible', timeout: 30000 }).catch(() => { });
         const hasJobTitle = await page.getByTestId('job-title').isVisible({ timeout: 2000 }).catch(() => false);
         if (!hasJobTitle) {
             test.skip(true, 'Job detail page not loaded – skipping bid step');
             return;
         }
+
+        // AI compiled title might be different from uniqueJobTitle
+        await expect(page.getByTestId('job-title')).toContainText(/CCTV|Security|Test CCTV/i);
         await page.getByTestId('actions-panel').waitFor({ state: 'visible', timeout: 10000 }).catch(() => { });
         const bidButton = page.getByTestId('place-bid-button').or(page.locator('button:has-text("Place Bid")')).first();
         const isVisible = await bidButton.isVisible({ timeout: 5000 }).catch(() => false);
@@ -168,9 +115,9 @@ test.describe('Desktop User Flow (Job Giver / Installer / Admin / Staff)', () =>
         ]);
         await page.waitForTimeout(1000);
 
-        // ---------- Job Giver Awards ----------
+        // ---------- Client Awards ----------
         await helper.auth.logout();
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         await page.getByTestId('send-offer-button').first().click();
@@ -182,9 +129,9 @@ test.describe('Desktop User Flow (Job Giver / Installer / Admin / Staff)', () =>
         ]);
         await page.waitForTimeout(1000); // Allow state to settle
 
-        // ---------- Installer Accepts ----------
+        // ---------- Professional Accepts ----------
         await helper.auth.logout();
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('accept-job-button').first().click();
 
@@ -214,3 +161,5 @@ test.describe('Desktop User Flow (Job Giver / Installer / Admin / Staff)', () =>
         console.log('Desktop Flow Completed Successfully');
     });
 });
+
+

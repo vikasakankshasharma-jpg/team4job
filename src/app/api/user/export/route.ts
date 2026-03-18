@@ -16,15 +16,15 @@ export async function GET() {
         const userDoc = await db.collection(COLLECTIONS.USERS).doc(userId).get();
         const userData = userDoc.exists ? userDoc.data() : null;
 
-        // 2. Fetch User's Jobs (as Job Giver)
+        // 2. Fetch User's Jobs (as Client)
         const jobsSnapshot = await db.collection(COLLECTIONS.JOBS)
-            .where('jobGiverId', '==', userId)
+            .where('clientId', '==', userId)
             .get();
         const jobs = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         // 3. Fetch User's Bids (using Collection Group)
         const bidsSnapshot = await db.collectionGroup('bids')
-            .where('installerId', '==', userId)
+            .where('professionalId', '==', userId)
             .get();
         const bids = bidsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 

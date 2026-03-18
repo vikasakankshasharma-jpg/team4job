@@ -25,7 +25,7 @@ export interface JobDraft {
     address?: Address;
     fullAddress?: string;
     jobStartDate?: Date | Timestamp;
-    directAwardInstallerId?: string;
+    directAwardProfessionalId?: string;
     travelTip?: number;
     skills?: string[];
     attachments?: JobAttachment[];
@@ -245,3 +245,4 @@ export async function incrementTemplateUsage(
         throw error;
     }
 }
+

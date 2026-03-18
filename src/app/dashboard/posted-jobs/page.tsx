@@ -5,7 +5,7 @@ import PostedJobsClient from './posted-jobs-client';
 export const dynamic = 'force-dynamic';
 
 import { getUserIdFromSession } from '@/lib/auth-server';
-import { listJobsForJobGiverAction } from '@/app/actions/job.actions';
+import { listJobsForClientAction } from '@/app/actions/job.actions';
 import { Job } from '@/lib/types';
 
 export default async function PostedJobsPage() {
@@ -13,7 +13,7 @@ export default async function PostedJobsPage() {
     let initialJobs: Job[] = [];
 
     if (userId) {
-        const result = await listJobsForJobGiverAction(userId);
+        const result = await listJobsForClientAction(userId);
         if (result.success && result.data) {
             initialJobs = result.data;
         }
@@ -29,3 +29,6 @@ export default async function PostedJobsPage() {
         </Suspense>
     );
 }
+
+
+

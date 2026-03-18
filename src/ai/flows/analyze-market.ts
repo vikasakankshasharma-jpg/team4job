@@ -14,10 +14,10 @@ const AnalyzeMarketInputSchema = z.object({
 });
 
 const AnalyzeMarketOutputSchema = z.object({
-    demandLevel: z.enum(['Low', 'Medium', 'High']).describe('Predicted installer demand for this job.'),
+    demandLevel: z.enum(['Low', 'Medium', 'High']).describe('Predicted professional demand for this job.'),
     suggestedBoostPercentage: z.number().describe('Percentage (0-100) to increase the budget/travel tip by.'),
     reasoning: z.string().describe('Explanation for the market analysis.'),
-    recommendedAction: z.string().describe('A concrete step for the Job Giver (e.g., "Add a travel tip of ₹500").'),
+    recommendedAction: z.string().describe('A concrete step for the Client (e.g., "Add a travel tip of ₹500").'),
     marketTrend: z.string().describe('Summary of the current market for this category and location.'),
 });
 
@@ -32,7 +32,7 @@ export const analyzeMarketFlow = defineLoggedFlow(
     },
     async (input) => {
         const prompt = `You are an expert market analyst for an on-demand service platform in India.
-        Analyze the following job posting and provide strategic pricing advice to the Job Giver.
+        Analyze the following job posting and provide strategic pricing advice to the Client.
         
         Job Details:
         - Title: ${input.jobTitle}
@@ -44,7 +44,7 @@ export const analyzeMarketFlow = defineLoggedFlow(
         
         Guidelines:
         1. If bidCount is 0 after 2 days, demand is likely "Low" or the price is too low.
-        2. If the job is URGENT, suggest a "Boost" of at least 15% to attract premium installers.
+        2. If the job is URGENT, suggest a "Boost" of at least 15% to attract premium professionals.
         3. Consider the pincode: Some areas may have higher travel costs.
         4. Suggest specific actions like adding a "Travel Tip" instead of just increasing the base budget.
         

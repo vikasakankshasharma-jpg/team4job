@@ -38,7 +38,7 @@ export const openApiSpec = {
                     email: { type: 'string' },
                     roles: {
                         type: 'array',
-                        items: { type: 'string', enum: ['Job Giver', 'Installer', 'Admin'] }
+                        items: { type: 'string', enum: ['Client', 'Professional', 'Admin'] }
                     },
                     status: { type: 'string', enum: ['active', 'suspended', 'deactivated'] }
                 }

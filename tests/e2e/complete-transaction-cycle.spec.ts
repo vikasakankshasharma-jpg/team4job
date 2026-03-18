@@ -43,9 +43,9 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
         const helper = new TestHelper(page);
 
-        // --- PHASE 1: JOB GIVER POSTS JOB ---
-        console.log('--- START: Phase 1 - Job Giver posts a new job ---');
-        await helper.auth.loginAsJobGiver();
+        // --- PHASE 1: Client POSTS JOB ---
+        console.log('--- START: Phase 1 - Client posts a new job ---');
+        await helper.auth.loginAsClient();
         await expect(page).toHaveURL(/.*\/dashboard/);
 
         // Mock Pincode API
@@ -172,10 +172,10 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
             return;
         }
 
-        // --- PHASE 2: INSTALLER PLACES BID ---
-        console.log('--- START: Phase 2 - Installer places a bid ---');
+        // --- PHASE 2: Professional PLACES BID ---
+        console.log('--- START: Phase 2 - Professional places a bid ---');
         await helper.auth.logout();
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
@@ -190,10 +190,10 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await helper.form.waitForToast('Bid Placed!');
         console.log('[PASS] Phase 2 Complete: Bid placed');
 
-        // --- PHASE 3: JOB GIVER AWARDS JOB ---
-        console.log('--- START: Phase 3 - Job Giver awards job ---');
-        await helper.auth.logout(); // Force logout to switch user from Installer to Job Giver
-        await helper.auth.loginAsJobGiver();
+        // --- PHASE 3: Client AWARDS JOB ---
+        console.log('--- START: Phase 3 - Client awards job ---');
+        await helper.auth.logout(); // Force logout to switch user from Professional to Client
+        await helper.auth.loginAsClient();
         await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
@@ -205,17 +205,17 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await helper.form.waitForToast('Offer Sent');
         console.log('[PASS] Phase 3 Complete: Offer sent');
 
-        // --- PHASE 4: INSTALLER ACCEPTS JOB ---
-        console.log('--- START: Phase 4 - Installer accepts job ---');
+        // --- PHASE 4: Professional ACCEPTS JOB ---
+        console.log('--- START: Phase 4 - Professional accepts job ---');
 
-        // Ensure Installer has Payouts Setup (via Test API)
-        await page.request.post('/api/e2e/setup-installer', {
-            data: { email: TEST_ACCOUNTS.installer.email }
+        // Ensure Professional has Payouts Setup (via Test API)
+        await page.request.post('/api/e2e/setup-Professional', {
+            data: { email: TEST_ACCOUNTS.professional.email }
         });
-        console.log('[INFO] Seeded installer payouts via API');
+        console.log('[INFO] Seeded Professional payouts via API');
 
         await helper.auth.logout(); // Ensure clean session
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
@@ -232,7 +232,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
         // Handle potential Conflict Dialog (if previous test runs left awarded jobs)
         // Handle potential Conflict Dialog (if previous test runs left awarded jobs)
-        // Correct text found in installer-acceptance-section.tsx
+        // Correct text found in Professional-acceptance-section.tsx
         const conflictDialogText = page.getByText('Schedule Conflict Warning');
 
         try {
@@ -251,10 +251,10 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await helper.job.waitForJobStatus('Pending Funding');
         console.log('[PASS] Phase 4 Complete: Job accepted');
 
-        // --- PHASE 5: JOB GIVER FUNDS ESCROW ---
-        console.log('--- START: Phase 5 - Job Giver funds escrow ---');
+        // --- PHASE 5: Client FUNDS ESCROW ---
+        console.log('--- START: Phase 5 - Client funds escrow ---');
         await helper.auth.logout(); // Ensure clean session switch
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
         await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
@@ -290,10 +290,10 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         const startOtp = await otpLocator.innerText();
         console.log(`[PASS] Phase 5 Complete: Funded, OTP: ${startOtp} `);
 
-        // --- PHASE 6: INSTALLER STARTS WORK ---
-        console.log('--- START: Phase 6 - Installer starts work ---');
+        // --- PHASE 6: Professional STARTS WORK ---
+        console.log('--- START: Phase 6 - Professional starts work ---');
         await helper.auth.logout(); // Ensure clean session
-        await helper.auth.loginAsInstaller();
+        await helper.auth.loginAsProfessional();
         await expect(page).toHaveURL(/.*\/dashboard/);
 
         console.log(`[DEBUG] Phase 6: Navigating to job detail. JobID: ${jobId}`);
@@ -317,9 +317,9 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         }
         console.log('[PASS] Phase 6 Complete: Work started');
 
-        // --- PHASE 7: INSTALLER COMPLETES WORK ---
-        console.log('--- START: Phase 7 - Installer completes work ---');
-        const completionSection = page.getByTestId('installer-completion-section');
+        // --- PHASE 7: Professional COMPLETES WORK ---
+        console.log('--- START: Phase 7 - Professional completes work ---');
+        const completionSection = page.getByTestId('Professional-completion-section');
         await expect(completionSection).toBeVisible();
         await completionSection.locator('input[type="file"]').setInputFiles({
             name: 'proof.png',
@@ -335,14 +335,14 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await helper.form.waitForToast('Submitted for Confirmation');
         await helper.job.waitForJobStatus('Pending Confirmation');
 
-        // Persistence verified by subsequent Job Giver login in Phase 8
+        // Persistence verified by subsequent Client login in Phase 8
 
         console.log('[PASS] Phase 7 Complete: Work submitted and status persisted');
 
-        // --- PHASE 8: JOB GIVER APPROVES & PAYS ---
-        console.log('--- START: Phase 8 - Job Giver approves work ---');
+        // --- PHASE 8: Client APPROVES & PAYS ---
+        console.log('--- START: Phase 8 - Client approves work ---');
         await helper.auth.logout(); // Ensure clean session
-        await helper.auth.loginAsJobGiver();
+        await helper.auth.loginAsClient();
         await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
@@ -395,7 +395,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await invoicePage.waitForTimeout(1000);
 
         // Check for content in the new tab
-        await expect(invoicePage.getByText('Billed To (Job Giver):')).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(invoicePage.getByText('Billed To (Client):')).toBeVisible({ timeout: TIMEOUTS.medium });
         console.log('[PASS] Service Invoice Page Verified');
         await invoicePage.close();
 
@@ -453,10 +453,10 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         // --- PHASE 10: VERIFY REVIEW & RATING ---
         console.log('--- START: Phase 10 - Verify Review & Rating ---');
 
-        // 1. Job Giver Submits Review
+        // 1. Client Submits Review
         await expect(page.getByText('Rate Your Experience')).toBeVisible();
         await page.getByTestId('rating-star-5').click();
-        await page.getByTestId('rating-comment').fill('Great installer, highly recommended!');
+        await page.getByTestId('rating-comment').fill('Great Professional, highly recommended!');
         await page.getByTestId('submit-review-button').click();
 
         // Verify Sealed State
@@ -475,7 +475,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
         // PERSISTENCE GATE: Verify Backend has the data before reloading environment
         // This solves the race condition where local cache has data but backend doesn't.
-        console.log('[Phase 10] Verifying Job Giver persistence via Backend (Admin SDK)...');
+        console.log('[Phase 10] Verifying Client persistence via Backend (Admin SDK)...');
         await expect(async () => {
             const adminFirestore = getAdminDb();
             const jobDoc = await adminFirestore.collection('jobs').doc(jobId).get();
@@ -483,18 +483,18 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
             // console.log('[Phase 10] Backend Job Data Review:', JSON.stringify(data?.jobGiverReview)); 
             if (!data?.jobGiverReview) throw new Error('Review not persisted to backend yet');
         }).toPass({ timeout: TIMEOUTS.medium });
-        console.log('[PASS] Job Giver Review Persisted to Backend (Verified)');
+        console.log('[PASS] Client Review Persisted to Backend (Verified)');
 
         // Now safe to reload or logout
         // Optional: Reload check (to prove client fetches it)
         // await page.reload();
         // await expect(page.getByTestId('review-locked-card')).toBeVisible({ timeout: TIMEOUTS.medium });
 
-        // Logout Job Giver
+        // Logout Client
         await helper.auth.logout();
 
-        // Installer Logs in
-        await helper.auth.loginAsInstaller();
+        // Professional Logs in
+        await helper.auth.loginAsProfessional();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await helper.job.waitForJobStatus('Completed');
 
@@ -505,13 +505,13 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
             await page.waitForTimeout(2000);
             await expect(page.getByTestId('other-party-reviewed-text')).toBeVisible({ timeout: 10000 });
         } catch (e) {
-            console.log('[INFO] Phase 10: Review not synced to Installer yet. Reloading...');
+            console.log('[INFO] Phase 10: Review not synced to Professional yet. Reloading...');
             await page.reload();
             await page.waitForTimeout(3000);
             await expect(page.getByTestId('other-party-reviewed-text')).toBeVisible({ timeout: TIMEOUTS.long });
         }
 
-        // Installer Submits Review
+        // Professional Submits Review
         await expect(page.getByText('Rate Your Experience')).toBeVisible();
         await page.getByTestId('rating-star-5').click();
         await page.getByTestId('rating-comment').fill('Excellent client, clear requirements.');
@@ -521,15 +521,18 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await expect(page.getByTestId('reviews-revealed-section')).toBeVisible();
         await expect(page.getByText('You Rated Them')).toBeVisible();
         await expect(page.getByText('They Rated You')).toBeVisible();
-        await expect(page.getByText('Great installer, highly recommended!')).toBeVisible(); // Job Giver's review (as "They") - Wait, Installer is viewing
-        // Installer viewing: "They Rated You" should satisfy Giver's review text.
+        await expect(page.getByText('Great Professional, highly recommended!')).toBeVisible(); // Client's review (as "They") - Wait, Professional is viewing
+        // Professional viewing: "They Rated You" should satisfy Giver's review text.
         // Component logic: 
-        // myReview = InstallerReview. theirReview = JobGiverReview.
+        // myReview = ProfessionalReview. theirReview = JobGiverReview.
         // "They Rated You" card shows `theirReview.review`.
-        // So yes, Installer sees 'Great installer...'? NO. Giver wrote "Great installer".
+        // So yes, Professional sees 'Great Professional...'? NO. Giver wrote "Great Professional".
 
         console.log('[PASS] Phase 10 Complete: Reviews Verified');
 
         await context.close();
     });
 });
+
+
+

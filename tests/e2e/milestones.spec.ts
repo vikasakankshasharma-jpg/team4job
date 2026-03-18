@@ -12,7 +12,7 @@ test.describe('Milestone-based Payments @slow', () => {
         helper = { auth: new AuthHelper(page) };
     });
 
-    test('Job Giver can create and release milestones', async ({ page }) => {
+    test('Client can create and release milestones', async ({ page }) => {
         // 1. Seed Job (Bypass Posting UI)
         console.log("Seeding job...");
         let jobId;
@@ -26,7 +26,7 @@ test.describe('Milestone-based Payments @slow', () => {
         }
 
         // 2. Login and Navigate
-        await helper.auth.login(TEST_ACCOUNTS.jobGiver.email, TEST_ACCOUNTS.jobGiver.password);
+        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
 
@@ -87,3 +87,5 @@ test.describe('Milestone-based Payments @slow', () => {
         await expect(page.locator('text=Paid').first()).toBeVisible();
     });
 });
+
+

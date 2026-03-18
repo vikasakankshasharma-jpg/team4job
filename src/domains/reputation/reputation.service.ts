@@ -18,18 +18,18 @@ export class ReputationService {
         if (!userSnap.exists) throw new Error('User not found');
 
         const data = userSnap.data();
-        const currentPoints = data?.installerProfile?.reputationPoints || 0;
+        const currentPoints = data?.professionalProfile?.reputationPoints || 0;
         const newPoints = Math.max(0, currentPoints - points);
 
         // Update Reputation
         await userRef.update({
-            'installerProfile.reputationPoints': newPoints
+            'professionalProfile.reputationPoints': newPoints
         });
 
         // 2. If jobId provided, remove from disqualified list (as penalty was paid)
         if (jobId) {
             await db.collection('jobs').doc(jobId).update({
-                disqualifiedInstallerIds: FieldValue.arrayRemove(userId)
+                disqualifiedProfessionalIds: FieldValue.arrayRemove(userId)
             });
         }
 
@@ -41,10 +41,11 @@ export class ReputationService {
     async addPoints(userId: string, points: number, reason: string): Promise<void> {
         const db = getAdminDb();
         await db.collection('users').doc(userId).update({
-            'installerProfile.reputationPoints': FieldValue.increment(points)
+            'professionalProfile.reputationPoints': FieldValue.increment(points)
         });
 
     }
 }
 
 export const reputationService = new ReputationService();
+

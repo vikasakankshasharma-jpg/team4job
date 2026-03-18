@@ -140,7 +140,7 @@ export default function TransactionsClient() {
         // Calculate total commission (platform revenue)
         const totalCommission = transactions.reduce((sum, t) => {
             if (t.status === 'released') {
-                return sum + (t.commission || 0) + (t.jobGiverFee || 0);
+                return sum + (t.commission || 0) + (t.clientFee || 0);
             }
             return sum;
         }, 0);
@@ -314,11 +314,11 @@ export default function TransactionsClient() {
                 </>
             )}
 
-            <Card>
+            <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                            <CardTitle>{t('title')}</CardTitle>
+                            <CardTitle className="text-xl font-bold tracking-tight">{t('title')}</CardTitle>
                             <CardDescription>
                                 {isAdmin ? t('adminDescription') : t('description')}
                                 {' '}• {t('shown', { count: filteredTransactions.length })}
@@ -334,15 +334,15 @@ export default function TransactionsClient() {
                 <CardContent>
                     {/* Tabs */}
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-                        <TabsList>
-                            <TabsTrigger value="all">{t('tabs.all')} ({filteredTransactions.length})</TabsTrigger>
-                            <TabsTrigger value="funded">
+                        <TabsList className="bg-muted/40 rounded-xl p-1">
+                            <TabsTrigger value="all" className="rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background">{t('tabs.all')} ({filteredTransactions.length})</TabsTrigger>
+                            <TabsTrigger value="funded" className="rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background">
                                 {t('tabs.funded')} ({filteredTransactions.filter(t => t.status === 'funded').length})
                             </TabsTrigger>
-                            <TabsTrigger value="released">
+                            <TabsTrigger value="released" className="rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background">
                                 {t('tabs.released')} ({filteredTransactions.filter(t => t.status === 'released').length})
                             </TabsTrigger>
-                            <TabsTrigger value="refunded">
+                            <TabsTrigger value="refunded" className="rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background">
                                 {t('tabs.refunded')} ({filteredTransactions.filter(t => t.status === 'refunded').length})
                             </TabsTrigger>
                         </TabsList>

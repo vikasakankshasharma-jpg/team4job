@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { DummyDataBadge } from "./dummy-data-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { StatusBadge } from "@/components/job-giver/status-badge";
+import { StatusBadge } from "@/components/client/status-badge";
 import { formatDistanceToNow } from "date-fns";
 import { toDate } from "@/lib/utils";
 import {
@@ -32,7 +32,7 @@ interface MobileJobDetailProps {
     job: Job;
     user: User | null;
     bids: Bid[];
-    isJobGiver: boolean;
+    isclient: boolean;
     platformSettings: PlatformSettings | null;
     onJobUpdate: () => void;
     // Add other necessary handlers as needed, keeping it simple for now
@@ -42,7 +42,7 @@ export function MobileJobDetail({
     job,
     user,
     bids,
-    isJobGiver,
+    isclient,
     platformSettings,
     onJobUpdate
 }: MobileJobDetailProps) {
@@ -157,7 +157,7 @@ export function MobileJobDetail({
                     </Card>
 
                     {/* Bids Section (Simplified) */}
-                    {isJobGiver && (
+                    {isclient && (
                         <Card>
                             <AccordionItem value="bids" className="border-none px-0">
                                 <AccordionTrigger className="px-4 py-3 hover:no-underline font-semibold">
@@ -179,7 +179,7 @@ export function MobileJobDetail({
                                             {bids.slice(0, 3).map((bid) => (
                                                 <div key={bid.id} className="flex justify-between items-center p-3 border rounded-lg bg-card">
                                                     <div>
-                                                        <p className="font-medium text-sm">{(bid.installer as any).name || 'Installer'}</p>
+                                                        <p className="font-medium text-sm">{(bid.professional as any).name || 'Professional'}</p>
                                                         <p className="text-xs text-muted-foreground">{formatDistanceToNow(toDate(bid.timestamp))} ago</p>
                                                     </div>
                                                     <div className="text-right">
@@ -209,11 +209,11 @@ export function MobileJobDetail({
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-50 md:hidden pb-[safe-area-inset-bottom]">
                 <div className="flex gap-3">
                     {/* Primary Action Button Logic */}
-                    {job.status === 'Open for Bidding' && isJobGiver ? (
+                    {job.status === 'Open for Bidding' && isclient ? (
                         <Button className="w-full" size="lg">
                             Manage Bids ({bids.length})
                         </Button>
-                    ) : job.status === 'Open for Bidding' && !isJobGiver ? (
+                    ) : job.status === 'Open for Bidding' && !isclient ? (
                         <Button className="w-full" size="lg">
                             Place Bid
                         </Button>

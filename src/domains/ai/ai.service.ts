@@ -124,9 +124,13 @@ export class AIService {
     async recommendJobs(input: RecommendJobsInput): Promise<RecommendJobsOutput> {
         try {
             const { recommendJobs } = await import('@/ai/flows/recommend-jobs');
-            return await recommendJobs(input);
+            // Mapping domain input to flow input
+            return await recommendJobs({
+                professionalSkills: input.professionalSkills,
+                professionalLocation: input.professionalLocation,
+                jobs: input.jobs
+            });
         } catch (error: any) {
-
             return { recommendations: [] };
         }
     }
@@ -134,9 +138,14 @@ export class AIService {
     async aiAssistedBidCreation(input: AiAssistedBidCreationInput): Promise<AiAssistedBidCreationOutput> {
         try {
             const { aiAssistedBidCreation } = await import('@/ai/flows/ai-assisted-bid-creation');
-            return await aiAssistedBidCreation(input);
+            return await aiAssistedBidCreation({
+                jobDescription: input.jobDescription,
+                professionalSkills: input.professionalSkills,
+                professionalExperience: input.professionalExperience,
+                bidContext: input.bidContext,
+                userId: input.userId
+            });
         } catch (error: any) {
-
             throw new Error(error.message || 'Bid generation failed');
         }
     }

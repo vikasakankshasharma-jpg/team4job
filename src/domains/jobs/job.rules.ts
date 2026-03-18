@@ -22,15 +22,15 @@ export class JobRules {
      * Validate if user can create a job
      */
     canCreateJob(userRole: Role): boolean {
-        return userRole === 'Job Giver' || userRole === 'Admin';
+        return userRole === 'Client' || userRole === 'Admin';
     }
 
     /**
      * Validate if user can accept a bid
      */
-    canAcceptBid(jobStatus: JobStatus, userId: string, jobGiverId: string, userRole: Role): boolean {
-        // Only job giver or admin can accept bids
-        if (userRole !== 'Job Giver' && userRole !== 'Admin') {
+    canAcceptBid(jobStatus: JobStatus, userId: string, clientId: string, userRole: Role): boolean {
+        // Only client or admin can accept bids
+        if (userRole !== 'Client' && userRole !== 'Admin') {
             return false;
         }
 
@@ -40,8 +40,8 @@ export class JobRules {
             return false;
         }
 
-        // User must be the job giver (or admin)
-        if (userRole !== 'Admin' && userId !== jobGiverId) {
+        // User must be the client (or admin)
+        if (userRole !== 'Admin' && userId !== clientId) {
 
             return false;
         }
@@ -52,13 +52,13 @@ export class JobRules {
     /**
      * Validate if user can start work
      */
-    canStartWork(jobStatus: JobStatus, userId: string, awardedInstallerId?: string): boolean {
+    canStartWork(jobStatus: JobStatus, userId: string, awardedProfessionalId?: string): boolean {
         const allowed = ['funded', 'in_progress', 'Pending Funding', 'In Progress'];
         if (!allowed.includes(jobStatus)) {
             return false;
         }
 
-        if (!awardedInstallerId || userId !== awardedInstallerId) {
+        if (!awardedProfessionalId || userId !== awardedProfessionalId) {
             return false;
         }
 
@@ -68,13 +68,13 @@ export class JobRules {
     /**
      * Validate if user can mark job as complete
      */
-    canMarkComplete(jobStatus: JobStatus, userId: string, jobGiverId: string): boolean {
+    canMarkComplete(jobStatus: JobStatus, userId: string, clientId: string): boolean {
         const allowed = ['work_submitted', 'Pending Confirmation'];
         if (!allowed.includes(jobStatus)) {
             return false;
         }
 
-        if (userId !== jobGiverId) {
+        if (userId !== clientId) {
             return false;
         }
 

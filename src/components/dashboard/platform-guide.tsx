@@ -12,8 +12,8 @@ export function PlatformGuide() {
             <Tabs defaultValue="general" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="general">Overview</TabsTrigger>
-                    <TabsTrigger value="installer">For Installers</TabsTrigger>
-                    <TabsTrigger value="jobgiver">For Job Givers</TabsTrigger>
+                    <TabsTrigger value="professional">For Professionals</TabsTrigger>
+                    <TabsTrigger value="client">For Clients</TabsTrigger>
                 </TabsList>
 
                 {/* GENERAL OVERVIEW */}
@@ -36,10 +36,10 @@ export function PlatformGuide() {
                                 <div className="space-y-2 text-sm">
                                     <p>We use a safe <strong>Secure and Lock Payment Model</strong>:</p>
                                     <ol className="list-decimal pl-5 space-y-1">
-                                        <li><strong>Funding:</strong> Job Giver funds the job upfront. Money is <strong>Locked</strong> securely by the platform.</li>
-                                        <li><strong>Work:</strong> Installer completes the task and uploads proof.</li>
-                                        <li><strong>Release:</strong> Job Giver verifies work and releases payment.</li>
-                                        <li><strong>Auto-Settle:</strong> If a Job Giver is unresponsive for <Badge variant="outline">5 Days</Badge> after submission, funds are auto-released to the installer.</li>
+                                        <li><strong>Funding:</strong> Client funds the job upfront. Money is <strong>Locked</strong> securely by the platform.</li>
+                                        <li><strong>Work:</strong> Professional completes the task and uploads proof.</li>
+                                        <li><strong>Release:</strong> Client verifies work and releases payment.</li>
+                                        <li><strong>Auto-Settle:</strong> If a Client is unresponsive for <Badge variant="outline">5 Days</Badge> after submission, funds are auto-released to the professional.</li>
                                     </ol>
                                 </div>
                             </AccordionContent>
@@ -52,7 +52,7 @@ export function PlatformGuide() {
                                     <p>Either party can raise a dispute if issues arise.</p>
                                     <ul className="list-disc pl-5 space-y-1">
                                         <li><strong>Locking:</strong> Payments remain <strong>Locked</strong> immediately when a dispute is active.</li>
-                                        <li><strong>Resolution:</strong> Our admins investigate and have the authority to refund the client or release funds to the installer based on evidence.</li>
+                                        <li><strong>Resolution:</strong> Our admins investigate and have the authority to refund the client or release funds to the professional based on evidence.</li>
                                     </ul>
                                 </div>
                             </AccordionContent>
@@ -60,8 +60,8 @@ export function PlatformGuide() {
                     </Accordion>
                 </TabsContent>
 
-                {/* FOR INSTALLERS */}
-                <TabsContent value="installer" className="space-y-4 mt-4">
+                {/* FOR PROFESSIONALS */}
+                <TabsContent value="professional" className="space-y-4 mt-4">
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900">
                         <h3 className="font-semibold flex items-center gap-2 mb-2 text-blue-700 dark:text-blue-400">
                             <Briefcase className="h-5 w-5" />
@@ -93,7 +93,7 @@ export function PlatformGuide() {
                             <AccordionTrigger>Blind Bidding System</AccordionTrigger>
                             <AccordionContent>
                                 <p className="text-sm text-muted-foreground">
-                                    To ensure fair competition, <strong>you cannot see other installers&apos; bid amounts</strong>, and they cannot see yours.
+                                    To ensure fair competition, <strong>you cannot see other professionals&apos; bid amounts</strong>, and they cannot see yours.
                                     Focus on quoting a fair price for your quality of work rather than undercutting others.
                                 </p>
                             </AccordionContent>
@@ -103,7 +103,7 @@ export function PlatformGuide() {
                             <AccordionTrigger>Getting Paid</AccordionTrigger>
                             <AccordionContent>
                                 <p className="text-sm text-muted-foreground">
-                                    Funds are sent directly to your bank account via Cashfree Payouts immediately after the Job Giver approves your work
+                                    Funds are sent directly to your bank account via Cashfree Payouts immediately after the Client approves your work
                                     (or after the 5-day Auto-Settle period).
                                 </p>
                             </AccordionContent>
@@ -111,8 +111,8 @@ export function PlatformGuide() {
                     </Accordion>
                 </TabsContent>
 
-                {/* FOR JOB GIVERS */}
-                <TabsContent value="jobgiver" className="space-y-4 mt-4">
+                {/* FOR CLIENTS */}
+                <TabsContent value="client" className="space-y-4 mt-4">
                     <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900">
                         <h3 className="font-semibold flex items-center gap-2 mb-2 text-amber-700 dark:text-amber-400">
                             <User className="h-5 w-5" />
@@ -140,7 +140,7 @@ export function PlatformGuide() {
                             <AccordionTrigger>Is my money safe?</AccordionTrigger>
                             <AccordionContent>
                                 <p className="text-sm text-muted-foreground">
-                                    Yes. Your money is held in a neutral <strong>Secure and Lock</strong> account. It is <strong>never</strong> released to the installer until you approve the work
+                                    Yes. Your money is held in a neutral <strong>Secure and Lock</strong> account. It is <strong>never</strong> released to the professional until you approve the work
                                     or the auto-settle timer expires (5 days after submission). You can raise a dispute at any time to keep the funds <strong>Locked</strong>.
                                 </p>
                             </AccordionContent>

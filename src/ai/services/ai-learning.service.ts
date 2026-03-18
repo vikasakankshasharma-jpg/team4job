@@ -3,7 +3,7 @@ import { getAdminDb } from '@/lib/firebase/server-init';
 import { FieldValue } from 'firebase-admin/firestore';
 
 
-export type AiInteractionType = 'price_estimate' | 'time_estimate' | 'skill_suggestion' | 'job_recommendation' | 'installer_matching';
+export type AiInteractionType = 'price_estimate' | 'time_estimate' | 'skill_suggestion' | 'job_recommendation' | 'Professional_matching';
 
 export interface AiLogEntry {
     id?: string;
