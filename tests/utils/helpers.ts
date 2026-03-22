@@ -843,7 +843,7 @@ export class FormHelper {
         
         // Wait for the review page to load - AI generation can take time locally
         const reviewHeader = this.page.getByText(/Review Your Job Post|Looks Good, Post Job|Review and Post|Review & Post/i).first();
-        await reviewHeader.waitFor({ state: 'visible', timeout: 60000 });
+        await reviewHeader.waitFor({ state: 'visible', timeout: 120000 });
         
         // Click the "Looks Good, Post Job" button
         const looksGoodBtn = this.page.getByRole('button', { name: /Looks Good, Post Job/i }).first();

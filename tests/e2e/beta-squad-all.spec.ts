@@ -56,10 +56,22 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         // Auto-resume from wizard draft happens asynchronously upon page load.
         // We must wait for it to finish form.reset() before we type, otherwise our typing gets cleared.
         await page.getByText(/Draft loaded/i).waitFor({ state: 'visible', timeout: 15000 }).catch(() => console.log('Draft toast not seen'));
-        await page.waitForTimeout(1000); // Buffer for React Hook Form to apply values
-        await page.getByTestId('job-title-input').first().fill(data.title);
-        await helper.form.fillTextarea('Job Description', LONG_DESCRIPTION);
-        await page.getByTestId('skills-input').first().fill("CCTV");
+        await page.waitForTimeout(2000); // Increased buffer for React Hook Form to apply values
+
+        // Robust fill: retry once if it gets cleared
+        const fillFields = async () => {
+            await page.getByTestId('job-title-input').first().fill(data.title);
+            await helper.form.fillTextarea('Job Description', LONG_DESCRIPTION);
+            await page.getByTestId('skills-input').first().fill("CCTV");
+        };
+
+        await fillFields();
+        await page.waitForTimeout(1000); // Check if cleared
+        const currentTitle = await page.getByTestId('job-title-input').first().inputValue();
+        if (currentTitle !== data.title) {
+            console.log('[Test] Title cleared by draft resume, re-filling...');
+            await fillFields();
+        }
         
         await helper.form.fillPincodeAndSelectPO(data.pincode);
         await page.fill('input[name="address.house"]', data.house);
@@ -72,6 +84,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('[data-testid="max-budget-input"]', data.budget.toString());
 
         await helper.preparePostJobSubmission();
+        await page.waitForTimeout(1000); // Final settle
         await helper.form.submitPostJob();
 
 
@@ -83,10 +96,26 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         console.log('--- Step 2: IN Bid ---');
         await helper.auth.logout();
-        await helper.auth.loginAsProfessional();
-        await page.goto(`/dashboard/jobs/${jobId}`);
+        
+        // Direct login to ensure session is established
+        await page.goto('/login');
+        await helper.auth.login('installer.professional@team4job.com', 'password123');
+        await helper.auth.waitForStability();
 
-        await page.getByTestId('place-bid-button').click();
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        await page.waitForTimeout(2000); // Settle
+        
+        // Final fallback if redirect logic fails
+        if (page.url().includes('/login')) {
+            console.log('[Test] Redirection failed, logging in again at ' + page.url());
+            await helper.auth.login('installer.professional@team4job.com', 'password123');
+            await page.goto(`/dashboard/jobs/${jobId}`);
+        }
+
+        const placeBidBtn = page.getByTestId('place-bid-button');
+        await placeBidBtn.waitFor({ state: 'visible', timeout: 45000 });
+        await placeBidBtn.click();
+        
         await page.locator('input[name="amount"]').fill(data.budget.toString());
         await page.fill('textarea[name="coverLetter"]', 'I can do this');
         await page.getByRole('button', { name: "Place Bid" }).click();

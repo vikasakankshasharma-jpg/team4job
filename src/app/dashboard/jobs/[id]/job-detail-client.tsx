@@ -322,6 +322,12 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
     const [counterParty, setCounterParty] = React.useState<User | null>(null);
     const isClient = !!(user && job && (user.id === getRefId(job.client) || user.id === job.clientId));
+    const awardedProfessionalId = job?.awardedProfessionalId || getRefId(job?.awardedProfessional);
+    const canClientFundJob = !!(
+        isClient &&
+        awardedProfessionalId &&
+        ['bid_accepted', 'Pending Funding', 'Awarded'].includes(job?.status || '')
+    );
 
     // State for Payment Dialog
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = React.useState(false);
@@ -1131,7 +1137,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         </div>
                                     )}
 
-                                    {isClient && (job.status === 'bid_accepted' || job.status === 'Pending Funding') && (
+                                    {canClientFundJob && (
                                         isPaymentsEnabled ? (
                                             <Button className="w-full min-h-[44px]" onClick={handleStartCheckout} data-testid="proceed-payment-button">{t('proceedToPayment')}</Button>
                                         ) : (

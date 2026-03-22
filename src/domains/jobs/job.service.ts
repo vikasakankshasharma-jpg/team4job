@@ -12,6 +12,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { aiLearningService } from '@/ai/services/ai-learning.service';
 import { userRepository } from '../users/user.repository';
 import { emailService } from '@/lib/email/email-service';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
 
 /**
  * Job Service - Business logic for job management
@@ -214,6 +215,7 @@ export class JobService {
         const updates: Partial<Job> = {
             status: 'bid_accepted',
             awardedProfessionalId: professionalId,
+            awardedProfessional: getAdminDb().collection('users').doc(professionalId) as any,
             acceptanceDeadline: acceptanceDeadline,
         };
 

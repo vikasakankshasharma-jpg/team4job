@@ -123,6 +123,7 @@ export async function awardJobAction(jobId: string, userId: string, professional
         await jobService.awardJob(jobId, userId, professionalId, new Date(acceptanceDeadline));
 
         revalidatePath(`/dashboard/jobs/${jobId}`);
+        revalidatePath('/dashboard/jobs');
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message || 'Failed to award job' };
