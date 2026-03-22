@@ -323,6 +323,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const repostJobId = searchParams.get('repostJobId');
   const editJobId = searchParams.get('editJobId');
   const directAwardParam = searchParams.get('directAwardProfessionalId');
+  const wizardCompletedParam = searchParams.get('wizardCompleted');
+  const isWizardCompleted = wizardCompletedParam === 'true';
   const isEditMode = !!editJobId;
 
   // Auto-save hook
@@ -385,19 +387,18 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         const res = await getLatestDraftAction(user.id);
         if (res.success && res.draft) {
           setLoadedDraft(res.draft);
-          const wizardCompleted = searchParams.get('wizardCompleted');
-          if (wizardCompleted === 'true') {
+          if (isWizardCompleted) {
             // Auto-resume if coming from wizard
             handleAutoResume(res.draft);
           } else {
             setShowDraftDialog(true);
           }
-        } else if (searchParams.get('wizardCompleted') === 'true') {
+        } else if (isWizardCompleted) {
            // Coming from wizard but no draft found yet? 
            // At least we have the default future dates set now from useForm defaultValues.
            // We could optionally show a small toast or just let the user fill it.
            console.log("Wizard completed but no draft found in Firestore yet.");
-        } else if (!directAwardParam && !searchParams.get('wizardCompleted') && process.env.NEXT_PUBLIC_IS_CI !== 'true') {
+        } else if (!directAwardParam && !isWizardCompleted && process.env.NEXT_PUBLIC_IS_CI !== 'true') {
           // Wizard-first guard: No draft, no special params → redirect to wizard
           router.replace('/wizard');
         }
@@ -407,7 +408,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     };
 
     checkForDraft();
-  }, [directAwardParam, form, handleAutoResume, isEditMode, isSubmitted, repostJobId, router, searchParams, user]);
+  }, [directAwardParam, form, handleAutoResume, isEditMode, isSubmitted, isWizardCompleted, repostJobId, router, user]);
 
   const handleResumeDraft = useCallback(() => {
     if (!loadedDraft) return;
@@ -424,10 +425,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       description: tSuccess('draftDiscardedDesc'),
     });
     // Redirect to wizard if this was a fresh start (no wizardCompleted param)
-    if (!searchParams.get('wizardCompleted')) {
+    if (!isWizardCompleted) {
         router.replace('/wizard');
     }
-  }, [loadedDraft, router, searchParams, tSuccess, toast, user]);
+  }, [isWizardCompleted, loadedDraft, router, tSuccess, toast, user]);
 
   // Handle template selection
   const handleTemplateSelect = useCallback(async (template: JobTemplate) => {

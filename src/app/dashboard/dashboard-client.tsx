@@ -95,7 +95,7 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
                 </div>
                 <div className="text-center">
                     <h3 className="text-lg font-semibold">Dashboard Data Unavailable</h3>
-                    <p className="text-muted-foreground text-sm max-w-sm">We&apos;re having trouble loading your dashboard stats right now. Please try refreshing the page.</p>
+                    <p className="text-muted-foreground text-sm max-w-sm">We’re having trouble loading your dashboard stats right now. Please try refreshing the page.</p>
                 </div>
                 <button 
                   onClick={() => window.location.reload()}
