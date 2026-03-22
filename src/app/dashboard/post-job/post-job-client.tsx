@@ -351,6 +351,29 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     }
   );
 
+  const handleAutoResume = useCallback((draft: JobDraft) => {
+    form.reset({
+      jobTitle: draft.title || '',
+      jobDescription: draft.description || '',
+      jobCategory: draft.jobCategory || '',
+      skills: draft.skills?.join(', ') || '',
+      travelTip: draft.travelTip || 0,
+      isGstInvoiceRequired: draft.isGstInvoiceRequired || false,
+      address: draft.address || form.getValues('address'),
+      deadline: draft.deadline ? format(toDate(draft.deadline), "yyyy-MM-dd") : format(addDays(new Date(), 7), "yyyy-MM-dd"),
+      jobStartDate: draft.jobStartDate ? format(toDate(draft.jobStartDate), "yyyy-MM-dd'T'HH:mm") : format(addDays(new Date(), 1), "yyyy-MM-dd'T'10:00"),
+      directAwardProfessionalId: draft.directAwardProfessionalId || '',
+      priceEstimate: draft.budget || { min: 0, max: 0 },
+    });
+
+    setDraftId(draft.id);
+    setShowDraftDialog(false);
+    toast({
+      title: tSuccess('draftLoaded'),
+      description: tSuccess('draftLoadedDesc'),
+    });
+  }, [form, setDraftId, toast, tSuccess]);
+
   useEffect(() => {
     if (directAwardParam) {
       form.setValue('directAwardProfessionalId', directAwardParam, { shouldValidate: true });
@@ -384,30 +407,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     };
 
     checkForDraft();
-  }, [isEditMode, repostJobId, user, isSubmitted, directAwardParam, form, router]);
-
-  const handleAutoResume = useCallback((draft: JobDraft) => {
-    form.reset({
-      jobTitle: draft.title || '',
-      jobDescription: draft.description || '',
-      jobCategory: draft.jobCategory || '',
-      skills: draft.skills?.join(', ') || '',
-      travelTip: draft.travelTip || 0,
-      isGstInvoiceRequired: draft.isGstInvoiceRequired || false,
-      address: draft.address || form.getValues('address'),
-      deadline: draft.deadline ? format(toDate(draft.deadline), "yyyy-MM-dd") : format(addDays(new Date(), 7), "yyyy-MM-dd"),
-      jobStartDate: draft.jobStartDate ? format(toDate(draft.jobStartDate), "yyyy-MM-dd'T'HH:mm") : format(addDays(new Date(), 1), "yyyy-MM-dd'T'10:00"),
-      directAwardProfessionalId: draft.directAwardProfessionalId || '',
-      priceEstimate: draft.budget || { min: 0, max: 0 },
-    });
-
-    setDraftId(draft.id);
-    setShowDraftDialog(false);
-    toast({
-      title: tSuccess('draftLoaded'),
-      description: tSuccess('draftLoadedDesc'),
-    });
-  }, [form, setDraftId, toast, tSuccess]);
+  }, [directAwardParam, form, handleAutoResume, isEditMode, isSubmitted, repostJobId, router, searchParams, user]);
 
   const handleResumeDraft = useCallback(() => {
     if (!loadedDraft) return;
@@ -427,7 +427,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     if (!searchParams.get('wizardCompleted')) {
         router.replace('/wizard');
     }
-  }, [loadedDraft, user, toast, tSuccess, router]);
+  }, [loadedDraft, router, searchParams, tSuccess, toast, user]);
 
   // Handle template selection
   const handleTemplateSelect = useCallback(async (template: JobTemplate) => {

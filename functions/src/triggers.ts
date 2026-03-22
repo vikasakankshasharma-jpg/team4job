@@ -82,7 +82,7 @@ export const onPrivateMessageCreated = functions.firestore
  */
 export const onJobCompleted = functions.firestore
   .document("jobs/{jobId}")
-  .onUpdate(async (change, context) => {
+  .onUpdate(async (change) => {
     const beforeData = change.before.data();
     const afterData = change.after.data();
 
@@ -123,7 +123,7 @@ export const onJobCompleted = functions.firestore
         });
       });
 
-      sendPushNotification(profRef.id, "Reputation Updated!", `You earned ${pointsEarned} points for completing: "${afterData.title}"`, "/dashboard/profile").catch(() => {});
+      sendPushNotification(profRef.id, "Reputation Updated!", `You earned ${pointsEarned} points for completing: "${afterData.title}"`, "/dashboard/profile").catch(() => { /* ignore */ });
     } catch (error) {
       functions.logger.error("Error in onJobCompleted:", error);
     }
@@ -150,7 +150,7 @@ export const onUserVerified = functions.firestore
 
         if (foundingSnap.size < 100) {
           await db.collection("users").doc(context.params.userId).update({ isFoundingProfessional: true });
-          sendPushNotification(context.params.userId, "Congratulations!", "You are a Founding Professional!", "/dashboard/profile").catch(() => {});
+          sendPushNotification(context.params.userId, "Congratulations!", "You are a Founding Professional!", "/dashboard/profile").catch(() => { /* ignore */ });
         }
       } catch (error) {
         functions.logger.error("Error in onUserVerified:", error);
@@ -172,12 +172,12 @@ export const onJobDateChange = functions.firestore
     if (!beforeData.dateChangeProposal && afterData.dateChangeProposal?.status === "pending") {
         const proposal = afterData.dateChangeProposal;
         const recipientId = proposal.proposedBy === "Client" ? afterData.awardedProfessional.id : afterData.client.id;
-        sendPushNotification(recipientId, "Date Change Proposed", `A new start date has been proposed for "${afterData.title}".`, `/dashboard/jobs/${jobId}`).catch(() => {});
+        sendPushNotification(recipientId, "Date Change Proposed", `A new start date has been proposed for "${afterData.title}".`, `/dashboard/jobs/${jobId}`).catch(() => { /* ignore */ });
     }
 
     if (beforeData.dateChangeProposal?.status === "pending" && afterData.dateChangeProposal?.status !== "pending") {
         const wasAccepted = afterData.jobStartDate !== beforeData.jobStartDate;
         const proposerId = beforeData.dateChangeProposal.proposedBy === "Client" ? afterData.client.id : afterData.awardedProfessional.id;
-        sendPushNotification(proposerId, `Date Change ${wasAccepted ? "Accepted" : "Rejected"}`, `Your request for "${afterData.title}" was ${wasAccepted ? "accepted" : "rejected"}.`, `/dashboard/jobs/${jobId}`).catch(() => {});
+        sendPushNotification(proposerId, `Date Change ${wasAccepted ? "Accepted" : "Rejected"}`, `Your request for "${afterData.title}" was ${wasAccepted ? "accepted" : "rejected"}.`, `/dashboard/jobs/${jobId}`).catch(() => { /* ignore */ });
     }
   });

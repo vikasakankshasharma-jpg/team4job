@@ -7,7 +7,7 @@ const db = admin.firestore();
 /**
  * Handles scheduled cleanup of jobs that are stuck in "Pending Funding".
  */
-export const handleUnfundedJobs = functions.pubsub.schedule("every 6 hours").onRun(async (context) => {
+export const handleUnfundedJobs = functions.pubsub.schedule("every 6 hours").onRun(async () => {
   const now = admin.firestore.Timestamp.now();
   const fortyEightHoursAgo = admin.firestore.Timestamp.fromMillis(now.toMillis() - 48 * 60 * 60 * 1000);
 
@@ -37,7 +37,7 @@ export const handleUnfundedJobs = functions.pubsub.schedule("every 6 hours").onR
 /**
  * Implements the "Job Rescue Plan" for jobs that have officially become "Unbid".
  */
-export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(async (context) => {
+export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(async () => {
   const snapshot = await db.collection("jobs")
     .where("status", "==", "Unbid")
     .get();
@@ -47,7 +47,7 @@ export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(
   for (const doc of snapshot.docs) {
     const job = doc.data();
     await doc.ref.update({ status: "Needs Assistance" });
-    sendPushNotification(job.client.id, "Job Needs Attention", `Your job "${job.title}" didn't receive bids. Review your options.`, `/dashboard/jobs/${doc.id}`).catch(() => {});
+    sendPushNotification(job.client.id, "Job Needs Attention", `Your job "${job.title}" didn't receive bids. Review your options.`, `/dashboard/jobs/${doc.id}`).catch(() => { /* ignore */ });
   }
   return null;
 });
@@ -55,7 +55,7 @@ export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(
 /**
  * Handles scheduled cleanup of jobs where the award offer has expired.
  */
-export const handleExpiredAwards = functions.pubsub.schedule("every 1 hours").onRun(async (context) => {
+export const handleExpiredAwards = functions.pubsub.schedule("every 1 hours").onRun(async () => {
   const now = admin.firestore.Timestamp.now();
 
   const snapshot = await db.collection("jobs")
@@ -70,6 +70,7 @@ export const handleExpiredAwards = functions.pubsub.schedule("every 1 hours").on
 
   snapshot.docs.forEach((doc) => {
     const job = doc.data();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const profIds = (job.selectedProfessionals || []).map((s: any) => s.professionalId);
 
     profIds.forEach((id: string) => {

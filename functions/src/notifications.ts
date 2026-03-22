@@ -46,8 +46,8 @@ export async function sendPushNotification(
       response.responses.forEach((resp, idx) => {
         if (!resp.success) {
           const errorCode = resp.error?.code;
-          if (errorCode === 'messaging/invalid-registration-token' ||
-              errorCode === 'messaging/registration-token-not-registered') {
+          if (errorCode === "messaging/invalid-registration-token" ||
+              errorCode === "messaging/registration-token-not-registered") {
             tokensToRemove.push(userData.fcmTokens[idx]);
           }
         }
@@ -75,15 +75,15 @@ export async function sendBrevoEmail(to: string, subject: string, text: string, 
     }
 
     try {
-        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-            method: 'POST',
+        const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+            method: "POST",
             headers: {
-                'accept': 'application/json',
-                'api-key': apiKey,
-                'content-type': 'application/json'
+                "accept": "application/json",
+                "api-key": apiKey,
+                "content-type": "application/json"
             },
             body: JSON.stringify({
-                sender: { name: 'Team4Job Alerts', email: 'noreply@team4job.com' },
+                sender: { name: "Team4Job Alerts", email: "noreply@team4job.com" },
                 to: [{ email: to }],
                 subject: subject,
                 textContent: text,

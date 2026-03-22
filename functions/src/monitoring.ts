@@ -12,7 +12,7 @@ import * as admin from "firebase-admin";
  * 
  * Logs with severity 'ERROR' if thresholds are exceeded, which can trigger GCP alerts.
  */
-export const monitorSystemHealth = functions.pubsub.schedule("every 24 hours").onRun(async (context: functions.EventContext) => {
+export const monitorSystemHealth = functions.pubsub.schedule("every 24 hours").onRun(async () => {
     functions.logger.info("Running System Health Monitor...");
     const db = admin.firestore();
     const now = admin.firestore.Timestamp.now();

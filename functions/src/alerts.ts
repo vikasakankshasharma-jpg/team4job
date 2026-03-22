@@ -12,15 +12,15 @@ async function sendEmail(to: string, subject: string, text: string, html: string
     }
 
     try {
-        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-            method: 'POST',
+        const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+            method: "POST",
             headers: {
-                'accept': 'application/json',
-                'api-key': apiKey,
-                'content-type': 'application/json'
+                "accept": "application/json",
+                "api-key": apiKey,
+                "content-type": "application/json"
             },
             body: JSON.stringify({
-                sender: { name: 'Team4Job Alerts', email: 'noreply@cctvjobconnect.com' }, // Using existing verified sender
+                sender: { name: "Team4Job Alerts", email: "noreply@cctvjobconnect.com" }, // Using existing verified sender
                 to: [{ email: to }],
                 subject: subject,
                 textContent: text,

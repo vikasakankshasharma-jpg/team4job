@@ -18,6 +18,7 @@ const eslintConfig = [
             "shard*/**",
             "playwright-report/**",
             "test-results/**",
+            "functions/**",
         ],
     },
     ...compat.extends("next/core-web-vitals"),

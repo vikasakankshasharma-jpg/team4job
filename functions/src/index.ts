@@ -17,12 +17,13 @@ function verifyCashfreeSignature(rawBody: string, signature: string, timestamp: 
   }
   try {
     const signatureData = `${timestamp}${rawBody}`;
-    const expectedSignature = crypto.createHmac('sha256', secretKey).update(signatureData).digest('base64');
+    const expectedSignature = crypto.createHmac("sha256", secretKey).update(signatureData).digest("base64");
     return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
   } catch { return false; }
 }
 
 app.post("/cashfree-webhook", async (req, res) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawBody = (req as any).rawBody?.toString() || JSON.stringify(req.body);
   const signature = req.headers["x-webhook-signature"] as string;
   const timestamp = req.headers["x-webhook-timestamp"] as string;
