@@ -69,7 +69,7 @@ export function DashboardMetrics({ userId, user, metrics }: DashboardMetricsProp
                 label={t('metrics.yourNetwork')}
                 value={metrics.favoriteProfessionals}
                 icon={Users}
-                onClick={() => router.push("/dashboard/my-Professionals?tab=favorites")}
+                onClick={() => router.push("/dashboard/my-professionals?tab=favorites")}
                 actionable
                 tooltip={t('metrics.yourNetworkTooltip')}
                 className="h-full"

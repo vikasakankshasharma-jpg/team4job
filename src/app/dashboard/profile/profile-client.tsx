@@ -1133,7 +1133,7 @@ export default function ProfileClient() {
                     </CardHeader>
                     <CardContent>
                         <Button asChild>
-                            <Link href="/dashboard/verify-Professional">
+                            <Link href="/dashboard/verify-professional">
                                 {t('becomeProfessional')} <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>

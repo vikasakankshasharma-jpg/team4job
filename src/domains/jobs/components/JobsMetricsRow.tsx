@@ -210,7 +210,7 @@ export function JobsMetricsRow({ userId, user }: QuickMetricsRowProps) {
                 label="Your Network"
                 value={metrics.favoriteProfessionals}
                 icon={Users}
-                onClick={() => router.push("/dashboard/my-Professionals?tab=favorites")}
+                onClick={() => router.push("/dashboard/my-professionals?tab=favorites")}
                 actionable
                 tooltip="Professionals you've favorited. Click to view them."
                 className="h-full"

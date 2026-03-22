@@ -135,7 +135,7 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
                     </CardHeader>
                     <CardContent>
                         <Button asChild variant="warning" size="sm" className="font-semibold shadow-sm">
-                            <Link href="/dashboard/verify-Professional">
+                            <Link href="/dashboard/verify-professional">
                                 {tDash('verifyNow')} <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>

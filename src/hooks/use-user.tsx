@@ -16,6 +16,17 @@ import { updateSessionTokenAction, removeSessionTokenAction, getUserProfileActio
 
 type Role = "Client" | "Professional" | "Admin" | "Support Team";
 
+const normalizeRole = (role: string): Role | null => {
+  const normalized = role.trim().toLowerCase();
+
+  if (normalized === "client") return "Client";
+  if (normalized === "professional") return "Professional";
+  if (normalized === "admin") return "Admin";
+  if (normalized === "support team") return "Support Team";
+
+  return null;
+};
+
 interface UserContextType {
   user: User | null;
   role: Role;
@@ -95,30 +106,44 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [pathname, router]);
 
   const updateUserState = useCallback((userData: User | null) => {
-    setUser(userData);
-    if (userData) {
+    const normalizedUser =
+      userData
+        ? {
+            ...userData,
+            roles: Array.from(
+              new Set(
+                (userData.roles || [])
+                  .map((role) => normalizeRole(role))
+                  .filter((role): role is Role => role !== null)
+              )
+            ),
+          }
+        : null;
+
+    setUser(normalizedUser);
+    if (normalizedUser) {
       const storedRole = localStorage.getItem('userRole') as Role;
-      const isAdminUser = userData.roles.includes("Admin");
+      const isAdminUser = normalizedUser.roles.includes("Admin");
       setIsAdmin(isAdminUser);
 
-      if (manualRoleSet.current && storedRole && userData.roles.includes(storedRole)) {
+      if (manualRoleSet.current && storedRole && normalizedUser.roles.includes(storedRole)) {
         setRoleState(storedRole);
         return;
       }
 
       manualRoleSet.current = false;
-      const canUseStoredRole = storedRole && userData.roles.includes(storedRole);
+      const canUseStoredRole = storedRole && normalizedUser.roles.includes(storedRole);
 
       if (canUseStoredRole) {
         setRoleState(storedRole);
       } else if (isAdminUser) {
         setRoleState("Admin");
         localStorage.setItem('userRole', "Admin");
-      } else if (userData.roles.includes("Support Team")) {
+      } else if (normalizedUser.roles.includes("Support Team")) {
         setRoleState("Support Team");
         localStorage.setItem('userRole', "Support Team");
       } else {
-        const initialRole = userData.roles.includes("Professional") ? "Professional" : "Client";
+        const initialRole = normalizedUser.roles.includes("Professional") ? "Professional" : "Client";
         setRoleState(initialRole);
         localStorage.setItem('userRole', initialRole);
       }

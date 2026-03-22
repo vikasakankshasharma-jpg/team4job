@@ -34,6 +34,24 @@ interface DashboardData {
   quickMetrics?: any;
 }
 
+const EMPTY_CLIENT_STATS: ClientStats = {
+  activeJobs: 0,
+  completedJobs: 0,
+  cancelledJobs: 0,
+  totalBids: 0,
+  openDisputes: 0,
+};
+
+const EMPTY_PROFESSIONAL_STATS: ProfessionalStats = {
+  openJobs: 0,
+  myBids: 0,
+  jobsWon: 0,
+  projectedEarnings: 0,
+  totalEarnings: 0,
+  activeJobs: 0,
+  completedJobs: 0,
+};
+
 export default function DashboardClient({ initialData }: { initialData?: DashboardData }) {
   const { user, role, loading } = useUser();
   const [data, setData] = useState<DashboardData | undefined>(initialData);
@@ -46,6 +64,13 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
     if (data || !user || fetching || role === "Admin" || role === "Support Team") return;
     
     let cancelled = false;
+    const fetchTimeout = window.setTimeout(() => {
+      if (!cancelled) {
+        setFetchError(true);
+        setFetching(false);
+      }
+    }, 8000);
+
     setFetching(true);
     
     getDashboardStatsAction(user.id)
@@ -61,10 +86,14 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
         if (!cancelled) setFetchError(true);
       })
       .finally(() => {
+        window.clearTimeout(fetchTimeout);
         if (!cancelled) setFetching(false);
       });
     
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      window.clearTimeout(fetchTimeout);
+    };
   }, [data, user, fetching, role]);
 
   if (loading || !user) {
@@ -78,6 +107,8 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
   const renderDashboard = (userRole: Role) => {
     // Show loading while fetching client-side (only for roles that need this data)
     const needsStats = userRole !== "Admin" && userRole !== "Support Team";
+    const hasFailedStatsFetch = needsStats && !data && fetchError;
+
     if (!data && fetching && needsStats) {
       return (
         <div className="flex h-48 items-center justify-center">
@@ -85,28 +116,7 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
         </div>
       );
     }
-    
-    // Show error only if fetch has completely failed
-    if (!data && fetchError) {
-        return (
-            <div className="flex flex-col items-center justify-center h-96 gap-4">
-                <div className="p-4 rounded-full bg-destructive/10 text-destructive">
-                    <Loader2 className="h-8 w-8" />
-                </div>
-                <div className="text-center">
-                    <h3 className="text-lg font-semibold">Dashboard Data Unavailable</h3>
-                    <p className="text-muted-foreground text-sm max-w-sm">We’re having trouble loading your dashboard stats right now. Please try refreshing the page.</p>
-                </div>
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                >
-                  Refresh Dashboard
-                </button>
-            </div>
-        );
-    }
-    
+
     switch (userRole) {
       case "Admin":
         return <AdminDashboardView />;
@@ -114,27 +124,41 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
         return <SupportTeamDashboard />;
       case "Professional":
         return (
-          <ProfessionalDashboard
-            stats={data?.ProfessionalStats || { openJobs: 0, myBids: 0, jobsWon: 0, projectedEarnings: 0, totalEarnings: 0, activeJobs: 0, completedJobs: 0 }}
-            transactions={data?.transactions || []}
-            loading={!data}
-          />
+          <div className="space-y-6">
+            {hasFailedStatsFetch && (
+              <div className="rounded-lg border border-warning/50 bg-warning/5 px-4 py-3 text-sm text-muted-foreground">
+                We couldn&apos;t load your latest dashboard stats, so you&apos;re seeing a safe empty state for now.
+              </div>
+            )}
+            <ProfessionalDashboard
+              stats={data?.ProfessionalStats || EMPTY_PROFESSIONAL_STATS}
+              transactions={data?.transactions || []}
+              loading={false}
+            />
+          </div>
         );
       case "Client":
         return (
-          <ClientDashboard
-            stats={data?.ClientStats || { activeJobs: 0, completedJobs: 0, cancelledJobs: 0, totalBids: 0, openDisputes: 0 }}
-            transactions={data?.transactions || []}
-            loading={!data}
-            quickMetrics={data?.quickMetrics}
-          />
+          <div className="space-y-6">
+            {hasFailedStatsFetch && (
+              <div className="rounded-lg border border-warning/50 bg-warning/5 px-4 py-3 text-sm text-muted-foreground">
+                We couldn&apos;t load your latest dashboard stats, so you&apos;re seeing a safe empty state for now.
+              </div>
+            )}
+            <ClientDashboard
+              stats={data?.ClientStats || EMPTY_CLIENT_STATS}
+              transactions={data?.transactions || []}
+              loading={false}
+              quickMetrics={data?.quickMetrics}
+            />
+          </div>
         );
       default:
         return (
           <ClientDashboard
-            stats={data?.ClientStats || { activeJobs: 0, completedJobs: 0, cancelledJobs: 0, totalBids: 0, openDisputes: 0 }}
+            stats={data?.ClientStats || EMPTY_CLIENT_STATS}
             transactions={data?.transactions || []}
-            loading={!data}
+            loading={false}
             quickMetrics={data?.quickMetrics}
           />
         );
@@ -147,8 +171,3 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
     </>
   );
 }
-
-
-
-
-

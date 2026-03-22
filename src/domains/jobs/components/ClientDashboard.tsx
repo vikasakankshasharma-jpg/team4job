@@ -46,6 +46,7 @@ export function ClientDashboard({ stats, transactions, loading = false, quickMet
     const tDash = useTranslations('dashboard');
     const tJob = useTranslations('job');
     const tCommon = useTranslations('common');
+    const hasDashboardActivity = stats.activeJobs > 0 || stats.completedJobs > 0 || stats.cancelledJobs > 0 || stats.totalBids > 0 || stats.openDisputes > 0 || transactions.length > 0;
 
     // Process Data for Spending Chart (Last 6 Months - Released Only)
     const { spendingData, jobStatusData, totalSpent, fundsInEscrow } = useMemo(() => {
@@ -141,6 +142,24 @@ export function ClientDashboard({ stats, transactions, loading = false, quickMet
 
             {/* Phase 11: Quick Metrics Row */}
             {user && <DashboardMetrics userId={user.id} user={user} metrics={quickMetrics} />}
+
+            {!hasDashboardActivity && (
+                <Card className="mb-6 border-dashed">
+                    <CardHeader>
+                        <CardTitle>Welcome to your client dashboard</CardTitle>
+                        <CardDescription>
+                            You don&apos;t have any job activity yet. Post your first job to start seeing dashboard metrics, charts, and recent activity.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild size="sm">
+                            <Link href="/wizard">
+                                <PlusCircle className="mr-2 h-4 w-4" /> {t('postNewJob')}
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard

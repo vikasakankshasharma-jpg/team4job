@@ -39,7 +39,7 @@ export async function ProfessionalServerView({ user }: { user: User }) {
                     </CardHeader>
                     <CardContent>
                         <Button asChild>
-                            <Link href="/dashboard/verify-Professional">
+                            <Link href="/dashboard/verify-professional">
                                 {t('verifyButton')} <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
