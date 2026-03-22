@@ -4,7 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
-import { FirebaseClientProvider } from "@/lib/firebase/client-provider";
+import { FirebaseClientProvider } from "@/infrastructure/firebase/client-provider";
 import { UserProvider } from "@/hooks/use-user";
 import { Providers } from "@/components/providers";
 import { IntlProvider } from "@/components/providers/intl-provider";
@@ -15,9 +15,14 @@ import CookieBanner from "@/components/gdpr/cookie-banner";
 import { SystemStatusBanner } from "@/components/layout/system-status-banner";
 import ErrorBoundaryWrapper from "@/components/error-boundary-wrapper";
 import { OfflineDetector } from "@/components/layout/offline-detector";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://dodo-beta.web.app"),
+  metadataBase: new URL("https://team4job.com"),
+  alternates: {
+    canonical: '/',
+  },
   title: "Team4Job | Professional Services Marketplace",
   description: "The premier marketplace for skilled technical professionals. Connect with verified experts for Networking, Electrical, Security, and more.",
   keywords: ["Team4Job", "Technical Services", "Networking", "Electrical", "Security", "Installation", "Marketplace", "Professional Services"],
@@ -141,6 +146,14 @@ export default async function RootLayout({
               "url": "https://team4job.com",
               "applicationCategory": "BusinessApplication",
               "operatingSystem": "Web",
+              "publisher": {
+                "@type": "Organization",
+                "name": "Team4Job",
+                "logo": {
+                  "@type": "ImageObject",
+                  "url": "https://team4job.com/icon-512.png"
+                }
+              },
               "offers": {
                 "@type": "Offer",
                 "price": "0",
@@ -151,6 +164,22 @@ export default async function RootLayout({
                 "ratingValue": "4.8",
                 "ratingCount": "150"
               }
+            }
+          `}
+        </Script>
+        
+        {/* Breadcrumb JSON-LD */}
+        <Script id="breadcrumb-data" type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              "itemListElement": [{
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://team4job.com"
+              }]
             }
           `}
         </Script>
@@ -174,6 +203,8 @@ export default async function RootLayout({
           `}
         </Script>
         <CookieBanner />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html >
   );

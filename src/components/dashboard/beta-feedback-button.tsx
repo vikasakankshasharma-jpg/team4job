@@ -93,7 +93,7 @@ export function BetaFeedbackButton() {
         <>
             <Button
                 onClick={() => setOpen(true)}
-                className="fixed bottom-20 sm:bottom-4 right-4 z-50 shadow-lg gap-2 rounded-full px-4 h-12 bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300"
+                className="fixed bottom-20 sm:bottom-4 !left-4 !right-auto z-50 shadow-lg gap-2 rounded-full px-4 h-12 bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300"
             >
                 <MessageSquarePlus className="h-5 w-5" />
                 <span className="hidden sm:inline">{t('button')}</span>

@@ -50,7 +50,8 @@ import {
 import { useSearchParams, useRouter } from "next/navigation";
 import { Job } from "@/lib/types";
 import { toDate, getRefId } from "@/lib/utils";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { useState, useEffect } from "react";
 import { useHelp } from "@/hooks/use-help";
 import { Label } from "@/components/ui/label";

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Star, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { User } from "@/lib/types";
 import { getRecommendedProfessionals } from "@/lib/services/professional-recommendations";
 import { ProfessionalProfileModal } from "@/components/professionals/professional-profile-modal";

@@ -1,6 +1,7 @@
 "use client";
 
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { notFound, useParams, useSearchParams, useRouter } from "next/navigation";
 import {
     Card,
@@ -22,7 +23,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-import { getAuth } from "firebase/auth";
+import { auth } from "@/infrastructure/firebase/client";
 import { DocumentReference, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useJobSubscription } from "@/hooks/use-job-subscription";
@@ -719,11 +720,13 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
     // E2E Test Logic
     const handleDirectConfirm = React.useCallback(async (options?: { simulateError?: boolean }) => {
-        const auth = getAuth();
+        console.log('[E2E-FUND] handleDirectConfirm started');
         const token = await auth.currentUser?.getIdToken();
         const runId = id; // use params id
 
         if (!token) {
+            console.error('[E2E-FUND] No user token found in handleDirectConfirm');
+            toast({ title: "Fund Failed", description: "No session found. Please re-login.", variant: "destructive" });
             return;
         }
 
@@ -733,13 +736,16 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
         }
 
         try {
+            console.log(`[E2E-FUND] Sending request to v2 for Job: ${runId}`);
             const res = await axios.post('/api/e2e/fund-job-v2', {
                 jobId: runId,
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            console.log('[E2E-FUND] API Response:', res.status, res.data);
             toast({ title: "Test Mode: Payment Initiated", description: "Waiting for external funding..." });
         } catch (e: any) {
+            console.error('[E2E-FUND] Direct fund failed:', e.response?.data || e.message);
             toast({ title: "Fund Failed", description: "Check logs", variant: "destructive" });
         }
     }, [id, toast]);
@@ -793,7 +799,6 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     const handleReschedule = async (action: 'propose' | 'accept' | 'reject' | 'dismiss') => {
         setIsLoading(true);
         try {
-            const auth = getAuth();
             const token = await auth.currentUser?.getIdToken();
             if (!token) throw new Error("Not authenticated");
 

@@ -11,19 +11,19 @@ dotenv.config({ path: path.resolve(__dirname, '.env.production'), override: true
 
 export default defineConfig({
     testDir: './tests',
-    testMatch: '**/performance.spec.ts', // Only run performance test
+    testMatch: '**/*.spec.ts',
     fullyParallel: false,
     forbidOnly: !!process.env.CI,
     retries: 0,
     workers: 1,
     reporter: [['list']],
     use: {
-        baseURL: 'https://dodo-beta.web.app',
+        baseURL: 'https://www.team4job.com',
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
-        actionTimeout: 60000,
-        navigationTimeout: 60000,
+        actionTimeout: 90000,
+        navigationTimeout: 90000,
     },
     projects: [
         {

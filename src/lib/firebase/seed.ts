@@ -456,7 +456,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         jobStartDate: Timestamp.fromDate(new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000)), // 10 days from now
         bids: [
             {
-                Professional: refs.professional,
+                Professional: refs.Professional,
                 amount: 22500,
                 timestamp: Timestamp.fromDate(new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)),
                 coverLetter: "I'm a Gold-tier Professional with 5 years of experience in large commercial projects. I can start next week and ensure a clean, professional installation."
@@ -483,8 +483,8 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         deadline: Timestamp.fromDate(new Date('2024-06-10')),
         postedAt: Timestamp.fromDate(new Date('2024-06-01')),
         jobStartDate: Timestamp.fromDate(new Date('2024-06-15')),
-        awardedProfessional: refs.professional,
-        bids: [{ Professional: refs.professional, amount: 52000, timestamp: Timestamp.fromDate(new Date('2024-06-03')), coverLetter: "I have extensive experience with large-scale factory installations and can complete this overhaul efficiently. My team is certified in advanced platform integrations." }],
+        awardedProfessional: refs.Professional,
+        bids: [{ Professional: refs.Professional, amount: 52000, timestamp: Timestamp.fromDate(new Date('2024-06-03')), coverLetter: "I have extensive experience with large-scale factory installations and can complete this overhaul efficiently. My team is certified in advanced platform integrations." }],
         bidderIds: [ProfessionalUID],
         rating: 5,
         completionOtp: "543210",
@@ -555,7 +555,7 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         postedAt: Timestamp.fromDate(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
         jobStartDate: Timestamp.fromDate(new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)),
         bids: [
-            { Professional: refs.professional, amount: 7000, timestamp: Timestamp.fromDate(new Date(now.getTime() - 24 * 60 * 60 * 1000)), coverLetter: "Gold Professional, ready to start immediately." },
+            { Professional: refs.Professional, amount: 7000, timestamp: Timestamp.fromDate(new Date(now.getTime() - 24 * 60 * 60 * 1000)), coverLetter: "Gold Professional, ready to start immediately." },
             { Professional: refs.justProfessional, amount: 6500, timestamp: Timestamp.fromDate(new Date(now.getTime() - 12 * 60 * 60 * 1000)), coverLetter: "I'm available this weekend and have experience with professional security systems." }
         ],
         bidderIds: [ProfessionalUID, justProfessionalUID],
@@ -578,9 +578,9 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         deadline: Timestamp.fromDate(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
         postedAt: Timestamp.fromDate(new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)),
         jobStartDate: Timestamp.fromDate(new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)),
-        bids: [{ Professional: refs.professional, amount: 19000, timestamp: Timestamp.fromDate(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)), coverLetter: "Experienced with access control systems. Ready to proceed." }],
+        bids: [{ Professional: refs.Professional, amount: 19000, timestamp: Timestamp.fromDate(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)), coverLetter: "Experienced with access control systems. Ready to proceed." }],
         bidderIds: [ProfessionalUID],
-        awardedProfessional: refs.professional,
+        awardedProfessional: refs.Professional,
         acceptanceDeadline: Timestamp.fromDate(new Date(now.getTime() + 23 * 60 * 60 * 1000)), // 23 hours left
         comments: [],
         privateMessages: [],
@@ -648,8 +648,8 @@ async function seedJobsAndSubcollections(uids: { [email: string]: string }) {
         deadline: Timestamp.fromDate(new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000)),
         postedAt: Timestamp.fromDate(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)),
         jobStartDate: Timestamp.fromDate(new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000)),
-        awardedProfessional: refs.professional,
-        bids: [{ Professional: refs.professional, amount: 12000, timestamp: Timestamp.fromDate(new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000)), coverLetter: "Experienced Professional." }],
+        awardedProfessional: refs.Professional,
+        bids: [{ Professional: refs.Professional, amount: 12000, timestamp: Timestamp.fromDate(new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000)), coverLetter: "Experienced Professional." }],
         bidderIds: [ProfessionalUID],
         rating: 5,
         completionOtp: "654321",

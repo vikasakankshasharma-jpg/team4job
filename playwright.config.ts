@@ -78,8 +78,8 @@ export default defineConfig({
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         /* Base URL to use in actions like `await page.goto('/')`. */
-        /* Using Firebase Emulator port (5000) for stability instead of next dev (3006) */
-        baseURL: process.env.BASE_URL || 'http://localhost:5000',
+        /* Using port 3000 for local dev server consistency */
+        baseURL: process.env.BASE_URL || 'http://localhost:3000',
 
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
         trace: 'on-first-retry',
@@ -107,34 +107,13 @@ export default defineConfig({
 
     /* Run your local dev server before starting the tests */
     webServer: {
-        command: process.env.CI
-            ? 'npx next start -p 5000'
-            : 'npm run build && npx next start -p 5000',
-        url: 'http://localhost:5000',
-        // Reusing an existing server can accidentally attach Playwright to `next dev`,
-        // which is much more prone to reload/frame-detach issues during E2E.
+        command: 'npm run dev',
+        url: 'http://localhost:3000',
         reuseExistingServer: !process.env.CI,
-        timeout: 600000, // 10 mins for server start (Windows/CI can be slow)
-        env: process.env.CI
-            ? getWebServerEnv()
-            : (() => {
-                const baseEnv = getWebServerEnv();
-                const useEmu = baseEnv.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' || baseEnv.NEXT_PUBLIC_USE_EMULATOR === 'true';
-                if (useEmu) {
-                    return {
-                        ...baseEnv,
-                        FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
-                        FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199',
-                        FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
-                    };
-                }
-                // When emulators are disabled, ensure these variables are actively stripped
-                // so they don't leak from the host environment
-                delete baseEnv.FIRESTORE_EMULATOR_HOST;
-                delete baseEnv.FIREBASE_STORAGE_EMULATOR_HOST;
-                delete baseEnv.FIREBASE_AUTH_EMULATOR_HOST;
-                return baseEnv;
-            })(),
+        stdout: 'pipe',
+        stderr: 'pipe',
+        env: getWebServerEnv(),
+        timeout: 180000,
     },
 
     /* Global timeout for each test */

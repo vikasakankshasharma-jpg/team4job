@@ -14,7 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Bookmark, Loader2 } from 'lucide-react';
 import { JobDraft, saveTemplate } from '@/lib/api/drafts';
-import { useFirebase, useUser } from '@/hooks/use-user';
+import { useUser } from '@/hooks/use-user';
+import { useFirebase } from '@/infrastructure/firebase/client-provider';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 

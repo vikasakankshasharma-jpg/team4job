@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Plus, Settings, Trash2 } from "lucide-react";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import {
     getBudgetTemplates,
     saveBudgetTemplate,

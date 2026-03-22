@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Zap, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { FileUpload } from "@/components/ui/file-upload";
 import { completeJobWithOtpAction } from "@/app/actions/job.actions";

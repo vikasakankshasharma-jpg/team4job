@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendServerEmail } from '@/lib/server-email';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 
+import { rateLimit } from '@/lib/rate-limit';
 import { Timestamp } from 'firebase-admin/firestore';
 import { verifyEmailSchema } from '@/lib/validations/auth';
-import { z } from 'zod';
 
+const limiter = rateLimit({
+    interval: 60 * 1000, // 1 minute
+    uniqueTokenPerInterval: 500,
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +17,14 @@ export async function POST(req: NextRequest) {
     try {
         const db = getAdminDb();
         const body = await req.json();
+
+        // 1. Rate Limiting (Prevent brute-force and email spam)
+        const clientIp = req.headers.get('x-forwarded-for') || 'anonymous';
+        try {
+            await limiter.check(5, clientIp); // Limit 5 requests per minute per IP
+        } catch (e) {
+            return NextResponse.json({ success: false, message: 'Too many requests. Please try again later.' }, { status: 429 });
+        }
 
         // Validate input
         const validation = verifyEmailSchema.safeParse(body);

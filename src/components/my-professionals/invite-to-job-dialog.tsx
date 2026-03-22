@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { useToast } from "@/hooks/use-toast";
 import { Job, User } from "@/lib/types";
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, arrayUnion, serverTimestamp } from "firebase/firestore";

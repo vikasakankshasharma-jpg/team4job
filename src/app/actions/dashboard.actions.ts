@@ -9,19 +9,34 @@ import { Transaction } from "@/lib/types";
 
 export async function getDashboardStatsAction(userId: string) {
     try {
+        console.log(`[DashboardAction] Starting data fetch for user: ${userId}`);
         const db = getAdminDb();
+        console.log(`[DashboardAction] Admin DB instance obtained`);
+        const startTime = Date.now();
 
-        // Fetch data in parallel
-        const [transactionsSnapshot, ProfessionalStats, ClientStats, quickMetrics] = await Promise.all([
-            db.collection('transactions')
-                .where('payeeId', '==', userId)
-                .orderBy('createdAt', 'desc')
-                .limit(10)
-                .get(),
-            jobService.getStatsForProfessional(userId),
-            jobService.getStatsForClient(userId),
-            jobService.getQuickMetrics(userId)
+        const timeout = new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Dashboard data fetch timed out')), 5000)
+        );
+
+        const [transactionsSnapshot, ProfessionalStats, ClientStats, quickMetrics] = await Promise.race([
+            Promise.all([
+                db.collection('transactions')
+                    .where('payeeId', '==', userId)
+                    .orderBy('createdAt', 'desc')
+                    .limit(10)
+                    .get()
+                    .then(snap => { console.log('[DashboardAction] Transactions fetched'); return snap; }),
+                jobService.getStatsForProfessional(userId)
+                    .then(stats => { console.log('[DashboardAction] Professional stats fetched'); return stats; }),
+                jobService.getStatsForClient(userId)
+                    .then(stats => { console.log('[DashboardAction] Client stats fetched'); return stats; }),
+                jobService.getQuickMetrics(userId)
+                    .then(metrics => { console.log('[DashboardAction] Quick metrics fetched'); return metrics; })
+            ]),
+            timeout
         ]);
+
+        console.log(`[DashboardAction] All data fetched in ${Date.now() - startTime}ms`);
 
         const transactions = transactionsSnapshot.docs.map(doc => {
             const data = doc.data();

@@ -1,5 +1,5 @@
 
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
 

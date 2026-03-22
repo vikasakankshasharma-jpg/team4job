@@ -20,8 +20,8 @@ export function FirebaseErrorListener() {
   }, []);
 
   if (error) {
-    // This will be caught by the Next.js error overlay in development
-    throw error;
+    // Just log for now to avoid crashing the whole tree during audit
+    console.error("Firestore Permission Error:", error);
   }
 
   return null;

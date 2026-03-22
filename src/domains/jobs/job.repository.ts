@@ -3,7 +3,7 @@
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { COLLECTIONS, getDocData } from '@/infrastructure/firebase/firestore';
 
-import { Job, JobFilters, JobStats, ProfessionalStats } from './job.types';
+import { Job, JobFilters, JobStats, ProfessionalStats, ClientStats } from './job.types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { toDate } from '@/lib/utils';
 
@@ -71,12 +71,12 @@ export class JobRepository {
             const snapshot = await db
                 .collection(COLLECTIONS.JOBS)
                 .where('clientId', '==', clientId)
+                .orderBy('postedAt', 'desc')
                 .limit(limit)
                 .get();
 
             return snapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() } as Job))
-                .sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+                .map(doc => ({ id: doc.id, ...doc.data() } as Job));
         } catch (error) {
 
             throw error;
@@ -151,8 +151,7 @@ export class JobRepository {
 
             const snapshot = await query.limit(limit).get();
             return snapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() } as Job))
-                .sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
+                .map(doc => ({ id: doc.id, ...doc.data() } as Job));
         } catch (error) {
 
             throw error;
@@ -191,7 +190,8 @@ export class JobRepository {
                 jobMap.set(doc.id, { id: doc.id, ...doc.data() } as Job);
             });
 
-            return Array.from(jobMap.values());
+            return Array.from(jobMap.values())
+                .sort((a, b) => toDate(b.postedAt).getTime() - toDate(a.postedAt).getTime());
         } catch (error) {
 
             throw error;
@@ -256,7 +256,7 @@ export class JobRepository {
     /**
      * Get job statistics for a user
      */
-    async getStatsForClient(clientId: string): Promise<JobStats> {
+    async getStatsForClient(clientId: string): Promise<ClientStats> {
         try {
             const db = getAdminDb();
 
@@ -289,17 +289,16 @@ export class JobRepository {
                     .get()
             ]);
 
-            // Fetch user for cached totalBids
+            // Fetch user for cached totalBids and openDisputes
             const userDoc = await db.collection(COLLECTIONS.USERS).doc(clientId).get();
             const userData = userDoc.data();
 
             return {
-                totalJobs: allJobsSnap.data().count,
-                openJobs: activeSnap.data().count,
-                inProgressJobs: 0,
+                activeJobs: activeSnap.data().count,
                 completedJobs: completedSnap.data().count,
                 cancelledJobs: cancelledSnap.data().count,
-                totalBids: userData?.totalBids || 0
+                totalBids: userData?.totalBids || 0,
+                openDisputes: userData?.openDisputes || 0
             };
         } catch (error) {
 

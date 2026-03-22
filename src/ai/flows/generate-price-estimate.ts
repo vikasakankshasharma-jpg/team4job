@@ -1,6 +1,6 @@
 
 import { ai, defineLoggedFlow } from '@/ai/genkit';
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
 import {
   GeneratePriceEstimateInputSchema,
   GeneratePriceEstimateOutputSchema,

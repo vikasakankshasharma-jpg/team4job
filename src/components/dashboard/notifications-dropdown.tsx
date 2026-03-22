@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";

@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { useTranslations } from 'next-intl';
 import { Button } from "@/components/ui/button";
 import {

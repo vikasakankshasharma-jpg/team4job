@@ -1,4 +1,4 @@
-import { getAdminDb } from "@/lib/firebase/server-init"; // Correct import for Server Side
+import { getAdminDb } from "@/infrastructure/firebase/admin"; // Correct import for Server Side
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 const LIMITS = {

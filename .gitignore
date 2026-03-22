@@ -83,3 +83,9 @@ firebase-export*/
 
 # Sentry Backup Configs
 _sentry.*.config.ts
+
+# Compiled and temporary files
+functions/lib/
+*.js.map
+tmp/
+chatgpt_prompt.md

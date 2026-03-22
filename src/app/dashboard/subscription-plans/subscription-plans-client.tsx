@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { useEffect, useState } from 'react';
 import SubscriptionPlansManager from './subscription-plans-manager';
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { SubscriptionPlan } from "@/lib/types";
 import { collection, getDocs } from "firebase/firestore";
 import { Loader2 } from "lucide-react";

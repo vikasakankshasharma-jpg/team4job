@@ -30,6 +30,9 @@ export interface JobDraft {
     skills?: string[];
     attachments?: JobAttachment[];
     isGstInvoiceRequired?: boolean;
+    deadline?: Date | Timestamp;
+    preferredTimeSlot?: 'Morning' | 'Afternoon' | 'Evening' | 'Weekend' | 'Any';
+    isUrgent?: boolean;
     lastSaved: Date | Timestamp;
     createdAt: Date | Timestamp;
 }

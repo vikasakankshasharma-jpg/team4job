@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { notFound, useParams } from "next/navigation";
 import {
   Card,

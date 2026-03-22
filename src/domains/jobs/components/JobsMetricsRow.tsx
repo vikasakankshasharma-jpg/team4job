@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { QuickMetricCard } from "@/components/dashboard/quick-metric-card";
 import { Target, Clock, Star, Users } from "lucide-react";
 import { collection, query, where, getDocs, Timestamp } from "firebase/firestore";

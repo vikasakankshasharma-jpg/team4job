@@ -29,7 +29,7 @@ import {
     DialogTrigger
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import { approveJobAction } from "@/app/actions/job.actions";

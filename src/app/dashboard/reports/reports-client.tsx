@@ -10,7 +10,8 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { useRouter } from "next/navigation";
 import { Loader2, Users, Briefcase, IndianRupee, PieChart, Download, Award, Star, Calendar, Medal, Bot, HardDriveDownload, MessageSquare, ShieldCheck, Clock } from "lucide-react";
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadialBar, RadialBarChart, PolarGrid, PolarAngleAxis } from "recharts";

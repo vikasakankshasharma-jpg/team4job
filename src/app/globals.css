@@ -198,7 +198,10 @@
   }
 }
 
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-display: swap;
+/* Hide Next.js development overlay for stable audit */
+#nextjs-portal, 
+[data-nextjs-toast], 
+[data-nextjs-dialog-overlay],
+[data-nextjs-bottom-right-toast] {
+  display: none !important;
 }

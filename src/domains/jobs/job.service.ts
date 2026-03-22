@@ -3,7 +3,7 @@
 import { jobRepository } from './job.repository';
 import { bidRepository } from '../bids/bid.repository';
 import { jobRules } from './job.rules';
-import { Job, JobStatus, CreateJobInput, JobFilters, JobStats, ProfessionalStats } from './job.types'; // Updated imports
+import { Job, JobStatus, CreateJobInput, JobFilters, JobStats, ProfessionalStats, ClientStats } from './job.types'; // Updated imports
 
 import { Role, User } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -564,7 +564,7 @@ export class JobService {
     /**
      * Get job statistics for a client
      */
-    async getStatsForClient(userId: string): Promise<JobStats> {
+    async getStatsForClient(userId: string): Promise<ClientStats> {
         try {
             return await jobRepository.getStatsForClient(userId);
         } catch (error) {

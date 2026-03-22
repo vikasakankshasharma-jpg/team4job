@@ -1,6 +1,6 @@
 
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { db } from '@/infrastructure/firebase/client';
 
 /**
  * Client-Side User Service

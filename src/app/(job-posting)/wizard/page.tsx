@@ -1,5 +1,6 @@
 "use client";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { saveDraft } from "@/lib/api/drafts";
 import { useToast } from "@/hooks/use-toast";
 

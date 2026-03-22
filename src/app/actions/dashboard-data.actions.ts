@@ -8,19 +8,8 @@ import { jobService } from "@/domains/jobs/job.service";
 import { userRepository } from "@/domains/users/user.repository";
 
 export async function fetchClientStats(userId: string): Promise<ClientStats> {
-    const stats = await jobService.getStatsForClient(userId);
-
-    // Map JobStats (domain) to ClientStats (UI)
-    // JobStats: { totalJobs, openJobs, inProgressJobs, completedJobs, cancelledJobs, totalBids }
-    // ClientStats: { activeJobs, completedJobs, cancelledJobs, totalBids, openDisputes }
-
-    return {
-        activeJobs: stats.openJobs, // Using 'openJobs' which we calculated as all active/in-progress statuses
-        completedJobs: stats.completedJobs,
-        cancelledJobs: stats.cancelledJobs,
-        totalBids: stats.totalBids,
-        openDisputes: 0 // Placeholder, or fetch from dispute service if critical
-    };
+    // jobService.getStatsForClient now returns ClientStats directly
+    return await jobService.getStatsForClient(userId);
 }
 
 export async function fetchProfessionalStats(userId: string): Promise<ProfessionalStats> {

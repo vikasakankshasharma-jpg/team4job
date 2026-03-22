@@ -31,7 +31,8 @@ import { generateJobDescriptionAction, generatePriceEstimateAction } from "@/app
 import { useToast } from "@/hooks/use-toast";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { cn, toDate } from "@/lib/utils";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { Job, JobAttachment, User, PlatformSettings } from "@/lib/types";
@@ -54,7 +55,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { jobCategoryTemplates } from "@/lib/job-category-templates";
 import { VoiceInput } from "@/components/ui/voice-input";
@@ -307,12 +308,12 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
         cityPincode: "",
         fullAddress: "",
       },
-      deadline: "",
-      jobStartDate: "",
+      deadline: format(addDays(new Date(), 7), "yyyy-MM-dd"),
+      jobStartDate: format(addDays(new Date(), 1), "yyyy-MM-dd'T'10:00"),
       attachments: [],
       directAwardProfessionalId: "",
       priceEstimate: { min: 0, max: 0 },
-      verifyDetails: false, // Must be false, not undefined, to prevent uncontrolled component warnings
+      verifyDetails: false, 
     },
   });
 
@@ -359,11 +360,21 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       try {
         const { getLatestDraftAction } = await import('@/app/actions/draft.actions');
         const res = await getLatestDraftAction(user.id);
-        const wizardCompleted = searchParams.get('wizardCompleted');
         if (res.success && res.draft) {
           setLoadedDraft(res.draft);
-          setShowDraftDialog(true);
-        } else if (!directAwardParam && !wizardCompleted && process.env.NEXT_PUBLIC_IS_CI !== 'true') {
+          const wizardCompleted = searchParams.get('wizardCompleted');
+          if (wizardCompleted === 'true') {
+            // Auto-resume if coming from wizard
+            handleAutoResume(res.draft);
+          } else {
+            setShowDraftDialog(true);
+          }
+        } else if (searchParams.get('wizardCompleted') === 'true') {
+           // Coming from wizard but no draft found yet? 
+           // At least we have the default future dates set now from useForm defaultValues.
+           // We could optionally show a small toast or just let the user fill it.
+           console.log("Wizard completed but no draft found in Firestore yet.");
+        } else if (!directAwardParam && !searchParams.get('wizardCompleted') && process.env.NEXT_PUBLIC_IS_CI !== 'true') {
           // Wizard-first guard: No draft, no special params → redirect to wizard
           router.replace('/wizard');
         }
@@ -375,31 +386,33 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     checkForDraft();
   }, [isEditMode, repostJobId, user, isSubmitted, directAwardParam, form, router]);
 
-  // Handle draft recovery
-  const handleResumeDraft = useCallback(() => {
-    if (!loadedDraft) return;
-
+  const handleAutoResume = useCallback((draft: JobDraft) => {
     form.reset({
-      jobTitle: loadedDraft.title || '',
-      jobDescription: loadedDraft.description || '',
-      jobCategory: loadedDraft.jobCategory || '',
-      skills: loadedDraft.skills?.join(', ') || '',
-      travelTip: loadedDraft.travelTip || 0,
-      isGstInvoiceRequired: loadedDraft.isGstInvoiceRequired || false,
-      address: loadedDraft.address || form.getValues('address'),
-      deadline: '',
-      jobStartDate: loadedDraft.jobStartDate ? format(toDate(loadedDraft.jobStartDate), "yyyy-MM-dd'T'HH:mm") : '',
-      directAwardProfessionalId: loadedDraft.directAwardProfessionalId || '',
-      priceEstimate: loadedDraft.budget || { min: 0, max: 0 },
+      jobTitle: draft.title || '',
+      jobDescription: draft.description || '',
+      jobCategory: draft.jobCategory || '',
+      skills: draft.skills?.join(', ') || '',
+      travelTip: draft.travelTip || 0,
+      isGstInvoiceRequired: draft.isGstInvoiceRequired || false,
+      address: draft.address || form.getValues('address'),
+      deadline: draft.deadline ? format(toDate(draft.deadline), "yyyy-MM-dd") : format(addDays(new Date(), 7), "yyyy-MM-dd"),
+      jobStartDate: draft.jobStartDate ? format(toDate(draft.jobStartDate), "yyyy-MM-dd'T'HH:mm") : format(addDays(new Date(), 1), "yyyy-MM-dd'T'10:00"),
+      directAwardProfessionalId: draft.directAwardProfessionalId || '',
+      priceEstimate: draft.budget || { min: 0, max: 0 },
     });
 
-    setDraftId(loadedDraft.id);
+    setDraftId(draft.id);
     setShowDraftDialog(false);
     toast({
       title: tSuccess('draftLoaded'),
       description: tSuccess('draftLoadedDesc'),
     });
-  }, [loadedDraft, form, setDraftId, toast, tSuccess]);
+  }, [form, setDraftId, toast, tSuccess]);
+
+  const handleResumeDraft = useCallback(() => {
+    if (!loadedDraft) return;
+    handleAutoResume(loadedDraft);
+  }, [loadedDraft, handleAutoResume]);
 
   const handleDiscardDraft = useCallback(async () => {
     if (!loadedDraft || !user) return;
@@ -429,8 +442,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       travelTip: fields.travelTip || 0,
       isGstInvoiceRequired: fields.isGstInvoiceRequired || false,
       address: fields.address || form.getValues('address'),
-      deadline: '',
-      jobStartDate: '',
+      deadline: fields.deadline ? format(toDate(fields.deadline), "yyyy-MM-dd") : format(addDays(new Date(), 7), "yyyy-MM-dd"),
+      jobStartDate: fields.jobStartDate ? format(toDate(fields.jobStartDate), "yyyy-MM-dd'T'HH:mm") : format(addDays(new Date(), 1), "yyyy-MM-dd'T'10:00"),
       directAwardProfessionalId: '',
       priceEstimate: fields.budget || { min: 0, max: 0 },
     });

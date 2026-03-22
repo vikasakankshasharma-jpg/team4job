@@ -29,3 +29,16 @@ export const StatCard = ({ title, value, description, icon: Icon, href, iconBgCo
         </Card>
     </Link>
 );
+
+export const StatCardSkeleton = () => (
+    <Card className="flex flex-col h-full relative overflow-hidden min-w-0 border-0 shadow-sm bg-card animate-pulse">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 min-w-0">
+            <div className="h-4 w-24 bg-muted rounded" />
+            <div className="h-10 w-10 bg-muted rounded-xl" />
+        </CardHeader>
+        <CardContent className="flex-grow">
+            <div className="h-10 w-20 bg-muted rounded mb-2" />
+            <div className="h-3 w-32 bg-muted rounded" />
+        </CardContent>
+    </Card>
+);

@@ -3,7 +3,8 @@
 
 import { useEffect } from 'react';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
-import { useFirebase, useUser } from './use-user';
+import { useUser } from './use-user';
+import { useFirebase } from '@/infrastructure/firebase/client-provider';
 import { userClientService } from '@/domains/users/user.client.service';
 import { logger } from '@/infrastructure/logger';
 

@@ -1,6 +1,6 @@
 'use server';
 
-import { getAdminDb, getAdminAuth } from '@/lib/firebase/server-init';
+import { getAdminDb, getAdminAuth } from '@/infrastructure/firebase/admin';
 import { AIFeedback } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { headers } from 'next/headers';

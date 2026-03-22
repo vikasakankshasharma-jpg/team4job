@@ -31,7 +31,8 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { User } from "@/lib/types";
 import { toDate, cn, exportToCsv } from "@/lib/utils";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { Input } from "@/components/ui/input";
 import {
   Select,

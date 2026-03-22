@@ -30,10 +30,10 @@ export default async function ClientDashboard() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-4 gap-4 mb-8">
-                <StatCard label="Total Jobs" value={stats.totalJobs} />
-                <StatCard label="Open Jobs" value={stats.openJobs} />
-                <StatCard label="In Progress" value={stats.inProgressJobs} />
+                <StatCard label="Active Jobs" value={stats.activeJobs} />
                 <StatCard label="Completed" value={stats.completedJobs} />
+                <StatCard label="Cancelled" value={stats.cancelledJobs} />
+                <StatCard label="Total Bids" value={stats.totalBids} />
             </div>
 
             {/* Jobs List */}

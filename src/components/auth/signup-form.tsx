@@ -62,7 +62,7 @@ import {
   getAuth
 } from "firebase/auth";
 import { initializeApp, getApps } from "firebase/app";
-import { useFirestore, useFirebase } from "@/lib/firebase/client-provider";
+import { useFirestore, useFirebase } from "@/infrastructure/firebase/client-provider";
 import { useHelp } from "@/hooks/use-help";
 import { allSkills } from "@/lib/data";
 import { trackSignupProgress, markSignupComplete } from "@/lib/signup-tracker";
@@ -179,11 +179,12 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             },
           });
         }
-      } catch (e) {
-        // Silent fail
+      } catch (e: any) {
+        console.error('[SignUp] Failed to initialize reCAPTCHA:', e.message);
+        toast({ title: "Verification Setup", description: "Could not initialize phone verification. Please refresh the page.", variant: "destructive" });
       }
     }
-  }, [mainApp]);
+  }, [mainApp, toast]);
 
   const handleSendMobileOtp = async () => {
     const mobile = form.getValues("mobile");
@@ -194,9 +195,12 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
     setIsLoading(true);
     try {
       const formattedNumber = `+91${mobile}`;
-      // Capture ref current value to satisfy TS
       const authInstance = tempAuthRef.current;
-      if (!authInstance || !recaptchaVerifierRef.current) return;
+      if (!authInstance || !recaptchaVerifierRef.current) {
+        toast({ title: "Error", description: "Phone verification is not ready. Please ensure reCAPTCHA has loaded and try again.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
 
       const confirmation = await signInWithPhoneNumber(authInstance, formattedNumber, recaptchaVerifierRef.current);
       // @ts-ignore
@@ -599,30 +603,23 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
     }
 
     try {
-      let firebaseUser: FirebaseUser | null = auth.currentUser;
+      if (!isMobileVerified) throw new Error("Please verify your mobile number.");
+      if (!isEmailVerified) throw new Error("Please verify your email address.");
 
-      // If mobile is verified, we have the credential stored.
-      if (isMobileVerified && verifiedCredential && firebaseUser) {
+      // Step 1: Create user with email/password FIRST
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      let firebaseUser: FirebaseUser = userCredential.user;
+
+      // Step 2: Link phone credential to the newly created user
+      if (verifiedCredential) {
         try {
           await linkWithCredential(firebaseUser, verifiedCredential);
         } catch (linkError: any) {
-          if (linkError.code === 'auth/credential-already-associated') {
-            // Ignore if already done
-          } else {
-            // Non-fatal? If link fails, user still created but mobile not linked in Auth.
+          if (linkError.code !== 'auth/credential-already-associated') {
+            // Non-fatal: user still created but mobile not linked in Auth.
             toast({ title: "Link Warning", description: "Mobile could not be linked to Auth account, but signup proceeded.", variant: "default" });
           }
         }
-      } else {
-        // Fallback: If mobile NOT verified (should be blocked by validation)
-        // Or if session lost.
-        if (!isMobileVerified) throw new Error("Please verify your mobile number.");
-
-        // If execution reaches here, it means we required verification but session is gone?
-        // We can try creating user, but mobile won't be "Phone Auth" verified.
-        // Reverting to Create User:
-        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-        firebaseUser = userCredential.user;
       }
 
       // Update Profile Name immediately
@@ -640,7 +637,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         email: values.email.toLowerCase(),
         mobile: values.mobile,
         isMobileVerified: true,
-        isEmailVerified: false,
+        isEmailVerified: isEmailVerified,
         roles: userRoles,
         memberSince: new Date(),
         status: 'active',
@@ -1397,8 +1394,8 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
             <div className="space-y-1 leading-none">
               <FormLabel>
                 {tAuth.rich('iAgreeToLabel', {
-                  terms: (chunks) => <Link href="/terms" target="_blank" className="underline text-primary">{tAuth('termsOfService')}</Link>,
-                  privacy: (chunks) => <Link href="/privacy" target="_blank" className="underline text-primary">{tAuth('privacyPolicy')}</Link>
+                  terms: (chunks) => <Link href="/terms-of-service" target="_blank" className="underline text-primary">{tAuth('termsOfService')}</Link>,
+                  privacy: (chunks) => <Link href="/privacy-policy" target="_blank" className="underline text-primary">{tAuth('privacyPolicy')}</Link>
                 })}
               </FormLabel>
               <FormMessage />

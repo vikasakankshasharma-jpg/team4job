@@ -13,7 +13,7 @@ import { Timeline } from "./timeline";
 import { CommunicationFeed } from "./communication-feed";
 import { buildJobTimeline, CommunicationItem, TimelineEvent } from "@/lib/services/timeline-builder";
 import { Job, User } from "@/lib/types";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { Loader2, MessageSquare, Clock } from "lucide-react";
 

@@ -41,7 +41,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, Trash2, List, Grid } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { BlacklistEntry } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import React, { useState } from "react";

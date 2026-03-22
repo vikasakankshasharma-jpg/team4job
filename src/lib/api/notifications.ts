@@ -14,7 +14,7 @@ import {
     addDoc,
     writeBatch
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { db } from '@/infrastructure/firebase/client';
 import { Notification, NotificationPreferences, NotificationType } from '@/lib/types';
 
 const NOTIFICATIONS_COLLECTION = 'notifications';

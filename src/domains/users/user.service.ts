@@ -6,7 +6,12 @@ import { User, UpdateProfileInput, ProfessionalFilters, Role } from '@/lib/types
 
 export class UserService {
     async getProfile(userId: string): Promise<User> {
-        const user = await userRepository.fetchById(userId);
+        // Add timeout to prevent SSR hangs
+        const user = await Promise.race([
+            userRepository.fetchById(userId),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Fetch user profile timeout')), 10000))
+        ]);
+
         if (!user) {
             throw new Error('User not found');
         }

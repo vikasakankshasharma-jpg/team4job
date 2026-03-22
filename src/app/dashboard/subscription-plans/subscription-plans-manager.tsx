@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Loader2, MoreHorizontal, Grid, List } from "lucide-react";
 import React, { useState } from "react";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { SubscriptionPlan } from "@/lib/types";
 import {
   Dialog,

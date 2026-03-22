@@ -1,6 +1,6 @@
 
 import { doc, onSnapshot, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { db } from '@/infrastructure/firebase/client';
 import { Job } from '@/lib/types';
 import { Unsubscribe } from 'firebase/auth';
 

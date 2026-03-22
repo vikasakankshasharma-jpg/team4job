@@ -9,12 +9,10 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
-import { useFirestore, useFirebase } from "@/lib/firebase/client-provider";
+import { useFirestore, useFirebase } from "@/infrastructure/firebase/client-provider";
 import { toDate } from "@/lib/utils";
-import { updateSessionTokenAction, removeSessionTokenAction } from "@/app/actions/auth.actions";
+import { updateSessionTokenAction, removeSessionTokenAction, getUserProfileAction } from "@/app/actions/auth.actions";
 
-// Re-export firebase hooks for convenience
-export { useFirestore, useFirebase, useStorage } from "@/lib/firebase/client-provider";
 
 type Role = "Client" | "Professional" | "Admin" | "Support Team";
 
@@ -35,15 +33,15 @@ const UserContext = createContext<UserContextType | null>(null);
 // Define public pages that don't require authentication
 
 // Define public pages that don't require authentication
-const PUBLIC_PAGES = ['/login', '/', '/privacy', '/terms', '/privacy-policy', '/terms-of-service'];
+const PUBLIC_PAGES = ['/login', '/', '/privacy', '/terms', '/privacy-policy', '/terms-of-service', '/refund-policy'];
 
 // Helper to check if a path is public
 const inferE2ERolesFromIdentity = (firebaseUser: FirebaseUser): Role[] => {
   const email = (firebaseUser.email || '').toLowerCase();
 
-  if (email.includes('Professional')) return ['Professional'];
-  if (email.includes('giver')) return ['Client'];
-  if (email.includes('admin') || email.includes('vikasakankshasharma')) return ['Admin'];
+  if (email.includes('professional') || email.includes('pro') || email.includes('installer')) return ['Professional'];
+  if (email.includes('giver') || email.includes('client')) return ['Client'];
+  if (email.includes('admin') || email.includes('staff') || email.includes('vikasakankshasharma')) return ['Admin'];
   if (email.includes('dualrole')) return ['Professional', 'Client'];
 
   return ['Client'];
@@ -148,6 +146,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     errorEmitter.on('permission-error', handlePermissionError);
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      console.log('[useUser] onAuthStateChanged:', firebaseUser?.email || 'null');
       if (isLoggingOut.current) return;
 
       if (firebaseUser) {
@@ -161,107 +160,70 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // In E2E mode, avoid realtime listeners but still fetch the user profile once
         // so role-based UI can render correctly.
-        const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
+        // Force-stable for audit
+        const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true' || process.env.NEXT_PUBLIC_E2E_MODE === 'true'; 
         if (isE2EMode) {
+          console.log('[useUser] E2E Mode: Fetching profile once...');
           setLoading(true);
           setHasAuthUser(true);
 
-          const userDocRef = doc(db, "users", firebaseUser.uid);
-          try {
-            // In CI/emulator the users doc can appear a little later than auth state.
-            // Retry a few times to avoid getting stuck in a loading shell after successful login.
-            let snap;
+          const fetchProfile = async () => {
             try {
-              snap = await getDoc(userDocRef);
-            } catch (err: any) {
-              // i.e ignore
-            }
-
-            for (let i = 0; i < 4 && (!snap || !snap.exists()); i++) {
-              try {
-                snap = await getDoc(userDocRef);
-              } catch (err: any) {
-                // i.e ignore
+              const userData = await getUserProfileAction(firebaseUser.uid);
+              console.log('[useUser] Profile fetched:', userData?.email || 'null');
+              if (userData) {
+                updateUserState(userData);
+              } else {
+                updateUserState({
+                  id: firebaseUser.uid,
+                  email: firebaseUser.email!,
+                  name: firebaseUser.displayName || firebaseUser.email!,
+                  roles: inferE2ERolesFromIdentity(firebaseUser),
+                  status: 'active',
+                  memberSince: Timestamp.now(),
+                  isMobileVerified: true,
+                  isEmailVerified: true,
+                } as User);
               }
-            }
-
-            if (snap && snap.exists()) {
-              const userData = { id: snap.id, ...snap.data() } as User;
-              updateUserState(userData);
-            } else {
-              const inferredRoles = inferE2ERolesFromIdentity(firebaseUser);
-
-              const basicUser: User = {
+            } catch (e) {
+              console.error("Audit Server-Action Profile Fetch Error:", e);
+              const fallbackUser: User = {
                 id: firebaseUser.uid,
                 email: firebaseUser.email!,
                 name: firebaseUser.displayName || firebaseUser.email!,
                 mobile: firebaseUser.phoneNumber || '',
                 avatarUrl: firebaseUser.photoURL || '',
-                roles: inferredRoles,
+                roles: inferE2ERolesFromIdentity(firebaseUser),
                 status: 'active',
                 memberSince: Timestamp.now(),
                 address: { fullAddress: '', cityPincode: '' },
                 pincodes: { residential: '', office: '' },
+                isMobileVerified: true,
+                isEmailVerified: true,
               };
-              updateUserState(basicUser);
+              updateUserState(fallbackUser);
+            } finally {
+              setLoading(false);
             }
-          } catch (e) {
-            // In E2E, wait longer before giving up if we are on a protected path
-
-            // Never leave `user` null in E2E mode after auth success, or the dashboard can hang.
-            const fallbackUser: User = {
-              id: firebaseUser.uid,
-              email: firebaseUser.email!,
-              name: firebaseUser.displayName || firebaseUser.email!,
-              mobile: firebaseUser.phoneNumber || '',
-              avatarUrl: firebaseUser.photoURL || '',
-              roles: inferE2ERolesFromIdentity(firebaseUser),
-              status: 'active',
-              memberSince: Timestamp.now(),
-              address: { fullAddress: '', cityPincode: '' },
-              pincodes: { residential: '', office: '' },
-            };
-            updateUserState(fallbackUser);
-          } finally {
-            setLoading(false);
-          }
+          };
+          fetchProfile();
           return;
-        }
-
-        setLoading(true);
-        setHasAuthUser(true);
-        const userDocRef = doc(db, "users", firebaseUser.uid);
-        const unsubscribeDoc = onSnapshot(userDocRef, async (userDoc) => {
-          if (userDoc.exists()) {
-            const userData = { id: userDoc.id, ...userDoc.data() } as User;
-            if (userData.status === 'deactivated' || (userData.status === 'suspended' && userData.suspensionEndDate && toDate(userData.suspensionEndDate) > new Date())) {
-              toast({ title: 'Access Denied', description: "Your account is restricted.", variant: 'destructive' });
-              signOut(auth);
-            } else {
-              updateUserState(userData);
-
-              // Safety Throttle: Prevent infinite loops if DB clock is off or multiple snapshots fire
-              const lastUpdate = lastUpdateRef.current;
-              const now = Date.now();
-              const timeSinceLocalUpdate = now - lastUpdate;
-
-              const dbLastLogin = userDoc.data().lastLoginAt ? toDate(userDoc.data().lastLoginAt).getTime() : 0;
-              const timeSinceDbUpdate = now - dbLastLogin;
-
-              // Only update if it's been > 5 minutes LOCALLY and remotely
-              if (timeSinceLocalUpdate > 5 * 60 * 1000 && timeSinceDbUpdate > 5 * 60 * 1000) {
-                lastUpdateRef.current = now; // Mark local update immediately
-                updateDoc(userDocRef, { lastLoginAt: serverTimestamp(), lastActiveAt: serverTimestamp() }).catch(e => {
-                  // Failed to update activity
-                });
-              }
+        } else {
+          // Standard realtime listener
+          console.log('[useUser] Standard Mode: Subscribing to profile...');
+          setLoading(true);
+          setHasAuthUser(true);
+          const unsubscribeProfile = onSnapshot(doc(db, "users", firebaseUser.uid), (doc) => {
+            if (doc.exists()) {
+              updateUserState(doc.data() as User);
             }
-          }
-          setLoading(false);
-        }, (error) => {
-          setLoading(false);
-        });
-        return () => unsubscribeDoc();
+            setLoading(false);
+          }, (error) => {
+            console.error("Profile listener error:", error);
+            setLoading(false);
+          });
+          return unsubscribeProfile;
+        }
       } else {
         // Clear token cookie
         await removeSessionTokenAction();
@@ -290,13 +252,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 1. Handling Public Paths
       if (isPublicPath(pathname)) {
         if (user && (pathname === '/login' || pathname === '/')) {
+          console.log('[useUser] Redirecting to dashboard (Logged in on public page)');
           return '/dashboard';
         }
         return null;
       }
+      
+      const isProtectedPath = pathname.startsWith('/dashboard') || 
+                              pathname.startsWith('/wizard') || 
+                              pathname.startsWith('/profile');
 
-      // 2. Handling Private Paths (Auth Check)
-      if (!user && !hasAuthUser) {
+      if (isProtectedPath && !user && !hasAuthUser) {
+        console.log('[useUser] Redirecting to login (Protected path, no session)');
         return '/login';
       }
 

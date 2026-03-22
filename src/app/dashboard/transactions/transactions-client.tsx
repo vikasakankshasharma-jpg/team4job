@@ -27,7 +27,8 @@ import { Loader2, IndianRupee, ArrowRight, X, Wallet, CheckCircle2, ShieldEllips
 import { StatCard, FilterBar, ExportButton, AdminEmptyState } from "@/components/admin";
 import type { Filter } from "@/components/admin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { useRouter } from "next/navigation";
 import { Transaction, User } from "@/lib/types";
 import { toDate, cn } from "@/lib/utils";

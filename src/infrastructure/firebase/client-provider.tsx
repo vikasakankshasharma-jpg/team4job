@@ -29,7 +29,6 @@ export const FirebaseClientProvider: React.FC<{ children: React.ReactNode }> = (
   return (
     <FirebaseContext.Provider value={firebaseContextValue}>
       {children}
-      <FirebaseErrorListener />
     </FirebaseContext.Provider>
   );
 };

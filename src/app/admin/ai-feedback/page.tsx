@@ -1,5 +1,5 @@
 
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { AIFeedback } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';

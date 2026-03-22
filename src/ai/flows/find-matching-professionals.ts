@@ -13,7 +13,7 @@ import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'genkit';
 import { User } from '@/lib/types';
 
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
 
 const FindMatchingProfessionalsInputSchema = z.object({
   jobDescription: z.string().describe('Detailed description of the job requirements.'),

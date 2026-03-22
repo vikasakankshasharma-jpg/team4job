@@ -51,6 +51,7 @@ const Footer = dynamic(() => Promise.resolve(({ t }: { t: any }) => (
             <div className="flex gap-6 text-sm">
                 <Link href="/terms-of-service" className="hover:underline hover:text-foreground">{t('footerTerms')}</Link>
                 <Link href="/privacy-policy" className="hover:underline hover:text-foreground">{t('footerPrivacy')}</Link>
+                <Link href="/refund-policy" className="hover:underline hover:text-foreground">{t('footerRefund')}</Link>
             </div>
         </div>
     </footer>

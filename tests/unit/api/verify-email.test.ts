@@ -1,7 +1,7 @@
 /** @jest-environment node */
 import { POST } from '../../../src/app/api/auth/verify-email/route';
 import { sendServerEmail } from '@/lib/server-email';
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { NextRequest } from 'next/server';
 
@@ -10,7 +10,7 @@ jest.mock('@/lib/server-email', () => ({
     sendServerEmail: jest.fn(),
 }));
 
-jest.mock('@/lib/firebase/server-init', () => ({
+jest.mock('@/infrastructure/firebase/admin', () => ({
     getAdminDb: jest.fn(),
 }));
 

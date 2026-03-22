@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useFirebase } from '@/hooks/use-user';
+import { useFirebase } from '@/infrastructure/firebase/client-provider';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Info, Ticket } from 'lucide-react';

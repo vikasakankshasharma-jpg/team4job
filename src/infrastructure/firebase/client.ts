@@ -1,104 +1,73 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence, connectAuthEmulator } from 'firebase/auth';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth, setPersistence, inMemoryPersistence, connectAuthEmulator } from 'firebase/auth';
 import {
     getFirestore,
+    Firestore,
     initializeFirestore,
     memoryLocalCache,
-    persistentLocalCache,
-    persistentMultipleTabManager,
-    getFirestore as getFirestoreDefault,
     connectFirestoreEmulator
 } from 'firebase/firestore';
-import { getStorage, connectStorageEmulator } from 'firebase/storage';
-import { logger } from '@/infrastructure/logger';
+import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
 
 const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'mock-key',
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'mock.firebaseapp.com',
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'mock-project',
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'mock.appspot.com',
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '00000000000',
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:00000000000:web:0000000000000000000000',
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-const EMULATORS_STARTED = '__do_firebase_emulators_started__';
+// Singleton instances
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+let storage: FirebaseStorage;
 
-// Initialize Firebase
-let app: any;
-let auth: any;
-let db: any;
-let storage: any;
+const isClient = typeof window !== 'undefined';
 
-try {
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    auth = getAuth(app);
+const isE2E = process.env.NEXT_PUBLIC_E2E === 'true';
+const appName = isE2E ? 'dodo-e2e-app' : '[DEFAULT]';
 
-    // Initialization logic for Firestore to support custom cache settings
-    const useMemoryCache =
-        process.env.NEXT_PUBLIC_IS_CI === 'true' ||
-        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
-        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+if (getApps().length > 0 && !isE2E) {
+    app = getApp();
+} else {
+    // For E2E, we always initialize a fresh app instance to avoid cross-test state leakage or locks
+    app = initializeApp(firebaseConfig, appName);
+}
 
-    if (useMemoryCache) {
-        try {
+auth = getAuth(app);
+// Persistence is handled by default (browserLocalPersistence) which survives redirects.
+// If explicitly needed, we can set it here, but inMemoryPersistence was breaking E2E.
 
-            db = getFirestoreDefault(app);
-            db = getFirestoreDefault(app);
-        } catch (e) {
-            db = getFirestoreDefault(app);
-        }
-    } else {
-
-        try {
-            db = initializeFirestore(app, {
-                localCache: persistentLocalCache({
-                    tabManager: persistentMultipleTabManager()
-                })
-            });
-        } catch (e) {
-
-            db = getFirestoreDefault(app);
-        }
+// FORCE MEMORY CACHE
+if (isClient) {
+    try {
+        db = initializeFirestore(app, {
+            localCache: memoryLocalCache(),
+            ignoreUndefinedProperties: true
+        });
+    } catch (e) {
+        db = getFirestore(app);
     }
+} else {
+    db = getFirestore(app);
+}
 
-    storage = getStorage(app);
+storage = getStorage(app);
 
-    // Emulator Connection Logic
-    const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'ssr';
-    const isActualLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
-    const isStaging = currentHost.includes('dodo-beta');
-    const emulatorFlag = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' || process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+// --- Emulator Connectivity (Client Side) ---
+if (isClient && process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
+    console.log('[FirebaseClient] Connecting to emulators...');
+    // Use hardcoded defaults for E2E speed/stability
+    const AUTH_HOST = '127.0.0.1:9099';
+    const DB_HOST = '127.0.0.1';
+    const STORAGE_HOST = '127.0.0.1';
 
-    if (emulatorFlag && isActualLocalhost && !isStaging) {
-        const globalObj = typeof window !== 'undefined' ? (window as any) : globalThis;
-        if (!globalObj[EMULATORS_STARTED]) {
-
-            try {
-                connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
-                connectFirestoreEmulator(db, '127.0.0.1', 8080);
-                connectStorageEmulator(storage, '127.0.0.1', 9199);
-                globalObj[EMULATORS_STARTED] = true;
-
-            } catch (emuError: any) {
-                if (emuError?.code === 'auth/emulator-config-failed') {
-
-                    globalObj[EMULATORS_STARTED] = true;
-                }
-            }
-        }
-    }
-
-    // CI Specific Persistence Overrides
-    if (process.env.NEXT_PUBLIC_IS_CI === 'true') {
-        setPersistence(auth, browserLocalPersistence).catch(() => {});
-    }
-
-} catch (error) {
-    const mockApp = { name: '[DEFAULT]', options: firebaseConfig, automaticDataCollectionEnabled: false };
-    app = mockApp;
-    auth = { app: mockApp } as any;
-    db = { app: mockApp } as any;
-    storage = { app: mockApp } as any;
+    try { connectAuthEmulator(auth, `http://${AUTH_HOST}`); } catch(e) {}
+    try { connectFirestoreEmulator(db, DB_HOST, 8080); } catch(e) {}
+    try { connectStorageEmulator(storage, STORAGE_HOST, 9199); } catch(e) {}
 }
 
 export { app, auth, db, storage };

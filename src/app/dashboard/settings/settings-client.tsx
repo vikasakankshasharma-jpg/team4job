@@ -45,7 +45,7 @@ import { Gem, Medal, Percent, ShieldCheck, IndianRupee, Gift, Loader2, Ticket, P
 import { useHelp } from "@/hooks/use-help"
 import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore"
 import type { PlatformSettings, SubscriptionPlan, Coupon, BlacklistEntry } from "@/lib/types"
-import { useFirebase } from "@/hooks/use-user"
+import { useFirebase } from "@/infrastructure/firebase/client-provider"
 import { useTranslations } from "next-intl"
 import SubscriptionPlansManager from "@/app/dashboard/subscription-plans/subscription-plans-manager"
 import CouponsManager from "@/app/dashboard/coupons/coupons-manager"

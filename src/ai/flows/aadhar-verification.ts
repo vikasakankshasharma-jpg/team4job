@@ -15,7 +15,7 @@ import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'zod';
 import axios from 'axios';
 
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { PlatformSettings } from '@/lib/types';
 
 

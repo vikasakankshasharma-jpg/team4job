@@ -2,7 +2,7 @@
 import * as fs from 'fs';
 import { test, expect } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
-import { getAdminDb } from '../../src/lib/firebase/server-init';
+import { getAdminDb } from '../../src/infrastructure/firebase/admin';
 import { TEST_JOB_DATA, TEST_CREDENTIALS, TEST_ACCOUNTS, getDateString, getDateTimeString, generateUniqueJobTitle, JOB_STATUSES, TIMEOUTS } from '../fixtures/test-data';
 
 /**

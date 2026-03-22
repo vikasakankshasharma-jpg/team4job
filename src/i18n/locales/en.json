@@ -48,7 +48,26 @@
         "saving": "Saving...",
         "draftAutoSaved": "Draft auto-saved",
         "saved": "Saved successfully.",
-        "checkFormDesc": "Please check the form description and required fields."
+        "checkFormDesc": "Please check the form description and required fields.",
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "archived": "Archived",
+        "pending": "Pending",
+        "inProgress": "In Progress",
+        "all": "All",
+        "open": "Open",
+        "closed": "Closed",
+        "description": "Description",
+        "category": "Category",
+        "budget": "Budget",
+        "location": "Location",
+        "skills": "Skills",
+        "verified": "Verified",
+        "unverified": "Unverified",
+        "suspended": "Suspended",
+        "type": "Type",
+        "toggleMenu": "Toggle Menu"
     },
     "landing": {
         "tagline": "The Professional Service Provider's Marketplace",
@@ -83,6 +102,7 @@
         "footerRights": "Team4Job. All Rights Reserved.",
         "footerTerms": "Terms of Service",
         "footerPrivacy": "Privacy Policy",
+        "footerRefund": "Refund Policy",
         "trustProof": {
             "heading": "Built on Trust and Security",
             "subheading": "We engineered our platform to remove risk, so you can focus on getting the job done right.",
@@ -463,8 +483,15 @@
     },
     "job": {
         "title": "Job Title",
+        "bids": "Bids",
         "bidsTab": "Bids",
         "waitAward": "Waiting for Award",
+        "viewDetails": "View Details",
+        "jobTypeDirect": "Direct Award",
+        "jobTypeBidding": "Bidding",
+        "invalidInput": "Invalid Input",
+        "invalidInputDesc": "Please enter a valid amount and deadline.",
+        "promoteFailed": "Failed to promote job.",
         "titlePlaceholder": "e.g., Technical Installation for 2 BHK Apartment",
         "titleDesc": "Be specific! A clear title helps attract the right professionals.",
         "description": "Job Description",
@@ -2288,6 +2315,87 @@
         "home_theater": "Home Theater Setup",
         "smart_display": "Smart Display Install",
         "audio_video": "Audio/Video Solutions"
+    },
+    "settings": {
+        "title": "Settings",
+        "appearance": "Appearance",
+        "appearanceDesc": "Customize the look and feel of the application.",
+        "theme": "Theme",
+        "selectTheme": "Select a theme",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System",
+        "notifications": "Notifications",
+        "notificationsDesc": "Manage how you receive notifications from the platform.",
+        "pushNotifications": "Push Notifications",
+        "pushNotificationsDesc": "Receive real-time alerts on your device.",
+        "newBids": "New Bids",
+        "newBidsDesc": "Get notified when a Professional bids on your job.",
+        "jobAwarded": "Job Awarded",
+        "jobAwardedDesc": "Get notified when you are awarded a job.",
+        "disputeUpdates": "Dispute Updates",
+        "disputeUpdatesDesc": "Stay informed about your support tickets.",
+        "moreControlsSoon": "More granular notification controls will be available soon.",
+        "accountManagement": "Account Management",
+        "accountManagementDesc": "Manage your account settings and data.",
+        "changePassword": "Change Password",
+        "changePasswordDesc": "Update your account password.",
+        "deleteAccount": "Delete Account",
+        "deleteAccountDesc": "Permanently delete your account and associated data.",
+        "deleteConfirmPrompt": "This action cannot be undone. To confirm, please type Delete in the box below.",
+        "deleteConfirmPlaceholder": "Type 'Delete' to confirm",
+        "accountDeletionRequested": "Account Deletion Requested",
+        "accountDeletionRequestedDesc": "Your account is scheduled for deletion.",
+        "continue": "Continue"
+    },
+    "auditLogs": {
+        "title": "Admin Audit Log",
+        "description": "Tracking administrative activity for security and accountability. Showing {count} entries.",
+        "stats": {
+            "total": "Total Actions",
+            "totalDesc": "All administrative actions recorded",
+            "today": "Actions Today",
+            "todayDesc": "Actions recorded in the last 24 hours",
+            "week": "Actions This Week",
+            "weekDesc": "Actions recorded in the last 7 days"
+        },
+        "table": {
+            "timestamp": "Timestamp",
+            "admin": "Admin",
+            "action": "Action",
+            "target": "Target",
+            "details": "Details"
+        },
+        "empty": {
+            "title": "No logs found",
+            "description": "No administrative actions match your current filters."
+        },
+        "filters": {
+            "searchLabel": "Search Logs",
+            "searchPlaceholder": "Search by admin, action, or target...",
+            "actionTypeLabel": "Action Type",
+            "allActions": "All Actions"
+        },
+        "helper": {
+            "viewTarget": "View {target}",
+            "noDetails": "No additional details"
+        },
+        "actions": {
+            "USER_SUSPENDED": "User Suspended",
+            "USER_ACTIVATED": "User Activated",
+            "USER_DELETED": "User Deleted",
+            "USER_VERIFIED": "User Verified",
+            "JOB_DELETED": "Job Deleted",
+            "JOB_FLAGGED": "Job Flagged",
+            "DISPUTE_RESOLVED": "Dispute Resolved",
+            "REFUND_PROCESSED": "Refund Processed",
+            "SETTINGS_CHANGED": "Settings Changed",
+            "TEAM_MEMBER_ADDED": "Team Member Added",
+            "TEAM_MEMBER_REMOVED": "Team Member Removed",
+            "SUBSCRIPTION_GRANTED": "Subscription Granted",
+            "COUPON_CREATED": "Coupon Created",
+            "BLACKLIST_UPDATED": "Blacklist Updated"
+        }
     }
 }
 

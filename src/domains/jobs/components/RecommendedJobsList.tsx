@@ -10,7 +10,7 @@ import { User, Job } from "@/lib/types";
 import { recommendJobsAction } from "@/app/actions/ai.actions";
 import { type RecommendJobsOutput } from "@/domains/ai/ai.types";
 import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from 'next/link';

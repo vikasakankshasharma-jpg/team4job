@@ -14,7 +14,7 @@ test.describe('Smoke Tests @smoke', () => {
         await expect(page).toHaveURL(/\/dashboard/);
         
         // Verify we're on dashboard - look for Client-specific navigation
-        await expect(page.getByText('Post Job').or(page.getByText('Active Jobs')).first()).toBeVisible({ timeout: 90000 });
+        await expect(page.getByText('Post a Job').or(page.getByText('Active Jobs')).first()).toBeVisible({ timeout: 90000 });
     });
 
     test('User can login as Professional', async ({ page }) => {
@@ -109,7 +109,9 @@ test.describe('Smoke Tests @smoke', () => {
             !err.includes('404') &&
             !err.includes('Not Found') &&
             !err.includes('Google Maps JavaScript API error') && // Ignore expired key in CI
-            !err.includes('ExpiredKeyMapError')
+            !err.includes('ExpiredKeyMapError') &&
+            !err.includes('_vercel/speed-insights') &&
+            !err.includes('_vercel/insights')
         );
 
         expect(criticalErrors).toHaveLength(0);

@@ -20,7 +20,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { useUser, useFirestore } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirestore } from "@/infrastructure/firebase/client-provider";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { Bell, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";

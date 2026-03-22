@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import CouponsManager from './coupons-manager';
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { Coupon } from "@/lib/types";
 import { collection, getDocs } from "firebase/firestore";
 import { Loader2 } from "lucide-react";

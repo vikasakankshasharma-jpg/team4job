@@ -12,7 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Settings, FileText, Sparkles } from 'lucide-react';
 import { JobTemplate, getTemplates } from '@/lib/api/drafts';
-import { useFirebase, useUser } from '@/hooks/use-user';
+import { useUser } from '@/hooks/use-user';
+import { useFirebase } from '@/infrastructure/firebase/client-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslations } from 'next-intl';
 

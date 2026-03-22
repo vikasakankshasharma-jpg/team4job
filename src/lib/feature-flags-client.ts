@@ -1,7 +1,7 @@
 
 import { doc, onSnapshot } from "firebase/firestore";
 import { useState, useEffect } from "react";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 
 export type FeatureFlagKey = 'ENABLE_PAYMENTS' | 'ENABLE_AI_GENERATION' | 'ENABLE_DISPUTES_V2';
 

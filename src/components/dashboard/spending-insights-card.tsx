@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Wallet, TrendingDown, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { calculateSpendingInsights, SpendingInsights } from "@/lib/services/spending-analytics";
 
 interface SpendingInsightsCardProps {

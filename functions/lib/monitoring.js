@@ -15,7 +15,7 @@ const admin = require("firebase-admin");
  * Logs with severity 'ERROR' if thresholds are exceeded, which can trigger GCP alerts.
  */
 exports.monitorSystemHealth = functions.pubsub.schedule("every 24 hours").onRun(async (context) => {
-    console.log("Running System Health Monitor...");
+    functions.logger.info("Running System Health Monitor...");
     const db = admin.firestore();
     const now = admin.firestore.Timestamp.now();
     const alerts = [];
@@ -55,10 +55,10 @@ exports.monitorSystemHealth = functions.pubsub.schedule("every 24 hours").onRun(
         alerts.push(msg);
     }
     if (alerts.length === 0) {
-        console.log("System Health Check Passed: No critical issues found.");
+        functions.logger.info("System Health Check Passed: No critical issues found.");
     }
     else {
-        console.log(`System Health Check Completed with ${alerts.length} alerts.`);
+        functions.logger.info(`System Health Check Completed with ${alerts.length} alerts.`);
     }
     return null;
 });

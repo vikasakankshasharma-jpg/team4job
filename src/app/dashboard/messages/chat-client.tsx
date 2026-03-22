@@ -4,7 +4,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useUser } from "@/hooks/use-user";
-import { useFirestore } from "@/lib/firebase/client-provider";
+import { useFirestore } from "@/infrastructure/firebase/client-provider";
 import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, doc, setDoc, getDoc } from "firebase/firestore";
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";

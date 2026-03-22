@@ -1,22 +1,82 @@
 /**
  * Test Credentials and Constants
+ * 
+ * 10 Users covering all real-world scenarios:
+ * - Rajesh Kumar: Client (homeowner)
+ * - Priya Sharma: Client (business owner)
+ * - Amit Patel: Professional (Silver, verified)
+ * - Suresh Reddy: Professional (Gold, veteran)
+ * - Neha Gupta: Professional (Bronze, new/unverified)
+ * - Vikram Singh: Admin
+ * - Anita Desai: Dual Role (Client + Professional)
+ * - Manoj Tiwari: Professional (Suspended)
+ * - Kavita Joshi: Support Team
+ * - Ravi Verma: Client (new, no jobs)
  */
 
 export const TEST_ACCOUNTS = {
+    // Primary test accounts (used by most E2E tests)
     client: {
-        email: 'giver_vip_v3@team4job.com',
+        email: 'rajesh.client@team4job.com',
         password: 'Test@1234',
         role: 'Client',
+        name: 'Rajesh Kumar',
     },
     professional: {
-        email: 'Professional_pro_v3@team4job.com',
+        email: 'amit.pro@team4job.com',
         password: 'Test@1234',
         role: 'Professional',
+        name: 'Amit Patel',
     },
     admin: {
-        email: 'vikasakankshasharma_v3@gmail.com',
-        password: 'Vks2bhdj@9229',
+        email: 'vikasakankshasharma@gmail.com',
+        password: 'Vikas@129229',
         role: 'Admin',
+        name: 'Vikram Singh',
+    },
+
+    // Extended accounts for comprehensive testing
+    clientBusiness: {
+        email: 'priya.client@team4job.com',
+        password: 'Test@1234',
+        role: 'Client',
+        name: 'Priya Sharma',
+    },
+    professionalGold: {
+        email: 'suresh.pro@team4job.com',
+        password: 'Test@1234',
+        role: 'Professional',
+        name: 'Suresh Reddy',
+    },
+    professionalNew: {
+        email: 'neha.pro@team4job.com',
+        password: 'Test@1234',
+        role: 'Professional',
+        name: 'Neha Gupta',
+    },
+    dualRole: {
+        email: 'anita.dual@team4job.com',
+        password: 'Test@1234',
+        role: 'Client', // Default role
+        name: 'Anita Desai',
+    },
+    suspended: {
+        email: 'manoj.suspended@team4job.com',
+        password: 'Test@1234',
+        role: 'Professional',
+        name: 'Manoj Tiwari',
+    },
+    support: {
+        email: 'kavita.support@team4job.com',
+        password: 'Test@1234',
+        role: 'Support Team',
+        name: 'Kavita Joshi',
+    },
+    clientNew: {
+        email: 'ravi.newclient@team4job.com',
+        password: 'Test@1234',
+        role: 'Client',
+        name: 'Ravi Verma',
     },
 };
 
@@ -112,4 +172,3 @@ export function generateUniqueJobTitle(): string {
     const timestamp = Date.now();
     return `${TEST_JOB_DATA.title} - ${timestamp}`;
 }
-

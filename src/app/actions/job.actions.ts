@@ -204,18 +204,28 @@ export async function getInvoiceDataAction(jobId: string, userId: string, type?:
 
 export async function listJobsForClientAction(userId: string, limit = 50, lastPostedAt?: string): Promise<{ success: boolean; data: Job[]; error?: string }> {
     try {
-        const jobs = await jobService.listJobsForClient(userId, limit, lastPostedAt ? new Date(lastPostedAt) : undefined);
+        // Add timeout to prevent SSR hangs
+        const jobs = await Promise.race([
+            jobService.listJobsForClient(userId, limit, lastPostedAt ? new Date(lastPostedAt) : undefined),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('List jobs timeout')), 10000))
+        ]);
         return { success: true, data: JSON.parse(JSON.stringify(jobs)) };
     } catch (error: any) {
+        console.error(`[JobAction] Error listing jobs: ${error.message}`);
         return { success: false, data: [], error: error.message || 'Failed to list jobs' };
     }
 }
 
 export async function listOpenJobsAction(filters?: JobFilters, limit = 50, lastPostedAt?: string): Promise<{ success: boolean; data: Job[]; error?: string }> {
     try {
-        const jobs = await jobService.listOpenJobs(filters, limit, lastPostedAt ? new Date(lastPostedAt) : undefined);
+        // Add timeout to prevent SSR hangs
+        const jobs = await Promise.race([
+            jobService.listOpenJobs(filters, limit, lastPostedAt ? new Date(lastPostedAt) : undefined),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('List open jobs timeout')), 10000))
+        ]);
         return { success: true, data: JSON.parse(JSON.stringify(jobs)) };
     } catch (error: any) {
+        console.error(`[JobAction] Error listing open jobs: ${error.message}`);
         return { success: false, data: [], error: error.message || 'Failed to list open jobs' };
     }
 }

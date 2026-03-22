@@ -1,54 +1,101 @@
-
-// ZERO COST MIGRATION: These functions are DISABLED in favor of Client-Side Vercel Proxy.
-// See src/app/api/notifications/send/route.ts and src/lib/notifications.ts
-
-// THIS FILE IS BROKEN AND UNUSED. COMMENTING OUT TO PASS BUILD.
-
-/*
-import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import * as functions from "firebase-functions/v1";
 
 const db = admin.firestore();
 
-async function sendEmail(to: string, subject: string, text: string, html: string) {
-    const apiKey = process.env.SENDGRID_API_KEY;
+/**
+ * Sends a push notification to a user.
+ * @param userId The UID of the user to notify.
+ * @param title The title of the notification.
+ * @param body The body of the notification.
+ * @param link Optional deep link for the notification.
+ */
+export async function sendPushNotification(
+  userId: string, title: string, body: string, link?: string
+) {
+  try {
+    if (!userId) {
+      return;
+    }
+
+    const userDoc = await db.collection("users").doc(userId).get();
+    const userData = userDoc.data();
+
+    if (!userData || !userData.fcmTokens || userData.fcmTokens.length === 0) {
+      return;
+    }
+
+    const payload: admin.messaging.MulticastMessage = {
+      notification: {
+        title,
+        body,
+      },
+      webpush: {
+        fcmOptions: {
+          link: link || "https://team4job.com/dashboard",
+        },
+      },
+      tokens: userData.fcmTokens,
+    };
+
+    const response = await admin.messaging().sendEachForMulticast(payload);
+    
+    // Cleanup invalid tokens
+    if (response.failureCount > 0) {
+      const tokensToRemove: string[] = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          const errorCode = resp.error?.code;
+          if (errorCode === 'messaging/invalid-registration-token' ||
+              errorCode === 'messaging/registration-token-not-registered') {
+            tokensToRemove.push(userData.fcmTokens[idx]);
+          }
+        }
+      });
+
+      if (tokensToRemove.length > 0) {
+        await db.collection("users").doc(userId).update({
+          fcmTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove)
+        });
+      }
+    }
+  } catch (error) {
+    functions.logger.error("Push Notification Error:", error);
+  }
+}
+
+/**
+ * Sends an email using Brevo SMTP.
+ */
+export async function sendBrevoEmail(to: string, subject: string, text: string, html: string) {
+    const apiKey = process.env.BREVO_API_KEY;
     if (!apiKey) {
-        console.warn("Missing SENDGRID_API_KEY. Email not sent.");
+        functions.logger.warn("BREVO_API_KEY is missing. Email skipped.");
         return;
     }
 
-    const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            personalizations: [{ to: [{ email: to }] }],
-            from: { email: "noreply@cctvjobconnect.com", name: "CCTV Job Connect" },
-            subject: subject,
-            content: [
-                { type: "text/plain", value: text },
-                { type: "text/html", value: html },
-            ],
-        }),
-    });
+    try {
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'api-key': apiKey,
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                sender: { name: 'Team4Job Alerts', email: 'noreply@team4job.com' },
+                to: [{ email: to }],
+                subject: subject,
+                textContent: text,
+                htmlContent: html
+            })
+        });
 
-    if (!response.ok) {
-        const err = await response.text();
-        console.error("SendGrid Error:", err);
+        if (!response.ok) {
+            const errorData = await response.json();
+            functions.logger.error("Brevo API Error:", errorData);
+        }
+    } catch (error) {
+        functions.logger.error("Email Sending Error:", error);
     }
 }
-
-export const onBidCreated = functions.firestore
-    .document("bids/{bidId}")
-    .onCreate(async (snap, context) => {
-        // ... implementation ...
-    });
-
-export const emailOnJobUpdated = functions.firestore
-    .document("jobs/{jobId}")
-    .onUpdate(async (change, context) => {
-        // ... implementation ...
-    });
-*/

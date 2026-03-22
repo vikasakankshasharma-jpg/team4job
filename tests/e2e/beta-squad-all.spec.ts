@@ -53,9 +53,13 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         );
 
         // Fill Job Details (Review Page)
-        await helper.form.fillInput('Job Title', data.title);
+        // Auto-resume from wizard draft happens asynchronously upon page load.
+        // We must wait for it to finish form.reset() before we type, otherwise our typing gets cleared.
+        await page.getByText(/Draft loaded/i).waitFor({ state: 'visible', timeout: 15000 }).catch(() => console.log('Draft toast not seen'));
+        await page.waitForTimeout(1000); // Buffer for React Hook Form to apply values
+        await page.getByTestId('job-title-input').first().fill(data.title);
         await helper.form.fillTextarea('Job Description', LONG_DESCRIPTION);
-        await helper.form.fillInput('Skills', "CCTV");
+        await page.getByTestId('skills-input').first().fill("CCTV");
         
         await helper.form.fillPincodeAndSelectPO(data.pincode);
         await page.fill('input[name="address.house"]', data.house);
@@ -109,10 +113,15 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.logout();
         await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
-        await page.getByTestId('proceed-payment-button').click();
-        // Bypass payment shim
-        await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
-        await page.evaluate(async () => { await (window as any).e2e_directFundJob(); });
+        
+        console.log('[Test] Waiting for proceed-payment-button...');
+        const proceedBtn = page.getByTestId('proceed-payment-button');
+        await proceedBtn.waitFor({ state: 'visible', timeout: 30000 });
+        await proceedBtn.click();
+        
+        console.log('[Test] Clicking e2e-direct-fund...');
+        await page.getByTestId('e2e-direct-fund').click();
+        await helper.form.waitForToast('Test Mode: Payment Initiated');
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');
         const startOtp = await page.getByTestId('start-otp-value').innerText();

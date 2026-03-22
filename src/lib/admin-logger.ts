@@ -1,5 +1,5 @@
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
 
 export type AdminActionType =
     | 'USER_SUSPENDED'

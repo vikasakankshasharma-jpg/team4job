@@ -2,7 +2,7 @@
 
 import { ai } from '@/ai/genkit';
 import { textEmbedding004 } from '@genkit-ai/vertexai';
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export interface AIDocument {

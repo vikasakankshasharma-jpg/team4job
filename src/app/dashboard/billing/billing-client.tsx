@@ -13,7 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, CreditCard, Gift, Loader2, Ticket } from "lucide-react";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { SubscriptionPlan, User } from "@/lib/types";
 import { collection, getDocs, query, where, doc, updateDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth } from "firebase/auth";

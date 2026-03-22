@@ -3,6 +3,7 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
+import { getStorage } from 'firebase-admin/storage';
 import { logger } from '@/infrastructure/logger';
 
 let app: App | undefined;
@@ -23,9 +24,14 @@ export function getAdminApp(): App {
         app = getApps()[0];
     }
 
-    // 0. Emulator-friendly init (no credentials required)
-    const useEmulator = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' || process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
-    if (useEmulator && (process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST)) {
+    // 0. Emulator-friendly init (priority for local E2E/Dev)
+    const useEmulator = 
+        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' || 
+        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' ||
+        process.env.FIRESTORE_EMULATOR_HOST || 
+        process.env.FIREBASE_AUTH_EMULATOR_HOST;
+
+    if (useEmulator) {
 
         const emulatorProjectId =
             process.env.GCLOUD_PROJECT ||
@@ -114,3 +120,8 @@ export const getAdminDb = () => getFirestore(getAdminApp());
  * Get the Firebase Admin Auth instance.
  */
 export const getAdminAuth = () => getAuth(getAdminApp());
+
+/**
+ * Get the Firebase Admin Storage instance.
+ */
+export const getAdminStorage = () => getStorage(getAdminApp());

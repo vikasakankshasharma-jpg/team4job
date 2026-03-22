@@ -4,13 +4,14 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
 // Explicitly set Emulator Hosts for Admin SDK
-process.env.FIREBASE_AUTH_EMULATOR_HOST = "localhost:9099";
-process.env.FIRESTORE_EMULATOR_HOST = "localhost:8080";
-process.env.GCLOUD_PROJECT = "dodo-beta";
+process.env.FIREBASE_AUTH_EMULATOR_HOST = "127.0.0.1:9099";
+process.env.FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080";
+const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "dodo-beta";
+process.env.GCLOUD_PROJECT = projectId;
 
 // Initialize Admin SDK (no params needed as env vars handle connection)
 initializeApp({
-    projectId: "dodo-beta"
+    projectId: projectId
 });
 
 const auth = getAuth();

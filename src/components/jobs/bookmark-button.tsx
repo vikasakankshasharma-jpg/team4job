@@ -3,7 +3,8 @@
 import * as React from "react";
 import { Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useUser, useFirestore } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirestore } from "@/infrastructure/firebase/client-provider";
 import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";

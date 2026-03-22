@@ -20,7 +20,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { Dispute, User } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";

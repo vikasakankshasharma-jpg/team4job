@@ -12,7 +12,7 @@
 import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'zod';
 
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { grantProPlan } from '@/ai/flows/grant-pro-plan';
 import type { User } from '@/lib/types';
 import { calculateMonthlyPerformance } from '@/lib/utils';

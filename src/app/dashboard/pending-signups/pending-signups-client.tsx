@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@/hooks/use-user";
 import { useTranslations } from "next-intl";
-import { useFirestore } from "@/lib/firebase/client-provider";
+import { useFirestore } from "@/infrastructure/firebase/client-provider";
 import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import type { PendingSignup } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

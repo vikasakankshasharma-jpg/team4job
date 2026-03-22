@@ -8,7 +8,7 @@
 
 import { ai, defineLoggedFlow } from '@/ai/genkit';
 import { z } from 'zod';
-import { getAdminDb } from '@/lib/firebase/server-init';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
 import type { User, SubscriptionPlan } from '@/lib/types';
 
 const GrantProPlanInputSchema = z.object({

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
-import { useFirebase } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { CommunicationItem } from "@/lib/services/timeline-builder";
 import { User } from "@/lib/types";
 import {

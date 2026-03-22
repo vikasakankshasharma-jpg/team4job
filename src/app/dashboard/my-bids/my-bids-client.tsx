@@ -24,7 +24,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Job, Bid, User } from "@/lib/types";
 import React, { useEffect, useCallback, useMemo } from "react";
 import { getStatusVariant, toDate, getMyBidStatus, getRefId } from "@/lib/utils";
-import { useUser, useFirebase } from "@/hooks/use-user";
+import { useUser } from "@/hooks/use-user";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   DropdownMenu,

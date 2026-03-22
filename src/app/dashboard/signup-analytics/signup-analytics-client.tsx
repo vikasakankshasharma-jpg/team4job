@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@/hooks/use-user";
-import { useFirestore } from "@/lib/firebase/client-provider";
+import { useFirestore } from "@/infrastructure/firebase/client-provider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, TrendingUp, TrendingDown, Users, Target } from "lucide-react";
 import {

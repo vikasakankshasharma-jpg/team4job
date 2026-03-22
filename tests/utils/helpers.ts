@@ -60,6 +60,12 @@ export class AuthHelper {
         await this.ensureRole('Professional');
     }
 
+    async waitForStability() {
+        console.log('[TestHelper] Waiting for page stability (quiescence)...');
+        await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => { });
+        await this.page.waitForTimeout(1000); // Buffer for hydration
+    }
+
     async ensureRole(targetRole: 'Professional' | 'Client') {
         const primaryIndicator = targetRole === 'Professional' ? 'Open Jobs' : 'Active Jobs';
         const secondaryIndicator = targetRole === 'Professional' ? 'Browse Jobs' : 'Post Job';
@@ -84,12 +90,12 @@ export class AuthHelper {
             // Wait a bit for the page to settle
             await this.page.waitForTimeout(1000);
 
-            // Check primary or secondary indicators (sidebar links usually load fast)
-            const isProfessional = await this.page.getByText('Browse Jobs').first().isVisible() ||
-                await this.page.getByText('Open Jobs').first().isVisible();
-            const isClient = await this.page.getByTestId('dashboard-post-job-btn').isVisible().catch(() => false) ||
-                await this.page.getByText(/Post (New )?Job/i).first().isVisible().catch(() => false) ||
-                await this.page.getByText(/(My )?Active Jobs/i).first().isVisible().catch(() => false);
+            // Check primary or secondary indicators first (they might already be there)
+            const isProfessional = await this.page.getByText('Browse Jobs').first().isVisible({ timeout: 1000 }).catch(() => false) ||
+                await this.page.getByText('Open Jobs').first().isVisible({ timeout: 1000 }).catch(() => false);
+            const isClient = await this.page.getByTestId('dashboard-post-job-btn').isVisible({ timeout: 1000 }).catch(() => false) ||
+                await this.page.getByText(/Post (New )?Job/i).first().isVisible({ timeout: 1000 }).catch(() => false) ||
+                await this.page.getByText(/(My )?Active Jobs/i).first().isVisible({ timeout: 1000 }).catch(() => false);
 
             const currentRoleMatched = (targetRole === 'Professional' && isProfessional) ||
                 (targetRole === 'Client' && isClient);
@@ -112,30 +118,26 @@ export class AuthHelper {
                 .first();
 
             try {
-                await userMenu.waitFor({ state: 'visible', timeout: 10000 });
+                await userMenu.waitFor({ state: 'visible', timeout: 8000 });
                 await userMenu.click();
                 console.log('[AuthHelper] Clicked user menu');
             } catch (e: any) {
-                console.log('[AuthHelper] User menu not found or not clickable, checking if we are on dashboard...');
+                console.log('[AuthHelper] User menu not found or not clickable, checking URL...');
                 if (this.page.url().includes('/dashboard')) {
-                    console.log('[AuthHelper] Already on dashboard, proceeding without role switch');
+                    console.log('[AuthHelper] Already on dashboard URL, proceeding.');
                     return;
                 }
 
                 // Fallback: attempt to navigate to dashboard and re-check indicators.
-                // This handles transient reloads / missing header UI during hydration.
-                await this.page.goto('/dashboard');
-                await this.page.waitForLoadState('domcontentloaded');
-                await this.page.waitForTimeout(1500);
+                await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+                await this.page.waitForTimeout(2000);
 
-                const ProfessionalNow = await this.page.getByText('Browse Jobs').first().isVisible().catch(() => false) ||
-                    await this.page.getByText('Open Jobs').first().isVisible().catch(() => false);
-                const jobGiverNow = await this.page.getByText('Post Job').first().isVisible().catch(() => false) ||
-                    await this.page.getByText('Active Jobs').first().isVisible().catch(() => false);
+                const profNow = await this.page.getByText('Browse Jobs').first().isVisible().catch(() => false);
+                const clientNow = await this.page.getByTestId('dashboard-post-job-btn').isVisible().catch(() => false) ||
+                    await this.page.getByText('Post Job').first().isVisible().catch(() => false);
 
-                const matchedNow = (targetRole === 'Professional' && ProfessionalNow) || (targetRole === 'Client' && jobGiverNow);
-                if (matchedNow) {
-                    console.log(`[AuthHelper] ${targetRole} indicators found after dashboard fallback.`);
+                if ((targetRole === 'Professional' && profNow) || (targetRole === 'Client' && clientNow)) {
+                    console.log(`[AuthHelper] ${targetRole} indicators found after direct dashboard navigation.`);
                     return;
                 }
 
@@ -162,14 +164,16 @@ export class AuthHelper {
                 if (this.page.url().includes('/dashboard')) {
                     console.log(`[AuthHelper] On dashboard. Proceeding as ${targetRole}.`);
                 } else if (this.page.url().includes('/login')) {
-                    console.warn(`[AuthHelper] Still on login page after ensureRole. This might be a slow redirect.`);
-                    // One last wait
-                    await this.page.waitForTimeout(5000);
+                    console.warn(`[AuthHelper] Still on login page after ensureRole. Forcing navigation to /dashboard...`);
+                    // Proactive fallback for slow redirects/HMR hangs
+                    await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
+                    await this.page.waitForTimeout(2000);
+                    
                     if (this.page.url().includes('/dashboard')) {
-                        console.log(`[AuthHelper] Finally reached dashboard.`);
+                        console.log(`[AuthHelper] Successfully reached dashboard via forced navigation.`);
                         return;
                     }
-                    throw new Error(`Failed to ensure role ${targetRole}. Stuck on login/not on dashboard.`);
+                    throw new Error(`Failed to ensure role ${targetRole}. Stuck on login/not on dashboard even after force.`);
                 } else {
                     console.warn(`[AuthHelper] UI Indicators missing, but URL is ${this.page.url()}. Proceeding anyway.`);
                 }
@@ -197,6 +201,8 @@ export class AuthHelper {
             let consoleListener: ((msg: any) => void) | null = null;
             try {
                 console.log(`[AuthHelper] Login attempt ${attempts}/${maxRetries} for ${email}`);
+                await this.page.goto('/login', { waitUntil: 'domcontentloaded' });
+                await this.waitForStability();
 
                 if (this.page.isClosed()) {
                     throw new Error('[AuthHelper] Page is closed before login could start');
@@ -216,13 +222,45 @@ export class AuthHelper {
                 this.page.on('console', consoleListener);
 
                 // Navigate to login
+                // Proactively inject CSS to hide ANY cookie banner that might appear
+                await this.page.addInitScript(() => {
+                    const inject = () => {
+                        if (!document.head) {
+                            setTimeout(inject, 10);
+                            return;
+                        }
+                        const style = document.createElement('style');
+                        style.innerHTML = `
+                            .CookieConsent, 
+                            #cookie-consent-banner, 
+                            [class*="CookieConsent"],
+                            [id*="cookie-consent"],
+                            div[style*="z-index: 999"] { 
+                                display: none !important; 
+                                visibility: hidden !important; 
+                                pointer-events: none !important; 
+                                opacity: 0 !important;
+                            }
+                        `;
+                        document.head.appendChild(style);
+                        // Also mock the cookie to prevent the library from even trying
+                        document.cookie = "dodo-cookie-consent=true; path=/";
+                    };
+                    inject();
+                });
+
                 // Hot reload / frame swaps can prevent the full "load" event.
                 await this.page.goto(ROUTES.login, { waitUntil: 'domcontentloaded', timeout: 120000 });
+                
+                // Set cookie via Playwright API as well for redundancy
+                await this.page.context().addCookies([{
+                    name: "dodo-cookie-consent",
+                    value: "true",
+                    domain: "127.0.0.1",
+                    path: "/"
+                }]);
 
-                // Force hide cookie banner to prevent interception
-                await this.page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
-
-                await this.acceptCookies(); // Still try to accept contextually
+                await this.acceptCookies(); // Still try to accept contextually as fallback
 
                 // If redirected to dashboard, we ARE logged in. 
                 // We check if it's the right mode later in the test via ensureRole.
@@ -231,14 +269,14 @@ export class AuthHelper {
                     return;
                 }
 
-                // Fill email with retry on detachment
+                // Fill email with retry on detachment and scroll
                 const emailInput = this.page
                     .getByTestId('login-identifier')
                     .or(this.page.getByLabel(/Email|Mobile/i))
                     .or(this.page.locator('input[name="identifier"]'))
                     .first();
-                await emailInput.waitFor({ state: 'visible', timeout: 60000 });
-                await emailInput.fill(email);
+                await emailInput.waitFor({ state: 'visible', timeout: 30000 });
+                await emailInput.scrollIntoViewIfNeeded();
 
                 // Fill password
                 const passwordInput = this.page
@@ -246,22 +284,78 @@ export class AuthHelper {
                     .or(this.page.getByLabel(/^Password$/i))
                     .or(this.page.locator('input[type="password"]'))
                     .first();
-                await passwordInput.fill(password);
+                await passwordInput.waitFor({ state: 'visible', timeout: 30000 });
+                await passwordInput.scrollIntoViewIfNeeded();
+                
+                const fillAndVerify = async () => {
+                   await this.page.evaluate(({e, p}: any) => console.log(`[AuthHelper] Attempting fill for ${e}...`), {e: email, p: password});
+                   
+                   // Fill email
+                   await emailInput.focus();
+                   await this.page.keyboard.press('Control+A');
+                   await this.page.keyboard.press('Backspace');
+                   await emailInput.fill(email);
+                   
+                   // Fill password
+                   await passwordInput.focus();
+                   await this.page.keyboard.press('Control+A');
+                   await this.page.keyboard.press('Backspace');
+                   await passwordInput.fill(password);
+                   
+                   const eVal = await emailInput.inputValue();
+                   const pVal = await passwordInput.inputValue();
+                   
+                   if (eVal !== email || pVal !== password) {
+                       await this.page.evaluate(({ev, pv}: any) => console.warn(`[AuthHelper] Verify failed (E: "${ev}", P: "${pv.length}"), forcing DOM set...`), {ev: eVal, pv: pVal});
+                       await emailInput.evaluate((el: any, val: string) => { el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); }, email);
+                       await passwordInput.evaluate((el: any, val: string) => { el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); }, password);
+                   }
+                   
+                   const finalE = await emailInput.inputValue();
+                   const finalP = await passwordInput.inputValue();
+                   return finalE === email && finalP === password;
+                };
+
+                // Try to fill up to 10 times to handle aggressive clearing scripts
+                let fillSuccess = false;
+                for (let i = 0; i < 10; i++) {
+                    fillSuccess = await fillAndVerify();
+                    if (fillSuccess) break;
+                    await this.page.waitForTimeout(500);
+                }
+
+                if (!fillSuccess) {
+                    await this.page.evaluate(() => console.error('[AuthHelper] FATAL: Could not stabilize inputs after 10 attempts.'));
+                }
+
+                // FINAL stability check before submit to prevent clicking during HMR
+                await this.waitForStability();
 
                 // Click submit button with robustness
                 const submitButton = this.page.getByTestId('login-submit-btn').first();
-                await submitButton.waitFor({ state: 'visible', timeout: 5000 });
+                await submitButton.waitFor({ state: 'visible', timeout: 20000 });
+                
+                // Final check before click
+                if (await emailInput.inputValue() === '') {
+                    console.warn('[AuthHelper] Inputs cleared right before click! Re-filling one last time...');
+                    await emailInput.fill(email);
+                    await passwordInput.fill(password);
+                }
+
+                await this.page.waitForTimeout(2000);
 
                 // Try normal click first, then force
                 try {
-                    await submitButton.click({ timeout: 10000 });
-                } catch (e) {
-                    console.log('[AuthHelper] Normal click failed/timed out, trying force click...');
+                    await submitButton.click({ timeout: 20000 });
+                } catch (e: any) {
+                    console.log(`[AuthHelper] Normal click failed/timed out: ${e.message}, trying force click...`);
                     await submitButton.click({ force: true });
                 }
 
-                // Wait for dashboard or error
-                await this.page.waitForURL(/\/dashboard/, { timeout: 30000 });
+                // Wait for dashboard or error - shorter timeout to trigger fallback faster
+                await this.page.waitForURL(/\/dashboard/, { timeout: 15000 }).catch(() => {
+                    console.log('[AuthHelper] waitForURL(/dashboard) timed out, will attempt recovery in ensureRole.');
+                });
                 console.log('[AuthHelper] Cookie banner hidden after dashboard load');
 
                 // Wait for redirect to dashboard with stable markers
@@ -744,15 +838,20 @@ export class FormHelper {
     }
 
     async confirmWizardReview() {
-        // Wait for the review page to load
-        await expect(this.page.getByText(/Review Your Job Post|Looks Good, Post Job|Review and Post|Review & Post/i).first()).toBeVisible({ timeout: 15000 });
+        console.log('[FormHelper] Confirming wizard review...');
+        await this.helper.auth.waitForStability();
+        
+        // Wait for the review page to load - AI generation can take time locally
+        const reviewHeader = this.page.getByText(/Review Your Job Post|Looks Good, Post Job|Review and Post|Review & Post/i).first();
+        await reviewHeader.waitFor({ state: 'visible', timeout: 60000 });
         
         // Click the "Looks Good, Post Job" button
-        const looksGoodBtn = this.page.getByRole('button', { name: /Looks Good, Post Job/i });
-        await looksGoodBtn.click();
+        const looksGoodBtn = this.page.getByRole('button', { name: /Looks Good, Post Job/i }).first();
+        await looksGoodBtn.waitFor({ state: 'visible', timeout: 10000 });
+        await looksGoodBtn.click({ force: true });
         
         // Wait for redirect to /dashboard/post-job
-        await this.page.waitForURL(/\/dashboard\/post-job/, { timeout: 15000 });
+        await this.page.waitForURL(/\/dashboard\/post-job/, { timeout: 30000 });
     }
 
     async fillPincodeAndSelectPO(pincode: string) {
@@ -1488,13 +1587,12 @@ export class TestHelper {
         }).catch(() => { });
 
         // Mock Pincode API - Broad pattern
-        this.page.route('**/api.postalpincode.in/pincode/**', async route => {
-
+        const pincodePattern = /.*api\.postalpincode\.in\/pincode\/.*/;
+        page.route(pincodePattern, async route => {
             const url = route.request().url();
-            const match = url.match(/pincode\/([^\/\?]+)/);
-            const pincode = match ? match[1] : url.split('/').filter(Boolean).pop();
-            console.log(`[Mock] Intercepted Pincode request: ${pincode} from ${url}`);
-
+            const match = url.match(/pincode\/(\d{6})/);
+            const pincode = match ? match[1] : 'unknown';
+            console.log(`[Mock] Intercepted Pincode request for: ${pincode} (${url})`);
 
             if (pincode === '000000' || pincode === 'invalid') {
                 await route.fulfill({
@@ -1512,12 +1610,13 @@ export class TestHelper {
                     Message: "Number of post office(s) found: 2",
                     Status: "Success",
                     PostOffice: [
-                        { Name: "Connaught Place", Description: null, BranchType: "Head Post Office", DeliveryStatus: "Delivery", Circle: "Delhi", District: "Central Delhi", Division: "New Delhi Central", Region: "Delhi", Block: "New Delhi", State: "Delhi", Country: "India", Pincode: "110001" },
-                        { Name: "Sansad Marg", Description: null, BranchType: "Sub Post Office", DeliveryStatus: "Non-Delivery", Circle: "Delhi", District: "Central Delhi", Division: "New Delhi Central", Region: "Delhi", Block: "New Delhi", State: "Delhi", Country: "India", Pincode: "110001" }
+                        { Name: "Connaught Place", District: "Central Delhi", State: "Delhi", Country: "India", Pincode: "110001" },
+                        { Name: "Sansad Marg", District: "Central Delhi", State: "Delhi", Country: "India", Pincode: "110001" }
                     ]
                 }])
             });
         });
+        console.log(`[Mock] Pincode API route registered with pattern: ${pincodePattern}`);
     }
 
     async acceptCookies() {

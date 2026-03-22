@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "firebase-admin/auth";
-import { getAdminDb, getAdminStorage } from "@/lib/firebase/server-init";
+import { getAdminDb, getAdminStorage } from '@/infrastructure/firebase/admin';
+import { rateLimit } from "@/lib/rate-limit";
 import { Timestamp } from "firebase-admin/firestore";
+
+const limiter = rateLimit({
+    interval: 60 * 60 * 1000, // 1 hour
+    uniqueTokenPerInterval: 1000,
+});
 
 export async function POST(req: NextRequest) {
     try {
@@ -13,6 +19,13 @@ export async function POST(req: NextRequest) {
         const token = authHeader.split("Bearer ")[1];
         const decodedToken = await getAuth().verifyIdToken(token);
         const userId = decodedToken.uid;
+
+        // Rate Limiting (Prevent multiple application submissions per hour)
+        try {
+            await limiter.check(3, userId); // Limit 3 attempts per hour per user
+        } catch (e) {
+            return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 });
+        }
 
         const formData = await req.formData();
         const db = getAdminDb();

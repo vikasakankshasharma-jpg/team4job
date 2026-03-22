@@ -3,7 +3,8 @@
 import React, { useMemo, useEffect } from "react";
 import { JobsMetricsRow } from "./JobsMetricsRow"
 import { RecommendedJobsList } from "./RecommendedJobsList"
-import { useUser, useFirebase } from "@/hooks/use-user"
+import { useUser } from "@/hooks/use-user"
+import { useFirebase } from "@/infrastructure/firebase/client-provider"
 import { useTranslations } from 'next-intl';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
