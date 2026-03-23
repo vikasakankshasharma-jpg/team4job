@@ -112,9 +112,18 @@ export function getAdminApp(): App {
         }
         return app as App;
     }
-    throw new Error(
-        'Failed to initialize Firebase Admin SDK. Missing credentials (FIREBASE_SERVICE_ACCOUNT_KEY, DO_FIREBASE_*, or FIREBASE_* vars).'
-    );
+
+    // 3. Fallback to Application Default Credentials (Google Cloud Run / Firebase App Hosting)
+    try {
+        if (!app) {
+            app = initializeApp();
+        }
+        return app as App;
+    } catch (e) {
+        throw new Error(
+            'Failed to initialize Firebase Admin SDK. Missing credentials (FIREBASE_SERVICE_ACCOUNT_KEY, DO_FIREBASE_*, or ADC).'
+        );
+    }
 }
 
 /**

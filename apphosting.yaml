@@ -28,8 +28,6 @@ env:
     value: 1:1027204295362:web:196d8eb01a5d87a9b8e95b
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
     value: G-FGSDGE9BFR
-  - variable: FIREBASE_PRIVATE_KEY
-    secret: firebase-private-key
   
   # Google Services
   - variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
