@@ -8,6 +8,16 @@ import { logger } from '@/infrastructure/logger';
 
 let app: App | undefined;
 
+const allowProductionEmulators = process.env.ALLOW_PRODUCTION_EMULATORS === 'true';
+const shouldUseAdminEmulators =
+    (
+        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
+        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' ||
+        !!process.env.FIRESTORE_EMULATOR_HOST ||
+        !!process.env.FIREBASE_AUTH_EMULATOR_HOST
+    ) &&
+    (process.env.NODE_ENV !== 'production' || allowProductionEmulators);
+
 /**
  * Initialize and return the Firebase Admin App.
  * This function is designed for server-side environments (API routes, server components).
@@ -25,13 +35,7 @@ export function getAdminApp(): App {
     }
 
     // 0. Emulator-friendly init (priority for local E2E/Dev)
-    const useEmulator = 
-        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' || 
-        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' ||
-        process.env.FIRESTORE_EMULATOR_HOST || 
-        process.env.FIREBASE_AUTH_EMULATOR_HOST;
-
-    if (useEmulator) {
+    if (shouldUseAdminEmulators) {
 
         const emulatorProjectId =
             process.env.GCLOUD_PROJECT ||
@@ -57,9 +61,7 @@ export function getAdminApp(): App {
                     ignoreUndefinedProperties: true
                 });
             } catch (e: any) {
-                if (!e.message?.includes('settings() once')) {
-                    throw e;
-                }
+                // Already initialized or setting failure
             }
         }
 
@@ -89,25 +91,29 @@ export function getAdminApp(): App {
 
     // 2. Fallback to individual environment variables (easier for Vercel/hosting dashboards)
     if (
-        process.env.DO_FIREBASE_PROJECT_ID &&
-        process.env.DO_FIREBASE_CLIENT_EMAIL &&
-        process.env.DO_FIREBASE_PRIVATE_KEY
+        (process.env.DO_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID) &&
+        (process.env.DO_FIREBASE_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL) &&
+        (process.env.DO_FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY)
     ) {
         if (!app) {
-            const privateKey = process.env.DO_FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'); // Fix escaped newlines
+            const projectId = process.env.DO_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+            const clientEmail = process.env.DO_FIREBASE_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL;
+            const rawPrivateKey = process.env.DO_FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY || '';
+            const privateKey = rawPrivateKey.replace(/\\n/g, '\n'); // Fix escaped newlines
+
             app = initializeApp({
                 credential: cert({
-                    projectId: process.env.DO_FIREBASE_PROJECT_ID,
-                    clientEmail: process.env.DO_FIREBASE_CLIENT_EMAIL,
+                    projectId,
+                    clientEmail,
                     privateKey: privateKey,
                 }),
-                projectId: process.env.DO_FIREBASE_PROJECT_ID
+                projectId
             });
         }
         return app as App;
     }
     throw new Error(
-        'Failed to initialize Firebase Admin SDK. Missing credentials (FIREBASE_SERVICE_ACCOUNT_KEY or individual vars).'
+        'Failed to initialize Firebase Admin SDK. Missing credentials (FIREBASE_SERVICE_ACCOUNT_KEY, DO_FIREBASE_*, or FIREBASE_* vars).'
     );
 }
 

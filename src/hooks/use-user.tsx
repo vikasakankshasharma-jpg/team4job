@@ -71,8 +71,7 @@ const isPublicPath = (path: string) => {
 };
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { auth } = useFirebase();
-  const db = useFirestore();
+  const { auth, db } = useFirebase();
 
   const [user, setUser] = useState<User | null>(null);
   const [role, setRoleState] = useState<Role>("Client");

@@ -5,8 +5,9 @@ import { rateLimit } from '@/lib/rate-limit';
 
 const isE2eAllowed = () => {
     const emulatorEnabled =
-        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
-        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+        (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
+        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') &&
+        (process.env.NODE_ENV !== 'production' || process.env.ALLOW_PRODUCTION_EMULATORS === 'true');
 
     if (emulatorEnabled) return true;
     if (process.env.ALLOW_E2E_SEED === 'true') return true;
