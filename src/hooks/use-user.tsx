@@ -19,8 +19,8 @@ type Role = "Client" | "Professional" | "Admin" | "Support Team";
 const normalizeRole = (role: string): Role | null => {
   const normalized = role.trim().toLowerCase();
 
-  if (normalized === "client") return "Client";
-  if (normalized === "professional") return "Professional";
+  if (normalized === "client" || normalized === "job giver") return "Client";
+  if (normalized === "professional" || normalized === "installer") return "Professional";
   if (normalized === "admin") return "Admin";
   if (normalized === "support team") return "Support Team";
 
