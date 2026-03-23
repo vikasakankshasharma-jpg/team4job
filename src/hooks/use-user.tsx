@@ -170,7 +170,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     errorEmitter.on('permission-error', handlePermissionError);
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      console.log('[useUser] onAuthStateChanged:', firebaseUser?.email || 'null');
+      console.log('[useUser] onAuthStateChanged:', firebaseUser?.email || 'null', 'UID:', firebaseUser?.uid);
       if (isLoggingOut.current) return;
 
       if (firebaseUser) {
