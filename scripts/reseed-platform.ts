@@ -10,9 +10,18 @@ if (result.error) {
 // We need to import these dynamically after dotenv config
 async function reseedPlatform() {
     console.log("Starting Platform Reseed...");
+    
+    // FORCE PRODUCTION OVERRIDE: Ignore .env.local emulators
+    process.env.NEXT_PUBLIC_USE_EMULATOR = 'false';
+    process.env.FIRESTORE_EMULATOR_HOST = '';
+    process.env.FIREBASE_AUTH_EMULATOR_HOST = '';
+    
+    // Explicit Project ID for ADC
+    process.env.GOOGLE_CLOUD_PROJECT = 'team4job-live';
+    process.env.GCLOUD_PROJECT = 'team4job-live';
 
     try {
-        const { getAdminDb, getAdminAuth } = await import('../src/lib/firebase/server-init');
+        const { getAdminDb, getAdminAuth } = await import('../src/infrastructure/firebase/admin');
         const { Timestamp } = await import('firebase-admin/firestore');
         const admin = await import('firebase-admin');
 

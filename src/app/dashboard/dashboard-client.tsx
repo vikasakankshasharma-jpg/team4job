@@ -87,7 +87,7 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
       })
       .finally(() => {
         window.clearTimeout(fetchTimeout);
-        if (!cancelled) setFetching(false);
+        setFetching(false);
       });
     
     return () => {
