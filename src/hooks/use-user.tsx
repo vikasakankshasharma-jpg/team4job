@@ -249,25 +249,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const q = query(collection(db, "users"), where("email", "==", firebaseUser.email));
               const querySnapshot = await getDocs(q);
               
-              if (!querySnapshot.empty) {
+              if (!querySnapshot.empty && querySnapshot.docs[0].id !== firebaseUser.uid) {
                 const legacyDoc = querySnapshot.docs[0];
-                // Only migrate if the legacy doc IS NOT the current UID (prevent loops)
-                if (legacyDoc.id !== firebaseUser.uid) {
-                  const legacyData = legacyDoc.data();
-                  console.log('[useUser] Found legacy profile (ID:', legacyDoc.id, '), migrating to UID:', firebaseUser.uid);
-                  
-                  const newData = {
-                    ...legacyData,
-                    id: firebaseUser.uid,
-                    updatedAt: new Date().toISOString()
-                  };
-                  
-                  await setDoc(firestoreDoc(db, "users", firebaseUser.uid), newData);
-                  updateUserState(newData as User);
-                } else {
-                  console.log('[useUser] Legacy ID matches current UID but doc was reported missing? (Strange)');
-                }
-                setLoading(false);
+                const legacyData = legacyDoc.data();
+                console.log('[useUser] Found legacy profile (ID:', legacyDoc.id, '), migrating to UID:', firebaseUser.uid);
+                
+                const newData = {
+                  ...legacyData,
+                  id: firebaseUser.uid,
+                  updatedAt: new Date().toISOString()
+                } as any as User;
+                
+                await setDoc(firestoreDoc(db, "users", firebaseUser.uid), newData);
+                updateUserState(newData);
+              } else {
+                console.log('[useUser] Legacy ID matches current UID but doc was reported missing? (Strange)');
+              }
+              setLoading(false);
               } else {
                 console.log('[useUser] No profile found by either UID or Email.');
                 setLoading(false);
