@@ -284,6 +284,10 @@
         "manageProfileTitle": "Manage Your Profile",
         "manageProfileDesc": "Keep your skills and reputation up-to-date to attract more Clients.",
         "goToProfile": "Go to Profile",
+        "verifyProfessional": "Become a Verified Professional",
+        "verifyProfessionalDesc": "Complete Aadhar verification to build trust and get more jobs.",
+        "verifyNow": "Verify Now",
+        "manageProfile": "Manage Your Profile",
         "recommender": {
             "neuralMatch": "Neural Match",
             "aiPoweredDesc": "Get AI-powered job recommendations tailored to your skills and location.",
@@ -2395,6 +2399,40 @@
             "SUBSCRIPTION_GRANTED": "Subscription Granted",
             "COUPON_CREATED": "Coupon Created",
             "BLACKLIST_UPDATED": "Blacklist Updated"
+        }
+    },
+    "Professional": {
+        "dashboard": {
+            "guide": {
+                "title": "Professional Dashboard Guide",
+                "welcome": "Welcome to your dashboard! This is your central hub for managing your work on the platform.",
+                "openJobsLabel": "Open Jobs:",
+                "openJobsDesc": "This shows the total number of jobs currently available for bidding. Click it to find your next opportunity.",
+                "myBidsLabel": "My Bids:",
+                "myBidsDesc": "Tracks all jobs you've bid on and their current status (Bidded, Awarded, etc.).",
+                "jobsWonLabel": "Jobs Won:",
+                "jobsWonDesc": "Displays the number of jobs you've won that are currently active or in progress.",
+                "projectedEarningsLabel": "Projected Earnings:",
+                "projectedEarningsDesc": "Total value of your currently 'Funded' jobs that are in progress.",
+                "verificationLabel": "Verification:",
+                "verificationDesc": "Complete your Aadhar verification to become a trusted Professional and increase your chances of winning jobs.",
+                "findProjectLabel": "Find Your Next Project:",
+                "findProjectDesc": "Quick link to go directly to the job browsing page.",
+                "bottomText": "Use the sidebar navigation to access other sections like your profile, where you can track your reputation and skills."
+            },
+            "openJobs": "Open Jobs",
+            "openJobsDesc": "Current jobs available for bidding",
+            "myBids": "My Bids",
+            "myBidsDesc": "Bids you have placed",
+            "jobsWon": "Jobs Won",
+            "jobsWonDesc": "Active awarded jobs",
+            "totalEarnings": "Total Earnings",
+            "totalEarningsDesc": "Lifetime payouts processed",
+            "projectedEarnings": "Projected Earnings",
+            "projectedEarningsDesc": "Funds currently held in escrow",
+            "findNextProject": "Find Your Next Project",
+            "findNextProjectDesc": "Browse professional service jobs and place your bid.",
+            "browseJobs": "Browse Jobs"
         }
     }
 }
