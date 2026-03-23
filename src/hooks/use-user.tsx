@@ -263,13 +263,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 await setDoc(firestoreDoc(db, "users", firebaseUser.uid), newData);
                 updateUserState(newData);
               } else {
-                console.log('[useUser] Legacy ID matches current UID but doc was reported missing? (Strange)');
+                console.log('[useUser] No legacy profile found by email or already migrated.');
               }
               setLoading(false);
-              } else {
-                console.log('[useUser] No profile found by either UID or Email.');
-                setLoading(false);
-              }
             }
           }, (error) => {
             console.error("Profile listener error:", error);
