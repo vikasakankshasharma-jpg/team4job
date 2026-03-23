@@ -61,7 +61,7 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
   // Client-side fallback: fetch stats when server-side data is unavailable
   useEffect(() => {
     // Admin and Support roles handle their own data fetching
-    if (data || !user || fetching || role === "Admin" || role === "Support Team") return;
+    if (data || !user || fetching || fetchError || role === "Admin" || role === "Support Team") return;
     
     let cancelled = false;
     const fetchTimeout = window.setTimeout(() => {
@@ -94,7 +94,7 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
       cancelled = true;
       window.clearTimeout(fetchTimeout);
     };
-  }, [data, user, fetching, role]);
+  }, [data, user, fetching, fetchError, role]);
 
   if (loading || !user) {
     return (
