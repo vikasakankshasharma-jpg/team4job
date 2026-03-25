@@ -1,6 +1,3 @@
-
-"use client";
-
 import {
   Card,
   CardContent,
@@ -10,18 +7,17 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import type { Job, User } from "@/lib/types";
-import { MapPin, IndianRupee, Clock, Users, User as UserIcon, Star, Gift, RefreshCw, Hash } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
+import type { Job } from "@/lib/types";
+import { MapPin, IndianRupee, Clock, Users, User as UserIcon, Hash, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { getStatusVariant, toDate, getMyBidStatus } from "@/lib/utils";
 import React from "react";
-import { AnimatedAvatar } from "./ui/animated-avatar";
-import { CardDescription } from "./ui/card";
 import { useUser } from "@/hooks/use-user";
 import { BookmarkButton } from "@/components/jobs/bookmark-button";
 import { DummyDataBadge } from "@/components/jobs/dummy-data-badge";
+import { motion } from "framer-motion";
 
 type JobCardProps = {
   job: Job;
@@ -41,7 +37,6 @@ export function JobCard({ job }: JobCardProps) {
     }
   }, [job.deadline, job.postedAt]);
 
-  // Check if job is in Professional's pincode area
   const isNearby = React.useMemo(() => {
     if (!user?.pincodes || !job.location) return false;
     const locationLower = job.location.toLowerCase();
@@ -50,35 +45,21 @@ export function JobCard({ job }: JobCardProps) {
     return residentialMatch || officeMatch;
   }, [user, job.location]);
 
-  // Check if job is unbid (no bids yet)
   const isUnbid = job.status === 'Unbid' || (job.status === 'Open for Bidding' && ((job.bids as any)?.length || 0) === 0);
-
   const hasBidded = user && job.bidderIds?.includes(user.id);
   const myBidStatus = hasBidded && user ? getMyBidStatus(job, user) : null;
-
   const displayStatus = myBidStatus ? myBidStatus.text : job.status;
   const statusVariant = myBidStatus ? myBidStatus.variant : getStatusVariant(job.status);
 
   const getButtonText = () => {
     if (myBidStatus) {
-      if (myBidStatus.text === 'Awarded to You' || myBidStatus.text === 'In Progress' || myBidStatus.text === 'Pending Funding') return "View Job & Respond";
-      if (myBidStatus.text === 'Completed & Won') return 'View Completed Job';
+      if (myBidStatus.text === 'Awarded to You' || myBidStatus.text === 'In Progress' || myBidStatus.text === 'Pending Funding') return "View & Respond";
+      if (myBidStatus.text === 'Completed & Won') return 'View Completed';
     }
     switch (job.status) {
-      case 'Open for Bidding':
-        return hasBidded ? 'View & Modify Bid' : 'View Job & Bid';
-      case 'Bidding Closed':
-        return 'View Bids';
-      case 'Awarded':
-      case 'In Progress':
-      case 'Pending Funding':
-        return 'View Job Details';
-      case 'Completed':
-        return 'View Archived Job';
-      case 'Unbid':
-        return 'View Job';
-      default:
-        return 'View Job';
+      case 'Open for Bidding': return hasBidded ? 'Modify Bid' : 'View & Bid';
+      case 'Bidding Closed': return 'View Bids';
+      default: return 'View Details';
     }
   }
 
@@ -86,95 +67,100 @@ export function JobCard({ job }: JobCardProps) {
   const buttonVariant = statusVariant === 'success' ? 'success' : statusVariant === 'warning' ? 'warning' : statusVariant === 'info' ? 'info' : 'default';
 
   return (
-    <Card
-      className="flex flex-col relative transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border-border/50 hover:border-primary/20 bg-card group overflow-hidden"
-      data-job-id={job.id}
-      data-testid="job-card"
+    <motion.div
+        whileHover={{ y: -8, scale: 1.02 }}
+        className="h-full"
     >
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant={statusVariant} className="capitalize font-semibold tracking-wide text-[10px] uppercase shadow-sm">
-                {displayStatus}
-              </Badge>
-              <DummyDataBadge isDummyData={job.isDummyData} />
-              {job.travelTip && job.travelTip > 0 && (
-                <Badge variant="warning" className="gap-1 font-semibold tracking-wide text-[10px] uppercase shadow-sm"><Gift className="h-3 w-3" /> Tip Included</Badge>
-              )}
-              {isNearby && (
-                <Badge variant="default" className="gap-1 font-semibold tracking-wide text-[10px] uppercase shadow-sm bg-success hover:bg-success/90">
-                  <MapPin className="h-3 w-3" /> Near You
-                </Badge>
-              )}
-              {isUnbid && (
-                <Badge variant="secondary" className="gap-1 font-semibold tracking-wide text-[10px] uppercase shadow-sm border border-amber-500/30 text-amber-700 bg-amber-500/10 dark:text-amber-400">
-                  <RefreshCw className="h-3 w-3" /> Second Chance
-                </Badge>
-              )}
+        <Card
+        className="flex flex-col h-full relative border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] group overflow-hidden transition-all duration-500 hover:bg-card/60"
+        data-job-id={job.id}
+        data-testid="job-card"
+        >
+        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/50 via-primary to-primary/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        
+        <CardHeader className="p-8 pb-4">
+            <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 space-y-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant={statusVariant} className="px-3 py-1 rounded-full font-black text-[9px] uppercase tracking-wider shadow-lg">
+                        {displayStatus}
+                    </Badge>
+                    <DummyDataBadge isDummyData={job.isDummyData} />
+                    {isNearby && (
+                        <Badge className="px-3 py-1 rounded-full bg-success/20 text-success border-none font-black text-[9px] uppercase tracking-wider">
+                            <MapPin className="h-3 w-3 mr-1" /> Near You
+                        </Badge>
+                    )}
+                </div>
+                <div className="space-y-1">
+                    <CardTitle className="text-2xl font-black tracking-tight leading-tight line-clamp-2 bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent group-hover:from-primary group-hover:to-primary/60 transition-all duration-500">
+                        {job.title}
+                    </CardTitle>
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                        <Hash className="h-3 w-3" /> {job.id.slice(-8)}
+                    </div>
+                </div>
             </div>
-            <div>
-              <CardTitle className="text-xl font-bold leading-tight line-clamp-2 group-hover:text-primary transition-colors">{job.title}</CardTitle>
-              <CardDescription className="font-mono text-xs pt-1.5 opacity-60 flex items-center gap-1.5">
-                  <Hash className="h-3 w-3" /> {job.id}
-              </CardDescription>
+            <BookmarkButton jobId={job.id} className="opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
             </div>
-          </div>
-          <BookmarkButton jobId={job.id} className="-mt-1 opacity-50 group-hover:opacity-100 transition-opacity" />
-        </div>
-        <div className="flex items-center gap-3 pt-5 border-t border-border/40 mt-2">
-          <Avatar className="h-10 w-10 bg-muted/50 border-2 border-background shadow-sm flex items-center justify-center">
-            <UserIcon className="h-5 w-5 text-muted-foreground/70" />
-          </Avatar>
-          <div className="flex flex-col">
-            <p className="font-bold text-sm text-foreground">Client</p>
-            <p className="text-xs font-medium text-muted-foreground/80 flex items-center gap-1">
-              <Clock className="h-3 w-3" /> Posted {postedAt}
-            </p>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-grow pb-4">
-        <div className="space-y-4 text-sm bg-muted/10 p-4 rounded-xl border border-muted-foreground/10">
-          <div className="flex items-center gap-3 text-foreground/90 font-medium">
-            <div className="p-1.5 bg-background rounded-md shadow-sm border border-border/50">
-                <MapPin className="h-4 w-4 text-primary/70" />
+        </CardHeader>
+
+        <CardContent className="px-8 flex-grow">
+            <div className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-foreground/[0.03] p-4 rounded-3xl border border-foreground/[0.05] space-y-1">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Bids</p>
+                        <div className="flex items-center gap-2 font-black text-lg">
+                            <Users className="h-4 w-4 text-primary" />
+                            {job.bids.length}
+                        </div>
+                    </div>
+                    <div className="bg-foreground/[0.03] p-4 rounded-3xl border border-foreground/[0.05] space-y-1">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Budget</p>
+                        <div className="flex items-center gap-2 font-black text-lg text-primary">
+                            <IndianRupee className="h-4 w-4" />
+                            {job.priceEstimate ? (job.priceEstimate.min >= 1000 ? `${(job.priceEstimate.min/1000).toFixed(0)}k` : job.priceEstimate.min) : 'N/A'}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-primary/5 p-4 rounded-[1.5rem] border border-primary/10 transition-colors group-hover:bg-primary/10">
+                    <div className="p-2 bg-background rounded-xl shadow-inner">
+                        <MapPin className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Location</p>
+                        <p className="font-bold text-sm line-clamp-1 italic">
+                        {job.status === 'In Progress' || job.status === 'Completed' ? job.location : job.location.split(',')[0]}
+                        </p>
+                    </div>
+                </div>
             </div>
-            <span className={job.status !== 'In Progress' && job.status !== 'Completed' ? "blur-[3px] hover:blur-none transition-all duration-300 cursor-crosshair select-none" : ""}>
-              {job.status === 'In Progress' || job.status === 'Completed' ? job.location : job.location.split(',')[0] + " (Area)"}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 text-foreground/90 font-medium">
-            <div className="p-1.5 bg-background rounded-md shadow-sm border border-border/50">
-                <Users className="h-4 w-4 text-primary/70" />
+        </CardContent>
+
+        <CardFooter className="p-8 pt-4 flex flex-col gap-6">
+            <div className="flex items-center gap-3 w-full border-t border-foreground/5 pt-6">
+                <Avatar className="h-10 w-10 border-2 border-background shadow-xl">
+                    <div className="h-full w-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+                        <UserIcon className="h-5 w-5 text-primary" />
+                    </div>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Posted {postedAt}</p>
+                    <p className="text-xs font-bold text-amber-500 flex items-center gap-1.5 uppercase tracking-tighter">
+                        <Clock className="h-3.5 w-3.5" /> {timeRemaining}
+                    </p>
+                </div>
             </div>
-            <span>{job.bids.length} Bids</span>
-          </div>
-          {job.travelTip && job.travelTip > 0 && (
-            <div className="flex items-center gap-3 text-primary font-bold">
-              <div className="p-1.5 bg-primary/10 rounded-md shadow-sm border border-primary/20">
-                  <IndianRupee className="h-4 w-4" />
-              </div>
-              <span>₹{job.travelTip.toLocaleString()} Travel Tip</span>
-            </div>
-          )}
-          {job.status === 'Open for Bidding' && (
-            <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400 font-bold">
-              <div className="p-1.5 bg-amber-500/10 rounded-md shadow-sm border border-amber-500/20">
-                  <Clock className="h-4 w-4" />
-              </div>
-              <span>Ends {timeRemaining}</span>
-            </div>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter className="pt-2 pb-6">
-        <Button asChild className="w-full font-bold shadow-sm transition-transform active:scale-[0.98]" variant={job.status === 'Completed' || job.status === 'Unbid' ? "outline" : buttonVariant}>
-          <Link href={`/dashboard/jobs/${job.id}`}>{buttonText}</Link>
-        </Button>
-      </CardFooter>
-    </Card>
+
+            <Button asChild className="w-full h-14 rounded-[1.5rem] font-black text-base shadow-2xl transition-all duration-500 hover:shadow-primary/20 group/btn" variant={buttonVariant}>
+                <Link href={`/dashboard/jobs/${job.id}`} className="flex items-center justify-center gap-2">
+                    {buttonText} <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-1" />
+                </Link>
+            </Button>
+        </CardFooter>
+        </Card>
+    </motion.div>
   );
 }
 

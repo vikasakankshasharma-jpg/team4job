@@ -312,7 +312,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                               pathname.startsWith('/profile');
 
       if (isProtectedPath && !user && !hasAuthUser) {
-        console.log('[useUser] Redirecting to login (Protected path, no session)');
+        console.log('[useUser] Redirecting to login (Protected path, no session)', { pathname, hasAuthUser, user: !!user });
         return '/login';
       }
 
@@ -334,12 +334,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isSupportPage = supportPaths.some(p => pathname.startsWith(p));
 
       if (role === 'Client' && isProfessionalOnlyPage) {
+        console.log('[useUser] Redirecting Client from Professional page');
         return '/dashboard';
       } else if (role === 'Professional' && isClientPage) {
+        console.log('[useUser] Redirecting Professional from Client page');
         return '/dashboard';
       } else if (role === 'Support Team' && !isSupportPage && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/profile')) {
+        console.log('[useUser] Redirecting Support Team member');
         return '/dashboard/disputes';
       } else if (!user?.roles.includes("Admin") && isAdminPage) {
+        console.log('[useUser] Unauthorized admin page access');
         return '/dashboard';
       }
 
@@ -429,15 +433,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // RENDER LOGIC:
   // 1. If loading, show loader
   // 2. If we determined a redirect is necessary, show loader
-  // 1. If loading, show loader
-  // 2. If we determined a redirect is necessary, show loader
   const isPublic = isPublicPath(pathname);
   const shouldShowLoader = (loading && !isPublic) || (redirectPath !== null);
 
   if (shouldShowLoader) {
     return (
-      <div className="flex items-center justify-center min-h-screen" data-testid="initial-loader">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex flex-col items-center justify-center min-h-screen" data-testid="initial-loader">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        {redirectPath && (
+          <div className="text-sm text-muted-foreground animate-pulse">
+            Redirecting to {redirectPath}...
+          </div>
+        )}
       </div>
     );
   }

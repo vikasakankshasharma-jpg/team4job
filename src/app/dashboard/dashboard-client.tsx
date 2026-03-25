@@ -2,7 +2,7 @@
 
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Role } from "@/lib/types";
 import dynamic from "next/dynamic";
 import { getDashboardStatsAction } from "@/app/actions/dashboard.actions";
@@ -57,22 +57,25 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
   const [data, setData] = useState<DashboardData | undefined>(initialData);
   const [fetchError, setFetchError] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const fetchingRef = useRef(false);
 
   // Client-side fallback: fetch stats when server-side data is unavailable
   useEffect(() => {
     // Admin and Support roles handle their own data fetching
-    if (data || !user || fetching || fetchError || role === "Admin" || role === "Support Team") return;
-    
+    if (data || !user || fetchingRef.current || fetchError || role === "Admin" || role === "Support Team") return;
+
     let cancelled = false;
+    fetchingRef.current = true;
+    setFetching(true);
+
     const fetchTimeout = window.setTimeout(() => {
       if (!cancelled) {
         setFetchError(true);
         setFetching(false);
+        fetchingRef.current = false;
       }
     }, 8000);
 
-    setFetching(true);
-    
     getDashboardStatsAction(user.id)
       .then((result) => {
         if (cancelled) return;
@@ -87,14 +90,18 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
       })
       .finally(() => {
         window.clearTimeout(fetchTimeout);
-        setFetching(false);
+        if (!cancelled) {
+          setFetching(false);
+          fetchingRef.current = false;
+        }
       });
-    
+
     return () => {
       cancelled = true;
       window.clearTimeout(fetchTimeout);
+      fetchingRef.current = false;
     };
-  }, [data, user, fetching, fetchError, role]);
+  }, [data, user, fetchError, role]);
 
   if (loading || !user) {
     return (

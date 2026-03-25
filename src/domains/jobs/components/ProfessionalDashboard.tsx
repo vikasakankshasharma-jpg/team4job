@@ -22,6 +22,7 @@ import { useHelp } from "@/hooks/use-help";
 import { toDate } from "@/lib/utils";
 import { format, subMonths } from "date-fns";
 import dynamic from "next/dynamic";
+import { motion } from "framer-motion";
 import { StatCard } from "@/components/dashboard/cards/stat-card";
 
 import { RecentActivity } from "@/components/dashboard/recent-activity";
@@ -117,26 +118,33 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
     }
 
     return (
-        <>
-            <div className="flex items-center mb-8">
-                <h1 className="text-lg font-semibold md:text-2xl">{tDash('welcomeUser', { name: user?.name || 'User' })}</h1>
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-10 pb-16 px-4"
+        >
+            <div className="flex items-center mb-4">
+                <h1 className="text-2xl font-black tracking-tight md:text-4xl bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">
+                    {tDash('welcomeUser', { name: user?.name || 'User' })}
+                </h1>
             </div>
+
             {user?.roles.includes('Professional') && !isVerified && (
-                <Card className="mb-8 border-warning/50 bg-warning/5 overflow-hidden relative">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-warning" />
-                    <CardHeader className="flex-row items-center gap-4 space-y-0">
-                        <div className="p-3 rounded-xl bg-warning/10">
-                            <ShieldCheck className="h-6 w-6 text-warning" />
+                <Card className="mb-10 border-none bg-warning/10 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden relative group">
+                    <div className="absolute top-0 left-0 w-2 h-full bg-warning opacity-50 group-hover:opacity-100 transition-opacity" />
+                    <CardHeader className="flex-row items-center gap-6 space-y-0 p-8">
+                        <div className="p-4 rounded-2xl bg-warning/20 shadow-inner">
+                            <ShieldCheck className="h-8 w-8 text-warning" />
                         </div>
                         <div>
-                            <CardTitle className="text-lg font-bold">{tDash('verifyProfessional')}</CardTitle>
-                            <CardDescription className="text-muted-foreground">{tDash('verifyProfessionalDesc')}</CardDescription>
+                            <CardTitle className="text-xl font-black tracking-tight">{tDash('verifyProfessional')}</CardTitle>
+                            <CardDescription className="text-muted-foreground font-medium mt-1">{tDash('verifyProfessionalDesc')}</CardDescription>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <Button asChild variant="warning" size="sm" className="font-semibold shadow-sm">
+                    <CardContent className="px-8 pb-8">
+                        <Button asChild variant="warning" className="h-12 px-8 rounded-2xl font-bold shadow-lg shadow-warning/20">
                             <Link href="/dashboard/verify-professional">
-                                {tDash('verifyNow')} <ArrowRight className="ml-2 h-4 w-4" />
+                                {tDash('verifyNow')} <ArrowRight className="ml-2 h-5 w-5" />
                             </Link>
                         </Button>
                     </CardContent>
@@ -176,23 +184,23 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
             <div className="mt-8 grid gap-4 md:grid-cols-3">
                 <ProfessionalEarningsChart data={earningsData} />
 
-                <div className="flex flex-col gap-4">
-                    <Card className="flex flex-col justify-center items-center text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/10 border-0 shadow-sm shadow-green-500/10 hover:shadow-md transition-shadow flex-1 group">
+                <div className="flex flex-col gap-6">
+                    <Card className="flex flex-col justify-center items-center text-center p-8 border-none bg-green-500/10 backdrop-blur-xl shadow-2xl rounded-[2.5rem] flex-1 group transition-all duration-500 hover:scale-[1.02]">
                         <div className="p-4 rounded-full bg-green-200/50 dark:bg-green-900/50 mb-4 group-hover:scale-110 transition-transform">
-                            <IndianRupee className="h-8 w-8 text-green-700 dark:text-green-400" />
+                            <IndianRupee className="h-10 w-10 text-green-700 dark:text-green-400" />
                         </div>
-                        <p className="text-sm font-semibold tracking-tight text-green-600 dark:text-green-400">{t('totalEarnings')}</p>
-                        <h3 className="text-4xl font-extrabold mt-2 text-green-800 dark:text-green-300">₹{totalEarnings.toLocaleString()}</h3>
-                        <p className="text-xs text-muted-foreground mt-2">{t('totalEarningsDesc')}</p>
+                        <p className="text-sm font-bold tracking-widest text-green-600 dark:text-green-400 uppercase">{t('totalEarnings')}</p>
+                        <h3 className="text-5xl font-black mt-2 text-green-800 dark:text-green-300">₹{totalEarnings.toLocaleString()}</h3>
+                        <p className="text-xs text-muted-foreground mt-3 font-medium">{t('totalEarningsDesc')}</p>
                     </Card>
 
-                    <Card className="flex flex-col justify-center items-center text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/10 border-0 shadow-sm shadow-blue-500/10 hover:shadow-md transition-shadow flex-1 group">
+                    <Card className="flex flex-col justify-center items-center text-center p-8 border-none bg-blue-500/10 backdrop-blur-xl shadow-2xl rounded-[2.5rem] flex-1 group transition-all duration-500 hover:scale-[1.02]">
                         <div className="p-4 rounded-full bg-blue-200/50 dark:bg-blue-900/50 mb-4 group-hover:scale-110 transition-transform">
-                            <Clock className="h-8 w-8 text-blue-700 dark:text-blue-400" />
+                            <Clock className="h-10 w-10 text-blue-700 dark:text-blue-400" />
                         </div>
-                        <p className="text-sm font-semibold tracking-tight text-blue-600 dark:text-blue-400">{t('projectedEarnings')}</p>
-                        <h3 className="text-4xl font-extrabold mt-2 text-blue-800 dark:text-blue-300">₹{pendingPayments.toLocaleString()}</h3>
-                        <p className="text-xs text-muted-foreground mt-2">{t('projectedEarningsDesc')}</p>
+                        <p className="text-sm font-bold tracking-widest text-blue-600 dark:text-blue-400 uppercase">{t('projectedEarnings')}</p>
+                        <h3 className="text-5xl font-black mt-2 text-blue-800 dark:text-blue-300">₹{pendingPayments.toLocaleString()}</h3>
+                        <p className="text-xs text-muted-foreground mt-3 font-medium">{t('projectedEarningsDesc')}</p>
                     </Card>
                 </div>
             </div>
@@ -203,18 +211,18 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
             </div>
 
             {/* Bottom action cards — single flat grid, never nested */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card data-tour="find-project-card" className="border-0 shadow-md shadow-primary/5 hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                        <CardTitle className="text-lg font-bold tracking-tight">{t('findNextProject')}</CardTitle>
-                        <CardDescription>
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                <Card data-tour="find-project-card" className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden group transition-all duration-500 hover:scale-[1.02]">
+                    <CardHeader className="p-8">
+                        <CardTitle className="text-2xl font-black tracking-tight">{t('findNextProject')}</CardTitle>
+                        <CardDescription className="text-base mt-2">
                             {t('findNextProjectDesc')}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <Button asChild>
+                    <CardContent className="px-8 pb-8">
+                        <Button asChild className="h-12 px-8 rounded-2xl font-bold shadow-lg shadow-primary/20">
                             <Link href="/dashboard/jobs">
-                                {t('browseJobs')} <ArrowRight className="ml-2 h-4 w-4" />
+                                {t('browseJobs')} <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                             </Link>
                         </Button>
                     </CardContent>
@@ -222,22 +230,22 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
 
                 <RecentActivity />
 
-                <Card data-tour="manage-profile-card" className="border-0 shadow-md shadow-primary/5 hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                        <CardTitle className="text-lg font-bold tracking-tight">{tDash('manageProfile')}</CardTitle>
-                        <CardDescription>
+                <Card data-tour="manage-profile-card" className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden group transition-all duration-500 hover:scale-[1.02]">
+                    <CardHeader className="p-8">
+                        <CardTitle className="text-2xl font-black tracking-tight">{tDash('manageProfile')}</CardTitle>
+                        <CardDescription className="text-base mt-2">
                             {tDash('manageProfileDesc')}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <Button asChild variant="secondary">
+                    <CardContent className="px-8 pb-8">
+                        <Button asChild variant="secondary" className="h-12 px-8 rounded-2xl font-bold border-2">
                             <Link href="/dashboard/profile">
-                                {tDash('goToProfile')} <ArrowRight className="ml-2 h-4 w-4" />
+                                {tDash('goToProfile')} <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                             </Link>
                         </Button>
                     </CardContent>
                 </Card>
             </div>
-        </>
+        </motion.div>
     );
 }

@@ -96,11 +96,11 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
+            value: 'camera=(self), microphone=(), geolocation=()',
           },
           {
             key: 'Content-Security-Policy',
-            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://sdk.cashfree.com https://va.vercel-scripts.com https://*.googleapis.com https://*.googletagmanager.com https://www.google.com/recaptcha https://www.gstatic.com/recaptcha; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' blob: data: https://*.googleapis.com https://*.gstatic.com https://firebasestorage.googleapis.com 127.0.0.1:* localhost:*; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.postalpincode.in https://*.googleapis.com https://*.firebaseio.com https://*.cashfree.com https://vitals.vercel-insights.com https://*.google-analytics.com https://*.analytics.google.com 127.0.0.1:* localhost:*; frame-src 'self' https://*.cashfree.com https://www.google.com/recaptcha https://recaptcha.google.com/recaptcha; ${process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' ? '' : 'upgrade-insecure-requests;'}`.trim(),
+            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://sdk.cashfree.com https://va.vercel-scripts.com https://*.googleapis.com https://*.googletagmanager.com https://www.google.com/recaptcha https://www.gstatic.com/recaptcha https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' blob: data: https://*.googleapis.com https://*.gstatic.com https://firebasestorage.googleapis.com 127.0.0.1:* localhost:* https://maps.gstatic.com https://maps.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' wss://*.firebaseio.com https://api.postalpincode.in https://*.googleapis.com https://identitytoolkit.googleapis.com https://*.firebaseio.com https://*.cashfree.com https://vitals.vercel-insights.com https://*.google-analytics.com https://*.analytics.google.com 127.0.0.1:* localhost:*; frame-src 'self' https://*.cashfree.com https://www.google.com/recaptcha https://recaptcha.google.com/recaptcha https://*.firebaseapp.com; ${process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_USE_EMULATOR !== 'true' ? 'upgrade-insecure-requests;' : ''}`.trim(),
           },
         ],
       },

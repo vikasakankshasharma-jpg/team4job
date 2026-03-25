@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { toDate } from "@/lib/utils";
 import { useTranslations } from 'next-intl';
+import { motion, AnimatePresence } from "framer-motion";
 
 type NavItem = {
     href: string;
@@ -112,21 +113,26 @@ export function SidebarNav() {
 
     return (
         <TooltipProvider>
-            <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
+            <nav className="flex flex-col items-center gap-6 px-3 sm:py-8">
                 <Link
                     href="/dashboard"
-                    className="group flex flex-col items-center justify-center gap-0.5"
+                    className="group flex flex-col items-center justify-center gap-1 mb-4"
                 >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base">
-                        <Logo className="h-5 w-5 transition-all group-hover:scale-110" />
-                    </div>
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Beta</span>
+                    <motion.div 
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/30 text-lg font-semibold text-primary-foreground md:h-10 md:w-10"
+                    >
+                        <Logo className="h-6 w-6" />
+                    </motion.div>
+                    <span className="text-[10px] font-black text-primary/70 uppercase tracking-[0.2em]">Beta</span>
                     <span className="sr-only">Team4Job</span>
                 </Link>
 
                 {navItems.map((item) => {
                     const linkPath = item.premium && !isSubscribed ? "/dashboard/billing" : item.href;
                     const label = tNav(item.labelKey as any);
+                    const isActive = (pathname.startsWith(item.href) && item.href !== '/dashboard') || (pathname === '/dashboard' && item.href === '/dashboard');
 
                     return (
                         <Tooltip key={item.href}>
@@ -134,53 +140,71 @@ export function SidebarNav() {
                                 <Link
                                     href={linkPath}
                                     className={cn(
-                                        "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8 relative",
-                                        pathname.startsWith(item.href) && item.href !== '/dashboard' && "bg-accent text-accent-foreground",
-                                        pathname === '/dashboard' && item.href === '/dashboard' && "bg-accent text-accent-foreground"
+                                        "flex h-12 w-12 items-center justify-center rounded-2xl text-muted-foreground transition-all duration-300 hover:text-primary hover:bg-primary/5 md:h-10 md:w-10 relative group/nav",
+                                        isActive && "bg-primary/10 text-primary shadow-inner"
                                     )}
                                     data-tour={item.tourId}
                                     data-testid={`nav-link-${item.labelKey}`}
                                 >
-                                    <item.icon className="h-5 w-5" />
+                                    <motion.div
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                    >
+                                        <item.icon className={cn("h-6 w-6 transition-transform", isActive && "scale-110")} />
+                                    </motion.div>
+                                    
+                                    {isActive && (
+                                        <motion.div 
+                                            layoutId="activeNav"
+                                            className="absolute -left-1 w-1 h-6 bg-primary rounded-full"
+                                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                        />
+                                    )}
+
                                     {item.premium && !isSubscribed && (
-                                        <Zap className="absolute -bottom-1 -right-1 h-4 w-4 fill-amber-400 text-amber-500" />
+                                        <Zap className="absolute -top-1 -right-1 h-4 w-4 fill-amber-400 text-amber-500 shadow-sm" />
                                     )}
                                     <span className="sr-only">{label}</span>
                                 </Link>
                             </TooltipTrigger>
-                            <TooltipContent side="right">{label}{item.premium && !isSubscribed && " (Upgrade)"}</TooltipContent>
+                            <TooltipContent side="right" className="font-bold border-none bg-foreground text-background rounded-xl px-4 py-2">{label}{item.premium && !isSubscribed && " (Upgrade)"}</TooltipContent>
                         </Tooltip>
                     );
                 })}
             </nav>
-            <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
+            <nav className="mt-auto flex flex-col items-center gap-6 px-3 sm:py-8">
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Link
                             href="/dashboard/profile"
-                            className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                                pathname.startsWith('/dashboard/profile') && "bg-accent text-accent-foreground"
+                            className={cn("flex h-12 w-12 items-center justify-center rounded-2xl text-muted-foreground transition-all duration-300 hover:text-primary hover:bg-primary/5 md:h-10 md:w-10 relative group/nav",
+                                pathname.startsWith('/dashboard/profile') && "bg-primary/10 text-primary shadow-inner"
                             )}
                         >
-                            <UserIcon className="h-5 w-5" />
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                                <UserIcon className={cn("h-6 w-6", pathname.startsWith('/dashboard/profile') && "scale-110")} />
+                            </motion.div>
                             <span className="sr-only">{tNav('profile')}</span>
                         </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right">{tNav('profile')}</TooltipContent>
+                    <TooltipContent side="right" className="font-bold border-none bg-foreground text-background rounded-xl px-4 py-2">{tNav('profile')}</TooltipContent>
                 </Tooltip>
+                
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Link
                             href="/dashboard/settings"
-                            className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                                pathname.startsWith('/dashboard/settings') && 'bg-accent text-accent-foreground'
+                            className={cn("flex h-12 w-12 items-center justify-center rounded-2xl text-muted-foreground transition-all duration-300 hover:text-primary hover:bg-primary/5 md:h-10 md:w-10 relative group/nav",
+                                pathname.startsWith('/dashboard/settings') && 'bg-primary/10 text-primary shadow-inner'
                             )}
                         >
-                            <Settings className="h-5 w-5" />
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                                <Settings className={cn("h-6 w-6", pathname.startsWith('/dashboard/settings') && "scale-110")} />
+                            </motion.div>
                             <span className="sr-only">{tNav('settings')}</span>
                         </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right">{tNav('settings')}</TooltipContent>
+                    <TooltipContent side="right" className="font-bold border-none bg-foreground text-background rounded-xl px-4 py-2">{tNav('settings')}</TooltipContent>
                 </Tooltip>
 
                 <SupportDialog />

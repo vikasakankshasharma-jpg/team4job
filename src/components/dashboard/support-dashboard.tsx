@@ -42,28 +42,32 @@ export function SupportTeamDashboard() {
             if (!user || !db) return;
             setLoading(true);
 
-            const disputesRef = collection(db, "disputes");
+            try {
+                const disputesRef = collection(db, "disputes");
 
-            const openQuery = query(disputesRef, where('status', '==', DISPUTE_STATUS.OPEN));
-            const reviewQuery = query(disputesRef, where('status', '==', DISPUTE_STATUS.UNDER_REVIEW));
+                const openQuery = query(disputesRef, where('status', '==', DISPUTE_STATUS.OPEN));
+                const reviewQuery = query(disputesRef, where('status', '==', DISPUTE_STATUS.UNDER_REVIEW));
 
-            const [openSnapshot, reviewSnapshot] = await Promise.all([
-                getDocs(openQuery),
-                getDocs(reviewQuery),
-            ]);
+                const [openSnapshot, reviewSnapshot] = await Promise.all([
+                    getDocs(openQuery),
+                    getDocs(reviewQuery),
+                ]);
 
-            const involvedDisputesQuery = query(disputesRef, where('handledBy', '==', user.id));
-            const involvedSnapshot = await getDocs(involvedDisputesQuery);
-            const handledDisputes = involvedSnapshot.docs.map(d => d.data() as Dispute);
+                const involvedDisputesQuery = query(disputesRef, where('handledBy', '==', user.id));
+                const involvedSnapshot = await getDocs(involvedDisputesQuery);
+                const handledDisputes = involvedSnapshot.docs.map(d => d.data() as Dispute);
 
-            setDisputes(handledDisputes);
+                setDisputes(handledDisputes);
 
-            setStats({
-                openDisputes: openSnapshot.size,
-                underReviewDisputes: reviewSnapshot.size,
-            });
-
-            setLoading(false);
+                setStats({
+                    openDisputes: openSnapshot.size,
+                    underReviewDisputes: reviewSnapshot.size,
+                });
+            } catch (error) {
+                console.error("[SupportTeamDashboard] Failed to fetch disputes:", error);
+            } finally {
+                setLoading(false);
+            }
         }
         fetchData();
     }, [user, db]);

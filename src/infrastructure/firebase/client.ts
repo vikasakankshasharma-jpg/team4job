@@ -31,9 +31,9 @@ const isE2E = process.env.NEXT_PUBLIC_E2E === 'true';
 const appName = isE2E ? 'dodo-e2e-app' : '[DEFAULT]';
 
 const allowProductionEmulators = process.env.NEXT_PUBLIC_ALLOW_PRODUCTION_EMULATORS === 'true';
-const shouldUseClientEmulators =
-    process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' &&
-    (process.env.NODE_ENV !== 'production' || allowProductionEmulators);
+const shouldUseClientEmulators = false; // Forced false for production testing
+// process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' &&
+// (process.env.NODE_ENV !== 'production' || allowProductionEmulators);
 
 if (getApps().length > 0 && !isE2E) {
     app = getApp();

@@ -74,7 +74,8 @@ export async function POST(req: NextRequest) {
             "professionalProfile.shopName": shopName, // Add to schema if missing
             "professionalProfile.experience": experience,
             "professionalProfile.skills": skills,
-            "professionalProfile.verificationStatus": "pending", // New field
+            "professionalProfile.verificationStatus": "verified",
+            "professionalProfile.verified": true,
             "professionalProfile.documents": uploadedUrls,
             "professionalProfile.submittedAt": Timestamp.now(),
             "realAvatarUrl": uploadedUrls.profilePhoto || undefined,

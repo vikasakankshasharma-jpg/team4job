@@ -20,6 +20,7 @@ import { useHelp } from "@/hooks/use-help";
 import { toDate } from "@/lib/utils";
 import { format, subMonths } from "date-fns";
 import dynamic from "next/dynamic";
+import { motion } from "framer-motion";
 import { StatCard } from "@/components/dashboard/cards/stat-card";
 import { ActionRequiredDashboard } from "@/components/notifications/action-required-dashboard";
 import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
@@ -122,16 +123,22 @@ export function ClientDashboard({ stats, transactions, loading = false, quickMet
     }
 
     return (
-        <>
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-10 pb-16 px-4"
+        >
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-6">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{tDash('welcomeUser', { name: user?.name || 'User' })}</h1>
-                    <p className="text-muted-foreground">{t('dashboardDesc')}</p>
+                    <h1 className="text-3xl font-black tracking-tight md:text-5xl bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent italic">
+                        {tDash('welcomeUser', { name: user?.name || 'User' })}
+                    </h1>
+                    <p className="text-muted-foreground font-medium mt-2 text-lg">{t('dashboardDesc')}</p>
                 </div>
-                <div className="flex gap-2">
-                     <Button asChild size="sm">
+                <div className="flex gap-4">
+                     <Button asChild size="lg" className="rounded-2xl font-bold shadow-xl shadow-primary/20 h-14 px-8">
                         <Link href="/wizard">
-                            <PlusCircle className="mr-2 h-4 w-4" /> {t('postNewJob')}
+                            <PlusCircle className="mr-2 h-6 w-6" /> {t('postNewJob')}
                         </Link>
                     </Button>
                 </div>
@@ -144,17 +151,17 @@ export function ClientDashboard({ stats, transactions, loading = false, quickMet
             {user && <DashboardMetrics userId={user.id} user={user} metrics={quickMetrics} />}
 
             {!hasDashboardActivity && (
-                <Card className="mb-6 border-dashed">
-                    <CardHeader>
-                        <CardTitle>Welcome to your client dashboard</CardTitle>
-                        <CardDescription>
+                <Card className="mb-10 border-none bg-card/20 backdrop-blur-xl shadow-2xl rounded-[3rem] overflow-hidden group">
+                    <CardHeader className="p-10">
+                        <CardTitle className="text-3xl font-black tracking-tight">Welcome to your elite dashboard</CardTitle>
+                        <CardDescription className="text-lg font-medium mt-3">
                             You don&apos;t have any job activity yet. Post your first job to start seeing dashboard metrics, charts, and recent activity.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <Button asChild size="sm">
+                    <CardContent className="px-10 pb-10">
+                        <Button asChild size="lg" className="rounded-2xl font-black h-14 px-10 shadow-2xl">
                             <Link href="/wizard">
-                                <PlusCircle className="mr-2 h-4 w-4" /> {t('postNewJob')}
+                                <PlusCircle className="mr-3 h-6 w-6" /> {t('postNewJob')}
                             </Link>
                         </Button>
                     </CardContent>
@@ -216,18 +223,18 @@ export function ClientDashboard({ stats, transactions, loading = false, quickMet
                 </div>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card data-tour="need-Professional-card" className="col-span-1 border-0 shadow-md shadow-primary/5 hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                        <CardTitle className="text-lg font-bold tracking-tight">{t('needProfessional')}</CardTitle>
-                        <CardDescription>
+            <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                <Card data-tour="need-Professional-card" className="col-span-1 border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden group transition-all duration-500 hover:scale-[1.02]">
+                    <CardHeader className="p-8">
+                        <CardTitle className="text-2xl font-black tracking-tight">{t('needProfessional')}</CardTitle>
+                        <CardDescription className="text-base mt-2">
                             {t('needProfessionalDesc')}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <Button asChild>
+                    <CardContent className="px-8 pb-8">
+                        <Button asChild className="h-12 px-8 rounded-2xl font-bold shadow-lg shadow-primary/20">
                             <Link href="/wizard">
-                                <PlusCircle className="mr-2 h-4 w-4" /> {t('postNewJob')}
+                                <PlusCircle className="mr-2 h-5 w-5 transition-transform group-hover:rotate-90" /> {t('postNewJob')}
                             </Link>
                         </Button>
                     </CardContent>
@@ -235,23 +242,23 @@ export function ClientDashboard({ stats, transactions, loading = false, quickMet
 
                 <RecentActivity />
 
-                <Card data-tour="manage-jobs-card" className="col-span-1 border-0 shadow-md shadow-primary/5 hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                        <CardTitle className="text-lg font-bold tracking-tight">{t('manageJobs')}</CardTitle>
-                        <CardDescription>
+                <Card data-tour="manage-jobs-card" className="col-span-1 border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden group transition-all duration-500 hover:scale-[1.02]">
+                    <CardHeader className="p-8">
+                        <CardTitle className="text-2xl font-black tracking-tight">{t('manageJobs')}</CardTitle>
+                        <CardDescription className="text-base mt-2">
                             {t('manageJobsDesc')}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <Button asChild variant="secondary">
+                    <CardContent className="px-8 pb-8">
+                        <Button asChild variant="secondary" className="h-12 px-8 rounded-2xl font-bold border-2">
                             <Link href="/dashboard/posted-jobs">
-                                {t('goToMyJobs')} <ArrowRight className="ml-2 h-4 w-4" />
+                                {t('goToMyJobs')} <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                             </Link>
                         </Button>
                     </CardContent>
                 </Card>
             </div>
-        </>
+        </motion.div>
     );
 }
 

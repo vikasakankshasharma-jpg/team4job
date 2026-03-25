@@ -51,6 +51,7 @@ import { listOpenJobsAction } from "@/app/actions/job.actions";
 import dynamic from "next/dynamic";
 import { useTranslations } from 'next-intl';
 import { toDate } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 const SaveSearchDialog = dynamic(
   () => import("@/components/jobs/save-search-dialog").then((mod) => mod.SaveSearchDialog),
@@ -357,15 +358,28 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
   }
 
   return (
-    <div className="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
+    <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="space-y-10 pb-20 px-4 sm:px-6 lg:px-8"
+    >
+      <div className="flex flex-col gap-2 mb-4">
+          <h1 className="text-3xl font-black tracking-tight md:text-5xl bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent italic">
+              {tJob('availableJobs')}
+          </h1>
+          <p className="text-muted-foreground font-medium text-lg max-w-2xl">
+              {tJob('availableJobsDesc')}
+          </p>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-10 items-start">
 
         {/* DESKTOP SIDEBAR */}
-        <aside className="hidden lg:block w-72 flex-shrink-0 sticky top-24">
-          <Card className="border-0 shadow-xl shadow-primary/5 bg-card overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-accent/50" />
-            <CardHeader className="flex flex-row items-center justify-between pb-4 pt-6">
-              <CardTitle className="text-lg font-bold tracking-tight">{tCommon('filters')}</CardTitle>
+        <aside className="hidden lg:block w-80 flex-shrink-0 sticky top-24">
+          <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden group">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/30 to-primary/60" />
+            <CardHeader className="flex flex-row items-center justify-between pb-6 pt-8 px-8">
+              <CardTitle className="text-xl font-black tracking-tight uppercase">{tCommon('filters')}</CardTitle>
               <SaveSearchDialog
                 currentFilters={{
                   query: searchQuery,
@@ -375,7 +389,7 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                 }}
               />
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-8 pb-8">
               <JobFilters
                 budget={budget}
                 setBudget={setBudget}
@@ -392,25 +406,25 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
         <div className="flex-1 w-full min-w-0">
           <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-8">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <TabsList className="w-full sm:w-auto h-auto p-1.5 bg-muted/40 rounded-xl">
-                <TabsTrigger value="nearby" className="flex-1 sm:flex-none gap-2 min-h-[44px] rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-semibold">
+              <TabsList className="w-full sm:w-auto h-auto p-2 bg-foreground/5 backdrop-blur-md rounded-2xl border border-foreground/5">
+                <TabsTrigger value="nearby" className="flex-1 sm:flex-none gap-2 h-11 px-6 rounded-xl data-[state=active]:shadow-xl data-[state=active]:bg-background font-black text-xs uppercase tracking-widest transition-all">
                   <MapPin className="h-4 w-4" />
                   {tJob('nearYou')}
                   {filteredRecommendedJobs.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20">
+                    <Badge variant="secondary" className="ml-2 rounded-full bg-primary/20 text-primary border-none font-black text-[10px]">
                       {filteredRecommendedJobs.length}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="saved" className="flex-1 sm:flex-none gap-2 min-h-[44px] rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-semibold">
+                <TabsTrigger value="saved" className="flex-1 sm:flex-none gap-2 h-11 px-6 rounded-xl data-[state=active]:shadow-xl data-[state=active]:bg-background font-black text-xs uppercase tracking-widest transition-all">
                   {tJob('saved')}
                   {user?.bookmarks && user.bookmarks.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20">
+                    <Badge variant="secondary" className="ml-2 rounded-full bg-primary/20 text-primary border-none font-black text-[10px]">
                       {user.bookmarks.filter(id => jobs.find(j => j.id === id)).length}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="all" className="flex-1 sm:flex-none min-h-[44px] rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-semibold">{tJob('browseAll')}</TabsTrigger>
+                <TabsTrigger value="all" className="flex-1 sm:flex-none h-11 px-6 rounded-xl data-[state=active]:shadow-xl data-[state=active]:bg-background font-black text-xs uppercase tracking-widest transition-all">{tJob('browseAll')}</TabsTrigger>
               </TabsList>
 
               <div className="ml-auto flex items-center gap-2 lg:hidden">
@@ -479,14 +493,23 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                     <JobCardSkeletonGrid count={6} />
                   ) : (
                     <>
-                      <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                      <motion.div 
+                        initial="hidden"
+                        animate="visible"
+                        variants={{
+                            visible: { transition: { staggerChildren: 0.1 } }
+                        }}
+                        className="grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+                      >
                         {filteredJobs.map(job => (
-                          <JobCard key={job.id} job={job} />
+                          <motion.div key={job.id} variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
+                            <JobCard job={job} />
+                          </motion.div>
                         ))}
-                      </div>
+                      </motion.div>
                       {filteredJobs.length === 0 && (
-                        <div className="text-center py-10">
-                          <p className="text-muted-foreground overflow-wrap-anywhere px-4">
+                        <div className="text-center py-20 bg-foreground/[0.02] rounded-[3rem] border border-dashed border-foreground/10">
+                          <p className="text-muted-foreground font-bold italic">
                             {tJob('noJobsFound')}
                           </p>
                         </div>
@@ -613,6 +636,6 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
           </Tabs>
         </div>
       </div>
-    </div >
+    </motion.div>
   );
 }

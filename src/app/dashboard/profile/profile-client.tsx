@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2, Banknote, Gift, Copy, AlertTriangle } from "lucide-react";
+import { Gem, Medal, Star, ShieldCheck, Briefcase, ChevronsUpDown, TrendingUp, CalendarDays, ArrowRight, PlusCircle, MapPin, Building, Pencil, Check, Loader2, Banknote, Gift, Copy, AlertTriangle, User as UserIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     Collapsible,
     CollapsibleContent,
@@ -452,7 +453,7 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
     }
 
     return (
-        <Card className="border-0 shadow-md shadow-primary/5">
+        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
             <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-xl font-bold tracking-tight"><Banknote className="h-5 w-5 text-primary" /> {t('payoutSettings')}</CardTitle>
                 <CardDescription>{t('payoutSettingsDesc')}</CardDescription>
@@ -540,7 +541,7 @@ function ReferralCard({ user }: { user: User }) {
     };
 
     return (
-        <Card className="bg-gradient-to-r from-indigo-50/50 to-purple-50/50 border-indigo-100/50 shadow-md shadow-indigo-900/5">
+        <Card className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-indigo-200/20 shadow-2xl rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
             <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-indigo-900 text-xl font-bold tracking-tight">
                     <Gift className="h-5 w-5 text-indigo-600" />
@@ -616,7 +617,7 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
     }
 
     return (
-        <Card className="border-red-100/50 bg-red-50/30 shadow-md shadow-red-900/5">
+        <Card className="border-red-200/20 bg-red-500/5 shadow-2xl rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
             <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-red-900 text-xl font-bold tracking-tight">
                     <ShieldCheck className="h-5 w-5 text-red-600" />
@@ -731,7 +732,7 @@ function DeleteAccountCard({ user }: { user: User }) {
     };
 
     return (
-        <Card className="border-red-200/60 bg-red-50/50 dark:bg-red-950/20 dark:border-red-900/50 shadow-sm mt-8">
+        <Card className="border-red-200/20 bg-red-500/5 shadow-2xl rounded-[2.5rem] overflow-hidden backdrop-blur-xl mt-8">
             <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400 text-xl font-bold tracking-tight">
                     <AlertTriangle className="h-5 w-5" />
@@ -911,9 +912,14 @@ export default function ProfileClient() {
     const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
 
     return (
-        <div className="grid gap-8 max-w-full overflow-x-hidden px-4">
-            <Card className="border-0 shadow-xl shadow-primary/5 overflow-hidden">
-                <div className="h-1.5 w-full bg-gradient-to-r from-primary to-accent" />
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="grid gap-8 max-w-full overflow-x-hidden px-4 mb-12"
+        >
+            <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                <div className="h-2 w-full bg-gradient-to-r from-primary via-primary/50 to-accent" />
                 <CardHeader>
                     <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                         <Avatar className="h-28 w-28 border-4 border-background shadow-md">
@@ -969,10 +975,10 @@ export default function ProfileClient() {
                     </div>
                 </CardHeader>
             </Card>
-
+            
             {role === "Professional" && professionalProfile && (
                 <div className="grid gap-8">
-                    <Card className="border-0 shadow-lg shadow-primary/5">
+                    <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-2xl font-bold tracking-tight">{t('ProfessionalReputation')}</CardTitle>
                             <CardDescription className="text-base">{t('ProfessionalReputationDesc')}</CardDescription>
@@ -1105,7 +1111,7 @@ export default function ProfileClient() {
                     </Card>
 
                     <div className="grid md:grid-cols-2 gap-8">
-                        <Card className="border-0 shadow-md shadow-primary/5">
+                        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-xl font-bold tracking-tight">{t('mySkills')}</CardTitle>
                                 <CardDescription>{t('mySkillsDesc')}</CardDescription>
@@ -1156,6 +1162,6 @@ export default function ProfileClient() {
             )}
 
             <DeleteAccountCard user={user} />
-        </div>
+        </motion.div>
     );
 }

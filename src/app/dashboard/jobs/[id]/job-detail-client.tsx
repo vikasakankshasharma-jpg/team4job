@@ -149,6 +149,7 @@ import { ReleasePaymentDialog } from "@/components/job/release-payment-dialog";
 import { DisputeDialog } from "@/components/job/dispute-dialog";
 import { JobTimeline } from "@/components/job/job-timeline";
 import { useTranslations } from 'next-intl';
+import { motion, AnimatePresence } from "framer-motion";
 
 
 declare const cashfree: any;
@@ -826,20 +827,42 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
         }
     };
 
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0 }
+    };
+
     return (
-        <div className="max-w-full overflow-x-hidden">
-            <div className="container py-4 sm:py-6 space-y-4 sm:space-y-6 px-4 sm:px-6">
+        <motion.div 
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="max-w-full overflow-x-hidden pb-20"
+        >
+            <div className="container py-8 sm:py-12 space-y-8 sm:space-y-12 px-4 sm:px-8">
                 {/* Reschedule Banner */}
                 {job.dateChangeProposal && (
-                    <div className={`border p-4 rounded-md flex flex-col md:flex-row items-center justify-between gap-4 ${job.dateChangeProposal.status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
+                    <motion.div variants={itemVariants} className={`border-none p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden backdrop-blur-xl ${job.dateChangeProposal.status === 'rejected' ? 'bg-destructive/10' : 'bg-primary/10'
                         }`}>
-                        <div className={`flex items-center gap-2 ${job.dateChangeProposal.status === 'rejected' ? 'text-red-800' : 'text-blue-800'}`}>
-                            {job.dateChangeProposal.status === 'rejected' ? <XCircle className="h-5 w-5" /> : <Calendar className="h-5 w-5" />}
+                        <div className={`flex items-center gap-4 ${job.dateChangeProposal.status === 'rejected' ? 'text-destructive' : 'text-primary'}`}>
+                            <div className="bg-background/50 p-3 rounded-2xl">
+                                {job.dateChangeProposal.status === 'rejected' ? <XCircle className="h-6 w-6" /> : <Calendar className="h-6 w-6" />}
+                            </div>
                             <div>
-                                <p className="font-semibold">
+                                <p className="font-black text-lg tracking-tight decoration-skip-ink">
                                     {job.dateChangeProposal.status === 'rejected' ? t('rescheduleRejected') : t('rescheduleRequest')}
                                 </p>
-                                <p className="text-sm">
+                                <p className="text-sm font-medium opacity-70 italic tracking-tight">
                                     {job.dateChangeProposal.status === 'rejected' ? (
                                         <span>
                                             {t('otherPartyRejected', { date: job.jobStartDate ? new Date((job.jobStartDate as any).toDate ? (job.jobStartDate as any).toDate() : job.jobStartDate).toLocaleDateString() : 'Original Date' })}
@@ -861,424 +884,467 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                             <>
                                 {((job.dateChangeProposal.proposedBy === 'Client' && !isClient) ||
                                     (job.dateChangeProposal.proposedBy === 'Professional' && isClient)) ? (
-                                    <div className="flex gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => handleReschedule('reject')} disabled={isLoading}>{tCommon('decline')}</Button>
-                                        <Button size="sm" onClick={() => handleReschedule('accept')} disabled={isLoading}>{t('acceptNewDate')}</Button>
+                                    <div className="flex gap-3">
+                                        <Button variant="outline" className="h-11 px-6 rounded-2xl font-black text-xs uppercase tracking-widest" onClick={() => handleReschedule('reject')} disabled={isLoading}>{tCommon('decline')}</Button>
+                                        <Button className="h-11 px-6 rounded-2xl font-black text-xs uppercase tracking-widest" onClick={() => handleReschedule('accept')} disabled={isLoading}>{t('acceptNewDate')}</Button>
                                     </div>
                                 ) : (
-                                    <div className="text-xs text-blue-600 italic">{t('waitingResponse')}</div>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 italic">{t('waitingResponse')}</div>
                                 )}
                             </>
                         )}
 
                         {/* Rejected Actions (Dismiss) */}
                         {job.dateChangeProposal.status === 'rejected' && (
-                            <div className="flex gap-2">
-                                {/* If Client was rejected, show Cancel Hint? */}
+                            <div className="flex gap-3">
                                 {isClient && (
-                                    <Button size="sm" variant="destructive" onClick={() => setIsCancelDialogOpen(true)}>
+                                    <Button variant="destructive" className="h-11 px-6 rounded-2xl font-black text-xs uppercase tracking-widest" onClick={() => setIsCancelDialogOpen(true)}>
                                         {tCommon('cancel')}
                                     </Button>
                                 )}
-                                <Button size="sm" variant="outline" onClick={() => handleReschedule('dismiss')} disabled={isLoading}>
+                                <Button variant="outline" className="h-11 px-6 rounded-2xl font-black text-xs uppercase tracking-widest" onClick={() => handleReschedule('dismiss')} disabled={isLoading}>
                                     {t('dismiss')}
                                 </Button>
                             </div>
                         )}
-                    </div>
+                    </motion.div>
                 )}
 
-                {/* Debug Logs */}
-
-
-
-
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight overflow-wrap-anywhere" data-testid="job-title">{job.title}</h1>
-                <div className="flex flex-col gap-4 mt-2">
-                    <div className="flex items-center gap-2">
-                        <Badge variant={getStatusVariant(job.status)} className="w-fit px-3.5 py-1.5 text-xs font-bold tracking-wider uppercase shadow-sm" data-testid="job-status-badge" data-status={job.status}>
-                            {job.status.replace(/_/g, ' ').toUpperCase()}
-                        </Badge>
-                        {job.status === 'funded' && (
-                            <Badge className="bg-green-600 text-white flex items-center gap-1.5 px-3 py-1 shadow-sm animate-in fade-in zoom-in duration-300">
-                                <ShieldCheck className="h-4 w-4" />
-                                <span className="font-bold tracking-tight uppercase text-xs">Platform Guaranteed</span>
+                <div className="space-y-6">
+                    <motion.h1 
+                        variants={itemVariants}
+                        className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter overflow-wrap-anywhere bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent italic" 
+                        data-testid="job-title"
+                    >
+                        {job.title}
+                    </motion.h1>
+                    
+                    <motion.div variants={itemVariants} className="flex flex-col gap-6">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Badge variant={getStatusVariant(job.status)} className="px-5 py-2 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl border-none" data-testid="job-status-badge" data-status={job.status}>
+                                {job.status.replace(/_/g, ' ').toUpperCase()}
                             </Badge>
-                        )}
-                    </div>
-                    <Card className="border-0 shadow-lg shadow-primary/5 overflow-hidden">
-                        <div className="h-1 w-full bg-gradient-to-r from-muted to-muted" />
-                        <CardContent className="pt-6 pb-4">
-                            <JobTimeline status={job.status} userRole={isClient ? 'Client' : 'Professional'} />
-                        </CardContent>
-                    </Card>
+                            {job.status === 'funded' && (
+                                <Badge className="bg-success text-white flex items-center gap-2 px-5 py-2 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl animate-in fade-in zoom-in duration-500">
+                                    <ShieldCheck className="h-4 w-4" />
+                                    PLATFORM GUARANTEED
+                                </Badge>
+                            )}
+                        </div>
+                        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                            <div className="h-1 w-full bg-gradient-to-r from-primary/30 to-accent/30" />
+                            <CardContent className="p-8">
+                                <JobTimeline status={job.status} userRole={isClient ? 'Client' : 'Professional'} />
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
-                    <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-2 lg:order-1">
-                        <Card className="border-0 shadow-md shadow-primary/5">
-                            <CardHeader className="pb-4"><CardTitle className="text-xl font-bold tracking-tight">{t('description')}</CardTitle></CardHeader>
-                            <CardContent>
-                                <p className="whitespace-pre-line mb-4 overflow-wrap-anywhere">{job.description}</p>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-12 items-start">
+                    <div className="lg:col-span-2 space-y-8 sm:space-y-12 order-2 lg:order-1">
+                        <motion.div variants={itemVariants}>
+                            <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                                <CardHeader className="p-8 pb-4">
+                                    <CardTitle className="text-2xl font-black tracking-tighter italic uppercase opacity-80">{t('description')}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-8 pt-0">
+                                    <p className="whitespace-pre-line mb-8 text-lg leading-relaxed opacity-90 font-medium">{job.description}</p>
 
-                                {/* Attachments Grid */}
-                                {job.attachments && job.attachments.length > 0 && (
-                                    <div className="space-y-2">
-                                        <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                            <Paperclip className="h-4 w-4" />
-                                            {t('attachments')} ({job.attachments.length})
-                                        </h4>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                                            {job.attachments.map((file: any, idx: number) => (
-                                                <div key={idx} className="relative group aspect-square rounded-md overflow-hidden border bg-muted">
-                                                    {file.fileType.startsWith('image/') ? (
-                                                        <div
-                                                            className="relative w-full h-full cursor-pointer transition-transform hover:scale-105"
-                                                            onClick={() => window.open(file.fileUrl, '_blank')}
-                                                        >
+                                    {/* Attachments Grid */}
+                                    {job.attachments && job.attachments.length > 0 && (
+                                        <div className="space-y-4">
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                                <Paperclip className="h-4 w-4" />
+                                                {t('attachments')} ({job.attachments.length})
+                                            </h4>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                                {job.attachments.map((file: any, idx: number) => (
+                                                    <motion.div 
+                                                        whileHover={{ scale: 1.05 }}
+                                                        key={idx} 
+                                                        className="relative group aspect-square rounded-3xl overflow-hidden border-none bg-background/50 cursor-pointer shadow-lg"
+                                                        onClick={() => window.open(file.fileUrl, '_blank')}
+                                                    >
+                                                        {file.fileType.startsWith('image/') ? (
                                                             <Image
                                                                 src={file.fileUrl}
                                                                 alt={file.fileName}
                                                                 fill
-                                                                className="object-cover"
+                                                                className="object-cover transition-transform group-hover:scale-110"
                                                                 sizes="(max-width: 768px) 50vw, 25vw"
                                                             />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+                                                                <FileIcon className="h-10 w-10 mb-2 opacity-20" />
+                                                                <span className="truncate w-full text-[10px] font-black uppercase tracking-widest opacity-40">{file.fileName}</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                                                            <Plus className="h-8 w-8 text-white" />
                                                         </div>
-                                                    ) : (
-                                                        <div className="flex flex-col items-center justify-center h-full p-2 text-center text-xs text-muted-foreground">
-                                                            <FileIcon className="h-8 w-8 mb-1" />
-                                                            <span className="truncate w-full">{file.fileName}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                    </motion.div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </motion.div>
 
                         {/* Bids Section */}
-                        <Card id="bids-section" className="border-0 shadow-md shadow-primary/5">
-                            <CardHeader className="pb-4"><CardTitle className="text-xl font-bold tracking-tight">{tJob('bidsTab')} ({bids.length})</CardTitle></CardHeader>
-                            <CardContent>
-                                {isClient && marketAnalysis && bids.length === 0 && (
-                                    <div className="mb-6 p-4 bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl shadow-sm relative overflow-hidden group">
-                                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
-                                            <TrendingUp className="h-20 w-20 text-indigo-900" />
+                        <motion.div variants={itemVariants} id="bids-section">
+                            <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                                <CardHeader className="p-8 pb-4">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-2xl font-black tracking-tighter italic uppercase opacity-80">{tJob('bidsTab')} ({bids.length})</CardTitle>
+                                        <div className="bg-primary/10 px-4 py-2 rounded-2xl">
+                                            <Users className="h-5 w-5 text-primary" />
                                         </div>
-                                        <div className="relative z-10">
-                                            <div className="flex items-center gap-2 text-indigo-900 mb-2">
-                                                <Sparkles className="h-5 w-5 animate-pulse" />
-                                                <h4 className="font-bold">AI Market Insight</h4>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-8 pt-0">
+                                    {isClient && marketAnalysis && bids.length === 0 && (
+                                        <div className="mb-8 p-8 bg-gradient-to-br from-indigo-500/10 via-blue-500/10 to-accent/10 border-none rounded-[2rem] relative overflow-hidden group">
+                                            <div className="absolute -top-10 -right-10 p-4 opacity-5 group-hover:scale-110 transition-transform rotate-12">
+                                                <TrendingUp className="h-40 w-40 text-indigo-500" />
                                             </div>
-                                            <p className="text-sm text-indigo-800 mb-3 leading-relaxed">
-                                                {marketAnalysis.reasoning}
-                                            </p>
-                                            <div className="bg-white/60 backdrop-blur-sm p-3 rounded-lg border border-indigo-200/50 flex items-center justify-between gap-4">
+                                            <div className="relative z-10 space-y-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="bg-indigo-600 p-2 rounded-full text-white">
-                                                        <Zap className="h-4 w-4" />
+                                                    <div className="bg-indigo-500 p-2 rounded-xl shadow-lg shadow-indigo-500/20">
+                                                        <Sparkles className="h-5 w-5 text-white animate-pulse" />
                                                     </div>
-                                                    <div>
-                                                        <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wider">Recommendation</p>
-                                                        <p className="text-sm font-bold text-indigo-950">{marketAnalysis.recommendedAction}</p>
-                                                    </div>
+                                                    <h4 className="font-black text-xs uppercase tracking-widest text-indigo-500">AI Market Insight</h4>
                                                 </div>
-                                                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
-                                                    Apply Boost
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                {bids.length === 0 ? <p className="text-muted-foreground">{t('noBidsYet')}</p> : (
-                                    <div className="space-y-4">
-                                        {bids.map(bid => (
-                                            <Card key={bid.id} data-testid="bid-card-wrapper">
-                                                <CardContent className="p-4 flex justify-between items-center">
-                                                    <div>
-                                                        <p className="font-semibold text-lg" data-testid="bid-amount">
-                                                            {isClient || user?.id === getRefId(bid.professional) ? `₹${bid.amount}` : "₹ ••••"}
-                                                        </p>
-                                                        <p className="text-sm text-muted-foreground">{formatDistanceToNow(toDate(bid.timestamp))} ago</p>
-                                                        {(!isClient && user?.id !== getRefId(bid.professional)) && (
-                                                            <p className="text-[10px] text-muted-foreground italic">{t('bidAmountHidden')}</p>
-                                                        )}
-                                                    </div>
-                                                    {/* Award Action (Only for Client) */}
-                                                    {isClient && job.status === 'open' && (
-                                                        <Button data-testid="send-offer-button" onClick={async () => {
-                                                            // Award Logic
-                                                            // 1. Update Job Status to 'Pending Acceptance' (Phase 4 of checklist)
-                                                            // Or directly Awarded?
-                                                            // Actually, standard flow: Client Selects -> Professional Accepts.
-                                                            // The 'Send Offer' button does this.
-
-                                                            // We can handle this logic inside a "BidCard" component or here.
-                                                            // For simplicity, just logic here:
-                                                            const acceptanceDeadline = new Date();
-                                                            acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
-
-                                                            const professionalId = bid.professionalId || getRefId(bid.professional);
-                                                            if (!professionalId) {
-                                                                toast({ title: tCommon('error'), description: "Cannot award: missing professional ID", variant: "destructive" });
-                                                                return;
-                                                            }
-
-                                                            try {
-                                                                const res = await awardJobAction(
-                                                                    job.id,
-                                                                    user.id,
-                                                                    professionalId,
-                                                                    acceptanceDeadline.toISOString()
-                                                                );
-
-                                                                if (res.success) {
-                                                                    toast({ title: t('offerSent'), description: t('waitingAcceptance') });
-                                                                } else {
-                                                                    throw new Error(res.error);
-                                                                }
-                                                            } catch (err: any) {
-                                                                toast({
-                                                                    title: t('awardFailed'),
-                                                                    description: err.message || "Could not award job",
-                                                                    variant: "destructive"
-                                                                });
-                                                            }
-                                                        }}>
-                                                            {t('sendOffer')}
-                                                        </Button>
-                                                    )}
-                                                </CardContent>
-                                                {/* Bid Chat (Silent Bid Fix) */}
-                                                <CardFooter className="pt-0 pb-4 px-4 bg-muted/20">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="w-full text-xs text-muted-foreground hover:text-primary"
-                                                        onClick={() => {
-                                                            const contactUrl = `/dashboard/messages?recipientId=${getRefId(bid.professional)}`;
-                                                            window.open(contactUrl, '_blank');
-                                                        }}
-                                                    >
-                                                        <MessageSquare className="h-3 w-3 mr-1" />
-                                                        {t('askQuestionChat')}
-                                                    </Button>
-                                                </CardFooter>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <div className="space-y-4 sm:space-y-6 order-1 lg:order-2 lg:sticky lg:top-24 h-fit">
-                        {/* Actions Panel */}
-                        <Card data-testid="actions-panel" className="border-0 shadow-xl shadow-primary/5 sticky top-24">
-                            <div className="h-1 w-full bg-gradient-to-r from-primary/50 to-accent/50" />
-                            <CardHeader className="pb-4"><CardTitle className="text-xl font-bold tracking-tight">{t('actions')}</CardTitle></CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className={cn("space-y-4", userLoading && "opacity-50 pointer-events-none")}>
-                                    {userLoading && (
-                                        <div className="flex items-center justify-center py-2 text-xs text-muted-foreground animate-pulse">
-                                            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                                            {t('syncingPermissions')}
-                                        </div>
-                                    )}
-
-                                    {/* Client Actions */}
-                                    {isClient && job.status === 'open' && (
-                                        <Button variant="destructive" className="w-full min-h-[44px]" onClick={() => handleJobUpdate({ status: 'unbid' })}>{t('closeBidding')}</Button>
-                                    )}
-
-                                    {/* Professional Actions: Place Bid */}
-                                    {!isClient && job.status === 'open' && (
-                                        <Button className="w-full min-h-[48px]" onClick={() => setIsBidDialogOpen(true)} disabled={userLoading || bids.some(b => getRefId(b.professional) === user?.id)} data-testid="place-bid-button">
-                                            {bids.some(b => getRefId(b.professional) === user?.id) ? t('bidPlaced') : t('placeBid')}
-                                        </Button>
-                                    )}
-
-                                    {/* ... other actions truncated in this view but I will preserve them in real write ... */}
-                                    {/* Wait, I have to provide the FULL content of the block I am replacing. */}
-                                    {/* Let me rewrite the whole thing carefully. */}
-
-                                    {/* Reschedule Action */}
-                                    {job.status === 'in_progress' && !job.workStartedAt && !job.dateChangeProposal?.status.includes('pending') && (
-                                        <Button variant="outline" className="w-full" onClick={() => setIsRescheduleDialogOpen(true)}>
-                                            <Calendar className="mr-2 h-4 w-4" />
-                                            {t('requestReschedule')}
-                                        </Button>
-                                    )}
-
-                                    {/* Retract Offer */}
-                                    {isClient && job.status === 'bid_accepted' && (
-                                        <div className="space-y-4">
-                                            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
-                                                {t('offerSentMsg')}
-                                            </div>
-                                            <Button
-                                                variant="outline"
-                                                className="w-full text-amber-600 border-amber-200 hover:bg-amber-50"
-                                                onClick={async () => {
-                                                    if (!window.confirm("Retract offer? This will allow other professionals to bid again.")) return;
-                                                    await handleJobUpdate({
-                                                        status: 'open',
-                                                        awardedProfessional: null as any,
-                                                        selectedProfessionals: null as any
-                                                    });
-                                                    toast({ title: t('offerRetracted'), description: t('offerRetractedDesc') });
-                                                }}
-                                            >
-                                                <UserX className="mr-2 h-4 w-4" />
-                                                {t('retractOffer')}
-                                            </Button>
-                                        </div>
-                                    )}
-
-                                    {canClientFundJob && (
-                                        isPaymentsEnabled ? (
-                                            <Button className="w-full min-h-[44px]" onClick={handleStartCheckout} data-testid="proceed-payment-button">{t('proceedToPayment')}</Button>
-                                        ) : (
-                                            <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground text-center">
-                                                {t('paymentsDisabled')}
-                                            </div>
-                                        )
-                                    )}
-
-                                    {/* Release Payment */}
-                                    {isClient && job.status === 'work_submitted' && (
-                                        isPaymentsEnabled ? (
-                                            <Button className="w-full bg-green-600 hover:bg-green-700 min-h-[44px]" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
-                                                <CheckCircle className="mr-2 h-4 w-4" />
-                                                {t('approveWorkRelease')}
-                                            </Button>
-                                        ) : (
-                                            <Button className="w-full" variant="outline" disabled>
-                                                {t('paymentSystemOffline')}
-                                            </Button>
-                                        )
-                                    )}
-
-                                    {/* Raise Dispute */}
-                                    {(job.status === 'in_progress' || job.status === 'work_submitted') && (
-                                        isDisputesEnabled ? (
-                                            <Button variant="destructive" className="w-full border-red-200 text-red-600 hover:bg-red-50" onClick={() => setIsDisputeDialogOpen(true)}>
-                                                <ShieldAlert className="mr-2 h-4 w-4" />
-                                                {t('reportIssueDispute')}
-                                            </Button>
-                                        ) : null
-                                    )}
-
-                                    {/* Leave Review */}
-                                    {job.status === 'Completed' && (
-                                        <div className="space-y-2">
-                                            <Button className="w-full" variant="outline" onClick={() => setIsReviewDialogOpen(true)} data-testid="leave-review-button">
-                                                <Star className="mr-2 h-4 w-4" />
-                                                {t('leaveReview')}
-                                            </Button>
-
-                                            <Button
-                                                className="w-full"
-                                                variant="secondary"
-                                                onClick={() => window.open(`/dashboard/jobs/${job.id}/invoice`, '_blank')}
-                                                data-testid="download-invoice-button"
-                                            >
-                                                <FileText className="mr-2 h-4 w-4" />
-                                                {t('downloadServiceInvoice')}
-                                            </Button>
-
-                                            <Button
-                                                className="w-full"
-                                                variant="ghost"
-                                                onClick={() => window.open(`/dashboard/jobs/${job.id}/invoice?type=platform`, '_blank')}
-                                                data-testid="download-platform-invoice-button"
-                                            >
-                                                <FileText className="mr-2 h-4 w-4" />
-                                                {t('downloadPlatformReceipt')}
-                                            </Button>
-                                        </div>
-                                    )}
-
-                                    {/* Secure Contact Reveal */}
-                                    {revealLoading && <Loader2 className="h-4 w-4 animate-spin mx-auto my-4" />}
-                                    {counterParty && (
-                                        <div className="space-y-4">
-                                            <div className="border rounded-lg overflow-hidden">
-                                                <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-3 text-white">
-                                                    <h4 className="font-bold text-sm flex items-center">
-                                                        <ShieldCheck className="h-4 w-4 mr-2" />
-                                                        {t('verifiedIdentity')}
-                                                    </h4>
-                                                </div>
-                                                <div className="p-4 bg-background flex items-center gap-4">
-                                                    <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
-                                                        <AvatarImage src={counterParty.realAvatarUrl || counterParty.avatarUrl} />
-                                                        <AvatarFallback>{counterParty.name.substring(0, 2)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <p className="font-bold text-lg leading-none">{counterParty.name}</p>
-                                                        <p className="text-sm text-muted-foreground">{isClient ? t('professional') : t('client')}</p>
-                                                        <div className="flex items-center gap-1 mt-1 text-xs text-green-600 font-medium">
-                                                            <CheckCircle2 className="h-3 w-3" />
-                                                            {t('backgroundChecked')}
+                                                <p className="text-lg font-medium leading-relaxed opacity-80">
+                                                    {marketAnalysis.reasoning}
+                                                </p>
+                                                <div className="bg-background/40 backdrop-blur-md p-6 rounded-[1.5rem] flex flex-col sm:flex-row items-center justify-between gap-6">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="bg-indigo-500/20 p-3 rounded-2xl">
+                                                            <Zap className="h-6 w-6 text-indigo-500" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest opacity-60">Recommendation</p>
+                                                            <p className="font-black text-lg italic tracking-tight">{marketAnalysis.recommendedAction}</p>
                                                         </div>
                                                     </div>
+                                                    <Button className="h-12 px-8 rounded-2xl bg-indigo-500 hover:bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20">
+                                                        Apply Boost
+                                                    </Button>
                                                 </div>
-                                                {counterParty.mobile && (
-                                                    <div className="bg-blue-50 p-3 border-t border-blue-100 flex items-center justify-between">
-                                                        <span className="text-xs text-blue-700 font-semibold">{t('mobileContact')}</span>
-                                                        <a href={`tel:${counterParty.mobile}`} className="text-sm font-bold text-blue-900 flex items-center hover:underline">
-                                                            <Phone className="h-3 w-3 mr-1" />
-                                                            {counterParty.mobile}
-                                                        </a>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     )}
+                                    {bids.length === 0 ? (
+                                        <div className="py-20 text-center flex flex-col items-center justify-center gap-4">
+                                            <div className="p-6 bg-muted rounded-full">
+                                                <Hourglass className="h-12 w-12 opacity-20" />
+                                            </div>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">{t('noBidsYet')}</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            <AnimatePresence>
+                                                {bids.map((bid, index) => (
+                                                    <motion.div 
+                                                        key={bid.id}
+                                                        initial={{ opacity: 0, x: -20 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ delay: index * 0.1 }}
+                                                        data-testid="bid-card-wrapper"
+                                                        className="group bg-background/30 hover:bg-background/50 transition-colors p-6 rounded-[2rem] flex flex-col sm:flex-row justify-between items-center gap-6 border-none shadow-sm"
+                                                    >
+                                                        <div className="flex items-center gap-6">
+                                                            <div className="relative">
+                                                                <Avatar className="h-16 w-16 border-4 border-background/50 shadow-xl group-hover:scale-110 transition-transform font-black">
+                                                                    <AvatarFallback className="bg-primary/10 text-primary uppercase">PR</AvatarFallback>
+                                                                </Avatar>
+                                                                <div className="absolute -bottom-1 -right-1 bg-success p-1.5 rounded-full border-2 border-background">
+                                                                    <ShieldCheck className="h-3 w-3 text-white" />
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-2xl font-black tracking-tighter italic" data-testid="bid-amount">
+                                                                        {isClient || user?.id === getRefId(bid.professional) ? `₹${bid.amount}` : "₹ ••••"}
+                                                                    </span>
+                                                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-40">
+                                                                        {formatDistanceToNow(toDate(bid.timestamp))} ago
+                                                                    </span>
+                                                                </div>
+                                                                {(!isClient && user?.id !== getRefId(bid.professional)) && (
+                                                                    <p className="text-[9px] font-black uppercase tracking-widest text-destructive mt-1 italic">{t('bidAmountHidden')}</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
 
-                                    {/* Acceptance Section */}
-                                    {
-                                        !isClient && job.status === 'bid_accepted' && (
-                                            <ProfessionalAcceptanceSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
-                                        )
-                                    }
+                                                        <div className="flex items-center gap-3 w-full sm:w-auto">
+                                                            <Button
+                                                                variant="outline"
+                                                                className="flex-1 sm:flex-none h-12 px-6 rounded-2xl hover:bg-background/50 border-none bg-background/30 font-black text-[10px] uppercase tracking-widest"
+                                                                onClick={() => {
+                                                                    const contactUrl = `/dashboard/messages?recipientId=${getRefId(bid.professional)}`;
+                                                                    window.open(contactUrl, '_blank');
+                                                                }}
+                                                            >
+                                                                <MessageSquare className="h-4 w-4 mr-2" />
+                                                                {t('askQuestionChat')}
+                                                            </Button>
 
-                                    {/* Completion Sections */}
-                                    {
-                                        !isClient && (job.status === 'in_progress' || job.status === 'In Progress' || job.status === 'bid_accepted' || job.status === 'Pending Funding') && !job.workStartedAt && (
-                                            <StartWorkInput job={job} user={user!} onJobUpdate={handleJobUpdate} />
-                                        )
-                                    }
+                                                            {isClient && job.status === 'open' && (
+                                                                <Button 
+                                                                    data-testid="send-offer-button" 
+                                                                    className="flex-1 sm:flex-none h-12 px-8 rounded-2xl bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20"
+                                                                    onClick={async () => {
+                                                                        const acceptanceDeadline = new Date();
+                                                                        acceptanceDeadline.setHours(acceptanceDeadline.getHours() + 24);
+                                                                        const professionalId = bid.professionalId || getRefId(bid.professional);
+                                                                        if (!professionalId) {
+                                                                            toast({ title: tCommon('error'), description: "Cannot award: missing professional ID", variant: "destructive" });
+                                                                            return;
+                                                                        }
+                                                                        try {
+                                                                            const res = await awardJobAction(job.id, user.id, professionalId, acceptanceDeadline.toISOString());
+                                                                            if (res.success) {
+                                                                                toast({ title: t('offerSent'), description: t('waitingAcceptance') });
+                                                                            } else {
+                                                                                throw new Error(res.error);
+                                                                            }
+                                                                        } catch (err: any) {
+                                                                            toast({ title: t('awardFailed'), description: err.message || "Could not award job", variant: "destructive" });
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    {t('sendOffer')}
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </motion.div>
+                                                ))}
+                                            </AnimatePresence>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    </div>
 
-                                    {
-                                        !isClient && (job.status === 'in_progress' || job.status === 'In Progress') && job.workStartedAt && (
-                                            <ProfessionalCompletionSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
-                                        )
-                                    }
+                    <div className="space-y-8 sm:space-y-12 order-1 lg:order-2 lg:sticky lg:top-24 h-fit">
+                        {/* Actions Panel */}
+                        <motion.div variants={itemVariants} className="sticky top-24">
+                            <Card data-testid="actions-panel" className="border-none bg-primary/5 backdrop-blur-2xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                                <div className="h-2 w-full bg-gradient-to-r from-primary to-accent" />
+                                <CardHeader className="p-8 pb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-primary/20 p-2 rounded-xl">
+                                            <Zap className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <CardTitle className="text-xl font-black tracking-tighter italic uppercase">{t('actions')}</CardTitle>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-8 space-y-4">
+                                    <div className={cn("space-y-4", userLoading && "opacity-50 pointer-events-none")}>
+                                        {userLoading && (
+                                            <div className="flex items-center justify-center py-4 bg-background/20 rounded-2xl text-[10px] font-black uppercase tracking-widest opacity-60">
+                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                {t('syncingPermissions')}
+                                            </div>
+                                        )}
 
-                                    {
-                                        isClient && (job.status === 'in_progress' || job.status === 'In Progress' || job.status === 'work_submitted' || job.status === 'Work Submitted' || job.status === 'Pending Confirmation') && (
-                                            <ClientConfirmationSection
-                                                job={job}
-                                                user={user!}
-                                                onJobUpdate={handleJobUpdate}
-                                                onCancel={() => setIsCancelDialogOpen(true)}
-                                                onAddFunds={() => setIsAddFundsDialogOpen(true)}
-                                            />
-                                        )
-                                    }
+                                        {/* Client Actions */}
+                                        {isClient && job.status === 'open' && (
+                                            <Button variant="destructive" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-destructive/10" onClick={() => handleJobUpdate({ status: 'unbid' })}>{t('closeBidding')}</Button>
+                                        )}
 
-                                    {
-                                        job.status === 'Completed' && (
-                                            <RatingSection job={job} onJobUpdate={handleJobUpdate} />
-                                        )
-                                    }
-                                </div>
-                            </CardContent>
-                        </Card>
+                                        {/* Professional Actions: Place Bid */}
+                                        {!isClient && job.status === 'open' && (
+                                            <Button 
+                                                className="w-full h-16 rounded-2xl bg-primary text-primary-foreground font-black text-sm uppercase tracking-[0.1em] shadow-2xl shadow-primary/20 group overflow-hidden relative" 
+                                                onClick={() => setIsBidDialogOpen(true)} 
+                                                disabled={userLoading || bids.some(b => getRefId(b.professional) === user?.id)} 
+                                                data-testid="place-bid-button"
+                                            >
+                                                <span className="relative z-10">{bids.some(b => getRefId(b.professional) === user?.id) ? t('bidPlaced') : t('placeBid')}</span>
+                                                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform" />
+                                            </Button>
+                                        )}
+
+                                        {/* Reschedule Action */}
+                                        {job.status === 'in_progress' && !job.workStartedAt && !job.dateChangeProposal?.status.includes('pending') && (
+                                            <Button variant="outline" className="w-full h-14 rounded-2xl border-none bg-background/50 font-black text-xs uppercase tracking-widest" onClick={() => setIsRescheduleDialogOpen(true)}>
+                                                <Calendar className="mr-2 h-4 w-4" />
+                                                {t('requestReschedule')}
+                                            </Button>
+                                        )}
+
+                                        {/* Retract Offer */}
+                                        {isClient && job.status === 'bid_accepted' && (
+                                            <div className="space-y-4">
+                                                <div className="p-6 bg-warning/10 border-none rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest text-warning italic leading-relaxed">
+                                                    {t('offerSentMsg')}
+                                                </div>
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-full h-14 rounded-2xl border-2 border-warning/20 bg-background/50 text-warning hover:bg-warning/10 font-black text-xs uppercase tracking-widest"
+                                                    onClick={async () => {
+                                                        if (!window.confirm("Retract offer? This will allow other professionals to bid again.")) return;
+                                                        await handleJobUpdate({
+                                                            status: 'open',
+                                                            awardedProfessional: null as any,
+                                                            selectedProfessionals: null as any
+                                                        });
+                                                        toast({ title: t('offerRetracted'), description: t('offerRetractedDesc') });
+                                                    }}
+                                                >
+                                                    <UserX className="mr-2 h-4 w-4" />
+                                                    {t('retractOffer')}
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {canClientFundJob && (
+                                            isPaymentsEnabled ? (
+                                                <Button className="w-full h-16 rounded-2xl bg-success text-white font-black text-sm uppercase tracking-widest shadow-2xl shadow-success/20" onClick={handleStartCheckout} data-testid="proceed-payment-button">{t('proceedToPayment')}</Button>
+                                            ) : (
+                                                <div className="p-6 bg-muted rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest opacity-40 text-center">
+                                                    {t('paymentsDisabled')}
+                                                </div>
+                                            )
+                                        )}
+
+                                        {/* Release Payment */}
+                                        {isClient && job.status === 'work_submitted' && (
+                                            isPaymentsEnabled ? (
+                                                <Button className="w-full h-16 rounded-2xl bg-success text-white font-black text-sm uppercase tracking-widest shadow-2xl shadow-success/20" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
+                                                    <CheckCircle className="mr-2 h-5 w-5" />
+                                                    {t('approveWorkRelease')}
+                                                </Button>
+                                            ) : (
+                                                <Button className="w-full h-14 rounded-2xl bg-muted text-muted-foreground font-black text-xs uppercase tracking-widest" disabled>
+                                                    {t('paymentSystemOffline')}
+                                                </Button>
+                                            )
+                                        )}
+
+                                        {/* Raise Dispute */}
+                                        {(job.status === 'in_progress' || job.status === 'work_submitted') && (
+                                            isDisputesEnabled ? (
+                                                <Button variant="destructive" className="w-full h-14 rounded-2xl bg-destructive/10 text-destructive hover:bg-destructive/20 font-black text-xs uppercase tracking-widest border-none" onClick={() => setIsDisputeDialogOpen(true)}>
+                                                    <ShieldAlert className="mr-2 h-4 w-4" />
+                                                    {t('reportIssueDispute')}
+                                                </Button>
+                                            ) : null
+                                        )}
+
+                                        {/* Leave Review */}
+                                        {job.status === 'Completed' && (
+                                            <div className="space-y-3">
+                                                <Button className="w-full h-14 rounded-2xl border-none bg-background font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/5" variant="outline" onClick={() => setIsReviewDialogOpen(true)} data-testid="leave-review-button">
+                                                    <Star className="mr-2 h-4 w-4 text-warning" />
+                                                    {t('leaveReview')}
+                                                </Button>
+
+                                                <Button
+                                                    className="w-full h-14 rounded-2xl border-none bg-background font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/5"
+                                                    variant="secondary"
+                                                    onClick={() => window.open(`/dashboard/jobs/${job.id}/invoice`, '_blank')}
+                                                    data-testid="download-invoice-button"
+                                                >
+                                                    <FileText className="mr-2 h-4 w-4" />
+                                                    {t('downloadServiceInvoice')}
+                                                </Button>
+
+                                                <Button
+                                                    className="w-full h-10 rounded-2xl border-none bg-transparent hover:bg-background/50 font-black text-[9px] uppercase tracking-widest opacity-60"
+                                                    variant="ghost"
+                                                    onClick={() => window.open(`/dashboard/jobs/${job.id}/invoice?type=platform`, '_blank')}
+                                                    data-testid="download-platform-invoice-button"
+                                                >
+                                                    {t('downloadPlatformReceipt')}
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {/* Secure Contact Reveal */}
+                                        {revealLoading && <div className="py-4 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
+                                        {counterParty && (
+                                            <div className="space-y-4">
+                                                <div className="bg-background/50 rounded-[2rem] overflow-hidden shadow-xl border-none">
+                                                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white">
+                                                        <h4 className="font-black text-[10px] uppercase tracking-widest flex items-center">
+                                                            <ShieldCheck className="h-4 w-4 mr-2" />
+                                                            {t('verifiedIdentity')}
+                                                        </h4>
+                                                    </div>
+                                                    <div className="p-6 flex items-center gap-6">
+                                                        <Avatar className="h-20 w-20 border-4 border-background shadow-2xl">
+                                                            <AvatarImage src={counterParty.realAvatarUrl || counterParty.avatarUrl} />
+                                                            <AvatarFallback className="font-black text-xl">{counterParty.name.substring(0, 2)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div>
+                                                            <p className="font-black text-2xl tracking-tighter italic leading-none mb-1">{counterParty.name}</p>
+                                                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{isClient ? t('professional') : t('client')}</p>
+                                                            <div className="flex items-center gap-1.5 mt-3 text-[10px] text-success font-black uppercase tracking-widest">
+                                                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                                                {t('backgroundChecked')}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {counterParty.mobile && (
+                                                        <div className="bg-background/80 p-6 border-t border-muted/20">
+                                                            <a href={`tel:${counterParty.mobile}`} className="flex items-center justify-between group">
+                                                                <span className="text-[10px] font-black uppercase tracking-widest opacity-40">{t('mobileContact')}</span>
+                                                                <span className="text-xl font-black tracking-tighter italic text-primary group-hover:underline underline-offset-4">
+                                                                    {counterParty.mobile}
+                                                                </span>
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Acceptance Section */}
+                                        {
+                                            !isClient && job.status === 'bid_accepted' && (
+                                                <ProfessionalAcceptanceSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
+                                            )
+                                        }
+
+                                        {/* Completion Sections */}
+                                        {
+                                            !isClient && (job.status === 'in_progress' || job.status === 'In Progress' || job.status === 'bid_accepted' || job.status === 'Pending Funding') && !job.workStartedAt && (
+                                                <StartWorkInput job={job} user={user!} onJobUpdate={handleJobUpdate} />
+                                            )
+                                        }
+
+                                        {
+                                            !isClient && (job.status === 'in_progress' || job.status === 'In Progress') && job.workStartedAt && (
+                                                <ProfessionalCompletionSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
+                                            )
+                                        }
+
+                                        {
+                                            isClient && (job.status === 'in_progress' || job.status === 'In Progress' || job.status === 'work_submitted' || job.status === 'Work Submitted' || job.status === 'Pending Confirmation') && (
+                                                <ClientConfirmationSection
+                                                    job={job}
+                                                    user={user!}
+                                                    onJobUpdate={handleJobUpdate}
+                                                    onCancel={() => setIsCancelDialogOpen(true)}
+                                                    onAddFunds={() => setIsAddFundsDialogOpen(true)}
+                                                />
+                                            )
+                                        }
+
+                                        {
+                                            job.status === 'Completed' && (
+                                                <RatingSection job={job} onJobUpdate={handleJobUpdate} />
+                                            )
+                                        }
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
                     </div>
 
                     <FundingBreakdownDialog
@@ -1456,6 +1522,6 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     </Dialog>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }

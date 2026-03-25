@@ -10,6 +10,9 @@ export const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GA_ID || '';
 export type FunnelEventName =
     | 'cta_click'
     | 'signup_started'
+    | 'role_selected'
+    | 'profile_completed'
+    | 'account_created'
     | 'signup_completed';
 
 export interface FunnelProperties {

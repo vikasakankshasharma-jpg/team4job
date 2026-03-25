@@ -4,125 +4,81 @@ import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
-import { logger } from '@/infrastructure/logger';
 
-let app: App | undefined;
-
-const allowProductionEmulators = process.env.ALLOW_PRODUCTION_EMULATORS === 'true';
-const shouldUseAdminEmulators =
-    (
-        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
-        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' ||
-        !!process.env.FIRESTORE_EMULATOR_HOST ||
-        !!process.env.FIREBASE_AUTH_EMULATOR_HOST
-    ) &&
-    (process.env.NODE_ENV !== 'production' || allowProductionEmulators);
+let appInstance: App | undefined;
 
 /**
  * Initialize and return the Firebase Admin App.
- * This function is designed for server-side environments (API routes, server components).
+ * Robust implementation with trimming and diagnostics.
  */
 export function getAdminApp(): App {
-    if (app) {
-        return app;
+    console.log('[FirebaseAdmin] getAdminApp requested');
+    
+    if (appInstance) {
+        return appInstance;
     }
 
-    // Environment checks removed for Zero-Noise production compliance
-
-    // If an app is already initialized, cache it locally and continue to ensure settings are verified
-    if (getApps().length > 0) {
-        app = getApps()[0];
+    // Check if the specific named app is already initialized
+    const apps = getApps();
+    const existingApp = apps.find(a => a.name === 'admin-live');
+    if (existingApp) {
+        console.log('[FirebaseAdmin] Found existing named app (admin-live) in global context');
+        appInstance = existingApp;
+        return appInstance;
     }
 
-    // 0. Emulator-friendly init (priority for local E2E/Dev)
-    if (shouldUseAdminEmulators) {
+    const projectId = (process.env.DO_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || '').trim();
+    const clientEmail = (process.env.DO_FIREBASE_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL || '').trim();
+    const rawPrivateKey = (process.env.DO_FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY || '').trim();
 
-        const emulatorProjectId =
-            process.env.GCLOUD_PROJECT ||
-            process.env.FIREBASE_PROJECT_ID ||
-            process.env.DO_FIREBASE_PROJECT_ID ||
-            process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
-            'demo-project';
-
-        if (!app) {
-            app = initializeApp({
-                projectId: emulatorProjectId,
-            });
-        }
-
-        // Connect to emulators explicitly
-        if (process.env.FIRESTORE_EMULATOR_HOST) {
-            try {
-                const [host, port] = process.env.FIRESTORE_EMULATOR_HOST.split(':');
-                const normalizedHost = host === 'localhost' ? '127.0.0.1' : host;
-                getFirestore(app!).settings({
-                    host: `${normalizedHost}:${port}`,
-                    ssl: false,
-                    ignoreUndefinedProperties: true
-                });
-            } catch (e: any) {
-                // Already initialized or setting failure
-            }
-        }
-
-        if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-            // Emulator detected
-        }
-
-        return app as App;
-    }
-
-    // 1. Try FIREBASE_SERVICE_ACCOUNT_KEY (JSON string) - preferred for production
-    const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (serviceAccountEnv) {
+    if (!projectId || !clientEmail || !rawPrivateKey) {
+        console.error('[FirebaseAdmin] Missing required credentials in environment variables');
+        // Fallback to Application Default Credentials if possible
         try {
-            if (!app) {
-                const serviceAccount = JSON.parse(serviceAccountEnv);
-                app = initializeApp({
-                    credential: cert(serviceAccount),
-                    projectId: serviceAccount.project_id
-                });
-            }
-            return app as App;
-        } catch (error) {
-            // Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY.
+            console.log('[FirebaseAdmin] Attempting initialization with Application Default Credentials...');
+            appInstance = initializeApp();
+            return appInstance;
+        } catch (e) {
+            throw new Error('Firebase Admin initialization failed: Missing DO_FIREBASE_* credentials.');
         }
     }
 
-    // 2. Fallback to individual environment variables (easier for Vercel/hosting dashboards)
-    if (
-        (process.env.DO_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID) &&
-        (process.env.DO_FIREBASE_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL) &&
-        (process.env.DO_FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY)
-    ) {
-        if (!app) {
-            const projectId = process.env.DO_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
-            const clientEmail = process.env.DO_FIREBASE_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL;
-            const rawPrivateKey = process.env.DO_FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY || '';
-            const privateKey = rawPrivateKey.replace(/\\n/g, '\n'); // Fix escaped newlines
-
-            app = initializeApp({
-                credential: cert({
-                    projectId,
-                    clientEmail,
-                    privateKey: privateKey,
-                }),
-                projectId
-            });
-        }
-        return app as App;
+    // Extra robust private key processing
+    let privateKey = rawPrivateKey;
+    
+    // Remove wrapping quotes if they exist (sometimes .env values are literal strings)
+    if ((privateKey.startsWith('"') && privateKey.endsWith('"')) || (privateKey.startsWith("'") && privateKey.endsWith("'"))) {
+        privateKey = privateKey.substring(1, privateKey.length - 1);
+    }
+    
+    // Convert literal \n to real newlines if present
+    if (privateKey.includes('\\n')) {
+        privateKey = privateKey.replace(/\\n/g, '\n');
     }
 
-    // 3. Fallback to Application Default Credentials (Google Cloud Run / Firebase App Hosting)
+    console.log(`[FirebaseAdmin] Initializing for project: ${projectId}`);
+    console.log(`[FirebaseAdmin] Client Email: ${clientEmail}`);
+    console.log(`[FirebaseAdmin] Private Key Length: ${privateKey.length}`);
+    console.log(`[FirebaseAdmin] Private Key start: ${privateKey.substring(0, 40)}...`);
+
     try {
-        if (!app) {
-            app = initializeApp();
+        appInstance = initializeApp({
+            credential: cert({
+                projectId,
+                clientEmail,
+                privateKey: privateKey,
+            }),
+            projectId,
+            databaseURL: `https://${projectId}.firebaseio.com`
+        }, 'admin-live');
+        console.log('[FirebaseAdmin] initialization successful');
+        return appInstance;
+    } catch (error: any) {
+        console.error('[FirebaseAdmin] CRITICAL Initialization error:', error.message);
+        if (error.message?.includes('16 UNAUTHENTICATED')) {
+            console.error('[FirebaseAdmin] AUTH FAILURE: Check if private key or client email is correct.');
         }
-        return app as App;
-    } catch (e) {
-        throw new Error(
-            'Failed to initialize Firebase Admin SDK. Missing credentials (FIREBASE_SERVICE_ACCOUNT_KEY, DO_FIREBASE_*, or ADC).'
-        );
+        throw error;
     }
 }
 
