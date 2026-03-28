@@ -35,7 +35,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // 3. User Data
-const getTestPassword = () => 'Test@1234';
+const getTestPassword = () => 'TestUser_2026!';
 const getAdminPassword = () => 'Vikas@129229';
 
 const TEST_USERS = [

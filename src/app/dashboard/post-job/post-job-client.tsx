@@ -826,17 +826,19 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
           // Try router push first
           router.push(targetUrl);
 
-          // Fallback: If router doesn't navigate within 1.5s, force reload
+          // Fallback: If router doesn't navigate within 3s, force reload
           setTimeout(() => {
             if (window.location.pathname !== targetUrl) {
               window.location.href = targetUrl;
             }
-          }, 1500);
+          }, 3000);
 
         } else {
           throw new Error(result.error);
         }
       }
+
+
     } catch (error: any) {
       toast({
         title: tError('postFailed'),
@@ -883,21 +885,21 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   };
 
   return (
-    <div className="mx-auto grid max-w-4xl flex-1 auto-rows-max gap-4 px-4 max-w-full overflow-x-hidden">
-      <div className="flex items-center gap-4">
-        <h1 className="text-xl font-semibold tracking-tight break-words">
+    <div className="mx-auto grid max-w-4xl flex-1 auto-rows-max gap-4 px-4 max-w-full overflow-x-hidden font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface pb-16">
+      <div className="flex items-center gap-4 mt-8 mb-4">
+        <h1 className="text-3xl font-extrabold font-headline tracking-tighter break-words text-on-surface">
           {isEditMode ? tJob('editJob') : (repostJobId ? tJob('repostJob') : tJob('postJob'))}
         </h1>
         {isProcessing && <Loader2 className="h-5 w-5 animate-spin" />}
       </div>
       <Form {...form}>
         <form onSubmit={e => e.preventDefault()} className="grid gap-4">
-          <Card>
-            <CardHeader>
+          <Card className="border-0 shadow-lg shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-xl overflow-hidden">
+            <CardHeader className="bg-surface-container-highest dark:bg-slate-800/50 border-b border-outline-variant/10">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>{tJob('jobDetails')}</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-xl font-bold font-headline">{tJob('jobDetails')}</CardTitle>
+                  <CardDescription className="text-sm text-on-surface-variant font-medium mt-1">
                     {isEditMode
                       ? tJob('editJobDesc')
                       : (repostJobId

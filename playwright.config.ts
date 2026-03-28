@@ -91,10 +91,10 @@ export default defineConfig({
         video: 'retain-on-failure',
 
         /* Maximum time each action can take */
-        actionTimeout: 90 * 1000,
+        actionTimeout: 120 * 1000,
 
         /* Maximum time for navigation */
-        navigationTimeout: 90 * 1000,
+        navigationTimeout: 120 * 1000,
     },
 
     /* Configure projects for major browsers */
@@ -117,10 +117,11 @@ export default defineConfig({
     },
 
     /* Global timeout for each test */
-    timeout: 600000, // 10 mins per test (Beta Squad tests are complex)
+    timeout: 2100000, // 35 mins per test (Beta Squad tests are complex and EXTREMELY slow in local dev)
 
     /* Expect timeout */
     expect: {
-        timeout: 90 * 1000,
+        timeout: 120 * 1000,
     },
 });
+

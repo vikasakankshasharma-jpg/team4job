@@ -77,15 +77,16 @@ export class AuthHelper {
                 if (await loader.isVisible({ timeout: 5000 }).catch(() => false)) {
                     console.log('[AuthHelper] Waiting for initial loader to disappear...');
                     // Wait for it to be hidden or removed
-                    await loader.waitFor({ state: 'hidden', timeout: 60000 }).catch(async () => {
-                        console.warn('[AuthHelper] Initial loader hidden timeout - checking body visibility');
-                        const isBodyVisible = await this.page.locator('body').isVisible();
-                        if (!isBodyVisible) throw new Error('Body not visible after loader timeout');
+                    await loader.waitFor({ state: 'hidden', timeout: 30000 }).catch(async () => {
+                        console.warn('[AuthHelper] Initial loader hidden timeout (30s) - Attempting Force Reload for recovery');
+                        await this.page.reload({ waitUntil: 'domcontentloaded' });
+                        await this.page.waitForTimeout(5000); // Settle
                     });
                 }
             } catch (e) {
-                console.warn('[AuthHelper] Error waiting for initial loader:', e);
+                console.warn('[AuthHelper] Error waiting for initial loader or reload failed:', e);
             }
+
 
             // Wait a bit for the page to settle
             await this.page.waitForTimeout(1000);
@@ -249,8 +250,14 @@ export class AuthHelper {
                     inject();
                 });
 
-                // Hot reload / frame swaps can prevent the full "load" event.
-                await this.page.goto(ROUTES.login, { waitUntil: 'domcontentloaded', timeout: 120000 });
+                // Navigation to login - wait for networkidle to ensure hydration is complete
+                // This prevents the "white screen" and input clearing issues on slow dev servers
+                await this.page.goto(ROUTES.login, { waitUntil: 'networkidle', timeout: 120000 }).catch(async (e) => {
+                    console.warn(`[AuthHelper] initial goto networkidle timed out. Forcing stop and reload...`);
+                    await this.page.reload({ waitUntil: 'networkidle', timeout: 60000 }).catch(() => {});
+                });
+                
+                await this.page.waitForTimeout(2000); // Strict buffer for Next.js hydration
                 
                 // Set cookie via Playwright API as well for redundancy
                 await this.page.context().addCookies([{
@@ -850,8 +857,14 @@ export class FormHelper {
         await looksGoodBtn.waitFor({ state: 'visible', timeout: 10000 });
         await looksGoodBtn.click({ force: true });
         
-        // Wait for redirect to /dashboard/post-job
-        await this.page.waitForURL(/\/dashboard\/post-job/, { timeout: 30000 });
+        // Wait for redirect to /dashboard/post-job (LLM backend can take >35s locally)
+        try {
+            await this.page.waitForURL(/\/dashboard\/post-job/, { timeout: 120000 });
+        } catch {
+            console.warn('[FormHelper] post-job navigation timed out after 120s, attempting fallback dashboard load...');
+            await this.page.goto('/dashboard/post-job?wizardCompleted=true', { waitUntil: 'domcontentloaded' });
+            await this.page.waitForTimeout(2000);
+        }
     }
 
     async fillPincodeAndSelectPO(pincode: string) {

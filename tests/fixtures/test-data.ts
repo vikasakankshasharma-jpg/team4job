@@ -18,19 +18,19 @@ export const TEST_ACCOUNTS = {
     // Primary test accounts (used by most E2E tests)
     client: {
         email: 'rajesh.client@team4job.com',
-        password: 'Test@1234',
+        password: 'TestUser_2026!',
         role: 'Client',
         name: 'Rajesh Kumar',
     },
     professional: {
         email: 'amit.pro@team4job.com',
-        password: 'Test@1234',
+        password: 'TestUser_2026!',
         role: 'Professional',
         name: 'Amit Patel',
     },
     admin: {
         email: 'vikasakankshasharma@gmail.com',
-        password: 'Vikas@129229',
+        password: 'Admin_Pass2026!',
         role: 'Admin',
         name: 'Vikram Singh',
     },
@@ -38,43 +38,43 @@ export const TEST_ACCOUNTS = {
     // Extended accounts for comprehensive testing
     clientBusiness: {
         email: 'priya.client@team4job.com',
-        password: 'Test@1234',
+        password: 'TestUser_2026!',
         role: 'Client',
         name: 'Priya Sharma',
     },
     professionalGold: {
         email: 'suresh.pro@team4job.com',
-        password: 'Test@1234',
+        password: 'TestUser_2026!',
         role: 'Professional',
         name: 'Suresh Reddy',
     },
     professionalNew: {
         email: 'neha.pro@team4job.com',
-        password: 'Test@1234',
+        password: 'TestUser_2026!',
         role: 'Professional',
         name: 'Neha Gupta',
     },
     dualRole: {
         email: 'anita.dual@team4job.com',
-        password: 'Test@1234',
+        password: 'TestUser_2026!',
         role: 'Client', // Default role
         name: 'Anita Desai',
     },
     suspended: {
         email: 'manoj.suspended@team4job.com',
-        password: 'Test@1234',
+        password: 'TestUser_2026!',
         role: 'Professional',
         name: 'Manoj Tiwari',
     },
     support: {
         email: 'kavita.support@team4job.com',
-        password: 'Test@1234',
+        password: 'TestUser_2026!',
         role: 'Support Team',
         name: 'Kavita Joshi',
     },
     clientNew: {
         email: 'ravi.newclient@team4job.com',
-        password: 'Test@1234',
+        password: 'TestUser_2026!',
         role: 'Client',
         name: 'Ravi Verma',
     },
