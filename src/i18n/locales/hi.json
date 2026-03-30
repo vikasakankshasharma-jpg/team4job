@@ -1722,6 +1722,7 @@
         "acceptNewDate": "नई तारीख स्वीकार करें",
         "waitingResponse": "प्रतिक्रिया की प्रतीक्षा है...",
         "dismiss": "खारिज करें",
+        "paymentReleased": "भुगतान जारी किया गया!",
         "notifications": {
             "milestoneCreated": "माइलस्टोन को जॉब में जोड़ दिया गया है।",
             "milestoneGenericError": "माइलस्टोन बनाने में विफल",

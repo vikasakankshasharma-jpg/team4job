@@ -812,6 +812,7 @@
         "acceptNewDate": "Accept New Date",
         "waitingResponse": "Waiting for response...",
         "dismiss": "Dismiss",
+        "paymentReleased": "Payment Released!",
         "notifications": {
             "milestoneCreated": "Milestone has been added to the job.",
             "milestoneGenericError": "Failed to create milestone",

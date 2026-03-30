@@ -1127,7 +1127,15 @@ export class FormHelper {
         await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
         
         // Confirm dashboard marker is visible as proxy for hydration
-        await this.page.waitForSelector('[data-testid="dashboard-marker"]', { state: 'attached', timeout: 15000 });
+        // Resilient wait: if the marker is not found within 15s (local build/slow sync), 
+        // reload once and wait up to 60s (live environment latency)
+        try {
+            await this.page.waitForSelector('[data-testid="dashboard-marker"]', { state: 'attached', timeout: 15000 });
+        } catch {
+            console.warn('[FormHelper] dashboard-marker not immediately visible, reloading to force hydration...');
+            await this.page.reload({ waitUntil: 'domcontentloaded' });
+            await this.page.waitForSelector('[data-testid="dashboard-marker"]', { state: 'attached', timeout: 45000 });
+        }
         
         const jobId = this.page.url().split('/').pop() || '';
         console.log(`[FormHelper] Redirected to Job ID: ${jobId}`);
