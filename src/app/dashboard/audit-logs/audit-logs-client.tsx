@@ -220,7 +220,7 @@ export default function AuditLogsClient() {
             </div>
 
             {/* Audit Log Table */}
-            <Card>
+            <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>

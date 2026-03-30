@@ -35,6 +35,7 @@ export function MilestoneList({ job, user, isClient, onRelease }: MilestoneListP
                         animate="visible"
                         transition={{ delay: index * 0.1 }}
                         className="group relative overflow-hidden rounded-[2.5rem] bg-white/40 backdrop-blur-xl border border-white/40 p-8 shadow-2xl hover:shadow-primary/10 transition-all"
+                        data-testid="milestone-item"
                     >
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                             <div className="space-y-2">
@@ -43,6 +44,7 @@ export function MilestoneList({ job, user, isClient, onRelease }: MilestoneListP
                                     <Badge 
                                         variant={milestone.status === 'released' ? 'default' : 'secondary'}
                                         className="rounded-full px-4 py-1 font-black uppercase text-[10px]"
+                                        data-testid="milestone-status-badge"
                                     >
                                         {milestone.status}
                                     </Badge>
@@ -60,6 +62,7 @@ export function MilestoneList({ job, user, isClient, onRelease }: MilestoneListP
                                     <Button 
                                         onClick={() => onRelease(milestone.id)} 
                                         className="w-full sm:w-auto rounded-full px-8 py-6 font-black uppercase tracking-widest text-xs hover:scale-105 transition-transform"
+                                        data-testid="release-milestone-button"
                                     >
                                         <CheckCircle className="h-4 w-4 mr-2" />
                                         Release Payment

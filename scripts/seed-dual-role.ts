@@ -66,7 +66,7 @@ const auth = getAuth();
 
 const DUAL_ROLE_USER = {
     email: 'dualrole@example.com',
-    password: 'Test@1234',
+    password: 'TestUser_2026!',
     displayName: 'Dual Role User',
     roles: ['Job Giver', 'Installer'],
     profileData: {

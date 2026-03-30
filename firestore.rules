@@ -96,6 +96,8 @@ service cloud.firestore {
         allow read: if request.auth != null && (
           ('professionalId' in resource.data && resource.data.professionalId == request.auth.uid) || 
           get(/databases/$(database)/documents/jobs/$(jobId)).data.clientId == request.auth.uid ||
+          // Allow awarded professional to read all bids on their job (needed to calculate winningBidAmount)
+          get(/databases/$(database)/documents/jobs/$(jobId)).data.awardedProfessionalId == request.auth.uid ||
           isAdmin() || 
           isSupport()
         );

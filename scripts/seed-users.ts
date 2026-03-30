@@ -65,7 +65,7 @@ const auth = getAuth();
 const TEST_USERS = [
     {
         email: 'giver_vip_v3@team4job.com',
-        password: 'Test@1234',
+        password: 'TestUser_2026!',
         displayName: 'Test Job Giver V3',
         role: 'Job Giver',
         profileData: {
@@ -78,7 +78,7 @@ const TEST_USERS = [
     },
     {
         email: 'installer_pro_v3@team4job.com',
-        password: 'Test@1234',
+        password: 'TestUser_2026!',
         displayName: 'Test Installer V3',
         role: 'Installer',
         profileData: {
@@ -100,7 +100,7 @@ const TEST_USERS = [
     },
     {
         email: 'vikasakankshasharma_v3@gmail.com',
-        password: 'Vks2bhdj@9229',
+        password: 'Admin_Pass2026!',
         displayName: 'Vikas Sharma Admin',
         role: 'Admin',
         profileData: {
@@ -110,6 +110,20 @@ const TEST_USERS = [
             phone: '9999999993',
             createdAt: new Date().toISOString(),
             roles: ['Admin'] // Explicitly adding roles array for admin as per rules
+        }
+    },
+    {
+        email: 'admin@team4job.com',
+        password: 'Admin_Pass2026!',
+        displayName: 'Secondary Admin',
+        role: 'Admin',
+        profileData: {
+            userType: 'Admin',
+            firstName: 'Secondary',
+            lastName: 'Admin',
+            phone: '9999999994',
+            createdAt: new Date().toISOString(),
+            roles: ['Admin']
         }
     }
 ];
@@ -125,7 +139,8 @@ async function seed() {
             try {
                 const userRecord = await auth.getUserByEmail(user.email);
                 uid = userRecord.uid;
-                console.log(`✅ User ${user.email} already exists in Auth.`);
+                await auth.updateUser(uid, { password: user.password, displayName: user.displayName });
+                console.log(`✅ User ${user.email} already exists. Password and profile updated in Auth.`);
             } catch (e: any) {
                 if (e.code === 'auth/user-not-found') {
                     // Create user

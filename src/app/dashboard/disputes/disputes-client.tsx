@@ -71,7 +71,7 @@ function DisputeCard({ dispute, involvedUsers }: { dispute: Dispute, involvedUse
     };
 
     return (
-        <Card onClick={() => router.push(`/dashboard/disputes/${dispute.id}`)} className="cursor-pointer border-0 shadow-sm shadow-primary/5 hover:shadow-md transition-shadow group">
+        <Card onClick={() => router.push(`/dashboard/disputes/${dispute.id}`)} className="cursor-pointer border-none shadow-md shadow-black/5 bg-surface-container dark:bg-slate-800 hover:shadow-xl transition-all duration-300 group rounded-[2rem] overflow-hidden">
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-base font-bold tracking-tight leading-tight pr-4 group-hover:text-primary transition-colors">{dispute.title}</CardTitle>
@@ -255,7 +255,7 @@ export default function DisputesClient() {
                     </Card>
                 </div>
             )}
-            <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
+            <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
                 <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4">
                     <div>
                         <CardTitle className="text-xl font-bold tracking-tight">{t('center')}</CardTitle>

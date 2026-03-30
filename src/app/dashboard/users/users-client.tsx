@@ -99,7 +99,7 @@ function UserCard({ u, user, actionLoading, handleUserAction, setDeleteUser }: {
   };
 
   return (
-    <Card className="border-0 shadow-sm shadow-primary/5 hover:shadow-md transition-shadow group">
+    <Card className="border-none shadow-md shadow-black/5 bg-surface-container dark:bg-slate-800 hover:shadow-xl transition-all duration-300 group rounded-[2rem] overflow-hidden">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-3">
@@ -604,7 +604,7 @@ export default function UsersClient() {
         />
       </div>
 
-      <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
+      <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

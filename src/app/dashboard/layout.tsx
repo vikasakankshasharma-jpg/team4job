@@ -11,7 +11,7 @@ export default function DashboardLayout({
 }) {
   return (
     <DashboardProviders>
-      <div className="flex min-h-screen w-full flex-row bg-muted/40 overflow-x-hidden">
+      <div data-testid="dashboard-marker" className="flex min-h-screen w-full flex-row bg-muted/40 overflow-x-hidden">
         <DashboardSidebar />
         <div className="flex flex-1 flex-col sm:ml-14 min-w-0">
           <Header />

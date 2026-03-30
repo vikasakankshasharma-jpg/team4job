@@ -40,8 +40,9 @@ export const JOB_STATE_TRANSITIONS: Partial<Record<JobStatus, JobStatus[]>> = {
     draft: ['open', 'cancelled'],
     open: ['bid_accepted', 'unbid', 'cancelled'],
     bid_accepted: ['funded', 'open', 'cancelled'], // Can reopen if funding fails
-    funded: ['in_progress', 'cancelled'],
-    in_progress: ['work_submitted', 'disputed', 'cancelled'],
+    funded: ['in_progress', 'In Progress', 'cancelled'],
+    in_progress: ['work_submitted', 'Pending Confirmation', 'disputed', 'cancelled'],
+    'In Progress': ['work_submitted', 'Pending Confirmation', 'disputed', 'cancelled'],
     work_submitted: ['completed', 'in_progress', 'disputed'], // Can go back if work rejected
     completed: ['disputed'], // Can dispute after completion
     disputed: ['in_progress', 'completed', 'cancelled'],

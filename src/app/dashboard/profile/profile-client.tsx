@@ -916,9 +916,9 @@ export default function ProfileClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="grid gap-8 max-w-full overflow-x-hidden px-4 mb-12"
+            className="grid gap-8 max-w-full overflow-x-hidden px-4 mb-12 font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface min-h-screen pt-8 pb-16"
         >
-            <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+            <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
                 <div className="h-2 w-full bg-gradient-to-r from-primary via-primary/50 to-accent" />
                 <CardHeader>
                     <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
@@ -978,7 +978,7 @@ export default function ProfileClient() {
             
             {role === "Professional" && professionalProfile && (
                 <div className="grid gap-8">
-                    <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                    <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-2xl font-bold tracking-tight">{t('ProfessionalReputation')}</CardTitle>
                             <CardDescription className="text-base">{t('ProfessionalReputationDesc')}</CardDescription>
@@ -1111,7 +1111,7 @@ export default function ProfileClient() {
                     </Card>
 
                     <div className="grid md:grid-cols-2 gap-8">
-                        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                        <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-xl font-bold tracking-tight">{t('mySkills')}</CardTitle>
                                 <CardDescription>{t('mySkillsDesc')}</CardDescription>
@@ -1132,7 +1132,7 @@ export default function ProfileClient() {
             {user && <ReferralCard user={user} />}
 
             {isclientOnly && (
-                <Card className="bg-accent/20 border-dashed">
+                <Card className="bg-surface-container dark:bg-slate-900 border-dashed">
                     <CardHeader>
                         <CardTitle>{t('expandOpportunities')}</CardTitle>
                         <CardDescription>{t('expandOpportunitiesDesc')}</CardDescription>
@@ -1148,7 +1148,7 @@ export default function ProfileClient() {
             )}
 
             {isProfessionalOnly && (
-                <Card className="bg-accent/20 border-dashed">
+                <Card className="bg-surface-container dark:bg-slate-900 border-dashed">
                     <CardHeader>
                         <CardTitle>{t('readyToHire')}</CardTitle>
                         <CardDescription>{t('readyToHireDesc')}</CardDescription>

@@ -85,11 +85,11 @@ function JobCard({ job, onRowClick, t }: { job: Job, onRowClick: (jobId: string)
   const clientName = (job.client as User)?.name || 'N/A';
 
   return (
-    <Card onClick={() => onRowClick(job.id)} className="cursor-pointer border-0 shadow-sm shadow-primary/5 hover:shadow-md transition-shadow group">
+    <Card onClick={() => onRowClick(job.id)} className="cursor-pointer bg-surface-container dark:bg-slate-900 border-l-4 border-secondary hover:bg-surface-container-high transition-all hover:-translate-y-0.5 group">
       <CardHeader>
         <div className="flex justify-between items-start">
-          <CardTitle className="text-base font-bold tracking-tight leading-tight pr-4 group-hover:text-primary transition-colors">{job.title}</CardTitle>
-          <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
+          <CardTitle className="text-lg font-bold font-headline text-on-surface mb-1 group-hover:text-primary transition-colors">{job.title}</CardTitle>
+          <Badge variant={getStatusVariant(job.status)} className="text-[10px] bg-surface-container-highest text-outline-variant px-2 py-0.5 rounded font-black tracking-widest uppercase">{job.status}</Badge>
         </div>
         <CardDescription className="font-mono text-xs pt-1">{job.id}</CardDescription>
       </CardHeader>
@@ -447,6 +447,7 @@ export default function AllJobsClient() {
 
   return (
     <GlobalErrorBoundary>
+      <div className="font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface min-h-screen p-4 md:p-8">
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard
@@ -475,7 +476,7 @@ export default function AllJobsClient() {
         />
       </div>
 
-      <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
+      <Card className="border-0 shadow-lg shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-xl overflow-hidden mt-8">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -670,6 +671,7 @@ export default function AllJobsClient() {
           )}
         </CardContent>
       </Card>
+      </div>
     </GlobalErrorBoundary>
   );
 }

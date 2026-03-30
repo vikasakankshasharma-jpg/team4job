@@ -21,7 +21,7 @@
 
     const email = 'local_script_user@team4job.com';
     try {
-      const user = await auth.createUser({ email, password: 'Test@1234', displayName: 'Local Script' });
+      const user = await auth.createUser({ email, password: 'Admin_Pass2026!', displayName: 'Local Script' });
       console.log('[SCRIPT] Created user:', user.uid);
       await db.collection('users').doc(user.uid).set({ email: user.email, createdAt: firestoreMod.Timestamp.now() });
       console.log('[SCRIPT] Wrote user doc');

@@ -29,6 +29,8 @@ export const getStatusVariant = (status: Job['status']): "default" | "secondary"
             return 'secondary';
         case 'Cancelled':
             return 'destructive'
+        case 'Pending Confirmation':
+            return 'warning';
         default:
             return 'default';
     }

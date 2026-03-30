@@ -10,7 +10,7 @@ export function useNotifications() {
     const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
 
     // Disable realtime notifications in E2E mode to prevent Firestore assertion errors
-    const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
+    const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true' || process.env.NEXT_PUBLIC_E2E_MODE === 'true';
 
     useEffect(() => {
         if (!user || isE2EMode) {
@@ -19,29 +19,29 @@ export function useNotifications() {
             return;
         }
 
-        if (isE2EMode) {
-            setNotifications([]);
-            setLoading(false);
-            return;
-        }
-
         setLoading(true);
 
-        // 1. Subscribe to real-time notifications
-        // 1. Subscribe to real-time notifications
-        const unsubscribe = NotificationsService.subscribeToNotifications(
-            user.id,
-            (newNotifications) => {
-                setNotifications(newNotifications);
-                setLoading(false);
-            },
-            (error) => {
-                setLoading(false);
-            }
-        );
+        // 1. Subscribe to real-time notifications try-catch
+        let unsubscribe = () => {};
+        try {
+            unsubscribe = NotificationsService.subscribeToNotifications(
+                user.id,
+                (newNotifications) => {
+                    setNotifications(newNotifications);
+                    setLoading(false);
+                },
+                (error) => {
+                    console.error("[useNotifications] Subscription error:", error);
+                    setLoading(false);
+                }
+            );
+        } catch (e) {
+            console.error("[useNotifications] Failed to setup subscription:", e);
+            setLoading(false);
+        }
 
         // 2. Fetch initial preferences
-        NotificationsService.getPreferences(user.id).then(setPreferences);
+        NotificationsService.getPreferences(user.id).then(setPreferences).catch(() => {});
 
         return () => unsubscribe();
     }, [user, isE2EMode]);

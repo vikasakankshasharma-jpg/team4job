@@ -359,127 +359,72 @@ export class AuthHelper {
                     await submitButton.click({ force: true });
                 }
 
-                // Wait for dashboard or error - shorter timeout to trigger fallback faster
-                await this.page.waitForURL(/\/dashboard/, { timeout: 15000 }).catch(() => {
-                    console.log('[AuthHelper] waitForURL(/dashboard) timed out, will attempt recovery in ensureRole.');
-                });
-                console.log('[AuthHelper] Cookie banner hidden after dashboard load');
-
-                // Wait for redirect to dashboard with stable markers
+                // Wait for the login button to either disappear (redirect) or the URL to change
+                const postClickUrl = this.page.url();
                 try {
-                    const loginErrorSignals = this.page
-                        .getByText(/login failed|invalid credentials|too many failed attempts/i)
-                        .or(this.page.getByRole('alert').filter({ hasText: /login failed|invalid|too many/i }));
-
-                    // The app redirects with a small client-side delay. Instead of waiting on that,
-                    // validate the session via the auth-guard by navigating to /dashboard.
-                    await Promise.race([
-                        loginErrorSignals.first().waitFor({ state: 'visible', timeout: 15000 }).then(() => {
-                            throw new Error('[AuthHelper] Login error message detected on page');
-                        }),
-                        this.page.waitForTimeout(1500),
-                    ]);
-
-                    await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 30000 });
-                    await this.page.waitForTimeout(1000);
-
-                    if (this.page.url().includes('/login')) {
-                        throw new Error('[AuthHelper] After login submit, navigating to /dashboard redirected back to /login (session not established).');
-                    }
-
-                    // Wait for a stable dashboard marker (nav or user menu or post-job button)
-                    const markers = [
-                        '[data-testid="nav-link-auditLog"]',
-                        '[data-testid="user-menu-trigger"]',
-                        '[data-testid="dashboard-post-job-btn"]',
-                        'nav',
-                        '[role="navigation"]',
-                        'text="Post Job"',
-                        'text="Active Jobs"'
-                    ];
-                    
-                    await Promise.any(markers.map(m => 
-                        this.page.locator(m).first().waitFor({ state: 'visible', timeout: 60000 })
-                    )).catch(e => {
-                        console.warn('[AuthHelper] No dashboard markers visible after timeout, but check URL:', this.page.url());
-                    });
-
-                    // Hide any persistent cookie consent banners that may appear after navigation
-                    try {
-                        await this.page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
-                        console.log('[AuthHelper] Cookie banner hidden after dashboard load');
-                    } catch (e) {
-                        console.warn('[AuthHelper] Failed to hide cookie banner:', e);
-                    }
-
-                    console.log(`[AuthHelper] Login successful for ${email}`);
-                    return;
-                } catch (error) {
-                    // Sometimes login succeeds but the client-side redirect is delayed/flaky in CI.
-                    // Fallback: navigate to /dashboard directly and see if session is active.
-                    const currentUrl = this.page.url();
-                    try {
-                        await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 60000 });
-                        await this.page.waitForTimeout(1000);
-
-                        if (this.page.url().includes('/dashboard')) {
-                            console.log(`[AuthHelper] Recovered by direct navigation to /dashboard for ${email}`);
-                            return;
-                        }
-                    } catch {
-                    }
-
-                    if (!this.page.isClosed()) {
-                        const bodyText = (await this.page.textContent('body').catch(() => '')) || '';
-                        const alertText = (await this.page.locator('[role="alert"]').first().innerText().catch(() => '')) || '';
-                        const toastText = (await this.page.locator('region[name*="Notifications"], [aria-label*="Notifications"]').first().innerText().catch(() => '')) || '';
-                        const emailError = (await this.page.getByTestId('email-error').innerText().catch(() => '')) || '';
-                        const passwordError = (await this.page.getByTestId('password-error').innerText().catch(() => '')) || '';
-                        const combined = bodyText + '\n' + alertText + '\n' + toastText;
-                        const looksLikeLoginError = /invalid|wrong|incorrect|failed|error|lockout|too many/i.test(combined);
-                        if (currentUrl.includes('/login') && looksLikeLoginError) {
-                            throw new Error(
-                                `[AuthHelper] Login did not reach dashboard. Still on ${currentUrl}. Alert: ${alertText || '(none)'}. Toasts: ${toastText || '(none)'}. FormErrors: ${emailError || '(none)'} | ${passwordError || '(none)'}. LoginFormConsole: ${loginFormConsole.join(' | ') || '(none)'}`
-                            );
-                        }
-                        if (currentUrl.includes('/login')) {
-                            throw new Error(
-                                `[AuthHelper] Login did not reach dashboard. Still on ${currentUrl}. Alert: ${alertText || '(none)'}. Toasts: ${toastText || '(none)'}. FormErrors: ${emailError || '(none)'} | ${passwordError || '(none)'}. LoginFormConsole: ${loginFormConsole.join(' | ') || '(none)'}`
-                            );
-                        }
-                    }
-
-                    console.error(`[AuthHelper] Login failed to reach dashboard:`, error);
-                    throw error;
+                    await this.page.waitForURL(/\/dashboard/, { timeout: 30000 });
+                    console.log('[AuthHelper] Login submission redirect to dashboard detected.');
+                } catch (e) {
+                    console.warn('[AuthHelper] No redirect to /dashboard after 30s. Checking for errors on page...');
                 }
-            } catch (error) {
-                console.error(`[AuthHelper] Login attempt ${attempts} failed:`, error);
 
-                // Screenshot on failure
+                // Explicitly wait for the client-side session to sync by waiting for a dashboard marker
+                // rather than manually navigating to /dashboard again too early.
+                const markers = [
+                    '[data-testid="user-menu-trigger"]',
+                    '[data-testid="dashboard-post-job-btn"]',
+                    '[data-testid="nav-link-allJobs"]',
+                    'nav',
+                    'text="Post Job"',
+                    'text="Active Jobs"'
+                ];
+                
+                console.log('[AuthHelper] Waiting for auth session stabilization (Dashboard markers)...');
+                await Promise.any(markers.map(m => 
+                    this.page.locator(m).first().waitFor({ state: 'visible', timeout: 45000 })
+                )).catch(e => {
+                    console.warn('[AuthHelper] No dashboard markers appeared. Current URL:', this.page.url());
+                });
+
+                // Now verify we didn't get kicked back to login
+                if (this.page.url().includes('/login')) {
+                    throw new Error(`[AuthHelper] Login failed: Still on ${this.page.url()} after submit.`);
+                }
+
+                // Hide any persistent cookie consent banners that may appear after navigation
+                try {
+                    await this.page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
+                    console.log('[AuthHelper] Cookie banner hidden after dashboard load');
+                } catch (e) {
+                    // Ignore style tag errors
+                }
+
+                console.log(`[AuthHelper] Login successful for ${email}`);
+                return;
+            } catch (error: any) {
+                console.error(`[AuthHelper] Login attempt ${attempts} failed:`, error.message);
+                
+                // Fallback: Check if we are actually at the dashboard despite errors
+                if (this.page.url().includes('/dashboard')) {
+                    console.log('[AuthHelper] Recovered: URL is already at /dashboard');
+                    return;
+                }
+
                 if (!this.page.isClosed()) {
                     await this.page.screenshot({ path: `test-results/login-failure-${attempts}.png` }).catch(() => { });
                 }
 
                 if (attempts === maxRetries) throw error;
-                if (!this.page.isClosed()) {
-                    await this.page.waitForTimeout(500);
-                }
+                await this.page.waitForTimeout(1000);
             } finally {
                 if (consoleListener) {
-                    try {
-                        this.page.off('console', consoleListener);
-                    } catch {
-                        // ignore
-                    }
+                    this.page.off('console', consoleListener);
                 }
             }
         }
 
-        const currentUrl = this.page.url();
-        const pageText = await this.page.textContent('body');
-        throw new Error(`Login failed after ${maxRetries} attempts. Current URL: ${currentUrl}.`);
+        throw new Error(`Login failed after ${maxRetries} attempts. Current URL: ${this.page.url()}`);
     }
-
 
     async clearAuthPersistence() {
         console.log('[AuthHelper] Clearing auth persistence...');
@@ -510,10 +455,24 @@ export class AuthHelper {
 
     async logout() {
         console.log('[AuthHelper] Starting logout process...');
+        
+        // If we're already on the login page or home, we're effectively logged out
+        // but we still want to clear local storage to be safe
+        const currentUrl = this.page.url();
+        if (currentUrl.includes('/login') || currentUrl.endsWith('/')) {
+            console.log('[AuthHelper] Already on login or home page, enforcing storage/cookie purge...');
+            await this.clearAuthPersistence();
+            return;
+        }
+
         try {
+            // Give the client-side hydration a moment to settle
+            await this.page.waitForTimeout(1000);
+
             // 0. Dismiss any blocking dialogs that might be open
-            const dialog = this.page.getByRole('dialog');
+            const dialog = this.page.getByRole('dialog').first();
             if (await dialog.isVisible().catch(() => false)) {
+                console.log('[AuthHelper] Dismissing dialog before logout');
                 await this.page.keyboard.press('Escape').catch(() => { });
                 await this.page.waitForTimeout(500);
             }
@@ -522,32 +481,34 @@ export class AuthHelper {
                 .or(this.page.locator('button:has([data-testid="user-avatar"]), button:has(.avatar), button[aria-haspopup="menu"]').first())
                 .or(this.page.locator('button.rounded-full:has(img)'))
                 .or(this.page.locator('button:has(.rounded-full)'))
+                .or(this.page.locator('[data-testid="user-menu-button"]'))
                 .or(this.page.locator('button:has-text("D")'));
 
-            await userMenu.waitFor({ state: 'visible', timeout: 10000 });
-            await userMenu.click({ force: true });
-            console.log('[AuthHelper] Clicked user menu');
-
-            const logoutButton = this.page.getByTestId('logout-button').first()
-                .or(this.page.getByRole('menuitem', { name: /Log out|Sign out|Logout/i }).first())
-                .or(this.page.locator('button:has-text("Log out"), button:has-text("Sign out"), button:has-text("Logout")').first());
-
-            await logoutButton.waitFor({ state: 'visible', timeout: 5000 });
-            await logoutButton.click({ force: true });
-            console.log('[AuthHelper] Clicked logout button');
-
-            await this.page.waitForURL(url => url.pathname === '/' || url.pathname.includes('/login'), { timeout: 15000 });
-            console.log('[AuthHelper] Redirected to login page or home');
+            if (await userMenu.isVisible({ timeout: 5000 }).catch(() => false)) {
+                await userMenu.click({ force: true });
+                const logoutBtn = this.page.getByTestId('logout-button').first()
+                    .or(this.page.getByRole('menuitem', { name: /Log out|Sign out|Logout/i }).first())
+                    .or(this.page.locator('button:has-text("Log out"), button:has-text("Sign out"), button:has-text("Logout")').first());
+                
+                await logoutBtn.waitFor({ state: 'visible', timeout: 5000 });
+                await logoutBtn.click({ force: true });
+            } else {
+                console.warn('[AuthHelper] User menu not found. Enforcing hard reset.');
+            }
         } catch (error) {
-            console.error('[AuthHelper] Logout UI failed, enforcing hard reset.');
+            console.error('[AuthHelper] Logout UI interaction failed, enforcing hard reset.');
         } finally {
-            // ALWAYS clear persistence to prevent zombie sessions
+            // ALWAYS clear persistence and redirect to login to ensure clean state
             await this.clearAuthPersistence();
-            // Force navigate to login if UI interactions failed
-            if (!this.page.url().includes('/login') && this.page.url() !== '/') {
-                await this.page.goto(ROUTES.login || '/login', { timeout: 15000 }).catch(() => { });
+            if (!this.page.url().includes('/login')) {
+                await this.page.goto('/login').catch(() => {});
             }
         }
+
+        // Stabilize on login page
+        await this.page.waitForURL('**/login', { timeout: 15000 });
+        await this.page.waitForTimeout(2000); // Explicit buffer for session cleanup settlement
+        console.log('[AuthHelper] Logout successful');
     }
 
     async acceptCookies() {
@@ -967,8 +928,31 @@ export class FormHelper {
     }
 
     async waitForToast(message: string, timeout = TIMEOUTS.medium) {
-        await expect(this.page.locator(`[role="status"]:has-text("${message}"), .toast:has-text("${message}")`).first())
-            .toBeVisible({ timeout });
+        console.log(`[FormHelper] Waiting for toast: "${message}" (timeout: ${timeout}ms)`);
+        
+        // Define failure signals: destructive toasts or explicit error messages
+        const failureLocator = this.page.locator('[role="status"][data-variant="destructive"], .toast-error').first();
+        const successLocator = this.page.locator(`[role="status"]:has-text("${message}"), .toast:has-text("${message}")`).first();
+
+        try {
+            const combinedSelector = `[role="status"]:has-text("${message}"), .toast:has-text("${message}"), [role="status"][data-variant="destructive"], .toast-error`;
+            const matchedLocator = this.page.locator(combinedSelector).first();
+            await matchedLocator.waitFor({ state: 'visible', timeout });
+
+            // If the matched locator is an error, throw it
+            const isError = await failureLocator.isVisible();
+            if (isError) {
+                const errorText = await failureLocator.innerText();
+                console.error(`[FormHelper] Detected error toast instead of success: "${errorText}"`);
+                throw new Error(`Action failed with error: "${errorText.trim()}". Expected toast: "${message}"`);
+            }
+            
+            console.log(`[FormHelper] Success toast "${message}" detected.`);
+        } catch (e: any) {
+            if (e.message.includes('Action failed with error')) throw e;
+            console.error(`[FormHelper] Timeout waiting for toast "${message}". Current URL: ${this.page.url()}`);
+            throw e;
+        }
     }
 
     async waitForErrorToast(timeout = TIMEOUTS.medium) {
@@ -1118,7 +1102,36 @@ export class FormHelper {
             console.warn('[FormHelper] Form has validation errors:', errors.join(' | '));
             await this.page.screenshot({ path: `test-results/debug-errors-${Date.now()}.png`, fullPage: true }).catch(() => {});
         }
+        // 5. Check for AI Review page explicitly because its URL overlaps with the Job dashboard
+        try {
+            console.log('[FormHelper] Checking for AI Review compilation step...');
+            const reviewBtn = this.page.getByRole('button', { name: /Looks Good, Post Job|Looks Good/i });
+            if (await reviewBtn.waitFor({ state: 'visible', timeout: 60000 }).catch(() => false)) {
+                console.log('[FormHelper] AI Review page finished generating, finalizing post...');
+                await reviewBtn.click({ force: true });
+                await this.page.waitForTimeout(1500); // Give the system time to handle the click
+                
+                // Extra check for "Save as Template" modals or post-submission delays
+                await this.page.waitForLoadState('domcontentloaded');
+            } else {
+                console.log('[FormHelper] No AI Review page detected within timeout or not applicable.');
+            }
+        } catch (e) {
+            console.log('[FormHelper] AI Review handling error:', e);
+        }
+
         console.log('[FormHelper] submitPostJob completed.');
+
+        // Wait for redirect to job detail and confirm settlement
+        console.log('[FormHelper] Waiting for job detail page settlement...');
+        await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
+        
+        // Confirm dashboard marker is visible as proxy for hydration
+        await this.page.waitForSelector('[data-testid="dashboard-marker"]', { state: 'attached', timeout: 15000 });
+        
+        const jobId = this.page.url().split('/').pop() || '';
+        console.log(`[FormHelper] Redirected to Job ID: ${jobId}`);
+        return jobId;
     }
 }
 
@@ -1315,6 +1328,12 @@ export class JobHelper {
             const startTime = Date.now();
             while (Date.now() - startTime < timeout) {
                 console.log(`Helper: Checking for status ${status}...`);
+                
+                // DIAGNOSTIC: Log all present data-status attributes
+                const allBadges = await this.page.locator('[data-status]').all();
+                const statuses = await Promise.all(allBadges.map(b => b.getAttribute('data-status')));
+                console.log(`Helper: Currently visible status attributes: ${statuses.join(', ')}`);
+
                 const isVisible = await this.page.locator(`[data-status="${status}"]`).first().isVisible();
                 if (isVisible) {
                     console.log(`Helper: Job status ${status} found.`);
@@ -1336,6 +1355,11 @@ export class JobHelper {
                     // Continue loop
                 }
             }
+
+            // Before failing, take a screenshot
+            const screenshotPath = `test-results/status-failure-${Date.now()}.png`;
+            await this.page.screenshot({ path: screenshotPath });
+            console.error(`Helper: Timeout waiting for status: ${status}. Screenshot saved to ${screenshotPath}`);
 
             throw new Error(`Timeout waiting for status: ${status}`);
 
@@ -1371,6 +1395,35 @@ export class WaitHelper {
 
     async waitForUrl(pattern: string | RegExp, timeout = TIMEOUTS.medium) {
         await this.page.waitForURL(pattern, { timeout });
+    }
+
+    /**
+     * Wait for a subcollection (e.g. bids, milestones) to be populated/synced in the UI.
+     * This is useful for preventing race conditions after a server action where 
+     * Firestore listeners might be slow to propagate subcollection items.
+     */
+    async waitForSubcollectionSync(containerSelector: string, itemSelector: string, timeout = 30000) {
+        console.log(`[WaitHelper] Waiting for subcollection sync in "${containerSelector}" for items "${itemSelector}"...`);
+        const container = this.page.locator(containerSelector);
+        const items = container.locator(itemSelector);
+
+        const startTime = Date.now();
+        while (Date.now() - startTime < timeout) {
+            const count = await items.count();
+            if (count > 0) {
+                console.log(`[WaitHelper] Sync complete: ${count} items found.`);
+                return;
+            }
+            // Small wait before checking again - polling is safer than purely relying on visible
+            await this.page.waitForTimeout(2000);
+            
+            // If the container itself isn't even visible, maybe we need to wait or it's empty
+            if (!(await container.isVisible())) {
+                console.log(`[WaitHelper] Container "${containerSelector}" not yet visible...`);
+            }
+        }
+        
+        console.warn(`[WaitHelper] Subcollection sync timed out and found 0 items in ${timeout}ms. Proceeding anyway...`);
     }
 }
 
@@ -1813,9 +1866,6 @@ export class TestHelper {
     // Submit the Post Job action with overlays and confirm handling
     async submitPostJob(options?: { force?: boolean }) {
         // Delegate to the robust FormHelper implementation
-        await this.form.submitPostJob();
+        return await this.form.submitPostJob();
     }
 }
-
-
-

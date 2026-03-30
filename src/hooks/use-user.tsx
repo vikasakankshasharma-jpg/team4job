@@ -88,6 +88,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isLoggingOut = useRef(false);
   const lastRedirectPath = useRef<string | null>(null);
   const lastUpdateRef = useRef<number>(0);
+  const isInitialAuthCheckDone = useRef(false);
 
   // Sync role from localStorage after hydration
   useEffect(() => {
@@ -170,8 +171,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     errorEmitter.on('permission-error', handlePermissionError);
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      console.log('[useUser] onAuthStateChanged:', firebaseUser?.email || 'null', 'UID:', firebaseUser?.uid);
-      if (isLoggingOut.current) return;
+      const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true' || process.env.NEXT_PUBLIC_E2E_MODE === 'true';
+      isInitialAuthCheckDone.current = true;
+      if (isLoggingOut.current) {
+        return;
+      }
 
       if (firebaseUser) {
         // Sync token to cookie for server-side fetching
@@ -184,17 +188,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // In E2E mode, avoid realtime listeners but still fetch the user profile once
         // so role-based UI can render correctly.
-        // Force-stable for audit
-        const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true' || process.env.NEXT_PUBLIC_E2E_MODE === 'true'; 
         if (isE2EMode) {
-          console.log('[useUser] E2E Mode: Fetching profile once...');
           setLoading(true);
           setHasAuthUser(true);
 
           const fetchProfile = async () => {
             try {
               const userData = await getUserProfileAction(firebaseUser.uid);
-              console.log('[useUser] Profile fetched:', userData?.email || 'null');
               if (userData) {
                 updateUserState(userData);
               } else {
@@ -234,43 +234,49 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         } else {
           // Standard realtime listener
-          console.log('[useUser] Standard Mode: Subscribing to profile...');
           setLoading(true);
           setHasAuthUser(true);
-          const unsubscribeProfile = onSnapshot(doc(db, "users", firebaseUser.uid), async (snapshot) => {
-            if (snapshot.exists()) {
-              console.log('[useUser] Profile found via UID:', firebaseUser.uid);
-              updateUserState(snapshot.data() as User);
-              setLoading(false);
-            } else {
-              // Self-healing migration for seeded users
-              console.log('[useUser] Profile not found via UID, searching by email:', firebaseUser.email);
-              const { query, collection, where, getDocs, setDoc, doc: firestoreDoc } = await import('firebase/firestore');
-              const q = query(collection(db, "users"), where("email", "==", firebaseUser.email));
-              const querySnapshot = await getDocs(q);
-              
-              if (!querySnapshot.empty && querySnapshot.docs[0].id !== firebaseUser.uid) {
-                const legacyDoc = querySnapshot.docs[0];
-                const legacyData = legacyDoc.data();
-                console.log('[useUser] Found legacy profile (ID:', legacyDoc.id, '), migrating to UID:', firebaseUser.uid);
-                
-                const newData = {
-                  ...legacyData,
-                  id: firebaseUser.uid,
-                  updatedAt: new Date().toISOString()
-                } as any as User;
-                
-                await setDoc(firestoreDoc(db, "users", firebaseUser.uid), newData);
-                updateUserState(newData);
+          let unsubscribeProfile = () => {};
+          try {
+            unsubscribeProfile = onSnapshot(doc(db, "users", firebaseUser.uid), async (snapshot) => {
+              if (snapshot.exists()) {
+                updateUserState(snapshot.data() as User);
+                setLoading(false);
               } else {
-                console.log('[useUser] No legacy profile found by email or already migrated.');
+                // Self-healing migration for seeded users
+                const { query, collection, where, getDocs, setDoc, doc: firestoreDoc } = await import('firebase/firestore');
+                const q = query(collection(db, "users"), where("email", "==", firebaseUser.email));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty && querySnapshot.docs[0].id !== firebaseUser.uid) {
+                  const legacyDoc = querySnapshot.docs[0];
+                  const legacyData = legacyDoc.data();
+                  
+                  const newData = {
+                    ...legacyData,
+                    id: firebaseUser.uid,
+                    updatedAt: new Date().toISOString()
+                  } as any as User;
+                  
+                  await setDoc(firestoreDoc(db, "users", firebaseUser.uid), newData);
+                  updateUserState(newData);
+                } else {
+                }
+                setLoading(false);
+              }
+            }, (error) => {
+              // Handle permission-denied vs other errors
+              if (error.code === 'permission-denied') {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                  path: `users/${firebaseUser.uid}`,
+                  operation: 'get'
+                }));
               }
               setLoading(false);
-            }
-          }, (error) => {
-            console.error("Profile listener error:", error);
+            });
+          } catch (e) {
             setLoading(false);
-          });
+          }
           return unsubscribeProfile;
         }
       } else {
@@ -295,13 +301,17 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getRedirectPath = (): string | null => {
     // If still loading auth state, we are not ready to decide
-    if (loading) return null;
+    if (loading || !isInitialAuthCheckDone.current) {
+        if (pathname.startsWith('/dashboard')) {
+        }
+        return null;
+    }
+
 
     const res = ((): string | null => {
       // 1. Handling Public Paths
       if (isPublicPath(pathname)) {
         if (user && (pathname === '/login' || pathname === '/')) {
-          console.log('[useUser] Redirecting to dashboard (Logged in on public page)');
           return '/dashboard';
         }
         return null;
@@ -312,7 +322,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                               pathname.startsWith('/profile');
 
       if (isProtectedPath && !user && !hasAuthUser) {
-        console.log('[useUser] Redirecting to login (Protected path, no session)', { pathname, hasAuthUser, user: !!user });
+        if (loading) {
+           return null;
+        }
         return '/login';
       }
 
@@ -334,16 +346,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isSupportPage = supportPaths.some(p => pathname.startsWith(p));
 
       if (role === 'Client' && isProfessionalOnlyPage) {
-        console.log('[useUser] Redirecting Client from Professional page');
         return '/dashboard';
       } else if (role === 'Professional' && isClientPage) {
-        console.log('[useUser] Redirecting Professional from Client page');
         return '/dashboard';
       } else if (role === 'Support Team' && !isSupportPage && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/profile')) {
-        console.log('[useUser] Redirecting Support Team member');
         return '/dashboard/disputes';
       } else if (!user?.roles.includes("Admin") && isAdminPage) {
-        console.log('[useUser] Unauthorized admin page access');
         return '/dashboard';
       }
 

@@ -65,7 +65,7 @@
         "roleHiring": "ग्राहक मोड",
         "roleService": "सेवा प्रदाता मोड",
         "roleAdmin": "एडमिन",
-        "verifyTitle": "एक सत्यापित पेशेवर बनें",
+        "verifyTitle": "एक सत्यापित प्रोफेशनल बनें",
         "verifyDesc": "विश्वास बनाने और अधिक नौकरियां पाने के लिए आधार सत्यापन पूरा करें।",
         "verifyButton": "अभी सत्यापित करें",
         "findProjectTitle": "अपना अगला प्रोजेक्ट खोजें",
@@ -695,84 +695,6 @@
             },
             "loading": "Loading system health..."
         },
-        "reports": {
-            "title": "रिपोर्ट और एनालिटिक्स",
-            "description": "An overview of key metrics and trends (last 90 days).",
-            "updated": "Updated {{time}}",
-            "refresh": "Refresh Data",
-            "financial": {
-                "title": "Financial Summary",
-                "description": "A real-time overview of financial activities on the platform.",
-                "volume": "Total Volume",
-                "revenue": "Platform Revenue",
-                "released": "Funds Released",
-                "held": "Funds Held",
-                "refunds": "Refunds Processed"
-            },
-            "kpi": {
-                "totalUsers": "Total Users",
-                "usersDesc": "{{professionals}} सेवा प्रदाताs, {{givers}} ग्राहकs",
-                "totalJobs": "Total Jobs",
-                "jobsDesc": "All jobs created on the platform",
-                "fillRate": "Job Fill Rate",
-                "fillRateDesc": "Of jobs posted are completed"
-            },
-            "export": {
-                "title": "Data Export",
-                "description": "Download a full CSV backup of your platform's core data collections.",
-                "users": "Export All Users",
-                "jobs": "Export All Jobs",
-                "transactions": "Export All Transactions",
-                "disputes": "Export All Disputes",
-                "noData": "No Data",
-                "noDataDesc": "There is no data to export for {{type}}.",
-                "success": "Export Successful",
-                "successDesc": "{{count}} records exported for {{type}}.",
-                "failed": "Export Failed",
-                "failedDesc": "An error occurred during the export."
-            },
-            "topPerformers": {
-                "title": "Top Performers Report",
-                "description": "सेवा प्रदाताs ranked by performance for {{month}}.",
-                "runAutomation": "Run Monthly Reward Automation",
-                "automation": {
-                    "complete": "Automation Complete!",
-                    "failed": "Automation Failed",
-                    "error": "Automation Error",
-                    "errorDesc": "Could not grant rewards. Please try again."
-                },
-                "rank": "Rank",
-                "professional": "सेवा प्रदाता",
-                "points": "Monthly Points",
-                "rating": "Rating",
-                "tier": "Tier",
-                "empty": "Not enough data to generate performance report."
-            },
-            "leaderboard": {
-                "title": "All-Time Reputation Leaderboard",
-                "description": "Top professionals by total reputation points, with geographic filters.",
-                "download": "Download Report",
-                "filterState": "filter by State",
-                "filterCity": "Filter by City",
-                "filterPincode": "Filter by Pincode",
-                "allStates": "All States",
-                "allCities": "All Cities",
-                "allPincodes": "All Pincodes",
-                "totalPoints": "Total Points",
-                "empty": "No professionals found for the selected filters.",
-                "exportFailed": "Export Failed",
-                "exportFailedDesc": "No data to export for the current filter."
-            },
-            "disputes": {
-                "title": "Dispute Resolution Report",
-                "description": "An overview of support ticket performance.",
-                "resolutionRate": "Resolution Rate",
-                "avgDays": "Avg. Days to Resolve",
-                "byCategory": "Disputes by Category",
-                "count": "Count",
-                "status": "Resolution Status"
-            }
-        },
         "subscriptionPlans": {
             "title": "Subscription Plans",
             "description": "Manage platform subscription tiers and pricing.",
@@ -1012,6 +934,133 @@
                 "admin": "Admin",
                 "support": "Support Team"
             }
+        }
+    },
+    "reports": {
+        "title": "रिपोर्ट और एनालिटिक्स",
+        "description": "An overview of key metrics and trends (last 90 days).",
+        "updated": "Updated {{time}}",
+        "refresh": "Refresh Data",
+        "financial": {
+            "title": "Financial Summary",
+            "description": "A real-time overview of financial activities on the platform.",
+            "volume": "Total Volume",
+            "revenue": "Platform Revenue",
+            "released": "Funds Released",
+            "held": "Funds Held",
+            "refunds": "Refunds Processed"
+        },
+        "kpi": {
+            "totalUsers": "Total Users",
+            "usersDesc": "{{professionals}} सेवा प्रदाताs, {{givers}} ग्राहकs",
+            "totalJobs": "Total Jobs",
+            "jobsDesc": "All jobs created on the platform",
+            "fillRate": "Job Fill Rate",
+            "fillRateDesc": "Of jobs posted are completed"
+        },
+        "export": {
+            "title": "Data Export",
+            "description": "Download a full CSV backup of your platform's core data collections.",
+            "users": "Export All Users",
+            "jobs": "Export All Jobs",
+            "transactions": "Export All Transactions",
+            "disputes": "Export All Disputes",
+            "noData": "No Data",
+            "noDataDesc": "There is no data to export for {{type}}.",
+            "success": "Export Successful",
+            "successDesc": "{{count}} records exported for {{type}}.",
+            "failed": "Export Failed",
+            "failedDesc": "An error occurred during the export."
+        },
+        "topPerformers": {
+            "title": "Top Performers Report",
+            "description": "सेवा प्रदाताs ranked by performance for {{month}}.",
+            "runAutomation": "Run Monthly Reward Automation",
+            "automation": {
+                "complete": "Automation Complete!",
+                "failed": "Automation Failed",
+                "error": "Automation Error",
+                "errorDesc": "Could not grant rewards. Please try again."
+            },
+            "rank": "Rank",
+            "professional": "सेवा प्रदाता",
+            "points": "Monthly Points",
+            "rating": "Rating",
+            "tier": "Tier",
+            "empty": "Not enough data to generate performance report."
+        },
+        "leaderboard": {
+            "title": "All-Time Reputation Leaderboard",
+            "description": "Top professionals by total reputation points, with geographic filters.",
+            "download": "Download Report",
+            "filterState": "filter by State",
+            "filterCity": "Filter by City",
+            "filterPincode": "Filter by Pincode",
+            "allStates": "All States",
+            "allCities": "All Cities",
+            "allPincodes": "All Pincodes",
+            "totalPoints": "Total Points",
+            "empty": "No professionals found for the selected filters.",
+            "exportFailed": "Export Failed",
+            "exportFailedDesc": "No data to export for the current filter."
+        },
+        "disputes": {
+            "title": "Dispute Resolution Report",
+            "description": "An overview of support ticket performance.",
+            "resolutionRate": "Resolution Rate",
+            "avgDays": "Avg. Days to Resolve",
+            "byCategory": "Disputes by Category",
+            "count": "Count",
+            "status": "Resolution Status"
+        }
+    },
+    "analytics": {
+        "title": "एनालिटिक्स",
+        "description": "अपने प्लेटफ़ॉर्म प्रदर्शन और खर्च की निगरानी करें।",
+        "refresh": "रिफ्रेश",
+        "refreshing": "रिफ्रेश हो रहा है...",
+        "refreshingDesc": "एनालिटिक्स डेटा अपडेट किया जा रहा है...",
+        "export": "CSV एक्सपोर्ट करें",
+        "exportComplete": "एक्सपोर्ट पूरा हुआ",
+        "exportCompleteDesc": "आपकी रिपोर्ट डाउनलोड हो गई है।",
+        "loadError": "एनालिटिक्स डेटा लोड करने में विफल।",
+        "noData": "कोई डेटा उपलब्ध नहीं",
+        "noDataDesc": "इस अवधि के लिए दिखाने के लिए कोई डेटा नहीं है।",
+        "postFirstJob": "अपनी पहली जॉब पोस्ट करें",
+        "totalJobs": "कुल जॉब्स",
+        "completedJobs": "पूरा हुआ",
+        "totalSpend": "कुल खर्च",
+        "avgRating": "औसत रेटिंग",
+        "activeNow": "{count} अभी सक्रिय",
+        "completionRate": "{rate}% पूरा होने की दर",
+        "lifetimeProjectValue": "लाइफटाइम प्रोजेक्ट मूल्य",
+        "basedOnFeedback": "फीडबैक के आधार पर",
+        "loading": "लोड हो रहा है...",
+        "topProfessionals": "शीर्ष प्रोफेशनल",
+        "workMostOften": "प्रोफेशनल जिनके साथ आप सबसे अधिक काम करते हैं",
+        "performanceMostHired": "आपके सबसे अधिक हायर किए गए प्रोफेशनल का प्रदर्शन",
+        "noProfessionalData": "अभी तक कोई प्रोफेशनल डेटा नहीं है",
+        "tableProfessional": "प्रोफेशनल",
+        "tableJobs": "जॉब्स",
+        "tableTotalPaid": "कुल भुगतान",
+        "tableAvgRating": "औसत रेटिंग",
+        "aiInsights": "AI अंतर्दृष्टि",
+        "noInsights": "अभी तक कोई अंतर्दृष्टि उपलब्ध नहीं है। व्यक्तिगत अनुशंसाएं प्राप्त करने के लिए और अधिक जॉब्स पोस्ट करें।",
+        "aiPoweredInsights": "AI-संचालित अंतर्दृष्टि",
+        "actionableRecommendations": "आपके डेटा के आधार पर उपयोगी अनुशंसाएं",
+        "spendingTrends": "खर्च के रुझान",
+        "monthlySpendingDescription": "पिछले 12 महीनों में मासिक प्रोजेक्ट खर्च",
+        "spent": "खर्च किया गया",
+        "timeToHire": "हायरिंग का समय",
+        "avgDaysToHireDescription": "समय के साथ हायर करने के औसत दिन",
+        "avgDaysPostingToHiringDescription": "पोस्टिंग से हायरिंग तक के औसत दिन",
+        "insights": {
+            "spendingIncreasing": "खर्च बढ़ रहा है",
+            "spendingIncreasingDesc": "पिछले महीने की तुलना में आपका खर्च काफी बढ़ गया है।",
+            "budgetOptimized": "बजट अनुकूलित",
+            "budgetOptimizedDesc": "बहुत बढ़िया! आपका खर्च पिछले रुझानों से कम है।",
+            "highHiringVolume": "उच्च हायरिंग वॉल्यूम",
+            "highHiringVolumeDesc": "आपके पास वर्तमान में कई सक्रिय जॉब्स हैं।"
         }
     },
     "landing": {
@@ -1747,10 +1796,6 @@
         "start": "Start:",
         "estDuration": "Est. Duration:",
         "hours": "Hours"
-    },
-    "analytics": {
-        "title": "Analytics Overview",
-        "description": "Monitor platform growth, user engagement, and financial performance."
     },
     "conflict": {
         "title": "We noticed a difference",

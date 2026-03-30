@@ -6,6 +6,6 @@ curl -X POST http://localhost:3000/api/e2e/setup-installer \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin-test@team4job.com",
-    "password": "Test@1234",
+    "password": "Admin_Pass2026!",
     "isAdmin": true
   }'

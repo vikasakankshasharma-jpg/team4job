@@ -12,7 +12,12 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const body = await req.json();
+        const text = await req.text();
+        console.log(`[E2E-FUND] Request Body: "${text}"`);
+        if (!text) {
+            return NextResponse.json({ error: 'Empty request body' }, { status: 400 });
+        }
+        const body = JSON.parse(text);
         const { jobId } = body;
 
         if (!jobId) {

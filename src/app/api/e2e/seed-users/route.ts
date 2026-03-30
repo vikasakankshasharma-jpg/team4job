@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth, getAdminDb } from '@/infrastructure/firebase/admin';
 
 import { Timestamp } from 'firebase-admin/firestore';
+import { UserRecord } from 'firebase-admin/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,8 +10,8 @@ const isE2eAllowed = () => {
     return true;
 };
 
-const getTestPassword = () => process.env.E2E_TEST_PASSWORD || 'Test@1234';
-const getAdminPassword = () => process.env.E2E_ADMIN_PASSWORD || 'Vikas@129229';
+const getTestPassword = () => process.env.E2E_TEST_PASSWORD || 'TestUser_2026!';
+const getAdminPassword = () => process.env.E2E_ADMIN_PASSWORD || 'Admin_Pass2026!';
 
 /**
  * 10 Test Users covering all real-world scenarios:
@@ -283,12 +284,19 @@ export async function POST(req: NextRequest) {
         const results: Array<{ email: string; uid?: string; created: boolean; name: string; roles: string[] }> = [];
 
         for (const user of TEST_USERS) {
-            let userRecord;
+            let userRecord: UserRecord;
             let created = false;
 
             try {
                 try {
                     userRecord = await retryAsync(() => auth.getUserByEmail(user.email));
+                    // FORCE UPDATE password and display name for existing users to keep sync with test fixtures
+                    await retryAsync(() => auth.updateUser(userRecord.uid, {
+                        password: user.password,
+                        displayName: user.name,
+                        emailVerified: true
+                    }));
+                    console.log(`[SeedAPI] Updated existing user: ${user.email}`);
                 } catch (err: any) {
                     if (err.code === 'auth/user-not-found') {
                         userRecord = await retryAsync(() =>

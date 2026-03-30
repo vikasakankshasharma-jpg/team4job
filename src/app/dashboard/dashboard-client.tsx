@@ -24,6 +24,10 @@ const ClientDashboard = dynamic(() => import("@/domains/jobs").then(mod => mod.C
   ssr: false
 });
 
+import { StitchCustomerDashboardClient } from "@/components/dashboard/stitch-dashboard-client";
+import { StitchAdminAnalytics } from "@/components/dashboard/stitch-admin-analytics";
+import { StitchProfessionalJobBoard } from "@/components/dashboard/stitch-job-board";
+
 import { ClientStats, ProfessionalStats } from "@/domains/jobs/job.types";
 import { Transaction } from "@/lib/types";
 
@@ -74,7 +78,7 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
         setFetching(false);
         fetchingRef.current = false;
       }
-    }, 8000);
+    }, 30000); // Increased from 8s to 30s for dev-server cold boots
 
     getDashboardStatsAction(user.id)
       .then((result) => {
@@ -141,7 +145,7 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
               stats={data?.ProfessionalStats || EMPTY_PROFESSIONAL_STATS}
               transactions={data?.transactions || []}
               loading={false}
-            />
+             />
           </div>
         );
       case "Client":
@@ -152,12 +156,7 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
                 We couldn&apos;t load your latest dashboard stats, so you&apos;re seeing a safe empty state for now.
               </div>
             )}
-            <ClientDashboard
-              stats={data?.ClientStats || EMPTY_CLIENT_STATS}
-              transactions={data?.transactions || []}
-              loading={false}
-              quickMetrics={data?.quickMetrics}
-            />
+            <StitchCustomerDashboardClient />
           </div>
         );
       default:

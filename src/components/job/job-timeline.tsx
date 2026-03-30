@@ -15,12 +15,12 @@ const STEPS = [
     { id: 'bid_accepted', label: 'Accepted', statusMatch: ['bid_accepted', 'awarded'] },
     { id: 'funded', label: 'Funded', statusMatch: ['funded'] },
     { id: 'in_progress', label: 'In Progress', statusMatch: ['in_progress'] },
-    { id: 'work_submitted', label: 'Review', statusMatch: ['work_submitted'] },
+    { id: 'work_submitted', label: 'Review', statusMatch: ['work_submitted', 'pending confirmation'] },
     { id: 'completed', label: 'Done', statusMatch: ['completed'] },
 ];
 
 export function JobTimeline({ status, className, userRole }: JobTimelineProps) {
-    const normalizedStatus = status.toLowerCase();
+    const normalizedStatus = (status || 'open').toLowerCase();
 
     let currentStepIndex = STEPS.findIndex(step => step.statusMatch.includes(normalizedStatus));
     if (normalizedStatus === 'draft') currentStepIndex = -1;

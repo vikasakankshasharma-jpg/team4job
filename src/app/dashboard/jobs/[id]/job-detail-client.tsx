@@ -30,7 +30,7 @@ import { useJobSubscription } from "@/hooks/use-job-subscription";
 import { useBidsSubscription } from "@/hooks/use-bids-subscription";
 import { useFeatureFlag } from "@/lib/feature-flags-client";
 import axios from "axios";
-import { updateJobAction, approveJobAction, revealContactAction, awardJobAction, completeJobWithOtpAction } from "@/app/actions/job.actions";
+import { updateJobAction, approveJobAction, revealContactAction, awardJobAction, completeJobWithOtpAction, submitWorkAction } from "@/app/actions/job.actions";
 import { createPaymentOrderAction, createAddFundsOrderAction } from "@/app/actions/payment.actions";
 import { suggestPriceBoostAction } from "@/app/actions/ai.actions";
 
@@ -311,7 +311,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
     // Determine Winning Bid Amount (Hoisted for Payment Action)
     const winningBidAmount = React.useMemo(() => {
-        if (!job?.awardedProfessional || !bids) return 0;
+        if (!job?.awardedProfessional || !bids) return null;
         const awardedId = getRefId(job.awardedProfessional);
         const winningBid = bids.find(b => getRefId(b.professional) === awardedId);
         return winningBid ? winningBid.amount : 0;
@@ -327,6 +327,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     const canClientFundJob = !!(
         isClient &&
         awardedProfessionalId &&
+        winningBidAmount !== null &&
         ['bid_accepted', 'Pending Funding', 'Awarded'].includes(job?.status || '')
     );
 
@@ -473,8 +474,8 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             description,
             quoteAmount: amount,
             status: 'quoted',
-            createdBy: 'Professional',
-            createdAt: new Date()
+            createdAt: new Date(),
+            createdBy: isClient ? 'Client' : 'Professional' as const
         };
         await handleJobUpdate({
             additionalTasks: [...(job.additionalTasks || []), newTask]
@@ -488,8 +489,8 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             id: `TASK-${Date.now()}`,
             description,
             status: 'pending-quote',
-            createdBy: 'Client',
-            createdAt: new Date()
+            createdAt: new Date(),
+            createdBy: isClient ? 'Client' : 'Professional' as const
         };
         await handleJobUpdate({
             additionalTasks: [...(job.additionalTasks || []), newTask]
@@ -693,7 +694,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             const res = await createPaymentOrderAction(
                 job.id,
                 user.id,
-                winningBidAmount,
+                winningBidAmount || 0,
                 job.travelTip
             );
 
@@ -847,7 +848,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
             initial="hidden"
             animate="visible"
             variants={containerVariants}
-            className="max-w-full overflow-x-hidden pb-20"
+            className="max-w-full overflow-x-hidden pb-20 font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface min-h-screen pt-4"
         >
             <div className="container py-8 sm:py-12 space-y-8 sm:space-y-12 px-4 sm:px-8">
                 {/* Reschedule Banner */}
@@ -865,13 +866,13 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                 <p className="text-sm font-medium opacity-70 italic tracking-tight">
                                     {job.dateChangeProposal.status === 'rejected' ? (
                                         <span>
-                                            {t('otherPartyRejected', { date: job.jobStartDate ? new Date((job.jobStartDate as any).toDate ? (job.jobStartDate as any).toDate() : job.jobStartDate).toLocaleDateString() : 'Original Date' })}
+                                            {t('otherPartyRejected', { date: job.jobStartDate ? toDate(job.jobStartDate).toLocaleDateString() : 'Original Date' })}
                                         </span>
                                     ) : (
                                         <span>
                                             {t('proposedMoveJob', {
                                                 user: job.dateChangeProposal.proposedBy,
-                                                date: new Date((job.dateChangeProposal.newDate as any).toDate ? (job.dateChangeProposal.newDate as any).toDate() : job.dateChangeProposal.newDate).toLocaleDateString()
+                                                date: toDate(job.dateChangeProposal.newDate).toLocaleDateString()
                                             })}
                                         </span>
                                     )}
@@ -924,14 +925,14 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                             <Badge variant={getStatusVariant(job.status)} className="px-5 py-2 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl border-none" data-testid="job-status-badge" data-status={job.status}>
                                 {job.status.replace(/_/g, ' ').toUpperCase()}
                             </Badge>
-                            {job.status === 'funded' && (
+                            {(job.status?.toLowerCase() === 'funded' || job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress') && (
                                 <Badge className="bg-success text-white flex items-center gap-2 px-5 py-2 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl animate-in fade-in zoom-in duration-500">
                                     <ShieldCheck className="h-4 w-4" />
                                     PLATFORM GUARANTEED
                                 </Badge>
                             )}
                         </div>
-                        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                        <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
                             <div className="h-1 w-full bg-gradient-to-r from-primary/30 to-accent/30" />
                             <CardContent className="p-8">
                                 <JobTimeline status={job.status} userRole={isClient ? 'Client' : 'Professional'} />
@@ -943,7 +944,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-12 items-start">
                     <div className="lg:col-span-2 space-y-8 sm:space-y-12 order-2 lg:order-1">
                         <motion.div variants={itemVariants}>
-                            <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                            <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
                                 <CardHeader className="p-8 pb-4">
                                     <CardTitle className="text-2xl font-black tracking-tighter italic uppercase opacity-80">{t('description')}</CardTitle>
                                 </CardHeader>
@@ -993,7 +994,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
                         {/* Bids Section */}
                         <motion.div variants={itemVariants} id="bids-section">
-                            <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                            <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
                                 <CardHeader className="p-8 pb-4">
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="text-2xl font-black tracking-tighter italic uppercase opacity-80">{tJob('bidsTab')} ({bids.length})</CardTitle>
@@ -1091,7 +1092,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                                 {t('askQuestionChat')}
                                                             </Button>
 
-                                                            {isClient && job.status === 'open' && (
+                                                            {isClient && job.status?.toLowerCase() === 'open' && (
                                                                 <Button 
                                                                     data-testid="send-offer-button" 
                                                                     className="flex-1 sm:flex-none h-12 px-8 rounded-2xl bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20"
@@ -1132,7 +1133,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     <div className="space-y-8 sm:space-y-12 order-1 lg:order-2 lg:sticky lg:top-24 h-fit">
                         {/* Actions Panel */}
                         <motion.div variants={itemVariants} className="sticky top-24">
-                            <Card data-testid="actions-panel" className="border-none bg-primary/5 backdrop-blur-2xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                            <Card data-testid="actions-panel" className="border-none shadow-xl shadow-black/5 bg-surface-container-highest dark:bg-slate-800 rounded-[2.5rem] overflow-hidden">
                                 <div className="h-2 w-full bg-gradient-to-r from-primary to-accent" />
                                 <CardHeader className="p-8 pb-4">
                                     <div className="flex items-center gap-3">
@@ -1152,12 +1153,12 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         )}
 
                                         {/* Client Actions */}
-                                        {isClient && job.status === 'open' && (
+                                        {isClient && job.status?.toLowerCase() === 'open' && (
                                             <Button variant="destructive" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-destructive/10" onClick={() => handleJobUpdate({ status: 'unbid' })}>{t('closeBidding')}</Button>
                                         )}
 
                                         {/* Professional Actions: Place Bid */}
-                                        {!isClient && job.status === 'open' && (
+                                        {!isClient && job.status?.toLowerCase() === 'open' && (
                                             <Button 
                                                 className="w-full h-16 rounded-2xl bg-primary text-primary-foreground font-black text-sm uppercase tracking-[0.1em] shadow-2xl shadow-primary/20 group overflow-hidden relative" 
                                                 onClick={() => setIsBidDialogOpen(true)} 
@@ -1178,7 +1179,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         )}
 
                                         {/* Retract Offer */}
-                                        {isClient && job.status === 'bid_accepted' && (
+                                        {isClient && job.status?.toLowerCase() === 'bid_accepted' && (
                                             <div className="space-y-4">
                                                 <div className="p-6 bg-warning/10 border-none rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest text-warning italic leading-relaxed">
                                                     {t('offerSentMsg')}
@@ -1213,7 +1214,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         )}
 
                                         {/* Release Payment */}
-                                        {isClient && job.status === 'work_submitted' && (
+                                        {isClient && (job.status?.toLowerCase() === 'work_submitted' || job.status?.toLowerCase() === 'work submitted') && (
                                             isPaymentsEnabled ? (
                                                 <Button className="w-full h-16 rounded-2xl bg-success text-white font-black text-sm uppercase tracking-widest shadow-2xl shadow-success/20" onClick={() => setIsReleaseDialogOpen(true)} data-testid="approve-work-button">
                                                     <CheckCircle className="mr-2 h-5 w-5" />
@@ -1227,7 +1228,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         )}
 
                                         {/* Raise Dispute */}
-                                        {(job.status === 'in_progress' || job.status === 'work_submitted') && (
+                                        {(job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress' || job.status?.toLowerCase() === 'work_submitted' || job.status?.toLowerCase() === 'work submitted') && (
                                             isDisputesEnabled ? (
                                                 <Button variant="destructive" className="w-full h-14 rounded-2xl bg-destructive/10 text-destructive hover:bg-destructive/20 font-black text-xs uppercase tracking-widest border-none" onClick={() => setIsDisputeDialogOpen(true)}>
                                                     <ShieldAlert className="mr-2 h-4 w-4" />
@@ -1237,7 +1238,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         )}
 
                                         {/* Leave Review */}
-                                        {job.status === 'Completed' && (
+                                        {job.status?.toLowerCase() === 'completed' && (
                                             <div className="space-y-3">
                                                 <Button className="w-full h-14 rounded-2xl border-none bg-background font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/5" variant="outline" onClick={() => setIsReviewDialogOpen(true)} data-testid="leave-review-button">
                                                     <Star className="mr-2 h-4 w-4 text-warning" />
@@ -1306,26 +1307,34 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
                                         {/* Acceptance Section */}
                                         {
-                                            !isClient && job.status === 'bid_accepted' && (
+                                            !isClient && job.status?.toLowerCase() === 'bid_accepted' && (
                                                 <ProfessionalAcceptanceSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
                                             )
                                         }
 
                                         {/* Completion Sections */}
                                         {
-                                            !isClient && (job.status === 'in_progress' || job.status === 'In Progress' || job.status === 'bid_accepted' || job.status === 'Pending Funding') && !job.workStartedAt && (
+                                            !isClient && (job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress' || job.status?.toLowerCase() === 'bid_accepted' || job.status?.toLowerCase() === 'pending funding') && !job.workStartedAt && (
                                                 <StartWorkInput job={job} user={user!} onJobUpdate={handleJobUpdate} />
                                             )
                                         }
 
                                         {
-                                            !isClient && (job.status === 'in_progress' || job.status === 'In Progress') && job.workStartedAt && (
-                                                <ProfessionalCompletionSection job={job} user={user!} onJobUpdate={handleJobUpdate} />
+                                            !isClient && (job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress') && job.workStartedAt && (
+                                                <ProfessionalCompletionSection 
+                                                    job={job} 
+                                                    user={user!} 
+                                                    onJobUpdate={handleJobUpdate} 
+                                                    onSubmitWork={async (attachments) => {
+                                                        const res = await submitWorkAction(job.id, user!.id, attachments);
+                                                        if (!res.success) throw new Error(res.error);
+                                                    }}
+                                                />
                                             )
                                         }
 
                                         {
-                                            isClient && (job.status === 'in_progress' || job.status === 'In Progress' || job.status === 'work_submitted' || job.status === 'Work Submitted' || job.status === 'Pending Confirmation') && (
+                                            isClient && (job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress' || job.status?.toLowerCase() === 'work_submitted' || job.status?.toLowerCase() === 'work submitted' || job.status?.toLowerCase() === 'pending confirmation') && (
                                                 <ClientConfirmationSection
                                                     job={job}
                                                     user={user!}
@@ -1337,7 +1346,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         }
 
                                         {
-                                            job.status === 'Completed' && (
+                                            job.status?.toLowerCase() === 'completed' && (
                                                 <RatingSection job={job} onJobUpdate={handleJobUpdate} />
                                             )
                                         }
@@ -1354,7 +1363,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                         onConfirm={handleConfirmPayment}
                         onDirectConfirm={handleDirectConfirm}
                         platformSettings={platformSettings}
-                        bidAmount={bids.find((b: any) => getRefId(b.professional) === (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : getRefId(job.awardedProfessional)))?.amount || (job as any).budget?.min || 0}
+                        bidAmount={winningBidAmount || 0}
                     />
 
                     {/* Variation Orders Section */}
@@ -1389,12 +1398,12 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     <div className="md:col-span-3 mt-8 order-4">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold">{t('paymentMilestones')}</h3>
-                            {isClient && job.status === 'in_progress' && (
-                                // Configurable Threshold Check
-                                ((bids.find(b => getRefId(b.professional) === (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : getRefId(job.awardedProfessional)))?.amount || (job as any).priceEstimate?.min || 0) >= (platformSettings?.minJobBudgetForMilestones ?? 5000))
+                            {isClient && (job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress') && (
+                                // Configurable Threshold Check - Simplified with fallback
+                                ((bids.find(b => getRefId(b.professional) === (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : getRefId(job.awardedProfessional)))?.amount || (job as any).priceEstimate?.min || (job as any).budget || 0) >= (platformSettings?.minJobBudgetForMilestones ?? 5000))
                                     ? (
                                         <Button onClick={() => setIsMilestoneDialogOpen(true)} variant="outline" size="sm" data-testid="add-milestone-button">
-                                            <Plus className="h-4 w-4 mr-2" />
+                                            <PlusCircle className="h-4 w-4 mr-2" />
                                             {t('addMilestone')}
                                         </Button>
                                     ) : (
@@ -1486,7 +1495,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     }
 
                     {
-                        (job.status === 'in_progress' || job.status === 'work_submitted' || job.status === 'completed') && user && isDisputesEnabled && (
+                        (job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress' || job.status?.toLowerCase() === 'work_submitted' || job.status?.toLowerCase() === 'work submitted' || job.status?.toLowerCase() === 'completed') && user && isDisputesEnabled && (
                             <DisputeDialog
                                 job={job}
                                 user={user}

@@ -18,9 +18,10 @@ interface ProfessionalCompletionSectionProps {
     job: Job;
     user: User;
     onJobUpdate: (updatedJob: Partial<Job>) => void;
+    onSubmitWork?: (attachments: any[]) => Promise<void>;
 }
 
-export function ProfessionalCompletionSection({ job, user, onJobUpdate }: ProfessionalCompletionSectionProps) {
+export function ProfessionalCompletionSection({ job, user, onJobUpdate, onSubmitWork }: ProfessionalCompletionSectionProps) {
     const { toast } = useToast();
     const { storage } = useFirebase();
     const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -95,12 +96,8 @@ export function ProfessionalCompletionSection({ job, user, onJobUpdate }: Profes
                     setIsVerifyingOtp(false);
                     return;
                 }
-            } else {
-                const updatedJobData: Partial<Job> = {
-                    status: 'Pending Confirmation' as any,
-                    attachments: [...(job.attachments || []), ...uploadedAttachments],
-                };
-                await onJobUpdate(updatedJobData);
+            } else if (onSubmitWork) {
+                await onSubmitWork(uploadedAttachments);
 
                 // Notify Client
                 const client = job.client as User;
@@ -112,6 +109,19 @@ export function ProfessionalCompletionSection({ job, user, onJobUpdate }: Profes
                     ).catch(err => {});
                 }
 
+                toast({
+                    title: "Submitted for Confirmation",
+                    description: "Your proof of work has been sent to the Client for approval.",
+                    variant: 'default'
+                });
+            } else {
+                // Fallback for when onSubmitWork is missing (legacy compat)
+                const updatedJobData: Partial<Job> = {
+                    status: 'Pending Confirmation' as any,
+                    attachments: [...(job.attachments || []), ...uploadedAttachments],
+                };
+                await onJobUpdate(updatedJobData);
+                
                 toast({
                     title: "Submitted for Confirmation",
                     description: "Your proof of work has been sent to the Client for approval.",

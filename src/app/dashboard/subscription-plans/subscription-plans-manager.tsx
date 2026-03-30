@@ -257,7 +257,7 @@ export default function SubscriptionPlansManager({ plans, onDataChange }: { plan
   }
 
   const PlanCard = ({ plan }: { plan: SubscriptionPlan }) => (
-    <Card>
+    <Card className="border-none shadow-md shadow-black/5 bg-surface-container dark:bg-slate-800 hover:shadow-xl transition-all duration-300 rounded-[2rem] overflow-hidden">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -311,7 +311,7 @@ export default function SubscriptionPlansManager({ plans, onDataChange }: { plan
   );
 
   return (
-    <Card>
+    <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>{t('title')}</CardTitle>

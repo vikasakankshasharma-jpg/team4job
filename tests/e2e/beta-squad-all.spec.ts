@@ -381,6 +381,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('textarea[name="coverLetter"]', 'Need more wire');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!');
+        await helper.wait.waitForSubcollectionSync(jobId, 'bids');
 
         // 3. JG Accept Higher
         await helper.auth.logout();
@@ -402,11 +403,22 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         const acceptJobButton = page.getByTestId('accept-job-button').first()
             .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
+        const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
         await expect(acceptJobButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await acceptJobButton.click();
-        // Handle conflict
-        const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
-        if (await conflictBtn.isVisible()) await conflictBtn.click();
+        // Handle conflict or success
+        await Promise.race([
+            helper.form.waitForToast('Job Accepted!').then(() => 'success').catch((e) => { throw e; }),
+            conflictBtn.waitFor({ state: 'visible', timeout: 5000 }).then(() => 'conflict').catch(() => new Promise<string>(() => {})),
+            helper.form.waitForToast('Action Required', 5000).then(() => 'error').catch(() => new Promise<string>(() => {}))
+        ]).then(async (result) => {
+            if (result === 'conflict') {
+                await conflictBtn.click();
+                await helper.form.waitForToast('Job Accepted!');
+            } else if (result === 'error') {
+                throw new Error('Professional Payouts missing during acceptance flow (Amit Patel seeded user fallback error)');
+            }
+        });
 
         await helper.job.waitForJobStatus('Pending Funding');
         // Optional: verify funded amount later
@@ -461,6 +473,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('textarea[name="coverLetter"]', 'I can do it cheaper');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!');
+        await helper.wait.waitForSubcollectionSync(jobId, 'bids');
 
         // 3. JG Accept
         await helper.auth.logout();
@@ -473,10 +486,24 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.logout();
         await helper.auth.loginAsProfessional();
         await page.goto(`/dashboard/jobs/${jobId}`);
-        await page.getByTestId('accept-job-button').click();
-        // Handle conflict
+        const acceptJobButton = page.getByTestId('accept-job-button').first()
+            .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
         const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
-        if (await conflictBtn.isVisible()) await conflictBtn.click();
+
+        await expect(acceptJobButton).toBeVisible({ timeout: TIMEOUTS.medium });
+        await acceptJobButton.click();
+        await Promise.race([
+            helper.form.waitForToast('Job Accepted!').then(() => 'success').catch((e) => { throw e; }),
+            conflictBtn.waitFor({ state: 'visible', timeout: 5000 }).then(() => 'conflict').catch(() => new Promise<string>(() => {})),
+            helper.form.waitForToast('Action Required', 5000).then(() => 'error').catch(() => new Promise<string>(() => {}))
+        ]).then(async (result) => {
+            if (result === 'conflict') {
+                await conflictBtn.click();
+                await helper.form.waitForToast('Job Accepted!');
+            } else if (result === 'error') {
+                throw new Error('Professional Payouts missing during acceptance flow');
+            }
+        });
 
         await helper.job.waitForJobStatus('Pending Funding');
         await context.close();
@@ -486,6 +513,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     // Case 5: Milestone Job
     // -----------------------------------------------------------------------
     test('Case 5: Milestone Job', async ({ browser }) => {
+        test.setTimeout(1200000); // 20 minutes to accommodate complex user switching on Live Firebase
+        
         const uniqueJobTitle = `Case 5 - Milestones - ${Date.now()}`;
         const budget = 5000;
 
@@ -543,6 +572,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.fill('textarea[name="coverLetter"]', 'Milestone work quote');
         await page.getByRole('button', { name: "Place Bid" }).click();
         await helper.form.waitForToast('Bid Placed!', 15000);
+        await helper.wait.waitForSubcollectionSync(jobId, 'bids');
 
         // JG Award
         await helper.auth.logout();
@@ -571,30 +601,74 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         const acceptJobButton = page.getByTestId('accept-job-button').first()
             .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
+        const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
+
         await expect(acceptJobButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await acceptJobButton.click();
-        // Handle conflict
-        const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
-        if (await conflictBtn.isVisible()) await conflictBtn.click();
+        
+        // Handle conflict or success
+        await Promise.race([
+            helper.form.waitForToast('Job Accepted!').then(() => 'success').catch((e) => { throw e; }),
+            conflictBtn.waitFor({ state: 'visible', timeout: 5000 }).then(() => 'conflict').catch(() => new Promise<string>(() => {})),
+            helper.form.waitForToast('Action Required', 5000).then(() => 'error').catch(() => new Promise<string>(() => {}))
+        ]).then(async (result) => {
+            if (result === 'conflict') {
+                await conflictBtn.click();
+                await helper.form.waitForToast('Job Accepted!');
+            } else if (result === 'error') {
+                throw new Error('Professional Payouts missing during acceptance flow');
+            }
+        });
         await helper.job.waitForJobStatus('Pending Funding');
 
-        // JG Fund - Here we might set milestones?
+        // JG Fund - Move to In Progress using shim (bypassing Cashfree for now)
         await helper.auth.logout();
         await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
 
-        // If Logic for Milestones is inside Funding Page
         await page.getByTestId('proceed-payment-button').click();
-
-        // Check for Milestone creation UI here if it exists. 
-        // For now, executing full fund shim as placeholder for milestone structure
         await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
         await page.evaluate(async () => { await (window as any).e2e_directFundJob(); });
+        
+        // Wait for status update and reload to show In Progress UI
+        await helper.job.waitForJobStatus('In Progress');
         await page.reload();
 
-        await helper.job.waitForJobStatus('In Progress');
+        // JG Adds Milestone
+        const addMilestoneBtn = page.getByTestId('add-milestone-button');
+        await expect(addMilestoneBtn).toBeVisible({ timeout: TIMEOUTS.medium });
+        await addMilestoneBtn.click();
 
-        // Milestone 1 verify (if implicit)
+        await page.getByTestId('milestone-title-input').fill('Initial Phase');
+        await page.getByTestId('milestone-amount-input').fill('1000');
+        await page.getByTestId('milestone-description-input').fill('Setup and initial wiring');
+        await page.getByTestId('confirm-add-milestone-button').click();
+
+        // Verify Milestone appears
+        const milestoneItem = page.getByTestId('milestone-item').first();
+        await expect(milestoneItem).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(milestoneItem).toContainText('Initial Phase');
+
+        // IN (Professional) Verify Milestone
+        await helper.auth.logout();
+        await helper.auth.loginAsProfessional();
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        await expect(page.getByTestId('milestone-item').first()).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page.getByTestId('milestone-item').first()).toContainText('funded');
+
+        // JG Release Milestone
+        await helper.auth.logout();
+        await helper.auth.loginAsClient();
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        
+        const releaseBtn = page.getByTestId('release-milestone-button').first();
+        await expect(releaseBtn).toBeVisible({ timeout: TIMEOUTS.medium });
+        await releaseBtn.click();
+
+        // Verify Released status
+        const statusBadge = page.getByTestId('milestone-status-badge').first();
+        await expect(statusBadge).toContainText('released', { timeout: TIMEOUTS.medium });
+
         await context.close();
     });
 

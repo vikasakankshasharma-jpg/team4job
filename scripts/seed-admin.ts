@@ -10,7 +10,7 @@ async function seedAdmin() {
     const { Timestamp } = await import('firebase-admin/firestore');
 
     const adminEmail = 'admin@team4job.com';
-    const password = 'Test@1234';
+    const password = 'Admin_Pass2026!';
     const auth = getAuth();
 
     try {

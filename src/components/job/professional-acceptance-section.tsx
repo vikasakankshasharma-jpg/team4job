@@ -108,7 +108,7 @@ export function ProfessionalAcceptanceSection({ job, user, onJobUpdate }: Profes
             const snapshot = await getDocs(q);
 
             const conflicts = snapshot.docs
-                .map(d => d.data() as Job)
+                .map(d => ({ id: d.id, ...(d.data() as any) } as Job))
                 .filter(otherJob => {
                     // Filter status client-side
                     if (!['Awarded', 'In Progress', 'Pending Funding'].includes(otherJob.status)) return false;
@@ -140,6 +140,7 @@ export function ProfessionalAcceptanceSection({ job, user, onJobUpdate }: Profes
 
     const processAcceptance = async () => {
         setIsLoading(true);
+        console.log(`[ACCEPT-DEBUG] Attempting acceptance for Job: ${job.id}, User: ${user.id}`);
         try {
             const result = await acceptJobAction(job.id, user.id);
 

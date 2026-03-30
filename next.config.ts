@@ -14,6 +14,16 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['firebase-admin'],
   compress: true,
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000', '127.0.0.1:3000', 'localhost:9099', '127.0.0.1:9099'],

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useUser } from "@/hooks/use-user";
 import {
     AnalyticsService,
@@ -27,6 +27,17 @@ export default function AnalyticsClient() {
     const t = useTranslations('analytics');
     const tCommon = useTranslations('common');
     const { toast } = useToast();
+
+    // ── Stabilize hook references via refs to prevent infinite re-renders ──
+    // useTranslations and useToast return new function references on every
+    // render, which destabilizes useCallback / useMemo dependency arrays.
+    const tRef = useRef(t);
+    const tCommonRef = useRef(tCommon);
+    const toastRef = useRef(toast);
+    useEffect(() => { tRef.current = t; }, [t]);
+    useEffect(() => { tCommonRef.current = tCommon; }, [tCommon]);
+    useEffect(() => { toastRef.current = toast; }, [toast]);
+
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
@@ -39,7 +50,6 @@ export default function AnalyticsClient() {
 
         try {
             setRefreshing(true);
-            // Load all data in one optimized call
             const data = await AnalyticsService.getAnalytics(user.id);
 
             setSummary(data.summary);
@@ -48,48 +58,46 @@ export default function AnalyticsClient() {
             setTopProfessionals(data.topProfessionals);
 
         } catch (error) {
-            toast({
-                title: tCommon('error'),
-                description: t('loadError'),
+            toastRef.current({
+                title: tCommonRef.current('error'),
+                description: tRef.current('loadError'),
                 variant: "destructive",
             });
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [user?.id, toast, t, tCommon]);
+    }, [user?.id]); // eslint-disable-next-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         setLoading(true);
         loadData();
     }, [loadData]);
 
-    // Generate AI insights from data
+    // Generate AI insights from data — t is accessed via ref so no dep needed
     const insights = useMemo(() => {
         if (!summary) return [];
         const result = [];
+        const tr = tRef.current;
 
         // 1. Spending Trend
         if (spendingTrends.length >= 2) {
             const current = spendingTrends[spendingTrends.length - 1].amount;
             const previous = spendingTrends[spendingTrends.length - 2].amount;
             if (current > previous * 1.1) {
-                result.push({ title: t('insights.spendingIncreasing'), insight: t('insights.spendingIncreasingDesc'), type: 'warning' } as const);
+                result.push({ title: tr('insights.spendingIncreasing'), insight: tr('insights.spendingIncreasingDesc'), type: 'warning' } as const);
             } else if (current < previous * 0.9) {
-                result.push({ title: t('insights.budgetOptimized'), insight: t('insights.budgetOptimizedDesc'), type: 'success' } as const);
+                result.push({ title: tr('insights.budgetOptimized'), insight: tr('insights.budgetOptimizedDesc'), type: 'success' } as const);
             }
         }
 
         // 2. Hiring Velocity
         if (summary.activeJobs > 3) {
-            result.push({ title: t('insights.highHiringVolume'), insight: t('insights.highHiringVolumeDesc'), type: 'info' } as const);
+            result.push({ title: tr('insights.highHiringVolume'), insight: tr('insights.highHiringVolumeDesc'), type: 'info' } as const);
         }
 
-        // 3. Unrated Jobs
-        // We don't have this data explicitly in summary, but if we had it, we'd add it here.
-
         return result;
-    }, [summary, spendingTrends, t]);
+    }, [summary, spendingTrends]);
 
 
     const handleExport = () => {
@@ -112,17 +120,17 @@ export default function AnalyticsClient() {
         link.click();
         document.body.removeChild(link);
 
-        toast({
-            title: t('exportComplete'),
-            description: t('exportCompleteDesc'),
+        toastRef.current({
+            title: tRef.current('exportComplete'),
+            description: tRef.current('exportCompleteDesc'),
         });
     };
 
     const handleRefresh = () => {
         loadData();
-        toast({
-            title: t('refreshing'),
-            description: t('refreshingDesc'),
+        toastRef.current({
+            title: tRef.current('refreshing'),
+            description: tRef.current('refreshingDesc'),
         });
     };
 
@@ -207,7 +215,7 @@ export default function AnalyticsClient() {
 
             {/* Empty state for new users */}
             {!loading && summary && summary.totalJobs === 0 && (
-                <Card>
+                <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
                     <CardHeader>
                         <CardTitle>{t('noData')}</CardTitle>
                         <CardDescription>

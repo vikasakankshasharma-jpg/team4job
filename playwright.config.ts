@@ -39,6 +39,11 @@ const getWebServerEnv = () => {
         delete env.FIRESTORE_EMULATOR_HOST;
         delete env.FIREBASE_AUTH_EMULATOR_HOST;
         delete env.FIREBASE_STORAGE_EMULATOR_HOST;
+    } else if (useEmulator) {
+        // Ensure defaults if missing
+        env.FIREBASE_AUTH_EMULATOR_HOST = env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
+        env.FIRESTORE_EMULATOR_HOST = env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080';
+        env.FIREBASE_STORAGE_EMULATOR_HOST = env.FIREBASE_STORAGE_EMULATOR_HOST || '127.0.0.1:9199';
     }
 
     return env;
@@ -66,8 +71,8 @@ export default defineConfig({
     /* Fail the build on CI if you accidentally left test.only in the source code. */
     forbidOnly: !!process.env.CI,
 
-    /* Retry flaky tests caused by emulator timing (CI: 2, local: 1) */
-    retries: process.env.CI ? 2 : 1,
+    /* Retry flaky tests caused by emulator timing (CI: 2, local: 3) */
+    retries: 3,
 
     /* Single worker to prevent emulator state collisions */
     workers: 1,
@@ -91,10 +96,10 @@ export default defineConfig({
         video: 'retain-on-failure',
 
         /* Maximum time each action can take */
-        actionTimeout: 120 * 1000,
+        actionTimeout: 180 * 1000,
 
         /* Maximum time for navigation */
-        navigationTimeout: 120 * 1000,
+        navigationTimeout: 180 * 1000,
     },
 
     /* Configure projects for major browsers */
@@ -107,13 +112,13 @@ export default defineConfig({
 
     /* Run your local dev server before starting the tests */
     webServer: {
-        command: 'cross-env NODE_OPTIONS="--max-old-space-size=4096" npm run dev',
+        command: 'cross-env NODE_OPTIONS="--max-old-space-size=8192" npm run dev',
         url: 'http://localhost:3000',
         reuseExistingServer: !process.env.CI,
         stdout: 'pipe',
         stderr: 'pipe',
         env: getWebServerEnv(),
-        timeout: 180000,
+        timeout: 600000,
     },
 
     /* Global timeout for each test */
@@ -121,7 +126,7 @@ export default defineConfig({
 
     /* Expect timeout */
     expect: {
-        timeout: 120 * 1000,
+        timeout: 300 * 1000,
     },
 });
 

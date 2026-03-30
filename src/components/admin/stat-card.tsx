@@ -23,7 +23,7 @@ export function StatCard({
     className,
 }: StatCardProps) {
     return (
-        <Card className={cn("border-0 shadow-sm shadow-primary/5 hover:shadow-md transition-shadow relative overflow-hidden", className)}>
+        <Card className={cn("border-none shadow-md shadow-black/5 bg-surface-container dark:bg-slate-800 hover:shadow-xl transition-all duration-300 relative overflow-hidden rounded-[1.5rem]", className)}>
             <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 rounded-l-xl opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-semibold tracking-tight">{title}</CardTitle>

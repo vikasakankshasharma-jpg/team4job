@@ -13,22 +13,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
 import { ProfessionalPerformance } from "@/lib/api/analytics";
+import { useTranslations } from "next-intl";
 
 interface ProfessionalPerformanceTableProps {
     data: ProfessionalPerformance[];
 }
 
 export function ProfessionalPerformanceTable({ data }: ProfessionalPerformanceTableProps) {
+    const t = useTranslations('analytics');
+
     if (!data || data.length === 0) {
         return (
             <div data-testid="analytics-top-Professionals" className="col-span-2 lg:col-span-4">
                 <Card className="col-span-2 lg:col-span-4">
                     <CardHeader>
-                        <CardTitle>Top Professionals</CardTitle>
-                        <CardDescription>Professionals you work with most often</CardDescription>
+                        <CardTitle>{t('topProfessionals')}</CardTitle>
+                        <CardDescription>{t('workMostOften')}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex items-center justify-center h-32 text-muted-foreground">
-                        No Professional data yet
+                        {t('noProfessionalData')}
                     </CardContent>
                 </Card>
             </div>
@@ -39,19 +42,19 @@ export function ProfessionalPerformanceTable({ data }: ProfessionalPerformanceTa
         <div data-testid="analytics-top-Professionals" className="col-span-2 lg:col-span-4">
             <Card className="col-span-2 lg:col-span-4">
                 <CardHeader>
-                    <CardTitle>Top Professionals</CardTitle>
+                    <CardTitle>{t('topProfessionals')}</CardTitle>
                     <CardDescription>
-                        Performance of your most hired Professionals
+                        {t('performanceMostHired')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Professional</TableHead>
-                                <TableHead className="text-right">Jobs</TableHead>
-                                <TableHead className="text-right">Total Paid</TableHead>
-                                <TableHead className="text-right">Avg Rating</TableHead>
+                                <TableHead>{t('tableProfessional')}</TableHead>
+                                <TableHead className="text-right">{t('tableJobs')}</TableHead>
+                                <TableHead className="text-right">{t('tableTotalPaid')}</TableHead>
+                                <TableHead className="text-right">{t('tableAvgRating')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

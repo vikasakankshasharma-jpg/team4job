@@ -40,6 +40,8 @@ export async function createJobAction(
     }
 }
 
+
+
 /**
  * Server Action to get job details for editing
  */
@@ -172,6 +174,29 @@ export async function completeJobWithOtpAction(
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message || 'Failed to complete job' };
+    }
+}
+
+/**
+ * Server Action to submit work for review (Professional)
+ */
+export async function submitWorkAction(
+    jobId: string,
+    userId: string,
+    attachments: JobAttachment[]
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        // First update the attachments via generic update (since submitWork only handles status/dates in service)
+        await jobService.updateJob(jobId, userId, { attachments });
+        
+        // Then perform the formal submission
+        await jobService.submitWork(jobId, userId);
+        
+        revalidatePath(`/dashboard/jobs/${jobId}`);
+        revalidatePath('/dashboard/jobs');
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message || 'Failed to submit work' };
     }
 }
 

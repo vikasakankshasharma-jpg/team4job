@@ -89,3 +89,8 @@ functions/lib/
 *.js.map
 tmp/
 chatgpt_prompt.md
+
+# Generation artifacts
+dashboard-response.json
+generated-dashboard.html
+generated-dashboard.jpg

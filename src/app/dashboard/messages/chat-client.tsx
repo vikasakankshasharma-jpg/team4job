@@ -218,10 +218,10 @@ export default function ChatClient() {
     };
 
     return (
-        <div className="flex h-full border-0 rounded-xl overflow-hidden bg-background shadow-md shadow-primary/5 max-w-full">
+        <div className="flex h-full font-sans selection:bg-blue-500 selection:text-white bg-surface-container-low dark:bg-slate-900 text-on-surface border-none rounded-[2.5rem] overflow-hidden shadow-xl shadow-black/5 max-w-full min-h-[70vh]">
             {/* Sidebar (Conversation List) */}
-            <div className="w-1/3 border-r bg-muted/10 flex flex-col">
-                <div className="p-4 border-b font-semibold bg-background">{t('title')}</div>
+            <div className="w-1/3 border-r border-slate-200 dark:border-slate-800 bg-surface-container dark:bg-slate-900/50 flex flex-col">
+                <div className="p-6 border-b border-slate-200 dark:border-slate-800 font-black tracking-tighter italic uppercase opacity-80 bg-surface-container-low dark:bg-slate-900">{t('title')}</div>
                 <ScrollArea className="flex-1">
                     <div className="space-y-1 p-2">
                         {conversations.map(conv => (
@@ -263,7 +263,7 @@ export default function ChatClient() {
             </div>
 
             {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col bg-background">
+            <div className="flex-1 flex flex-col bg-surface-container-low dark:bg-slate-900">
                 {activeConversationId || initialRecipientId ? (
                     <>
                         <div className="flex-1 p-4 overflow-y-auto space-y-4">
@@ -285,7 +285,7 @@ export default function ChatClient() {
                         </div>
 
                         {/* Input Area */}
-                        <div className="p-4 border-t bg-background">
+                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-surface-container-low dark:bg-slate-900">
                             {moderationWarning && (
                                 <div className="mb-2 p-2 bg-red-50 text-red-600 text-xs rounded-md flex items-center">
                                     <AlertTriangle className="h-3 w-3 mr-2" />

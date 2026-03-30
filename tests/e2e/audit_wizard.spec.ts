@@ -4,7 +4,7 @@ test('audit post job wizard', async ({ page }) => {
   // 1. Login
   await page.goto('https://www.team4job.com/login');
   await page.fill('input[type="email"]', 'rajesh.client@team4job.com');
-  await page.fill('input[type="password"]', 'Test@1234');
+  await page.fill('input[type="password"]', 'TestUser_2026!');
   await page.click('button[type="submit"]');
 
   // Wait for dashboard or direct navigation

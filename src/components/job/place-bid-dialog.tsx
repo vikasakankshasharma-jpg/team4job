@@ -177,7 +177,7 @@ export function PlaceBidDialog({
                                     <FormControl>
                                         <Input type="number" placeholder="e.g. 5000" {...field} className="text-lg" />
                                     </FormControl>
-                                    <FormMessage />
+                                    <FormMessage data-testid="bid-amount-error" />
                                 </FormItem>
                             )}
                         />
@@ -192,7 +192,7 @@ export function PlaceBidDialog({
                                         <FormControl>
                                             <Input type="number" min={1} {...field} />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage data-testid="bid-duration-error" />
                                     </FormItem>
                                 )}
                             />
@@ -213,7 +213,7 @@ export function PlaceBidDialog({
                                                 <SelectItem value="Days">Days</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage />
+                                        <FormMessage data-testid="bid-duration-unit-error" />
                                     </FormItem>
                                 )}
                             />
@@ -263,7 +263,7 @@ export function PlaceBidDialog({
                                             AI Draft
                                         </Button>
                                     </div>
-                                    <FormMessage />
+                                    <FormMessage data-testid="bid-cover-letter-error" />
                                 </FormItem>
                             )}
                         />

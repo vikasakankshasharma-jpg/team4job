@@ -21,9 +21,9 @@ Verify the entire chain: **Post → Bid → Award → Pay → Complete → Relea
 ### Test Accounts Required
 | Role | Email | Password | Purpose |
 |:-----|:------|:---------|:--------|
-| **Job Giver** | `jobgiver@example.com` | `Vikas@129229` | Posts job, awards, pays |
-| **Installer** | `installer@example.com` | `Vikas@129229` | Bids, accepts, completes |
-| **Admin** | `vikasakankshasharma@gmail.com` | `Vikas@129229` | Monitor transactions |
+| **Job Giver** | `jobgiver@example.com` | `TestUser_2026!` | Posts job, awards, pays |
+| **Installer** | `installer@example.com` | `TestUser_2026!` | Bids, accepts, completes |
+| **Admin** | `vikasakankshasharma@gmail.com` | `Admin_Pass2026!` | Monitor transactions |
 
 ### Test Credentials
 - **Aadhar Number**: `999999990019`
@@ -42,7 +42,7 @@ Verify the entire chain: **Post → Bid → Award → Pay → Complete → Relea
 1. Navigate to `http://localhost:3000/login`
 2. Enter credentials:
    - Email: `jobgiver@example.com`
-   - Password: `Vikas@129229`
+   - Password: `TestUser_2026!`
 3. Click "Sign In"
 4. **Verify**: Redirected to dashboard
 
@@ -78,7 +78,7 @@ Verify the entire chain: **Post → Bid → Award → Pay → Complete → Relea
 1. Click user menu → Logout
 2. Login with installer credentials:
    - Email: `installer@example.com`
-   - Password: `Vikas@129229`
+   - Password: `TestUser_2026!`
 3. **Verify**: Dashboard shows "Installer" role
 
 #### Step 2.2: Verify KYC Status (If Needed)

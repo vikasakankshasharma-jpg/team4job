@@ -275,8 +275,8 @@ export default function BillingClient() {
   const isSubscribed = user?.subscription && toDate(user.subscription.expiresAt) > new Date();
 
   return (
-    <div className="grid gap-8 max-w-full overflow-x-hidden px-4">
-      <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
+    <div className="grid gap-8 max-w-full overflow-x-hidden px-4 font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface min-h-screen pt-8 pb-16">
+        <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
         <CardHeader>
           <CardTitle className="text-xl font-bold tracking-tight">{t('title')}</CardTitle>
           <CardDescription>{t('description')}</CardDescription>
@@ -309,7 +309,7 @@ export default function BillingClient() {
           <CardContent className="space-y-4">
             {loading ? <Skeleton className="h-32 w-full" /> : (
               plans.map(plan => (
-                <Card key={plan.id} className="p-4 border-0 shadow-sm shadow-primary/5 hover:shadow-md transition-shadow">
+                <Card key={plan.id} className="p-4 border-none shadow-xl shadow-black/5 bg-surface-container-highest dark:bg-slate-800 rounded-3xl hover:shadow-2xl transition-shadow">
                   <CardTitle className="text-lg font-bold tracking-tight mb-2">{plan.name}</CardTitle>
                   <p className="text-2xl font-extrabold mb-2">₹{plan.price.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">{t('year')}</span></p>
                   <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside mb-4">

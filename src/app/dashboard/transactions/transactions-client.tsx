@@ -276,7 +276,7 @@ export default function TransactionsClient() {
     }
 
     return (
-        <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
+        <div className="grid gap-6 max-w-full overflow-x-hidden px-4 font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface min-h-screen pt-8 pb-16">
             {/* Revenue Dashboard - Admin Only */}
             {isAdmin && (
                 <>
@@ -315,7 +315,7 @@ export default function TransactionsClient() {
                 </>
             )}
 
-            <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
+            <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>

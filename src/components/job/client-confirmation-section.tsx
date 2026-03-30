@@ -37,6 +37,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import axios from "axios";
 import { StartWorkInput } from "./start-work-input";
 import { FileUpload } from "@/components/ui/file-upload";
+import { toDate } from "@/lib/utils";
 
 // Helper to safely get the string ID
 const getRefId = (ref: any): string => {
@@ -187,7 +188,7 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
                 {job.workStartedAt && job.status === 'In Progress' && (
                     <div className="p-3 bg-blue-50 text-blue-700 rounded-md text-sm flex items-center justify-center">
                         <Zap className="h-4 w-4 mr-2" />
-                        Work Started at {new Date((job.workStartedAt as any).toDate ? (job.workStartedAt as any).toDate() : job.workStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        Work Started at {toDate(job.workStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                 )}
 

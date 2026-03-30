@@ -26,7 +26,7 @@ async function seed() {
             const admin = await auth.createUser({
                 uid: "admin-uid",
                 email: "vikasakankshasharma_v3@gmail.com",
-                password: "Vks2bhdj@9229",
+                password: "Admin_Pass2026!",
                 displayName: "Test Admin",
                 emailVerified: true
             });
@@ -54,7 +54,7 @@ async function seed() {
             await auth.createUser({
                 uid: "giver-uid",
                 email: "giver_vip_v3@team4job.com",
-                password: "Test@1234",
+                password: "TestUser_2026!",
                 displayName: "Test Giver",
                 emailVerified: true
             });
@@ -81,7 +81,7 @@ async function seed() {
             await auth.createUser({
                 uid: "installer-uid",
                 email: "installer_pro_v3@team4job.com",
-                password: "Test@1234",
+                password: "TestUser_2026!",
                 displayName: "Test Installer",
                 emailVerified: true
             });

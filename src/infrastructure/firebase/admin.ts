@@ -12,18 +12,29 @@ let appInstance: App | undefined;
  * Robust implementation with trimming and diagnostics.
  */
 export function getAdminApp(): App {
-    console.log('[FirebaseAdmin] getAdminApp requested');
     
     if (appInstance) {
         return appInstance;
     }
 
+    const isE2E = process.env.NEXT_PUBLIC_E2E === 'true' || process.env.NEXT_PUBLIC_E2E_MODE === 'true';
+    const useEmulator = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' || 
+                       (process.env.FIREBASE_AUTH_EMULATOR_HOST !== undefined && process.env.FIREBASE_AUTH_EMULATOR_HOST !== '');
+
+
     // Check if the specific named app is already initialized
     const apps = getApps();
-    const existingApp = apps.find(a => a.name === 'admin-live');
+    const existingApp = apps.find(a => a.name === (useEmulator ? 'admin-emulator' : 'admin-live'));
     if (existingApp) {
-        console.log('[FirebaseAdmin] Found existing named app (admin-live) in global context');
+        console.log(`[FirebaseAdmin] Found existing named app (${existingApp.name}) in global context`);
         appInstance = existingApp;
+        return appInstance;
+    }
+
+    if (useEmulator) {
+        console.log('[FirebaseAdmin] INITIALIZING WITH EMULATOR CONFIG (No Cert)');
+        const projectId = (process.env.DO_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'team4job-test').trim();
+        appInstance = initializeApp({ projectId }, 'admin-emulator');
         return appInstance;
     }
 

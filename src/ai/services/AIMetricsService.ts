@@ -1,15 +1,18 @@
-import { db } from "@/infrastructure/firebase/client"; // Use client SDK for MVP, move to admin SDK later if needed for reliability
-import { collection, query, where, getDocs, orderBy, limit, Timestamp, addDoc } from "firebase/firestore";
+import { getAdminDb } from "@/infrastructure/firebase/admin";
 import { AILog, AIMetric } from "@/lib/types";
+import { Timestamp, FieldValue } from "firebase-admin/firestore";
 
 export const aiMetricsService = {
     /**
-     * Log an AI interaction.
-     * In a real app, this should be done via a server-side queue to avoid blocking.
+     * Log an AI interaction using Admin SDK.
      */
     logInteraction: async (log: Omit<AILog, "id">) => {
         try {
-            await addDoc(collection(db, "ai_logs"), log);
+            const db = getAdminDb();
+            await db.collection("ai_logs").add({
+                ...log,
+                timestamp: FieldValue.serverTimestamp()
+            });
         } catch (error) {
             // Failed to log AI interaction
         }
@@ -20,10 +23,16 @@ export const aiMetricsService = {
      */
     getRecentLogs: async (limitCount = 50): Promise<AILog[]> => {
         try {
-            const logsRef = collection(db, "ai_logs");
-            const q = query(logsRef, orderBy("timestamp", "desc"), limit(limitCount));
-            const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AILog));
+            const db = getAdminDb();
+            const snapshot = await db.collection("ai_logs")
+                .orderBy("timestamp", "desc")
+                .limit(limitCount)
+                .get();
+            
+            return snapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data() 
+            } as AILog));
         } catch (error) {
             return [];
         }
@@ -31,17 +40,17 @@ export const aiMetricsService = {
 
     /**
      * Calculate aggregated metrics (Cost, Latency, Errors).
-     * For Phase 0, we calculate this on-the-fly from logs.
-     * In Phase 2, we should pre-aggregate this into 'ai_daily_metrics' collection.
      */
     getAggregatedMetrics: async (days = 7): Promise<AIMetric[]> => {
         try {
-            const logsRef = collection(db, "ai_logs");
+            const db = getAdminDb();
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - days);
 
-            const q = query(logsRef, where("timestamp", ">=", Timestamp.fromDate(startDate)));
-            const snapshot = await getDocs(q);
+            const snapshot = await db.collection("ai_logs")
+                .where("timestamp", ">=", Timestamp.fromDate(startDate))
+                .get();
+            
             const logs = snapshot.docs.map(doc => doc.data() as AILog);
 
             // Group by date
@@ -50,7 +59,7 @@ export const aiMetricsService = {
             logs.forEach(log => {
                 const date = log.timestamp instanceof Timestamp
                     ? log.timestamp.toDate().toISOString().split('T')[0]
-                    : new Date(log.timestamp).toISOString().split('T')[0];
+                    : new Date(log.timestamp as any).toISOString().split('T')[0];
 
                 if (!metricsMap.has(date)) {
                     metricsMap.set(date, {
@@ -66,7 +75,6 @@ export const aiMetricsService = {
                 metric.totalCostUsd += log.costUsd || 0;
                 metric.totalRequests += 1;
                 metric.errorCount += log.success ? 0 : 1;
-                // Running average for latency
                 metric.averageLatencyMs =
                     ((metric.averageLatencyMs * (metric.totalRequests - 1)) + log.latencyMs) / metric.totalRequests;
             });

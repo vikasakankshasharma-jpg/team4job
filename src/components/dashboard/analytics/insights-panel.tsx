@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface InsightCardProps {
     title: string;
@@ -56,12 +57,14 @@ interface InsightsPanelProps {
 }
 
 export function InsightsPanel({ insights }: InsightsPanelProps) {
+    const t = useTranslations('analytics');
+
     if (insights.length === 0) {
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>AI Insights</CardTitle>
-                    <CardDescription>No insights available yet. Post more jobs to get personalized recommendations.</CardDescription>
+                    <CardTitle>{t('aiInsights')}</CardTitle>
+                    <CardDescription>{t('noInsights')}</CardDescription>
                 </CardHeader>
             </Card>
         );
@@ -71,8 +74,8 @@ export function InsightsPanel({ insights }: InsightsPanelProps) {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-semibold">AI-Powered Insights</h3>
-                    <p className="text-sm text-muted-foreground">Actionable recommendations based on your data</p>
+                    <h3 className="text-lg font-semibold">{t('aiPoweredInsights')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('actionableRecommendations')}</p>
                 </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">

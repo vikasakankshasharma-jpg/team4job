@@ -316,8 +316,8 @@ export default function VerifyProfessionalClient() {
   }
 
   return (
-    <div className="mx-auto max-w-xl">
-      <Card>
+    <div className="mx-auto max-w-xl font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface pt-12 pb-20 px-4">
+      <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><ShieldCheck /> {t('title')}</CardTitle>
           <CardDescription>

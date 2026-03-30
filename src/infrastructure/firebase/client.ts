@@ -22,8 +22,8 @@ const firebaseConfig = {
 // Singleton instances
 let app: FirebaseApp;
 let auth: Auth;
-let db: Firestore;
-let storage: FirebaseStorage;
+let db: Firestore = null!;
+let storage: FirebaseStorage = null!;
 
 const isClient = typeof window !== 'undefined';
 
@@ -31,12 +31,12 @@ const isE2E = process.env.NEXT_PUBLIC_E2E === 'true';
 const appName = isE2E ? 'dodo-e2e-app' : '[DEFAULT]';
 
 const allowProductionEmulators = process.env.NEXT_PUBLIC_ALLOW_PRODUCTION_EMULATORS === 'true';
-const shouldUseClientEmulators = false; // Forced false for production testing
-// process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' &&
-// (process.env.NODE_ENV !== 'production' || allowProductionEmulators);
+const shouldUseClientEmulators = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' || 
+                               process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
 
-if (getApps().length > 0 && !isE2E) {
-    app = getApp();
+const existingApp = getApps().find(a => a.name === appName);
+if (existingApp) {
+    app = existingApp;
 } else {
     // For E2E, we always initialize a fresh app instance to avoid cross-test state leakage or locks
     app = initializeApp(firebaseConfig, appName);
@@ -46,7 +46,7 @@ auth = getAuth(app);
 // Persistence is handled by default (browserLocalPersistence) which survives redirects.
 // If explicitly needed, we can set it here, but inMemoryPersistence was breaking E2E.
 
-// FORCE MEMORY CACHE
+// FORCE MEMORY CACHE (Client Only)
 if (isClient) {
     try {
         db = initializeFirestore(app, {
@@ -57,21 +57,21 @@ if (isClient) {
         db = getFirestore(app);
     }
 } else {
-    db = getFirestore(app);
+    // On server, we leave db uninitialized to avoid gRPC error spam.
+    // Server-side code MUST use getAdminDb() instead.
 }
 
 storage = getStorage(app);
 
 // --- Emulator Connectivity (Client Side) ---
 if (isClient && shouldUseClientEmulators) {
-    console.log('[FirebaseClient] Connecting to emulators...');
     // Use hardcoded defaults for E2E speed/stability
     const AUTH_HOST = '127.0.0.1:9099';
     const DB_HOST = '127.0.0.1';
     const STORAGE_HOST = '127.0.0.1';
 
     try { connectAuthEmulator(auth, `http://${AUTH_HOST}`); } catch(e) {}
-    try { connectFirestoreEmulator(db, DB_HOST, 8080); } catch(e) {}
+    try { if (db) connectFirestoreEmulator(db, DB_HOST, 8080); } catch(e) {}
     try { connectStorageEmulator(storage, STORAGE_HOST, 9199); } catch(e) {}
 }
 

@@ -212,7 +212,7 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
 
   return (
     <TooltipProvider>
-      <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
+      <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
         <CardHeader className="pb-4">
           <CardTitle className="text-xl font-bold tracking-tight">{title}</CardTitle>
           <CardDescription>
@@ -495,7 +495,7 @@ export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] 
   const showLoadMore = hasMore && !filters.search && !filters.category && !filters.dateFrom && !filters.dateTo && !filters.budgetMin && !filters.budgetMax;
 
   return (
-    <>
+    <div className="font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface min-h-screen pt-8 pb-16 px-4">
       <Tabs defaultValue={tab} className="w-full">
         <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
           <TabsList className="h-auto flex-wrap justify-start w-full sm:w-auto grid-cols-1 sm:grid-cols-3">
@@ -593,6 +593,6 @@ export default function PostedJobsClient({ initialJobs }: { initialJobs?: Job[] 
         onDelete={handleBulkDelete}
         onClearSelection={() => setSelectedJobIds([])}
       />
-    </>
+    </div>
   )
 }

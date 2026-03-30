@@ -406,20 +406,20 @@ export default function MyBidsClient() {
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="max-w-full overflow-x-hidden px-4 sm:px-8 space-y-10 pb-20"
+        className="max-w-full overflow-x-hidden px-4 sm:px-8 space-y-10 pb-20 font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface min-h-screen pt-8"
     >
       <motion.div variants={itemVariants} className="flex flex-col gap-2">
-          <h1 className="text-3xl font-black tracking-tight md:text-5xl bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent italic">
+          <h1 className="text-3xl font-extrabold font-headline tracking-tighter md:text-5xl text-on-surface">
               {pageTitle}
           </h1>
-          <p className="text-muted-foreground font-medium text-lg max-w-2xl">
+          <p className="text-on-surface-variant font-medium text-lg max-w-2xl">
               {pageDescription}
           </p>
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
-          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 p-8 border-b border-foreground/5">
+        <Card className="border-none bg-surface-container-low dark:bg-slate-900 shadow-xl shadow-black/5 rounded-[2.5rem] overflow-hidden">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 p-8 border-b border-outline-variant/10 bg-surface-container-highest dark:bg-slate-800/50">
             <div className="flex items-center gap-2 p-1.5 bg-foreground/5 backdrop-blur-md rounded-2xl border border-foreground/5">
                 <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-10 w-10 rounded-xl" onClick={() => setView('list')} aria-label="List view">
                   <List className="h-5 w-5" />

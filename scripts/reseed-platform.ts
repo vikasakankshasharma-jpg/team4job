@@ -74,7 +74,7 @@ async function reseedPlatform() {
         // --- 2. ADMIN CREATION ---
         console.log("Step 2: Creating Admin User...");
         const adminEmail = 'vikasakankshasharma_v3@gmail.com';
-        const adminPassword = 'Vks2bhdj@9229'; // Use process.env in real prod, but hardcoded as per prompt
+        const adminPassword = 'Admin_Pass2026!'; // Use process.env in real prod, but hardcoded as per prompt
 
         let adminUid;
         try {
@@ -119,7 +119,7 @@ async function reseedPlatform() {
 
         // --- 2b. SEED SPECIFIC PERSONAS ---
         console.log("Step 2b: Creating Specific Dummy Personas...");
-        const commonPassword = 'Test@1234';
+        const commonPassword = 'TestUser_2026!';
 
         const personas = [
             {

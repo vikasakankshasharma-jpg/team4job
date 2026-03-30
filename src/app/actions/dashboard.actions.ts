@@ -15,8 +15,8 @@ export async function getDashboardStatsAction(userId: string) {
         const startTime = Date.now();
 
         const timeout = new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Dashboard data fetch timed out')), 5000)
-        );
+            setTimeout(() => reject(new Error('Dashboard data fetch timed out')), 15000)
+        ); // Increased from 5s to 15s for stability during audits
 
         const [transactionsSnapshot, ProfessionalStats, ClientStats, quickMetrics] = await Promise.race([
             Promise.all([

@@ -54,6 +54,7 @@ export function MilestoneDialog({ open, onOpenChange, onSubmit, maxAmount }: Mil
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="e.g., First Fix / Wiring"
+                            data-testid="milestone-title-input"
                         />
                     </div>
                     <div className="grid gap-2">
@@ -65,6 +66,7 @@ export function MilestoneDialog({ open, onOpenChange, onSubmit, maxAmount }: Mil
                             onChange={(e) => setAmount(e.target.value)}
                             max={maxAmount}
                             placeholder="0.00"
+                            data-testid="milestone-amount-input"
                         />
                     </div>
                     <div className="grid gap-2">
@@ -74,6 +76,7 @@ export function MilestoneDialog({ open, onOpenChange, onSubmit, maxAmount }: Mil
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Describe the deliverables..."
+                            data-testid="milestone-description-input"
                         />
                     </div>
                 </div>
@@ -81,7 +84,7 @@ export function MilestoneDialog({ open, onOpenChange, onSubmit, maxAmount }: Mil
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
                         Cancel
                     </Button>
-                    <Button onClick={handleSubmit} disabled={isLoading || !title || !amount || Number(amount) > maxAmount}>
+                    <Button onClick={handleSubmit} disabled={isLoading || !title || !amount || Number(amount) > maxAmount} data-testid="confirm-add-milestone-button">
                         {isLoading ? "Creating..." : "Add Milestone"}
                     </Button>
                 </DialogFooter>
