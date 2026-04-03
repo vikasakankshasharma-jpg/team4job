@@ -15,11 +15,9 @@ import CookieBanner from "@/components/gdpr/cookie-banner";
 import { SystemStatusBanner } from "@/components/layout/system-status-banner";
 import ErrorBoundaryWrapper from "@/components/error-boundary-wrapper";
 import { OfflineDetector } from "@/components/layout/offline-detector";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://team4job.com"),
+  metadataBase: new URL("https://www.team4job.com"),
   alternates: {
     canonical: '/',
   },
@@ -144,7 +142,7 @@ export default async function RootLayout({
               "@type": "WebApplication",
               "name": "Team4Job",
               "description": "Professional Marketplace for Skilled Services",
-              "url": "https://team4job.com",
+              "url": "https://www.team4job.com",
               "applicationCategory": "BusinessApplication",
               "operatingSystem": "Web",
               "publisher": {
@@ -152,7 +150,7 @@ export default async function RootLayout({
                 "name": "Team4Job",
                 "logo": {
                   "@type": "ImageObject",
-                  "url": "https://team4job.com/icon-512.png"
+                  "url": "https://www.team4job.com/icon-512.png"
                 }
               },
               "offers": {
@@ -179,7 +177,7 @@ export default async function RootLayout({
                 "@type": "ListItem",
                 "position": 1,
                 "name": "Home",
-                "item": "https://team4job.com"
+                "item": "https://www.team4job.com"
               }]
             }
           `}
@@ -204,8 +202,6 @@ export default async function RootLayout({
           `}
         </Script>
         <CookieBanner />
-        <Analytics />
-        <SpeedInsights />
       </body>
     </html >
   );
